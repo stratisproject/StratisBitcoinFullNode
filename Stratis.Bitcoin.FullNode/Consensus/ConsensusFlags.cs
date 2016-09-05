@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 			// Start enforcing CHECKLOCKTIMEVERIFY, (BIP65) for block.nVersion=4
 			// blocks, when 75% of the network has upgraded:
-			if(pindex.Height >= chainparams.BuriedDeployments[BuriedDeployments.BIP66])
+			if(pindex.Height >= chainparams.BuriedDeployments[BuriedDeployments.BIP65])
 			{
 				ScriptFlags |= ScriptVerify.CheckLockTimeVerify;
 			}
