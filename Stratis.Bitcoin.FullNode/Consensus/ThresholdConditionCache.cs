@@ -25,32 +25,29 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		}
 
 		NBitcoin.Consensus _Consensus;
-		BIP9Deployments _Deployment;
-		Dictionary<uint256, ThresholdState> cache = new Dictionary<uint256, ThresholdState>();
+		Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
 
-		public ThresholdConditionCache(NBitcoin.Consensus consensus, BIP9Deployments deployment)
+		public ThresholdConditionCache(NBitcoin.Consensus consensus)
 		{
 			if(consensus == null)
 				throw new ArgumentNullException("consensus");
 			_Consensus = consensus;
 		}
-		//public ThresholdState this[uint256 hash]
-		//{
-		//	get
-		//	{
 
-		//	}
-		//	set
-		//	{ /* set the specified index to value here */
-		//	}
-		//} 
+		public ThresholdState[] GetStates(ChainedBlock pindexPrev)
+		{
+			return Enum.GetValues(typeof(BIP9Deployments))
+				.OfType<BIP9Deployments>()
+				.Select(b => GetState(pindexPrev, b))
+				.ToArray();
+		}
 
-		public ThresholdState GetState(ChainedBlock pindexPrev)
+		public ThresholdState GetState(ChainedBlock pindexPrev, BIP9Deployments deployment)
 		{
 			int nPeriod = _Consensus.MinerConfirmationWindow;
 			int nThreshold = _Consensus.RuleChangeActivationThreshold;
-			var nTimeStart = _Consensus.BIP9Deployments[_Deployment].StartTime;
-			var nTimeTimeout = _Consensus.BIP9Deployments[_Deployment].Timeout;
+			var nTimeStart = _Consensus.BIP9Deployments[deployment].StartTime;
+			var nTimeTimeout = _Consensus.BIP9Deployments[deployment].Timeout;
 
 			// A block's state is always the same as that of the first of its period, so it is computed based on a pindexPrev whose height equals a multiple of nPeriod - 1.
 			if(pindexPrev != null)
@@ -60,26 +57,26 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 			// Walk backwards in steps of nPeriod to find a pindexPrev whose information is known
 			List<ChainedBlock> vToCompute = new List<ChainedBlock>();
-			while(!cache.ContainsKey(pindexPrev.HashBlock))
+			while(!ContainsKey(pindexPrev?.HashBlock, deployment))
 			{
 				if(pindexPrev == null)
 				{
 					// The genesis block is by definition defined.
-					cache[uint256.Zero] = ThresholdState.Defined;
+					Set(pindexPrev?.HashBlock, deployment, ThresholdState.Defined);
 					break;
 				}
 				if(pindexPrev.GetMedianTimePast() < nTimeStart)
 				{
 					// Optimization: don't recompute down further, as we know every earlier block will be before the start time
-					cache[pindexPrev.HashBlock] = ThresholdState.Defined;
+					Set(pindexPrev?.HashBlock, deployment, ThresholdState.Defined);
 					break;
 				}
 				vToCompute.Add(pindexPrev);
 				pindexPrev = pindexPrev.GetAncestor(pindexPrev.Height - nPeriod);
 			}
 			// At this point, cache[pindexPrev] is known
-			assert(cache.ContainsKey(pindexPrev.HashBlock));
-			ThresholdState state = cache[pindexPrev.HashBlock];
+			assert(ContainsKey(pindexPrev?.HashBlock, deployment));
+			ThresholdState state = Get(pindexPrev?.HashBlock, deployment);
 
 			// Now walk forward and compute the state of descendants of pindexPrev
 			while(vToCompute.Count != 0)
@@ -114,7 +111,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 							int count = 0;
 							for(int i = 0; i < nPeriod; i++)
 							{
-								if(Condition(pindexCount))
+								if(Condition(pindexCount, deployment))
 								{
 									count++;
 								}
@@ -139,20 +136,49 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 							break;
 						}
 				}
-				cache[pindexPrev.HashBlock] = state = stateNext;
+				Set(pindexPrev?.HashBlock, deployment, state = stateNext);
 			}
 
 			return state;
 		}
 
-		private bool Condition(ChainedBlock pindex)
+		private ThresholdState Get(uint256 hash, BIP9Deployments deployment)
 		{
-			return (((pindex.Header.Version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) && (pindex.Header.Version & Mask()) != 0);
+			ThresholdState?[] threshold;
+			if(!cache.TryGetValue(hash, out threshold))
+				throw new InvalidOperationException("Should never happen");
+			if(threshold[(int)deployment] == null)
+				throw new InvalidOperationException("Should never happen");
+			return threshold[(int)deployment].Value;
 		}
 
-		private uint Mask()
+		private void Set(uint256 hash, BIP9Deployments deployment, ThresholdState state)
 		{
-			return ((uint)1) << _Consensus.BIP9Deployments[_Deployment].Bit;
+			ThresholdState?[] threshold;
+			if(!cache.TryGetValue(hash, out threshold))
+			{
+				threshold = new ThresholdState?[ArraySize];
+				cache.Add(hash, threshold);
+			}
+			threshold[(int)deployment] = state;
+		}
+
+		private bool ContainsKey(uint256 hash, BIP9Deployments deployment)
+		{
+			ThresholdState?[] threshold;
+			if(!cache.TryGetValue(hash, out threshold))
+				return false;
+			return threshold[(int)deployment].HasValue;
+		}
+
+		private bool Condition(ChainedBlock pindex, BIP9Deployments deployment)
+		{
+			return (((pindex.Header.Version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) && (pindex.Header.Version & Mask(deployment)) != 0);
+		}
+
+		private uint Mask(BIP9Deployments deployment)
+		{
+			return ((uint)1) << _Consensus.BIP9Deployments[deployment].Bit;
 		}
 
 		private void assert(bool v)

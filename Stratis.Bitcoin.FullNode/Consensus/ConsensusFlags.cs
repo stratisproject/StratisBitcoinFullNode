@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 
 		}
-		public ConsensusFlags(ChainedBlock pindex, NBitcoin.Consensus chainparams)
+		public ConsensusFlags(ChainedBlock pindex, ThresholdState[] states, NBitcoin.Consensus chainparams)
 		{
 			// Do not allow blocks that contain transactions which 'overwrite' older transactions,
 			// unless those are already completely spent.
@@ -60,9 +60,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			{
 				ScriptFlags |= ScriptVerify.CheckLockTimeVerify;
 			}
-			
+
 			// Start enforcing BIP68 (sequence locks), BIP112 (CHECKSEQUENCEVERIFY) and BIP113 (Median Time Past) using versionbits logic.
-			if(VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_CSV, versionbitscache) == THRESHOLD_ACTIVE)
+			if(states[(int)BIP9Deployments.CSV] == ThresholdState.Active)
 			{
 				ScriptFlags |= ScriptVerify.CheckSequenceVerify;
 				LockTimeFlags |= LockTimeFlags.VerifySequence;
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 
 			// Start enforcing WITNESS rules using versionbits logic.
-			if(VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE)
+			if(states[(int)BIP9Deployments.Segwit] ==  ThresholdState.Active)
 			{
 				ScriptFlags |= ScriptVerify.Witness;
 			}
