@@ -31,8 +31,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			int nHeight = context.BestBlock.Height + 1;
 
 			// Check proof of work
-			var workRequired = context.BestBlock?.NextWorkRequired ?? _ConsensusParams.PowLimit;
-			if(header.Bits != workRequired)
+			if(header.Bits != context.NextWorkRequired)
 				return Error("bad-diffbits", "incorrect proof of work");
 
 			// Check timestamp against prev
