@@ -52,6 +52,8 @@
     <Compile Include="Consensus\ConsensusFlags.cs" />
     <Compile Include="Consensus\ConsensusValidator.cs" />
     <Compile Include="Consensus\ContextualInformation.cs" />
+    <Compile Include="Consensus\ThresholdConditionCache.cs" />
+    <Compile Include="Consensus\ThresholdState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
