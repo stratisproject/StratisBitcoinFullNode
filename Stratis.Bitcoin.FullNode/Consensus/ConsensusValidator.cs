@@ -118,16 +118,16 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			// This implements the weight = (stripped_size * 4) + witness_size formula,
 			// using only serialization with and without witness data. As witness_size
 			// is equal to total_size - stripped_size, this formula is identical to:
-			// weight = (stripped_size * 3) + total_size.
-			MemoryStream ms = new MemoryStream();
-			BitcoinStream bms = new BitcoinStream(ms, true);
+			// weight = (stripped_size * 3) + total_size.			
+			var ms = new MemoryStream(MAX_BLOCK_WEIGHT / 2);
+			var bms = new BitcoinStream(ms, true);
+			block.ReadWrite(bms);
+			var withWitnessSize = ms.Length;
+			ms = new MemoryStream((int)ms.Length);
+			bms = new BitcoinStream(ms, true);
 			bms.TransactionOptions = TransactionOptions.None;
 			block.ReadWrite(bms);
 			var noWitnessSize = ms.Length;
-			ms = new MemoryStream();
-			bms = new BitcoinStream(ms, true);
-			block.ReadWrite(bms);
-			var withWitnessSize = ms.Length;
 			return noWitnessSize * (WITNESS_SCALE_FACTOR - 1) + withWitnessSize;
 		}
 
