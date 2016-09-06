@@ -91,17 +91,17 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public bool EnforceBIP30
 		{
 			get;
-			private set;
+			set;
 		}
 		public bool EnforceBIP34
 		{
 			get;
-			private set;
+			set;
 		}
 		public ScriptVerify ScriptFlags
 		{
 			get;
-			private set;
+			set;
 		}
 	}
 }

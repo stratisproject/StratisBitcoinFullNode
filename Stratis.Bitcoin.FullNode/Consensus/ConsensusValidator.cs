@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 					Buffer.BlockCopy(hashWitness.ToBytes(), 0, hashed, 0, 32);
 					Buffer.BlockCopy(witness.Pushes.First(), 0, hashed, 32, 32);
 					hashWitness = Hashes.Hash256(hashed);
-					if(memcmp(hashWitness.ToBytes(), block.Transactions[0].Outputs[commitpos].ScriptPubKey.ToBytes(true).Skip(6).ToArray(), 32))
+					if(!EqualsArray(hashWitness.ToBytes(), block.Transactions[0].Outputs[commitpos].ScriptPubKey.ToBytes(true).Skip(6).ToArray(), 32))
 					{
 						return Error("bad-witness-merkle-match", "witness merkle commitment mismatch");
 					}
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 
 
-		private bool memcmp(byte[] a, byte[] b, int len)
+		private bool EqualsArray(byte[] a, byte[] b, int len)
 		{
 			for(int i = 0; i < len; i++)
 			{
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return true;
 		}
 
-		public bool ContextualCheckBlockHeader(ContextInformation context, BlockHeader header)
+		public bool ContextualCheckBlockHeader(BlockHeader header, ContextInformation context)
 		{
 			if(context.BestBlock == null)
 				throw new ArgumentException("context.BestBlock should not be null");
