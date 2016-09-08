@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 	public class ConsensusValidator
 	{
 		NBitcoin.Consensus _ConsensusParams;
-		private readonly int MAX_BLOCK_WEIGHT = 4000000;
+		const int MAX_BLOCK_WEIGHT = 4000000;
 		private readonly int WITNESS_SCALE_FACTOR = 4;
 
 		public ConsensusValidator(NBitcoin.Consensus consensusParams)
@@ -113,23 +113,26 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return true;
 		}
 
+		byte[] blockWeight = new byte[MAX_BLOCK_WEIGHT];		
 		private long GetBlockWeight(Block block)
 		{
-			// This implements the weight = (stripped_size * 4) + witness_size formula,
-			// using only serialization with and without witness data. As witness_size
-			// is equal to total_size - stripped_size, this formula is identical to:
-			// weight = (stripped_size * 3) + total_size.
-			var buffer = new byte[MAX_BLOCK_WEIGHT];
-			var ms = new MemoryStream(buffer);
-			var bms = new BitcoinStream(ms, true);
-			block.ReadWrite(bms);
-			var withWitnessSize = ms.Position;
-			ms = new MemoryStream(buffer);
-			bms = new BitcoinStream(ms, true);
-			bms.TransactionOptions = TransactionOptions.None;
-			block.ReadWrite(bms);
-			var noWitnessSize = ms.Position;
-			return noWitnessSize * (WITNESS_SCALE_FACTOR - 1) + withWitnessSize;
+			lock(blockWeight)
+			{
+				// This implements the weight = (stripped_size * 4) + witness_size formula,
+				// using only serialization with and without witness data. As witness_size
+				// is equal to total_size - stripped_size, this formula is identical to:
+				// weight = (stripped_size * 3) + total_size.
+				var ms = new MemoryStream(blockWeight);
+				var bms = new BitcoinStream(ms, true);
+				block.ReadWrite(bms);
+				var withWitnessSize = ms.Position;
+				ms = new MemoryStream(blockWeight);
+				bms = new BitcoinStream(ms, true);
+				bms.TransactionOptions = TransactionOptions.None;
+				block.ReadWrite(bms);
+				var noWitnessSize = ms.Position;
+				return noWitnessSize * (WITNESS_SCALE_FACTOR - 1) + withWitnessSize;
+			}
 		}
 
 
