@@ -16,13 +16,10 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public ContextBlockInformation(ChainedBlock bestBlock, NBitcoin.Consensus consensus)
 		{
 			if(bestBlock == null)
-				throw new ArgumentNullException("bestBlock");
-			if(bestBlock.Previous == null)
-				throw new ArgumentException("bestBlock.Previous == null");
-			var previous = bestBlock.Previous;
-			Header = previous.Header;
-			Height = previous.Height;
-			MedianTimePast = previous.GetMedianTimePast();
+				throw new ArgumentNullException("bestBlock");       
+			Header = bestBlock.Header;
+			Height = bestBlock.Height;
+			MedianTimePast = bestBlock.GetMedianTimePast();
 		}
 
 		public BlockHeader Header

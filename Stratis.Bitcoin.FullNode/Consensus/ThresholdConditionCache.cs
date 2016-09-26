@@ -59,12 +59,6 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			List<ChainedBlock> vToCompute = new List<ChainedBlock>();
 			while(!ContainsKey(pindexPrev?.HashBlock, deployment))
 			{
-				if(pindexPrev == null)
-				{
-					// The genesis block is by definition defined.
-					Set(pindexPrev?.HashBlock, deployment, ThresholdState.Defined);
-					break;
-				}
 				if(pindexPrev.GetMedianTimePast() < nTimeStart)
 				{
 					// Optimization: don't recompute down further, as we know every earlier block will be before the start time
@@ -144,6 +138,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		private ThresholdState Get(uint256 hash, BIP9Deployments deployment)
 		{
+            if(hash == null)
+                return ThresholdState.Defined;
 			ThresholdState?[] threshold;
 			if(!cache.TryGetValue(hash, out threshold))
 				throw new InvalidOperationException("Should never happen");
@@ -154,6 +150,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		private void Set(uint256 hash, BIP9Deployments deployment, ThresholdState state)
 		{
+            if(hash == null)
+                return;
 			ThresholdState?[] threshold;
 			if(!cache.TryGetValue(hash, out threshold))
 			{
@@ -165,6 +163,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		private bool ContainsKey(uint256 hash, BIP9Deployments deployment)
 		{
+            if(hash == null)
+                return true;
 			ThresholdState?[] threshold;
 			if(!cache.TryGetValue(hash, out threshold))
 				return false;
