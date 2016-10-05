@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
             List<uint256> leaves = new List<uint256>(block.Transactions.Count);
             for(int s = 0; s < block.Transactions.Count; s++)
             {
-                leaves[s] = block.Transactions[s].GetHash();
+                leaves.Add(block.Transactions[s].GetHash());
             }
             return ComputeMerkleRoot(leaves, ref mutated);
         }

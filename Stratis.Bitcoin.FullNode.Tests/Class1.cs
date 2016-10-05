@@ -110,6 +110,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
             validator.CheckBlockHeader(block.Header);
             validator.ContextualCheckBlockHeader(block.Header, context);
             validator.ContextualCheckBlock(block, consensusFlags, context);
+            validator.CheckBlock(block);
         }
     }
 }
