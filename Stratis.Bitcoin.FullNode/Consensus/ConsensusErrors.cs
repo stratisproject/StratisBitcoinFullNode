@@ -48,6 +48,33 @@ namespace Stratis.Bitcoin.FullNode.Consensus
             _Message = message;
         }
 
+
+        public override bool Equals(object obj)
+        {
+            ConsensusError item = obj as ConsensusError;
+            if(item == null)
+                return false;
+            return Code.Equals(item.Code);
+        }
+        public static bool operator ==(ConsensusError a, ConsensusError b)
+        {
+            if(System.Object.ReferenceEquals(a, b))
+                return true;
+            if(((object)a == null) || ((object)b == null))
+                return false;
+            return a.Code == b.Code;
+        }
+
+        public static bool operator !=(ConsensusError a, ConsensusError b)
+        {
+            return !(a == b);
+        }
+
+        public override int GetHashCode()
+        {
+            return Code.GetHashCode();
+        }
+
         public override string ToString()
         {
             return _Code + ": " + _Message;
@@ -66,5 +93,21 @@ namespace Stratis.Bitcoin.FullNode.Consensus
         public readonly static ConsensusError TimeTooOld = new ConsensusError("time-too-old", "block's timestamp is too early");
         public readonly static ConsensusError TimeTooNew = new ConsensusError("time-too-new", "block timestamp too far in the future");
         public readonly static ConsensusError BadVersion = new ConsensusError("bad-version", "block version rejected");
+        public readonly static ConsensusError BadMerkleRoot = new ConsensusError("bad-txnmrklroot", "hashMerkleRoot mismatch");        
+        public readonly static ConsensusError BadBlockLength = new ConsensusError("bad-blk-length", "size limits failed");
+        public readonly static ConsensusError BadCoinbaseMissing = new ConsensusError("bad-cb-missing", "first tx is not coinbase");
+        public readonly static ConsensusError BadCoinbaseSize = new ConsensusError("bad-cb-length", "invalid coinbase size");
+        public readonly static ConsensusError BadMultipleCoinbase = new ConsensusError("bad-cb-multiple", "more than one coinbase");
+        public readonly static ConsensusError BadBlockSigOps = new ConsensusError("bad-blk-sigops", "out-of-bounds SigOpCount");
+
+        public readonly static ConsensusError BadTransactionDuplicate = new ConsensusError("bad-txns-duplicate", "duplicate transaction");
+        public readonly static ConsensusError BadTransactionNoInput = new ConsensusError("bad-txns-vin-empty", "no input in the transaction");
+        public readonly static ConsensusError BadTransactionNoOutput = new ConsensusError("bad-txns-vout-empty", "no output in the transaction");
+        public readonly static ConsensusError BadTransactionOversize = new ConsensusError("bad-txns-oversize", "oversized transaction");
+        public readonly static ConsensusError BadTransactionNegativeOutput = new ConsensusError("bad-txns-vout-negative", "the transaction contains a negative value output");
+        public readonly static ConsensusError BadTransactionTooLargeOutput = new ConsensusError("bad-txns-vout-toolarge", "the transaction contains a too large value output");
+        public readonly static ConsensusError BadTransactionTooLargeTotalOutput = new ConsensusError("bad-txns-txouttotal-toolarge", "the sum of outputs'value is too large for this transaction");
+        public readonly static ConsensusError BadTransactionDuplicateInputs = new ConsensusError("bad-txns-inputs-duplicate", "duplicate inputs");
+        public readonly static ConsensusError BadTransactionNullPrevout = new ConsensusError("bad-txns-prevout-null", "this transaction contains a null prevout");
     }
 }
