@@ -37,7 +37,9 @@ namespace Stratis.Bitcoin.FullNode.Tests
             var validator = new ConsensusValidator(store.Network.Consensus);
             ThresholdConditionCache bip9 = new ThresholdConditionCache(store.Network.Consensus);
             bool blockOnFullQueue = false;
-            foreach(var block in blocks.GetConsumingEnumerable())
+			CoinViewBase coinView = new CoinViewBase();
+
+			foreach(var block in blocks.GetConsumingEnumerable())
             {
                 try
                 {
@@ -50,7 +52,6 @@ namespace Stratis.Bitcoin.FullNode.Tests
                     validator.ContextualCheckBlock(block, flags, context);
                     validator.CheckBlock(block);
 
-                    CoinViewBase coinView = new CoinViewBase();
                     validator.ExecuteBlock(block, next, flags, coinView, null);
                     
                     tip = next;

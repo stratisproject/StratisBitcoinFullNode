@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 			return tx
 			.Inputs
-			.Select(i => GetOutputFor(i).Value)
+			.Select(i => GetOutputFor(i))
 			.All(o => o != null);
 		}
 
@@ -38,7 +38,17 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		Dictionary<uint256, Coins> coins = new Dictionary<uint256, Coins>();
 		internal void Update(Transaction tx, int height)
 		{
-			coins.Add(tx.GetHash(), new Coins(tx, height));
+			coins.AddOrReplace(tx.GetHash(), new Coins(tx, height));
+			if(!tx.IsCoinBase)
+			{
+				foreach(var input in tx.Inputs)
+				{
+					var c = AccessCoins(input.PrevOut.Hash);
+					c.Spend((int)input.PrevOut.N);
+					if(c.IsPruned)
+						coins.Remove(input.PrevOut.Hash);
+				}
+			}
 		}
 
 		internal Money GetValueIn(Transaction tx)
