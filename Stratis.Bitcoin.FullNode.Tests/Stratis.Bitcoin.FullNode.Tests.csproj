@@ -6,7 +6,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{EA3C9A06-7FE0-41D6-A6EE-EFB026C96E66}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Stratis.Bitcoin.FullNode.Tests</RootNamespace>
     <AssemblyName>Stratis.Bitcoin.FullNode.Tests</AssemblyName>
@@ -32,9 +32,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NBitcoin, Version=3.0.0.57, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NBitcoin.3.0.0.57\lib\net45\NBitcoin.dll</HintPath>
+    <Reference Include="NBitcoin, Version=3.0.0.61, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NBitcoin.3.0.0.61\lib\net45\NBitcoin.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -60,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

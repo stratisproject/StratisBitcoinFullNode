@@ -36,27 +36,27 @@ namespace Stratis.Bitcoin.FullNode.Tests
 
             var validator = new ConsensusValidator(store.Network.Consensus);
             ThresholdConditionCache bip9 = new ThresholdConditionCache(store.Network.Consensus);
-            bool blockOnFullQueue = true;
+            bool blockOnFullQueue = false;
             foreach(var block in blocks.GetConsumingEnumerable())
             {
                 try
                 {
-                    if(tip.Height != 0)
-                        validator.CheckBlockHeader(block.Header);
+                    validator.CheckBlockHeader(block.Header);
                     var next = new ChainedBlock(block.Header, block.Header.GetHash(), tip);
                     var context = new ContextInformation(next, store.Network.Consensus);
-                    if(tip.Height != 0)
-                        validator.ContextualCheckBlockHeader(block.Header, context);
+                    validator.ContextualCheckBlockHeader(block.Header, context);
                     var states = bip9.GetStates(tip);
                     var flags = new ConsensusFlags(next, states, store.Network.Consensus);
-                    if(tip.Height != 0)
-                        validator.ContextualCheckBlock(block, flags, context);
-                    if(tip.Height != 0)
-                        validator.CheckBlock(block);
+                    validator.ContextualCheckBlock(block, flags, context);
+                    validator.CheckBlock(block);
+
+                    CoinViewBase coinView = new CoinViewBase();
+                    validator.ExecuteBlock(block, next, flags, coinView, null);
+                    
                     tip = next;
                     if(blockOnFullQueue && blocks.Count == blocks.BoundedCapacity)
                     {
-                        //Debugger.Break();
+                        Debugger.Break();
                     }
                 }
                 catch(ConsensusErrorException ex)
@@ -71,6 +71,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
             ConcurrentChain chain = new ConcurrentChain(Network.Main);
             chain.Load(File.ReadAllBytes("C:\\Bitcoin\\main.data"));
             var tip = chain.GetBlock(hashStart);
+
 
             Dictionary<uint256, Block> unprocessed = new Dictionary<uint256, Block>();
             foreach(var block in blocks)

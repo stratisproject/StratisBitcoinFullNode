@@ -109,5 +109,15 @@ namespace Stratis.Bitcoin.FullNode.Consensus
         public readonly static ConsensusError BadTransactionTooLargeTotalOutput = new ConsensusError("bad-txns-txouttotal-toolarge", "the sum of outputs'value is too large for this transaction");
         public readonly static ConsensusError BadTransactionDuplicateInputs = new ConsensusError("bad-txns-inputs-duplicate", "duplicate inputs");
         public readonly static ConsensusError BadTransactionNullPrevout = new ConsensusError("bad-txns-prevout-null", "this transaction contains a null prevout");
-    }
+        public readonly static ConsensusError BadTransactionBIP30 = new ConsensusError("bad-txns-BIP30", "tried to overwrite transaction");
+		public readonly static ConsensusError BadTransactionMissingInput = new ConsensusError("bad-txns-inputs-missingorspent", "input missing/spent");
+
+		public readonly static ConsensusError BadCoinbaseAmount = new ConsensusError("bad-cb-amount", "coinbase pays too much");
+		public readonly static ConsensusError BadTransactionPrematureCoinbaseSpending = new ConsensusError("bad-txns-premature-spend-of-coinbase", "tried to spend coinbase before maturity");
+
+		public readonly static ConsensusError BadTransactionInputValueOutOfRange = new ConsensusError("bad-txns-inputvalues-outofrange", "input value out of range");
+		public readonly static ConsensusError BadTransactionInBelowOut = new ConsensusError("bad-txns-in-belowout", "input value below output value");
+		public readonly static ConsensusError BadTransactionNegativeFee = new ConsensusError("bad-txns-fee-negative", "negative fee");
+		public readonly static ConsensusError BadTransactionFeeOutOfRange = new ConsensusError("bad-txns-fee-outofrange", "fee out of range");
+	}
 }
