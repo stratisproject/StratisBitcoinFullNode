@@ -23,14 +23,13 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			_ConsensusParams = consensusParams;
 		}
 
-		public bool CheckBlockHeader(BlockHeader header)
+		public void CheckBlockHeader(BlockHeader header)
 		{
-			if(!header.CheckProofOfWork())
-				return Error("high-hash", "proof of work failed");
-			return true;
+            if(!header.CheckProofOfWork())
+                ConsensusErrors.HighHash.Throw();
 		}
 
-		public bool ContextualCheckBlock(Block block, ConsensusFlags consensusFlags, ContextInformation context)
+		public void ContextualCheckBlock(Block block, ConsensusFlags consensusFlags, ContextInformation context)
 		{
 			int nHeight = context.BestBlock == null ? 0 : context.BestBlock.Height + 1;
 
@@ -44,7 +43,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			{
 				if(!transaction.IsFinal(nLockTimeCutoff, nHeight))
 				{
-					return Error("bad-txns-nonfinal", "non-final transaction");
+                    ConsensusErrors.BadTransactionNonFinal.Throw();
 				}
 			}
 
@@ -55,8 +54,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				Script actual = block.Transactions[0].Inputs[0].ScriptSig;
 				if(!StartWith(actual.ToBytes(true), expect.ToBytes(true)))
 				{
-					return Error("bad-cb-height", "block height mismatch in coinbase");
-				}
+                    ConsensusErrors.BadCoinbaseHeight.Throw();
+                }
 			}
 
 			// Validation for witness commitments.
@@ -81,7 +80,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 					var witness = block.Transactions[0].Inputs[0].WitScript;
 					if(witness.PushCount != 1 || witness.Pushes.First().Length != 32)
 					{
-						return Error("bad-witness-nonce-size", "invalid witness nonce size");
+                        ConsensusErrors.BadWitnessNonceSize.Throw();
 					}
 
 					byte[] hashed = new byte[64];
@@ -90,7 +89,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 					hashWitness = Hashes.Hash256(hashed);
 					if(!EqualsArray(hashWitness.ToBytes(), block.Transactions[0].Outputs[commitpos].ScriptPubKey.ToBytes(true).Skip(6).ToArray(), 32))
 					{
-						return Error("bad-witness-merkle-match", "witness merkle commitment mismatch");
+                        ConsensusErrors.BadWitnessMerkleMatch.Throw();
 					}
 					fHaveWitness = true;
 				}
@@ -98,19 +97,17 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 			if(!fHaveWitness)
 			{
-				if(block.Transactions.Any(t => t.HasWitness))
-					return Error("unexpected-witness", "unexpected witness data found");
+                ConsensusErrors.UnexpectedWitness.Throw();
 			}
 
-			// After the coinbase witness nonce and commitment are verified,
-			// we can check if the block weight passes (before we've checked the
-			// coinbase witness, it would be possible for the weight to be too
-			// large by filling up the coinbase witness, which doesn't change
-			// the block hash, so we couldn't mark the block as permanently
-			// failed).
-			if(GetBlockWeight(block) > MAX_BLOCK_WEIGHT)
-				return Error("bad-blk-weight", "weight limit failed");
-			return true;
+            // After the coinbase witness nonce and commitment are verified,
+            // we can check if the block weight passes (before we've checked the
+            // coinbase witness, it would be possible for the weight to be too
+            // large by filling up the coinbase witness, which doesn't change
+            // the block hash, so we couldn't mark the block as permanently
+            // failed).
+            if(GetBlockWeight(block) > MAX_BLOCK_WEIGHT)
+                ConsensusErrors.BadCoinbaseHeight.Throw();
 		}
 
 		byte[] blockWeight = new byte[MAX_BLOCK_WEIGHT];		
@@ -315,37 +312,30 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return true;
 		}
 
-		public bool ContextualCheckBlockHeader(BlockHeader header, ContextInformation context)
+		public void ContextualCheckBlockHeader(BlockHeader header, ContextInformation context)
 		{
 			if(context.BestBlock == null)
 				throw new ArgumentException("context.BestBlock should not be null");
 			int nHeight = context.BestBlock.Height + 1;
 
-			// Check proof of work
-			if(header.Bits != context.NextWorkRequired)
-				return Error("bad-diffbits", "incorrect proof of work");
+            // Check proof of work
+            if(header.Bits != context.NextWorkRequired)
+                ConsensusErrors.BadDiffBits.Throw();
 
 			// Check timestamp against prev
 			if(header.BlockTime <= context.BestBlock.MedianTimePast)
-				return Error("time-too-old", "block's timestamp is too early");
+                ConsensusErrors.TimeTooOld.Throw();
 
-			// Check timestamp
-			if(header.BlockTime > context.Time + TimeSpan.FromHours(2))
-				return Error("time-too-new", "block timestamp too far in the future");
+            // Check timestamp
+            if(header.BlockTime > context.Time + TimeSpan.FromHours(2))
+                ConsensusErrors.TimeTooNew.Throw();
 
-			// Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
-			// check for version 2, 3 and 4 upgrades
-			if((header.Version < 2 && nHeight >= _ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34]) ||
-			   (header.Version < 3 && nHeight >= _ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]) ||
-			   (header.Version < 4 && nHeight >= _ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65]))
-				return Error("bad-version", $"rejected nVersion={header.Version} block");
-
-			return true;
-		}
-
-		private bool Error(string code, string message)
-		{
-			return false;
+            // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
+            // check for version 2, 3 and 4 upgrades
+            if((header.Version < 2 && nHeight >= _ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34]) ||
+               (header.Version < 3 && nHeight >= _ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]) ||
+               (header.Version < 4 && nHeight >= _ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65]))
+                ConsensusErrors.BadVersion.Throw();
 		}
 	}
 }

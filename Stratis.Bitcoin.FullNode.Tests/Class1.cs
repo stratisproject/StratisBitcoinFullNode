@@ -27,16 +27,22 @@ namespace Stratis.Bitcoin.FullNode.Tests
             ThresholdConditionCache bip9 = new ThresholdConditionCache(store.Network.Consensus);
             foreach(var block in Order(tip.HashBlock, store.Enumerate(DiskBlockPosRange.All).Select(b => b.Item)))
             {
-                var valid = validator.CheckBlockHeader(block.Header);
-                var next = new ChainedBlock(block.Header, block.Header.GetHash(), tip);
-                var context = new ContextInformation(next, store.Network.Consensus);
-                valid &= validator.ContextualCheckBlockHeader(block.Header, context);
-                var states = bip9.GetStates(tip);
-                var flags = new ConsensusFlags(next, states, store.Network.Consensus);
-                valid &= validator.ContextualCheckBlock(block, flags, context);
-                if(!valid)
+                try
+                {
+
+                    validator.CheckBlockHeader(block.Header);
+                    var next = new ChainedBlock(block.Header, block.Header.GetHash(), tip);
+                    var context = new ContextInformation(next, store.Network.Consensus);
+                    validator.ContextualCheckBlockHeader(block.Header, context);
+                    var states = bip9.GetStates(tip);
+                    var flags = new ConsensusFlags(next, states, store.Network.Consensus);
+                    validator.ContextualCheckBlock(block, flags, context);
+                    tip = next;
+                }
+                catch(ConsensusErrorException ex)
+                {
                     Debugger.Break();
-                tip = next;
+                }
             }
         }
 
@@ -101,9 +107,9 @@ namespace Stratis.Bitcoin.FullNode.Tests
                 Time = DateTimeOffset.UtcNow
             };
             var validator = new ConsensusValidator(new NBitcoin.Consensus());
-            Assert.True(validator.CheckBlockHeader(block.Header));
-            Assert.True(validator.ContextualCheckBlockHeader(block.Header, context));
-            Assert.True(validator.ContextualCheckBlock(block, consensusFlags, context));
+            validator.CheckBlockHeader(block.Header);
+            validator.ContextualCheckBlockHeader(block.Header, context);
+            validator.ContextualCheckBlock(block, consensusFlags, context);
         }
     }
 }
