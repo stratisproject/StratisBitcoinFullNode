@@ -220,7 +220,6 @@ namespace Stratis.Bitcoin.FullNode.Consensus
             return (nValue >= 0 && nValue <= MAX_MONEY);
         }
 
-        byte[] blockWeight = new byte[MAX_BLOCK_WEIGHT];
         /** The maximum allowed number of signature check operations in a block (network rule) */
         const int MAX_BLOCK_SIGOPS_COST = 80000;
         const long MAX_MONEY = 21000000 * Money.COIN;
@@ -236,11 +235,10 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
         public int GetSize(IBitcoinSerializable data, TransactionOptions options)
         {
-            var ms = new MemoryStream(blockWeight);
-            var bms = new BitcoinStream(ms, true);
+            var bms = new BitcoinStream(Stream.Null, true);
             bms.TransactionOptions = options;
             data.ReadWrite(bms);
-            return (int)ms.Position;
+            return (int)bms.Counter.WrittenBytes;
         }
 
 
