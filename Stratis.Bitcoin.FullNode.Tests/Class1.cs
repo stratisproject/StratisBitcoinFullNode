@@ -13,6 +13,8 @@ using Xunit;
 using static NBitcoin.Transaction;
 using System.Diagnostics;
 using System.IO;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Stratis.Bitcoin.FullNode.Tests
 {
@@ -21,23 +23,41 @@ namespace Stratis.Bitcoin.FullNode.Tests
         [Fact]
         public void Valid()
         {
+            BlockingCollection<Block> blocks = new BlockingCollection<Block>(new ConcurrentQueue<Block>(), 50);
             BlockStore store = new BlockStore("G:\\Bitcoin\\blocks", Network.Main);
-            var validator = new ConsensusValidator(store.Network.Consensus);
             ChainedBlock tip = new ChainedBlock(store.Network.GetGenesis().Header, 0);
+            new Thread(() =>
+            {
+                foreach(var b in Order(tip.HashBlock, store.Enumerate(DiskBlockPosRange.All).Select(b => b.Item)))
+                {
+                    blocks.Add(b);
+                }
+            }).Start();
+
+            var validator = new ConsensusValidator(store.Network.Consensus);
             ThresholdConditionCache bip9 = new ThresholdConditionCache(store.Network.Consensus);
-            foreach(var block in Order(tip.HashBlock, store.Enumerate(DiskBlockPosRange.All).Select(b => b.Item)))
+            bool blockOnFullQueue = true;
+            foreach(var block in blocks.GetConsumingEnumerable())
             {
                 try
                 {
-
-                    validator.CheckBlockHeader(block.Header);
+                    if(tip.Height != 0)
+                        validator.CheckBlockHeader(block.Header);
                     var next = new ChainedBlock(block.Header, block.Header.GetHash(), tip);
                     var context = new ContextInformation(next, store.Network.Consensus);
-                    validator.ContextualCheckBlockHeader(block.Header, context);
+                    if(tip.Height != 0)
+                        validator.ContextualCheckBlockHeader(block.Header, context);
                     var states = bip9.GetStates(tip);
                     var flags = new ConsensusFlags(next, states, store.Network.Consensus);
-                    validator.ContextualCheckBlock(block, flags, context);
+                    if(tip.Height != 0)
+                        validator.ContextualCheckBlock(block, flags, context);
+                    if(tip.Height != 0)
+                        validator.CheckBlock(block);
                     tip = next;
+                    if(blockOnFullQueue && blocks.Count == blocks.BoundedCapacity)
+                    {
+                        //Debugger.Break();
+                    }
                 }
                 catch(ConsensusErrorException ex)
                 {
@@ -51,6 +71,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
             ConcurrentChain chain = new ConcurrentChain(Network.Main);
             chain.Load(File.ReadAllBytes("C:\\Bitcoin\\main.data"));
             var tip = chain.GetBlock(hashStart);
+
             Dictionary<uint256, Block> unprocessed = new Dictionary<uint256, Block>();
             foreach(var block in blocks)
             {

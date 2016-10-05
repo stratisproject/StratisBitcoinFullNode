@@ -97,7 +97,14 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
             if(!fHaveWitness)
             {
-                ConsensusErrors.UnexpectedWitness.Throw();
+                for(var i = 0; i < block.Transactions.Count; i++)
+                {
+                    if(block.Transactions[i].HasWitness)
+                    {
+                        ConsensusErrors.UnexpectedWitness.Throw();
+                    }
+                }
+                
             }
 
             // After the coinbase witness nonce and commitment are verified,
@@ -387,8 +394,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
                     }
 
                     var hashh = new byte[64];
-                    Buffer.BlockCopy(inner[levell].ToBytes(), 0, hash, 0, 32);
-                    Buffer.BlockCopy(hh.ToBytes(), 0, hash, 32, 32);
+                    Buffer.BlockCopy(inner[levell].ToBytes(), 0, hashh, 0, 32);
+                    Buffer.BlockCopy(hh.ToBytes(), 0, hashh, 32, 32);
                     hh = Hashes.Hash256(hashh);
 
                     levell++;
