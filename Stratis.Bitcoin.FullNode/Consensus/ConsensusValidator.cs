@@ -168,6 +168,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 					CheckIntputs(tx, view, index.Height);
 					nFees += view.GetValueIn(tx) - tx.TotalOut;
 					int ii = i;
+					var localTx = tx;
 					PrecomputedTransactionData txData = new PrecomputedTransactionData(tx);
 					for(int iInput = 0; iInput < tx.Inputs.Count; iInput++)
 					{
@@ -190,6 +191,10 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			Money blockReward = nFees + GetBlockSubsidy(index.Height);
 			if(block.Transactions[0].TotalOut > blockReward)
 				ConsensusErrors.BadCoinbaseAmount.Throw();
+
+			var passed = checkInputs.All(c => c.GetAwaiter().GetResult());
+			if(!passed)
+				ConsensusErrors.BadTransactionScriptError.Throw();
 		}
 
 		private void CheckIntputs(Transaction tx, CoinViewBase inputs, int nSpendHeight)

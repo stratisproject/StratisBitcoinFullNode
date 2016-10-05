@@ -38,6 +38,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		Dictionary<uint256, Coins> coins = new Dictionary<uint256, Coins>();
 		internal void Update(Transaction tx, int height)
 		{
+			tx = tx.Clone();
 			coins.AddOrReplace(tx.GetHash(), new Coins(tx, height));
 			if(!tx.IsCoinBase)
 			{

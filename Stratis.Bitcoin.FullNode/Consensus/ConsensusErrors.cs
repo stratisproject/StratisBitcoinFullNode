@@ -119,5 +119,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public readonly static ConsensusError BadTransactionInBelowOut = new ConsensusError("bad-txns-in-belowout", "input value below output value");
 		public readonly static ConsensusError BadTransactionNegativeFee = new ConsensusError("bad-txns-fee-negative", "negative fee");
 		public readonly static ConsensusError BadTransactionFeeOutOfRange = new ConsensusError("bad-txns-fee-outofrange", "fee out of range");
+
+		public readonly static ConsensusError BadTransactionScriptError = new ConsensusError("bad-txns-script-failed", "a script failed");
 	}
 }
