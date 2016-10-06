@@ -35,14 +35,23 @@ namespace Stratis.Bitcoin.FullNode.Tests
             }).Start();
 
             var validator = new ConsensusValidator(store.Network.Consensus);
+			//validator.UseConsensusLib = true;
             ThresholdConditionCache bip9 = new ThresholdConditionCache(store.Network.Consensus);
             bool blockOnFullQueue = false;
 			CoinViewBase coinView = new CoinViewBase();
-
+			ConsensusPerformanceSnapshot snapshot = validator.PerformanceCounter.Snapshot();
 			foreach(var block in blocks.GetConsumingEnumerable())
             {
                 try
                 {
+					if(DateTimeOffset.UtcNow - snapshot.Taken > TimeSpan.FromSeconds(10))
+					{
+						var snapshot2 = validator.PerformanceCounter.Snapshot();
+						Console.WriteLine("Height: " + tip.Height);
+						Console.WriteLine("Queue size: " + ((decimal)blocks.Count * 100.0m / blocks.BoundedCapacity));
+						Console.WriteLine(snapshot2);						
+						snapshot = snapshot2;
+					}
                     validator.CheckBlockHeader(block.Header);
                     var next = new ChainedBlock(block.Header, block.Header.GetHash(), tip);
                     var context = new ContextInformation(next, store.Network.Consensus);

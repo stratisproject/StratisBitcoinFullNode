@@ -24,6 +24,16 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			_ConsensusParams = consensusParams;
 		}
 
+
+		private readonly ConsensusPerformanceCounter _PerformanceCounter = new ConsensusPerformanceCounter();
+		public ConsensusPerformanceCounter PerformanceCounter
+		{
+			get
+			{
+				return _PerformanceCounter;
+			}
+		}
+
 		public void CheckBlockHeader(BlockHeader header)
 		{
 			if(!header.CheckProofOfWork())
@@ -120,6 +130,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		public void ExecuteBlock(Block block, ChainedBlock index, ConsensusFlags flags, CoinViewBase view, TaskScheduler taskScheduler)
 		{
+			PerformanceCounter.AddProcessedBlocks(1);
 			taskScheduler = taskScheduler ?? TaskScheduler.Default;
 			if(flags.EnforceBIP30)
 			{
@@ -135,6 +146,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			List<Task<bool>> checkInputs = new List<Task<bool>>();
 			for(int i = 0; i < block.Transactions.Count; i++)
 			{
+				PerformanceCounter.AddProcessedTransactions(1);
 				var tx = block.Transactions[i];
 				if(!tx.IsCoinBase)
 				{
@@ -172,15 +184,24 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 					PrecomputedTransactionData txData = new PrecomputedTransactionData(tx);
 					for(int iInput = 0; iInput < tx.Inputs.Count; iInput++)
 					{
+						PerformanceCounter.AddProcessedInputs(1);
 						var input = tx.Inputs[iInput];
 						int iiIntput = iInput;
 						var txout = view.GetOutputFor(input);
 						var checkInput = new Task<bool>(() =>
 						{
-							var checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
-							var ctx = new ScriptEvaluationContext();
-							ctx.ScriptVerify = flags.ScriptFlags;
-							return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+							if(UseConsensusLib)
+							{
+								Script.BitcoinConsensusError error;
+								return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint)iiIntput, flags.ScriptFlags, out error);
+							}
+							else
+							{
+								var checker = new TransactionChecker(tx, iiIntput, txout.Value, txData);
+								var ctx = new ScriptEvaluationContext();
+								ctx.ScriptVerify = flags.ScriptFlags;
+								return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+							}
 						});
 						checkInput.Start(taskScheduler);
 						checkInputs.Add(checkInput);
@@ -195,6 +216,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			var passed = checkInputs.All(c => c.GetAwaiter().GetResult());
 			if(!passed)
 				ConsensusErrors.BadTransactionScriptError.Throw();
+		}
+
+		public bool UseConsensusLib
+		{
+			get;
+			set;
 		}
 
 		private void CheckIntputs(Transaction tx, CoinViewBase inputs, int nSpendHeight)
