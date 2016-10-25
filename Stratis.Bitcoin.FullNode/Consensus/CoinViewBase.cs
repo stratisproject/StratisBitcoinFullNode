@@ -10,7 +10,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 {
     public class CoinViewBase
     {
-        public Coins AccessCoins(uint256 txId)
+		public ChainedBlock Tip
+		{
+			get;
+			set;
+		}
+		public Coins AccessCoins(uint256 txId)
         {
 			Coins r;
 			coins.TryGetValue(txId, out r);
@@ -58,6 +63,21 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			.Inputs
 			.Select(i => GetOutputFor(i).Value)
 			.Sum();
+		}
+
+		public void AcceptChanges(ChainedBlock newTip)
+		{
+			Tip = newTip;
+		}
+
+		public void RejectChanges()
+		{
+			
+		}
+
+		public void Warmup(IEnumerable<OutPoint> impactedOutpoints)
+		{
+			
 		}
 	}
 }

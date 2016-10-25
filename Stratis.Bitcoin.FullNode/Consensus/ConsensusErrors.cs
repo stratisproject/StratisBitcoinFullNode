@@ -10,9 +10,15 @@ namespace Stratis.Bitcoin.FullNode.Consensus
     {
         public ConsensusErrorException(ConsensusError error) : base(error.Message)
         {
-
+			ConsensusError = error;
         }
-    }
+
+		public ConsensusError ConsensusError
+		{
+			get;
+			private set;
+		}
+	}
     public class ConsensusError
     {
         private readonly string _Code;

@@ -1,8 +1,10 @@
 ﻿using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.FullNode.BlockPulling;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,6 +24,73 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			if(consensusParams == null)
 				throw new ArgumentNullException("consensusParams");
 			_ConsensusParams = consensusParams;
+		}
+
+		public NBitcoin.Consensus ConsensusParams
+		{
+			get
+			{
+				return _ConsensusParams;
+			}
+		}
+
+		public void Run(CoinViewBase utxo, BlockPuller puller)
+		{
+			puller.SetLocation(utxo.Tip);
+			ThresholdConditionCache bip9 = new ThresholdConditionCache(_ConsensusParams);
+			StopWatch watch = new StopWatch();
+			while(true)
+			{
+				Block block = null;
+				try
+				{
+					while(true)
+					{
+						using(watch.Start(o => PerformanceCounter.AddBlockFetchingTime(o)))
+						{
+							block = puller.NextBlock();
+						}
+						ChainedBlock next;
+						ContextInformation context;
+						ConsensusFlags flags;
+						using(watch.Start(o => PerformanceCounter.AddBlockProcessingTime(o)))
+						{
+							CheckBlockHeader(block.Header);
+							next = new ChainedBlock(block.Header, block.Header.GetHash(), utxo.Tip);
+							context = new ContextInformation(next, this._ConsensusParams);
+							ContextualCheckBlockHeader(block.Header, context);
+							var states = bip9.GetStates(utxo.Tip);
+							flags = new ConsensusFlags(next, states, _ConsensusParams);
+							ContextualCheckBlock(block, flags, context);
+							CheckBlock(block);
+						}
+						using(watch.Start(o => PerformanceCounter.AddUTXOFetchingTime(o)))
+						{
+							utxo.Warmup(block.Transactions.SelectMany(t => t.Inputs.Select(i => i.PrevOut)));
+						}
+						using(watch.Start(o => PerformanceCounter.AddBlockProcessingTime(o)))
+						{
+							ExecuteBlock(block, next, flags, utxo, null);
+						}
+						using(watch.Start(o => PerformanceCounter.AddUTXOFetchingTime(o)))
+						{
+							utxo.AcceptChanges(next);
+						}
+					}
+				}
+				catch(ConsensusErrorException ex)
+				{
+					if(ex.ConsensusError == ConsensusErrors.TimeTooNew)
+					{
+						puller.Reject(block, RejectionMode.Temporary);
+					}
+					else
+					{
+						puller.Reject(block, RejectionMode.Permanent);
+					}
+					utxo.RejectChanges();
+				}
+			}
 		}
 
 

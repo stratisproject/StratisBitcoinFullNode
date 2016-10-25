@@ -30,8 +30,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NBitcoin, Version=3.0.0.61, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NBitcoin.3.0.0.61\lib\net45\NBitcoin.dll</HintPath>
+    <Reference Include="NBitcoin, Version=3.0.0.63, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NBitcoin.3.0.0.63\lib\net45\NBitcoin.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -49,12 +49,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BlockPulling\BlockPuller.cs" />
+    <Compile Include="BlockPulling\LookaheadBlockPuller.cs" />
+    <Compile Include="BlockPulling\NodeBlockPuller.cs" />
+    <Compile Include="BlockPulling\RejectionMode.cs" />
     <Compile Include="Consensus\CoinViewBase.cs" />
     <Compile Include="Consensus\ConsensusErrors.cs" />
     <Compile Include="Consensus\ConsensusFlags.cs" />
     <Compile Include="Consensus\ConsensusPerformanceCounter.cs" />
     <Compile Include="Consensus\ConsensusValidator.cs" />
     <Compile Include="Consensus\ContextualInformation.cs" />
+    <Compile Include="Consensus\StopWatch.cs" />
     <Compile Include="Consensus\ThresholdConditionCache.cs" />
     <Compile Include="Consensus\ThresholdState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

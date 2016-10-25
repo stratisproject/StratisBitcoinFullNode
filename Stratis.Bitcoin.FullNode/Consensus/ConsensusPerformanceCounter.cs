@@ -10,13 +10,43 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 	public class ConsensusPerformanceSnapshot
 	{
 
-		public ConsensusPerformanceSnapshot(long processedInputs, long processedTransactions, long processedBlocks)
+		public ConsensusPerformanceSnapshot(long processedInputs, long processedTransactions, long processedBlocks, long blockFetchingTime, long blockProcessingTime, long utxoFetchingTime)
 		{
 			_TotalProcessedTransactions = processedTransactions;
 			_TotalProcessedInputs = processedInputs;
 			_TotalProcessedBlocks = processedBlocks;
+			_TotalBlockFetchingTime = blockFetchingTime;
+			_TotalBlockProcessingTime = blockProcessingTime;
+			_TotalUTXOFetchingTime = utxoFetchingTime;
 		}
 
+		private readonly long _TotalBlockFetchingTime;
+		public TimeSpan TotalBlockFetchingTime
+		{
+			get
+			{
+				return TimeSpan.FromTicks(_TotalBlockFetchingTime);
+			}
+		}
+
+		private readonly long _TotalBlockProcessingTime;
+		public TimeSpan TotalBlockProcessingTime
+		{
+			get
+			{
+				return TimeSpan.FromTicks(_TotalBlockProcessingTime);
+			}
+		}
+
+
+		private readonly long _TotalUTXOFetchingTime;
+		public TimeSpan TotalUTXOFetchingTime
+		{
+			get
+			{
+				return TimeSpan.FromTicks(_TotalUTXOFetchingTime);
+			}
+		}
 
 		private readonly long _TotalProcessedBlocks;
 		public long TotalProcessedBlocks
@@ -90,7 +120,10 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 			return new ConsensusPerformanceSnapshot(end.TotalProcessedInputs - start.TotalProcessedInputs,
 											end.TotalProcessedTransactions - start.TotalProcessedTransactions,
-											end.TotalProcessedBlocks - start.TotalProcessedBlocks)
+											end.TotalProcessedBlocks - start.TotalProcessedBlocks,
+											end._TotalBlockFetchingTime - start._TotalBlockFetchingTime,
+											end._TotalBlockProcessingTime - start._TotalBlockProcessingTime,
+											end._TotalUTXOFetchingTime - start._TotalUTXOFetchingTime)
 			{
 				Start = start.Taken,
 				Taken = end.Taken
@@ -99,7 +132,19 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		public override string ToString()
 		{
-			return "Inputs : " + ToKBSec(ProcessedInputsPerSecond) + ", Transactions : " + ToKBSec(ProcessedTransactionsPerSecond) + ", Blocks : " + ToKBSec(ProcessedBlocksPerSecond);
+			StringBuilder builder = new StringBuilder();
+			builder.AppendLine("Inputs : " + ToKBSec(ProcessedInputsPerSecond));
+			builder.AppendLine("Transactions : " + ToKBSec(ProcessedTransactionsPerSecond));
+			builder.AppendLine("Blocks : " + ToKBSec(ProcessedBlocksPerSecond));
+			builder.AppendLine("Fetching Block : " + ToTimespan(TotalBlockFetchingTime));
+			builder.AppendLine("Processing Block : " + ToTimespan(TotalBlockProcessingTime));
+			builder.AppendLine("UTXO Processing : " + ToTimespan(TotalUTXOFetchingTime));
+			return builder.ToString();
+		}
+
+		private string ToTimespan(TimeSpan timespan)
+		{
+			return timespan.ToString("c");
 		}
 
 		private string ToKBSec(ulong count)
@@ -148,6 +193,46 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			Interlocked.Add(ref _ProcessedBlocks, count);
 		}
 
+
+		public void AddUTXOFetchingTime(long count)
+		{
+			Interlocked.Add(ref _UTXOFetchingTime, count);
+		}
+		private long _UTXOFetchingTime;
+		public TimeSpan UTXOFetchingTime
+		{
+			get
+			{
+				return TimeSpan.FromTicks(_UTXOFetchingTime);
+			}
+		}
+
+		public void AddBlockProcessingTime(long count)
+		{
+			Interlocked.Add(ref _BlockProcessingTime, count);
+		}
+		private long _BlockProcessingTime;
+		public TimeSpan BlockProcessingTime
+		{
+			get
+			{
+				return TimeSpan.FromTicks(_BlockFetchingTime);
+			}
+		}
+
+		public void AddBlockFetchingTime(long count)
+		{
+			Interlocked.Add(ref _BlockFetchingTime, count);
+		}
+		private long _BlockFetchingTime;
+		public TimeSpan BlockFetchingTime
+		{
+			get
+			{
+				return TimeSpan.FromTicks(_BlockFetchingTime);
+			}
+		}
+
 		long _ProcessedInputs;
 		public long ProcessedInputs
 		{
@@ -171,7 +256,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 #if !(PORTABLE || NETCORE)
 			Thread.MemoryBarrier();
 #endif
-			var snap = new ConsensusPerformanceSnapshot(ProcessedInputs, ProcessedTransactions, ProcessedBlocks)
+			var snap = new ConsensusPerformanceSnapshot(ProcessedInputs, ProcessedTransactions, ProcessedBlocks, _BlockFetchingTime, _BlockProcessingTime, _UTXOFetchingTime)
 			{
 				Start = Start,
 				Taken = DateTime.UtcNow

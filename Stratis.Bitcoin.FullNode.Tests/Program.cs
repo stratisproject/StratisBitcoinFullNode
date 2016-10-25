@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
     {
         public static void Main(string[] args)
         {
-            new Class1().Valid();
+            new Class1().ValidSomeBlocks();
         }
     }
 }
