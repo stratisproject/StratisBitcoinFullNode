@@ -133,7 +133,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public override string ToString()
 		{
 			StringBuilder builder = new StringBuilder();
-			builder.AppendLine("Inputs : " + ToKBSec(ProcessedInputsPerSecond));
+			//builder.AppendLine("Inputs : " + ToKBSec(ProcessedInputsPerSecond));
+			builder.AppendLine("Inputs : " + (Elapsed.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
 			builder.AppendLine("Transactions : " + ToKBSec(ProcessedTransactionsPerSecond));
 			builder.AppendLine("Blocks : " + ToKBSec(ProcessedBlocksPerSecond));
 			builder.AppendLine("Fetching Block : " + ToTimespan(TotalBlockFetchingTime));
