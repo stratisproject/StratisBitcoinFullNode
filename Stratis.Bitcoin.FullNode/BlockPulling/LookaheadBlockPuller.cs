@@ -10,7 +10,11 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.FullNode.BlockPulling
 {
-	public abstract class LookaheadBlockPuller : BlockPuller
+	public interface ILookaheadBlockPuller
+	{
+		Block TryGetLookahead(int count);
+	}
+	public abstract class LookaheadBlockPuller : BlockPuller, ILookaheadBlockPuller
 	{
 		class DownloadedBlock
 		{
@@ -88,7 +92,18 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 			if((_LookaheadLocation.Height - _Location.Height) <= Lookahead)
 				AskBlocks();
 			return block;
-		}		
+		}
+
+		public Block TryGetLookahead(int count)
+		{
+			var chainedBlock = _Chain.GetBlock(_Location.Height + 1 + count);
+			if(chainedBlock == null)
+				return null;
+			var block = _DownloadedBlocks.TryGet(chainedBlock.HashBlock);
+			if(block == null)
+				return null;
+			return block.Block;
+		}
 
 		public override void Reject(Block block, RejectionMode rejectionMode)
 		{

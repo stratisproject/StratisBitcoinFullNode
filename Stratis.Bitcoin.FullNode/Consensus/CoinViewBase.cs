@@ -75,7 +75,11 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			
 		}
 
-		public void Warmup(IEnumerable<OutPoint> impactedOutpoints)
+		public void Warmup(Block block)
+		{
+			Warmup(block.Transactions.SelectMany(t => t.Inputs.Select(i => i.PrevOut)));
+		}
+		public void Warmup(IEnumerable<OutPoint> outpoints)
 		{
 			
 		}
