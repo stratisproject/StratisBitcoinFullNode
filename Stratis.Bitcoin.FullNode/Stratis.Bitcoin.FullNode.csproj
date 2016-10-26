@@ -53,12 +53,15 @@
     <Compile Include="BlockPulling\LookaheadBlockPuller.cs" />
     <Compile Include="BlockPulling\NodeBlockPuller.cs" />
     <Compile Include="BlockPulling\RejectionMode.cs" />
+    <Compile Include="Consensus\CoinView.cs" />
     <Compile Include="Consensus\CoinViewBase.cs" />
+    <Compile Include="Consensus\CommitableCoinView.cs" />
     <Compile Include="Consensus\ConsensusErrors.cs" />
     <Compile Include="Consensus\ConsensusFlags.cs" />
     <Compile Include="Consensus\ConsensusPerformanceCounter.cs" />
     <Compile Include="Consensus\ConsensusValidator.cs" />
     <Compile Include="Consensus\ContextualInformation.cs" />
+    <Compile Include="Consensus\InMemoryCoinView.cs" />
     <Compile Include="Consensus\StopWatch.cs" />
     <Compile Include="Consensus\ThresholdConditionCache.cs" />
     <Compile Include="Consensus\ThresholdState.cs" />

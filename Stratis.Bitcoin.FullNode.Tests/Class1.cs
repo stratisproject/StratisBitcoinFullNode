@@ -39,8 +39,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
 			ConsensusValidator valid = new ConsensusValidator(network.Consensus);
 			Node node = Node.Connect(network, "yournode");
 			node.VersionHandshake();
-			var coinview = new CoinViewBase();
-			coinview.Tip = new ChainedBlock(network.GetGenesis().Header, 0);
+			var coinview = new InMemoryCoinView(new ChainedBlock(network.GetGenesis().Header, 0));
 			var puller = new CustomNodeBlockPuller(chain, node);
 			var lastSnapshot = valid.PerformanceCounter.Snapshot();
 			foreach(var block in valid.Run(coinview, puller))
