@@ -63,6 +63,13 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 		ConcurrentChain _Chain;
 		ChainedBlock _Location;
 		ChainedBlock _LookaheadLocation;
+		public ChainedBlock LookaheadLocation
+		{
+			get
+			{
+				return _LookaheadLocation;
+			}
+		}
 
 		public override void SetLocation(ChainedBlock tip)
 		{

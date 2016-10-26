@@ -48,6 +48,11 @@ namespace Stratis.Bitcoin.FullNode.Tests
 				if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
 				{
 					Console.WriteLine();
+					if(puller.LookaheadLocation != null)
+					{
+						Console.WriteLine("Lookahead: " + (puller.LookaheadLocation.Height - puller.Location.Height) + " blocks");
+					}
+					Console.WriteLine(puller.Location);
 					Console.WriteLine("Height: " + puller.Location.Height);
 					var snapshot = valid.PerformanceCounter.Snapshot();
 					Console.WriteLine(snapshot - lastSnapshot);
