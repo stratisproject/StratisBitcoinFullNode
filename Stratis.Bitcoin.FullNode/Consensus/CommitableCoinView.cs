@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 	public class CommitableCoinView : CoinView
 	{
 		CoinView _Inner;
-		InMemoryCoinView _Cache = new InMemoryCoinView();
+		InMemoryCoinView _Cache = new InMemoryCoinView() { CanRemove = false };
 		bool update = false;
 
 		public override ChainedBlock Tip
