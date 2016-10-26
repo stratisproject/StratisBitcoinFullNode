@@ -42,16 +42,17 @@ namespace Stratis.Bitcoin.FullNode.Tests
 			var coinview = new CoinViewBase();
 			coinview.Tip = new ChainedBlock(network.GetGenesis().Header, 0);
 			var puller = new CustomNodeBlockPuller(chain, node);
-			Task.Run(() => valid.Run(coinview, puller));
 			var lastSnapshot = valid.PerformanceCounter.Snapshot();
-			while(true)
+			foreach(var block in valid.Run(coinview, puller))
 			{
-				Thread.Sleep(5000);
-				Console.WriteLine();
-				Console.WriteLine("Height: " + puller.Location.Height);
-				var snapshot = valid.PerformanceCounter.Snapshot();
-				Console.WriteLine(snapshot - lastSnapshot);
-				lastSnapshot = snapshot;
+				if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
+				{
+					Console.WriteLine();
+					Console.WriteLine("Height: " + puller.Location.Height);
+					var snapshot = valid.PerformanceCounter.Snapshot();
+					Console.WriteLine(snapshot - lastSnapshot);
+					lastSnapshot = snapshot;
+				}
 			}
 		}
 

@@ -40,19 +40,28 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			get;
 			set;
 		}
-		public void Run(CoinViewBase utxo, BlockPuller puller)
+
+		/// <summary>
+		/// Pull blocks, validate them and update the UTXO Set
+		/// </summary>
+		/// <param name="utxo">UTXO Set</param>
+		/// <param name="puller">Block source</param>
+		/// <returns>Stream of validated blocks</returns>
+		public IEnumerable<Block> Run(CoinViewBase utxo, BlockPuller puller)
 		{
 			var lookaheadUTXO = utxo as ILookaheadBlockPuller;
 			puller.SetLocation(utxo.Tip);
 			ThresholdConditionCache bip9 = new ThresholdConditionCache(_ConsensusParams);
 			StopWatch watch = new StopWatch();
 			int lookaheadCount = 0;
+			bool rejected = false;
 			while(true)
 			{
 				Block block = null;
-				try
+				while(true)
 				{
-					while(true)
+					rejected = false;
+					try
 					{
 						using(watch.Start(o => PerformanceCounter.AddBlockFetchingTime(o)))
 						{
@@ -95,19 +104,22 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 							utxo.AcceptChanges(next);
 						}
 					}
-				}
-				catch(ConsensusErrorException ex)
-				{
-					lookaheadCount = 0;
-					if(ex.ConsensusError == ConsensusErrors.TimeTooNew)
+					catch(ConsensusErrorException ex)
 					{
-						puller.Reject(block, RejectionMode.Temporary);
+						rejected = true;
+						lookaheadCount = 0;
+						if(ex.ConsensusError == ConsensusErrors.TimeTooNew)
+						{
+							puller.Reject(block, RejectionMode.Temporary);
+						}
+						else
+						{
+							puller.Reject(block, RejectionMode.Permanent);
+						}
+						utxo.RejectChanges();
 					}
-					else
-					{
-						puller.Reject(block, RejectionMode.Permanent);
-					}
-					utxo.RejectChanges();
+					if(!rejected)
+						yield return block;
 				}
 			}
 		}
