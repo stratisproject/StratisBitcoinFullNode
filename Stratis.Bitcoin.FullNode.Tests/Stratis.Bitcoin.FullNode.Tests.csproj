@@ -36,6 +36,10 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DBreeze, Version=1.79.2016.1007, Culture=neutral, PublicKeyToken=174b57f1c155f3c6, processorArchitecture=MSIL">
+      <HintPath>..\packages\DBreeze.1.79.0\lib\net45\DBreeze.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="NBitcoin, Version=3.0.0.63, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NBitcoin.3.0.0.63\lib\net45\NBitcoin.dll</HintPath>
       <Private>True</Private>
@@ -64,6 +68,7 @@
   <ItemGroup>
     <Compile Include="Class1.cs" />
     <Compile Include="CustomNodeBlockPuller.cs" />
+    <Compile Include="NodeContext.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

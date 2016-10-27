@@ -18,44 +18,129 @@ using System.Threading;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.FullNode.BlockPulling;
 using System.Net.Http;
+using System.Collections;
+using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.FullNode.Tests
 {
 	public class Class1
 	{
 		[Fact]
+		public void TestDBreezeSerialization()
+		{
+			using(NodeContext ctx = NodeContext.Create())
+			{
+				var genesis = ctx.Network.GetGenesis();
+				var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
+				ctx.PersistentCoinView.SaveChanges(genesisChainedBlock,
+								 new uint256[] { genesis.Transactions[0].GetHash() },
+								 new Coins[] { new Coins(genesis.Transactions[0], 0) });
+				Assert.NotNull(ctx.PersistentCoinView.AccessCoins(genesis.Transactions[0].GetHash()));
+				Assert.Null(ctx.PersistentCoinView.AccessCoins(new uint256()));
+
+				var chained = MakeNext(MakeNext(genesisChainedBlock));
+				chained = MakeNext(MakeNext(genesisChainedBlock));
+				ctx.PersistentCoinView.SaveChanges(chained, new uint256[0], new Coins[0]);
+				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.Tip.HashBlock);
+				ctx.ReloadPersistentCoinView();
+				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.Tip.HashBlock);
+				Assert.NotNull(ctx.PersistentCoinView.AccessCoins(genesis.Transactions[0].GetHash()));
+				Assert.Null(ctx.PersistentCoinView.AccessCoins(new uint256()));
+			}
+		}
+
+		[Fact]
+		public void TestDBreezeInsertOrder()
+		{
+			using(NodeContext ctx = NodeContext.Create())
+			{
+				using(var engine = new DBreeze.DBreezeEngine(ctx.FolderName + "/2"))
+				{
+					var data = new[]
+					{
+						new uint256(3),
+						new uint256(2),
+						new uint256(2439425),
+						new uint256(5),
+						new uint256(243945),
+						new uint256(10),
+						new uint256(Hashes.Hash256(new byte[0])),
+						new uint256(Hashes.Hash256(new byte[] {1})),
+						new uint256(Hashes.Hash256(new byte[] {2})),
+					};
+					Array.Sort(data, new UInt256Comparer());
+
+					using(var tx = engine.GetTransaction())
+					{
+						foreach(var d in data)
+							tx.Insert("Table", d.ToBytes(false), d.ToBytes());
+						tx.Commit();
+					}
+					var data2 = new uint256[data.Length];
+					using(var tx = engine.GetTransaction())
+					{
+						int i = 0;
+						foreach(var row in tx.SelectForward<byte[], byte[]>("Table"))
+						{
+							data2[i++] = new uint256(row.Key, false);
+						}
+					}
+					Assert.True(data.SequenceEqual(data2));
+				}
+			}
+		}
+
+		private ChainedBlock MakeNext(ChainedBlock previous)
+		{
+			var header = previous.Header.Clone();
+			header.HashPrevBlock = previous.HashBlock;
+			return new ChainedBlock(header, null, previous);
+		}
+
+		[Fact]
 		public void ValidSomeBlocks()
 		{
-			var network = NBitcoin.Network.Main;
-			var chain = new ConcurrentChain(network.GetGenesis().Header);
-			if(network == NBitcoin.Network.Main)
+			using(NodeContext ctx = NodeContext.Create(network: Network.Main))
 			{
-				chain.Load(GetFile("main.data", "https://aois.blob.core.windows.net/public/main.data"));
-			}
-			else
-			{
-				chain.Load(GetFile("test.data", "https://aois.blob.core.windows.net/public/test.data"));
-			}
-			ConsensusValidator valid = new ConsensusValidator(network.Consensus);
-			Node node = Node.Connect(network, "yournode");
-			node.VersionHandshake();
-			var coinview = new InMemoryCoinView(new ChainedBlock(network.GetGenesis().Header, 0));
-			var puller = new CustomNodeBlockPuller(chain, node);
-			var lastSnapshot = valid.PerformanceCounter.Snapshot();
-			foreach(var block in valid.Run(coinview, puller))
-			{
-				if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
+				var network = ctx.Network;
+				var chain = new ConcurrentChain(network.GetGenesis().Header);
+				if(network == NBitcoin.Network.Main)
 				{
-					Console.WriteLine();
-					if(puller.LookaheadLocation != null)
+					chain.Load(GetFile("main.data", "https://aois.blob.core.windows.net/public/main.data"));
+				}
+				else
+				{
+					chain.Load(GetFile("test.data", "https://aois.blob.core.windows.net/public/test.data"));
+				}
+
+				var coinview = new BackgroundCommiterCoinView(ctx.PersistentCoinView);
+				ConsensusValidator valid = new ConsensusValidator(network.Consensus);
+				Node node = Node.Connect(network, "yournode");
+				node.VersionHandshake();
+				var puller = new CustomNodeBlockPuller(chain, node);
+				var lastSnapshot = valid.PerformanceCounter.Snapshot();
+				var lastSnapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
+				foreach(var block in valid.Run(coinview, puller))
+				{
+					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
 					{
-						Console.WriteLine("Lookahead: " + (puller.LookaheadLocation.Height - puller.Location.Height) + " blocks");
+						Console.WriteLine();
+						if(puller.LookaheadLocation != null)
+						{
+							Console.WriteLine("Lookahead: " + (puller.LookaheadLocation.Height - puller.Location.Height) + " blocks");
+						}						
+						Console.WriteLine("CoinViewTip : " + coinview.Tip.Height);
+						Console.WriteLine("CommitingTip : " + coinview.CommitingTip.Height);
+						Console.WriteLine("InnerTip : " + coinview.InnerTip.Height);
+						Console.WriteLine("Height: " + puller.Location.Height);
+						var snapshot = valid.PerformanceCounter.Snapshot();
+						Console.Write(snapshot - lastSnapshot);
+						lastSnapshot = snapshot;
+
+						var snapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
+						Console.Write(ctx.PersistentCoinView.PerformanceCounter);
+						lastSnapshot2 = snapshot2;
 					}
-					Console.WriteLine(puller.Location);
-					Console.WriteLine("Height: " + puller.Location.Height);
-					var snapshot = valid.PerformanceCounter.Snapshot();
-					Console.WriteLine(snapshot - lastSnapshot);
-					lastSnapshot = snapshot;
 				}
 			}
 		}

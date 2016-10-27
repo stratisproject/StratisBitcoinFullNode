@@ -90,21 +90,21 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedBlocks / Elapsed.TotalSeconds);
+				return (ulong)((double)TotalProcessedBlocks / TotalBlockProcessingTime.TotalSeconds);
 			}
 		}
 		public ulong ProcessedInputsPerSecond
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedInputs / Elapsed.TotalSeconds);
+				return (ulong)((double)TotalProcessedInputs / TotalBlockProcessingTime.TotalSeconds);
 			}
 		}
 		public ulong ProcessedTransactionsPerSecond
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedTransactions / Elapsed.TotalSeconds);
+				return (ulong)((double)TotalProcessedTransactions / TotalBlockProcessingTime.TotalSeconds);
 			}
 		}
 
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 			StringBuilder builder = new StringBuilder();
 			//builder.AppendLine("Inputs : " + ToKBSec(ProcessedInputsPerSecond));
-			builder.AppendLine("Inputs : " + (Elapsed.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			builder.AppendLine("Inputs : " + (TotalBlockProcessingTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
 			builder.AppendLine("Transactions : " + ToKBSec(ProcessedTransactionsPerSecond));
 			builder.AppendLine("Blocks : " + ToKBSec(ProcessedBlocksPerSecond));
 			builder.AppendLine("Fetching Block : " + ToTimespan(TotalBlockFetchingTime));
@@ -143,12 +143,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return builder.ToString();
 		}
 
-		private string ToTimespan(TimeSpan timespan)
+		internal static string ToTimespan(TimeSpan timespan)
 		{
 			return timespan.ToString("c");
 		}
 
-		private string ToKBSec(ulong count)
+		internal static string ToKBSec(ulong count)
 		{
 			return count + "/s";
 		}
@@ -284,12 +284,6 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public override string ToString()
 		{
 			return Snapshot().ToString();
-		}
-
-		internal void Add(ConsensusPerformanceCounter counter)
-		{
-			AddProcessedTransactions(counter.ProcessedTransactions);
-			AddProcessedInputs(counter.ProcessedInputs);
 		}
 	}
 }

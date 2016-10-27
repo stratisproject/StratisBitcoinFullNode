@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DBreeze, Version=1.79.2016.1007, Culture=neutral, PublicKeyToken=174b57f1c155f3c6, processorArchitecture=MSIL">
+      <HintPath>..\packages\DBreeze.1.79.0\lib\net45\DBreeze.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="NBitcoin, Version=3.0.0.63, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NBitcoin.3.0.0.63\lib\net45\NBitcoin.dll</HintPath>
       <Private>True</Private>
@@ -53,6 +57,8 @@
     <Compile Include="BlockPulling\LookaheadBlockPuller.cs" />
     <Compile Include="BlockPulling\NodeBlockPuller.cs" />
     <Compile Include="BlockPulling\RejectionMode.cs" />
+    <Compile Include="Consensus\BackendPerformanceCounter.cs" />
+    <Compile Include="Consensus\BackgroundCommiterCoinView.cs" />
     <Compile Include="Consensus\CoinView.cs" />
     <Compile Include="Consensus\CoinViewBase.cs" />
     <Compile Include="Consensus\CommitableCoinView.cs" />
@@ -61,10 +67,12 @@
     <Compile Include="Consensus\ConsensusPerformanceCounter.cs" />
     <Compile Include="Consensus\ConsensusValidator.cs" />
     <Compile Include="Consensus\ContextualInformation.cs" />
+    <Compile Include="Consensus\DBreezeCoinView.cs" />
     <Compile Include="Consensus\InMemoryCoinView.cs" />
     <Compile Include="Consensus\StopWatch.cs" />
     <Compile Include="Consensus\ThresholdConditionCache.cs" />
     <Compile Include="Consensus\ThresholdState.cs" />
+    <Compile Include="Consensus\UInt256Comparer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

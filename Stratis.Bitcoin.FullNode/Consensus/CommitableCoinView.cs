@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 	public class CommitableCoinView : CoinView
 	{
 		CoinView _Inner;
-		InMemoryCoinView _Cache = new InMemoryCoinView() { CanRemove = false };
+		InMemoryCoinView _Cache = new InMemoryCoinView() { RemovePrunableCoins = false };
 		bool update = false;
 
 		public override ChainedBlock Tip
@@ -32,11 +32,18 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			_Inner = inner;
 			_Cache.SaveChanges(newTip, NullUItn256s, NullCoins);
 		}
+		public CommitableCoinView(CoinView inner) : this(inner.Tip, inner)
+		{
+		}
 
 		public override Coins AccessCoins(uint256 txId)
 		{
+			return AccessCoins(txId, true);
+		}
+		public Coins AccessCoins(uint256 txId, bool accessInner)
+		{
 			var cachedCoin = _Cache.AccessCoins(txId);
-			if(cachedCoin != null)
+			if(cachedCoin != null || !accessInner)
 				return cachedCoin;
 			var coin = _Inner.AccessCoins(txId);
 			if(coin == null)

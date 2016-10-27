@@ -12,11 +12,11 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 	{
 		public InMemoryCoinView()
 		{
-			CanRemove = true;
+			RemovePrunableCoins = true;
 		}
 		public InMemoryCoinView(ChainedBlock tip)
 		{
-			CanRemove = true;
+			RemovePrunableCoins = true;
 			_Tip = tip;
 		}
 		ChainedBlock _Tip;
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return r;
 		}
 
-		public bool CanRemove
+		public bool RemovePrunableCoins
 		{
 			get;
 			set;
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		internal Dictionary<uint256, Coins> coins = new Dictionary<uint256, Coins>();
 		public void SaveChange(uint256 txid, Coins coins)
 		{
-			if(coins.IsPruned && CanRemove)
+			if(coins.IsPruned && RemovePrunableCoins)
 			{
 				this.coins.Remove(txid);
 			}
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				{
 					var c = AccessCoins(input.PrevOut.Hash);
 					c.Spend((int)input.PrevOut.N);
-					if(c.IsPruned && CanRemove)
+					if(c.IsPruned && RemovePrunableCoins)
 						coins.Remove(input.PrevOut.Hash);
 				}
 			}
