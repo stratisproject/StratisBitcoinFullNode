@@ -61,7 +61,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 			if((_Commiting == null || _Commiting.IsCompleted))
 			{
+				_InnerCommitable.Clear();
 				_Commitable.SaveChanges();
+				_Commitable.Clear();
 				_Commiting = Task.Run(() =>
 				{
 					_InnerCommitable.SaveChanges();

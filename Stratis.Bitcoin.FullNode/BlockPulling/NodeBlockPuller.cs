@@ -22,6 +22,9 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 		{
 			message.Message.IfPayloadIs<BlockPayload>((block) =>
 			{
+				block.Object.Header.CacheHashes();
+				foreach(var tx in block.Object.Transactions)
+					tx.CacheHashes();
 				PushBlock((int)message.Length, block.Object);
 			});			
 		}

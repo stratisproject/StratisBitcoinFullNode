@@ -81,5 +81,10 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				}
 			}
 		}
+
+		public void Clear()
+		{
+			coins.Clear();
+		}
 	}
 }

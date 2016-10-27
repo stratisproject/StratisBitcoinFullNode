@@ -238,9 +238,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			{
 				foreach(var tx in block.Transactions)
 				{
-					//Coins coins = view.AccessCoins(tx.GetHash());
-					//if(coins != null && !coins.IsPruned)
-					//	ConsensusErrors.BadTransactionBIP30.Throw();
+					Coins coins = view.AccessCoins(tx.GetHash());
+					if(coins != null && !coins.IsPruned)
+						ConsensusErrors.BadTransactionBIP30.Throw();
 				}
 			}
 			long nSigOpsCost = 0;

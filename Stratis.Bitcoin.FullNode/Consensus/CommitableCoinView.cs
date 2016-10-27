@@ -59,6 +59,11 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			_Cache.SaveChanges(newTip, txIds, coins);
 		}
 
+		public void Clear()
+		{
+			_Cache.Clear();
+		}
+
 		public void SaveChanges()
 		{
 			if(!update)
