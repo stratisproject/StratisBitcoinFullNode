@@ -59,6 +59,7 @@
     <Compile Include="BlockPulling\RejectionMode.cs" />
     <Compile Include="Consensus\BackendPerformanceCounter.cs" />
     <Compile Include="Consensus\BackgroundCommiterCoinView.cs" />
+    <Compile Include="Consensus\PrefetcherCoinView.cs" />
     <Compile Include="Consensus\CoinView.cs" />
     <Compile Include="Consensus\CoinViewBase.cs" />
     <Compile Include="Consensus\CommitableCoinView.cs" />

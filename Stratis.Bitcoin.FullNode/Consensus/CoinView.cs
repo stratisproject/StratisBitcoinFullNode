@@ -7,11 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.FullNode.Consensus
-{
-	public interface IPersistentCoinView
-	{
-		void PrefetchUTXOs(Block block);
-	}
+{	
 	public abstract class CoinView
 	{
 		public abstract Coins AccessCoins(uint256 txId);
@@ -37,6 +33,16 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			.Inputs
 			.Select(i => GetOutputFor(i).Value)
 			.Sum();
+		}
+
+		public virtual Coins[] FetchCoins(uint256[] txIds)
+		{
+			Coins[] coins = new Coins[txIds.Length];
+			for(int i  = 0; i < coins.Length; i++)
+			{
+				coins[i] = AccessCoins(txIds[i]);
+			}
+			return coins;
 		}
 
 		public bool HaveInputs(Transaction tx)

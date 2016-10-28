@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
+		public static StopWatch Instance = new StopWatch();
 		System.Diagnostics.Stopwatch _Watch = new System.Diagnostics.Stopwatch();
 		public StopWatch()
 		{

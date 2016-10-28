@@ -24,7 +24,6 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			if(consensusParams == null)
 				throw new ArgumentNullException("consensusParams");
 			_ConsensusParams = consensusParams;
-			WarmupLookahead = 3;
 		}
 
 		public NBitcoin.Consensus ConsensusParams
@@ -35,12 +34,6 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
-		public int WarmupLookahead
-		{
-			get;
-			set;
-		}
-
 		/// <summary>
 		/// Pull blocks, validate them and update the UTXO Set
 		/// </summary>
@@ -49,8 +42,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		/// <returns>Stream of validated blocks</returns>
 		public IEnumerable<Block> Run(CoinView utxo, BlockPuller puller)
 		{
-			var lookaheadPuller = utxo as ILookaheadBlockPuller;
-			var persistentCoinView = utxo as IPersistentCoinView;
+			var lookaheadPuller = puller as ILookaheadBlockPuller;
+			var prefetcherCoinView = utxo as IPrefetcherCoinView;
 			puller.SetLocation(utxo.Tip);
 			ThresholdConditionCache bip9 = new ThresholdConditionCache(_ConsensusParams);
 			StopWatch watch = new StopWatch();
@@ -82,18 +75,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 							ContextualCheckBlock(block, flags, context);
 							CheckBlock(block);
 						}
-						if(lookaheadPuller != null && persistentCoinView != null && lookaheadCount <= WarmupLookahead)
+						if(lookaheadPuller != null && prefetcherCoinView != null)
 						{
-							using(watch.Start(o => PerformanceCounter.AddUTXOFetchingTime(o)))
-							{
-								for(int i = 0; i < WarmupLookahead; i++)
-								{
-									var ahead = lookaheadPuller.TryGetLookahead(i);
-									if(ahead != null)
-										persistentCoinView.PrefetchUTXOs(ahead);
-									lookaheadCount++;
-								}
-							}
+							var ahead = lookaheadPuller.TryGetLookahead(0);
+							if(ahead != null)
+								prefetcherCoinView.PrefetchUTXOs(ahead);
+							lookaheadCount++;
 						}
 
 						var commitable = new CommitableCoinView(next, utxo);

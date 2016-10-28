@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			_Engine = new DBreezeEngine(_Folder);
 			using(var tx = _Engine.GetTransaction())
 			{
+				tx.ValuesLazyLoadingIsOn = false;
 				foreach(var row in tx.SelectForward<int, BlockHeader>("Chain"))
 				{
 					_Tip = new ChainedBlock(row.Value, null, _Tip);
@@ -74,9 +75,33 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		public override Coins AccessCoins(uint256 txId)
 		{
-			using(var tx = _Engine.GetTransaction())
+			using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
 			{
-				return tx.Select<byte[], Coins>("Coins", txId.ToBytes(false))?.Value;
+				using(var tx = _Engine.GetTransaction())
+				{
+					tx.ValuesLazyLoadingIsOn = false;
+					PerformanceCounter.AddQueriedEntities(1);
+					return tx.Select<byte[], Coins>("Coins", txId.ToBytes(false))?.Value;
+				}
+			}
+		}
+
+		public override Coins[] FetchCoins(uint256[] txIds)
+		{
+			using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
+			{
+				Coins[] result = new Coins[txIds.Length];
+				using(var txx = _Engine.GetTransaction())
+				{
+					txx.ValuesLazyLoadingIsOn = false;
+					int i = 0;
+					foreach(var input in txIds)
+					{
+						PerformanceCounter.AddQueriedEntities(1);
+						result[i++] = txx.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
+					}
+				}
+				return result;
 			}
 		}
 
@@ -111,7 +136,10 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 					all.Sort(CoinPairComparer.Instance);
 					foreach(var coin in all)
 					{
-						tx.Insert("Coins", coin.Item1.ToBytes(false), coin.Item2);
+						if(coin.Item2.IsPruned)
+							tx.RemoveKey("Coins", coin.Item1.ToBytes(false));
+						else
+							tx.Insert("Coins", coin.Item1.ToBytes(false), coin.Item2);
 					}
 					insertedEntities += all.Count;
 					tx.Commit();
@@ -120,7 +148,6 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 			PerformanceCounter.AddInsertedEntities(insertedEntities);
 		}
-
 
 		private readonly BackendPerformanceCounter _PerformanceCounter = new BackendPerformanceCounter();
 		public BackendPerformanceCounter PerformanceCounter

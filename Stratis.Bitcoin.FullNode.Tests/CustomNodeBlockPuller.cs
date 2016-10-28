@@ -15,7 +15,8 @@ namespace Stratis.Bitcoin.FullNode.Tests
 		public CustomNodeBlockPuller(ConcurrentChain chain, Node node):base(node)
 		{
 			_Chain = chain;
-		}
+		}		
+
 		protected override ConcurrentChain ReloadChainCore()
 		{
 			return _Chain;

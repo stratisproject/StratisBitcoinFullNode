@@ -27,7 +27,8 @@ namespace Stratis.Bitcoin.FullNode.Tests
 		{
 			network = network ?? Network.TestNet;
 			this.name = name;
-			CleanDirectory();
+			if(Clean)
+				CleanDirectory();
 			_Network = network;
 
 			_PersistentCoinView = new DBreezeCoinView(network, name);
@@ -54,6 +55,12 @@ namespace Stratis.Bitcoin.FullNode.Tests
 			}
 		}
 
+		public bool Clean
+		{
+			get;
+			private set;
+		}
+
 		private void CleanDirectory()
 		{
 			try
@@ -65,16 +72,17 @@ namespace Stratis.Bitcoin.FullNode.Tests
 			}
 		}
 
-		public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null)
+		public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
 		{
-			return new NodeContext(name, network);
+			return new NodeContext(name, network) { Clean = clean };
 		}
 
 		public void Dispose()
 		{
 			foreach(var item in _CleanList)
 				item.Dispose();
-			CleanDirectory();
+			if(Clean)
+				CleanDirectory();
 		}
 
 		public void ReloadPersistentCoinView()

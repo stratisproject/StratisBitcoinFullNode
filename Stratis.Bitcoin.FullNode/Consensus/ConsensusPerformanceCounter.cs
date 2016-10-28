@@ -134,12 +134,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 			StringBuilder builder = new StringBuilder();
 			//builder.AppendLine("Inputs : " + ToKBSec(ProcessedInputsPerSecond));
-			builder.AppendLine("Inputs : " + (TotalBlockProcessingTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
-			builder.AppendLine("Transactions : " + ToKBSec(ProcessedTransactionsPerSecond));
-			builder.AppendLine("Blocks : " + ToKBSec(ProcessedBlocksPerSecond));
-			builder.AppendLine("Fetching Block : " + ToTimespan(TotalBlockFetchingTime));
-			builder.AppendLine("Processing Block : " + ToTimespan(TotalBlockProcessingTime));
-			builder.AppendLine("UTXO Processing : " + ToTimespan(TotalUTXOFetchingTime));
+			builder.AppendLine("Inputs :\t" + (TotalBlockProcessingTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			builder.AppendLine("Transactions :\t" + ToKBSec(ProcessedTransactionsPerSecond));
+			builder.AppendLine("Blocks :\t" + ToKBSec(ProcessedBlocksPerSecond));
+			builder.AppendLine("Fetching Block :\t" + ToTimespan(TotalBlockFetchingTime));
+			builder.AppendLine("Processing Block :\t" + ToTimespan(TotalBlockProcessingTime));
+			builder.AppendLine("UTXO Processing :\t" + ToTimespan(TotalUTXOFetchingTime));
 			return builder.ToString();
 		}
 

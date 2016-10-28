@@ -115,24 +115,23 @@ namespace Stratis.Bitcoin.FullNode.Tests
 
 				var coinview = new BackgroundCommiterCoinView(ctx.PersistentCoinView);
 				ConsensusValidator valid = new ConsensusValidator(network.Consensus);
+				valid.UseConsensusLib = false;
 				Node node = Node.Connect(network, "yournode");
 				node.VersionHandshake();
 				var puller = new CustomNodeBlockPuller(chain, node);
 				var lastSnapshot = valid.PerformanceCounter.Snapshot();
 				var lastSnapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
-				foreach(var block in valid.Run(coinview, puller))
+				foreach(var block in valid.Run(new PrefetcherCoinView(coinview), puller))
 				{
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
 					{
 						Console.WriteLine();
-						if(puller.LookaheadLocation != null)
-						{
-							Console.WriteLine("Lookahead: " + (puller.LookaheadLocation.Height - puller.Location.Height) + " blocks");
-						}						
-						Console.WriteLine("CoinViewTip : " + coinview.Tip.Height);
-						Console.WriteLine("CommitingTip : " + coinview.CommitingTip.Height);
-						Console.WriteLine("InnerTip : " + coinview.InnerTip.Height);
-						Console.WriteLine("Height: " + puller.Location.Height);
+
+						Console.WriteLine("ActualLookahead :\t" + puller.ActualLookahead + " blocks");
+						Console.WriteLine("Downloaded Count :\t" + puller.RollingAverageDownloadedCount + " blocks");
+						Console.WriteLine("CoinViewTip :\t" + coinview.Tip.Height);
+						Console.WriteLine("CommitingTip :\t" + coinview.CommitingTip.Height);
+						Console.WriteLine("InnerTip :\t" + coinview.InnerTip.Height);
 						var snapshot = valid.PerformanceCounter.Snapshot();
 						Console.Write(snapshot - lastSnapshot);
 						lastSnapshot = snapshot;

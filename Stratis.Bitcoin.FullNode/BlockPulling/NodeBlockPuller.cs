@@ -15,7 +15,6 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 		{
 			_Node = node;
 			_Node.MessageReceived += _Node_MessageReceived;
-			Lookahead = 500;
 		}
 
 		private void _Node_MessageReceived(Node node, IncomingMessage message)

@@ -25,13 +25,43 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 		public LookaheadBlockPuller()
 		{
 			MaxBufferedSize = BLOCK_SIZE * 10;
-			Lookahead = 5;
+			MinimumLookahead = 4;
+			MaximumLookahead = 2000;
 		}
 
-		protected int Lookahead
+
+		public int MinimumLookahead
 		{
 			get;
 			set;
+		}
+
+		public int MaximumLookahead
+		{
+			get;
+			set;
+		}
+
+		int _ActualLookahead;
+		public int ActualLookahead
+		{
+			get
+			{
+				return 500;
+				//return Math.Min(MaximumLookahead, Math.Max(MinimumLookahead, _ActualLookahead));
+			}
+			private set
+			{
+				_ActualLookahead = Math.Min(MaximumLookahead, Math.Max(MinimumLookahead, value));
+			}
+		}
+
+		public int DownloadedCount
+		{
+			get
+			{
+				return _DownloadedBlocks.Count;
+			}
 		}
 
 		public ChainedBlock Location
@@ -86,19 +116,60 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 			}
 		}
 
+		int lastLookaheadUpdate = 0;
 		public override Block NextBlock()
 		{
 			if(_Chain == null)
 				ReloadChain();
+
+
+			if(lastLookaheadUpdate > ActualLookahead)
+			{
+				CalculateLookahead();
+				lastLookaheadUpdate = 0;
+			}
+			lastLookaheadUpdate++;
+			rollingDownloadedCount = ApproxRollingAverage(rollingDownloadedCount, _DownloadedBlocks.Count);
+
 			if(_LookaheadLocation == null)
 			{
 				AskBlocks();
 				AskBlocks();
 			}
 			var block = NextBlockCore();
-			if((_LookaheadLocation.Height - _Location.Height) <= Lookahead)
+			if((_LookaheadLocation.Height - _Location.Height) <= ActualLookahead)
 				AskBlocks();
+
 			return block;
+		}
+
+		private decimal ApproxRollingAverage(decimal avg, int sample)
+		{
+			avg -= avg / ActualLookahead;
+			avg += (decimal)sample / ActualLookahead;
+			return avg;
+		}
+
+		decimal rollingDownloadedCount = 0;
+		public int RollingAverageDownloadedCount
+		{
+			get
+			{
+				return (int)rollingDownloadedCount;
+			}
+		}
+
+		// If blocks ActualLookahead is 8: 
+		// If the number of downloaded block reach 2 or below, then ActualLookahead will be multiplied by 1.1. 
+		// If it reach 14 or above, it will be divided by 1.1.
+		private void CalculateLookahead()
+		{
+			decimal tolerance = 0.25m;
+			var margin = Math.Max(tolerance * ActualLookahead, 1);
+			if(rollingDownloadedCount <= margin)
+				ActualLookahead = (int)Math.Max(ActualLookahead * 1.1m, ActualLookahead + 1);
+			else if(rollingDownloadedCount >= Math.Min(MaximumLookahead, ActualLookahead * 1.5m) - margin)
+				ActualLookahead = (int)Math.Min(ActualLookahead / 1.1m, ActualLookahead - 1);
 		}
 
 		public Block TryGetLookahead(int count)
@@ -187,7 +258,7 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 			lock(_ChainLock)
 			{
 				ChainedBlock lookaheadBlock = _LookaheadLocation ?? _Location;
-				ChainedBlock nextLookaheadBlock = _Chain.GetBlock(Math.Min(lookaheadBlock.Height + Lookahead, _Chain.Height));
+				ChainedBlock nextLookaheadBlock = _Chain.GetBlock(Math.Min(lookaheadBlock.Height + ActualLookahead, _Chain.Height));
 				_LookaheadLocation = nextLookaheadBlock;
 
 				downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - lookaheadBlock.Height];
@@ -201,8 +272,10 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 			AskBlocks(downloadRequests);
 		}
 
+		static int[] waitTime = new[] { 1, 10, 100, 1000 };
 		private Block NextBlockCore()
 		{
+			int i = 0;
 			while(true)
 			{
 				var header = _Chain.GetBlock(_Location.Height + 1);
@@ -218,8 +291,9 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 				else
 				{
 					IsStalling = true;
-					_Pushed.WaitOne(1000);
+					_Pushed.WaitOne(waitTime[i]);
 				}
+				i = Math.Min(i + 1, waitTime.Length - 1);
 			}
 		}
 	}
