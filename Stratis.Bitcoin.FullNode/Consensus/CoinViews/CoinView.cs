@@ -19,12 +19,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		public TxOut GetOutputFor(TxIn txIn)
 		{
-			var c = AccessCoins(txIn.PrevOut.Hash);
-			if(c == null)
-				return null;
-			if(!c.IsAvailable(txIn.PrevOut.N))
-				return null;
-			return c.Outputs[(int)txIn.PrevOut.N];
+			return AccessCoins(txIn.PrevOut.Hash)?.TryGetOutput(txIn.PrevOut.N);
 		}
 
 		public Money GetValueIn(Transaction tx)

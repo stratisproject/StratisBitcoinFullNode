@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 	/// <summary>
 	/// Wrap a CoinView doing IO, so that IO happens in background.
 	/// </summary>
-	public class BackgroundCommiterCoinView : CoinView
+	public class BackgroundCommiterCoinView : CoinView, IBackedCoinView
 	{
 		CoinView _Inner;
 		CommitableCoinView _Commitable;
@@ -21,12 +21,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			if(inner == null)
 				throw new ArgumentNullException("inner");
 			_Inner = inner;
-			_InnerCommitable = new CommitableCoinView(_Inner);
+			_InnerCommitable = new CommitableCoinView(Inner);
 			_Commitable = new CommitableCoinView(_InnerCommitable);
-
-			// Disable ReadThroughCache so InnerCommitable internal cache does not get modified while being flushed to Inner
-			_InnerCommitable.ReadThroughCache = false;
-
 			FlushPeriod = TimeSpan.FromSeconds(5);
 		}
 
@@ -50,7 +46,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 			get
 			{
-				return _Inner.Tip;
+				return Inner.Tip;
 			}
 		}
 
@@ -68,6 +64,14 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 			get;
 			set;
+		}
+
+		public CoinView Inner
+		{
+			get
+			{
+				return _Inner;
+			}
 		}
 
 		Task _Commiting;

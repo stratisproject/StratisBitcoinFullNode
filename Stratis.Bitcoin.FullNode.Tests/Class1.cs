@@ -5,7 +5,6 @@ using Stratis.Bitcoin.FullNode.Consensus;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using NBitcoin;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -113,7 +112,14 @@ namespace Stratis.Bitcoin.FullNode.Tests
 					chain.Load(GetFile("test.data", "https://aois.blob.core.windows.net/public/test.data"));
 				}
 
-				var coinview = new BackgroundCommiterCoinView(ctx.PersistentCoinView);
+				var stack = new CoinViewStack(
+						new CacheCoinView(
+						new PrefetcherCoinView(
+						new BackgroundCommiterCoinView(
+						ctx.PersistentCoinView))));
+
+				var cache = stack.Find<CacheCoinView>();
+				var backgroundCommiter = stack.Find<BackgroundCommiterCoinView>();
 				ConsensusValidator valid = new ConsensusValidator(network.Consensus);
 				valid.UseConsensusLib = false;
 				Node node = Node.Connect(network, "yournode");
@@ -121,7 +127,8 @@ namespace Stratis.Bitcoin.FullNode.Tests
 				var puller = new CustomNodeBlockPuller(chain, node);
 				var lastSnapshot = valid.PerformanceCounter.Snapshot();
 				var lastSnapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
-				foreach(var block in valid.Run(new PrefetcherCoinView(coinview), puller))
+				var lastSnapshot3 = cache.PerformanceCounter.Snapshot();
+				foreach(var block in valid.Run(stack, puller))
 				{
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
 					{
@@ -129,16 +136,22 @@ namespace Stratis.Bitcoin.FullNode.Tests
 
 						Console.WriteLine("ActualLookahead :\t" + puller.ActualLookahead + " blocks");
 						Console.WriteLine("Downloaded Count :\t" + puller.RollingAverageDownloadedCount + " blocks");
-						Console.WriteLine("CoinViewTip :\t" + coinview.Tip.Height);
-						Console.WriteLine("CommitingTip :\t" + coinview.CommitingTip.Height);
-						Console.WriteLine("InnerTip :\t" + coinview.InnerTip.Height);
+						Console.WriteLine("CoinViewTip :\t" + backgroundCommiter.Tip.Height);
+						Console.WriteLine("CommitingTip :\t" + backgroundCommiter.CommitingTip.Height);
+						Console.WriteLine("InnerTip :\t" + backgroundCommiter.InnerTip.Height);
+						Console.WriteLine("Cache entries :\t" + cache.CacheEntryCount);
+
 						var snapshot = valid.PerformanceCounter.Snapshot();
 						Console.Write(snapshot - lastSnapshot);
 						lastSnapshot = snapshot;
 
 						var snapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
-						Console.Write(ctx.PersistentCoinView.PerformanceCounter);
+						Console.Write(snapshot2 - lastSnapshot2);
 						lastSnapshot2 = snapshot2;
+
+						var snapshot3 = cache.PerformanceCounter.Snapshot();
+						Console.Write(snapshot3 - lastSnapshot3);
+						lastSnapshot3 = snapshot3;
 					}
 				}
 			}

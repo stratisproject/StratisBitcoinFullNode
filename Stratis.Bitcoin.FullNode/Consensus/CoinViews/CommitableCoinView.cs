@@ -8,12 +8,12 @@ using NBitcoin.BitcoinCore;
 
 namespace Stratis.Bitcoin.FullNode.Consensus
 {
-	public class CommitableCoinView : CoinView
+	public class CommitableCoinView : CoinView, IBackedCoinView
 	{
 		CoinView _Inner;
 
 		//Prunable coins should be flushed down inner
-		InMemoryCoinView _Cache = new InMemoryCoinView() { RemovePrunableCoins = false };
+		InMemoryCoinView _Uncommited = new InMemoryCoinView() { RemovePrunableCoins = false };
 
 		bool update = false;
 
@@ -21,9 +21,18 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 			get
 			{
-				return _Cache.Tip;
+				return _Uncommited.Tip;
 			}
 		}
+
+		public CoinView Inner
+		{
+			get
+			{
+				return _Inner;
+			}
+		}
+
 		static IEnumerable<uint256> NullUItn256s = new uint256[0];
 		static IEnumerable<Coins> NullCoins = new Coins[0];
 		public CommitableCoinView(ChainedBlock newTip, CoinView inner)
@@ -33,46 +42,19 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			if(newTip == null)
 				throw new ArgumentNullException("newTip");
 			_Inner = inner;
-			_Cache.SaveChanges(newTip, NullUItn256s, NullCoins);
-			ReadThroughCache = true;
+			_Uncommited.SaveChanges(newTip, NullUItn256s, NullCoins);
 		}
 		public CommitableCoinView(CoinView inner) : this(inner.Tip, inner)
 		{
-			ReadThroughCache = true;
 		}
 
-		public bool CacheMissingCoins
-		{
-			get;
-			set;
-		}
-
-		public bool ReadThroughCache
-		{
-			get;
-			set;
-		}
-
-		static readonly Coins MissingCoins = new Coins();
 		public override Coins AccessCoins(uint256 txId)
 		{
-			return AccessCoins(txId, true);
-		}
-		public Coins AccessCoins(uint256 txId, bool accessInner)
-		{
-			var cachedCoin = _Cache.AccessCoins(txId);
-			if(cachedCoin != null || !accessInner)
-				return MissingCoins == cachedCoin ? null : cachedCoin;
-			var coin = _Inner.AccessCoins(txId);
-			if(coin == null)
-			{
-				if(ReadThroughCache && CacheMissingCoins)
-					_Cache.SaveChange(txId, MissingCoins);
-				return null;
-			}
-			coin = coin.Clone();
-			if(ReadThroughCache)
-				_Cache.SaveChange(txId, coin);
+			var uncommited = _Uncommited.AccessCoins(txId);
+			if(uncommited != null)
+				return uncommited;
+			var coin = Inner.AccessCoins(txId);
+			_Uncommited.SaveChange(txId, coin);
 			return coin;
 		}
 
@@ -81,7 +63,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			Coins[] coins = new Coins[txIds.Length];
 			int i = 0;
 			int notInCache = 0;
-			foreach(var coin in _Cache.FetchCoins(txIds))
+			foreach(var coin in _Uncommited.FetchCoins(txIds))
 			{
 				if(coin == null)
 					notInCache++;
@@ -97,25 +79,19 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 
 			i = 0;
-			foreach(var coin in _Inner.FetchCoins(txIds2))
-			{
+			foreach(var coin in Inner.FetchCoins(txIds2))
+			{				
 				for(; i < coins.Length;)
 				{
 					if(coins[i] == null)
 						break;
 					i++;
 				}
-				if(coin == null)
-				{
-					if(ReadThroughCache && CacheMissingCoins)
-						_Cache.SaveChange(txIds[i], MissingCoins);
-					coins[i++] = null;
-					continue;
-				}
-				var cc = coin.Clone();
-				if(ReadThroughCache)
-					_Cache.SaveChange(txIds[i], cc);
-				coins[i++] = cc;
+				if(i >= coins.Length)
+					break;
+				_Uncommited.SaveChange(txIds[i], coin);
+				coins[i] = coin;
+				i++;
 			}
 			return coins;
 		}
@@ -123,31 +99,31 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
 		{
 			update = true;
-			_Cache.SaveChanges(newTip, txIds, coins);
+			_Uncommited.SaveChanges(newTip, txIds, coins);
 		}
 
 		public void Clear()
 		{
-			_Cache.Clear();
+			_Uncommited.Clear();
 		}
 
 		public void SaveChanges()
 		{
 			if(!update)
 				return;
-			_Inner.SaveChanges(_Cache.Tip, _Cache.coins.Keys, _Cache.coins.Values);
+			Inner.SaveChanges(_Uncommited.Tip, _Uncommited.coins.Keys, _Uncommited.coins.Values);
 			update = false;
 		}
 
 		public void SaveChanges(CoinView coinview)
 		{
-			coinview.SaveChanges(_Cache.Tip, _Cache.coins.Keys, _Cache.coins.Values);
+			coinview.SaveChanges(_Uncommited.Tip, _Uncommited.coins.Keys, _Uncommited.coins.Values);
 		}
 
 		public void Update(Transaction tx, int height)
 		{
 			update = true;
-			_Cache.SaveChanges(tx, height);
+			_Uncommited.SaveChanges(tx, height);
 		}
 	}
 }

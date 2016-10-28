@@ -31,9 +31,16 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		public override Coins AccessCoins(uint256 txId)
 		{
+			return AccessCoins(txId, true);
+		}
+
+		private Coins AccessCoins(uint256 txId, bool copy)
+		{			
 			Coins r;
 			coins.TryGetValue(txId, out r);
-			return r;
+			if(r == null)
+				return null;
+			return copy ? r.Clone() : r;
 		}
 
 		public bool RemovePrunableCoins
@@ -55,30 +62,42 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		}
 
 		internal Dictionary<uint256, Coins> coins = new Dictionary<uint256, Coins>();
-		public void SaveChange(uint256 txid, Coins coins)
-		{
-			if(coins.IsPruned && RemovePrunableCoins)
+		public void SaveChange(uint256 txId, Coins coins)
+		{			
+			if(coins == null || (coins.IsPruned && RemovePrunableCoins))
 			{
-				this.coins.Remove(txid);
+				this.coins.Remove(txId);
 			}
 			else
 			{
-				this.coins.AddOrReplace(txid, coins);
+				AddOrMerge(txId, coins);
 			}
+		}
+
+		private void AddOrMerge(uint256 txid, Coins c)
+		{
+			var old = coins.TryGet(txid);
+			if(old == null)
+			{
+				coins.Add(txid, c);
+				return;
+			}
+			old.MergeFrom(c);
 		}
 
 		internal void SaveChanges(Transaction tx, int height)
 		{
-			tx = tx.Clone();
 			coins.AddOrReplace(tx.GetHash(), new Coins(tx, height));
 			if(!tx.IsCoinBase)
 			{
 				foreach(var input in tx.Inputs)
 				{
-					var c = AccessCoins(input.PrevOut.Hash);
+					var c = AccessCoins(input.PrevOut.Hash, false);
 					c.Spend((int)input.PrevOut.N);
-					if(c.IsPruned && RemovePrunableCoins)
+					if(RemovePrunableCoins && c.IsPruned)
+					{
 						coins.Remove(input.PrevOut.Hash);
+					}
 				}
 			}
 		}

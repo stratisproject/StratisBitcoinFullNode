@@ -11,9 +11,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 {
 	public interface IPrefetcherCoinView
 	{
-		void PrefetchUTXOs(Block block);
+		void PrefetchUTXOs(BlockHeader prefetchedHeader,  uint256[] txIds);
 	}
-	public class PrefetcherCoinView : CoinView, IPrefetcherCoinView
+	public class PrefetcherCoinView : CoinView, IPrefetcherCoinView, IBackedCoinView
 	{
 		CoinView _Inner;
 		public PrefetcherCoinView(CoinView inner)
@@ -30,49 +30,50 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
+		public CoinView Inner
+		{
+			get
+			{
+				return _Inner;
+			}
+		}
+
 		public override Coins AccessCoins(uint256 txId)
 		{
-			return _Prefetch == null ? _Inner.AccessCoins(txId) : _Prefetch.AccessCoins(txId);
+			if(_CurrentPrefetch == null)
+				return _Inner.AccessCoins(txId);
+			return _CurrentPrefetch.GetAwaiter().GetResult().AccessCoins(txId);
+		}
+
+		public override Coins[] FetchCoins(uint256[] txIds)
+		{
+			if(_CurrentPrefetch == null)
+				return _Inner.FetchCoins(txIds);
+			return _CurrentPrefetch.GetAwaiter().GetResult().FetchCoins(txIds);
 		}
 
 		static readonly Coins MissingCoins = new Coins();
-		public void PrefetchUTXOs(Block block)
+		public void PrefetchUTXOs(BlockHeader prefetchedHeader, uint256[] txIds)
 		{
-			if(_NextPrefetchTask != null)
-				throw new InvalidOperationException("One prefetch at a time allowed");
-			_NextPrefetch = new CommitableCoinView(_Inner);
-			_NextPrefetch.CacheMissingCoins = true;
-			var prefetch = _NextPrefetch;
-			_NextPrefetchTask = Task.Run(() =>
+			if(_PrefetchesByPrev.ContainsKey(prefetchedHeader.HashPrevBlock))
+				return;
+			var task = Task.Run(() =>
 			{
-				int i = 0;
-				uint256[] ids = new uint256[block.Transactions.Count + block.Transactions.Where(tx=>!tx.IsCoinBase).SelectMany(txin => txin.Inputs).Count()];
-				foreach(var tx in block.Transactions)
-				{
-					ids[i++] = tx.GetHash();
-					if(!tx.IsCoinBase)
-						foreach(var input in tx.Inputs)
-						{
-							ids[i++] = input.PrevOut.Hash;
-						}
-				}
-				prefetch.FetchCoins(ids);
+				var inMemory = new InMemoryCoinView();				
+				var coins = _Inner.FetchCoins(txIds);
+				inMemory.SaveChanges(_Inner.Tip, txIds, coins);
+				return inMemory;
 			});
+			_PrefetchesByPrev.Add(prefetchedHeader.HashPrevBlock, task);
 		}
 
-		CommitableCoinView _NextPrefetch = null;
-		Task _NextPrefetchTask = null;
-		CommitableCoinView _Prefetch;
+		Dictionary<uint256, Task<InMemoryCoinView>> _PrefetchesByPrev = new Dictionary<uint256, Task<InMemoryCoinView>>();
+		Task<InMemoryCoinView> _CurrentPrefetch;
+
 		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
 		{
-			_Prefetch = _NextPrefetch;
-			if(_NextPrefetchTask != null)
-			{
-				_NextPrefetchTask.Wait();
-				_NextPrefetchTask = null;
-				_NextPrefetch.SaveChanges(newTip, txIds, coins);
-				_NextPrefetch = null;
-			}
+			_CurrentPrefetch = _PrefetchesByPrev.TryGet(newTip.HashBlock);
+			_PrefetchesByPrev.Remove(newTip.HashBlock);
 			_Inner.SaveChanges(newTip, txIds, coins);
 		}
 	}

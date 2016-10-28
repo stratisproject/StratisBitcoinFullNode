@@ -40,10 +40,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		/// <param name="utxo">UTXO Set</param>
 		/// <param name="puller">Block source</param>
 		/// <returns>Stream of validated blocks</returns>
-		public IEnumerable<Block> Run(CoinView utxo, BlockPuller puller)
+		public IEnumerable<Block> Run(CoinViewStack utxoStack, BlockPuller puller)
 		{
+			var utxo = utxoStack.Top;
 			var lookaheadPuller = puller as ILookaheadBlockPuller;
-			var prefetcherCoinView = utxo as IPrefetcherCoinView;
+			var prefetcherCoinView = utxoStack.Find<IPrefetcherCoinView>();
+			var cache = utxoStack.Find<CacheCoinView>();
 			puller.SetLocation(utxo.Tip);
 			ThresholdConditionCache bip9 = new ThresholdConditionCache(_ConsensusParams);
 			StopWatch watch = new StopWatch();
@@ -79,7 +81,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 						{
 							var ahead = lookaheadPuller.TryGetLookahead(0);
 							if(ahead != null)
-								prefetcherCoinView.PrefetchUTXOs(ahead);
+								prefetcherCoinView.PrefetchUTXOs(ahead.Header, GetIdsToPrefetch(ahead, cache, flags.EnforceBIP30));
 							lookaheadCount++;
 						}
 
@@ -87,6 +89,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 						using(watch.Start(o => PerformanceCounter.AddBlockProcessingTime(o)))
 						{
 							lookaheadCount--;
+							
 							ExecuteBlock(block, next, flags, commitable, null);
 						}
 						using(watch.Start(o => PerformanceCounter.AddUTXOFetchingTime(o)))
@@ -113,6 +116,26 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
+		private uint256[] GetIdsToPrefetch(Block block, CacheCoinView cache, bool enforceBIP30)
+		{
+			List<uint256> ids = new List<uint256>(block.Transactions.Count + block.Transactions.Where(tx => !tx.IsCoinBase).SelectMany(txin => txin.Inputs).Count());
+			foreach(var tx in block.Transactions)
+			{
+				if(enforceBIP30)
+				{
+					var txId = tx.GetHash();
+					if(cache == null || !cache.Contains(txId))
+						ids.Add(txId);
+				}
+				if(!tx.IsCoinBase)
+					foreach(var input in tx.Inputs)
+					{
+						if(cache == null || !cache.Contains(input.PrevOut.Hash))
+							ids.Add(input.PrevOut.Hash);
+					}
+			}
+			return ids.ToArray();
+		}
 
 		private readonly ConsensusPerformanceCounter _PerformanceCounter = new ConsensusPerformanceCounter();
 		public ConsensusPerformanceCounter PerformanceCounter
@@ -332,8 +355,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				}
 
 				// Check for negative or overflow input values
-				nValueIn += coins.Outputs[(int)prevout.N].Value;
-				if(!MoneyRange(coins.Outputs[(int)prevout.N].Value) || !MoneyRange(nValueIn))
+				nValueIn += coins.TryGetOutput(prevout.N).Value;
+				if(!MoneyRange(coins.TryGetOutput(prevout.N).Value) || !MoneyRange(nValueIn))
 					ConsensusErrors.BadTransactionInputValueOutOfRange.Throw();
 
 			}

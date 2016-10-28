@@ -199,6 +199,6 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				Taken = DateTime.UtcNow
 			};
 			return snap;
-		}		
+		}
 	}
 }
