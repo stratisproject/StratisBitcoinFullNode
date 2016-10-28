@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			_TotalProcessedInputs = processedInputs;
 			_TotalProcessedBlocks = processedBlocks;
 			_TotalBlockFetchingTime = blockFetchingTime;
-			_TotalBlockProcessingTime = blockProcessingTime;
+			_TotalBlockValidationTime = blockProcessingTime;
 			_TotalUTXOFetchingTime = utxoFetchingTime;
 		}
 
@@ -29,12 +29,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
-		private readonly long _TotalBlockProcessingTime;
-		public TimeSpan TotalBlockProcessingTime
+		private readonly long _TotalBlockValidationTime;
+		public TimeSpan TotalBlockValidationTime
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_TotalBlockProcessingTime);
+				return TimeSpan.FromTicks(_TotalBlockValidationTime);
 			}
 		}
 
@@ -90,21 +90,21 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedBlocks / TotalBlockProcessingTime.TotalSeconds);
+				return (ulong)((double)TotalProcessedBlocks / TotalBlockValidationTime.TotalSeconds);
 			}
 		}
 		public ulong ProcessedInputsPerSecond
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedInputs / TotalBlockProcessingTime.TotalSeconds);
+				return (ulong)((double)TotalProcessedInputs / TotalBlockValidationTime.TotalSeconds);
 			}
 		}
 		public ulong ProcessedTransactionsPerSecond
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedTransactions / TotalBlockProcessingTime.TotalSeconds);
+				return (ulong)((double)TotalProcessedTransactions / TotalBlockValidationTime.TotalSeconds);
 			}
 		}
 
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 											end.TotalProcessedTransactions - start.TotalProcessedTransactions,
 											end.TotalProcessedBlocks - start.TotalProcessedBlocks,
 											end._TotalBlockFetchingTime - start._TotalBlockFetchingTime,
-											end._TotalBlockProcessingTime - start._TotalBlockProcessingTime,
+											end._TotalBlockValidationTime - start._TotalBlockValidationTime,
 											end._TotalUTXOFetchingTime - start._TotalUTXOFetchingTime)
 			{
 				Start = start.Taken,
@@ -133,13 +133,21 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public override string ToString()
 		{
 			StringBuilder builder = new StringBuilder();
-			//builder.AppendLine("Inputs : " + ToKBSec(ProcessedInputsPerSecond));
-			builder.AppendLine("Inputs :\t" + (TotalBlockProcessingTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
-			builder.AppendLine("Transactions :\t" + ToKBSec(ProcessedTransactionsPerSecond));
-			builder.AppendLine("Blocks :\t" + ToKBSec(ProcessedBlocksPerSecond));
-			builder.AppendLine("Fetching Block :\t" + ToTimespan(TotalBlockFetchingTime));
-			builder.AppendLine("Processing Block :\t" + ToTimespan(TotalBlockProcessingTime));
-			builder.AppendLine("UTXO Processing :\t" + ToTimespan(TotalUTXOFetchingTime));
+
+			builder.AppendLine("====Overall Speed====");
+			builder.AppendLine("Inputs :\t" + (Elapsed.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			builder.AppendLine("Transactions :\t" + (Elapsed.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+			builder.AppendLine("Blocks :\t" + (Elapsed.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
+			builder.AppendLine("====Validation Speed====");
+			builder.AppendLine("Inputs :\t" + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			builder.AppendLine("Transactions :\t" + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+			builder.AppendLine("Blocks :\t" + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
+			builder.AppendLine("====Speed breakdown(%)====");
+			var total = _TotalBlockFetchingTime + _TotalUTXOFetchingTime + _TotalBlockValidationTime;
+			builder.AppendLine("Blk Fetching :\t" + ((decimal)_TotalBlockFetchingTime * 100m / total).ToString("0.00") + " %");
+			builder.AppendLine("Validation :\t" + ((decimal)_TotalBlockValidationTime * 100m / total).ToString("0.00") + " %");
+			builder.AppendLine("Utxo Fetching :\t" + ((decimal)_TotalUTXOFetchingTime * 100m / total).ToString("0.00") + " %");
+			builder.AppendLine("==========================");
 			return builder.ToString();
 		}
 
