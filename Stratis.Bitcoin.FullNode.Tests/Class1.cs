@@ -94,57 +94,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
 			var header = previous.Header.Clone();
 			header.HashPrevBlock = previous.HashBlock;
 			return new ChainedBlock(header, null, previous);
-		}
-
-		[Fact]
-		public void CanPrefetchCoins()
-		{
-			using(NodeContext ctx = NodeContext.Create())
-			{
-				var background = new BackgroundCommiterCoinView(ctx.PersistentCoinView);
-				var prefetcher = new PrefetcherCoinView(background);
-				ctx.ChainBuilder.Mine(100);
-				var validator = new ConsensusValidator(ctx.Network.Consensus);
-				var validation = validator.Run(new CoinViewStack(prefetcher), ctx.ChainBuilder.BlockPuller);
-				validation.Take(100).ToList();
-				background.Flush();
-
-				
-				var coins = ctx.ChainBuilder.GetSpendableCoins();
-				var tx = ctx.ChainBuilder.Spend(coins, Money.Coins(25.0m));
-
-				ctx.ChainBuilder.Broadcast(tx);
-				ctx.ChainBuilder.Mine(1);
-				background.Flush();
-				validation.Take(1).ToList();
-
-				var sameTxCoins = ctx.ChainBuilder.GetSpendableCoins().Where(c => c.Outpoint.Hash == tx.GetHash()).ToArray();
-				var utxo = prefetcher.AccessCoins(tx.GetHash());
-				Assert.True(utxo.IsAvailable(0));
-				Assert.True(utxo.IsAvailable(1));
-			
-				ctx.ChainBuilder.Mine(2);
-
-				prefetcher.PrefetchUTXOs(ctx.ChainBuilder.Chain.Tip.Header, new uint256[] { tx.GetHash() });
-				prefetcher.Wait();
-
-				validation.Take(1).ToList();
-
-				Assert.True(prefetcher.IsLoaded);
-
-				var tx2 = ctx.ChainBuilder.Spend(sameTxCoins.Take(1).ToArray(), Money.Coins(5.0m));
-				ctx.ChainBuilder.Broadcast(tx2);
-
-				ctx.ChainBuilder.Mine(2);
-
-				
-				
-
-				utxo = prefetcher.AccessCoins(tx.GetHash());
-				Assert.False(utxo.IsAvailable(0));
-				Assert.True(utxo.IsAvailable(1));
-			}
-		}
+		}		
 
 		[Fact]
 		public void ValidSomeBlocks()

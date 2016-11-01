@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public abstract ChainedBlock Tip
 		{
 			get;
-		}
+		}		
 
 		public TxOut GetOutputFor(TxIn txIn)
 		{

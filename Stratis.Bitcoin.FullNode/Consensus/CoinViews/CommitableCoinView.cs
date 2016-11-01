@@ -31,6 +31,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
+		public bool NoInnerQuery
+		{
+			get;
+			set;
+		}
+
 		static IEnumerable<uint256> NullUItn256s = new uint256[0];
 		static IEnumerable<Coins> NullCoins = new Coins[0];
 		public CommitableCoinView(ChainedBlock newTip, CoinView inner)
@@ -49,7 +55,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public override Coins AccessCoins(uint256 txId)
 		{
 			var uncommited = _Uncommited.AccessCoins(txId);
-			if(uncommited != null)
+			if(NoInnerQuery || uncommited != null)
 				return uncommited;
 			var coin = Inner.AccessCoins(txId);
 			_Uncommited.SaveChange(txId, coin);
@@ -77,19 +83,23 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 
 			i = 0;
-			foreach(var coin in Inner.FetchCoins(txIds2))
+
+			if(!NoInnerQuery)
 			{
-				for(; i < coins.Length;)
+				foreach(var coin in Inner.FetchCoins(txIds2))
 				{
-					if(coins[i] == null)
+					for(; i < coins.Length;)
+					{
+						if(coins[i] == null)
+							break;
+						i++;
+					}
+					if(i >= coins.Length)
 						break;
+					_Uncommited.SaveChange(txIds[i], coin);
+					coins[i] = coin;
 					i++;
 				}
-				if(i >= coins.Length)
-					break;
-				_Uncommited.SaveChange(txIds[i], coin);
-				coins[i] = coin;
-				i++;
 			}
 			return coins;
 		}
