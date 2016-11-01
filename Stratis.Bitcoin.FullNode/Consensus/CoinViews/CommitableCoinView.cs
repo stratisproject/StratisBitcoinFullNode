@@ -11,11 +11,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 	public class CommitableCoinView : CoinView, IBackedCoinView
 	{
 		CoinView _Inner;
-
+		HashSet<uint256> _ChangedCoins = new HashSet<uint256>();
 		//Prunable coins should be flushed down inner
 		InMemoryCoinView _Uncommited = new InMemoryCoinView() { RemovePrunableCoins = false };
-
-		bool update = false;
 
 		public override ChainedBlock Tip
 		{
@@ -80,7 +78,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 			i = 0;
 			foreach(var coin in Inner.FetchCoins(txIds2))
-			{				
+			{
 				for(; i < coins.Length;)
 				{
 					if(coins[i] == null)
@@ -98,32 +96,43 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
 		{
-			update = true;
+			foreach(var id in txIds)
+				_ChangedCoins.Add(id);
 			_Uncommited.SaveChanges(newTip, txIds, coins);
+		}
+		public void Update(Transaction tx, int height)
+		{
+			_ChangedCoins.Add(tx.GetHash());
+			_Uncommited.SaveChanges(tx, height);
 		}
 
 		public void Clear()
 		{
 			_Uncommited.Clear();
+			_ChangedCoins.Clear();
 		}
 
 		public void Commit()
 		{
-			if(!update)
-				return;
-			Inner.SaveChanges(_Uncommited.Tip, _Uncommited.coins.Keys, _Uncommited.coins.Values);
-			update = false;
+			var changedCoins = GetChangedCoins();
+			Inner.SaveChanges(_Uncommited.Tip, changedCoins.Keys, changedCoins.Values);
+		}
+
+		private Dictionary<uint256, Coins> GetChangedCoins()
+		{
+			var changed = new Dictionary<uint256, Coins>(_ChangedCoins.Count);
+			foreach(var kv in _Uncommited.coins)
+			{
+				if(_ChangedCoins.Contains(kv.Key))
+					changed.Add(kv.Key, kv.Value);
+			}
+			return changed;
 		}
 
 		public void Commit(CoinView coinview)
 		{
-			coinview.SaveChanges(_Uncommited.Tip, _Uncommited.coins.Keys, _Uncommited.coins.Values);
-		}
-
-		public void Update(Transaction tx, int height)
-		{
-			update = true;
-			_Uncommited.SaveChanges(tx, height);
+			var changedCoins = GetChangedCoins();
+			coinview.SaveChanges(_Uncommited.Tip, changedCoins.Keys, changedCoins.Values);
 		}
 	}
 }

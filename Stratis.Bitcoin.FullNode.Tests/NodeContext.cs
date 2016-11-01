@@ -23,9 +23,9 @@ namespace Stratis.Bitcoin.FullNode.Tests
 
 		List<IDisposable> _CleanList = new List<IDisposable>();
 
-		public NodeContext(string name, Network network)
+		public NodeContext(string name, Network network, bool clean)
 		{
-			Clean = true;
+			Clean = clean;
 			network = network ?? Network.RegTest;
 			this.name = name;
 			if(Clean)
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
 
 		public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
 		{
-			return new NodeContext(name, network) { Clean = clean };
+			return new NodeContext(name, network, clean);
 		}
 
 		public void Dispose()

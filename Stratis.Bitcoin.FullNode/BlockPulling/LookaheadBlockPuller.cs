@@ -47,8 +47,7 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 		{
 			get
 			{
-				return 500;
-				//return Math.Min(MaximumLookahead, Math.Max(MinimumLookahead, _ActualLookahead));
+				return Math.Min(MaximumLookahead, Math.Max(MinimumLookahead, _ActualLookahead));
 			}
 			private set
 			{

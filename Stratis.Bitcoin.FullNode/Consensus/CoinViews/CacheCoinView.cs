@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
-
+		Random _Rand = new Random();
 		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
 		{
 			if(WriteThrough)
@@ -165,10 +165,32 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 			if(CacheEntryCount > MaxItems)
 			{
-				_Cache.Clear();
-				_NotFound.Clear();
+				Evict();
 			}
 			_Inner.SaveChanges(newTip, txIds, coins);
+		}
+
+		private void Evict()
+		{
+			List<uint256> toDelete = new List<uint256>();
+			foreach(var item in _Cache.coins)
+			{
+				if(_Rand.Next() % 3 == 0)
+					toDelete.Add(item.Key);
+			}
+
+			foreach(var delete in toDelete)
+				_Cache.coins.Remove(delete);
+
+			toDelete.Clear();
+			foreach(var item in _NotFound)
+			{
+				if(_Rand.Next() % 3 == 0)
+					toDelete.Add(item);
+			}
+
+			foreach(var delete in toDelete)
+				_NotFound.Remove(delete);
 		}
 	}
 }
