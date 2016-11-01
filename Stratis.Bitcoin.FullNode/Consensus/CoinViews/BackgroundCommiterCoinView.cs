@@ -74,23 +74,36 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
+		public void Flush()
+		{
+			if(_Commiting != null)
+				_Commiting.Wait();
+			FlushAsync().Wait();
+		}
+
 		Task _Commiting;
 		DateTimeOffset _LastFlush = DateTimeOffset.UtcNow;
 		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
 		{
 			_Commitable.SaveChanges(newTip, txIds, coins);
-
 			if((_Commiting == null || _Commiting.IsCompleted) && (DateTimeOffset.UtcNow - _LastFlush) > FlushPeriod)
 			{
-				_InnerCommitable.Clear();
-				_Commitable.SaveChanges();
-				_Commitable.Clear();
-				_Commiting = Task.Run(() =>
-				{
-					_InnerCommitable.SaveChanges();
-					_LastFlush = DateTimeOffset.UtcNow;
-				});
+				FlushAsync();
 			}
+		}
+
+		private Task FlushAsync()
+		{
+			_InnerCommitable.Clear();
+			_Commitable.Commit();
+			_Commitable.Clear();
+			var t = Task.Run(() =>
+			{
+				_InnerCommitable.Commit();
+				_LastFlush = DateTimeOffset.UtcNow;
+			});
+			_Commiting = t;
+			return t;
 		}
 	}
 }

@@ -25,7 +25,8 @@ namespace Stratis.Bitcoin.FullNode.Tests
 
 		public NodeContext(string name, Network network)
 		{
-			network = network ?? Network.TestNet;
+			Clean = true;
+			network = network ?? Network.RegTest;
 			this.name = name;
 			if(Clean)
 				CleanDirectory();
@@ -46,6 +47,16 @@ namespace Stratis.Bitcoin.FullNode.Tests
 			}
 		}
 
+
+		private ChainBuilder _ChainBuilder;
+		public ChainBuilder ChainBuilder
+		{
+			get
+			{
+				return _ChainBuilder = _ChainBuilder ?? new ChainBuilder(Network);
+			}
+		}
+		
 		DBreezeCoinView _PersistentCoinView;
 		public DBreezeCoinView PersistentCoinView
 		{
@@ -92,6 +103,6 @@ namespace Stratis.Bitcoin.FullNode.Tests
 			_PersistentCoinView = new DBreezeCoinView(_Network, name);
 			_PersistentCoinView.Initialize();
 			_CleanList.Add(_PersistentCoinView);
-		}
+		}		
 	}
 }

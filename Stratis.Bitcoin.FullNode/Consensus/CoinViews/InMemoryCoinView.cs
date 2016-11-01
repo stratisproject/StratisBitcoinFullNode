@@ -20,6 +20,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			RemovePrunableCoins = true;
 			_Tip = tip;
 		}
+
+		public bool SpendOnly
+		{
+			get;
+			set;
+		}
 		ChainedBlock _Tip;
 		public override ChainedBlock Tip
 		{
@@ -79,7 +85,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			var old = coins.TryGet(txid);
 			if(old == null)
 			{
-				coins.Add(txid, c);
+				if(!SpendOnly)
+					coins.Add(txid, c);
 				return;
 			}
 			old.MergeFrom(c);

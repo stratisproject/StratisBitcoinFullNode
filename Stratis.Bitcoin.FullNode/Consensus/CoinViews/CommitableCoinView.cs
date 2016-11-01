@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			_Uncommited.Clear();
 		}
 
-		public void SaveChanges()
+		public void Commit()
 		{
 			if(!update)
 				return;
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			update = false;
 		}
 
-		public void SaveChanges(CoinView coinview)
+		public void Commit(CoinView coinview)
 		{
 			coinview.SaveChanges(_Uncommited.Tip, _Uncommited.coins.Keys, _Uncommited.coins.Values);
 		}

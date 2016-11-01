@@ -160,18 +160,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		private ChainedBlock FindFork(ChainedBlock newTip, ChainedBlock tip)
 		{
-			var highest = newTip.Height > tip.Height ? newTip : tip;
-			var lowest = highest == newTip ? tip : newTip;
-			while(lowest.Height != highest.Height)
-			{
-				highest = highest.Previous;
-			}
-			while(lowest.HashBlock != highest.HashBlock)
-			{
-				lowest = lowest.Previous;
-				highest = highest.Previous;
-			}
-			return highest;
+			return newTip.FindFork(tip);
 		}
 
 		public void Dispose()

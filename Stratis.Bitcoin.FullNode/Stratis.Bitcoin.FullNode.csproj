@@ -73,11 +73,13 @@
     <Compile Include="Consensus\ContextualInformation.cs" />
     <Compile Include="Consensus\CoinViews\DBreezeCoinView.cs" />
     <Compile Include="Consensus\CoinViews\InMemoryCoinView.cs" />
+    <Compile Include="Consensus\Extensions.cs" />
     <Compile Include="Consensus\StopWatch.cs" />
     <Compile Include="Consensus\ThresholdConditionCache.cs" />
     <Compile Include="Consensus\ThresholdState.cs" />
     <Compile Include="Consensus\UInt256Comparer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\ReaderWriterLock.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
