@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		public static uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
 		{
-			List<uint256> ids = new List<uint256>(block.Transactions.Count + block.Transactions.Where(tx => !tx.IsCoinBase).SelectMany(txin => txin.Inputs).Count());
+			HashSet<uint256> ids = new HashSet<uint256>();
 			foreach(var tx in block.Transactions)
 			{
 				if(enforceBIP30)

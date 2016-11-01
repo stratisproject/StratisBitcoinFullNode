@@ -96,34 +96,33 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return coin;
 		}
 
+		class ToFetch
+		{
+			public int Index;
+			public uint256 TxId;
+		}
 		public override Coins[] FetchCoins(uint256[] txIds)
 		{
 			var fetched = _Cache.FetchCoins(txIds);
-			List<uint256> toFetch = new List<uint256>(txIds.Length);
+			List<ToFetch> toFetch = new List<ToFetch>(txIds.Length);
 			for(int i = 0; i < txIds.Length; i++)
 			{
 				if(fetched[i] == null && !_NotFound.Contains(txIds[i]))
 				{
-					toFetch.Add(txIds[i]);
+					toFetch.Add(new ToFetch() { TxId = txIds[i], Index = i });
 				}
 			}
 			PerformanceCounter.AddMissCount(toFetch.Count);
 			PerformanceCounter.AddHitCount(txIds.Length - toFetch.Count);
 
-			var innerCoins = _Inner.FetchCoins(toFetch.ToArray());
-
-			int innerIndex = 0;
-			for(int i = 0; i < txIds.Length; i++)
+			var innerCoins = _Inner.FetchCoins(toFetch.Select(f => f.TxId).ToArray());
+			for(int i = 0; i < innerCoins.Length; i++)
 			{
-				if(fetched[i] == null && !_NotFound.Contains(txIds[i]))
+				if(ReadThrough)
 				{
-					toFetch.Add(txIds[i]);
-					fetched[i] = innerCoins[innerIndex++];
-					if(ReadThrough)
-					{
-						AddToCache(txIds[i], fetched[i]);
-					}
+					AddToCache(toFetch[i].TxId, innerCoins[i]);
 				}
+				fetched[toFetch[i].Index] = innerCoins[i];
 			}
 			return fetched;
 		}
