@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public IEnumerable<Block> Run(CoinViewStack utxoStack, BlockPuller puller)
 		{
 			var utxo = utxoStack.Top;
+			var cache = utxoStack.Find<CacheCoinView>();
 			var lookaheadPuller = puller as ILookaheadBlockPuller;
 			puller.SetLocation(utxo.Tip);
 			ThresholdConditionCache bip9 = new ThresholdConditionCache(_ConsensusParams);
@@ -81,12 +82,15 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 							commitable.FetchCoins(GetIdsToFetch(block, flags.EnforceBIP30));
 						}
 						commitable.SetInner(NullCoinView.Instance);
+
+						Task prefetching = GetPrefetchingTask(cache, lookaheadPuller, flags);
 						using(watch.Start(o => PerformanceCounter.AddBlockProcessingTime(o)))
 						{
 							ExecuteBlock(block, next, flags, commitable, null);
 						}
 						using(watch.Start(o => PerformanceCounter.AddUTXOFetchingTime(o)))
 						{
+							prefetching.Wait();
 							commitable.Commit(utxo);
 						}
 					}
@@ -106,6 +110,18 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 						yield return block;
 				}
 			}
+		}
+
+		private static Task GetPrefetchingTask(CacheCoinView cache, ILookaheadBlockPuller lookaheadPuller, ConsensusFlags flags)
+		{
+			Task prefetching = Task.FromResult<bool>(true);
+			if(cache != null && lookaheadPuller != null)
+			{
+				var nextBlock = lookaheadPuller.TryGetLookahead(0);
+				if(nextBlock != null)
+					prefetching = Task.Run(() => cache.FetchCoins(GetIdsToFetch(nextBlock, flags.EnforceBIP30)));
+			}
+			return prefetching;
 		}
 
 		public static uint256[] GetIdsToFetch(Block block, bool enforceBIP30)

@@ -73,8 +73,11 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
+		static readonly UnspentOutputs[] NoOutputs = new UnspentOutputs[0];
 		public override UnspentOutputs[] FetchCoins(uint256[] txIds)
 		{
+			if(txIds.Length == 0)
+				return NoOutputs;
 			using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
 			{
 				UnspentOutputs[] result = new UnspentOutputs[txIds.Length];

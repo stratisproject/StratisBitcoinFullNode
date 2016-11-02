@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			if(coins == null)
 			{
 				_Cache.SaveChange(txId, null);
-				_NotFound.Add(coins.TransactionId);
+				_NotFound.Add(txId);
 			}
 			else
 			{
