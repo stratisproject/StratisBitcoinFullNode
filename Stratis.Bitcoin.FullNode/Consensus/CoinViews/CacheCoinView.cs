@@ -74,34 +74,12 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
-		public override Coins AccessCoins(uint256 txId)
-		{
-			if(_NotFound.Contains(txId))
-			{
-				PerformanceCounter.AddHitCount(1);
-				return null;
-			}
-			var cached = _Cache.AccessCoins(txId);
-			if(cached != null)
-			{
-				PerformanceCounter.AddHitCount(1);
-				return cached;
-			}
-			PerformanceCounter.AddMissCount(1);
-			var coin = _Inner.AccessCoins(txId);
-			if(ReadThrough)
-			{
-				AddToCache(txId, coin);
-			}
-			return coin;
-		}
-
 		class ToFetch
 		{
 			public int Index;
 			public uint256 TxId;
 		}
-		public override Coins[] FetchCoins(uint256[] txIds)
+		public override UnspentOutputs[] FetchCoins(uint256[] txIds)
 		{
 			var fetched = _Cache.FetchCoins(txIds);
 			List<ToFetch> toFetch = new List<ToFetch>(txIds.Length);
@@ -127,17 +105,17 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return fetched;
 		}
 
-		private void AddToCache(uint256 id, Coins coins)
+		private void AddToCache(uint256 txId, UnspentOutputs coins)
 		{
 			if(coins == null)
 			{
-				_Cache.SaveChange(id, null);
-				_NotFound.Add(id);
+				_Cache.SaveChange(txId, null);
+				_NotFound.Add(coins.TransactionId);
 			}
 			else
 			{
-				_Cache.SaveChange(id, coins);
-				_NotFound.Remove(id);
+				_Cache.SaveChange(coins.TransactionId, coins);
+				_NotFound.Remove(coins.TransactionId);
 			}
 		}
 
@@ -150,23 +128,20 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		}
 
 		Random _Rand = new Random();
-		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
+		public override void SaveChanges(ChainedBlock newTip, IEnumerable<UnspentOutputs> unspentOutputs)
 		{
 			if(WriteThrough)
 			{
-				var idEnum = txIds.GetEnumerator();
-				var coinsEnum = coins.GetEnumerator();
-				while(idEnum.MoveNext())
+				foreach(var output in unspentOutputs)
 				{
-					coinsEnum.MoveNext();
-					AddToCache(idEnum.Current, coinsEnum.Current);
+					AddToCache(output.TransactionId, output);
 				}
 			}
 			if(CacheEntryCount > MaxItems)
 			{
 				Evict();
 			}
-			_Inner.SaveChanges(newTip, txIds, coins);
+			_Inner.SaveChanges(newTip, unspentOutputs);
 		}
 
 		private void Evict()

@@ -50,12 +50,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
-		public override Coins AccessCoins(uint256 txId)
-		{
-			return _Commitable.AccessCoins(txId);
-		}
-
-		public override Coins[] FetchCoins(uint256[] txIds)
+		public override UnspentOutputs[] FetchCoins(uint256[] txIds)
 		{
 			return _Commitable.FetchCoins(txIds);
 		}
@@ -83,9 +78,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		Task _Commiting;
 		DateTimeOffset _LastFlush = DateTimeOffset.UtcNow;
-		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
+		public override void SaveChanges(ChainedBlock newTip, IEnumerable<UnspentOutputs> unspentOutputs)
 		{
-			_Commitable.SaveChanges(newTip, txIds, coins);
+			_Commitable.SaveChanges(newTip, unspentOutputs);
 			if((_Commiting == null || _Commiting.IsCompleted) && (DateTimeOffset.UtcNow - _LastFlush) > FlushPeriod)
 			{
 				FlushAsync();

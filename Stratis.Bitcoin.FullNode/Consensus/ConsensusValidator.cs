@@ -80,14 +80,14 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 						{
 							commitable.FetchCoins(GetIdsToFetch(block, flags.EnforceBIP30));
 						}
-						commitable.NoInnerQuery = true;
+						commitable.SetInner(NullCoinView.Instance);
 						using(watch.Start(o => PerformanceCounter.AddBlockProcessingTime(o)))
 						{
 							ExecuteBlock(block, next, flags, commitable, null);
 						}
 						using(watch.Start(o => PerformanceCounter.AddUTXOFetchingTime(o)))
 						{
-							commitable.Commit();
+							commitable.Commit(utxo);
 						}
 					}
 					catch(ConsensusErrorException ex)
@@ -238,8 +238,8 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			{
 				foreach(var tx in block.Transactions)
 				{
-					Coins coins = view.AccessCoins(tx.GetHash());
-					if(coins != null && !coins.IsPruned)
+					var coins = view.AccessCoins(tx.GetHash());
+					if(coins != null && !coins.IsPrunable)
 						ConsensusErrors.BadTransactionBIP30.Throw();
 				}
 			}
@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			set;
 		}
 
-		private void CheckIntputs(Transaction tx, CoinView inputs, int nSpendHeight)
+		private void CheckIntputs(Transaction tx, CommitableCoinView inputs, int nSpendHeight)
 		{
 			if(!inputs.HaveInputs(tx))
 				ConsensusErrors.BadTransactionMissingInput.Throw();
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				var coins = inputs.AccessCoins(prevout.Hash);
 
 				// If prev is coinbase, check that it's matured
-				if(coins.Coinbase)
+				if(coins.IsCoinbase)
 				{
 					if(nSpendHeight - coins.Height < COINBASE_MATURITY)
 						ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
@@ -377,7 +377,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return nSubsidy;
 		}
 
-		private long GetTransactionSigOpCost(Transaction tx, CoinView inputs, ConsensusFlags flags)
+		private long GetTransactionSigOpCost(Transaction tx, CommitableCoinView inputs, ConsensusFlags flags)
 		{
 			long nSigOps = GetLegacySigOpCount(tx) * WITNESS_SCALE_FACTOR;
 
@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return 0;
 		}
 
-		private uint GetP2SHSigOpCount(Transaction tx, CoinView inputs)
+		private uint GetP2SHSigOpCount(Transaction tx, CommitableCoinView inputs)
 		{
 			if(tx.IsCoinBase)
 				return 0;

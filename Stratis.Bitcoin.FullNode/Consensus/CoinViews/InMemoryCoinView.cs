@@ -35,14 +35,14 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
-		public override Coins AccessCoins(uint256 txId)
+		public UnspentOutputs AccessCoins(uint256 txId)
 		{
 			return AccessCoins(txId, true);
 		}
 
-		private Coins AccessCoins(uint256 txId, bool copy)
+		private UnspentOutputs AccessCoins(uint256 txId, bool copy)
 		{			
-			Coins r;
+			UnspentOutputs r;
 			coins.TryGetValue(txId, out r);
 			if(r == null)
 				return null;
@@ -55,22 +55,19 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			set;
 		}
 
-		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
+		public override void SaveChanges(ChainedBlock newTip, IEnumerable<UnspentOutputs> unspentOutputs)
 		{
 			_Tip = newTip;
-			var enumTxIds = txIds.GetEnumerator();
-			var enumCoins = coins.GetEnumerator();
-			while(enumTxIds.MoveNext())
+			foreach(var output in unspentOutputs)
 			{
-				enumCoins.MoveNext();
-				SaveChange(enumTxIds.Current, enumCoins.Current);
+				SaveChange(output.TransactionId, output);
 			}
 		}
 
-		internal Dictionary<uint256, Coins> coins = new Dictionary<uint256, Coins>();
-		public void SaveChange(uint256 txId, Coins coins)
+		internal Dictionary<uint256, UnspentOutputs> coins = new Dictionary<uint256, UnspentOutputs>();
+		public void SaveChange(uint256 txId, UnspentOutputs coins)
 		{			
-			if(coins == null || (coins.IsPruned && RemovePrunableCoins))
+			if(coins == null || (coins.IsPrunable && RemovePrunableCoins))
 			{
 				this.coins.Remove(txId);
 			}
@@ -80,13 +77,13 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
-		private void AddOrMerge(uint256 txid, Coins c)
+		private void AddOrMerge(uint256 txId, UnspentOutputs c)
 		{
-			var old = coins.TryGet(txid);
+			var old = coins.TryGet(txId);
 			if(old == null)
 			{
 				if(!SpendOnly)
-					coins.Add(txid, c);
+					coins.Add(txId, c);
 				return;
 			}
 			old.MergeFrom(c);
@@ -94,14 +91,14 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 		internal void SaveChanges(Transaction tx, int height)
 		{
-			coins.AddOrReplace(tx.GetHash(), new Coins(tx, height));
+			coins.AddOrReplace(tx.GetHash(), new UnspentOutputs((uint)height, tx));
 			if(!tx.IsCoinBase)
 			{
 				foreach(var input in tx.Inputs)
 				{
 					var c = AccessCoins(input.PrevOut.Hash, false);
-					c.Spend((int)input.PrevOut.N);
-					if(RemovePrunableCoins && c.IsPruned)
+					c.Spend(input.PrevOut.N);
+					if(RemovePrunableCoins && c.IsPrunable)
 					{
 						coins.Remove(input.PrevOut.Hash);
 					}
@@ -112,6 +109,16 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public void Clear()
 		{
 			coins.Clear();
+		}
+
+		public override UnspentOutputs[] FetchCoins(uint256[] txIds)
+		{
+			var result = new UnspentOutputs[txIds.Length];
+			for(int i = 0; i < txIds.Length; i++)
+			{
+				result[i] = AccessCoins(txIds[i]);
+			}
+			return result;
 		}
 	}
 }

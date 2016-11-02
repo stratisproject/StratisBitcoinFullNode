@@ -73,24 +73,11 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 
-		public override Coins AccessCoins(uint256 txId)
+		public override UnspentOutputs[] FetchCoins(uint256[] txIds)
 		{
 			using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
 			{
-				using(var tx = _Engine.GetTransaction())
-				{
-					tx.ValuesLazyLoadingIsOn = false;
-					PerformanceCounter.AddQueriedEntities(1);
-					return tx.Select<byte[], Coins>("Coins", txId.ToBytes(false))?.Value;
-				}
-			}
-		}
-
-		public override Coins[] FetchCoins(uint256[] txIds)
-		{
-			using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
-			{
-				Coins[] result = new Coins[txIds.Length];
+				UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
 				using(var txx = _Engine.GetTransaction())
 				{
 					txx.ValuesLazyLoadingIsOn = false;
@@ -98,14 +85,15 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 					foreach(var input in txIds)
 					{
 						PerformanceCounter.AddQueriedEntities(1);
-						result[i++] = txx.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
+						var coin = txx.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
+						result[i++] = coin == null ? null : new UnspentOutputs(input, coin);
 					}
 				}
 				return result;
 			}
 		}
 
-		public override void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins)
+		public override void SaveChanges(ChainedBlock newTip, IEnumerable<UnspentOutputs> unspentOutputs)
 		{
 			int insertedEntities = 0;
 			using(new StopWatch().Start(o => PerformanceCounter.AddInsertTime(o)))
@@ -125,21 +113,14 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 					insertedEntities += blocks.Length;
 					foreach(var block in blocks)
 						tx.Insert("Chain", block.Height, block.Header);
-					var txIdsEnum = txIds.GetEnumerator();
-					var coinsEnum = coins.GetEnumerator();
-					List<Tuple<uint256, Coins>> all = new List<Tuple<uint256, Coins>>();
-					while(txIdsEnum.MoveNext())
-					{
-						coinsEnum.MoveNext();
-						all.Add(Tuple.Create(txIdsEnum.Current, coinsEnum.Current));
-					}
-					all.Sort(CoinPairComparer.Instance);
+					var all = unspentOutputs.ToList();
+					all.Sort(UnspentOutputsComparer.Instance);
 					foreach(var coin in all)
 					{
-						if(coin.Item2.IsPruned)
-							tx.RemoveKey("Coins", coin.Item1.ToBytes(false));
+						if(coin.IsPrunable)
+							tx.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
 						else
-							tx.Insert("Coins", coin.Item1.ToBytes(false), coin.Item2);
+							tx.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 					}
 					insertedEntities += all.Count;
 					tx.Commit();
@@ -147,7 +128,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				_Tip = newTip;
 			}
 			PerformanceCounter.AddInsertedEntities(insertedEntities);
-		}
+		}		
 
 		private readonly BackendPerformanceCounter _PerformanceCounter = new BackendPerformanceCounter();
 		public BackendPerformanceCounter PerformanceCounter

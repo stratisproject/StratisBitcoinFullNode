@@ -32,19 +32,18 @@ namespace Stratis.Bitcoin.FullNode.Tests
 				var genesis = ctx.Network.GetGenesis();
 				var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
 				ctx.PersistentCoinView.SaveChanges(genesisChainedBlock,
-								 new uint256[] { genesis.Transactions[0].GetHash() },
-								 new Coins[] { new Coins(genesis.Transactions[0], 0) });
-				Assert.NotNull(ctx.PersistentCoinView.AccessCoins(genesis.Transactions[0].GetHash()));
-				Assert.Null(ctx.PersistentCoinView.AccessCoins(new uint256()));
+								 new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) });
+				Assert.NotNull(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() })[0]);
+				Assert.Null(ctx.PersistentCoinView.FetchCoins(new[] { new uint256() })[0]);
 
 				var chained = MakeNext(MakeNext(genesisChainedBlock));
 				chained = MakeNext(MakeNext(genesisChainedBlock));
-				ctx.PersistentCoinView.SaveChanges(chained, new uint256[0], new Coins[0]);
+				ctx.PersistentCoinView.SaveChanges(chained,new UnspentOutputs[0]);
 				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.Tip.HashBlock);
 				ctx.ReloadPersistentCoinView();
 				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.Tip.HashBlock);
-				Assert.NotNull(ctx.PersistentCoinView.AccessCoins(genesis.Transactions[0].GetHash()));
-				Assert.Null(ctx.PersistentCoinView.AccessCoins(new uint256()));
+				Assert.NotNull(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() })[0]);
+				Assert.Null(ctx.PersistentCoinView.FetchCoins(new[] { new uint256() })[0]);
 			}
 		}
 

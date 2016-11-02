@@ -19,11 +19,11 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			return 0;
 		}
 	}
-	public class CoinPairComparer : IComparer<Tuple<uint256, Coins>>
+	public class UnspentOutputsComparer : IComparer<UnspentOutputs>
 	{
 
-		private static readonly CoinPairComparer _Instance = new CoinPairComparer();
-		public static CoinPairComparer Instance
+		private static readonly UnspentOutputsComparer _Instance = new UnspentOutputsComparer();
+		public static UnspentOutputsComparer Instance
 		{
 			get
 			{
@@ -31,9 +31,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			}
 		}
 		private readonly UInt256Comparer Comparer = new UInt256Comparer();
-		public int Compare(Tuple<uint256, Coins> x, Tuple<uint256, Coins> y)
+		public int Compare(UnspentOutputs x, UnspentOutputs y)
 		{
-			return Comparer.Compare(x.Item1, y.Item1);
+			return Comparer.Compare(x.TransactionId, y.TransactionId);
 		}
 	}
 }

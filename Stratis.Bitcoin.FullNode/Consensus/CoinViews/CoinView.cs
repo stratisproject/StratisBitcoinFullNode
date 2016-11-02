@@ -10,45 +10,11 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 {	
 	public abstract class CoinView
 	{
-		public abstract Coins AccessCoins(uint256 txId);
-		public abstract void SaveChanges(ChainedBlock newTip, IEnumerable<uint256> txIds, IEnumerable<Coins> coins);
+		public abstract void SaveChanges(ChainedBlock newTip, IEnumerable<UnspentOutputs> unspentOutputs);
 		public abstract ChainedBlock Tip
 		{
 			get;
-		}		
-
-		public TxOut GetOutputFor(TxIn txIn)
-		{
-			return AccessCoins(txIn.PrevOut.Hash)?.TryGetOutput(txIn.PrevOut.N);
 		}
-
-		public Money GetValueIn(Transaction tx)
-		{
-			return tx
-			.Inputs
-			.Select(i => GetOutputFor(i).Value)
-			.Sum();
-		}
-
-		public virtual Coins[] FetchCoins(uint256[] txIds)
-		{
-			Coins[] coins = new Coins[txIds.Length];
-			for(int i  = 0; i < coins.Length; i++)
-			{
-				coins[i] = AccessCoins(txIds[i]);
-			}
-			return coins;
-		}
-
-		public bool HaveInputs(Transaction tx)
-		{
-			foreach(var input in tx.Inputs)
-			{
-				var coin = AccessCoins(input.PrevOut.Hash);
-				if(coin == null || !coin.IsAvailable(input.PrevOut.N))
-					return false;
-			}
-			return true;
-		}
+		public abstract UnspentOutputs[] FetchCoins(uint256[] txIds);		
 	}
 }
