@@ -135,9 +135,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			StringBuilder builder = new StringBuilder();
 
 			builder.AppendLine("====Overall Speed====");
-			builder.AppendLine("Inputs :\t" + (Elapsed.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			builder.AppendLine("Inputs :\t" + (Elapsed.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/input");
 			builder.AppendLine("Transactions :\t" + (Elapsed.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
-			builder.AppendLine("Blocks :\t" + (Elapsed.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
+			builder.AppendLine("Blocks :\t" + (Elapsed.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/block");
 			builder.AppendLine("====Validation Speed====");
 			builder.AppendLine("Inputs :\t" + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
 			builder.AppendLine("Transactions :\t" + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");

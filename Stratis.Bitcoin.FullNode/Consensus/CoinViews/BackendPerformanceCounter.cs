@@ -98,10 +98,10 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 		public override string ToString()
 		{
 			StringBuilder builder = new StringBuilder();
-			builder.AppendLine("Insert speed :\t" + (TotalInsertTime.TotalMilliseconds / TotalInsertedEntities).ToString("0.0000") + " ms/entities");
+			builder.AppendLine("Insert speed :\t" + (TotalInsertTime.TotalMilliseconds / TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
 			builder.AppendLine("Insert time :\t" + ConsensusPerformanceSnapshot.ToTimespan(TotalInsertTime));
 
-			builder.AppendLine("Query speed :\t" + (TotalQueryTime.TotalMilliseconds / TotalQueriedEntities).ToString("0.0000") + " ms/entities");
+			builder.AppendLine("Query speed :\t" + (TotalQueryTime.TotalMilliseconds / TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
 			builder.AppendLine("Query time :\t" + ConsensusPerformanceSnapshot.ToTimespan(TotalQueryTime));
 
 			return builder.ToString();
