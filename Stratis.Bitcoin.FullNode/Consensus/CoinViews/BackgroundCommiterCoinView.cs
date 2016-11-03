@@ -22,8 +22,9 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				throw new ArgumentNullException("inner");
 			_Inner = inner;
 			_InnerCommitable = new CommitableCoinView(Inner);
+			_InnerCommitable.ReadThrough = false;
 			_Commitable = new CommitableCoinView(_InnerCommitable);
-			FlushPeriod = TimeSpan.FromSeconds(5);
+			FlushPeriod = TimeSpan.FromSeconds(0);
 		}
 
 		public override ChainedBlock Tip

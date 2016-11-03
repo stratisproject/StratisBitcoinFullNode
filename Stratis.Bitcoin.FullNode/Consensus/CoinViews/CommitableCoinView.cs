@@ -95,6 +95,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 
 			i = 0;
 
+
 			foreach(var coin in Inner.FetchCoins(txIds2))
 			{
 				for(; i < coins.Length;)
@@ -105,11 +106,26 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 				}
 				if(i >= coins.Length)
 					break;
-				_Uncommited.SaveChange(txIds[i], coin);
+				if(ReadThrough)
+					_Uncommited.SaveChange(txIds[i], coin);
 				coins[i] = coin;
 				i++;
 			}
 			return coins;
+		}
+
+
+		bool _ReadThrough = true;
+		public bool ReadThrough
+		{
+			get
+			{
+				return _ReadThrough;
+			}
+			set
+			{
+				_ReadThrough = value;
+			}
 		}
 
 		public void SetInner(CoinView inner)

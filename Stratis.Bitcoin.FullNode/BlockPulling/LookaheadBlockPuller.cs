@@ -115,21 +115,11 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 			}
 		}
 
-		int lastLookaheadUpdate = 0;
 		public override Block NextBlock()
 		{
 			if(_Chain == null)
 				ReloadChain();
-
-
-			if(lastLookaheadUpdate > ActualLookahead)
-			{
-				CalculateLookahead();
-				lastLookaheadUpdate = 0;
-			}
-			lastLookaheadUpdate++;
-			rollingDownloadedCount = ApproxRollingAverage(rollingDownloadedCount, _DownloadedBlocks.Count);
-
+			_DownloadedCounts.Add(_DownloadedBlocks.Count);
 			if(_LookaheadLocation == null)
 			{
 				AskBlocks();
@@ -137,38 +127,54 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 			}
 			var block = NextBlockCore();
 			if((_LookaheadLocation.Height - _Location.Height) <= ActualLookahead)
+			{
+				CalculateLookahead();
 				AskBlocks();
-
+			}
 			return block;
 		}
 
-		private decimal ApproxRollingAverage(decimal avg, int sample)
+		static decimal GetMedian(List<int> sourceNumbers)
 		{
-			avg -= avg / ActualLookahead;
-			avg += (decimal)sample / ActualLookahead;
-			return avg;
+			//Framework 2.0 version of this method. there is an easier way in F4        
+			if(sourceNumbers == null || sourceNumbers.Count == 0)
+				throw new System.Exception("Median of empty array not defined.");
+
+			//make sure the list is sorted, but use a new array
+			sourceNumbers.Sort();
+
+			//get the median
+			int size = sourceNumbers.Count;
+			int mid = size / 2;
+			decimal median = (size % 2 != 0) ? (decimal)sourceNumbers[mid] : ((decimal)sourceNumbers[mid] + (decimal)sourceNumbers[mid - 1]) / 2;
+			return median;
 		}
 
-		decimal rollingDownloadedCount = 0;
-		public int RollingAverageDownloadedCount
-		{
-			get
-			{
-				return (int)rollingDownloadedCount;
-			}
-		}
-
+		List<int> _DownloadedCounts = new List<int>();
 		// If blocks ActualLookahead is 8: 
 		// If the number of downloaded block reach 2 or below, then ActualLookahead will be multiplied by 1.1. 
 		// If it reach 14 or above, it will be divided by 1.1.
 		private void CalculateLookahead()
 		{
-			decimal tolerance = 0.25m;
-			var margin = Math.Max(tolerance * ActualLookahead, 1);
-			if(rollingDownloadedCount <= margin)
+			var medianDownloads = (decimal)GetMedian(_DownloadedCounts);
+			_DownloadedCounts.Clear();
+			var expectedDownload = ActualLookahead * 1.1m;
+			decimal tolerance = 0.05m;
+			var margin = expectedDownload * tolerance;
+			if(medianDownloads <= expectedDownload - margin)
 				ActualLookahead = (int)Math.Max(ActualLookahead * 1.1m, ActualLookahead + 1);
-			else if(rollingDownloadedCount >= Math.Min(MaximumLookahead, ActualLookahead * 1.5m) - margin)
+			else if(medianDownloads >= expectedDownload + margin)
 				ActualLookahead = (int)Math.Min(ActualLookahead / 1.1m, ActualLookahead - 1);
+		}
+
+		public decimal MedianDownloadCount
+		{
+			get
+			{
+				if(_DownloadedCounts.Count == 0)
+					return decimal.One;
+				return GetMedian(_DownloadedCounts);
+			}
 		}
 
 		public Block TryGetLookahead(int count)
@@ -289,6 +295,8 @@ namespace Stratis.Bitcoin.FullNode.BlockPulling
 				}
 				else
 				{
+					if(_DownloadedBlocks.Count != 0)
+						System.Diagnostics.Debugger.Break();
 					IsStalling = true;
 					_Pushed.WaitOne(waitTime[i]);
 				}

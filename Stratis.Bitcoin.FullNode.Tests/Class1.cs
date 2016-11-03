@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
 				var cache = stack.Find<CacheCoinView>();
 				var backgroundCommiter = stack.Find<BackgroundCommiterCoinView>();
 				ConsensusValidator valid = new ConsensusValidator(network.Consensus);
-				valid.UseConsensusLib = false;
+				valid.UseConsensusLib = true;
 				Node node = Node.Connect(network, "yournode");
 				node.VersionHandshake();
 				var puller = new CustomNodeBlockPuller(chain, node);
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
 						Console.WriteLine();
 
 						Console.WriteLine("ActualLookahead :\t" + puller.ActualLookahead + " blocks");
-						Console.WriteLine("Downloaded Count :\t" + puller.RollingAverageDownloadedCount + " blocks");
+						Console.WriteLine("Median Downloaded :\t" + puller.MedianDownloadCount + " blocks");
 						if(backgroundCommiter != null)
 						{
 							Console.WriteLine("CoinViewTip :\t" + backgroundCommiter.Tip.Height);
