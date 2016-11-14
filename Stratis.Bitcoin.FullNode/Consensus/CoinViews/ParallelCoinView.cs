@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			for(int i = 0; i < batchCount; i++)
 			{
 				int localOffset = offset;
-				int size = Math.Min(100, total);
+				int size = Math.Min(BatchMaxSize, total);
 				uint256[] txIdsPart = new uint256[size];
 				Array.Copy(txIds, offset, txIdsPart, 0, size);
 				total -= size;
