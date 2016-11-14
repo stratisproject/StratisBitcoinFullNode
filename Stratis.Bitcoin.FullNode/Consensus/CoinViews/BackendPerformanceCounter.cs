@@ -100,10 +100,10 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			StringBuilder builder = new StringBuilder();
 			builder.AppendLine("Insert speed :\t" + (TotalInsertTime.TotalMilliseconds / TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
 			builder.AppendLine("Insert time :\t" + ConsensusPerformanceSnapshot.ToTimespan(TotalInsertTime));
-
+			builder.AppendLine("Inserted UTXO :\t" + TotalInsertedEntities);
 			builder.AppendLine("Query speed :\t" + (TotalQueryTime.TotalMilliseconds / TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
 			builder.AppendLine("Query time :\t" + ConsensusPerformanceSnapshot.ToTimespan(TotalQueryTime));
-
+			builder.AppendLine("Queried UTXO :\t" + TotalQueriedEntities);
 			return builder.ToString();
 		}
 	}

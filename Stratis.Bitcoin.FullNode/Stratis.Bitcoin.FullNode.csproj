@@ -66,6 +66,7 @@
     <Compile Include="Consensus\CoinViews\CoinView.cs" />
     <Compile Include="Consensus\CoinViews\CommitableCoinView.cs" />
     <Compile Include="Consensus\CoinViews\NullCoinView.cs" />
+    <Compile Include="Consensus\CoinViews\ParallelCoinView.cs" />
     <Compile Include="Consensus\ConsensusErrors.cs" />
     <Compile Include="Consensus\ConsensusFlags.cs" />
     <Compile Include="Consensus\ConsensusPerformanceCounter.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="Consensus\UInt256Comparer.cs" />
     <Compile Include="Consensus\UnspentOutputs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\CustomThreadPoolScheduler.cs" />
     <Compile Include="Utilities\ReaderWriterLock.cs" />
   </ItemGroup>
   <ItemGroup>

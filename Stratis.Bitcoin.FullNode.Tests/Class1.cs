@@ -19,6 +19,7 @@ using Stratis.Bitcoin.FullNode.BlockPulling;
 using System.Net.Http;
 using System.Collections;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.FullNode.Utilities;
 
 namespace Stratis.Bitcoin.FullNode.Tests
 {
@@ -111,9 +112,12 @@ namespace Stratis.Bitcoin.FullNode.Tests
 					chain.Load(GetFile("test.data", "https://aois.blob.core.windows.net/public/test.data"));
 				}
 
+				//var threads = new CustomThreadPoolTaskScheduler(10, 100, "Parallel Coin Fetcher");
+
 				var stack = new CoinViewStack(
 						new CacheCoinView(
 						// PrefetcherCoinView(
+						//new ParallelCoinView(threads,
 						new BackgroundCommiterCoinView(
 						ctx.PersistentCoinView)));//);
 				//new InMemoryCoinView(chain.Genesis));
@@ -122,7 +126,7 @@ namespace Stratis.Bitcoin.FullNode.Tests
 				var cache = stack.Find<CacheCoinView>();
 				var backgroundCommiter = stack.Find<BackgroundCommiterCoinView>();
 				ConsensusValidator valid = new ConsensusValidator(network.Consensus);
-				valid.UseConsensusLib = true;
+				valid.UseConsensusLib = false;
 				Node node = Node.Connect(network, "yournode");
 				node.VersionHandshake();
 				var puller = new CustomNodeBlockPuller(chain, node);
