@@ -1,0 +1,21 @@
+﻿{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+
+    "dependencies": {
+        "Microsoft.NETCore.App": {
+            "type": "platform",
+            "version": "1.1.0"
+        },
+        "Stratis.Bitcoin.FullNode": "1.0.0-*",
+        "NBitcoin": "3.0.0.87"
+    },
+
+  "frameworks": {
+    "netcoreapp1.0": {
+      "imports": "dnxcore50"
+    }
+  }
+}
