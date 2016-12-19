@@ -7,8 +7,9 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using System.Net;
 using System.Text;
+using Stratis.Bitcoin.FullNode.Logging;
 
-namespace Stratis.BitcoinD
+namespace Stratis.Bitcoin.FullNode.Configuration
 {
 	public class RPCArgs
 	{

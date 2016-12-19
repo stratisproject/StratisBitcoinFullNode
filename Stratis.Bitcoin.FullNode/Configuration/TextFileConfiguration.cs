@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Stratis.BitcoinD
+namespace Stratis.Bitcoin.FullNode.Configuration
 {
 	public class ConfigurationException : Exception
 	{

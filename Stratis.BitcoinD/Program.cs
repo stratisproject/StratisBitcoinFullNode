@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging.Console;
+using Stratis.Bitcoin.FullNode.Configuration;
+using Stratis.Bitcoin.FullNode.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;

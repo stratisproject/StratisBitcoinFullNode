@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Stratis.BitcoinD
+namespace Stratis.Bitcoin.FullNode.Logging
 {
 	public class FuncLoggerFactory : ILoggerFactory
 	{
