@@ -57,10 +57,16 @@ namespace Stratis.Bitcoin.FullNode.Consensus
 			get; set;
 		}
 
+		public static int DivRem(int a, int b, out int result)
+		{
+			result = a % b;
+			return a / b;
+		}
+
 		public override UnspentOutputs[] FetchCoins(uint256[] txIds)
 		{
 			int remain;
-			int batchCount = Math.DivRem(txIds.Length, BatchMaxSize, out remain);
+			int batchCount = DivRem(txIds.Length, BatchMaxSize, out remain);
 			if(batchCount == 0)
 				return _Inner.FetchCoins(txIds);
 			if(remain > 0)

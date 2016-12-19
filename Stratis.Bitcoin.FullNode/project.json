@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0-*",
+
+  "dependencies": {
+    "NBitcoin": "3.0.0.87",
+	"DBreeze": "1.79.0"
+  },
+
+  "frameworks": {
+    "netstandard1.6": {
+        "dependencies": {
+        },
+        "buildOptions": { "define": [ "NETCORE" ] }
+    }
+  }
+}

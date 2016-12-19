@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.FullNode", "Stratis.Bitcoin.FullNode\Stratis.Bitcoin.FullNode.csproj", "{A6C18CAE-7246-41B1-BFD6-C54BA1694AC2}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Stratis.Bitcoin.FullNode", "Stratis.Bitcoin.FullNode\Stratis.Bitcoin.FullNode.xproj", "{094AECD5-E0D8-43A9-A0BD-39B01F51A1F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.FullNode.Tests", "Stratis.Bitcoin.FullNode.Tests\Stratis.Bitcoin.FullNode.Tests.csproj", "{EA3C9A06-7FE0-41D6-A6EE-EFB026C96E66}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Stratis.Bitcoin.FullNode.Tests", "Stratis.Bitcoin.FullNode.Tests\Stratis.Bitcoin.FullNode.Tests.xproj", "{800A5906-C050-4E75-9D7C-0CB1C404A0F8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A6C18CAE-7246-41B1-BFD6-C54BA1694AC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A6C18CAE-7246-41B1-BFD6-C54BA1694AC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A6C18CAE-7246-41B1-BFD6-C54BA1694AC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A6C18CAE-7246-41B1-BFD6-C54BA1694AC2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EA3C9A06-7FE0-41D6-A6EE-EFB026C96E66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EA3C9A06-7FE0-41D6-A6EE-EFB026C96E66}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EA3C9A06-7FE0-41D6-A6EE-EFB026C96E66}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EA3C9A06-7FE0-41D6-A6EE-EFB026C96E66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{094AECD5-E0D8-43A9-A0BD-39B01F51A1F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{094AECD5-E0D8-43A9-A0BD-39B01F51A1F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{094AECD5-E0D8-43A9-A0BD-39B01F51A1F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{094AECD5-E0D8-43A9-A0BD-39B01F51A1F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{800A5906-C050-4E75-9D7C-0CB1C404A0F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{800A5906-C050-4E75-9D7C-0CB1C404A0F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{800A5906-C050-4E75-9D7C-0CB1C404A0F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{800A5906-C050-4E75-9D7C-0CB1C404A0F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
