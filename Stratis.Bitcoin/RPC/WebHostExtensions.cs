@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.RPC
 			hostBuilder.ConfigureServices(s =>
 			{
 				s.AddSingleton(fullNode);
+				s.AddSingleton(fullNode.Network);
 			});
 			return hostBuilder;
 		}

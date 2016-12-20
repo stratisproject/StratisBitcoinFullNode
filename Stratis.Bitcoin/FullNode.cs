@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
 using Stratis.Bitcoin.RPC;
+using NBitcoin;
 
 namespace Stratis.Bitcoin
 {
@@ -18,9 +19,17 @@ namespace Stratis.Bitcoin
 			if(args == null)
 				throw new ArgumentNullException("args");
 			_Args = args;
-		}
+			Network = _Args.GetNetwork();
+		}		
 
 		CancellationToken _Cancellation;
+
+		public Network Network
+		{
+			get;
+			internal set;
+		}
+
 		public void Start(CancellationToken cancellation = default(CancellationToken))
 		{
 			_Cancellation = cancellation;
@@ -29,13 +38,13 @@ namespace Stratis.Bitcoin
 				var host = new WebHostBuilder()
 				.UseKestrel()
 				.ForFullNode(this)
-				.UseContentRoot(_Args.DataDir)
+				.UseUrls(_Args.RPC.GetUrls())
 				.UseIISIntegration()
 				.UseStartup<RPC.Startup>()
 				.Build();
 				host.Start();
 				_Cancellation.Register(() => host.Dispose());
-			}	
+			}
 		}
     }
 }

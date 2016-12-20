@@ -7,7 +7,12 @@
         "Microsoft.Extensions.Logging.Abstractions": "1.0.0",
         "Microsoft.AspNetCore.Hosting": "1.0.0",
         "Microsoft.AspNetCore.Server.Kestrel": "1.0.1",
-        "Microsoft.AspNetCore.Server.IISIntegration": "1.0.0"
+        "Microsoft.AspNetCore.Server.IISIntegration": "1.0.0",
+        "Microsoft.AspNetCore.Mvc.Core": "1.0.1",
+        "Microsoft.AspNetCore.Mvc.Formatters.Json": "1.0.1",
+        "Microsoft.Extensions.Logging.Filter": "1.0.0",
+        "Microsoft.AspNetCore.Diagnostics": "1.0.0",
+        "Microsoft.Extensions.Logging.Console": "1.0.0"
     },
 
   "frameworks": {

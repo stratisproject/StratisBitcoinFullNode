@@ -18,6 +18,11 @@ namespace Stratis.Bitcoin.Configuration
 			Bind = new List<IPEndPoint>();
 			AllowIp = new List<IPAddress>();
 		}
+
+		public int RPCPort
+		{
+			get; set;
+		}
 		public List<IPEndPoint> Bind
 		{
 			get; set;
@@ -26,6 +31,11 @@ namespace Stratis.Bitcoin.Configuration
 		public List<IPAddress> AllowIp
 		{
 			get; set;
+		}
+
+		public string[] GetUrls()
+		{
+			return Bind.Select(b => "http://" + b + "/").ToArray();
 		}
 	}
 	public class NodeArgs
@@ -98,6 +108,7 @@ namespace Stratis.Bitcoin.Configuration
 			if(nodeArgs.RPC != null)
 			{
 				var defaultPort = config.GetOrDefault<int>("rpcport", network.RPCPort);
+				nodeArgs.RPC.RPCPort = defaultPort;
 				try
 				{
 					nodeArgs.RPC.Bind = config
@@ -194,7 +205,7 @@ namespace Stratis.Bitcoin.Configuration
 			return config;
 		}
 
-		private Network GetNetwork()
+		public Network GetNetwork()
 		{
 			return Testnet ? Network.TestNet :
 				RegTest ? Network.RegTest :
