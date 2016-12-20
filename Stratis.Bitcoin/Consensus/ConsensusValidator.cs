@@ -40,12 +40,11 @@ namespace Stratis.Bitcoin.Consensus
 		/// <param name="utxo">UTXO Set</param>
 		/// <param name="puller">Block source</param>
 		/// <returns>Stream of validated blocks</returns>
-		public IEnumerable<Block> Run(CoinViewStack utxoStack, BlockPuller puller)
+		public IEnumerable<Block> Run(ChainedBlock tip, CoinViewStack utxoStack, BlockPuller puller)
 		{
 			var utxo = utxoStack.Top;
-			var cache = utxoStack.Find<CacheCoinView>();
 			var lookaheadPuller = puller as ILookaheadBlockPuller;
-			puller.SetLocation(utxo.Tip);
+			puller.SetLocation(tip);
 			ThresholdConditionCache bip9 = new ThresholdConditionCache(_ConsensusParams);
 			StopWatch watch = new StopWatch();
 			bool rejected = false;
@@ -67,32 +66,31 @@ namespace Stratis.Bitcoin.Consensus
 						using(watch.Start(o => PerformanceCounter.AddBlockProcessingTime(o)))
 						{
 							CheckBlockHeader(block.Header);
-							next = new ChainedBlock(block.Header, block.Header.GetHash(), utxo.Tip);
+							next = new ChainedBlock(block.Header, block.Header.GetHash(), tip);
 							context = new ContextInformation(next, this._ConsensusParams);
 							ContextualCheckBlockHeader(block.Header, context);
-							var states = bip9.GetStates(utxo.Tip);
+							var states = bip9.GetStates(tip);
 							flags = new ConsensusFlags(next, states, _ConsensusParams);
 							ContextualCheckBlock(block, flags, context);
 							CheckBlock(block);
 						}
 
-						var commitable = new CommitableCoinView(next, utxo);
+						var set = new UnspentOutputSet();
 						using(watch.Start(o => PerformanceCounter.AddUTXOFetchingTime(o)))
 						{
-							commitable.FetchCoins(GetIdsToFetch(block, flags.EnforceBIP30));
+							var ids = GetIdsToFetch(block, flags.EnforceBIP30);
+							var coins = utxo.FetchCoinsAsync(ids).GetAwaiter().GetResult();
+							set.SetCoins(coins);
 						}
-						commitable.SetInner(NullCoinView.Instance);
 
-						Task prefetching = GetPrefetchingTask(cache, lookaheadPuller, flags);
+						TryPrefetchAsync(utxo, lookaheadPuller, flags);
 						using(watch.Start(o => PerformanceCounter.AddBlockProcessingTime(o)))
 						{
-							ExecuteBlock(block, next, flags, commitable, null);
+							ExecuteBlock(block, next, flags, set, null);
 						}
-						using(watch.Start(o => PerformanceCounter.AddUTXOFetchingTime(o)))
-						{
-							prefetching.Wait();
-							commitable.Commit(utxo);
-						}
+
+						utxo.SaveChangesAsync(set.GetCoins(utxo), tip.HashBlock, next.HashBlock);
+						tip = next;
 					}
 					catch(ConsensusErrorException ex)
 					{
@@ -110,20 +108,20 @@ namespace Stratis.Bitcoin.Consensus
 						yield return block;
 				}
 			}
-		}
+		}		
 
-		private static Task GetPrefetchingTask(CacheCoinView cache, ILookaheadBlockPuller lookaheadPuller, ConsensusFlags flags)
+		private static Task TryPrefetchAsync(CoinView utxo, ILookaheadBlockPuller lookaheadPuller, ConsensusFlags flags)
 		{
 			Task prefetching = Task.FromResult<bool>(true);
-			if(cache != null && lookaheadPuller != null)
+			utxo = utxo as CachedCoinView;
+			if(utxo != null && lookaheadPuller != null)
 			{
 				var nextBlock = lookaheadPuller.TryGetLookahead(0);
 				if(nextBlock != null)
-					prefetching = Task.Run(() => cache.FetchCoins(GetIdsToFetch(nextBlock, flags.EnforceBIP30)));
+					prefetching = utxo.FetchCoinsAsync(GetIdsToFetch(nextBlock, flags.EnforceBIP30));
 			}
 			return prefetching;
 		}
-
 		public static uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
 		{
 			HashSet<uint256> ids = new HashSet<uint256>();
@@ -246,7 +244,7 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.BadCoinbaseHeight.Throw();
 		}
 
-		public void ExecuteBlock(Block block, ChainedBlock index, ConsensusFlags flags, CommitableCoinView view, TaskScheduler taskScheduler)
+		public void ExecuteBlock(Block block, ChainedBlock index, ConsensusFlags flags, UnspentOutputSet view, TaskScheduler taskScheduler)
 		{
 			PerformanceCounter.AddProcessedBlocks(1);
 			taskScheduler = taskScheduler ?? TaskScheduler.Default;
@@ -327,7 +325,6 @@ namespace Stratis.Bitcoin.Consensus
 					}
 				}
 				view.Update(tx, index.Height);
-
 			}
 			Money blockReward = nFees + GetBlockSubsidy(index.Height);
 			if(block.Transactions[0].TotalOut > blockReward)
@@ -343,7 +340,7 @@ namespace Stratis.Bitcoin.Consensus
 			set;
 		}
 
-		private void CheckIntputs(Transaction tx, CommitableCoinView inputs, int nSpendHeight)
+		private void CheckIntputs(Transaction tx, UnspentOutputSet inputs, int nSpendHeight)
 		{
 			if(!inputs.HaveInputs(tx))
 				ConsensusErrors.BadTransactionMissingInput.Throw();
@@ -393,7 +390,7 @@ namespace Stratis.Bitcoin.Consensus
 			return nSubsidy;
 		}
 
-		private long GetTransactionSigOpCost(Transaction tx, CommitableCoinView inputs, ConsensusFlags flags)
+		private long GetTransactionSigOpCost(Transaction tx, UnspentOutputSet inputs, ConsensusFlags flags)
 		{
 			long nSigOps = GetLegacySigOpCount(tx) * WITNESS_SCALE_FACTOR;
 
@@ -456,7 +453,7 @@ namespace Stratis.Bitcoin.Consensus
 			return 0;
 		}
 
-		private uint GetP2SHSigOpCount(Transaction tx, CommitableCoinView inputs)
+		private uint GetP2SHSigOpCount(Transaction tx, UnspentOutputSet inputs)
 		{
 			if(tx.IsCoinBase)
 				return 0;

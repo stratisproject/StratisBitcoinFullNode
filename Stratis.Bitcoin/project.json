@@ -2,7 +2,7 @@
   "version": "1.0.0-*",
 
     "dependencies": {
-        "NBitcoin": "3.0.0.87",
+        "NBitcoin": "3.0.0.88",
         "DBreeze": "1.79.0",
         "Microsoft.Extensions.Logging.Abstractions": "1.0.0",
         "Microsoft.AspNetCore.Hosting": "1.0.0",
@@ -12,14 +12,16 @@
         "Microsoft.AspNetCore.Mvc.Formatters.Json": "1.0.1",
         "Microsoft.Extensions.Logging.Filter": "1.0.0",
         "Microsoft.AspNetCore.Diagnostics": "1.0.0",
-        "Microsoft.Extensions.Logging.Console": "1.0.0"
+        "Microsoft.Extensions.Logging.Console": "1.0.0",
+        "System.Xml.XmlSerializer": "4.0.10"
     },
 
   "frameworks": {
     "netstandard1.6": {
         "dependencies": {
         },
-        "buildOptions": { "define": [ "NETCORE" ] }
+        "buildOptions": { "define": [ "NETCORE" ] },
+        "imports": [ "netcore50" ]
     }
   }
 }

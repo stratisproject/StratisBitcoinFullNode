@@ -10,11 +10,12 @@ namespace Stratis.Bitcoin.Consensus
 {	
 	public abstract class CoinView
 	{
-		public abstract void SaveChanges(ChainedBlock newTip, IEnumerable<UnspentOutputs> unspentOutputs);
-		public abstract ChainedBlock Tip
+		public async Task<uint256> GetBlockHashAsync()
 		{
-			get;
+			var response = await FetchCoinsAsync(new uint256[0]).ConfigureAwait(false);
+			return response.BlockHash;
 		}
-		public abstract UnspentOutputs[] FetchCoins(uint256[] txIds);		
+		public abstract Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, uint256 oldBlockHash, uint256 nextBlockHash);
+		public abstract Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds);
 	}
 }

@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Tests
 			_Network = network;
 
 			_PersistentCoinView = new DBreezeCoinView(network, name);
-			_PersistentCoinView.Initialize();
+			_PersistentCoinView.Initialize(network.GetGenesis());
 			_CleanList.Add(_PersistentCoinView);
 		}
 
@@ -101,7 +101,6 @@ namespace Stratis.Bitcoin.Tests
 			_PersistentCoinView.Dispose();
 			_CleanList.Remove(_PersistentCoinView);
 			_PersistentCoinView = new DBreezeCoinView(_Network, name);
-			_PersistentCoinView.Initialize();
 			_CleanList.Add(_PersistentCoinView);
 		}		
 	}

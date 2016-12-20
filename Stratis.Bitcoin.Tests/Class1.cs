@@ -32,31 +32,32 @@ namespace Stratis.Bitcoin.Tests
 			{
 				var genesis = ctx.Network.GetGenesis();
 				var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
-				ctx.PersistentCoinView.SaveChanges(genesisChainedBlock,
-								 new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) });
-				Assert.NotNull(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() })[0]);
-				Assert.Null(ctx.PersistentCoinView.FetchCoins(new[] { new uint256() })[0]);
+				var chained = MakeNext(genesisChainedBlock);
+				ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
+				Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
+				Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 
-				var chained = MakeNext(MakeNext(genesisChainedBlock));
+				var previous = chained;
 				chained = MakeNext(MakeNext(genesisChainedBlock));
-				ctx.PersistentCoinView.SaveChanges(chained, new UnspentOutputs[0]);
-				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.Tip.HashBlock);
+				chained = MakeNext(MakeNext(genesisChainedBlock));
+				ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], previous.HashBlock, chained.HashBlock).Wait();
+				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
 				ctx.ReloadPersistentCoinView();
-				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.Tip.HashBlock);
-				Assert.NotNull(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() })[0]);
-				Assert.Null(ctx.PersistentCoinView.FetchCoins(new[] { new uint256() })[0]);
+				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
+				Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
+				Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 			}
 		}
 
-		[Fact]
-		public void CanRPCPingStratisNode()
-		{
-			using(NodeBuilder builder = NodeBuilder.Create())
-			{
-				var node = builder.CreateStratisNode();
-				builder.StartAll();
-			}
-		}
+		//[Fact]
+		//public void CanRPCPingStratisNode()
+		//{
+		//	using(NodeBuilder builder = NodeBuilder.Create())
+		//	{
+		//		var node = builder.CreateStratisNode();
+		//		builder.StartAll();
+		//	}
+		//}
 
 		[Fact]
 		public void TestDBreezeInsertOrder()
@@ -104,7 +105,7 @@ namespace Stratis.Bitcoin.Tests
 			var header = previous.Header.Clone();
 			header.HashPrevBlock = previous.HashBlock;
 			return new ChainedBlock(header, null, previous);
-		}		
+		}
 
 		[Fact]
 		public void ValidSomeBlocks()
@@ -121,20 +122,12 @@ namespace Stratis.Bitcoin.Tests
 				{
 					chain.Load(GetFile("test.data", "https://aois.blob.core.windows.net/public/test.data"));
 				}
-
-				//var threads = new CustomThreadPoolTaskScheduler(10, 100, "Parallel Coin Fetcher");
-
+				
 				var stack = new CoinViewStack(
-						new CacheCoinView(
-						// PrefetcherCoinView(
-						//new ParallelCoinView(threads,
-						new BackgroundCommiterCoinView(
-						ctx.PersistentCoinView)));//);
-				//new InMemoryCoinView(chain.Genesis));
+						new CachedCoinView(ctx.PersistentCoinView));
 
 				var bottom = stack.Bottom;
-				var cache = stack.Find<CacheCoinView>();
-				var backgroundCommiter = stack.Find<BackgroundCommiterCoinView>();
+				var cache = stack.Find<CachedCoinView>();
 				ConsensusValidator valid = new ConsensusValidator(network.Consensus);
 				valid.UseConsensusLib = false;
 				Node node = Node.Connect(network, "yournode");
@@ -143,7 +136,7 @@ namespace Stratis.Bitcoin.Tests
 				var lastSnapshot = valid.PerformanceCounter.Snapshot();
 				var lastSnapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
 				var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
-				foreach(var block in valid.Run(stack, puller))
+				foreach(var block in valid.Run(chain.Genesis, stack, puller))
 				{
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
 					{
@@ -151,14 +144,12 @@ namespace Stratis.Bitcoin.Tests
 
 						Console.WriteLine("ActualLookahead :\t" + puller.ActualLookahead + " blocks");
 						Console.WriteLine("Median Downloaded :\t" + puller.MedianDownloadCount + " blocks");
-						if(backgroundCommiter != null)
-						{
-							Console.WriteLine("CoinViewTip :\t" + backgroundCommiter.Tip.Height);
-							Console.WriteLine("CommitingTip :\t" + backgroundCommiter.CommitingTip.Height);
-						}
-						Console.WriteLine("Bottom Tip :\t" + bottom.Tip.Height);
+						Console.WriteLine("Persistent Tip :\t" + chain.GetBlock(ctx.PersistentCoinView.GetBlockHashAsync().Result).Height);
 						if(cache != null)
+						{
+							Console.WriteLine("Cache Tip :\t" + chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
 							Console.WriteLine("Cache entries :\t" + cache.CacheEntryCount);
+						}
 
 						var snapshot = valid.PerformanceCounter.Snapshot();
 						Console.Write(snapshot - lastSnapshot);

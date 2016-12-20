@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using DBreeze;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -22,29 +23,44 @@ namespace Stratis.Bitcoin.Consensus
 				throw new ArgumentNullException("network");
 			_Folder = folder;
 			_Network = network;
+			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, "DBreeze");
+			Initialize();
 		}
-		public void Initialize()
+
+		public void Initialize(Block genesis)
+		{
+			new Task(() =>
+			{
+				SetBlockHash(genesis.GetHash());
+				//Genesis coin is unspendable so do not add the coins
+				_Transaction.Commit();
+			}).Start(_SingleThread);
+		}
+
+		void Initialize()
 		{
 			DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
 			DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
 
-			_Tip = new ChainedBlock(_Network.GetGenesis().Header, 0);
-			_Engine = new DBreezeEngine(_Folder);
-			using(var tx = _Engine.GetTransaction())
+			new Task(() =>
 			{
-				tx.ValuesLazyLoadingIsOn = false;
-				foreach(var row in tx.SelectForward<int, BlockHeader>("Chain"))
-				{
-					_Tip = new ChainedBlock(row.Value, null, _Tip);
-				}
-			}
+				_Engine = new DBreezeEngine(_Folder);
+				_Transaction = _Engine.GetTransaction();
+				_Transaction.ValuesLazyLoadingIsOn = false;
+			}).Start(_SingleThread);
 		}
+
+		DBreeze.Transactions.Transaction _Transaction;
+		CustomThreadPoolTaskScheduler _SingleThread;
 
 		byte[] NBitcoinSerialize(object obj)
 		{
 			IBitcoinSerializable serializable = obj as IBitcoinSerializable;
 			if(serializable != null)
 				return serializable.ToBytes();
+			uint256 u = obj as uint256;
+			if(u != null)
+				return u.ToBytes();
 			throw new NotSupportedException();
 		}
 		object NBitcoinDeserialize(byte[] bytes, Type type)
@@ -61,77 +77,79 @@ namespace Stratis.Bitcoin.Consensus
 				header.ReadWrite(bytes);
 				return header;
 			}
+			if(type == typeof(uint256))
+			{
+				return new uint256(bytes);
+			}
 			throw new NotSupportedException();
 		}
 
-		ChainedBlock _Tip;
-		public override ChainedBlock Tip
-		{
-			get
-			{
-				return _Tip;
-			}
-		}
-
+		static byte[] BlockHashKey = new byte[0];
 		static readonly UnspentOutputs[] NoOutputs = new UnspentOutputs[0];
-		public override UnspentOutputs[] FetchCoins(uint256[] txIds)
+		public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
-			if(txIds.Length == 0)
-				return NoOutputs;
-			using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
+			var task = new Task<FetchCoinsResponse>(() =>
 			{
-				UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
-				using(var txx = _Engine.GetTransaction())
+				using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
 				{
-					txx.ValuesLazyLoadingIsOn = false;
+					var blockHash = GetCurrentHash();
+					UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
 					int i = 0;
+					PerformanceCounter.AddQueriedEntities(txIds.Length);
 					foreach(var input in txIds)
-					{
-						PerformanceCounter.AddQueriedEntities(1);
-						var coin = txx.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
+					{						
+						var coin = _Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
 						result[i++] = coin == null ? null : new UnspentOutputs(input, coin);
 					}
+					return new FetchCoinsResponse(result, blockHash);
 				}
-				return result;
-			}
+			});
+			task.Start(_SingleThread);
+			return task;
 		}
 
-		public override void SaveChanges(ChainedBlock newTip, IEnumerable<UnspentOutputs> unspentOutputs)
+
+		uint256 _BlockHash;
+		private uint256 GetCurrentHash()
 		{
-			int insertedEntities = 0;
-			using(new StopWatch().Start(o => PerformanceCounter.AddInsertTime(o)))
+			_BlockHash = _BlockHash ?? _Transaction.Select<byte[], uint256>("BlockHash", BlockHashKey)?.Value;
+			return _BlockHash;
+		}
+
+		private void SetBlockHash(uint256 nextBlockHash)
+		{
+			_BlockHash = nextBlockHash;
+			_Transaction.Insert<byte[], uint256>("BlockHash", BlockHashKey, nextBlockHash);
+		}
+
+		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+		{
+			var task = new Task(() =>
 			{
-				using(var tx = _Engine.GetTransaction())
+				int insertedEntities = 0;
+				using(new StopWatch().Start(o => PerformanceCounter.AddInsertTime(o)))
 				{
-					var fork = FindFork(newTip, Tip);
-					var currentTip = newTip;
-					var blocks = new ChainedBlock[currentTip.Height - fork.Height];
-					int i = 0;
-					while(currentTip.Height != fork.Height)
-					{
-						blocks[i++] = currentTip;
-						currentTip = currentTip.Previous;
-					}
-					Array.Reverse(blocks);
-					insertedEntities += blocks.Length;
-					foreach(var block in blocks)
-						tx.Insert("Chain", block.Height, block.Header);
+					var current = GetCurrentHash();
+					if(current != oldBlockHash)
+						throw new InvalidOperationException("Invalid oldBlockHash");
+					SetBlockHash(nextBlockHash);
 					var all = unspentOutputs.ToList();
 					all.Sort(UnspentOutputsComparer.Instance);
 					foreach(var coin in all)
 					{
 						if(coin.IsPrunable)
-							tx.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
+							_Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
 						else
-							tx.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+							_Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 					}
 					insertedEntities += all.Count;
-					tx.Commit();
+					_Transaction.Commit();
 				}
-				_Tip = newTip;
-			}
-			PerformanceCounter.AddInsertedEntities(insertedEntities);
-		}		
+				PerformanceCounter.AddInsertedEntities(insertedEntities);
+			});
+			task.Start(_SingleThread);
+			return task;
+		}
 
 		private readonly BackendPerformanceCounter _PerformanceCounter = new BackendPerformanceCounter();
 		public BackendPerformanceCounter PerformanceCounter
@@ -141,18 +159,22 @@ namespace Stratis.Bitcoin.Consensus
 				return _PerformanceCounter;
 			}
 		}
-
-		private ChainedBlock FindFork(ChainedBlock newTip, ChainedBlock tip)
-		{
-			return newTip.FindFork(tip);
-		}
-
+		
 		public void Dispose()
 		{
-			if(_Engine != null)
+			new Task(() =>
 			{
-				_Engine.Dispose();
-				_Engine = null;
+				if(_Engine != null)
+				{
+					_Engine.Dispose();
+					_Engine = null;
+				}
+			}).Start(_SingleThread);
+			_SingleThread.WaitFinished();
+			if(_SingleThread != null)
+			{
+				_SingleThread.Dispose();
+				_SingleThread = null;
 			}
 		}
 	}
