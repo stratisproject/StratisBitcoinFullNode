@@ -47,19 +47,51 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			set;
 		}
+		public string ConfigurationFile
+		{
+			get;
+			set;
+		}
 
-		public static NodeArgs GetArgs(string dataDir, string[] args)
+		public static NodeArgs GetArgs(string[] args)
 		{
 			NodeArgs nodeArgs = new NodeArgs();
+			nodeArgs.ConfigurationFile = args.Where(a => a.StartsWith("-conf=")).Select(a => a.Substring("-conf=".Length).Replace("\"", "")).FirstOrDefault();
+			nodeArgs.DataDir = args.Where(a => a.StartsWith("-datadir=")).Select(a => a.Substring("-datadir=".Length).Replace("\"", "")).FirstOrDefault();
+			if(nodeArgs.DataDir != null)
+			{
+				nodeArgs.ConfigurationFile = Path.Combine(nodeArgs.DataDir, nodeArgs.ConfigurationFile);
+			}
 			nodeArgs.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
 			nodeArgs.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
 
+			if(nodeArgs.ConfigurationFile != null)
+			{
+				AssetConfigFileExists(nodeArgs);
+				var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeArgs.ConfigurationFile));
+				nodeArgs.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
+				nodeArgs.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
+			}
+
 			var network = nodeArgs.GetNetwork();
-			nodeArgs.DataDir = dataDir ?? GetDefaultDataDir("stratisbitcoin", nodeArgs.GetNetwork());
+			if(nodeArgs.DataDir == null)
+			{
+				nodeArgs.DataDir = GetDefaultDataDir("stratisbitcoin", network);
+			}
+
+			if(nodeArgs.ConfigurationFile == null)
+			{
+				nodeArgs.ConfigurationFile = nodeArgs.GetDefaultConfigurationFile();
+			}
+
 			Logs.Configuration.LogInformation("Data directory set to " + nodeArgs.DataDir);
+			Logs.Configuration.LogInformation("Configuration file set to " + nodeArgs.ConfigurationFile);
+
+			if(!Directory.Exists(nodeArgs.DataDir))
+				throw new ConfigurationException("Data directory does not exists");			
 
 			var consoleConfig = new TextFileConfiguration(args);
-			var config = TextFileConfiguration.Parse(File.ReadAllText(nodeArgs.GetConfigurationFile()));
+			var config = TextFileConfiguration.Parse(File.ReadAllText(nodeArgs.ConfigurationFile));
 			consoleConfig.MergeInto(config);
 
 			nodeArgs.RPC = config.GetOrDefault<bool>("server", false) ? new RPCArgs() : null;
@@ -110,6 +142,12 @@ namespace Stratis.Bitcoin.Configuration
 			return nodeArgs;
 		}
 
+		private static void AssetConfigFileExists(NodeArgs nodeArgs)
+		{
+			if(!File.Exists(nodeArgs.ConfigurationFile))
+				throw new ConfigurationException("Configuration file does not exists");
+		}
+
 		static IPEndPoint ConvertToEndpoint(string str, int defaultPort)
 		{
 			var portOut = defaultPort;
@@ -135,7 +173,7 @@ namespace Stratis.Bitcoin.Configuration
 			return new IPEndPoint(IPAddress.Parse(str), defaultPort);
 		}
 
-		private string GetConfigurationFile()
+		private string GetDefaultConfigurationFile()
 		{
 			var config = Path.Combine(DataDir, "bitcoin.conf");
 			Logs.Configuration.LogInformation("Configuration file set to " + config);

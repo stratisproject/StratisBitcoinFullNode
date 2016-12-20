@@ -6,8 +6,12 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Logging
 {
-    public class Logs
-    {		
+	public class Logs
+	{
+		static Logs()
+		{
+			Configure(new FuncLoggerFactory(n => new NullLogger()));
+		}
 		public static void Configure(ILoggerFactory factory)
 		{
 			Configuration = factory.CreateLogger("Configuration");

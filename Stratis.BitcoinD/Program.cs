@@ -13,8 +13,7 @@ namespace Stratis.BitcoinD
 		public static void Main(string[] args)
 		{
 			Logs.Configure(new FuncLoggerFactory(n => new ConsoleLogger(n, (a, b) => true, false)));
-			var dataDir = args.Where(a => a.StartsWith("-datadir=")).Select(a => a.Substring("-datadir=".Length).Replace("\"", "")).FirstOrDefault();
-			NodeArgs nodeArgs = NodeArgs.GetArgs(dataDir, args);
+			NodeArgs nodeArgs = NodeArgs.GetArgs(args);
 			Console.WriteLine("Press one key to stop");
 			Console.ReadLine();		
 		}

@@ -39,12 +39,22 @@ namespace Stratis.Bitcoin.Tests
 
 				var chained = MakeNext(MakeNext(genesisChainedBlock));
 				chained = MakeNext(MakeNext(genesisChainedBlock));
-				ctx.PersistentCoinView.SaveChanges(chained,new UnspentOutputs[0]);
+				ctx.PersistentCoinView.SaveChanges(chained, new UnspentOutputs[0]);
 				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.Tip.HashBlock);
 				ctx.ReloadPersistentCoinView();
 				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.Tip.HashBlock);
 				Assert.NotNull(ctx.PersistentCoinView.FetchCoins(new[] { genesis.Transactions[0].GetHash() })[0]);
 				Assert.Null(ctx.PersistentCoinView.FetchCoins(new[] { new uint256() })[0]);
+			}
+		}
+
+		[Fact]
+		public void CanRPCPingStratisNode()
+		{
+			using(NodeBuilder builder = NodeBuilder.Create())
+			{
+				var node = builder.CreateStratisNode();
+				builder.StartAll();
 			}
 		}
 

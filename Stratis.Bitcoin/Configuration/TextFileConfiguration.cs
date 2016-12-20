@@ -77,14 +77,13 @@ namespace Stratis.Bitcoin.Configuration
 
 				var key = split[0];
 				List<string> values;
-				if(result.TryGetValue(key, out values))
+				if(!result.TryGetValue(key, out values))
 				{
 					values = new List<string>();
 					result.Add(key, values);
 				}
 				var value = String.Join("=", split.Skip(1).ToArray());
 				values.Add(value);
-				result.Add(key, values);
 			}
 			return new TextFileConfiguration(result);
 		}
