@@ -12,10 +12,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.RPC
 {
-	public class RPCMethodNotFoundMiddleware
+	public class RPCErrorHandlerMiddleware
 	{
 		RequestDelegate next;
-		public RPCMethodNotFoundMiddleware(RequestDelegate next)
+		public RPCErrorHandlerMiddleware(RequestDelegate next)
 		{
 			this.next = next;
 		}

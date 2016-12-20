@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.RPC
 			var fullNode = serviceProvider.GetService<FullNode>();
 			var options = GetMVCOptions(serviceProvider);
 			Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);
-			app.UseMiddleware(typeof(RPCMethodNotFoundMiddleware));
+			app.UseMiddleware(typeof(RPCErrorHandlerMiddleware));
 		}
 
 		private static MvcJsonOptions GetMVCOptions(IServiceProvider serviceProvider)

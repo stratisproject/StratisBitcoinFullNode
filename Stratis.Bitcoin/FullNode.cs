@@ -8,11 +8,13 @@ using Microsoft.AspNetCore.Hosting;
 using System.IO;
 using Stratis.Bitcoin.RPC;
 using NBitcoin;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin
 {
-    public class FullNode
-    {
+	public class FullNode
+	{
 		NodeArgs _Args;
 		public FullNode(NodeArgs args)
 		{
@@ -20,7 +22,7 @@ namespace Stratis.Bitcoin
 				throw new ArgumentNullException("args");
 			_Args = args;
 			Network = _Args.GetNetwork();
-		}		
+		}
 
 		CancellationToken _Cancellation;
 
@@ -44,7 +46,8 @@ namespace Stratis.Bitcoin
 				.Build();
 				host.Start();
 				_Cancellation.Register(() => host.Dispose());
+				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
 		}
-    }
+	}
 }
