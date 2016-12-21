@@ -295,8 +295,8 @@ namespace Stratis.Bitcoin.BlockPulling
 				}
 				else
 				{
-					if(_DownloadedBlocks.Count != 0)
-						System.Diagnostics.Debugger.Break();
+					//if(_DownloadedBlocks.Count != 0)
+					//	System.Diagnostics.Debugger.Break();
 					IsStalling = true;
 					_Pushed.WaitOne(waitTime[i]);
 				}

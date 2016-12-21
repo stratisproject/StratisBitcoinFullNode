@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using System.Diagnostics;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -45,11 +46,11 @@ namespace Stratis.Bitcoin.Consensus
 
 			FetchCoinsResponse result = null;
 			uint256 innerBlockHash = null;
+			UnspentOutputs[] outputs = new UnspentOutputs[txIds.Length];
+			List<int> miss = new List<int>();
+			List<uint256> missedTxIds = new List<uint256>();
 			using(_Lock.LockRead())
 			{
-				UnspentOutputs[] outputs = new UnspentOutputs[txIds.Length];
-				List<int> miss = new List<int>();
-				List<uint256> missedTxIds = new List<uint256>();
 				for(int i = 0; i < txIds.Length; i++)
 				{
 					CacheItem cache;
@@ -60,16 +61,24 @@ namespace Stratis.Bitcoin.Consensus
 					}
 					else
 					{
-						outputs[i] = cache.UnspentOutputs.IsPrunable ? null : cache.UnspentOutputs;
+						outputs[i] = cache.UnspentOutputs == null ? null :
+									 cache.UnspentOutputs.IsPrunable ? null :
+									 cache.UnspentOutputs;
 					}
 				}
 				PerformanceCounter.AddMissCount(miss.Count);
 				PerformanceCounter.AddHitCount(txIds.Length - miss.Count);
-
-				var fetchedCoins = await Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
+			}
+			var fetchedCoins = await Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
+			using(_Lock.LockWrite())
+			{
 				innerBlockHash = fetchedCoins.BlockHash;
-
-
+				if(_BlockHash == null)
+				{
+					Debug.Assert(_Unspents.Count == 0);
+					_InnerBlockHash = innerBlockHash;
+					_BlockHash = innerBlockHash;
+				}
 				for(int i = 0; i < miss.Count; i++)
 				{
 					var index = miss[i];
@@ -79,69 +88,64 @@ namespace Stratis.Bitcoin.Consensus
 					cache.ExistInInner = unspent != null;
 					cache.Synchronized = true;
 					cache.UnspentOutputs = unspent;
-					_Unspents.Add(unspent.TransactionId, cache);
+					_Unspents.TryAdd(txIds[index], cache);
 				}
-
 				result = new FetchCoinsResponse(outputs, _BlockHash);
-			}
-
-			if(innerBlockHash != _InnerBlockHash)
-			{
-				using(_Lock.LockWrite())
-				{
-					_InnerBlockHash = innerBlockHash;
-				}
 			}
 
 			if(CacheEntryCount > MaxItems)
 			{
-				using(_Lock.LockWrite())
+				Evict();
+				if(CacheEntryCount > MaxItems)
 				{
+					await FlushAsync().ConfigureAwait(false);
 					Evict();
-					if(CacheEntryCount > MaxItems)
-					{
-						await FlushAsyncNoLock().ConfigureAwait(false);
-						Evict();
-					}
 				}
+
 			}
 
 			return result;
 		}
 
-		public Task FlushAsync()
+		Task _Flushing;
+		public async Task FlushAsync()
 		{
+			//wait previous flushing to complete
+			if(_Flushing != null)				
+				await _Flushing.ConfigureAwait(false);
+			CacheItem[] unspent = null;
 			using(_Lock.LockWrite())
 			{
-				return FlushAsyncNoLock();
-			}
-		}
-
-		private async Task FlushAsyncNoLock()
-		{
-			var unspent =
+				if(_InnerBlockHash == null)
+					return;
+				unspent =
 				_Unspents.Where(u => !u.Value.Synchronized)
-				.Select(u => u.Value.UnspentOutputs)
+				.Select(u => u.Value)
 				.ToArray();
 
-			await Inner.SaveChangesAsync(unspent, _InnerBlockHash, _BlockHash).ConfigureAwait(false);
-			_InnerBlockHash = _BlockHash;
-
-			foreach(var u in _Unspents)
-			{
-				u.Value.Synchronized = true;
+				foreach(var u in unspent)
+				{
+					u.Synchronized = true;
+				}
+				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.UnspentOutputs).ToArray(), _InnerBlockHash, _BlockHash);
+				_InnerBlockHash = _BlockHash;
 			}
+			//Can't await inside a lock
+			await _Flushing.ConfigureAwait(false);
 		}
 
 		private void Evict()
 		{
-			Random rand = new Random();
-			foreach(var entry in _Unspents.ToList())
+			using(_Lock.LockWrite())
 			{
-				if(entry.Value.Synchronized)
+				Random rand = new Random();
+				foreach(var entry in _Unspents.ToList())
 				{
-					if(rand.Next() % 3 == 0)
-						_Unspents.Remove(entry.Key);
+					if(entry.Value.Synchronized)
+					{
+						if(rand.Next() % 3 == 0)
+							_Unspents.Remove(entry.Key);
+					}
 				}
 			}
 		}

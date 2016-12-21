@@ -34,11 +34,13 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void Update(Transaction tx, int height)
 		{
-			foreach(var input in tx.Inputs)
-			{
-				var c = AccessCoins(input.PrevOut.Hash);
-				c.Spend(input.PrevOut.N);
-			}
+			if(!tx.IsCoinBase)
+				foreach(var input in tx.Inputs)
+				{
+					var c = AccessCoins(input.PrevOut.Hash);
+					c.Spend(input.PrevOut.N);
+				}
+			_Unspents.AddOrReplace(tx.GetHash(), new UnspentOutputs((uint)height, tx));
 		}
 
 		public void SetCoins(FetchCoinsResponse coins)

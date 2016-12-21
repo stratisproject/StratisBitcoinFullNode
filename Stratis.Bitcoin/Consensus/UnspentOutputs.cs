@@ -116,7 +116,11 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void MergeFrom(UnspentOutputs c)
 		{
-			_Outputs = c._Outputs.ToArray();
+			for(int i = 0; i < _Outputs.Length; i++)
+			{
+				if(c._Outputs[i] == null)
+					_Outputs[i] = null;
+			}
 		}
 
 		static TxIn CoinbaseTxIn = TxIn.CreateCoinbase(0);

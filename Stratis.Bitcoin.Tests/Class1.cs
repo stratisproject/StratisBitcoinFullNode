@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void ValidSomeBlocks()
 		{
-			using(NodeContext ctx = NodeContext.Create(network: Network.Main, clean: false))
+			using(NodeContext ctx = NodeContext.Create(network: Network.Main, clean: true))
 			{
 				var network = ctx.Network;
 				var chain = new ConcurrentChain(network.GetGenesis().Header);
@@ -171,9 +171,11 @@ namespace Stratis.Bitcoin.Tests
 
 		private byte[] GetFile(string fileName, string url)
 		{
+			fileName = Path.Combine("TestData", fileName);
 			if(File.Exists(fileName))
 				return File.ReadAllBytes(fileName);
 			HttpClient client = new HttpClient();
+			client.Timeout = TimeSpan.FromMinutes(10);
 			var data = client.GetByteArrayAsync(url).Result;
 			File.WriteAllBytes(fileName, data);
 			return data;

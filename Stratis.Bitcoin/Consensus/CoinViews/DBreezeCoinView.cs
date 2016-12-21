@@ -46,6 +46,7 @@ namespace Stratis.Bitcoin.Consensus
 			{
 				_Engine = new DBreezeEngine(_Folder);
 				_Transaction = _Engine.GetTransaction();
+				_Transaction.SynchronizeTables("Coins", "BlockHash");
 				_Transaction.ValuesLazyLoadingIsOn = false;
 			}).Start(_SingleThread);
 		}

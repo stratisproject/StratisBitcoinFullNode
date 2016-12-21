@@ -1,7 +1,7 @@
 {
     "version": "1.0.0-*",
     "testRunner": "xunit",
-
+    "buildOptions": { "emitEntryPoint": true },
     "dependencies": {
         "xunit": "2.2.0-beta4-build3444",
         "Stratis.Bitcoin": "1.0.0-*",
