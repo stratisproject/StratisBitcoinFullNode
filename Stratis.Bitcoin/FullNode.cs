@@ -10,6 +10,7 @@ using Stratis.Bitcoin.RPC;
 using NBitcoin;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin
 {
@@ -32,8 +33,16 @@ namespace Stratis.Bitcoin
 			internal set;
 		}
 
+		public CoinView CoinView
+		{
+			get; set;
+		}
+
 		public void Start(CancellationToken cancellation = default(CancellationToken))
 		{
+			var folder = new DataFolder(_Args.DataDir);
+			CoinView = new CachedCoinView(new DBreezeCoinView(Network, folder.CoinViewPath));
+			
 			_Cancellation = cancellation;
 			if(_Args.RPC != null)
 			{

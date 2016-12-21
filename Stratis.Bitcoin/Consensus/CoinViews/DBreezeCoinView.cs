@@ -24,20 +24,10 @@ namespace Stratis.Bitcoin.Consensus
 			_Folder = folder;
 			_Network = network;
 			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, "DBreeze");
-			Initialize();
+			Initialize(network.GetGenesis());
 		}
 
-		public void Initialize(Block genesis)
-		{
-			new Task(() =>
-			{
-				SetBlockHash(genesis.GetHash());
-				//Genesis coin is unspendable so do not add the coins
-				_Transaction.Commit();
-			}).Start(_SingleThread);
-		}
-
-		void Initialize()
+		private void Initialize(Block genesis)
 		{
 			DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
 			DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
@@ -49,7 +39,18 @@ namespace Stratis.Bitcoin.Consensus
 				_Transaction.SynchronizeTables("Coins", "BlockHash");
 				_Transaction.ValuesLazyLoadingIsOn = false;
 			}).Start(_SingleThread);
+
+			new Task(() =>
+			{
+				if(GetCurrentHash() == null)
+				{
+					SetBlockHash(genesis.GetHash());
+					//Genesis coin is unspendable so do not add the coins
+					_Transaction.Commit();
+				}
+			}).Start(_SingleThread);
 		}
+
 
 		DBreeze.Transactions.Transaction _Transaction;
 		CustomThreadPoolTaskScheduler _SingleThread;
@@ -98,7 +99,7 @@ namespace Stratis.Bitcoin.Consensus
 					int i = 0;
 					PerformanceCounter.AddQueriedEntities(txIds.Length);
 					foreach(var input in txIds)
-					{						
+					{
 						var coin = _Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
 						result[i++] = coin == null ? null : new UnspentOutputs(input, coin);
 					}
@@ -160,7 +161,7 @@ namespace Stratis.Bitcoin.Consensus
 				return _PerformanceCounter;
 			}
 		}
-		
+
 		public void Dispose()
 		{
 			new Task(() =>

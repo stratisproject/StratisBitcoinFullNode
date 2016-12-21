@@ -49,15 +49,15 @@ namespace Stratis.Bitcoin.Tests
 			}
 		}
 
-		//[Fact]
-		//public void CanRPCPingStratisNode()
-		//{
-		//	using(NodeBuilder builder = NodeBuilder.Create())
-		//	{
-		//		var node = builder.CreateStratisNode();
-		//		builder.StartAll();
-		//	}
-		//}
+		[Fact]
+		public void CanRPCPingStratisNode()
+		{
+			using(NodeBuilder builder = NodeBuilder.Create())
+			{
+				var node = builder.CreateStratisNode();
+				builder.StartAll();
+			}
+		}
 
 		[Fact]
 		public void TestDBreezeInsertOrder()

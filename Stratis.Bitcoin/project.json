@@ -13,7 +13,8 @@
         "Microsoft.Extensions.Logging.Filter": "1.0.0",
         "Microsoft.AspNetCore.Diagnostics": "1.0.0",
         "Microsoft.Extensions.Logging.Console": "1.0.0",
-        "System.Xml.XmlSerializer": "4.0.10"
+        "System.Xml.XmlSerializer": "4.0.10",
+        "Microsoft.AspNetCore.Mvc.ViewFeatures": "1.0.1"
     },
 
   "frameworks": {

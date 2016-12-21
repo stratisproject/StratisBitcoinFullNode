@@ -149,7 +149,9 @@ namespace Stratis.Bitcoin.Configuration
 					nodeArgs.RPC.Bind.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), defaultPort));
 				}
 			}
-
+			var folder = new DataFolder(nodeArgs.DataDir);
+			if(!Directory.Exists(folder.CoinViewPath))
+				Directory.CreateDirectory(folder.CoinViewPath);
 			return nodeArgs;
 		}
 
