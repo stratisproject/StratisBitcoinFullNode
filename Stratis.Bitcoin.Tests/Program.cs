@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Tests
     {
         public static void Main(string[] args)
         {
-            new Class1().CanRPCPingStratisNode();
+            new Class1().ValidSomeBlocks();
         }
     }
 }

@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Tests
 				var cache = stack.Find<CachedCoinView>();
 				ConsensusValidator valid = new ConsensusValidator(network.Consensus);
 				valid.UseConsensusLib = false;
-				Node node = Node.Connect(network, "yournode");
+				Node node = Node.ConnectToLocal(network);
 				node.VersionHandshake();
 				var puller = new CustomNodeBlockPuller(chain, node);
 				var lastSnapshot = valid.PerformanceCounter.Snapshot();
