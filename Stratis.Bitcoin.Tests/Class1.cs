@@ -123,8 +123,7 @@ namespace Stratis.Bitcoin.Tests
 					chain.Load(GetFile("test.data", "https://aois.blob.core.windows.net/public/test.data"));
 				}
 				
-				var stack = new CoinViewStack(
-						new CachedCoinView(ctx.PersistentCoinView));
+				var stack = new CoinViewStack(new CachedCoinView(ctx.PersistentCoinView));
 
 				var bottom = stack.Bottom;
 				var cache = stack.Find<CachedCoinView>();
@@ -136,7 +135,10 @@ namespace Stratis.Bitcoin.Tests
 				var lastSnapshot = valid.PerformanceCounter.Snapshot();
 				var lastSnapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
 				var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
-				foreach(var block in valid.Run(chain.Genesis, stack, puller))
+
+
+				var loop = new ConsensusLoop(valid, chain, stack.Top, puller);
+				foreach(var block in loop.Execute())
 				{
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
 					{

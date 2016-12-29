@@ -24,12 +24,7 @@ namespace Stratis.Bitcoin.Tests
 			var nextBlock = _Builder.Chain.EnumerateAfter(fork).First();
 			_Location = nextBlock;
 			return _Builder._Blocks[nextBlock.HashBlock];
-		}
-
-		public override void Reject(Block block, RejectionMode rejectionMode)
-		{
-
-		}
+		}		
 
 		ChainedBlock _Location;
 		public override void SetLocation(ChainedBlock location)

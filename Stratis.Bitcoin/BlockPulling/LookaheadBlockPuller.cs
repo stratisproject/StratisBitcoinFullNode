@@ -188,20 +188,6 @@ namespace Stratis.Bitcoin.BlockPulling
 			return block.Block;
 		}
 
-		public override void Reject(Block block, RejectionMode rejectionMode)
-		{
-			var h = block.GetHash();
-			if(_Chain.Contains(h))
-				ReloadChain();
-			_RejectedHashes.TryAdd(h, h);
-		}
-
-		ConcurrentDictionary<uint256, uint256> _RejectedHashes = new ConcurrentDictionary<uint256, uint256>();
-		public bool IsRejected(uint256 blockHash)
-		{
-			return _RejectedHashes.ContainsKey(blockHash);
-		}
-
 		protected abstract void AskBlocks(ChainedBlock[] downloadRequests);
 		protected abstract ConcurrentChain ReloadChainCore();
 		private void ReloadChain()
