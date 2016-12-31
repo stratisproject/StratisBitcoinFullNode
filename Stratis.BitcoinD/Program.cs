@@ -23,7 +23,10 @@ namespace Stratis.BitcoinD
 				Console.WriteLine("Press one key to stop");
 				Console.ReadLine();
 				node.Dispose();
-			}).Start();
+			})
+			{
+				IsBackground = true //so the process terminate
+			}.Start();
 			node.Start();			
 			node.WaitDisposed();
 			node.Dispose();

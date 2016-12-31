@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.Consensus
 {
 	public class DBreezeCoinView : CoinView, IDisposable
 	{
-		DBreezeEngine _Engine;
-		string _Folder;
+
+		DBreezeSingleThreadSession _Session;
 		Network _Network;
 		public DBreezeCoinView(Network network, string folder)
 		{
@@ -21,76 +21,36 @@ namespace Stratis.Bitcoin.Consensus
 				throw new ArgumentNullException("folder");
 			if(network == null)
 				throw new ArgumentNullException("network");
-			_Folder = folder;
+
+			_Session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
 			_Network = network;
-			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, "DBreeze CoinView");
 			Initialize(network.GetGenesis());
 		}
 
 		private void Initialize(Block genesis)
 		{
-			DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
-			DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
-
-			new Task(() =>
+			_Session.Do(() =>
 			{
-				_Engine = new DBreezeEngine(_Folder);
-				_Transaction = _Engine.GetTransaction();
-				_Transaction.SynchronizeTables("Coins", "BlockHash");
-				_Transaction.ValuesLazyLoadingIsOn = false;
-			}).Start(_SingleThread);
+				_Session.Transaction.SynchronizeTables("Coins", "BlockHash");
+				_Session.Transaction.ValuesLazyLoadingIsOn = false;
+			});
 
-			new Task(() =>
+			_Session.Do(() =>
 			{
 				if(GetCurrentHash() == null)
 				{
 					SetBlockHash(genesis.GetHash());
 					//Genesis coin is unspendable so do not add the coins
-					_Transaction.Commit();
+					_Session.Transaction.Commit();
 				}
-			}).Start(_SingleThread);
-		}
-
-
-		DBreeze.Transactions.Transaction _Transaction;
-		CustomThreadPoolTaskScheduler _SingleThread;
-
-		internal static byte[] NBitcoinSerialize(object obj)
-		{
-			IBitcoinSerializable serializable = obj as IBitcoinSerializable;
-			if(serializable != null)
-				return serializable.ToBytes();
-			uint256 u = obj as uint256;
-			if(u != null)
-				return u.ToBytes();
-			throw new NotSupportedException();
-		}
-		internal static object NBitcoinDeserialize(byte[] bytes, Type type)
-		{
-			if(type == typeof(Coins))
-			{
-				Coins coin = new Coins();
-				coin.ReadWrite(bytes);
-				return coin;
-			}
-			if(type == typeof(BlockHeader))
-			{
-				BlockHeader header = new BlockHeader();
-				header.ReadWrite(bytes);
-				return header;
-			}
-			if(type == typeof(uint256))
-			{
-				return new uint256(bytes);
-			}
-			throw new NotSupportedException();
+			});
 		}
 
 		static byte[] BlockHashKey = new byte[0];
 		static readonly UnspentOutputs[] NoOutputs = new UnspentOutputs[0];
 		public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
-			var task = new Task<FetchCoinsResponse>(() =>
+			return _Session.Do(() =>
 			{
 				using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
 				{
@@ -100,33 +60,31 @@ namespace Stratis.Bitcoin.Consensus
 					PerformanceCounter.AddQueriedEntities(txIds.Length);
 					foreach(var input in txIds)
 					{
-						var coin = _Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
+						var coin = _Session.Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
 						result[i++] = coin == null ? null : new UnspentOutputs(input, coin);
 					}
 					return new FetchCoinsResponse(result, blockHash);
 				}
 			});
-			task.Start(_SingleThread);
-			return task;
 		}
 
 
 		uint256 _BlockHash;
 		private uint256 GetCurrentHash()
 		{
-			_BlockHash = _BlockHash ?? _Transaction.Select<byte[], uint256>("BlockHash", BlockHashKey)?.Value;
+			_BlockHash = _BlockHash ?? _Session.Transaction.Select<byte[], uint256>("BlockHash", BlockHashKey)?.Value;
 			return _BlockHash;
 		}
 
 		private void SetBlockHash(uint256 nextBlockHash)
 		{
 			_BlockHash = nextBlockHash;
-			_Transaction.Insert<byte[], uint256>("BlockHash", BlockHashKey, nextBlockHash);
+			_Session.Transaction.Insert<byte[], uint256>("BlockHash", BlockHashKey, nextBlockHash);
 		}
 
 		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
-			var task = new Task(() =>
+			return _Session.Do(() =>
 			{
 				int insertedEntities = 0;
 				using(new StopWatch().Start(o => PerformanceCounter.AddInsertTime(o)))
@@ -140,17 +98,15 @@ namespace Stratis.Bitcoin.Consensus
 					foreach(var coin in all)
 					{
 						if(coin.IsPrunable)
-							_Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
+							_Session.Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
 						else
-							_Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+							_Session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 					}
 					insertedEntities += all.Count;
-					_Transaction.Commit();
+					_Session.Transaction.Commit();
 				}
 				PerformanceCounter.AddInsertedEntities(insertedEntities);
 			});
-			task.Start(_SingleThread);
-			return task;
 		}
 
 		private readonly BackendPerformanceCounter _PerformanceCounter = new BackendPerformanceCounter();
@@ -164,25 +120,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void Dispose()
 		{
-			new Task(() =>
-			{
-				if(_Transaction != null)
-				{
-					_Transaction.Dispose();
-					_Transaction = null;
-				}
-				if(_Engine != null)
-				{
-					_Engine.Dispose();
-					_Engine = null;
-				}
-			}).Start(_SingleThread);
-			_SingleThread.WaitFinished();
-			if(_SingleThread != null)
-			{
-				_SingleThread.Dispose();
-				_SingleThread = null;
-			}
+			_Session.Dispose();
 		}
 	}
 }

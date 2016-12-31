@@ -11,54 +11,21 @@ using Stratis.Bitcoin.Consensus;
 namespace Stratis.Bitcoin
 {
 	public class ChainRepository : IDisposable
-	{
-		private DBreezeEngine _Engine;
-		private CustomThreadPoolTaskScheduler _SingleThread;
-		private DBreeze.Transactions.Transaction _Transaction;
+	{		
+		DBreezeSingleThreadSession _Session;
 
 		public ChainRepository(string folder)
 		{
-			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, "DBreeze ChainRepository");
-			new Task(() =>
-			{
-				DBreeze.Utils.CustomSerializator.ByteArraySerializator = DBreezeCoinView.NBitcoinSerialize;
-				DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = DBreezeCoinView.NBitcoinDeserialize;
-				_Engine = new DBreezeEngine(folder);
-				_Transaction = _Engine.GetTransaction();
-				_Transaction.SynchronizeTables("Chain");
-				_Transaction.ValuesLazyLoadingIsOn = false;
-			}).Start(_SingleThread);
+			_Session = new DBreezeSingleThreadSession("DBreeze ChainRepository", folder);
 		}
-
-		public void Dispose()
-		{
-			new Task(() =>
-			{
-				if(_Transaction != null)
-				{
-					_Transaction.Dispose();
-					_Transaction = null;
-				}
-				if(_Engine != null)
-				{
-					_Engine.Dispose();
-					_Engine = null;
-				}
-			}).Start(_SingleThread);			
-			_SingleThread.WaitFinished();
-			if(_SingleThread != null)
-			{
-				_SingleThread.Dispose();
-				_SingleThread = null;
-			}
-		}
+		
 		BlockLocator _Locator;
 		public Task<ConcurrentChain> GetChain()
 		{
-			var task = new Task<ConcurrentChain>(() =>
+			return _Session.Do(() =>
 			{
 				ChainedBlock tip = null;
-				foreach(var row in _Transaction.SelectForward<int, BlockHeader>("Chain"))
+				foreach(var row in _Session.Transaction.SelectForward<int, BlockHeader>("Chain"))
 				{
 					if(tip != null && row.Value.HashPrevBlock != tip.HashBlock)
 						break;
@@ -71,13 +38,11 @@ namespace Stratis.Bitcoin
 				chain.SetTip(tip);
 				return chain;
 			});
-			task.Start(_SingleThread);
-			return task;
 		}
 
 		public Task Save(ConcurrentChain chain)
 		{
-			var task = new Task(() =>
+			return _Session.Do(() =>
 			{
 				var fork = _Locator == null ? null : chain.FindFork(_Locator);
 				var tip = chain.Tip;
@@ -91,13 +56,16 @@ namespace Stratis.Bitcoin
 				blocks.Reverse();
 				foreach(var block in blocks)
 				{
-					_Transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
+					_Session.Transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
 				}
 				_Locator = tip.GetLocator();
-				_Transaction.Commit();
+				_Session.Transaction.Commit();
 			});
-			task.Start(_SingleThread);
-			return task;
+		}
+
+		public void Dispose()
+		{
+			_Session.Dispose();
 		}
 	}
 }

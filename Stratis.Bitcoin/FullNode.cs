@@ -75,6 +75,7 @@ namespace Stratis.Bitcoin
 				.UseStartup<RPC.Startup>()
 				.Build();
 				RPCHost.Start();
+				_Resources.Add(RPCHost);
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
 
@@ -187,8 +188,6 @@ namespace Stratis.Bitcoin
 				return;
 			Logs.FullNode.LogInformation("Closing node pending...");
 			_IsStarted.WaitOne();
-			if(RPCHost != null)
-				RPCHost.Dispose();
 			if(_Cancellation != null)
 			{
 				_Cancellation.Cancel();
