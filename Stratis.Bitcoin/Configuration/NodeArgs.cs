@@ -19,6 +19,15 @@ namespace Stratis.Bitcoin.Configuration
 			AllowIp = new List<IPAddress>();
 		}
 
+		public string RpcUser
+		{
+			get; set;
+		}
+		public string RpcPassword
+		{
+			get; set;
+		}
+
 		public int RPCPort
 		{
 			get; set;
@@ -43,7 +52,7 @@ namespace Stratis.Bitcoin.Configuration
 		public RPCArgs RPC
 		{
 			get; set;
-		}
+		}		
 		public bool Testnet
 		{
 			get; set;
@@ -107,6 +116,13 @@ namespace Stratis.Bitcoin.Configuration
 			nodeArgs.RPC = config.GetOrDefault<bool>("server", false) ? new RPCArgs() : null;
 			if(nodeArgs.RPC != null)
 			{
+				nodeArgs.RPC.RpcUser = config.GetOrDefault<string>("rpcuser", null);
+				nodeArgs.RPC.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
+				if(nodeArgs.RPC.RpcPassword == null && nodeArgs.RPC.RpcUser != null)
+					throw new ConfigurationException("rpcpassword should be provided");
+				if(nodeArgs.RPC.RpcUser == null && nodeArgs.RPC.RpcPassword != null)
+					throw new ConfigurationException("rpcuser should be provided");
+
 				var defaultPort = config.GetOrDefault<int>("rpcport", network.RPCPort);
 				nodeArgs.RPC.RPCPort = defaultPort;
 				try
