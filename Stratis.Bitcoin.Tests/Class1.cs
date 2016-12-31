@@ -20,6 +20,7 @@ using System.Net.Http;
 using System.Collections;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Utilities;
+using NBitcoin.RPC;
 
 namespace Stratis.Bitcoin.Tests
 {
@@ -56,6 +57,28 @@ namespace Stratis.Bitcoin.Tests
 			{
 				var node = builder.CreateStratisNode();
 				builder.StartAll();
+				var client = node.CreateRPCClient();
+				var hash = client.GetBestBlockHash();
+				try
+				{
+					client.SendCommand("lol");
+					Assert.True(false, "should throw");
+				}
+				catch(RPCException ex)
+				{
+					Assert.Equal(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.RPCCode);
+				}
+				Assert.Equal(hash, Network.RegTest.GetGenesis().GetHash());
+				client = new NBitcoin.RPC.RPCClient("abc:def", client.Address, client.Network);
+				try
+				{
+					client.GetBestBlockHash();
+					Assert.True(false, "should throw");
+				}
+				catch(Exception ex)
+				{
+					Assert.True(ex.Message.Contains("401"));
+				}
 			}
 		}
 
