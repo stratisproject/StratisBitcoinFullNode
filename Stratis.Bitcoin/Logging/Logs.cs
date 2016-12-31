@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Logging
 			Configuration = factory.CreateLogger("Configuration");
 			RPC = factory.CreateLogger("RPC");
 			FullNode = factory.CreateLogger("FullNode");
+			ConnectionManager = factory.CreateLogger("ConnectionManager");
 		}
 		public static ILogger Configuration
 		{
@@ -27,6 +28,10 @@ namespace Stratis.Bitcoin.Logging
 			get; set;
 		}
 		public static ILogger FullNode
+		{
+			get; set;
+		}
+		public static ILogger ConnectionManager
 		{
 			get; set;
 		}

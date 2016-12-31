@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin
 			return this;
 		}
 
-		public void RunAndStop()
+		public void RunOnce()
 		{
 			_Loop(CancellationToken.None);
 		}

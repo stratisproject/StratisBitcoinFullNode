@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Consensus;
 using NBitcoin.Protocol;
 using Microsoft.AspNetCore.Hosting.Internal;
+using NBitcoin.Protocol.Behaviors;
 
 namespace Stratis.Bitcoin
 {
@@ -61,9 +62,14 @@ namespace Stratis.Bitcoin
 				RPCHost.Start();
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
-
+		
 			StartFlushAddrManThread();
 			StartFlushChainThread();
+
+			var connectionParameters = new NodeConnectionParameters();
+			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
+			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
+			ConnectionManager = new ConnectionManager(Network, connectionParameters);
 		}
 
 		public IWebHost RPCHost
@@ -87,6 +93,11 @@ namespace Stratis.Bitcoin
 			{
 				ChainRepository.Save(Chain);
 			}).Start(_Cancellation.Token);
+		}
+
+		public ConnectionManager ConnectionManager
+		{
+			get; set;
 		}
 
 		public AddressManager AddressManager
@@ -150,10 +161,11 @@ namespace Stratis.Bitcoin
 		{
 			RPCHost.Dispose();
 			_Cancellation.Cancel();
-			FlushAddrmanTask.RunAndStop();
+			FlushAddrmanTask.RunOnce();
 			Logs.FullNode.LogInformation("FlushAddrMan stopped");
-			FlushChainTask.RunAndStop();
+			FlushChainTask.RunOnce();
 			Logs.FullNode.LogInformation("FlushChain stopped");
+			ConnectionManager.Dispose();
 			_IsDisposed = true;
 		}
 	}
