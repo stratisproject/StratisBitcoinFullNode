@@ -64,6 +64,8 @@ namespace Stratis.Bitcoin.RPC
 			var cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
 			File.WriteAllText(fullNode.DataFolder.RPCCookiePath, cookieStr);
 			authorizedAccess.Authorized.Add(cookieStr);
+			authorizedAccess.AllowIp.AddRange(fullNode.Args.RPC.AllowIp);
+
 
 			var options = GetMVCOptions(serviceProvider);
 			Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);

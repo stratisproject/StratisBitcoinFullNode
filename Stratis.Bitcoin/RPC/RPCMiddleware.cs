@@ -54,6 +54,8 @@ namespace Stratis.Bitcoin.RPC
 
 		private bool Authorized(HttpContext httpContext)
 		{
+			if(!authorization.IsAuthorized(httpContext.Connection.RemoteIpAddress))
+				return false;
 			StringValues auth;
 			if(!httpContext.Request.Headers.TryGetValue("Authorization", out auth) || auth.Count != 1)
 				return false;
