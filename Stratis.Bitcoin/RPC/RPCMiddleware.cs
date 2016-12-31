@@ -9,18 +9,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
+using NBitcoin.DataEncoders;
 
 namespace Stratis.Bitcoin.RPC
 {
 	public class RPCMiddleware
 	{
 		RequestDelegate next;
-		public RPCMiddleware(RequestDelegate next)
+		RPCAuthorization authorization;
+		public RPCMiddleware(RequestDelegate next, RPCAuthorization authorization)
 		{
 			this.next = next;
+			this.authorization = authorization;
 		}
 		public async Task Invoke(HttpContext httpContext)
 		{
+			if(!Authorized(httpContext))
+			{
+				httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
+				return;
+			}
 			Exception ex = null;
 			try
 			{
@@ -41,6 +50,29 @@ namespace Stratis.Bitcoin.RPC
 				Logs.RPC.LogError(new EventId(0), ex, "Internal error while calling RPC Method");
 				await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
 			}
+		}
+
+		private bool Authorized(HttpContext httpContext)
+		{
+			StringValues auth;
+			if(!httpContext.Request.Headers.TryGetValue("Authorization", out auth) || auth.Count != 1)
+				return false;
+			var splittedAuth = auth[0].Split(' ');
+			if(splittedAuth.Length != 2 ||
+			   splittedAuth[0] != "Basic")
+				return false;
+
+			try
+			{
+				var user = Encoders.ASCII.EncodeData(Encoders.Base64.DecodeData(splittedAuth[1]));
+				if(!authorization.IsAuthorized(user))
+					return false;
+			}
+			catch
+			{
+				return false;
+			}
+			return true;
 		}
 
 		private static JObject CreateError(RPCErrorCode code, string message)

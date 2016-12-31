@@ -80,12 +80,20 @@ namespace Stratis.Bitcoin
 			var task = new Task(() =>
 			{
 				var fork = _Locator == null ? null : chain.FindFork(_Locator);
-				var toSave = chain.Tip;
+				var tip = chain.Tip;
+				var toSave = tip;
+				List<ChainedBlock> blocks = new List<ChainedBlock>();
 				while(toSave != fork)
 				{
-					_Transaction.Insert<int, BlockHeader>("Chain", toSave.Height, toSave.Header);
 					toSave = toSave.Previous;
 				}
+				//DBreeze faster on ordered insert
+				blocks.Reverse();
+				foreach(var block in blocks)
+				{
+					_Transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
+				}
+				_Locator = tip.GetLocator();
 				_Transaction.Commit();
 			});
 			task.Start(_SingleThread);

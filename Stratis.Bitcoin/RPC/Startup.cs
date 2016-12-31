@@ -14,6 +14,11 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using System.IO;
+using Stratis.Bitcoin.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.RPC
 {
@@ -23,13 +28,13 @@ namespace Stratis.Bitcoin.RPC
 		// For more information on how to configure your application, visit http://go.microsoft.com/fwlink/?LinkID=398940
 		public void ConfigureServices(IServiceCollection services)
 		{
-			services.AddSingleton<IObjectModelValidator, NoObjectModelValidator>();			
+			services.AddSingleton<IObjectModelValidator, NoObjectModelValidator>();
 			services.AddMvcCore(o =>
 			{
 				o.ValueProviderFactories.Clear();
 				o.ValueProviderFactories.Add(new RPCParametersValueProvider());
 			})
-				.AddJsonFormatters()				
+				.AddJsonFormatters()
 				.AddFormatterMappings();
 			services.TryAddEnumerable(ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, RPCJsonMvcOptionsSetup>());
 		}
@@ -54,11 +59,17 @@ namespace Stratis.Bitcoin.RPC
 			app.UseRPC();
 
 			var fullNode = serviceProvider.GetService<FullNode>();
+
+			RPCAuthorization authorizedAccess = new RPCAuthorization();
+			var cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
+			File.WriteAllText(fullNode.DataFolder.RPCCookiePath, cookieStr);
+			authorizedAccess.Authorized.Add(cookieStr);
+
 			var options = GetMVCOptions(serviceProvider);
 			Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);
-			app.UseMiddleware(typeof(RPCMiddleware));
+			app.UseMiddleware(typeof(RPCMiddleware), authorizedAccess);
 		}
-		
+
 		private static MvcJsonOptions GetMVCOptions(IServiceProvider serviceProvider)
 		{
 			return serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MvcJsonOptions>>().Value;

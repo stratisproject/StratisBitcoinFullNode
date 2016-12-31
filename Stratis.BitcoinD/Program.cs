@@ -18,9 +18,14 @@ namespace Stratis.BitcoinD
 			NodeArgs nodeArgs = NodeArgs.GetArgs(args);
 			FullNode node = new FullNode(nodeArgs);
 			CancellationTokenSource cts = new CancellationTokenSource();
-			node.Start();
-			Console.WriteLine("Press one key to stop");
-			Console.ReadLine();
+			new Thread(() =>
+			{
+				Console.WriteLine("Press one key to stop");
+				Console.ReadLine();
+				node.Dispose();
+			}).Start();
+			node.Start();			
+			node.WaitDisposed();
 			node.Dispose();
 		}
 	}

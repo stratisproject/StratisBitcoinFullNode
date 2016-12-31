@@ -7,7 +7,7 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Controllers
 {
-    public class ConsensusController : Controller
+    public partial class ConsensusController : Controller
 	{
 		public ConsensusController(FullNode fullNode)
 		{
@@ -24,7 +24,12 @@ namespace Stratis.Bitcoin.Controllers
 		[ActionName("getblockhash")]
 		public async Task<uint256> GetBlockHash(int height)
 		{
-			return await _FullNode.CoinView.GetBlockHashAsync();
+			var bestBlockHash = await _FullNode.CoinView.GetBlockHashAsync();
+			var bestBlock = _FullNode.Chain.GetBlock(bestBlockHash);
+			if(bestBlock == null)
+				return null;
+			var block = _FullNode.Chain.GetBlock(height);
+			return block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
 		}
 	}
 }

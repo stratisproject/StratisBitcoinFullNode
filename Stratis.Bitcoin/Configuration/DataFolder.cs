@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Configuration
 			CoinViewPath = Path.Combine(path, "coinview");
 			AddrManFile = Path.Combine(path, "addrman.dat");
 			ChainPath = Path.Combine(path, "chain");
+			RPCCookiePath = Path.Combine(path, ".cookie");
 		}
 
 		public string AddrManFile
@@ -25,6 +26,11 @@ namespace Stratis.Bitcoin.Configuration
 			get; set;
 		}
 		public string ChainPath
+		{
+			get;
+			internal set;
+		}
+		public string RPCCookiePath
 		{
 			get;
 			internal set;

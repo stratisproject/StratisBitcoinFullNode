@@ -20,6 +20,14 @@ namespace Stratis.Bitcoin
 	public class FullNode : IDisposable
 	{
 		NodeArgs _Args;
+		public NodeArgs Args
+		{
+			get
+			{
+				return _Args;
+			}
+		}
+
 		public FullNode(NodeArgs args)
 		{
 			if(args == null)
@@ -45,10 +53,17 @@ namespace Stratis.Bitcoin
 		{
 			get; set;
 		}
+
+		List<IDisposable> _Resources = new List<IDisposable>();
 		public void Start()
 		{
+			if(IsDisposed)
+				throw new ObjectDisposedException("FullNode");
+			_IsStarted.Reset();
 			DataFolder = new DataFolder(_Args.DataDir);
-			CoinView = new CachedCoinView(new DBreezeCoinView(Network, DataFolder.CoinViewPath));
+			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
+			_Resources.Add(coinviewDB);
+			CoinView = new CachedCoinView(coinviewDB);
 			_Cancellation = new CancellationTokenSource();
 			if(_Args.RPC != null)
 			{
@@ -62,7 +77,7 @@ namespace Stratis.Bitcoin
 				RPCHost.Start();
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
-		
+
 			StartFlushAddrManThread();
 			StartFlushChainThread();
 
@@ -70,6 +85,7 @@ namespace Stratis.Bitcoin
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters);
+			_IsStarted.Set();
 		}
 
 		public IWebHost RPCHost
@@ -82,9 +98,10 @@ namespace Stratis.Bitcoin
 			if(!Directory.Exists(DataFolder.ChainPath))
 			{
 				Logs.FullNode.LogInformation("Creating " + DataFolder.ChainPath);
-				Directory.CreateDirectory(DataFolder.ChainPath);				
+				Directory.CreateDirectory(DataFolder.ChainPath);
 			}
 			ChainRepository = new ChainRepository(DataFolder.ChainPath);
+			_Resources.Add(ChainRepository);
 			Logs.FullNode.LogInformation("Loading chain");
 			Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
 			Chain = Chain ?? new ConcurrentChain(Network);
@@ -128,12 +145,13 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
-		bool _IsDisposed;
+		ManualResetEvent _IsDisposed = new ManualResetEvent(false);
+		ManualResetEvent _IsStarted = new ManualResetEvent(false);
 		public bool IsDisposed
 		{
 			get
 			{
-				return _IsDisposed;
+				return _IsDisposed.WaitOne(0);
 			}
 		}
 
@@ -157,16 +175,32 @@ namespace Stratis.Bitcoin
 			}).Start(_Cancellation.Token);
 		}
 
+		public void WaitDisposed()
+		{
+			_IsDisposed.WaitOne();
+			Dispose();
+		}
+
 		public void Dispose()
 		{
-			RPCHost.Dispose();
-			_Cancellation.Cancel();
-			FlushAddrmanTask.RunOnce();
-			Logs.FullNode.LogInformation("FlushAddrMan stopped");
-			FlushChainTask.RunOnce();
-			Logs.FullNode.LogInformation("FlushChain stopped");
-			ConnectionManager.Dispose();
-			_IsDisposed = true;
+			if(IsDisposed)
+				return;
+			Logs.FullNode.LogInformation("Closing node pending...");
+			_IsStarted.WaitOne();
+			if(RPCHost != null)
+				RPCHost.Dispose();
+			if(_Cancellation != null)
+			{
+				_Cancellation.Cancel();
+				FlushAddrmanTask.RunOnce();
+				Logs.FullNode.LogInformation("FlushAddrMan stopped");
+				FlushChainTask.RunOnce();
+				Logs.FullNode.LogInformation("FlushChain stopped");
+				ConnectionManager.Dispose();
+				foreach(var dispo in _Resources)
+					dispo.Dispose();
+			}
+			_IsDisposed.Set();
 		}
 	}
 }

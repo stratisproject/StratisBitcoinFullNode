@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin
 		{
 			if(node.State == NodeState.HandShaked)
 			{
-				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected with agent " + node.PeerVersion.UserAgent);
+				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected, agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
 			}
 			if(node.State == NodeState.Failed || node.State == NodeState.Offline)
 			{
