@@ -11,11 +11,23 @@ namespace Stratis.Bitcoin.Configuration
 		public DataFolder(string path)
 		{
 			CoinViewPath = Path.Combine(path, "coinview");
+			AddrManFile = Path.Combine(path, "addrman.dat");
+			ChainPath = Path.Combine(path, "chain");
 		}
 
+		public string AddrManFile
+		{
+			get;
+			set;
+		}
 		public string CoinViewPath
 		{
 			get; set;
+		}
+		public string ChainPath
+		{
+			get;
+			internal set;
 		}
 	}
 }

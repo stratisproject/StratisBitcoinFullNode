@@ -108,6 +108,50 @@ namespace Stratis.Bitcoin.Tests
 		}
 
 		[Fact]
+		public void CanSaveChainIncrementally()
+		{
+			using(var dir = TestDirectory.Create())
+			{
+				using(var repo = new ChainRepository(dir.FolderName))
+				{
+					var chain = new ConcurrentChain(Network.RegTest);
+					var tip = AppendBlock(chain);
+					Assert.Null(repo.GetChain().GetAwaiter().GetResult());
+					repo.Save(chain).GetAwaiter().GetResult();
+					chain = repo.GetChain().GetAwaiter().GetResult();
+					Assert.Equal(tip, chain.Tip);
+					tip = AppendBlock(chain);
+					repo.Save(chain).GetAwaiter().GetResult();
+					chain = repo.GetChain().GetAwaiter().GetResult();
+					Assert.Equal(tip, chain.Tip);
+				}
+			}
+		}
+
+		public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
+		{
+			ChainedBlock last = null;
+			var nonce = RandomUtils.GetUInt32();
+			foreach(var chain in chains)
+			{
+				var block = new Block();
+				block.AddTransaction(new Transaction());
+				block.UpdateMerkleRoot();
+				block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
+				block.Header.Nonce = nonce;
+				if(!chain.TrySetTip(block.Header, out last))
+					throw new InvalidOperationException("Previous not existing");
+			}
+			return last;
+		}
+
+		private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
+		{
+			ChainedBlock index = null;
+			return AppendBlock(index, chains);
+		}
+
+		[Fact]
 		public void ValidSomeBlocks()
 		{
 			using(NodeContext ctx = NodeContext.Create(network: Network.Main, clean: true))
@@ -122,7 +166,7 @@ namespace Stratis.Bitcoin.Tests
 				{
 					chain.Load(GetFile("test.data", "https://aois.blob.core.windows.net/public/test.data"));
 				}
-				
+
 				var stack = new CoinViewStack(new CachedCoinView(ctx.PersistentCoinView));
 
 				var bottom = stack.Bottom;

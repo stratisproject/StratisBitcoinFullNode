@@ -12,28 +12,15 @@ namespace Stratis.Bitcoin.Tests
 {
 	public class NodeContext : IDisposable
 	{
-		private string name;
-		public string FolderName
-		{
-			get
-			{
-				return name;
-			}
-		}
-
 		List<IDisposable> _CleanList = new List<IDisposable>();
-
+		TestDirectory _TestDirectory;
 		public NodeContext(string name, Network network, bool clean)
 		{
-			Clean = clean;
 			network = network ?? Network.RegTest;
-			this.name = name;
-			if(Clean)
-				CleanDirectory();
 			_Network = network;
-
 			_PersistentCoinView = new DBreezeCoinView(network, name);
 			_CleanList.Add(_PersistentCoinView);
+			_TestDirectory = new TestDirectory(name, clean);
 		}
 
 
@@ -65,20 +52,11 @@ namespace Stratis.Bitcoin.Tests
 			}
 		}
 
-		public bool Clean
+		public string FolderName
 		{
-			get;
-			private set;
-		}
-
-		private void CleanDirectory()
-		{
-			try
+			get
 			{
-				Directory.Delete(name, true);
-			}
-			catch(DirectoryNotFoundException)
-			{
+				return _TestDirectory.FolderName;
 			}
 		}
 
@@ -91,15 +69,14 @@ namespace Stratis.Bitcoin.Tests
 		{
 			foreach(var item in _CleanList)
 				item.Dispose();
-			if(Clean)
-				CleanDirectory();
+			_TestDirectory.Dispose(); //Not into cleanlist because it must run last
 		}
 
 		public void ReloadPersistentCoinView()
 		{
 			_PersistentCoinView.Dispose();
 			_CleanList.Remove(_PersistentCoinView);
-			_PersistentCoinView = new DBreezeCoinView(_Network, name);
+			_PersistentCoinView = new DBreezeCoinView(_Network, _TestDirectory.FolderName);
 			_CleanList.Add(_PersistentCoinView);
 		}		
 	}

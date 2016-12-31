@@ -11,10 +11,12 @@ using NBitcoin;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Consensus;
+using NBitcoin.Protocol;
+using Microsoft.AspNetCore.Hosting.Internal;
 
 namespace Stratis.Bitcoin
 {
-	public class FullNode
+	public class FullNode : IDisposable
 	{
 		NodeArgs _Args;
 		public FullNode(NodeArgs args)
@@ -25,7 +27,7 @@ namespace Stratis.Bitcoin
 			Network = _Args.GetNetwork();
 		}
 
-		CancellationToken _Cancellation;
+		CancellationTokenSource _Cancellation;
 
 		public Network Network
 		{
@@ -38,25 +40,121 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
-		public void Start(CancellationToken cancellation = default(CancellationToken))
+		public DataFolder DataFolder
 		{
-			var folder = new DataFolder(_Args.DataDir);
-			CoinView = new CachedCoinView(new DBreezeCoinView(Network, folder.CoinViewPath));
-			
-			_Cancellation = cancellation;
+			get; set;
+		}
+		public void Start()
+		{
+			DataFolder = new DataFolder(_Args.DataDir);
+			CoinView = new CachedCoinView(new DBreezeCoinView(Network, DataFolder.CoinViewPath));
+			_Cancellation = new CancellationTokenSource();
 			if(_Args.RPC != null)
 			{
-				var host = new WebHostBuilder()
+				RPCHost = new WebHostBuilder()
 				.UseKestrel()
 				.ForFullNode(this)
 				.UseUrls(_Args.RPC.GetUrls())
 				.UseIISIntegration()
 				.UseStartup<RPC.Startup>()
 				.Build();
-				host.Start();
-				_Cancellation.Register(() => host.Dispose());
+				RPCHost.Start();
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
+
+			StartFlushAddrManThread();
+			StartFlushChainThread();
+		}
+
+		public IWebHost RPCHost
+		{
+			get; set;
+		}
+
+		private void StartFlushChainThread()
+		{
+			if(!Directory.Exists(DataFolder.ChainPath))
+			{
+				Logs.FullNode.LogInformation("Creating " + DataFolder.ChainPath);
+				Directory.CreateDirectory(DataFolder.ChainPath);				
+			}
+			ChainRepository = new ChainRepository(DataFolder.ChainPath);
+			Logs.FullNode.LogInformation("Loading chain");
+			Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
+			Chain = Chain ?? new ConcurrentChain(Network);
+			Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
+			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
+			{
+				ChainRepository.Save(Chain);
+			}).Start(_Cancellation.Token);
+		}
+
+		public AddressManager AddressManager
+		{
+			get; set;
+		}
+
+		public ChainRepository ChainRepository
+		{
+			get; set;
+		}
+
+		/// <summary>
+		/// The longest PoW chain
+		/// </summary>
+		public ConcurrentChain Chain
+		{
+			get; set;
+		}
+
+		public PeriodicTask FlushAddrmanTask
+		{
+			get; set;
+		}
+
+		public PeriodicTask FlushChainTask
+		{
+			get; set;
+		}
+
+		bool _IsDisposed;
+		public bool IsDisposed
+		{
+			get
+			{
+				return _IsDisposed;
+			}
+		}
+
+		private void StartFlushAddrManThread()
+		{
+			if(!File.Exists(DataFolder.AddrManFile))
+			{
+				Logs.FullNode.LogInformation("Creating " + DataFolder.AddrManFile);
+				AddressManager = new AddressManager();
+				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
+			}
+			else
+			{
+				Logs.FullNode.LogInformation("Loading addrman");
+				AddressManager = AddressManager.LoadPeerFile(DataFolder.AddrManFile);
+				Logs.FullNode.LogInformation("Loaded");
+			}
+			FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) =>
+			{
+				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
+			}).Start(_Cancellation.Token);
+		}
+
+		public void Dispose()
+		{
+			RPCHost.Dispose();
+			_Cancellation.Cancel();
+			FlushAddrmanTask.RunAndStop();
+			Logs.FullNode.LogInformation("FlushAddrMan stopped");
+			FlushChainTask.RunAndStop();
+			Logs.FullNode.LogInformation("FlushChain stopped");
+			_IsDisposed = true;
 		}
 	}
 }

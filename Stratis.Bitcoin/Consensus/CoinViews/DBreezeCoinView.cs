@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Consensus
 				throw new ArgumentNullException("network");
 			_Folder = folder;
 			_Network = network;
-			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, "DBreeze");
+			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, "DBreeze CoinView");
 			Initialize(network.GetGenesis());
 		}
 
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Consensus
 		DBreeze.Transactions.Transaction _Transaction;
 		CustomThreadPoolTaskScheduler _SingleThread;
 
-		byte[] NBitcoinSerialize(object obj)
+		internal static byte[] NBitcoinSerialize(object obj)
 		{
 			IBitcoinSerializable serializable = obj as IBitcoinSerializable;
 			if(serializable != null)
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Consensus
 				return u.ToBytes();
 			throw new NotSupportedException();
 		}
-		object NBitcoinDeserialize(byte[] bytes, Type type)
+		internal static object NBitcoinDeserialize(byte[] bytes, Type type)
 		{
 			if(type == typeof(Coins))
 			{
@@ -166,6 +166,11 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			new Task(() =>
 			{
+				if(_Transaction != null)
+				{
+					_Transaction.Dispose();
+					_Transaction = null;
+				}
 				if(_Engine != null)
 				{
 					_Engine.Dispose();

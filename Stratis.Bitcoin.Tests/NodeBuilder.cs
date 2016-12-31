@@ -45,23 +45,22 @@ namespace Stratis.Bitcoin.Tests
 		{
 			get
 			{
-				return _Cts.IsCancellationRequested;
+				return node.IsDisposed;
 			}
 		}
 
 		public void Kill()
 		{
-			_Cts.Cancel();
+			node.Dispose();
 		}
-
-		CancellationTokenSource _Cts;
+		
 		public void Start(string dataDir)
 		{
 			var args = NodeArgs.GetArgs(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
-			_Cts = new CancellationTokenSource();
-			FullNode node = new FullNode(args);
-			node.Start(_Cts.Token);
+			node = new FullNode(args);
+			node.Start();
 		}
+		FullNode node;
 	}
 	public class BitcoinCoreRunner : INodeRunner
 	{
