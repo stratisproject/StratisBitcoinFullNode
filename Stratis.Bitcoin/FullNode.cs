@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin
 			var connectionParameters = new NodeConnectionParameters();
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
-			ConnectionManager = new ConnectionManager(Network, connectionParameters);
+			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
 			_IsStarted.Set();
 		}
 

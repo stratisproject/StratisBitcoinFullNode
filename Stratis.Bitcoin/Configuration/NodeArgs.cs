@@ -47,12 +47,31 @@ namespace Stratis.Bitcoin.Configuration
 			return Bind.Select(b => "http://" + b + "/").ToArray();
 		}
 	}
+
+	public class ConnectionManagerArgs
+	{
+		public ConnectionManagerArgs()
+		{
+		}
+		public List<IPEndPoint> Connect
+		{
+			get; set;
+		} = new List<IPEndPoint>();
+		public List<IPEndPoint> AddNode
+		{
+			get; set;
+		} = new List<IPEndPoint>();
+	}
 	public class NodeArgs
 	{
 		public RPCArgs RPC
 		{
 			get; set;
-		}		
+		}
+		public ConnectionManagerArgs ConnectionManager
+		{
+			get; set;
+		} = new ConnectionManagerArgs();
 		public bool Testnet
 		{
 			get; set;
@@ -107,7 +126,7 @@ namespace Stratis.Bitcoin.Configuration
 			Logs.Configuration.LogInformation("Configuration file set to " + nodeArgs.ConfigurationFile);
 
 			if(!Directory.Exists(nodeArgs.DataDir))
-				throw new ConfigurationException("Data directory does not exists");			
+				throw new ConfigurationException("Data directory does not exists");
 
 			var consoleConfig = new TextFileConfiguration(args);
 			var config = TextFileConfiguration.Parse(File.ReadAllText(nodeArgs.ConfigurationFile));
@@ -165,6 +184,28 @@ namespace Stratis.Bitcoin.Configuration
 					nodeArgs.RPC.Bind.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), defaultPort));
 				}
 			}
+
+			try
+			{
+				nodeArgs.ConnectionManager.Connect.AddRange(config.GetAll("connect")
+					.Select(c => ConvertToEndpoint(c, network.DefaultPort)));
+			}
+			catch(FormatException)
+			{
+				throw new ConfigurationException("Invalid connect parameter");
+			}
+
+			try
+			{
+
+				nodeArgs.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
+						.Select(c => ConvertToEndpoint(c, network.DefaultPort)));
+			}
+			catch(FormatException)
+			{
+				throw new ConfigurationException("Invalid addnode parameter");
+			}
+
 			var folder = new DataFolder(nodeArgs.DataDir);
 			if(!Directory.Exists(folder.CoinViewPath))
 				Directory.CreateDirectory(folder.CoinViewPath);

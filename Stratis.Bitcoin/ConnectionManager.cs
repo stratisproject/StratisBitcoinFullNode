@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Stratis.Bitcoin.Configuration;
+using System.Net;
 
 namespace Stratis.Bitcoin
 {
@@ -45,7 +47,7 @@ namespace Stratis.Bitcoin
 		{
 			if(node.State == NodeState.HandShaked)
 			{
-				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected, agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
+				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected (" + (Inbound ? "inbound" : "outbound" )+ "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
 			}
 			if(node.State == NodeState.Failed || node.State == NodeState.Offline)
 			{
@@ -63,7 +65,7 @@ namespace Stratis.Bitcoin
 
 	public class ConnectionManager : IDisposable
 	{
-		public NodesGroup OutboundNodeGroup
+		public NodesGroup DiscoveredNodeGroup
 		{
 			get; set;
 		}
@@ -77,18 +79,74 @@ namespace Stratis.Bitcoin
 				return _Network;
 			}
 		}
-		public ConnectionManager(Network network, NodeConnectionParameters parameters)
+
+		public NodesGroup ConnectNodeGroup
+		{
+			get;
+			private set;
+		}
+		public NodesGroup AddNodeNodeGroup
+		{
+			get;
+			private set;
+		}
+
+		public ConnectionManager(Network network, NodeConnectionParameters parameters, ConnectionManagerArgs args)
 		{
 			_Network = network;
 			parameters.UserAgent = "StratisBitcoin:" + GetVersion();
-			var outboundParameters = parameters.Clone();
-			parameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
-			OutboundNodeGroup = new NodesGroup(network, parameters, new NodeRequirement()
+
+
+
+			if(args.Connect.Count == 0)
+			{
+				var cloneParameters = parameters.Clone();
+				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
+				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters);
+				DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
+				DiscoveredNodeGroup.Connect();
+			}
+			else
+			{
+				var cloneParameters = parameters.Clone();
+				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
+				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
+				var addrman = new AddressManager();
+				addrman.Add(args.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
+				var addrmanBehavior = new AddressManagerBehavior(addrman);
+				addrmanBehavior.Mode = AddressManagerBehaviorMode.None;
+				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
+
+				ConnectNodeGroup = CreateNodeGroup(cloneParameters);
+				ConnectNodeGroup.MaximumNodeConnection = args.Connect.Count;
+				ConnectNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
+				ConnectNodeGroup.Connect();
+			}
+
+			{
+				var cloneParameters = parameters.Clone();
+				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
+				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
+				var addrman = new AddressManager();
+				addrman.Add(args.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
+				var addrmanBehavior = new AddressManagerBehavior(addrman);
+				addrmanBehavior.Mode = AddressManagerBehaviorMode.AdvertizeDiscover;
+				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
+
+				AddNodeNodeGroup = CreateNodeGroup(cloneParameters);
+				AddNodeNodeGroup.MaximumNodeConnection = args.AddNode.Count;
+				AddNodeNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
+				AddNodeNodeGroup.Connect();
+			}
+		}
+
+		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters)
+		{
+			return new NodesGroup(Network, cloneParameters, new NodeRequirement()
 			{
 				MinVersion = ProtocolVersion.SENDHEADERS_VERSION,
-				RequiredServices = NodeServices.Network
+				RequiredServices = NodeServices.Network,
 			});
-			OutboundNodeGroup.Connect();
 		}
 
 		private string GetVersion()
@@ -99,7 +157,10 @@ namespace Stratis.Bitcoin
 
 		public void Dispose()
 		{
-			OutboundNodeGroup.Dispose();
+			DiscoveredNodeGroup.Dispose();
+			if(ConnectNodeGroup != null)
+				ConnectNodeGroup.Dispose();
+			AddNodeNodeGroup.Dispose();
 		}
 	}
 }
