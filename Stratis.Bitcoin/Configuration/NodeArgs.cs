@@ -85,6 +85,11 @@ namespace Stratis.Bitcoin.Configuration
 		{
 			get; set;
 		} = new List<NodeServerEndpoint>();
+		public IPEndPoint ExternalEndpoint
+		{
+			get;
+			internal set;
+		}
 	}
 	public class NodeArgs
 	{
@@ -229,10 +234,11 @@ namespace Stratis.Bitcoin.Configuration
 				throw new ConfigurationException("Invalid addnode parameter");
 			}
 
+			var port = config.GetOrDefault<int>("port", network.DefaultPort);
 			try
 			{
 				nodeArgs.ConnectionManager.Listen.AddRange(config.GetAll("listen")
-						.Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, network.DefaultPort), false)));
+						.Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), false)));
 			}
 			catch(FormatException)
 			{
@@ -242,16 +248,34 @@ namespace Stratis.Bitcoin.Configuration
 			try
 			{
 				nodeArgs.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
-						.Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, network.DefaultPort), true)));
+						.Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), true)));
 			}
 			catch(FormatException)
 			{
 				throw new ConfigurationException("Invalid listen parameter");
 			}
-
+			
 			if(nodeArgs.ConnectionManager.Listen.Count == 0)
 			{
-				nodeArgs.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), network.DefaultPort), false));
+				nodeArgs.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
+			}
+
+			var externalIp = config.GetOrDefault<string>("externalip", null);
+			if(externalIp != null)
+			{
+				try
+				{
+					nodeArgs.ConnectionManager.ExternalEndpoint = ConvertToEndpoint(externalIp, port);
+				}
+				catch(FormatException)
+				{
+					throw new ConfigurationException("Invalid externalip parameter");
+				}
+			}
+
+			if(nodeArgs.ConnectionManager.ExternalEndpoint == null)
+			{
+				nodeArgs.ConnectionManager.ExternalEndpoint = nodeArgs.ConnectionManager.Listen.First().Endpoint;
 			}
 
 			var folder = new DataFolder(nodeArgs.DataDir);
@@ -266,7 +290,7 @@ namespace Stratis.Bitcoin.Configuration
 				throw new ConfigurationException("Configuration file does not exists");
 		}
 
-		static IPEndPoint ConvertToEndpoint(string str, int defaultPort)
+		public static IPEndPoint ConvertToEndpoint(string str, int defaultPort)
 		{
 			var portOut = defaultPort;
 			var hostOut = "";

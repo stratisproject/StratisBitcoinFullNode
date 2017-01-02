@@ -39,12 +39,19 @@ namespace Stratis.Bitcoin.RPC
 			{
 				ex = exx;
 			}
-			if(httpContext.Response?.StatusCode == 404)
+
+
+			if(ex is ArgumentException || ex is FormatException)
+			{
+				JObject response = CreateError(RPCErrorCode.RPC_MISC_ERROR, "Argument error: " + ex.Message);
+				await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
+			}
+			else if(httpContext.Response?.StatusCode == 404)
 			{
 				JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found");
 				await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
 			}
-			if(httpContext.Response?.StatusCode == 500 || ex != null)
+			else if(httpContext.Response?.StatusCode == 500 || ex != null)
 			{
 				JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, "Internal error");
 				Logs.RPC.LogError(new EventId(0), ex, "Internal error while calling RPC Method");

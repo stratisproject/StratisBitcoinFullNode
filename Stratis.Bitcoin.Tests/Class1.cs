@@ -21,6 +21,7 @@ using System.Collections;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Utilities;
 using NBitcoin.RPC;
+using System.Net;
 
 namespace Stratis.Bitcoin.Tests
 {
@@ -51,7 +52,32 @@ namespace Stratis.Bitcoin.Tests
 		}
 
 		[Fact]
-		public void CanRPCPingStratisNode()
+		public void NodesCanConnectToEachOthers()
+		{
+			using(NodeBuilder builder = NodeBuilder.Create())
+			{
+				var node1 = builder.CreateStratisNode();
+				var node2 = builder.CreateStratisNode();
+				builder.StartAll();
+				Assert.Equal(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count);
+				Assert.Equal(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count);
+				var rpc1 = node1.CreateRPCClient();
+				var rpc2 = node2.CreateRPCClient();
+				rpc1.AddNode(node2.Endpoint, true);
+				Assert.Equal(1, node1.FullNode.ConnectionManager.ConnectedNodes.Count);
+				Assert.Equal(1, node2.FullNode.ConnectionManager.ConnectedNodes.Count);
+
+				var behavior = node1.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
+				Assert.False(behavior.Inbound);
+				Assert.True(behavior.OneTry);
+				behavior = node2.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
+				Assert.True(behavior.Inbound);
+				Assert.False(behavior.OneTry);
+			}
+		}
+
+		[Fact]
+		public void CheckRPCFailures()
 		{
 			using(NodeBuilder builder = NodeBuilder.Create())
 			{
@@ -69,6 +95,7 @@ namespace Stratis.Bitcoin.Tests
 					Assert.Equal(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.RPCCode);
 				}
 				Assert.Equal(hash, Network.RegTest.GetGenesis().GetHash());
+				var oldClient = client;
 				client = new NBitcoin.RPC.RPCClient("abc:def", client.Address, client.Network);
 				try
 				{
@@ -79,6 +106,18 @@ namespace Stratis.Bitcoin.Tests
 				{
 					Assert.True(ex.Message.Contains("401"));
 				}
+				client = oldClient;
+
+				try
+				{
+					client.SendCommand("addnode", "regreg", "addr");
+					Assert.True(false, "should throw");
+				}
+				catch(RPCException ex)
+				{
+					Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
+				}
+				
 			}
 		}
 

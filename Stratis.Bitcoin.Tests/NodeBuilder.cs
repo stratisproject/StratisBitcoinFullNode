@@ -45,22 +45,22 @@ namespace Stratis.Bitcoin.Tests
 		{
 			get
 			{
-				return node.IsDisposed;
+				return FullNode.IsDisposed;
 			}
 		}
 
 		public void Kill()
 		{
-			node.Dispose();
+			FullNode.Dispose();
 		}
 		
 		public void Start(string dataDir)
 		{
 			var args = NodeArgs.GetArgs(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
-			node = new FullNode(args);
-			node.Start();
+			FullNode = new FullNode(args);
+			FullNode.Start();
 		}
-		FullNode node;
+		public FullNode FullNode;
 	}
 	public class BitcoinCoreRunner : INodeRunner
 	{
@@ -321,6 +321,17 @@ namespace Stratis.Bitcoin.Tests
 			ConfigParameters.Import(builder.ConfigParameters);
 			ports = new int[2];
 			FindPorts(ports);
+		}
+
+		/// <summary>
+		/// Get stratis full node if possible
+		/// </summary>
+		public FullNode FullNode
+		{
+			get
+			{
+				return ((StratisBitcoinRunner)_Runner).FullNode;
+			}
 		}
 
 		private void CleanFolder()

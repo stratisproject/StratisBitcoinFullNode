@@ -37,6 +37,11 @@ namespace Stratis.Bitcoin
 			get;
 			internal set;
 		}
+		public bool OneTry
+		{
+			get;
+			internal set;
+		}
 
 		public override object Clone()
 		{
@@ -52,6 +57,7 @@ namespace Stratis.Bitcoin
 		{
 			if(node.State == NodeState.HandShaked)
 			{
+				ConnectionManager.ConnectedNodes.Add(node);
 				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected (" + (Inbound ? "inbound" : "outbound") + "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
 			}
 			if(node.State == NodeState.Failed || node.State == NodeState.Offline)
@@ -59,6 +65,7 @@ namespace Stratis.Bitcoin
 				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " offline");
 				if(node.DisconnectReason != null)
 					Logs.ConnectionManager.LogInformation("Reason: " + node.DisconnectReason.Reason);
+				ConnectionManager.ConnectedNodes.Remove(node);
 			}
 		}
 
@@ -96,9 +103,11 @@ namespace Stratis.Bitcoin
 			private set;
 		}
 
+		NodeConnectionParameters _Parameters;
 		public ConnectionManager(Network network, NodeConnectionParameters parameters, ConnectionManagerArgs args)
 		{
 			_Network = network;
+			_Parameters = parameters;
 			parameters.UserAgent = "StratisBitcoin:" + GetVersion();
 
 			if(args.Connect.Count == 0)
@@ -148,6 +157,8 @@ namespace Stratis.Bitcoin
 			{
 				var cloneParameters = parameters.Clone();
 				var server = new NodeServer(Network);
+				server.LocalEndpoint = listen.Endpoint;
+				server.ExternalEndpoint = args.ExternalEndpoint;
 				_Servers.Add(server);
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this)
 				{
@@ -188,6 +199,45 @@ namespace Stratis.Bitcoin
 				ConnectNodeGroup.Dispose();
 			if(AddNodeNodeGroup != null)
 				AddNodeNodeGroup.Dispose();
+			foreach(var server in _Servers)
+				server.Dispose();
+			foreach(var node in ConnectedNodes.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
+				node.Disconnect();
+		}
+
+
+		private readonly NodesCollection _ConnectedNodes = new NodesCollection();
+		public NodesCollection ConnectedNodes
+		{
+			get
+			{
+				return _ConnectedNodes;
+			}
+		}
+		
+		public void AddNode(IPEndPoint endpoint)
+		{
+			var addrman = AddressManagerBehavior.GetAddrman(AddNodeNodeGroup.NodeConnectionParameters);
+			addrman.Add(new NetworkAddress(endpoint));
+			AddNodeNodeGroup.MaximumNodeConnection++;
+		}
+
+		public void RemoveNode(IPEndPoint endpoint)
+		{
+			//TODO
+			throw new NotSupportedException();
+		}
+
+		public Node Connect(IPEndPoint endpoint)
+		{
+			var cloneParameters = _Parameters.Clone();
+			cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this)
+			{
+				OneTry = true
+			});
+			var node = Node.Connect(Network, endpoint, cloneParameters);
+			node.VersionHandshake();
+			return node;
 		}
 	}
 }
