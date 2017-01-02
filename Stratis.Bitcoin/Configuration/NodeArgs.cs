@@ -48,6 +48,26 @@ namespace Stratis.Bitcoin.Configuration
 		}
 	}
 
+	public class NodeServerEndpoint
+	{
+		public NodeServerEndpoint()
+		{
+
+		}
+		public NodeServerEndpoint(IPEndPoint endpoint, bool whitelisted)
+		{
+			Endpoint = endpoint;
+			Whitelisted = whitelisted;
+		}
+		public IPEndPoint Endpoint
+		{
+			get; set;
+		}
+		public bool Whitelisted
+		{
+			get; set;
+		}
+	}
 	public class ConnectionManagerArgs
 	{
 		public ConnectionManagerArgs()
@@ -61,6 +81,10 @@ namespace Stratis.Bitcoin.Configuration
 		{
 			get; set;
 		} = new List<IPEndPoint>();
+		public List<NodeServerEndpoint> Listen
+		{
+			get; set;
+		} = new List<NodeServerEndpoint>();
 	}
 	public class NodeArgs
 	{
@@ -197,13 +221,37 @@ namespace Stratis.Bitcoin.Configuration
 
 			try
 			{
-
 				nodeArgs.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
 						.Select(c => ConvertToEndpoint(c, network.DefaultPort)));
 			}
 			catch(FormatException)
 			{
 				throw new ConfigurationException("Invalid addnode parameter");
+			}
+
+			try
+			{
+				nodeArgs.ConnectionManager.Listen.AddRange(config.GetAll("listen")
+						.Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, network.DefaultPort), false)));
+			}
+			catch(FormatException)
+			{
+				throw new ConfigurationException("Invalid listen parameter");
+			}
+
+			try
+			{
+				nodeArgs.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
+						.Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, network.DefaultPort), true)));
+			}
+			catch(FormatException)
+			{
+				throw new ConfigurationException("Invalid listen parameter");
+			}
+
+			if(nodeArgs.ConnectionManager.Listen.Count == 0)
+			{
+				nodeArgs.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), network.DefaultPort), false));
 			}
 
 			var folder = new DataFolder(nodeArgs.DataDir);

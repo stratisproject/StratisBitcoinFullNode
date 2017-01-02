@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using Stratis.Bitcoin.Configuration;
 using System.Net;
+using System.Text;
 
 namespace Stratis.Bitcoin
 {
@@ -31,7 +32,11 @@ namespace Stratis.Bitcoin
 			get;
 			private set;
 		}
-
+		public bool Whitelisted
+		{
+			get;
+			internal set;
+		}
 
 		public override object Clone()
 		{
@@ -47,7 +52,7 @@ namespace Stratis.Bitcoin
 		{
 			if(node.State == NodeState.HandShaked)
 			{
-				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected (" + (Inbound ? "inbound" : "outbound" )+ "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
+				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected (" + (Inbound ? "inbound" : "outbound") + "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
 			}
 			if(node.State == NodeState.Failed || node.State == NodeState.Offline)
 			{
@@ -96,8 +101,6 @@ namespace Stratis.Bitcoin
 			_Network = network;
 			parameters.UserAgent = "StratisBitcoin:" + GetVersion();
 
-
-
 			if(args.Connect.Count == 0)
 			{
 				var cloneParameters = parameters.Clone();
@@ -138,7 +141,29 @@ namespace Stratis.Bitcoin
 				AddNodeNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
 				AddNodeNodeGroup.Connect();
 			}
+
+			StringBuilder logs = new StringBuilder();
+			logs.AppendLine("Node listening on:");
+			foreach(var listen in args.Listen)
+			{
+				var cloneParameters = parameters.Clone();
+				var server = new NodeServer(Network);
+				_Servers.Add(server);
+				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this)
+				{
+					Whitelisted = listen.Whitelisted
+				});
+				server.InboundNodeConnectionParameters = cloneParameters;
+				server.Listen();
+				logs.Append(listen.Endpoint.Address + ":" + listen.Endpoint.Port);
+				if(listen.Whitelisted)
+					logs.Append(" (whitelisted)");
+				logs.AppendLine();
+			}
+			Logs.ConnectionManager.LogInformation(logs.ToString());
 		}
+
+		List<NodeServer> _Servers = new List<NodeServer>();
 
 		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters)
 		{
@@ -157,10 +182,12 @@ namespace Stratis.Bitcoin
 
 		public void Dispose()
 		{
-			DiscoveredNodeGroup.Dispose();
+			if(DiscoveredNodeGroup != null)
+				DiscoveredNodeGroup.Dispose();
 			if(ConnectNodeGroup != null)
 				ConnectNodeGroup.Dispose();
-			AddNodeNodeGroup.Dispose();
+			if(AddNodeNodeGroup != null)
+				AddNodeNodeGroup.Dispose();
 		}
 	}
 }
