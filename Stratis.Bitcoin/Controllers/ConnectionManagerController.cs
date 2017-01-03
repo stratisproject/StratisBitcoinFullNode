@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Controllers
 	public partial class ConsensusController : Controller
 	{
 		[ActionName("addnode")]
-		public Task AddNode(string endpointStr, string command)
+		public bool AddNode(string endpointStr, string command)
 		{
 			var endpoint = NodeArgs.ConvertToEndpoint(endpointStr, _FullNode.Network.DefaultPort);
 			switch(command)
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Controllers
 				default:
 					throw new ArgumentException("command");
 			}
-			return Task.CompletedTask;
+			return true;
 		}
 	}
 }

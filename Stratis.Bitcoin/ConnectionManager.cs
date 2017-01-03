@@ -45,7 +45,11 @@ namespace Stratis.Bitcoin
 
 		public override object Clone()
 		{
-			return new ConnectionManagerBehavior(Inbound, ConnectionManager);
+			return new ConnectionManagerBehavior(Inbound, ConnectionManager)
+			{
+				OneTry = OneTry,
+				Whitelisted = Whitelisted,
+			};
 		}
 
 		protected override void AttachCore()

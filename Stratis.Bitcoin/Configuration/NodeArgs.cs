@@ -312,7 +312,7 @@ namespace Stratis.Bitcoin.Configuration
 				hostOut = str.Substring(1, str.Length - 2);
 			else
 				hostOut = str;
-			return new IPEndPoint(IPAddress.Parse(str), defaultPort);
+			return new IPEndPoint(IPAddress.Parse(str), portOut);
 		}
 
 		private string GetDefaultConfigurationFile()
