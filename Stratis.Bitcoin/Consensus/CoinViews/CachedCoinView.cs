@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Consensus
 		public async Task FlushAsync()
 		{
 			//wait previous flushing to complete
-			if(_Flushing != null)				
+			if(_Flushing != null)
 				await _Flushing.ConfigureAwait(false);
 
 			if(_InnerBlockHash == null)
@@ -133,6 +133,10 @@ namespace Stratis.Bitcoin.Consensus
 					u.ExistInInner = true;
 				}
 				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.UnspentOutputs).ToArray(), _InnerBlockHash, _BlockHash);
+
+				//Remove from cache prunable entries as they are being flushed down
+				foreach(var c in unspent.Where(c => c.UnspentOutputs.IsPrunable))
+					_Unspents.Remove(c.UnspentOutputs.TransactionId);
 				_InnerBlockHash = _BlockHash;
 			}
 			//Can't await inside a lock
