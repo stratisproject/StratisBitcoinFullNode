@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Tests
 		{
 			get
 			{
-				return FullNode.IsDisposed;
+				return FullNode.HasExited;
 			}
 		}
 

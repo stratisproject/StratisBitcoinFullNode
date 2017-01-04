@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin
 		{
 			get
 			{
-				return _IsDisposed.WaitOne(0);
+				return _IsDisposedValue;
 			}
 		}
 
@@ -267,10 +267,23 @@ namespace Stratis.Bitcoin
 			Dispose();
 		}
 
+		bool _IsDisposedValue;
+
+
+		private bool _HasExited;
+		public bool HasExited
+		{
+			get
+			{
+				return _HasExited;
+			}
+		}
+
 		public void Dispose()
 		{
 			if(IsDisposed)
 				return;
+			_IsDisposedValue = true;
 			Logs.FullNode.LogInformation("Closing node pending...");
 			_IsStarted.WaitOne();
 			if(_Cancellation != null)
@@ -280,14 +293,19 @@ namespace Stratis.Bitcoin
 				Logs.FullNode.LogInformation("FlushAddrMan stopped");
 				FlushChainTask.RunOnce();
 				Logs.FullNode.LogInformation("FlushChain stopped");
+
 				var cache = CoinView as CachedCoinView;
 				if(cache != null)
+				{
+					Logs.FullNode.LogInformation("Flushing Cache CoinView...");
 					cache.FlushAsync().GetAwaiter().GetResult();
+				}
 				ConnectionManager.Dispose();
 				foreach(var dispo in _Resources)
 					dispo.Dispose();
 			}
 			_IsDisposed.Set();
+			_HasExited = true;
 		}
 	}
 }
