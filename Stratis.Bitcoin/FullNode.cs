@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin
 			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
 			_Resources.Add(coinviewDB);
 			CoinView = new CachedCoinView(coinviewDB);
-			_Cancellation = new CancellationTokenSource();			
+			_Cancellation = new CancellationTokenSource();
 
 			StartFlushAddrManThread();
 			StartFlushChainThread();
@@ -99,58 +99,70 @@ namespace Stratis.Bitcoin
 
 		void RunLoop()
 		{
-			var stack = new CoinViewStack(CoinView);
-			var cache = stack.Find<CachedCoinView>();
-			var dbreeze = stack.Find<DBreezeCoinView>();
-			var bottom = stack.Bottom;
-
-			var lookaheadPuller = ConsensusLoop.Puller as LookaheadBlockPuller;
-
-			var lastSnapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-			var lastSnapshot2 = dbreeze == null ? null : dbreeze.PerformanceCounter.Snapshot();
-			var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
-			foreach(var block in ConsensusLoop.Execute())
+			try
 			{
-				if(_IsDisposed.WaitOne(0))
-					break;
-				if(block.Error != null)
+
+				var stack = new CoinViewStack(CoinView);
+				var cache = stack.Find<CachedCoinView>();
+				var dbreeze = stack.Find<DBreezeCoinView>();
+				var bottom = stack.Bottom;
+
+				var lookaheadPuller = ConsensusLoop.Puller as LookaheadBlockPuller;
+
+				var lastSnapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
+				var lastSnapshot2 = dbreeze == null ? null : dbreeze.PerformanceCounter.Snapshot();
+				var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
+				foreach(var block in ConsensusLoop.Execute())
 				{
-					//TODO: 
-					Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
+					if(_IsDisposed.WaitOne(0))
+						break;
+					if(block.Error != null)
+					{
+						//TODO: 
+						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
+					}
+					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
+					{
+						StringBuilder benchLogs = new StringBuilder();
+
+						if(lookaheadPuller != null)
+						{
+							benchLogs.AppendLine("ActualLookahead :\t" + lookaheadPuller.ActualLookahead + " blocks");
+							benchLogs.AppendLine("Median Downloaded :\t" + lookaheadPuller.MedianDownloadCount + " blocks");
+						}
+						benchLogs.AppendLine("Persistent Tip :\t" + Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
+						if(cache != null)
+						{
+							benchLogs.AppendLine("Cache Tip :\t" + Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
+							benchLogs.AppendLine("Cache entries :\t" + cache.CacheEntryCount);
+						}
+
+						var snapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
+						benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
+						lastSnapshot = snapshot;
+
+						if(dbreeze != null)
+						{
+							var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
+							benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
+							lastSnapshot2 = snapshot2;
+						}
+						if(cache != null)
+						{
+							var snapshot3 = cache.PerformanceCounter.Snapshot();
+							benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
+							lastSnapshot3 = snapshot3;
+						}
+						Logs.Bench.LogInformation(benchLogs.ToString());
+					}
 				}
-				if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
+			}
+			catch(Exception ex) //TODO: Barbaric clean exit
+			{
+				if(!IsDisposed)
 				{
-					StringBuilder benchLogs = new StringBuilder();
-
-					if(lookaheadPuller != null)
-					{
-						benchLogs.AppendLine("ActualLookahead :\t" + lookaheadPuller.ActualLookahead + " blocks");
-						benchLogs.AppendLine("Median Downloaded :\t" + lookaheadPuller.MedianDownloadCount + " blocks");
-					}
-					benchLogs.AppendLine("Persistent Tip :\t" + Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
-					if(cache != null)
-					{
-						benchLogs.AppendLine("Cache Tip :\t" + Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
-						benchLogs.AppendLine("Cache entries :\t" + cache.CacheEntryCount);
-					}
-
-					var snapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-					benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
-					lastSnapshot = snapshot;
-
-					if(dbreeze != null)
-					{
-						var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
-						benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
-						lastSnapshot2 = snapshot2;
-					}
-					if(cache != null)
-					{
-						var snapshot3 = cache.PerformanceCounter.Snapshot();
-						benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
-						lastSnapshot3 = snapshot3;
-					}
-					Logs.Bench.LogInformation(benchLogs.ToString());
+					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception");
+					Dispose();
 				}
 			}
 		}
@@ -268,6 +280,9 @@ namespace Stratis.Bitcoin
 				Logs.FullNode.LogInformation("FlushAddrMan stopped");
 				FlushChainTask.RunOnce();
 				Logs.FullNode.LogInformation("FlushChain stopped");
+				var cache = CoinView as CachedCoinView;
+				if(cache != null)
+					cache.FlushAsync().GetAwaiter().GetResult();
 				ConnectionManager.Dispose();
 				foreach(var dispo in _Resources)
 					dispo.Dispose();
