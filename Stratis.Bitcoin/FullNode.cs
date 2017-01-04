@@ -66,7 +66,11 @@ namespace Stratis.Bitcoin
 			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
 			_Resources.Add(coinviewDB);
 			CoinView = new CachedCoinView(coinviewDB);
-			_Cancellation = new CancellationTokenSource();
+			_Cancellation = new CancellationTokenSource();			
+
+			StartFlushAddrManThread();
+			StartFlushChainThread();
+
 			if(_Args.RPC != null)
 			{
 				RPCHost = new WebHostBuilder()
@@ -80,9 +84,6 @@ namespace Stratis.Bitcoin
 				_Resources.Add(RPCHost);
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
-
-			StartFlushAddrManThread();
-			StartFlushChainThread();
 
 			var connectionParameters = new NodeConnectionParameters();
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));

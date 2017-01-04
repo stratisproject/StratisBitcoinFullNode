@@ -18,9 +18,9 @@ namespace Stratis.Bitcoin.Tests
 		{
 			network = network ?? Network.RegTest;
 			_Network = network;
-			_PersistentCoinView = new DBreezeCoinView(network, name);
-			_CleanList.Add(_PersistentCoinView);
 			_TestDirectory = new TestDirectory(name, clean);
+			_PersistentCoinView = new DBreezeCoinView(network, _TestDirectory.FolderName);
+			_CleanList.Add(_PersistentCoinView);
 		}
 
 

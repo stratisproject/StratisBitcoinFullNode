@@ -273,6 +273,7 @@ namespace Stratis.Bitcoin.BlockPulling
 				DownloadedBlock block;
 				if(header != null && _DownloadedBlocks.TryRemove(header.HashBlock, out block))
 				{
+					//TODO: when we detect reorg, it will be here because header.Previous != _Location.Previous
 					IsStalling = false;
 					_Location = header;
 					Interlocked.Add(ref _CurrentSize, -block.Length);
