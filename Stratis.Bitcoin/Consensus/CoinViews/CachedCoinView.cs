@@ -113,6 +113,10 @@ namespace Stratis.Bitcoin.Consensus
 			//wait previous flushing to complete
 			if(_Flushing != null)				
 				await _Flushing.ConfigureAwait(false);
+
+			if(_InnerBlockHash == null)
+				_InnerBlockHash = await _Inner.GetBlockHashAsync().ConfigureAwait(false);
+
 			CacheItem[] unspent = null;
 			using(_Lock.LockWrite())
 			{
@@ -126,6 +130,7 @@ namespace Stratis.Bitcoin.Consensus
 				foreach(var u in unspent)
 				{
 					u.Synchronized = true;
+					u.ExistInInner = true;
 				}
 				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.UnspentOutputs).ToArray(), _InnerBlockHash, _BlockHash);
 				_InnerBlockHash = _BlockHash;

@@ -52,6 +52,41 @@ namespace Stratis.Bitcoin.Tests
 		}
 
 		[Fact]
+		public void TestCacheCoinView()
+		{
+			using(NodeContext ctx = NodeContext.Create())
+			{
+				var genesis = ctx.Network.GetGenesis();
+				var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
+				var chained = MakeNext(genesisChainedBlock);
+				var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView);
+
+				cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
+				Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
+				Assert.Null(cacheCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+				Assert.Equal(chained.HashBlock, cacheCoinView.GetBlockHashAsync().Result);
+
+				Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
+				Assert.Equal(chained.Previous.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().Result);
+				cacheCoinView.FlushAsync().GetAwaiter().GetResult();
+				Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
+				Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().Result);
+				//Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+
+
+				//var previous = chained;
+				//chained = MakeNext(MakeNext(genesisChainedBlock));
+				//chained = MakeNext(MakeNext(genesisChainedBlock));
+				//ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], previous.HashBlock, chained.HashBlock).Wait();
+				//Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
+				//ctx.ReloadPersistentCoinView();
+				//Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
+				//Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
+				//Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+			}
+		}
+
+		[Fact]
 		public void NodesCanConnectToEachOthers()
 		{
 			using(NodeBuilder builder = NodeBuilder.Create())
