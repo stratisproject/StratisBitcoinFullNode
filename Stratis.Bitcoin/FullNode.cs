@@ -14,6 +14,8 @@ using Stratis.Bitcoin.Consensus;
 using NBitcoin.Protocol;
 using Microsoft.AspNetCore.Hosting.Internal;
 using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.BlockPulling;
+using System.Text;
 
 namespace Stratis.Bitcoin
 {
@@ -86,8 +88,78 @@ namespace Stratis.Bitcoin
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
+			ConsensusLoop = new ConsensusLoop(new ConsensusValidator(Network.Consensus), Chain, CoinView, new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes));
+			new Thread(RunLoop)
+			{
+				Name = "Consensus Loop"
+			}.Start();
 			_IsStarted.Set();
 		}
+
+		void RunLoop()
+		{
+			var stack = new CoinViewStack(CoinView);
+			var cache = stack.Find<CachedCoinView>();
+			var dbreeze = stack.Find<DBreezeCoinView>();
+			var bottom = stack.Bottom;
+
+			var lookaheadPuller = ConsensusLoop.Puller as LookaheadBlockPuller;
+
+			var lastSnapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
+			var lastSnapshot2 = dbreeze == null ? null : dbreeze.PerformanceCounter.Snapshot();
+			var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
+			foreach(var block in ConsensusLoop.Execute())
+			{
+				if(_IsDisposed.WaitOne(0))
+					break;
+				if(block.Error != null)
+				{
+					//TODO: 
+					Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
+				}
+				if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
+				{
+					StringBuilder benchLogs = new StringBuilder();
+
+					if(lookaheadPuller != null)
+					{
+						benchLogs.AppendLine("ActualLookahead :\t" + lookaheadPuller.ActualLookahead + " blocks");
+						benchLogs.AppendLine("Median Downloaded :\t" + lookaheadPuller.MedianDownloadCount + " blocks");
+					}
+					benchLogs.AppendLine("Persistent Tip :\t" + Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
+					if(cache != null)
+					{
+						benchLogs.AppendLine("Cache Tip :\t" + Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
+						benchLogs.AppendLine("Cache entries :\t" + cache.CacheEntryCount);
+					}
+
+					var snapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
+					benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
+					lastSnapshot = snapshot;
+
+					if(dbreeze != null)
+					{
+						var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
+						benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
+						lastSnapshot2 = snapshot2;
+					}
+					if(cache != null)
+					{
+						var snapshot3 = cache.PerformanceCounter.Snapshot();
+						benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
+						lastSnapshot3 = snapshot3;
+					}
+					Logs.Bench.LogInformation(benchLogs.ToString());
+				}
+			}
+		}
+
+		public ConsensusLoop ConsensusLoop
+		{
+			get; set;
+		}
+
+
 
 		public IWebHost RPCHost
 		{
