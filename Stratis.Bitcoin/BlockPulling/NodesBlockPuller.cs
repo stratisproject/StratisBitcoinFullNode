@@ -169,6 +169,11 @@ namespace Stratis.Bitcoin.BlockPulling
 			DistributeDownload(vectors.ToArray(), nodes);
 		}
 
+		public override bool IsDownloading(uint256 hash)
+		{
+			return _Map.ContainsKey(hash);
+		}
+
 		protected override void OnStalling(ChainedBlock chainedBlock)
 		{
 			NodesBlockPullerBehavior behavior = null;
@@ -189,6 +194,8 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		private void DistributeDownload(InventoryVector[] vectors, NodesBlockPullerBehavior[] nodes)
 		{
+			if(vectors.Length == 0)
+				return;
 			if(nodes.Length == 0)
 			{
 				foreach(var v in vectors)
@@ -209,6 +216,8 @@ namespace Stratis.Bitcoin.BlockPulling
 			}
 			for(int i = 0; i < nodes.Length; i++)
 			{
+				if(getDatas[i].Inventory.Count == 0)
+					continue;
 				nodes[i].StartDownload(getDatas[i]);
 			}
 		}

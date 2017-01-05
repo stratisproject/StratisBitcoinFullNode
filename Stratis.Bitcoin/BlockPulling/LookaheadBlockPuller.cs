@@ -246,20 +246,24 @@ namespace Stratis.Bitcoin.BlockPulling
 				_LookaheadLocation = null;
 
 			ChainedBlock[] downloadRequests = null;
-			lock(_ChainLock)
-			{
-				ChainedBlock lookaheadBlock = _LookaheadLocation ?? _Location;
-				ChainedBlock nextLookaheadBlock = _Chain.GetBlock(Math.Min(lookaheadBlock.Height + ActualLookahead, _Chain.Height));
-				_LookaheadLocation = nextLookaheadBlock;
 
-				downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - lookaheadBlock.Height];
-				if(downloadRequests.Length == 0)
-					return;
-				for(int i = 0; i < downloadRequests.Length; i++)
-				{
-					downloadRequests[i] = _Chain.GetBlock(lookaheadBlock.Height + 1 + i);
-				}
+			ChainedBlock lookaheadBlock = _LookaheadLocation ?? _Location;
+			ChainedBlock nextLookaheadBlock = _Chain.GetBlock(Math.Min(lookaheadBlock.Height + ActualLookahead, _Chain.Height));
+			if(nextLookaheadBlock == null)
+				return;
+			var fork = nextLookaheadBlock.FindFork(lookaheadBlock);
+
+			_LookaheadLocation = nextLookaheadBlock;
+
+			downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - fork.Height];
+			if(downloadRequests.Length == 0)
+				return;
+			for(int i = 0; i < downloadRequests.Length; i++)
+			{
+				downloadRequests[downloadRequests.Length - i - 1] = nextLookaheadBlock;
+				nextLookaheadBlock = nextLookaheadBlock.Previous;
 			}
+
 			AskBlocks(downloadRequests);
 		}
 
@@ -284,6 +288,8 @@ namespace Stratis.Bitcoin.BlockPulling
 				{
 					if(header != null)
 					{
+						if(!IsDownloading(header.HashBlock))
+							AskBlocks(new ChainedBlock[] { header });
 						OnStalling(header);
 						IsStalling = true;
 					}
@@ -291,6 +297,11 @@ namespace Stratis.Bitcoin.BlockPulling
 				}
 				i = i == waitTime.Length - 1 ? 0 : i + 1;
 			}
+		}
+
+		public virtual bool IsDownloading(uint256 hash)
+		{
+			return false;
 		}
 
 		protected virtual void OnStalling(ChainedBlock chainedBlock)
