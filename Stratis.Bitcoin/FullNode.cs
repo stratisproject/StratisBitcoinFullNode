@@ -85,6 +85,9 @@ namespace Stratis.Bitcoin
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
 
+			if(AddressManager.Count == 0)
+				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
+
 			var connectionParameters = new NodeConnectionParameters();
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));

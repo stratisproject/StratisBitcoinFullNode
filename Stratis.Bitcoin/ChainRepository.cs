@@ -50,10 +50,10 @@ namespace Stratis.Bitcoin
 				List<ChainedBlock> blocks = new List<ChainedBlock>();
 				while(toSave != fork)
 				{
+					//DBreeze faster on ordered insert
+					blocks.Insert(0, toSave);
 					toSave = toSave.Previous;
-				}
-				//DBreeze faster on ordered insert
-				blocks.Reverse();
+				}				
 				foreach(var block in blocks)
 				{
 					_Session.Transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
