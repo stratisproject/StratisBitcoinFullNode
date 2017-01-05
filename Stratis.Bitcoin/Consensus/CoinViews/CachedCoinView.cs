@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Consensus
 					{
 						outputs[i] = cache.UnspentOutputs == null ? null :
 									 cache.UnspentOutputs.IsPrunable ? null :
-									 cache.UnspentOutputs;
+									 cache.UnspentOutputs.Clone();
 					}
 				}
 				PerformanceCounter.AddMissCount(miss.Count);
@@ -117,26 +117,29 @@ namespace Stratis.Bitcoin.Consensus
 			if(_InnerBlockHash == null)
 				_InnerBlockHash = await _Inner.GetBlockHashAsync().ConfigureAwait(false);
 
-			CacheItem[] unspent = null;
+			KeyValuePair<uint256, CacheItem>[] unspent = null;
 			using(_Lock.LockWrite())
 			{
 				if(_InnerBlockHash == null)
 					return;
 				unspent =
 				_Unspents.Where(u => u.Value.IsDirty)
-				.Select(u => u.Value)
 				.ToArray();
 
+				var others =
+				_Unspents.Where(u => !u.Value.IsDirty)
+				.ToArray();
+				
 				foreach(var u in unspent)
 				{
-					u.IsDirty = false;
-					u.ExistInInner = true;
+					u.Value.IsDirty = false;
+					u.Value.ExistInInner = true;
 				}
-				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.UnspentOutputs).ToArray(), _InnerBlockHash, _BlockHash);
+				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), _InnerBlockHash, _BlockHash);
 
 				//Remove from cache prunable entries as they are being flushed down
-				foreach(var c in unspent.Where(c => c.UnspentOutputs.IsPrunable))
-					_Unspents.Remove(c.UnspentOutputs.TransactionId);
+				foreach(var c in unspent.Where(c => c.Value.UnspentOutputs == null || c.Value.UnspentOutputs.IsPrunable))
+					_Unspents.Remove(c.Key);
 				_InnerBlockHash = _BlockHash;
 			}
 			//Can't await inside a lock
@@ -199,14 +202,14 @@ namespace Stratis.Bitcoin.Consensus
 						if(existing.UnspentOutputs != null)
 							existing.UnspentOutputs.MergeFrom(unspent);
 						else
-							existing.UnspentOutputs = unspent.Clone();
+							existing.UnspentOutputs = unspent;
 					}
 					else
 					{
 						existing = new CacheItem();
 						existing.ExistInInner = false;
 						existing.IsDirty = true;
-						existing.UnspentOutputs = unspent.Clone();
+						existing.UnspentOutputs = unspent;
 						_Unspents.Add(unspent.TransactionId, existing);
 					}
 					existing.IsDirty = true;
