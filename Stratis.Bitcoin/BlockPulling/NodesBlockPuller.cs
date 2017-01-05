@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.BlockPulling
 				return new NodesBlockPullerBehavior(_Puller);
 			}
 
-			public int StallingScore
+			public int QualityScore
 			{
 				get; set;
 			} = 1;
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.BlockPulling
 				message.Message.IfPayloadIs<BlockPayload>((block) =>
 				{
 					block.Object.Header.CacheHashes();
-					StallingScore = Math.Max(1, StallingScore - 1);
+					QualityScore = Math.Min(MaxQualityScore, QualityScore + 1);
 					uint256 unused;
 					if(!_PendingDownloads.TryRemove(block.Object.Header.GetHash(), out unused))
 					{
@@ -122,6 +122,14 @@ namespace Stratis.Bitcoin.BlockPulling
 					_Puller._PendingInventoryVectors.Add(blockHash);
 				}
 			}
+
+			public void ReleaseAll()
+			{
+				foreach(var h in PendingDownloads.ToArray())
+				{
+					Release(h);
+				}
+			}
 		}
 
 		NodesCollection _Nodes;
@@ -152,10 +160,10 @@ namespace Stratis.Bitcoin.BlockPulling
 			NodesBlockPullerBehavior behavior = null;
 			if(_Map.TryGetValue(chainedBlock.HashBlock, out behavior))
 			{
-				behavior.StallingScore = Math.Min(MaxStallingScore, behavior.StallingScore + inARow);
-				if(behavior.StallingScore == MaxStallingScore)
+				behavior.QualityScore = Math.Max(MinQualityScore, behavior.QualityScore - inARow);
+				if(behavior.QualityScore == MinQualityScore)
 				{
-					behavior.Release(chainedBlock.HashBlock);
+					behavior.ReleaseAll();
 				}
 			}
 			else
@@ -173,7 +181,7 @@ namespace Stratis.Bitcoin.BlockPulling
 					_PendingInventoryVectors.Add(v.Hash);
 				return;
 			}
-			var scores = idleNodes.Select(n => n.StallingScore).ToArray();
+			var scores = idleNodes.Select(n => n.QualityScore).ToArray();
 			var totalScore = scores.Sum();
 			GetDataPayload[] getDatas = idleNodes.Select(n => new GetDataPayload()).ToArray();
 			//TODO: Be careful to not ask block to a node that do not have it (we can check the ChainBehavior.PendingTip to know where the node is standing)
@@ -191,7 +199,8 @@ namespace Stratis.Bitcoin.BlockPulling
 			}
 		}
 
-		const int MaxStallingScore = 150;
+		const int MaxQualityScore = 150;
+		const int MinQualityScore = 1;
 		Random _Rand = new Random();
 		//Chose random index proportional to the score
 		private int GetNodeIndex(int[] scores, int totalScore)
@@ -201,7 +210,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			int i = 0;
 			foreach(var score in scores)
 			{
-				current += MaxStallingScore - score;
+				current += score;
 				if(v < current)
 					return i;
 				i++;

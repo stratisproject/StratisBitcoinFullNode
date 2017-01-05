@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin
 						builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(30) + "\t => R: " + ToKBSec(diff.ReadenBytesPerSecond) + "\tW: " + ToKBSec(diff.WrittenBytesPerSecond));
 						if(behavior != null)
 						{
-							builder.Append("\tStallingScore: " + behavior.StallingScore + "\tPendingBlocks: " + behavior.PendingDownloads.Count);
+							builder.Append("\tQualityScore: " + behavior.QualityScore + "\tPendingBlocks: " + behavior.PendingDownloads.Count);
 						}
 						builder.AppendLine();
 					}
