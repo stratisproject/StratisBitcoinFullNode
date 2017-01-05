@@ -107,14 +107,19 @@ namespace Stratis.Bitcoin.BlockPulling
 				{
 					if(download.Value == this)
 					{
-						NodesBlockPullerBehavior unused;
-						uint256 unused2;
-						if(_Puller._Map.TryRemove(download.Key, out unused))
-						{
-							_PendingDownloads.TryRemove(download.Key, out unused2);
-							_Puller._PendingInventoryVectors.Add(download.Key);
-						}
+						Release(download.Key);
 					}
+				}
+			}
+
+			internal void Release(uint256 blockHash)
+			{
+				NodesBlockPullerBehavior unused;
+				uint256 unused2;
+				if(_Puller._Map.TryRemove(blockHash, out unused))
+				{
+					_PendingDownloads.TryRemove(blockHash, out unused2);
+					_Puller._PendingInventoryVectors.Add(blockHash);
 				}
 			}
 		}
@@ -148,6 +153,10 @@ namespace Stratis.Bitcoin.BlockPulling
 			if(_Map.TryGetValue(chainedBlock.HashBlock, out behavior))
 			{
 				behavior.StallingScore = Math.Min(MaxStallingScore, behavior.StallingScore + inARow);
+				if(behavior.StallingScore == MaxStallingScore)
+				{
+					behavior.Release(chainedBlock.HashBlock);
+				}
 			}
 			else
 			{

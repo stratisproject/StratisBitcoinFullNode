@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin
 						var behavior = node.Behaviors.Find<NodesBlockPuller.NodesBlockPullerBehavior>();
 						var diff = newSnapshot - lastSnapshot;
 						diffTotal = new PerformanceSnapshot(diff.TotalReadenBytes + diffTotal.TotalReadenBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken  };
-						builder.Append(node.RemoteSocketAddress + ":" + node.RemoteSocketPort + "\t => R: " + ToKBSec(diff.ReadenBytesPerSecond) + "\tW: " + ToKBSec(diff.WrittenBytesPerSecond));
+						builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(30) + "\t => R: " + ToKBSec(diff.ReadenBytesPerSecond) + "\tW: " + ToKBSec(diff.WrittenBytesPerSecond));
 						if(behavior != null)
 						{
 							builder.Append("\tStallingScore: " + behavior.StallingScore + "\tPendingBlocks: " + behavior.PendingDownloads.Count);
