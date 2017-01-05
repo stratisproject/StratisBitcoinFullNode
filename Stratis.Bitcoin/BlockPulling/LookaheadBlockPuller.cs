@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			AskBlocks(downloadRequests);
 		}
 
-		static int[] waitTime = new[] { 1, 10, 100, 1000 };
+		static int[] waitTime = new[] { 1, 10, 20, 40, 100, 1000 };
 		private Block NextBlockCore()
 		{
 			int i = 0;
@@ -284,16 +284,16 @@ namespace Stratis.Bitcoin.BlockPulling
 				{
 					if(header != null)
 					{
-						OnStalling(header, i);
+						OnStalling(header);
 						IsStalling = true;
 					}
 					_Pushed.WaitOne(waitTime[i]);
 				}
-				i = Math.Min(i + 1, waitTime.Length - 1);
+				i = i == waitTime.Length - 1 ? 0 : i + 1;
 			}
 		}
 
-		protected virtual void OnStalling(ChainedBlock chainedBlock, int inARow)
+		protected virtual void OnStalling(ChainedBlock chainedBlock)
 		{
 
 		}

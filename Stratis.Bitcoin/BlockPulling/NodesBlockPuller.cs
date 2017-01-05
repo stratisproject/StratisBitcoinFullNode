@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.BlockPulling
 		public class NodesBlockPullerBehavior : NodeBehavior
 		{
 			private readonly NodesBlockPuller _Puller;
-			
+
 			public NodesBlockPullerBehavior(NodesBlockPuller puller)
 			{
 				_Puller = puller;
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			public int QualityScore
 			{
 				get; set;
-			} = 1;
+			} = 75;
 
 
 
@@ -145,57 +145,71 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		protected override void AskBlocks(ChainedBlock[] downloadRequests)
 		{
-			var busyNodes = new HashSet<NodesBlockPullerBehavior>(_Map.Select(m => m.Value).Distinct());
-			var idleNodes = _Nodes.Select(n => n.Behaviors.Find<NodesBlockPullerBehavior>())
-								  .Where(n => !busyNodes.Contains(n)).ToArray();
-			if(idleNodes.Length == 0)
-				idleNodes = busyNodes.ToArray();
-
+			NodesBlockPullerBehavior[] nodes = GetNodeBehaviors();
 			var vectors = downloadRequests.Select(r => new InventoryVector(InventoryType.MSG_BLOCK, r.HashBlock)).ToArray();
-			DistributeDownload(vectors, idleNodes);
+			DistributeDownload(vectors, nodes);
 		}
 
-		protected override void OnStalling(ChainedBlock chainedBlock, int inARow)
+		private NodesBlockPullerBehavior[] GetNodeBehaviors()
+		{
+			return _Nodes.Select(n => n.Behaviors.Find<NodesBlockPullerBehavior>()).ToArray();
+		}
+
+		private void AssignPendingVectors()
+		{
+			var nodes = GetNodeBehaviors();
+			if(nodes.Length == 0)
+				return;
+			List<InventoryVector> vectors = new List<InventoryVector>();
+			uint256 result;
+			while(_PendingInventoryVectors.TryTake(out result))
+			{
+				vectors.Add(new InventoryVector(InventoryType.MSG_BLOCK, result));
+			}
+			DistributeDownload(vectors.ToArray(), nodes);
+		}
+
+		protected override void OnStalling(ChainedBlock chainedBlock)
 		{
 			NodesBlockPullerBehavior behavior = null;
 			if(_Map.TryGetValue(chainedBlock.HashBlock, out behavior))
 			{
-				behavior.QualityScore = Math.Max(MinQualityScore, behavior.QualityScore - inARow);
+				behavior.QualityScore = Math.Max(MinQualityScore, behavior.QualityScore - 1);
 				if(behavior.QualityScore == MinQualityScore)
 				{
-					behavior.ReleaseAll();
+					//behavior.ReleaseAll();
+					//AssignPendingVectors();
 				}
 			}
 			else
 			{
-				foreach(var node in _Nodes.Select(n => n.Behaviors.Find<NodesBlockPullerBehavior>()))
-					node.AssignPendingVector();
+				AssignPendingVectors();
 			}
 		}
 
-		private void DistributeDownload(InventoryVector[] vectors, NodesBlockPullerBehavior[] idleNodes)
+		private void DistributeDownload(InventoryVector[] vectors, NodesBlockPullerBehavior[] nodes)
 		{
-			if(idleNodes.Length == 0)
+			if(nodes.Length == 0)
 			{
 				foreach(var v in vectors)
 					_PendingInventoryVectors.Add(v.Hash);
 				return;
 			}
-			var scores = idleNodes.Select(n => n.QualityScore).ToArray();
+			var scores = nodes.Select(n => n.QualityScore == MaxQualityScore ? MaxQualityScore * 2 : n.QualityScore).ToArray();
 			var totalScore = scores.Sum();
-			GetDataPayload[] getDatas = idleNodes.Select(n => new GetDataPayload()).ToArray();
+			GetDataPayload[] getDatas = nodes.Select(n => new GetDataPayload()).ToArray();
 			//TODO: Be careful to not ask block to a node that do not have it (we can check the ChainBehavior.PendingTip to know where the node is standing)
 			foreach(var inv in vectors)
 			{
 				var index = GetNodeIndex(scores, totalScore);
-				var node = idleNodes[index];
+				var node = nodes[index];
 				var getData = getDatas[index];
 				if(_Map.TryAdd(inv.Hash, node))
 					getData.Inventory.Add(inv);
 			}
-			for(int i = 0; i < idleNodes.Length; i++)
+			for(int i = 0; i < nodes.Length; i++)
 			{
-				idleNodes[i].StartDownload(getDatas[i]);
+				nodes[i].StartDownload(getDatas[i]);
 			}
 		}
 
