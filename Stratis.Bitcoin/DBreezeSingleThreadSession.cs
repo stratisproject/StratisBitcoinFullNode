@@ -60,6 +60,7 @@ namespace Stratis.Bitcoin
 
 		public void Dispose()
 		{
+			_IsDiposed = true;
 			if(_SingleThread == null)
 				return;
 			new Task(() =>
@@ -88,7 +89,7 @@ namespace Stratis.Bitcoin
 		private DBreeze.Transactions.Transaction _Transaction;
 		private DBreezeEngine _Engine;
 		private CustomThreadPoolTaskScheduler _SingleThread;
-
+		bool _IsDiposed;
 		public DBreeze.Transactions.Transaction Transaction
 		{
 			get
@@ -99,18 +100,28 @@ namespace Stratis.Bitcoin
 
 		public Task Do(Action act)
 		{
+			AssertNotDisposed();
 			var task = new Task(() =>
 			{
+				AssertNotDisposed();
 				act();
 			});
 			task.Start(_SingleThread);
 			return task;
 		}
 
+		private void AssertNotDisposed()
+		{
+			if(_IsDiposed)
+				throw new ObjectDisposedException("DBreezeSession");
+		}
+
 		public Task<T> Do<T>(Func<T> act)
 		{
+			AssertNotDisposed();
 			var task = new Task<T>(() =>
 			{
+				AssertNotDisposed();
 				return act();
 			});
 			task.Start(_SingleThread);

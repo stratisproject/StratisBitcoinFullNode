@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			public UnspentOutputs UnspentOutputs;
 			public bool ExistInInner;
-			public bool Synchronized;
+			public bool IsDirty;
 		}
 
 		ReaderWriterLock _Lock = new ReaderWriterLock();
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Consensus
 					outputs[index] = unspent;
 					CacheItem cache = new CacheItem();
 					cache.ExistInInner = unspent != null;
-					cache.Synchronized = true;
+					cache.IsDirty = false;
 					cache.UnspentOutputs = unspent;
 					_Unspents.TryAdd(txIds[index], cache);
 				}
@@ -123,13 +123,13 @@ namespace Stratis.Bitcoin.Consensus
 				if(_InnerBlockHash == null)
 					return;
 				unspent =
-				_Unspents.Where(u => !u.Value.Synchronized)
+				_Unspents.Where(u => u.Value.IsDirty)
 				.Select(u => u.Value)
 				.ToArray();
 
 				foreach(var u in unspent)
 				{
-					u.Synchronized = true;
+					u.IsDirty = false;
 					u.ExistInInner = true;
 				}
 				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.UnspentOutputs).ToArray(), _InnerBlockHash, _BlockHash);
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Consensus
 				Random rand = new Random();
 				foreach(var entry in _Unspents.ToList())
 				{
-					if(entry.Value.Synchronized)
+					if(!entry.Value.IsDirty)
 					{
 						if(rand.Next() % 3 == 0)
 							_Unspents.Remove(entry.Key);
@@ -205,11 +205,11 @@ namespace Stratis.Bitcoin.Consensus
 					{
 						existing = new CacheItem();
 						existing.ExistInInner = false;
-						existing.Synchronized = false;
+						existing.IsDirty = true;
 						existing.UnspentOutputs = unspent.Clone();
 						_Unspents.Add(unspent.TransactionId, existing);
 					}
-					existing.Synchronized = false;
+					existing.IsDirty = true;
 					//Inner does not need to know pruned unspent that it never saw.
 					if(existing.UnspentOutputs.IsPrunable && !existing.ExistInInner)
 						_Unspents.Remove(unspent.TransactionId);

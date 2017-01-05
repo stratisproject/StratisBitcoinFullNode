@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin
 
 						var diff = newSnapshot - lastSnapshot;
 						diffTotal = new PerformanceSnapshot(diff.TotalReadenBytes + diffTotal.TotalReadenBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken  };
-						builder.AppendLine(node.RemoteSocketAddress + ":" + node.RemoteSocketPort + "\t => R: " + ToKBSec(lastSnapshot.ReadenBytesPerSecond) + "\tW: " + ToKBSec(lastSnapshot.WrittenBytesPerSecond));
+						builder.AppendLine(node.RemoteSocketAddress + ":" + node.RemoteSocketPort + "\t => R: " + ToKBSec(diff.ReadenBytesPerSecond) + "\tW: " + ToKBSec(diff.WrittenBytesPerSecond));
 					}
 					_Downloads.AddOrReplace(node, newSnapshot);
 				}
