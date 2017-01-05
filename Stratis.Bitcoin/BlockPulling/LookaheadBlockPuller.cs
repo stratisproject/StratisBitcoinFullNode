@@ -282,13 +282,20 @@ namespace Stratis.Bitcoin.BlockPulling
 				}
 				else
 				{
-					//if(_DownloadedBlocks.Count != 0)
-					//	System.Diagnostics.Debugger.Break();
-					IsStalling = true;
+					if(header != null)
+					{
+						OnStalling(header, i);
+						IsStalling = true;
+					}
 					_Pushed.WaitOne(waitTime[i]);
 				}
 				i = Math.Min(i + 1, waitTime.Length - 1);
 			}
+		}
+
+		protected virtual void OnStalling(ChainedBlock chainedBlock, int inARow)
+		{
+
 		}
 	}
 }

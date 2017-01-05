@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using Stratis.Bitcoin.Configuration;
 using System.Net;
 using System.Text;
+using Stratis.Bitcoin.BlockPulling;
 
 namespace Stratis.Bitcoin
 {
@@ -108,15 +109,20 @@ namespace Stratis.Bitcoin
 		}
 
 		NodeConnectionParameters _Parameters;
+		ConnectionManagerArgs _Args;
 		public ConnectionManager(Network network, NodeConnectionParameters parameters, ConnectionManagerArgs args)
 		{
 			_Network = network;
+			_Args = args;
 			_Parameters = parameters;
-			parameters.UserAgent = "StratisBitcoin:" + GetVersion();
+		}
 
-			if(args.Connect.Count == 0)
+		public void Start()
+		{
+			_Parameters.UserAgent = "StratisBitcoin:" + GetVersion();
+			if(_Args.Connect.Count == 0)
 			{
-				var cloneParameters = parameters.Clone();
+				var cloneParameters = _Parameters.Clone();
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
 				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters);
 				DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
@@ -124,45 +130,45 @@ namespace Stratis.Bitcoin
 			}
 			else
 			{
-				var cloneParameters = parameters.Clone();
+				var cloneParameters = _Parameters.Clone();
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
 				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
 				var addrman = new AddressManager();
-				addrman.Add(args.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
+				addrman.Add(_Args.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
 				var addrmanBehavior = new AddressManagerBehavior(addrman);
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.None;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
 				ConnectNodeGroup = CreateNodeGroup(cloneParameters);
-				ConnectNodeGroup.MaximumNodeConnection = args.Connect.Count;
+				ConnectNodeGroup.MaximumNodeConnection = _Args.Connect.Count;
 				ConnectNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
 				ConnectNodeGroup.Connect();
 			}
 
 			{
-				var cloneParameters = parameters.Clone();
+				var cloneParameters = _Parameters.Clone();
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
 				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
 				var addrman = new AddressManager();
-				addrman.Add(args.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
+				addrman.Add(_Args.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
 				var addrmanBehavior = new AddressManagerBehavior(addrman);
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.AdvertizeDiscover;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
 				AddNodeNodeGroup = CreateNodeGroup(cloneParameters);
-				AddNodeNodeGroup.MaximumNodeConnection = args.AddNode.Count;
+				AddNodeNodeGroup.MaximumNodeConnection = _Args.AddNode.Count;
 				AddNodeNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
 				AddNodeNodeGroup.Connect();
 			}
 
 			StringBuilder logs = new StringBuilder();
 			logs.AppendLine("Node listening on:");
-			foreach(var listen in args.Listen)
+			foreach(var listen in _Args.Listen)
 			{
-				var cloneParameters = parameters.Clone();
+				var cloneParameters = _Parameters.Clone();
 				var server = new NodeServer(Network);
 				server.LocalEndpoint = listen.Endpoint;
-				server.ExternalEndpoint = args.ExternalEndpoint;
+				server.ExternalEndpoint = _Args.ExternalEndpoint;
 				_Servers.Add(server);
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this)
 				{
@@ -184,21 +190,26 @@ namespace Stratis.Bitcoin
 			lock(_Downloads)
 			{
 				PerformanceSnapshot diffTotal = new PerformanceSnapshot(0, 0);
-				builder.AppendLine("====Connections====");
+				builder.AppendLine("=======Connections=======");
 				foreach(var node in ConnectedNodes)
 				{
 					var newSnapshot = node.Counter.Snapshot();
 					PerformanceSnapshot lastSnapshot = null;
 					if(_Downloads.TryGetValue(node, out lastSnapshot))
 					{
-
+						var behavior = node.Behaviors.Find<NodesBlockPuller.NodesBlockPullerBehavior>();
 						var diff = newSnapshot - lastSnapshot;
 						diffTotal = new PerformanceSnapshot(diff.TotalReadenBytes + diffTotal.TotalReadenBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken  };
-						builder.AppendLine(node.RemoteSocketAddress + ":" + node.RemoteSocketPort + "\t => R: " + ToKBSec(diff.ReadenBytesPerSecond) + "\tW: " + ToKBSec(diff.WrittenBytesPerSecond));
+						builder.Append(node.RemoteSocketAddress + ":" + node.RemoteSocketPort + "\t => R: " + ToKBSec(diff.ReadenBytesPerSecond) + "\tW: " + ToKBSec(diff.WrittenBytesPerSecond));
+						if(behavior != null)
+						{
+							builder.Append("\tStallingScore: " + behavior.StallingScore + "\tPendingBlocks: " + behavior.PendingDownloads.Count);
+						}
+						builder.AppendLine();
 					}
 					_Downloads.AddOrReplace(node, newSnapshot);
 				}
-				builder.AppendLine("==========================");
+				builder.AppendLine("=================");
 				builder.AppendLine("Total\t => R: " + ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW: " + ToKBSec(diffTotal.WrittenBytesPerSecond));
 				builder.AppendLine("==========================");
 

@@ -92,7 +92,10 @@ namespace Stratis.Bitcoin
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
-			ConsensusLoop = new ConsensusLoop(new ConsensusValidator(Network.Consensus), Chain, CoinView, new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes));
+			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
+			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
+			ConnectionManager.Start();
+			ConsensusLoop = new ConsensusLoop(new ConsensusValidator(Network.Consensus), Chain, CoinView, blockPuller);
 			new Thread(RunLoop)
 			{
 				Name = "Consensus Loop"

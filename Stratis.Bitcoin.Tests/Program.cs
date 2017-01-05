@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests
 {
-    class Program
-    {
-        public static void Main(string[] args)
-        {
-            new Class1().ValidSomeBlocks();
-        }
-    }
+	class Program
+	{
+		public static void Main(string[] args)
+		{
+			new Class1().ValidSomeBlocks();
+		}
+
+		static Random _Rand = new Random();
+	}
 }

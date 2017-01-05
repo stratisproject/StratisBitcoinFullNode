@@ -5,118 +5,199 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using System.Collections.Concurrent;
+using NBitcoin.Protocol.Behaviors;
+using System.Threading;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
 	public class NodesBlockPuller : LookaheadBlockPuller
 	{
-		class Download
+		public class NodesBlockPullerBehavior : NodeBehavior
 		{
-			public Node Node
+			private readonly NodesBlockPuller _Puller;
+			
+			public NodesBlockPullerBehavior(NodesBlockPuller puller)
+			{
+				_Puller = puller;
+			}
+			public override object Clone()
+			{
+				return new NodesBlockPullerBehavior(_Puller);
+			}
+
+			public int StallingScore
 			{
 				get; set;
+			} = 1;
+
+
+
+			private ConcurrentDictionary<uint256, uint256> _PendingDownloads = new ConcurrentDictionary<uint256, uint256>();
+			public ICollection<uint256> PendingDownloads
+			{
+				get
+				{
+					return _PendingDownloads.Values;
+				}
+			}
+
+			private void Node_MessageReceived(Node node, IncomingMessage message)
+			{
+				message.Message.IfPayloadIs<BlockPayload>((block) =>
+				{
+					block.Object.Header.CacheHashes();
+					StallingScore = Math.Max(1, StallingScore - 1);
+					uint256 unused;
+					if(!_PendingDownloads.TryRemove(block.Object.Header.GetHash(), out unused))
+					{
+						//Unsollicited
+						return;
+					}
+					NodesBlockPullerBehavior unused2;
+					if(_Puller._Map.TryRemove(block.Object.Header.GetHash(), out unused2))
+					{
+						foreach(var tx in block.Object.Transactions)
+							tx.CacheHashes();
+						_Puller.PushBlock((int)message.Length, block.Object);
+						AssignPendingVector();
+					}
+				});
+			}
+
+			internal void AssignPendingVector()
+			{
+				if(AttachedNode != null && AttachedNode.State != NodeState.HandShaked)
+					return;
+				uint256 block;
+				if(_Puller._PendingInventoryVectors.TryTake(out block))
+				{
+					StartDownload(block);
+				}
+			}
+
+			internal void StartDownload(uint256 block)
+			{
+				if(_Puller._Map.TryAdd(block, this))
+				{
+					_PendingDownloads.TryAdd(block, block);
+					AttachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(InventoryType.MSG_BLOCK, block)));
+				}
+			}
+
+			//Caller should add to the puller map
+			internal void StartDownload(GetDataPayload getDataPayload)
+			{
+				foreach(var inv in getDataPayload.Inventory)
+				{
+					_PendingDownloads.TryAdd(inv.Hash, inv.Hash);
+				}
+				AttachedNode.SendMessageAsync(getDataPayload);
+			}
+
+			protected override void AttachCore()
+			{
+				AttachedNode.MessageReceived += Node_MessageReceived;
+				AssignPendingVector();
+			}
+
+			protected override void DetachCore()
+			{
+				AttachedNode.MessageReceived += Node_MessageReceived;
+				foreach(var download in _Puller._Map.ToArray())
+				{
+					if(download.Value == this)
+					{
+						NodesBlockPullerBehavior unused;
+						uint256 unused2;
+						if(_Puller._Map.TryRemove(download.Key, out unused))
+						{
+							_PendingDownloads.TryRemove(download.Key, out unused2);
+							_Puller._PendingInventoryVectors.Add(download.Key);
+						}
+					}
+				}
 			}
 		}
+
 		NodesCollection _Nodes;
 		ConcurrentChain _Chain;
 		public NodesBlockPuller(ConcurrentChain chain, NodesCollection nodes)
 		{
 			_Chain = chain;
 			_Nodes = nodes;
-			_Nodes.Added += _Nodes_Added;
-			_Nodes.Removed += _Nodes_Removed;
-			foreach(var node in _Nodes)
-				node.MessageReceived += Node_MessageReceived;
 		}
 
-		ConcurrentDictionary<uint256, Download> _Map = new ConcurrentDictionary<uint256, Download>();
+		ConcurrentDictionary<uint256, NodesBlockPullerBehavior> _Map = new ConcurrentDictionary<uint256, NodesBlockPullerBehavior>();
 		ConcurrentBag<uint256> _PendingInventoryVectors = new ConcurrentBag<uint256>();
-
-
-		private void _Nodes_Removed(object sender, NodeEventArgs e)
-		{
-			foreach(var download in _Map.ToArray())
-			{
-				if(download.Value.Node == e.Node)
-				{
-					Download d;
-					if(_Map.TryRemove(download.Key, out d))
-					{
-						_PendingInventoryVectors.Add(download.Key);
-					}
-				}
-			}
-			e.Node.MessageReceived -= Node_MessageReceived;
-		}
-
-		private void _Nodes_Added(object sender, NodeEventArgs e)
-		{
-			e.Node.MessageReceived += Node_MessageReceived;
-			AssignPendingVector(e.Node);
-		}
-
-		private void AssignPendingVector(Node node)
-		{
-			uint256 block;
-			if(_PendingInventoryVectors.TryTake(out block))
-			{
-				if(_Map.TryAdd(block, new Download() { Node = node }))
-					node.SendMessageAsync(new GetDataPayload(new InventoryVector(InventoryType.MSG_BLOCK, block)));
-			}
-		}
-
-		private void Node_MessageReceived(Node node, IncomingMessage message)
-		{
-			message.Message.IfPayloadIs<BlockPayload>((block) =>
-			{
-				block.Object.Header.CacheHashes();
-				Download v;
-				_Map.TryRemove(block.Object.Header.GetHash(), out v);
-				foreach(var tx in block.Object.Transactions)
-					tx.CacheHashes();
-				PushBlock((int)message.Length, block.Object);
-				AssignPendingVector(node);
-			});
-		}
 
 		protected override void AskBlocks(ChainedBlock[] downloadRequests)
 		{
-			var busyNodes = new HashSet<Node>(_Map.Select(m => m.Value.Node).Distinct());
-			var idleNodes = _Nodes.Where(n => !busyNodes.Contains(n)).ToArray();
+			var busyNodes = new HashSet<NodesBlockPullerBehavior>(_Map.Select(m => m.Value).Distinct());
+			var idleNodes = _Nodes.Select(n => n.Behaviors.Find<NodesBlockPullerBehavior>())
+								  .Where(n => !busyNodes.Contains(n)).ToArray();
 			if(idleNodes.Length == 0)
 				idleNodes = busyNodes.ToArray();
 
 			var vectors = downloadRequests.Select(r => new InventoryVector(InventoryType.MSG_BLOCK, r.HashBlock)).ToArray();
+			DistributeDownload(vectors, idleNodes);
+		}
+
+		protected override void OnStalling(ChainedBlock chainedBlock, int inARow)
+		{
+			NodesBlockPullerBehavior behavior = null;
+			if(_Map.TryGetValue(chainedBlock.HashBlock, out behavior))
+			{
+				behavior.StallingScore = Math.Min(MaxStallingScore, behavior.StallingScore + inARow);
+			}
+			else
+			{
+				foreach(var node in _Nodes.Select(n => n.Behaviors.Find<NodesBlockPullerBehavior>()))
+					node.AssignPendingVector();
+			}
+		}
+
+		private void DistributeDownload(InventoryVector[] vectors, NodesBlockPullerBehavior[] idleNodes)
+		{
 			if(idleNodes.Length == 0)
 			{
 				foreach(var v in vectors)
 					_PendingInventoryVectors.Add(v.Hash);
+				return;
 			}
-			else
+			var scores = idleNodes.Select(n => n.StallingScore).ToArray();
+			var totalScore = scores.Sum();
+			GetDataPayload[] getDatas = idleNodes.Select(n => new GetDataPayload()).ToArray();
+			//TODO: Be careful to not ask block to a node that do not have it (we can check the ChainBehavior.PendingTip to know where the node is standing)
+			foreach(var inv in vectors)
 			{
-				DistributeDownload(vectors, idleNodes);
+				var index = GetNodeIndex(scores, totalScore);
+				var node = idleNodes[index];
+				var getData = getDatas[index];
+				if(_Map.TryAdd(inv.Hash, node))
+					getData.Inventory.Add(inv);
+			}
+			for(int i = 0; i < idleNodes.Length; i++)
+			{
+				idleNodes[i].StartDownload(getDatas[i]);
 			}
 		}
 
-		private void DistributeDownload(InventoryVector[] vectors, Node[] idleNodes)
+		const int MaxStallingScore = 150;
+		Random _Rand = new Random();
+		//Chose random index proportional to the score
+		private int GetNodeIndex(int[] scores, int totalScore)
 		{
-			int nodeIndex = 0;
-			//TODO: Be careful to not ask block to a node that do not have it (we can check the ChainBehavior.PendingTip to know where the node is standing)
-			foreach(var batch in vectors.Partition(vectors.Length / idleNodes.Length))
+			var v = _Rand.Next(totalScore);
+			var current = 0;
+			int i = 0;
+			foreach(var score in scores)
 			{
-				var node = idleNodes[nodeIndex % idleNodes.Length];
-				var getData = new GetDataPayload(batch.ToArray());
-				foreach(var inv in batch)
-				{
-					if(!_Map.TryAdd(inv.Hash, new Download() { Node = node }))
-						getData.Inventory.Remove(inv);
-				}
-				if(getData.Inventory.Count > 0)
-				{
-					node.SendMessageAsync(getData);
-					nodeIndex++;
-				}
+				current += MaxStallingScore - score;
+				if(v < current)
+					return i;
+				i++;
 			}
+			return scores.Length - 1;
 		}
 
 		protected override ConcurrentChain ReloadChainCore()
