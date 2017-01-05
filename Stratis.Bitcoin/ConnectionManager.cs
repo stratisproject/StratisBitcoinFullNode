@@ -178,6 +178,45 @@ namespace Stratis.Bitcoin
 			Logs.ConnectionManager.LogInformation(logs.ToString());
 		}
 
+		public string GetStats()
+		{
+			StringBuilder builder = new StringBuilder();
+			lock(_Downloads)
+			{
+				PerformanceSnapshot diffTotal = new PerformanceSnapshot(0, 0);
+				builder.AppendLine("====Connections====");
+				foreach(var node in ConnectedNodes)
+				{
+					var newSnapshot = node.Counter.Snapshot();
+					PerformanceSnapshot lastSnapshot = null;
+					if(_Downloads.TryGetValue(node, out lastSnapshot))
+					{
+
+						var diff = newSnapshot - lastSnapshot;
+						diffTotal = new PerformanceSnapshot(diff.TotalReadenBytes + diffTotal.TotalReadenBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken  };
+						builder.AppendLine(node.RemoteSocketAddress + ":" + node.RemoteSocketPort + "\t => R: " + ToKBSec(lastSnapshot.ReadenBytesPerSecond) + "\tW: " + ToKBSec(lastSnapshot.WrittenBytesPerSecond));
+					}
+					_Downloads.AddOrReplace(node, newSnapshot);
+				}
+				builder.AppendLine("==========================");
+				builder.AppendLine("Total\t => R: " + ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW: " + ToKBSec(diffTotal.WrittenBytesPerSecond));
+				builder.AppendLine("==========================");
+
+				//TODO: Hack, we should just clean nodes that are not connect anymore
+				if(_Downloads.Count > 1000)
+					_Downloads.Clear();
+			}
+			return builder.ToString();
+		}
+
+		private string ToKBSec(ulong bytesPerSec)
+		{
+			double speed = ((double)bytesPerSec / 1024.0);
+			return speed.ToString("0.00") + " KB/S";
+		}
+
+		Dictionary<Node, PerformanceSnapshot> _Downloads = new Dictionary<Node, PerformanceSnapshot>();
+
 		List<NodeServer> _Servers = new List<NodeServer>();
 
 		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters)
@@ -218,7 +257,7 @@ namespace Stratis.Bitcoin
 				return _ConnectedNodes;
 			}
 		}
-		
+
 		public void AddNode(IPEndPoint endpoint)
 		{
 			var addrman = AddressManagerBehavior.GetAddrman(AddNodeNodeGroup.NodeConnectionParameters);

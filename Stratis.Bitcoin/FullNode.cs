@@ -156,6 +156,7 @@ namespace Stratis.Bitcoin
 							benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
 							lastSnapshot3 = snapshot3;
 						}
+						benchLogs.AppendLine(ConnectionManager.GetStats());
 						Logs.Bench.LogInformation(benchLogs.ToString());
 					}
 				}
