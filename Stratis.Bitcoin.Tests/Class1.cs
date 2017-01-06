@@ -272,7 +272,10 @@ namespace Stratis.Bitcoin.Tests
 				valid.UseConsensusLib = false;
 				Node node = Node.ConnectToLocal(network);
 				node.VersionHandshake();
-				var puller = new CustomNodeBlockPuller(chain, node);
+				var nodes = new NodesCollection();
+				nodes.Add(node);
+				var puller = new NodesBlockPuller(chain, nodes);
+				node.Behaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(puller));
 				var lastSnapshot = valid.PerformanceCounter.Snapshot();
 				var lastSnapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
 				var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();

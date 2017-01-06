@@ -89,7 +89,6 @@ namespace Stratis.Bitcoin.BlockPulling
 		long _CurrentSize;
 		ConcurrentDictionary<uint256, DownloadedBlock> _DownloadedBlocks = new ConcurrentDictionary<uint256, DownloadedBlock>();
 
-		ConcurrentChain _Chain;
 		ChainedBlock _Location;
 		ChainedBlock _LookaheadLocation;
 		public ChainedBlock LookaheadLocation
@@ -109,16 +108,12 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public ConcurrentChain Chain
 		{
-			get
-			{
-				return _Chain;
-			}
+			get;
+			set;
 		}
 
 		public override Block NextBlock()
 		{
-			if(_Chain == null)
-				ReloadChain();
 			_DownloadedCounts.Add(_DownloadedBlocks.Count);
 			if(_LookaheadLocation == null)
 			{
@@ -179,7 +174,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public Block TryGetLookahead(int count)
 		{
-			var chainedBlock = _Chain.GetBlock(_Location.Height + 1 + count);
+			var chainedBlock = Chain.GetBlock(_Location.Height + 1 + count);
 			if(chainedBlock == null)
 				return null;
 			var block = _DownloadedBlocks.TryGet(chainedBlock.HashBlock);
@@ -189,14 +184,6 @@ namespace Stratis.Bitcoin.BlockPulling
 		}
 
 		protected abstract void AskBlocks(ChainedBlock[] downloadRequests);
-		protected abstract ConcurrentChain ReloadChainCore();
-		private void ReloadChain()
-		{
-			lock(_ChainLock)
-			{
-				_Chain = ReloadChainCore();
-			}
-		}
 
 		AutoResetEvent _Consumed = new AutoResetEvent(false);
 		AutoResetEvent _Pushed = new AutoResetEvent(false);
@@ -222,7 +209,7 @@ namespace Stratis.Bitcoin.BlockPulling
 		protected void PushBlock(int length, Block block)
 		{
 			var hash = block.Header.GetHash();
-			var header = _Chain.GetBlock(hash);
+			var header = Chain.GetBlock(hash);
 			while(_CurrentSize + length >= MaxBufferedSize && header.Height != _Location.Height + 1)
 			{
 				IsFull = true;
@@ -234,21 +221,19 @@ namespace Stratis.Bitcoin.BlockPulling
 			_Pushed.Set();
 		}
 
-		object _ChainLock = new object();
-
 		private void AskBlocks()
 		{
 			if(_Location == null)
 				throw new InvalidOperationException("SetLocation should have been called");
-			if(_LookaheadLocation == null && !_Chain.Contains(_Location))
+			if(_LookaheadLocation == null && !Chain.Contains(_Location))
 				return;
-			if(_LookaheadLocation != null && !_Chain.Contains(_LookaheadLocation))
+			if(_LookaheadLocation != null && !Chain.Contains(_LookaheadLocation))
 				_LookaheadLocation = null;
 
 			ChainedBlock[] downloadRequests = null;
 
 			ChainedBlock lookaheadBlock = _LookaheadLocation ?? _Location;
-			ChainedBlock nextLookaheadBlock = _Chain.GetBlock(Math.Min(lookaheadBlock.Height + ActualLookahead, _Chain.Height));
+			ChainedBlock nextLookaheadBlock = Chain.GetBlock(Math.Min(lookaheadBlock.Height + ActualLookahead, Chain.Height));
 			if(nextLookaheadBlock == null)
 				return;
 			var fork = nextLookaheadBlock.FindFork(lookaheadBlock);
@@ -273,7 +258,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			int i = 0;
 			while(true)
 			{
-				var header = _Chain.GetBlock(_Location.Height + 1);
+				var header = Chain.GetBlock(_Location.Height + 1);
 				DownloadedBlock block;
 				if(header != null && _DownloadedBlocks.TryRemove(header.HashBlock, out block))
 				{

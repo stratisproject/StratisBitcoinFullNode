@@ -133,10 +133,9 @@ namespace Stratis.Bitcoin.BlockPulling
 		}
 
 		NodesCollection _Nodes;
-		ConcurrentChain _Chain;
 		public NodesBlockPuller(ConcurrentChain chain, NodesCollection nodes)
 		{
-			_Chain = chain;
+			Chain = chain;
 			_Nodes = nodes;
 		}
 
@@ -239,11 +238,6 @@ namespace Stratis.Bitcoin.BlockPulling
 				i++;
 			}
 			return scores.Length - 1;
-		}
-
-		protected override ConcurrentChain ReloadChainCore()
-		{
-			return _Chain;
 		}
 	}
 }
