@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Configuration
 			NodeArgs nodeArgs = new NodeArgs();
 			nodeArgs.ConfigurationFile = args.Where(a => a.StartsWith("-conf=")).Select(a => a.Substring("-conf=".Length).Replace("\"", "")).FirstOrDefault();
 			nodeArgs.DataDir = args.Where(a => a.StartsWith("-datadir=")).Select(a => a.Substring("-datadir=".Length).Replace("\"", "")).FirstOrDefault();
-			if(nodeArgs.DataDir != null)
+			if(nodeArgs.DataDir != null && nodeArgs.ConfigurationFile != null)
 			{
 				var isRelativePath = Path.GetFullPath(nodeArgs.ConfigurationFile).Length > nodeArgs.ConfigurationFile.Length;
 				if(isRelativePath)
