@@ -91,12 +91,24 @@ namespace Stratis.Bitcoin.Configuration
 			internal set;
 		}
 	}
+
+	public class CacheArgs
+	{
+		public int MaxItems
+		{
+			get; set;
+		} = 100000;
+	}
 	public class NodeArgs
 	{
 		public RPCArgs RPC
 		{
 			get; set;
 		}
+		public CacheArgs Cache
+		{
+			get; set;
+		} = new CacheArgs();
 		public ConnectionManagerArgs ConnectionManager
 		{
 			get; set;
@@ -275,7 +287,7 @@ namespace Stratis.Bitcoin.Configuration
 
 			if(nodeArgs.ConnectionManager.ExternalEndpoint == null)
 			{
-				nodeArgs.ConnectionManager.ExternalEndpoint = nodeArgs.ConnectionManager.Listen.First().Endpoint;
+				nodeArgs.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, network.DefaultPort);
 			}
 
 			var folder = new DataFolder(nodeArgs.DataDir);

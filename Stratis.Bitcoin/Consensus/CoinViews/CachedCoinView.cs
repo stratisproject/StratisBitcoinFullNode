@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Consensus
 				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), _InnerBlockHash, _BlockHash);
 
 				//Remove from cache prunable entries as they are being flushed down
-				foreach(var c in unspent.Where(c => c.Value.UnspentOutputs == null || c.Value.UnspentOutputs.IsPrunable))
+				foreach(var c in unspent.Where(c => c.Value.UnspentOutputs != null && c.Value.UnspentOutputs.IsPrunable))
 					_Unspents.Remove(c.Key);
 				_InnerBlockHash = _BlockHash;
 			}

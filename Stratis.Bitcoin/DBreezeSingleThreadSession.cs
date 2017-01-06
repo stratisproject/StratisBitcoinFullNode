@@ -11,16 +11,25 @@ using NBitcoin.BitcoinCore;
 
 namespace Stratis.Bitcoin
 {
-    public class DBreezeSingleThreadSession : IDisposable
-    {
+	public class DBreezeSingleThreadSession : IDisposable
+	{
 		public DBreezeSingleThreadSession(string threadName, string folder)
 		{
-			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName );
+			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
 			new Task(() =>
 			{
 				DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
 				DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
-				_Engine = new DBreezeEngine(folder);
+				try
+				{
+
+					_Engine = new DBreezeEngine(folder);
+				}
+				catch
+				{
+					Thread.Sleep(1000);
+					_Engine = new DBreezeEngine(folder);
+				}
 				_Transaction = _Engine.GetTransaction();
 			}).Start(_SingleThread);
 		}
@@ -84,7 +93,7 @@ namespace Stratis.Bitcoin
 			}
 		}
 
-		
+
 
 		private DBreeze.Transactions.Transaction _Transaction;
 		private DBreezeEngine _Engine;

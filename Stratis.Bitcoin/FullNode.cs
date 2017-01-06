@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin
 			DataFolder = new DataFolder(_Args.DataDir);
 			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
 			_Resources.Add(coinviewDB);
-			CoinView = new CachedCoinView(coinviewDB);
+			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
 			_Cancellation = new CancellationTokenSource();
 
 			StartFlushAddrManThread();

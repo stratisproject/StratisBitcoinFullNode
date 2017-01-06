@@ -258,20 +258,37 @@ namespace Stratis.Bitcoin.Tests
 			{
 				var nodeArgs = new NodeArgs();
 				nodeArgs.DataDir = ctx.FolderName;
+				nodeArgs.Cache.MaxItems = 1000;
 				nodeArgs.ConnectionManager.Connect.Add(new IPEndPoint(IPAddress.Loopback, ctx.Network.DefaultPort));
 				var fullNode = new FullNode(nodeArgs);
 				fullNode.Start();
-				WaitReachBlock(fullNode, 10000);
-				fullNode.Dispose();
+				int increment = 10000;
+				int reachNext = increment;
+				for(int i = 0; i < 10; i++)
+				{
+					WaitReachBlock(fullNode, reachNext);
+					fullNode = Restart(fullNode);
+					reachNext += increment;
+				}
 				fullNode.ThrowIfUncatchedException();
+				fullNode.Dispose();
 			}
+		}
+
+		private FullNode Restart(FullNode fullNode)
+		{
+			fullNode.Dispose();
+			fullNode.ThrowIfUncatchedException();
+			fullNode = new FullNode(fullNode.Args);
+			fullNode.Start();
+			return fullNode;
 		}
 
 		private void WaitReachBlock(FullNode fullNode, int height)
 		{
 			while(true)
 			{
-				if(fullNode.ConsensusLoop.Tip.Height >= 10000)
+				if(fullNode?.ConsensusLoop?.Tip?.Height >= height)
 				{
 					break;
 				}
