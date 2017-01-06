@@ -139,7 +139,11 @@ namespace Stratis.Bitcoin.Configuration
 			nodeArgs.DataDir = args.Where(a => a.StartsWith("-datadir=")).Select(a => a.Substring("-datadir=".Length).Replace("\"", "")).FirstOrDefault();
 			if(nodeArgs.DataDir != null)
 			{
-				nodeArgs.ConfigurationFile = Path.Combine(nodeArgs.DataDir, nodeArgs.ConfigurationFile);
+				var isRelativePath = Path.GetFullPath(nodeArgs.ConfigurationFile).Length > nodeArgs.ConfigurationFile.Length;
+				if(isRelativePath)
+				{
+					nodeArgs.ConfigurationFile = Path.Combine(nodeArgs.DataDir, nodeArgs.ConfigurationFile);
+				}
 			}
 			nodeArgs.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
 			nodeArgs.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
@@ -266,7 +270,7 @@ namespace Stratis.Bitcoin.Configuration
 			{
 				throw new ConfigurationException("Invalid listen parameter");
 			}
-			
+
 			if(nodeArgs.ConnectionManager.Listen.Count == 0)
 			{
 				nodeArgs.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
