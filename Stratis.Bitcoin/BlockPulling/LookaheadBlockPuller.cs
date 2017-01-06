@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			set;
 		}
 
-		public override Block NextBlock()
+		public override Block NextBlock(CancellationToken cancellationToken)
 		{
 			_DownloadedCounts.Add(_DownloadedBlocks.Count);
 			if(_LookaheadLocation == null)
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.BlockPulling
 				AskBlocks();
 				AskBlocks();
 			}
-			var block = NextBlockCore();
+			var block = NextBlockCore(cancellationToken);
 			if((_LookaheadLocation.Height - _Location.Height) <= ActualLookahead)
 			{
 				CalculateLookahead();
@@ -253,11 +253,12 @@ namespace Stratis.Bitcoin.BlockPulling
 		}
 
 		static int[] waitTime = new[] { 1, 10, 20, 40, 100, 1000 };
-		private Block NextBlockCore()
+		private Block NextBlockCore(CancellationToken cancellationToken)
 		{
 			int i = 0;
 			while(true)
 			{
+				cancellationToken.ThrowIfCancellationRequested();
 				var header = Chain.GetBlock(_Location.Height + 1);
 				DownloadedBlock block;
 				if(header != null && _DownloadedBlocks.TryRemove(header.HashBlock, out block))
@@ -278,7 +279,7 @@ namespace Stratis.Bitcoin.BlockPulling
 						OnStalling(header);
 						IsStalling = true;
 					}
-					_Pushed.WaitOne(waitTime[i]);
+					WaitHandle.WaitAny(new[] { _Pushed, cancellationToken.WaitHandle }, waitTime[i]);
 				}
 				i = i == waitTime.Length - 1 ? 0 : i + 1;
 			}

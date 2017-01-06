@@ -39,8 +39,6 @@ namespace Stratis.Bitcoin
 			Network = _Args.GetNetwork();
 		}
 
-		CancellationTokenSource _Cancellation;
-
 		public Network Network
 		{
 			get;
@@ -119,7 +117,7 @@ namespace Stratis.Bitcoin
 				var lastSnapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
 				var lastSnapshot2 = dbreeze == null ? null : dbreeze.PerformanceCounter.Snapshot();
 				var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
-				foreach(var block in ConsensusLoop.Execute())
+				foreach(var block in ConsensusLoop.Execute(_Cancellation.Token))
 				{
 					if(_IsDisposed.WaitOne(0))
 						break;
@@ -167,6 +165,11 @@ namespace Stratis.Bitcoin
 			}
 			catch(Exception ex) //TODO: Barbaric clean exit
 			{
+				if(ex is OperationCanceledException)
+				{
+					if(_Cancellation.IsCancellationRequested)
+						return;
+				}
 				if(!IsDisposed)
 				{
 					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception");
@@ -242,6 +245,7 @@ namespace Stratis.Bitcoin
 
 		ManualResetEvent _IsDisposed = new ManualResetEvent(false);
 		ManualResetEvent _IsStarted = new ManualResetEvent(false);
+		CancellationTokenSource _Cancellation = new CancellationTokenSource();
 		public bool IsDisposed
 		{
 			get

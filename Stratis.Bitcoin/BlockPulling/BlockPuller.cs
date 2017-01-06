@@ -14,6 +14,6 @@ namespace Stratis.Bitcoin.BlockPulling
 	{
 		public abstract void SetLocation(ChainedBlock location);
 
-		public abstract Block NextBlock();		
+		public abstract Block NextBlock(CancellationToken cancellationToken);		
 	}
 }

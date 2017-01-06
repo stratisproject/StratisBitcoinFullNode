@@ -3,6 +3,7 @@ using Stratis.Bitcoin.BlockPulling;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Consensus
@@ -111,22 +112,22 @@ namespace Stratis.Bitcoin.Consensus
 			bip9 = new ThresholdConditionCache(_Validator.ConsensusParams);
 		}
 
-		public IEnumerable<BlockResult> Execute()
+		public IEnumerable<BlockResult> Execute(CancellationToken cancellationToken)
 		{
 			while(true)
 			{
-				yield return ExecuteNextBlock();
+				yield return ExecuteNextBlock(cancellationToken);
 			}
 		}
 
-		public BlockResult ExecuteNextBlock()
+		public BlockResult ExecuteNextBlock(CancellationToken cancellationToken)
 		{
 			BlockResult result = new BlockResult();
 			try
 			{
 				using(watch.Start(o => Validator.PerformanceCounter.AddBlockFetchingTime(o)))
 				{
-					result.Block = Puller.NextBlock();
+					result.Block = Puller.NextBlock(cancellationToken);
 				}
 				ContextInformation context;
 				ConsensusFlags flags;

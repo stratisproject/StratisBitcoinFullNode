@@ -9,29 +9,6 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests
 {
-	public class ChainBuilderBlockPuller : BlockPuller
-	{
-		private readonly ChainBuilder _Builder;
-
-		public ChainBuilderBlockPuller(ChainBuilder builder)
-		{
-			_Builder = builder;
-			SetLocation(_Builder.Chain.Genesis);
-		}
-		public override Block NextBlock()
-		{
-			var fork = _Location.FindFork(_Location);
-			var nextBlock = _Builder.Chain.EnumerateAfter(fork).First();
-			_Location = nextBlock;
-			return _Builder._Blocks[nextBlock.HashBlock];
-		}		
-
-		ChainedBlock _Location;
-		public override void SetLocation(ChainedBlock location)
-		{
-			_Location = location;
-		}
-	}
 	public class ChainBuilder
 	{
 		ConcurrentChain _Chain = new ConcurrentChain();
@@ -44,14 +21,6 @@ namespace Stratis.Bitcoin.Tests
 			_Chain = new ConcurrentChain(_Network);
 			MinerKey = new Key();
 			MinerScriptPubKey = MinerKey.PubKey.Hash.ScriptPubKey;
-		}
-
-		public ChainBuilderBlockPuller BlockPuller
-		{
-			get
-			{
-				return _BlockPuller = _BlockPuller ?? new ChainBuilderBlockPuller(this);
-			}
 		}
 
 		public ConcurrentChain Chain
@@ -137,7 +106,6 @@ namespace Stratis.Bitcoin.Tests
 		}
 
 		internal Dictionary<uint256, Block> _Blocks = new Dictionary<uint256, Block>();
-		private ChainBuilderBlockPuller _BlockPuller;
 		private List<Transaction> _Transactions = new List<Transaction>();
 		public void Broadcast(Transaction tx)
 		{
