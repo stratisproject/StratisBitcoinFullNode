@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Stratis.Bitcoin.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -135,18 +136,27 @@ namespace Stratis.Bitcoin.Consensus
 			StringBuilder builder = new StringBuilder();
 
 			builder.AppendLine("====Overall Speed====");
-			builder.AppendLine("Inputs :\t" + (Elapsed.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/input");
-			builder.AppendLine("Transactions :\t" + (Elapsed.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
-			builder.AppendLine("Blocks :\t" + (Elapsed.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/block");
+			if(TotalProcessedInputs > 0)
+				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (Elapsed.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/input");
+			if(TotalProcessedTransactions > 0)
+				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (Elapsed.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+			if(TotalProcessedBlocks > 0)
+				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (Elapsed.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/block");
 			builder.AppendLine("====Validation Speed====");
-			builder.AppendLine("Inputs :\t" + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
-			builder.AppendLine("Transactions :\t" + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
-			builder.AppendLine("Blocks :\t" + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
+			if(TotalProcessedInputs > 0)
+				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			if(TotalProcessedTransactions > 0)
+				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+			if(TotalProcessedBlocks > 0)
+				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
 			builder.AppendLine("====Speed breakdown(%)====");
 			var total = _TotalBlockFetchingTime + _TotalUTXOFetchingTime + _TotalBlockValidationTime;
-			builder.AppendLine("Blk Fetching :\t" + ((decimal)_TotalBlockFetchingTime * 100m / total).ToString("0.00") + " %");
-			builder.AppendLine("Validation :\t" + ((decimal)_TotalBlockValidationTime * 100m / total).ToString("0.00") + " %");
-			builder.AppendLine("Utxo Fetching :\t" + ((decimal)_TotalUTXOFetchingTime * 100m / total).ToString("0.00") + " %");
+			if(total > 0)
+			{
+				builder.AppendLine("Blk Fetching:".PadRight(Logs.ColumnLength) + ((decimal)_TotalBlockFetchingTime * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Validation:".PadRight(Logs.ColumnLength) + ((decimal)_TotalBlockValidationTime * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Utxo Fetching:".PadRight(Logs.ColumnLength) + ((decimal)_TotalUTXOFetchingTime * 100m / total).ToString("0.00") + " %");
+			}
 			builder.AppendLine("==========================");
 			return builder.ToString();
 		}

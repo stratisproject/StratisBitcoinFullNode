@@ -40,5 +40,6 @@ namespace Stratis.Bitcoin.Logging
 		{
 			get; set;
 		}
+		public const int ColumnLength = 16;
 	}
 }
