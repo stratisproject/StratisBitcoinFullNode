@@ -252,17 +252,16 @@ namespace Stratis.Bitcoin.Tests
 		}
 
 		[Fact]
-		public void ValidSomeBlocks()
+		public void ValidSomeBlocksOnMainnet()
 		{
 			using(NodeContext ctx = NodeContext.Create(network: Network.Main))
 			{
 				var nodeArgs = new NodeArgs();
 				nodeArgs.DataDir = ctx.FolderName;
-				nodeArgs.Cache.MaxItems = 1000;
 				nodeArgs.ConnectionManager.Connect.Add(new IPEndPoint(IPAddress.Loopback, ctx.Network.DefaultPort));
 				var fullNode = new FullNode(nodeArgs);
 				fullNode.Start();
-				int increment = 10000;
+				int increment = 20000;
 				int reachNext = increment;
 				for(int i = 0; i < 10; i++)
 				{

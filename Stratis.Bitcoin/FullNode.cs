@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin
 				}
 				if(!IsDisposed)
 				{
-					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception");
+					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + ConsensusLoop.Tip?.Height + ")");
 					_UncatchedException = ex;
 					Dispose();
 				}

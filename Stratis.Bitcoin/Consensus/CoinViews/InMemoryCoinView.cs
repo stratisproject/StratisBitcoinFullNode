@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Consensus
 					UnspentOutputs existing;
 					if(_Unspents.TryGetValue(unspent.TransactionId, out existing))
 					{
-						existing.MergeFrom(unspent);
+						existing.Spend(unspent);
 					}
 					else
 					{

@@ -51,6 +51,7 @@ namespace Stratis.Bitcoin.Consensus
 			List<uint256> missedTxIds = new List<uint256>();
 			using(_Lock.LockRead())
 			{
+				_Flushing.Wait();
 				for(int i = 0; i < txIds.Length; i++)
 				{
 					CacheItem cache;
@@ -72,6 +73,7 @@ namespace Stratis.Bitcoin.Consensus
 			var fetchedCoins = await Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
 			using(_Lock.LockWrite())
 			{
+				_Flushing.Wait();
 				innerBlockHash = fetchedCoins.BlockHash;
 				if(_BlockHash == null)
 				{
@@ -107,12 +109,11 @@ namespace Stratis.Bitcoin.Consensus
 			return result;
 		}
 
-		Task _Flushing;
+		Task _Flushing = Task.CompletedTask;
 		public async Task FlushAsync()
 		{
 			//wait previous flushing to complete
-			if(_Flushing != null)
-				await _Flushing.ConfigureAwait(false);
+			await _Flushing.ConfigureAwait(false);
 
 			if(_InnerBlockHash == null)
 				_InnerBlockHash = await _Inner.GetBlockHashAsync().ConfigureAwait(false);
@@ -126,10 +127,6 @@ namespace Stratis.Bitcoin.Consensus
 				_Unspents.Where(u => u.Value.IsDirty)
 				.ToArray();
 
-				var others =
-				_Unspents.Where(u => !u.Value.IsDirty)
-				.ToArray();
-				
 				foreach(var u in unspent)
 				{
 					u.Value.IsDirty = false;
@@ -180,6 +177,8 @@ namespace Stratis.Bitcoin.Consensus
 			get; set;
 		} = new CachePerformanceCounter();
 
+
+		static uint256[] DuplicateTransactions = new[] { new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"), new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599") };
 		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
 			if(oldBlockHash == null)
@@ -191,6 +190,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			using(_Lock.LockWrite())
 			{
+				_Flushing.Wait();
 				if(_BlockHash != null && oldBlockHash != _BlockHash)
 					return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
 				_BlockHash = nextBlockHash;
@@ -200,14 +200,15 @@ namespace Stratis.Bitcoin.Consensus
 					if(_Unspents.TryGetValue(unspent.TransactionId, out existing))
 					{
 						if(existing.UnspentOutputs != null)
-							existing.UnspentOutputs.MergeFrom(unspent);
+							existing.UnspentOutputs.Spend(unspent);
 						else
 							existing.UnspentOutputs = unspent;
 					}
 					else
 					{
 						existing = new CacheItem();
-						existing.ExistInInner = false;
+						existing.ExistInInner = !unspent.IsFull; //seems to be a new created coin (careful, untrue if rewinding)
+						existing.ExistInInner |= DuplicateTransactions.Any(t => unspent.TransactionId == t);
 						existing.IsDirty = true;
 						existing.UnspentOutputs = unspent;
 						_Unspents.Add(unspent.TransactionId, existing);

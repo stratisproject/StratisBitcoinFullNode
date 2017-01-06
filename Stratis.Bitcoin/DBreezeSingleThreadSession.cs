@@ -20,16 +20,7 @@ namespace Stratis.Bitcoin
 			{
 				DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
 				DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
-				try
-				{
-
-					_Engine = new DBreezeEngine(folder);
-				}
-				catch
-				{
-					Thread.Sleep(1000);
-					_Engine = new DBreezeEngine(folder);
-				}
+				_Engine = new DBreezeEngine(folder);
 				_Transaction = _Engine.GetTransaction();
 			}).Start(_SingleThread);
 		}
@@ -72,6 +63,7 @@ namespace Stratis.Bitcoin
 			_IsDiposed = true;
 			if(_SingleThread == null)
 				return;
+			ManualResetEventSlim cleaned = new ManualResetEventSlim();
 			new Task(() =>
 			{
 				if(Transaction != null)
@@ -84,13 +76,11 @@ namespace Stratis.Bitcoin
 					_Engine.Dispose();
 					_Engine = null;
 				}
-			}).Start(_SingleThread);
-			_SingleThread.WaitFinished();
-			if(_SingleThread != null)
-			{
 				_SingleThread.Dispose();
 				_SingleThread = null;
-			}
+				cleaned.Set();
+			}).Start(_SingleThread);
+			cleaned.Wait();
 		}
 
 

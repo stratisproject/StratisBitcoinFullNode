@@ -92,6 +92,14 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
+		public bool IsFull
+		{
+			get
+			{
+				return _Outputs.All(o => o != null);
+			}
+		}
+
 		public bool IsAvailable(uint outputIndex)
 		{
 			return TryGetOutput(outputIndex) != null;
@@ -114,7 +122,7 @@ namespace Stratis.Bitcoin.Consensus
 			return true;
 		}
 
-		public void MergeFrom(UnspentOutputs c)
+		public void Spend(UnspentOutputs c)
 		{
 			for(int i = 0; i < _Outputs.Length; i++)
 			{
