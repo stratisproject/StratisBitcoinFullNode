@@ -22,6 +22,9 @@ using NBitcoin.Crypto;
 using Stratis.Bitcoin.Utilities;
 using NBitcoin.RPC;
 using System.Net;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Stratis.Bitcoin.Tests
 {
@@ -251,66 +254,26 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void ValidSomeBlocks()
 		{
-			using(NodeContext ctx = NodeContext.Create(network: Network.Main, clean: true))
+			using(NodeContext ctx = NodeContext.Create(network: Network.Main))
 			{
-				var network = ctx.Network;
-				var chain = new ConcurrentChain(network.GetGenesis().Header);
-				if(network == NBitcoin.Network.Main)
+				var nodeArgs = new NodeArgs();
+				nodeArgs.DataDir = ctx.FolderName;
+				nodeArgs.ConnectionManager.Connect.Add(new IPEndPoint(IPAddress.Loopback, ctx.Network.DefaultPort));
+				var fullNode = new FullNode(nodeArgs);
+				fullNode.Start();
+				WaitReachBlock(fullNode, 10000);
+				fullNode.Dispose();
+				fullNode.ThrowIfUncatchedException();
+			}
+		}
+
+		private void WaitReachBlock(FullNode fullNode, int height)
+		{
+			while(true)
+			{
+				if(fullNode.ConsensusLoop.Tip.Height >= 10000)
 				{
-					chain.Load(GetFile("main.data", "https://aois.blob.core.windows.net/public/main.data"));
-				}
-				else
-				{
-					chain.Load(GetFile("test.data", "https://aois.blob.core.windows.net/public/test.data"));
-				}
-
-				var stack = new CoinViewStack(new CachedCoinView(ctx.PersistentCoinView));
-
-				var bottom = stack.Bottom;
-				var cache = stack.Find<CachedCoinView>();
-				ConsensusValidator valid = new ConsensusValidator(network.Consensus);
-				valid.UseConsensusLib = false;
-				Node node = Node.ConnectToLocal(network);
-				node.VersionHandshake();
-				var nodes = new NodesCollection();
-				nodes.Add(node);
-				var puller = new NodesBlockPuller(chain, nodes);
-				node.Behaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(puller));
-				var lastSnapshot = valid.PerformanceCounter.Snapshot();
-				var lastSnapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
-				var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
-
-
-				var loop = new ConsensusLoop(valid, chain, stack.Top, puller);
-				foreach(var block in loop.Execute())
-				{
-					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
-					{
-						Console.WriteLine();
-
-						Console.WriteLine("ActualLookahead :\t" + puller.ActualLookahead + " blocks");
-						Console.WriteLine("Median Downloaded :\t" + puller.MedianDownloadCount + " blocks");
-						Console.WriteLine("Persistent Tip :\t" + chain.GetBlock(ctx.PersistentCoinView.GetBlockHashAsync().Result).Height);
-						if(cache != null)
-						{
-							Console.WriteLine("Cache Tip :\t" + chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
-							Console.WriteLine("Cache entries :\t" + cache.CacheEntryCount);
-						}
-
-						var snapshot = valid.PerformanceCounter.Snapshot();
-						Console.Write(snapshot - lastSnapshot);
-						lastSnapshot = snapshot;
-
-						var snapshot2 = ctx.PersistentCoinView.PerformanceCounter.Snapshot();
-						Console.Write(snapshot2 - lastSnapshot2);
-						lastSnapshot2 = snapshot2;
-						if(cache != null)
-						{
-							var snapshot3 = cache.PerformanceCounter.Snapshot();
-							Console.Write(snapshot3 - lastSnapshot3);
-							lastSnapshot3 = snapshot3;
-						}
-					}
+					break;
 				}
 			}
 		}

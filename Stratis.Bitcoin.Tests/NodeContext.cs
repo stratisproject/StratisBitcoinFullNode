@@ -1,5 +1,7 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging.Console;
+using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,7 +20,7 @@ namespace Stratis.Bitcoin.Tests
 		{
 			network = network ?? Network.RegTest;
 			_Network = network;
-			_TestDirectory = new TestDirectory(name, clean);
+			_TestDirectory = TestDirectory.Create(name, clean);
 			_PersistentCoinView = new DBreezeCoinView(network, _TestDirectory.FolderName);
 			_CleanList.Add(_PersistentCoinView);
 		}
@@ -62,6 +64,7 @@ namespace Stratis.Bitcoin.Tests
 
 		public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
 		{
+			Logs.Configure(new FuncLoggerFactory(n => new ConsoleLogger(n, (a, b) => true, false)));
 			return new NodeContext(name, network, clean);
 		}
 

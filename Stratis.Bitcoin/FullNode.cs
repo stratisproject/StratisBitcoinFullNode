@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Hosting.Internal;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.BlockPulling;
 using System.Text;
+using System.Runtime.ExceptionServices;
 
 namespace Stratis.Bitcoin
 {
@@ -169,6 +170,7 @@ namespace Stratis.Bitcoin
 				if(!IsDisposed)
 				{
 					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception");
+					_UncatchedException = ex;
 					Dispose();
 				}
 			}
@@ -278,6 +280,8 @@ namespace Stratis.Bitcoin
 
 
 		private bool _HasExited;
+		private Exception _UncatchedException;
+
 		public bool HasExited
 		{
 			get
@@ -313,6 +317,18 @@ namespace Stratis.Bitcoin
 			}
 			_IsDisposed.Set();
 			_HasExited = true;
+		}
+
+		public void ThrowIfUncatchedException()
+		{
+			if(_UncatchedException != null)
+			{
+				var ex = _UncatchedException;
+				var aex = _UncatchedException as AggregateException;
+				if(aex != null)
+					ex = aex.InnerException;
+				ExceptionDispatchInfo.Capture(ex).Throw();
+			}
 		}
 	}
 }
