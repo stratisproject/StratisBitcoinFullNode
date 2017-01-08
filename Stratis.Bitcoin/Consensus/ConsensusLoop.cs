@@ -144,7 +144,6 @@ namespace Stratis.Bitcoin.Consensus
 								Puller.SetLocation(rewinded);
 								break;
 							}
-							break;
 						}
 					}
 				}
