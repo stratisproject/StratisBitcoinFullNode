@@ -89,6 +89,7 @@ namespace Stratis.Bitcoin.Tests
 			}
 		}
 
+
 		[Fact]
 		public void NodesCanConnectToEachOthers()
 		{
@@ -114,6 +115,30 @@ namespace Stratis.Bitcoin.Tests
 			}
 		}
 
+
+		[Fact]
+		public void CanHandleReorgs()
+		{
+			using(NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNode = builder.CreateStratisNode();
+				var coreNode1 = builder.CreateNode();
+				var coreNode2 = builder.CreateNode();
+				builder.StartAll();
+
+				//Core1 discovers 10 blocks, sends to stratis
+				var tip = coreNode1.FindBlock(10).Last();
+				stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
+				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
+				stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
+
+				//Core2 discovers 20 blocks, sends to stratis
+				tip = coreNode2.FindBlock(20).Last();
+				stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
+				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
+				stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
+			}
+		}
 
 		[Fact]
 		public void CanStratisSyncFromCore()
@@ -143,7 +168,7 @@ namespace Stratis.Bitcoin.Tests
 		}
 		public static void Eventually(Func<bool> act)
 		{
-			var cancel = new CancellationTokenSource(10000);
+			var cancel = new CancellationTokenSource(Debugger.IsAttached ? 1000000 : 10000);
 			while(!act())
 			{
 				cancel.Token.ThrowIfCancellationRequested();

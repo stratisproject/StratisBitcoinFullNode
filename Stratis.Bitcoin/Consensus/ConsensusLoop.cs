@@ -141,6 +141,7 @@ namespace Stratis.Bitcoin.Consensus
 								var rewinded = Chain.GetBlock(hash);
 								if(rewinded == null)
 									continue;
+								_Tip = rewinded;
 								Puller.SetLocation(rewinded);
 								break;
 							}
@@ -153,6 +154,7 @@ namespace Stratis.Bitcoin.Consensus
 				{
 					Validator.CheckBlockHeader(result.Block.Header);
 					result.ChainedBlock = new ChainedBlock(result.Block.Header, result.Block.Header.GetHash(), Tip);
+					result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock; //Liberate from memory the block created above if possible
 					context = new ContextInformation(result.ChainedBlock, Validator.ConsensusParams);
 					Validator.ContextualCheckBlockHeader(result.Block.Header, context);
 					var states = bip9.GetStates(Tip);

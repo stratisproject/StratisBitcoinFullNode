@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Tests
 		public static void Main(string[] args)
 		{
 			Logs.Configure(new FuncLoggerFactory(n => new ConsoleLogger(n, (a, b) => true, false)));
-			new Class1().CanStratisSyncFromCore();
+			new Class1().CanHandleReorgs();
 		}
 
 		private void WaitReachBlock(FullNode fullNode, int height)
