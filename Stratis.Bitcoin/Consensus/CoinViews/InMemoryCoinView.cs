@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
-		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
 			if(oldBlockHash == null)
 				throw new ArgumentNullException("oldBlockHash");
@@ -67,6 +67,11 @@ namespace Stratis.Bitcoin.Consensus
 				}
 			}
 			return Task.FromResult(true);
+		}
+
+		public override Task<uint256> Rewind()
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

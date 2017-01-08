@@ -15,7 +15,9 @@ namespace Stratis.Bitcoin.Consensus
 			var response = await FetchCoinsAsync(new uint256[0]).ConfigureAwait(false);
 			return response.BlockHash;
 		}
-		public abstract Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, uint256 oldBlockHash, uint256 nextBlockHash);
+		public abstract Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash);
 		public abstract Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds);
+
+		public abstract Task<uint256> Rewind();
 	}
 }

@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.AspNetCore.Http;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
-using Microsoft.AspNetCore.Routing;
 
 namespace Stratis.Bitcoin.RPC
 {

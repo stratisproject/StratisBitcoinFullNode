@@ -117,8 +117,15 @@ namespace Stratis.Bitcoin
 				var lastSnapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
 				var lastSnapshot2 = dbreeze == null ? null : dbreeze.PerformanceCounter.Snapshot();
 				var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
+
+				ChainedBlock lastTip = ConsensusLoop.Tip;
 				foreach(var block in ConsensusLoop.Execute(_Cancellation.Token))
 				{
+					if(ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
+					{
+						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
+					}
+					lastTip = ConsensusLoop.Tip;
 					if(_IsDisposed.WaitOne(0))
 						break;
 					if(block.Error != null)

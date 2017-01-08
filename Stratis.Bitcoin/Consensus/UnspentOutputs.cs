@@ -8,8 +8,12 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Consensus
 {
-	public class UnspentOutputs
+	public class UnspentOutputs : IBitcoinSerializable
 	{
+		public UnspentOutputs()
+		{
+
+		}
 		public UnspentOutputs(uint height, Transaction tx)
 		{
 			if(tx == null)
@@ -24,6 +28,11 @@ namespace Stratis.Bitcoin.Consensus
 		public UnspentOutputs(uint256 txId, Coins coins)
 		{
 			_TransactionId = txId;
+			SetCoins(coins);
+		}
+
+		private void SetCoins(Coins coins)
+		{
 			_IsCoinbase = coins.Coinbase;
 			_Height = coins.Height;
 			_Version = coins.Version;
@@ -43,10 +52,10 @@ namespace Stratis.Bitcoin.Consensus
 			_Outputs = unspent._Outputs.ToArray();
 		}
 
-		TxOut[] _Outputs;
+		internal TxOut[] _Outputs;
 
 
-		private readonly uint256 _TransactionId;
+		private uint256 _TransactionId;
 		public uint256 TransactionId
 		{
 			get
@@ -56,7 +65,7 @@ namespace Stratis.Bitcoin.Consensus
 		}
 
 
-		private readonly uint _Version;
+		private uint _Version;
 		public uint Version
 		{
 			get
@@ -65,7 +74,7 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
-		private readonly bool _IsCoinbase;
+		private bool _IsCoinbase;
 		public bool IsCoinbase
 		{
 			get
@@ -74,7 +83,7 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
-		private readonly uint _Height;
+		private uint _Height;
 		public uint Height
 		{
 			get
@@ -110,7 +119,7 @@ namespace Stratis.Bitcoin.Consensus
 			if(outputIndex >= _Outputs.Length)
 				return null;
 			return _Outputs[outputIndex];
-		}
+		}		
 
 		public bool Spend(uint outputIndex)
 		{
@@ -147,6 +156,23 @@ namespace Stratis.Bitcoin.Consensus
 			}
 			coins.ClearUnspendable();
 			return coins;
+		}
+
+		public void ReadWrite(BitcoinStream stream)
+		{
+			stream.ReadWrite(ref _TransactionId);
+			if(stream.Serializing)
+			{
+				var c = ToCoins();
+				stream.ReadWrite(ref _TransactionId);
+				stream.ReadWrite(c);
+			}
+			else
+			{
+				Coins c = null;
+				stream.ReadWrite(ref c);
+				SetCoins(c);
+			}
 		}
 
 		public UnspentOutputs Clone()

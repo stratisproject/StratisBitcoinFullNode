@@ -121,6 +121,11 @@ namespace Stratis.Bitcoin.BlockPulling
 				AskBlocks();
 			}
 			var block = NextBlockCore(cancellationToken);
+			if(block == null)
+			{
+				//A reorg
+				return null;
+			}
 			if((_LookaheadLocation.Height - _Location.Height) <= ActualLookahead)
 			{
 				CalculateLookahead();
@@ -263,7 +268,11 @@ namespace Stratis.Bitcoin.BlockPulling
 				DownloadedBlock block;
 				if(header != null && _DownloadedBlocks.TryRemove(header.HashBlock, out block))
 				{
-					//TODO: when we detect reorg, it will be here because header.Previous != _Location.Previous
+					if(header.Previous.HashBlock != _Location.HashBlock)
+					{
+						//A reorg
+						return null;
+					}
 					IsStalling = false;
 					_Location = header;
 					Interlocked.Add(ref _CurrentSize, -block.Length);
@@ -272,7 +281,15 @@ namespace Stratis.Bitcoin.BlockPulling
 				}
 				else
 				{
-					if(header != null)
+					if(header == null)
+					{
+						if(!Chain.Contains(_Location.HashBlock))
+						{
+							//A reorg
+							return null;
+						}
+					}
+					else
 					{
 						if(!IsDownloading(header.HashBlock))
 							AskBlocks(new ChainedBlock[] { header });

@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,8 +24,8 @@ namespace Stratis.Bitcoin.Consensus
 			get; set;
 		}
 	}
-    public class ConsensusLoop
-    {
+	public class ConsensusLoop
+	{
 		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, BlockPuller puller)
 		{
 			if(validator == null)
@@ -41,7 +42,7 @@ namespace Stratis.Bitcoin.Consensus
 			_Puller = puller;
 			_LookaheadBlockPuller = puller as LookaheadBlockPuller;
 			Initialize();
-		}		
+		}
 
 		private readonly BlockPuller _Puller;
 		public BlockPuller Puller
@@ -127,7 +128,25 @@ namespace Stratis.Bitcoin.Consensus
 			{
 				using(watch.Start(o => Validator.PerformanceCounter.AddBlockFetchingTime(o)))
 				{
-					result.Block = Puller.NextBlock(cancellationToken);
+					while(true)
+					{
+						result.Block = Puller.NextBlock(cancellationToken);
+						if(result.Block != null)
+							break;
+						else
+						{
+							while(true)
+							{
+								var hash = UTXOSet.Rewind().GetAwaiter().GetResult();
+								var rewinded = Chain.GetBlock(hash);
+								if(rewinded == null)
+									continue;
+								Puller.SetLocation(rewinded);
+								break;
+							}
+							break;
+						}
+					}
 				}
 				ContextInformation context;
 				ConsensusFlags flags;
@@ -157,7 +176,7 @@ namespace Stratis.Bitcoin.Consensus
 					Validator.ExecuteBlock(result.Block, result.ChainedBlock, flags, set, null);
 				}
 
-				UTXOSet.SaveChangesAsync(set.GetCoins(UTXOSet), Tip.HashBlock, result.ChainedBlock.HashBlock);
+				UTXOSet.SaveChangesAsync(set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);
 				_Tip = result.ChainedBlock;
 			}
 			catch(ConsensusErrorException ex)

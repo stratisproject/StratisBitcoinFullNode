@@ -15,6 +15,7 @@ namespace Stratis.Bitcoin.Consensus
 			public UnspentOutputs UnspentOutputs;
 			public bool ExistInInner;
 			public bool IsDirty;
+			public TxOut[] OriginalOutputs;
 		}
 
 		ReaderWriterLock _Lock = new ReaderWriterLock();
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Consensus
 			List<uint256> missedTxIds = new List<uint256>();
 			using(_Lock.LockRead())
 			{
-				_Flushing.Wait();
+				WaitOngoingTasks();
 				for(int i = 0; i < txIds.Length; i++)
 				{
 					CacheItem cache;
@@ -90,6 +91,7 @@ namespace Stratis.Bitcoin.Consensus
 					cache.ExistInInner = unspent != null;
 					cache.IsDirty = false;
 					cache.UnspentOutputs = unspent;
+					cache.OriginalOutputs = unspent?._Outputs.ToArray();
 					_Unspents.TryAdd(txIds[index], cache);
 				}
 				result = new FetchCoinsResponse(outputs, _BlockHash);
@@ -132,7 +134,7 @@ namespace Stratis.Bitcoin.Consensus
 					u.Value.IsDirty = false;
 					u.Value.ExistInInner = true;
 				}
-				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), _InnerBlockHash, _BlockHash);
+				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), unspent.Select(u => u.Value.OriginalOutputs), _InnerBlockHash, _BlockHash);
 
 				//Remove from cache prunable entries as they are being flushed down
 				foreach(var c in unspent.Where(c => c.Value.UnspentOutputs != null && c.Value.UnspentOutputs.IsPrunable))
@@ -177,9 +179,8 @@ namespace Stratis.Bitcoin.Consensus
 			get; set;
 		} = new CachePerformanceCounter();
 
-
 		static uint256[] DuplicateTransactions = new[] { new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"), new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599") };
-		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
 			if(oldBlockHash == null)
 				throw new ArgumentNullException("oldBlockHash");
@@ -190,7 +191,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			using(_Lock.LockWrite())
 			{
-				_Flushing.Wait();
+				WaitOngoingTasks();
 				if(_BlockHash != null && oldBlockHash != _BlockHash)
 					return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
 				_BlockHash = nextBlockHash;
@@ -221,5 +222,38 @@ namespace Stratis.Bitcoin.Consensus
 				return Task.FromResult(true);
 			}
 		}
+
+		Task _Rewinding = Task.CompletedTask;
+		public override async Task<uint256> Rewind()
+		{
+			if(_InnerBlockHash == null)
+				_InnerBlockHash = await _Inner.GetBlockHashAsync().ConfigureAwait(false);
+
+			var innerHash = _InnerBlockHash;
+			Task<uint256> rewinding = null;
+			using(_Lock.LockWrite())
+			{
+				WaitOngoingTasks();
+				if(_Unspents.Count != 0)
+				{
+					//More intelligent version can restore without throwing away the cache. (as the rewind data is in the cache)
+					_Unspents.Clear();
+					_BlockHash = _InnerBlockHash;
+					return _BlockHash;
+				}
+				else
+				{
+					rewinding = _Inner.Rewind();
+					_Rewinding = rewinding;
+				}
+			}
+			return await rewinding.ConfigureAwait(false);
+		}
+
+		private void WaitOngoingTasks()
+		{
+			Task.WaitAll(_Flushing, _Rewinding);
+		}
 	}
 }
+

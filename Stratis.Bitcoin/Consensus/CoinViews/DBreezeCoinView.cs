@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			_Session.Do(() =>
 			{
-				_Session.Transaction.SynchronizeTables("Coins", "BlockHash");
+				_Session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind");
 				_Session.Transaction.ValuesLazyLoadingIsOn = false;
 			});
 
@@ -82,10 +82,11 @@ namespace Stratis.Bitcoin.Consensus
 			_Session.Transaction.Insert<byte[], uint256>("BlockHash", BlockHashKey, nextBlockHash);
 		}
 
-		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
 			return _Session.Do(() =>
 			{
+				RewindData rewindData = originalOutputs == null ? null: new RewindData(oldBlockHash);
 				int insertedEntities = 0;
 				using(new StopWatch().Start(o => PerformanceCounter.AddInsertTime(o)))
 				{
@@ -95,12 +96,36 @@ namespace Stratis.Bitcoin.Consensus
 					SetBlockHash(nextBlockHash);
 					var all = unspentOutputs.ToList();
 					all.Sort(UnspentOutputsComparer.Instance);
+					var originalEnumerator = originalOutputs?.GetEnumerator();
+					originalEnumerator?.MoveNext();
 					foreach(var coin in all)
 					{
+						var original = originalEnumerator?.Current;
 						if(coin.IsPrunable)
 							_Session.Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
 						else
 							_Session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+						if(originalEnumerator != null)
+						{
+							if(original == null)
+							{
+								//This one did not existed before, if we rewind, delete it
+								rewindData.TransactionsToRemove.Add(coin.TransactionId);
+							}
+							else
+							{
+								//We'll need to restore the original outputs
+								var clone = coin.Clone();
+								clone._Outputs = original;
+								rewindData.OutputsToRestore.Add(clone);
+							}
+						}
+						originalEnumerator?.MoveNext();
+					}
+					if(rewindData != null)
+					{
+						int nextRewindIndex = GetRewindIndex() + 1;
+						_Session.Transaction.Insert<int, RewindData>("Rewind", nextRewindIndex, rewindData);
 					}
 					insertedEntities += all.Count;
 					_Session.Transaction.Commit();
@@ -109,6 +134,43 @@ namespace Stratis.Bitcoin.Consensus
 			});
 		}
 
+		private int GetRewindIndex()
+		{
+			_Session.Transaction.ValuesLazyLoadingIsOn = true;
+			var first = _Session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
+			_Session.Transaction.ValuesLazyLoadingIsOn = false;
+			return first == null ? -1 : first.Key;
+		}
+
+		public override Task<uint256> Rewind()
+		{
+			return _Session.Do(() =>
+			{
+				if(GetRewindIndex() == -1)
+				{
+					_Session.Transaction.RemoveAllKeys("Coins", true);
+					SetBlockHash(_Network.GenesisHash);
+					_Session.Transaction.Commit();
+					return _Network.GenesisHash;
+				}
+				else
+				{
+					var first = _Session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
+					_Session.Transaction.RemoveKey("Rewind", first.Key);
+					SetBlockHash(first.Value.PreviousBlockHash);
+					foreach(var txId in first.Value.TransactionsToRemove)
+					{
+						_Session.Transaction.RemoveKey("Coins", txId.ToBytes(false));
+					}
+					foreach(var coin in first.Value.OutputsToRestore)
+					{
+						_Session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+					}
+					_Session.Transaction.Commit();
+					return first.Value.PreviousBlockHash;
+				}
+			});
+		}
 		private readonly BackendPerformanceCounter _PerformanceCounter = new BackendPerformanceCounter();
 		public BackendPerformanceCounter PerformanceCounter
 		{
