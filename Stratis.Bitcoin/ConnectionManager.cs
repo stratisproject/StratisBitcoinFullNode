@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Configuration;
 using System.Net;
 using System.Text;
 using Stratis.Bitcoin.BlockPulling;
+using NBitcoin.Protocol.Payloads;
 
 namespace Stratis.Bitcoin
 {
@@ -64,6 +65,7 @@ namespace Stratis.Bitcoin
 			{
 				ConnectionManager.ConnectedNodes.Add(node);
 				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected (" + (Inbound ? "inbound" : "outbound") + "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
+				node.SendMessageAsync(new SendHeadersPayload());
 			}
 			if(node.State == NodeState.Failed || node.State == NodeState.Offline)
 			{
@@ -278,8 +280,8 @@ namespace Stratis.Bitcoin
 
 		public void RemoveNode(IPEndPoint endpoint)
 		{
-			//TODO
-			throw new NotSupportedException();
+			var node = ConnectedNodes.FindByEndpoint(endpoint);
+			node.DisconnectAsync("Requested by user");
 		}
 
 		public Node Connect(IPEndPoint endpoint)

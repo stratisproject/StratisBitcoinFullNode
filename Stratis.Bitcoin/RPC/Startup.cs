@@ -45,10 +45,12 @@ namespace Stratis.Bitcoin.RPC
 			IServiceProvider serviceProvider)
 		{
 			var logging = new FilterLoggerSettings();
-			//logging.Add("Microsoft.AspNetCore.Hosting.Internal.WebHost", LogLevel.Error);
-			//logging.Add("Microsoft.AspNetCore.Mvc", LogLevel.Error);
+
+			//Disable aspnet core logs
+			logging.Add("Microsoft.AspNetCore", LogLevel.Error);
+
 			loggerFactory
-				//.WithFilter(logging)
+				.WithFilter(logging)
 				.AddConsole();
 
 			if(env.IsDevelopment())

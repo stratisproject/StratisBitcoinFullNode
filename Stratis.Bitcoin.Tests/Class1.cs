@@ -114,6 +114,43 @@ namespace Stratis.Bitcoin.Tests
 			}
 		}
 
+
+		[Fact]
+		public void CanStratisSyncFromCore()
+		{
+			using(NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNode = builder.CreateStratisNode();
+				var coreNode = builder.CreateNode();
+				builder.StartAll();
+				var tip = coreNode.FindBlock(10).Last();
+				stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
+				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
+				var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
+				Assert.Equal(tip.GetHash(), bestBlockHash);
+
+				//Now check if Core connect to stratis
+				stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
+				tip = coreNode.FindBlock(10).Last();
+				coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
+				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
+				bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
+				Assert.Equal(tip.GetHash(), bestBlockHash);
+
+
+				//For Core synching from Stratis, need to save blocks in stratis
+			}
+		}
+		public static void Eventually(Func<bool> act)
+		{
+			var cancel = new CancellationTokenSource(20000);
+			while(!act())
+			{
+				cancel.Token.ThrowIfCancellationRequested();
+				Thread.Sleep(50);
+			}
+		}
+
 		[Fact]
 		public void CheckRPCFailures()
 		{
@@ -155,7 +192,7 @@ namespace Stratis.Bitcoin.Tests
 				{
 					Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
 				}
-				
+
 			}
 		}
 
@@ -250,8 +287,7 @@ namespace Stratis.Bitcoin.Tests
 			ChainedBlock index = null;
 			return AppendBlock(index, chains);
 		}
-
-		[Fact]
+		
 		public void ValidSomeBlocksOnMainnet()
 		{
 			using(NodeContext ctx = NodeContext.Create(network: Network.Main))

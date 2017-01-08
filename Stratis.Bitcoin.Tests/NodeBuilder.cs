@@ -133,6 +133,18 @@ namespace Stratis.Bitcoin.Tests
 			return new NodeBuilder(caller, path);
 		}
 
+		public void SyncNodes()
+		{
+			foreach(var node in Nodes)
+			{
+				foreach(var node2 in Nodes)
+				{
+					if(node != node2)
+						node.Sync(node2, true);
+				}
+			}
+		}
+
 		private static string EnsureDownloaded(string version)
 		{
 			//is a file
@@ -632,10 +644,10 @@ namespace Stratis.Bitcoin.Tests
 			node.PingPong();
 		}
 
-		public void FindBlock(int blockCount = 1, bool includeMempool = true)
+		public Block[] FindBlock(int blockCount = 1, bool includeMempool = true)
 		{
 			SelectMempoolTransactions();
-			Generate(blockCount, includeMempool);
+			return Generate(blockCount, includeMempool);
 		}
 
 		class TransactionNode

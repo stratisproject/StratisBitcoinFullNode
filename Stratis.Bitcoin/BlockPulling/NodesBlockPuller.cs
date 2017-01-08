@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public override bool IsDownloading(uint256 hash)
 		{
-			return _Map.ContainsKey(hash);
+			return _Map.ContainsKey(hash) || _PendingInventoryVectors.Contains(hash);
 		}
 
 		protected override void OnStalling(ChainedBlock chainedBlock)

@@ -16,15 +16,15 @@ namespace Stratis.Bitcoin.Controllers
 		FullNode _FullNode;
 
 		[ActionName("getbestblockhash")]
-		public async Task<uint256> GetBestBlockHash()
+		public uint256 GetBestBlockHash()
 		{
-			return await _FullNode.CoinView.GetBlockHashAsync();
+			return _FullNode.ConsensusLoop.Tip.HashBlock;
 		}
 
 		[ActionName("getblockhash")]
-		public async Task<uint256> GetBlockHash(int height)
+		public uint256 GetBlockHash(int height)
 		{
-			var bestBlockHash = await _FullNode.CoinView.GetBlockHashAsync();
+			var bestBlockHash = _FullNode.ConsensusLoop.Tip.HashBlock;
 			var bestBlock = _FullNode.Chain.GetBlock(bestBlockHash);
 			if(bestBlock == null)
 				return null;
