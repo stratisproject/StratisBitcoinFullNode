@@ -139,8 +139,11 @@ namespace Stratis.Bitcoin.Consensus
 			var total = TotalMissCount + TotalHitCount;
 			StringBuilder builder = new StringBuilder();
 			builder.AppendLine("====Cache Stats(%)====");
-			builder.AppendLine("Hit:".PadRight(Logs.ColumnLength) + ((decimal)TotalHitCount * 100m / total).ToString("0.00") + " %");
-			builder.AppendLine("Miss:".PadRight(Logs.ColumnLength) + ((decimal)TotalMissCount * 100m / total).ToString("0.00") + " %");
+			if(total != 0)
+			{
+				builder.AppendLine("Hit:".PadRight(Logs.ColumnLength) + ((decimal)TotalHitCount * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Miss:".PadRight(Logs.ColumnLength) + ((decimal)TotalMissCount * 100m / total).ToString("0.00") + " %");
+			}
 			builder.AppendLine("========================");
 			return builder.ToString();
 		}
