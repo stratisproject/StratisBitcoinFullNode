@@ -122,12 +122,33 @@ namespace Stratis.Bitcoin.Tests
 				Directory.CreateDirectory("TestData");
 			var path = EnsureDownloaded(version);
 			caller = Path.Combine("TestData", caller);
+			bool retryDelete = true;
 			try
 			{
 				Directory.Delete(caller, true);
+				retryDelete = false;
 			}
 			catch(DirectoryNotFoundException)
 			{
+				retryDelete = false;
+			}
+			catch(UnauthorizedAccessException)
+			{
+			}
+			catch(IOException)
+			{
+			}
+			if(retryDelete)
+			{
+				foreach(var bitcoind in Process.GetProcessesByName("bitcoind"))
+				{
+					if(bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.Tests"))
+					{
+						bitcoind.Kill();
+					}
+				}
+				Thread.Sleep(1000);
+				Directory.Delete(caller, true);
 			}
 			Directory.CreateDirectory(caller);
 			return new NodeBuilder(caller, path);

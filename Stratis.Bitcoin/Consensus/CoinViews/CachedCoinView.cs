@@ -247,7 +247,13 @@ namespace Stratis.Bitcoin.Consensus
 					_Rewinding = rewinding;
 				}
 			}
-			return await rewinding.ConfigureAwait(false);
+			var h = await rewinding.ConfigureAwait(false);
+			using(_Lock.LockWrite())
+			{
+				_InnerBlockHash = h;
+				_BlockHash = h;
+			}
+			return h;
 		}
 
 		private void WaitOngoingTasks()

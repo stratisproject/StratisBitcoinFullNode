@@ -8,6 +8,7 @@ using DBreeze.Transactions;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
+using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin
 {
@@ -50,6 +51,12 @@ namespace Stratis.Bitcoin
 				BlockHeader header = new BlockHeader();
 				header.ReadWrite(bytes);
 				return header;
+			}
+			if(type == typeof(RewindData))
+			{
+				RewindData rewind = new RewindData();
+				rewind.ReadWrite(bytes);
+				return rewind;
 			}
 			if(type == typeof(uint256))
 			{

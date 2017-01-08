@@ -2,7 +2,7 @@
   "version": "1.0.0-*",
 
     "dependencies": {
-        "NBitcoin": "3.0.0.97",
+        "NBitcoin": "3.0.0.98",
         "DBreeze": "1.79.0",
         "Microsoft.Extensions.Logging.Abstractions": "1.0.0",
         "Microsoft.AspNetCore.Hosting": "1.0.0",
