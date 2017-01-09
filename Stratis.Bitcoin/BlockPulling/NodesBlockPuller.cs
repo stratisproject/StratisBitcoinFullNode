@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.BlockPulling
 		public class NodesBlockPullerBehavior : NodeBehavior
 		{
 			private readonly NodesBlockPuller _Puller;
-
+			CancellationTokenSource _Cts = new CancellationTokenSource();
 			public NodesBlockPullerBehavior(NodesBlockPuller puller)
 			{
 				_Puller = puller;
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.BlockPulling
 					{
 						foreach(var tx in block.Object.Transactions)
 							tx.CacheHashes();
-						_Puller.PushBlock((int)message.Length, block.Object);
+						_Puller.PushBlock((int)message.Length, block.Object, _Cts.Token);
 						AssignPendingVector();
 					}
 				});
@@ -102,7 +102,8 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			protected override void DetachCore()
 			{
-				AttachedNode.MessageReceived += Node_MessageReceived;
+				_Cts.Cancel();
+				AttachedNode.MessageReceived -= Node_MessageReceived;
 				foreach(var download in _Puller._Map.ToArray())
 				{
 					if(download.Value == this)
