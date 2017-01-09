@@ -151,7 +151,6 @@ namespace Stratis.Bitcoin.Configuration
 			}
 			nodeArgs.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
 			nodeArgs.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
-			nodeArgs.Prune = int.Parse(args.Where(a => a.StartsWith("-prune=")).Select(a => a.Substring("-prune=".Length).Replace("\"", "")).FirstOrDefault() ?? "0");
 
 			if (nodeArgs.ConfigurationFile != null)
 			{
@@ -181,6 +180,8 @@ namespace Stratis.Bitcoin.Configuration
 			var consoleConfig = new TextFileConfiguration(args);
 			var config = TextFileConfiguration.Parse(File.ReadAllText(nodeArgs.ConfigurationFile));
 			consoleConfig.MergeInto(config);
+
+			nodeArgs.Prune = config.GetOrDefault("prune", 0);
 
 			nodeArgs.RPC = config.GetOrDefault<bool>("server", false) ? new RPCArgs() : null;
 			if(nodeArgs.RPC != null)
