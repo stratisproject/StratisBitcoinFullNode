@@ -144,10 +144,9 @@ namespace Stratis.Bitcoin
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
 					}
 
-					if (!reorg && block.Error == null)
+					if (block.Error == null)
 					{
-						// TODO: delete blocks if reorg
-						this.BlockRepository?.PutAsync(block.Block);
+						this.TryStoreBlock(block.Block, reorg);
 					}
 
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
@@ -203,6 +202,22 @@ namespace Stratis.Bitcoin
 					Dispose();
 				}
 			}
+		}
+
+		private Task TryStoreBlock(Block block, bool reorg)
+		{
+			if (reorg)
+			{
+				// TODO: delete blocks if reorg
+				// this can be done periodically or 
+				// on a separate loop not to block consensus
+			}
+			else
+			{
+				return this.BlockRepository?.PutAsync(block);
+			}
+
+			return Task.CompletedTask;
 		}
 
 		public ConsensusLoop ConsensusLoop
