@@ -131,7 +131,11 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			set;
 		}
-
+		public bool Pruned
+		{
+			get;
+			set;
+		}
 		public static NodeArgs GetArgs(string[] args)
 		{
 			NodeArgs nodeArgs = new NodeArgs();
@@ -147,8 +151,9 @@ namespace Stratis.Bitcoin.Configuration
 			}
 			nodeArgs.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
 			nodeArgs.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
+			nodeArgs.Pruned = args.Contains("-pruned", StringComparer.CurrentCultureIgnoreCase);
 
-			if(nodeArgs.ConfigurationFile != null)
+			if (nodeArgs.ConfigurationFile != null)
 			{
 				AssetConfigFileExists(nodeArgs);
 				var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeArgs.ConfigurationFile));
