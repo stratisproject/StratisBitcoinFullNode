@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			internal set;
 		}
 
-		protected void PushBlock(int length, Block block)
+		protected void PushBlock(int length, Block block, CancellationToken cancellation)
 		{
 			var hash = block.Header.GetHash();
 			var header = Chain.GetBlock(hash);
@@ -219,6 +219,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			{
 				IsFull = true;
 				_Consumed.WaitOne(1000);
+				cancellation.ThrowIfCancellationRequested();
 			}
 			IsFull = false;
 			_DownloadedBlocks.TryAdd(hash, new DownloadedBlock() { Block = block, Length = length });
