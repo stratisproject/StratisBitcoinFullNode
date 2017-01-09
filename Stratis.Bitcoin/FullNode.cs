@@ -17,6 +17,7 @@ using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.BlockPulling;
 using System.Text;
 using System.Runtime.ExceptionServices;
+using Stratis.Bitcoin.BlockStore;
 
 namespace Stratis.Bitcoin
 {
@@ -65,8 +66,15 @@ namespace Stratis.Bitcoin
 			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
 			_Resources.Add(coinviewDB);
 			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
-			_Cancellation = new CancellationTokenSource();
 
+			if (_Args.Prune == 0)
+			{
+				// TODO: later use the prune size to limit storage size
+				BlockRepository = new BlockRepository(DataFolder.BlockPath);
+				_Resources.Add(BlockRepository);
+			}
+			
+			_Cancellation = new CancellationTokenSource();
 			StartFlushAddrManThread();
 			StartFlushChainThread();
 
@@ -121,8 +129,10 @@ namespace Stratis.Bitcoin
 				ChainedBlock lastTip = ConsensusLoop.Tip;
 				foreach(var block in ConsensusLoop.Execute(_Cancellation.Token))
 				{
+					bool reorg = false;
 					if(ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
 					{
+						reorg = true;
 						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
 					}
 					lastTip = ConsensusLoop.Tip;
@@ -133,6 +143,12 @@ namespace Stratis.Bitcoin
 						//TODO: 
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
 					}
+
+					if (block.Error == null)
+					{
+						this.TryStoreBlock(block.Block, reorg);
+					}
+
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
 					{
 						StringBuilder benchLogs = new StringBuilder();
@@ -188,6 +204,22 @@ namespace Stratis.Bitcoin
 			}
 		}
 
+		private Task TryStoreBlock(Block block, bool reorg)
+		{
+			if (reorg)
+			{
+				// TODO: delete blocks if reorg
+				// this can be done periodically or 
+				// on a separate loop not to block consensus
+			}
+			else
+			{
+				return this.BlockRepository?.PutAsync(block);
+			}
+
+			return Task.CompletedTask;
+		}
+
 		public ConsensusLoop ConsensusLoop
 		{
 			get; set;
@@ -230,6 +262,11 @@ namespace Stratis.Bitcoin
 		}
 
 		public ChainRepository ChainRepository
+		{
+			get; set;
+		}
+
+		public BlockRepository BlockRepository
 		{
 			get; set;
 		}

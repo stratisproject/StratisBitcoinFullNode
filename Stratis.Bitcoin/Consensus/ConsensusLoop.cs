@@ -178,6 +178,7 @@ namespace Stratis.Bitcoin.Consensus
 				}
 
 				UTXOSet.SaveChangesAsync(set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);
+
 				_Tip = result.ChainedBlock;
 			}
 			catch(ConsensusErrorException ex)
