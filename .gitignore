@@ -245,3 +245,4 @@ ModelManifest.xml
 .fake/
 /Stratis.Bitcoin.Tests/TestData
 /Stratis.Bitcoin.Tests/ValidSomeBlocks
+/Stratis.BitcoinD/Properties/launchSettings.json
