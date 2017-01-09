@@ -66,9 +66,6 @@ namespace Stratis.Bitcoin
 			_Resources.Add(coinviewDB);
 			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
 			_Cancellation = new CancellationTokenSource();
-			var blockRepository = _Args.Pruned ? null : new BlockStore.BlockRepository(DataFolder.BlockPath);
-			if (blockRepository != null) _Resources.Add(blockRepository);
-
 			StartFlushAddrManThread();
 			StartFlushChainThread();
 
@@ -96,7 +93,7 @@ namespace Stratis.Bitcoin
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 			ConnectionManager.Start();
-			ConsensusLoop = new ConsensusLoop(new ConsensusValidator(Network.Consensus), Chain, CoinView, blockPuller, blockRepository);
+			ConsensusLoop = new ConsensusLoop(new ConsensusValidator(Network.Consensus), Chain, CoinView, blockPuller);
 			new Thread(RunLoop)
 			{
 				Name = "Consensus Loop"

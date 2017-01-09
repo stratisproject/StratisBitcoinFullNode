@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			set;
 		}
-		public bool Pruned
+		public int Prune
 		{
 			get;
 			set;
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Configuration
 			}
 			nodeArgs.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
 			nodeArgs.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
-			nodeArgs.Pruned = args.Contains("-pruned", StringComparer.CurrentCultureIgnoreCase);
+			nodeArgs.Prune = int.Parse(args.Where(a => a.StartsWith("-prune=")).Select(a => a.Substring("-prune=".Length).Replace("\"", "")).FirstOrDefault() ?? "0");
 
 			if (nodeArgs.ConfigurationFile != null)
 			{

@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Consensus
 	}
 	public class ConsensusLoop
 	{
-		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, BlockPuller puller, BlockStore.IBlockRepository blockRepository)
+		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, BlockPuller puller)
 		{
 			if(validator == null)
 				throw new ArgumentNullException("validator");
@@ -41,7 +41,6 @@ namespace Stratis.Bitcoin.Consensus
 			_utxoSet = utxoSet;
 			_Puller = puller;
 			_LookaheadBlockPuller = puller as LookaheadBlockPuller;
-			this.blockRepository = blockRepository;
 			Initialize();
 		}
 
@@ -91,15 +90,6 @@ namespace Stratis.Bitcoin.Consensus
 			get
 			{
 				return _LookaheadBlockPuller;
-			}
-		}
-
-		private readonly BlockStore.IBlockRepository blockRepository;
-		public BlockStore.IBlockRepository BlockRepository
-		{
-			get
-			{
-				return blockRepository;
 			}
 		}
 
@@ -187,8 +177,7 @@ namespace Stratis.Bitcoin.Consensus
 					Validator.ExecuteBlock(result.Block, result.ChainedBlock, flags, set, null);
 				}
 
-				UTXOSet.SaveChangesAsync(set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock)
-					.ContinueWith(task => this.blockRepository?.PutAsync(result.Block), cancellationToken);
+				UTXOSet.SaveChangesAsync(set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);
 
 				_Tip = result.ChainedBlock;
 			}
