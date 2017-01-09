@@ -17,6 +17,7 @@ using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.BlockPulling;
 using System.Text;
 using System.Runtime.ExceptionServices;
+using Stratis.Bitcoin.BlockStore;
 
 namespace Stratis.Bitcoin
 {
@@ -65,6 +66,14 @@ namespace Stratis.Bitcoin
 			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
 			_Resources.Add(coinviewDB);
 			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
+
+			if (_Args.Prune == 0)
+			{
+				// TODO: later use the prune size to limit storage size
+				BlockRepository = new BlockRepository(DataFolder.BlockPath);
+				_Resources.Add(BlockRepository);
+			}
+			
 			_Cancellation = new CancellationTokenSource();
 			StartFlushAddrManThread();
 			StartFlushChainThread();
@@ -120,8 +129,10 @@ namespace Stratis.Bitcoin
 				ChainedBlock lastTip = ConsensusLoop.Tip;
 				foreach(var block in ConsensusLoop.Execute(_Cancellation.Token))
 				{
+					bool reorg = false;
 					if(ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
 					{
+						reorg = true;
 						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
 					}
 					lastTip = ConsensusLoop.Tip;
@@ -132,6 +143,13 @@ namespace Stratis.Bitcoin
 						//TODO: 
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
 					}
+
+					if (!reorg && block.Error == null)
+					{
+						// TODO: delete blocks if reorg
+						this.BlockRepository?.PutAsync(block.Block);
+					}
+
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
 					{
 						StringBuilder benchLogs = new StringBuilder();
@@ -229,6 +247,11 @@ namespace Stratis.Bitcoin
 		}
 
 		public ChainRepository ChainRepository
+		{
+			get; set;
+		}
+
+		public BlockRepository BlockRepository
 		{
 			get; set;
 		}
