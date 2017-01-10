@@ -60,7 +60,8 @@ namespace Stratis.Bitcoin.BlockStore
 				var block = await this.blockRepository.GetAsync(item.Hash).ConfigureAwait(false);
 
 				if (block != null)
-					await node.SendMessageAsync(new BlockPayload(block)).ConfigureAwait(false);
+					//TODO strip block of witness if not does not support
+					await node.SendMessageAsync(new BlockPayload(block.WithOptions(AttachedNode.SupportedTransactionOptions))).ConfigureAwait(false);
 			}
 		}
 
