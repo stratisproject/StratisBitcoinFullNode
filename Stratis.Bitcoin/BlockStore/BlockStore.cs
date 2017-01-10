@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.BlockStore
 			this.taskFactory = new TaskFactory(new CustomThreadPoolTaskScheduler(2, 500, "BlockStore"));
 	    }
 
-	    public Task ProcessGetData(Node node, GetDataPayload getDataPayload)
+	    public Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
 	    {
 		    return this.taskFactory.StartNew(async () =>
 		    {
@@ -30,22 +30,16 @@ namespace Stratis.Bitcoin.BlockStore
 				    var block = await this.blockRepository.GetAsync(item.Hash);
 
 				    if (block != null)
-					    node.SendMessage(new BlockPayload(block));
+					    await node.SendMessageAsync(new BlockPayload(block));
 			    }
 		    });
 	    }
 
-		public Task ProcessGetBlocks(Node node, GetBlocksPayload getBlocksPayload)
+		public Task ProcessGetBlocksAsync(Node node, GetBlocksPayload getBlocksPayload)
 		{
 			return this.taskFactory.StartNew(() =>
 			{
-				ChainedBlock chainedBlock = null;
-				foreach (var item in getBlocksPayload.BlockLocators.Blocks)
-				{
-					chainedBlock = this.concurrentChain.GetBlock(item);
-					if (chainedBlock != null)
-						break;
-				}
+				ChainedBlock chainedBlock = this.concurrentChain.FindFork(getBlocksPayload.BlockLocators); ;
 				
 				if (chainedBlock != null)
 				{

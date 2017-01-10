@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			this.blockStore = blockStore;
 			
-			this.CanRespondToGetBlocksPayload = true;
+			this.CanRespondToGetBlocksPayload = false;
 			this.CanRespondeToGetDataPayload = true;
 		}
 
@@ -38,10 +38,10 @@ namespace Stratis.Bitcoin.BlockStore
 		private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
 			if (this.CanRespondeToGetDataPayload)
-				message.Message.IfPayloadIs<GetDataPayload>(data => this.blockStore.ProcessGetData(node, data));
+				message.Message.IfPayloadIs<GetDataPayload>(data => this.blockStore.ProcessGetDataAsync(node, data));
 
 			if (this.CanRespondToGetBlocksPayload)
-				message.Message.IfPayloadIs<GetBlocksPayload>(data => this.blockStore.ProcessGetBlocks(node, data));
+				message.Message.IfPayloadIs<GetBlocksPayload>(data => this.blockStore.ProcessGetBlocksAsync(node, data));
 		}
 
 		public override object Clone()
