@@ -140,12 +140,19 @@ namespace Stratis.Bitcoin
 						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
 					}
 					lastTip = ConsensusLoop.Tip;
-					if(_IsDisposed.WaitOne(0))
-						break;
+					_Cancellation.Token.ThrowIfCancellationRequested();
 					if(block.Error != null)
 					{
 						//TODO: 
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
+						if(block.Error == ConsensusErrors.BadWitnessNonceSize)
+						{
+							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
+							ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
+							ConnectionManager.SetDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+							ConsensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
+							continue;
+						}
 					}
 
 					if (block.Error == null)

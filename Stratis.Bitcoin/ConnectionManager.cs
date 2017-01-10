@@ -186,6 +186,21 @@ namespace Stratis.Bitcoin
 			Logs.ConnectionManager.LogInformation(logs.ToString());
 		}
 
+		public void SetDiscoveredNodesRequirement(NodeServices services)
+		{
+			var group = DiscoveredNodeGroup;
+			if(group != null &&
+			   !group.Requirements.RequiredServices.HasFlag(services))
+			{
+				group.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+				foreach(var node in group.ConnectedNodes)
+				{
+					if(!node.PeerVersion.Services.HasFlag(services))
+						node.DisconnectAsync("The peer does not support the required services requirement");
+				}
+			}
+		}
+
 		public string GetStats()
 		{
 			StringBuilder builder = new StringBuilder();

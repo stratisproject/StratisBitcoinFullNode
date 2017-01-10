@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			internal void AssignPendingVector()
 			{
-				if(AttachedNode != null && AttachedNode.State != NodeState.HandShaked)
+				if(AttachedNode == null || AttachedNode.State != NodeState.HandShaked || !_Puller._Requirements.Check(AttachedNode.PeerVersion))
 					return;
 				uint256 block;
 				if(_Puller._PendingInventoryVectors.TryTake(out block))
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		private NodesBlockPullerBehavior[] GetNodeBehaviors()
 		{
-			return _Nodes.Select(n => n.Behaviors.Find<NodesBlockPullerBehavior>()).ToArray();
+			return _Nodes.Where(n => _Requirements.Check(n.PeerVersion)).Select(n => n.Behaviors.Find<NodesBlockPullerBehavior>()).ToArray();
 		}
 
 		private void AssignPendingVectors()
@@ -240,6 +240,26 @@ namespace Stratis.Bitcoin.BlockPulling
 				i++;
 			}
 			return scores.Length - 1;
+		}
+
+		NodeRequirement _Requirements = new NodeRequirement()
+		{
+			MinVersion = ProtocolVersion.SENDHEADERS_VERSION,
+			RequiredServices = NodeServices.Network
+		};
+		public override void RequestOptions(TransactionOptions transactionOptions)
+		{
+			if(transactionOptions == TransactionOptions.Witness)
+			{
+				_Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+				foreach(var node in _Nodes.Select(n => n.Behaviors.Find<NodesBlockPullerBehavior>()))
+				{
+					if(!_Requirements.Check(node.AttachedNode.PeerVersion))
+					{
+						node.ReleaseAll();
+					}
+				}
+			}
 		}
 	}
 }
