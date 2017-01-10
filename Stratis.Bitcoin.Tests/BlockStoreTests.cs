@@ -58,12 +58,10 @@ namespace Stratis.Bitcoin.Tests
 		    {
 				var stratisNode = builder.CreateStratisNode();
 				var stratisNodeSync = builder.CreateStratisNode();
-
 				var coreCreateNode = builder.CreateNode();
-				var coreReceiveNode = builder.CreateNode();
 				builder.StartAll();
 
-				//Core1 discovers 10 blocks, sends to stratis
+				// core discovers 10 blocks, sends to stratis 
 				var tip = coreCreateNode.FindBlock(5).Last();
 				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
 				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
