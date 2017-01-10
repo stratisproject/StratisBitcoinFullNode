@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
-			await this.AttachedNode_MessageReceivedAsync(node, message);
+			await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
 		}
 
 		private async Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
@@ -56,10 +56,10 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type == InventoryType.MSG_BLOCK))
 			{
-				var block = await this.blockRepository.GetAsync(item.Hash);
+				var block = await this.blockRepository.GetAsync(item.Hash).ConfigureAwait(false);
 
 				if (block != null)
-					await node.SendMessageAsync(new BlockPayload(block));
+					await node.SendMessageAsync(new BlockPayload(block)).ConfigureAwait(false);
 			}
 		}
 
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.BlockStore
 				}
 
 				if (inv.Inventory.Any())
-					await node.SendMessageAsync(inv);
+					await node.SendMessageAsync(inv).ConfigureAwait(false);
 			}
 		}
 

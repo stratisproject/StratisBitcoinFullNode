@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			TPayload payload = message.Payload as TPayload;
 			if (payload == null) return await Task.FromResult(false);
-			await action(payload);
+			await action(payload).ConfigureAwait(false);
 			return await Task.FromResult(true);
 		}
 	}
