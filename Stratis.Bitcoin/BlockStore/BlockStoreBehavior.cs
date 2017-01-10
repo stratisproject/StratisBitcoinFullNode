@@ -46,10 +46,10 @@ namespace Stratis.Bitcoin.BlockStore
 		private async Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
 		{
 			if (this.CanRespondeToGetDataPayload)
-				await message.Message.IfPayloadIsAsync<GetDataPayload>(async data => await this.ProcessGetDataAsync(node, data));
+				await message.Message.IfPayloadIsAsync<GetDataPayload>(data => this.ProcessGetDataAsync(node, data)).ConfigureAwait(false);
 
 			if (this.CanRespondToGetBlocksPayload)
-				await message.Message.IfPayloadIsAsync<GetBlocksPayload>(async data => await this.ProcessGetBlocksAsync(node, data));
+				await message.Message.IfPayloadIsAsync<GetBlocksPayload>(data => this.ProcessGetBlocksAsync(node, data)).ConfigureAwait(false);
 		}
 
 		private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
