@@ -43,18 +43,19 @@ namespace Stratis.Bitcoin.BlockStore
 			await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
 		}
 
-		private async Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+		private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
 		{
 			if (this.CanRespondeToGetDataPayload)
-				await message.Message.IfPayloadIsAsync<GetDataPayload>(data => this.ProcessGetDataAsync(node, data)).ConfigureAwait(false);
+				return message.Message.IfPayloadIsAsync<GetDataPayload>(data => this.ProcessGetDataAsync(node, data));
 
 			if (this.CanRespondToGetBlocksPayload)
-				await message.Message.IfPayloadIsAsync<GetBlocksPayload>(data => this.ProcessGetBlocksAsync(node, data)).ConfigureAwait(false);
+				return message.Message.IfPayloadIsAsync<GetBlocksPayload>(data => this.ProcessGetBlocksAsync(node, data));
+			return Task.CompletedTask;
 		}
 
 		private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
 		{
-			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type == InventoryType.MSG_BLOCK))
+			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
 			{
 				var block = await this.blockRepository.GetAsync(item.Hash).ConfigureAwait(false);
 
@@ -63,7 +64,7 @@ namespace Stratis.Bitcoin.BlockStore
 			}
 		}
 
-		private async Task ProcessGetBlocksAsync(Node node, GetBlocksPayload getBlocksPayload)
+		private Task ProcessGetBlocksAsync(Node node, GetBlocksPayload getBlocksPayload)
 		{
 			ChainedBlock chainedBlock = this.concurrentChain.FindFork(getBlocksPayload.BlockLocators);
 
@@ -80,8 +81,9 @@ namespace Stratis.Bitcoin.BlockStore
 				}
 
 				if (inv.Inventory.Any())
-					await node.SendMessageAsync(inv).ConfigureAwait(false);
+					return node.SendMessageAsync(inv);
 			}
+			return Task.CompletedTask;
 		}
 
 		public override object Clone()
