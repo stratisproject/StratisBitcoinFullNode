@@ -105,6 +105,15 @@ namespace Stratis.Bitcoin.Consensus
 				return _Tip;
 			}
 		}
+
+		public ThresholdConditionCache BIP9
+		{
+			get
+			{
+				return bip9;
+			}
+		}
+
 		private void Initialize()
 		{
 			var utxoHash = _utxoSet.GetBlockHashAsync().GetAwaiter().GetResult();

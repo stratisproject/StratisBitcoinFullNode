@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.BlockPulling
 				if(_Puller._Map.TryAdd(block, this))
 				{
 					_PendingDownloads.TryAdd(block, block);
-					AttachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(InventoryType.MSG_BLOCK, block)));
+					AttachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(AttachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
 				}
 			}
 
@@ -89,6 +89,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			{
 				foreach(var inv in getDataPayload.Inventory)
 				{
+					inv.Type = AttachedNode.AddSupportedOptions(inv.Type);
 					_PendingDownloads.TryAdd(inv.Hash, inv.Hash);
 				}
 				AttachedNode.SendMessageAsync(getDataPayload);

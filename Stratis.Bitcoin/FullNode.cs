@@ -88,6 +88,7 @@ namespace Stratis.Bitcoin
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
 			var connectionParameters = new NodeConnectionParameters();
+			connectionParameters.Services = NodeServices.Network | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
