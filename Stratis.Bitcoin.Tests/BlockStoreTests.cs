@@ -52,8 +52,8 @@ namespace Stratis.Bitcoin.Tests
 		}
 
 		[Fact]
-		public void NodeRespondeToGetData()
-	    {
+		public void NodeRespondToGetData()
+		{
 		    using (NodeBuilder builder = NodeBuilder.Create())
 		    {
 				var stratisNode = builder.CreateStratisNode();
