@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.BlockStore
 {
-	public class BlockStoreBehaviour : NodeBehavior
+	public class BlockStoreBehavior : NodeBehavior
 	{
 		private readonly ConcurrentChain concurrentChain;
 		private readonly BlockRepository blockRepository;
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public bool CanRespondeToGetDataPayload { get; set; }
 
-		public BlockStoreBehaviour(ConcurrentChain concurrentChain, BlockRepository blockRepository)
+		public BlockStoreBehavior(ConcurrentChain concurrentChain, BlockRepository blockRepository)
 		{
 			this.concurrentChain = concurrentChain;
 			this.blockRepository = blockRepository;
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override object Clone()
 		{
-			return new BlockStoreBehaviour(this.concurrentChain, this.blockRepository)
+			return new BlockStoreBehavior(this.concurrentChain, this.blockRepository)
 			{
 				CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
 				CanRespondeToGetDataPayload = this.CanRespondeToGetDataPayload

@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin
 				// TODO: later use the prune size to limit storage size
 				BlockRepository = new BlockRepository(DataFolder.BlockPath);
 				_Resources.Add(BlockRepository);
-				connectionParameters.TemplateBehaviors.Add(new BlockStoreBehaviour(this.Chain, this.BlockRepository));
+				connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockRepository));
 			}
 
 			ConnectionManager.Start();
