@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
+using NBitcoin.Protocol;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests
@@ -49,5 +50,5 @@ namespace Stratis.Bitcoin.Tests
 				}
 			}
 		}
-	}
+    }
 }
