@@ -57,6 +57,17 @@ namespace Stratis.Bitcoin
 		protected override void AttachCore()
 		{
 			this.AttachedNode.StateChanged += AttachedNode_StateChanged;
+			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
+			_ChainBehavior = this.AttachedNode.Behaviors.Find<ChainBehavior>();
+		}
+
+		ChainBehavior _ChainBehavior;
+		private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+		{
+			if(_ChainBehavior.InvalidHeaderReceived && !Whitelisted)
+			{
+				node.DisconnectAsync("Invalid block received");
+			}
 		}
 
 		private void AttachedNode_StateChanged(Node node, NodeState oldState)
@@ -79,6 +90,7 @@ namespace Stratis.Bitcoin
 		protected override void DetachCore()
 		{
 			this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
+			this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
 		}
 	}
 

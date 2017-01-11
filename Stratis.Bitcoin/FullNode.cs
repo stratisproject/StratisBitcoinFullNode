@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin
 			_Resources.Add(coinviewDB);
 			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
 
-			
+
 			_Cancellation = new CancellationTokenSource();
 			StartFlushAddrManThread();
 			StartFlushChainThread();
@@ -92,12 +92,13 @@ namespace Stratis.Bitcoin
 			var connectionParameters = new NodeConnectionParameters();
 			connectionParameters.Services = NodeServices.Network | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
+			_ChainBehaviorState = connectionParameters.TemplateBehaviors.Find<ChainBehavior>().SharedState;
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
-			if (_Args.Prune == 0)
+			if(_Args.Prune == 0)
 			{
 				// TODO: later use the prune size to limit storage size
 				BlockRepository = new BlockRepository(DataFolder.BlockPath);
@@ -111,6 +112,7 @@ namespace Stratis.Bitcoin
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
 				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
+			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 			ConnectionManager.Start();
 
 			new Thread(RunLoop)
@@ -119,6 +121,8 @@ namespace Stratis.Bitcoin
 			}.Start();
 			_IsStarted.Set();
 		}
+
+		ChainBehavior.State _ChainBehaviorState;
 
 		void RunLoop()
 		{
@@ -150,18 +154,28 @@ namespace Stratis.Bitcoin
 					if(block.Error != null)
 					{
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
+
+						//Pull again
+						ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
+
 						if(block.Error == ConsensusErrors.BadWitnessNonceSize)
 						{
 							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
-							ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
 							ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 							ConsensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
 							continue;
 						}
+
+						//Set the PoW chain back to ConsensusLoop.Tip
+						Chain.SetTip(ConsensusLoop.Tip);
+						//Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
+						Logs.FullNode.LogError("Marking block as invalid");
+						_ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
 					}
 
-					if (block.Error == null)
+					if(block.Error == null)
 					{
+						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 						this.TryStoreBlock(block.Block, reorg);
 						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
 						{
@@ -228,7 +242,7 @@ namespace Stratis.Bitcoin
 		{
 			if(BlockRepository == null)
 				return Task.CompletedTask;
-			if (reorg)
+			if(reorg)
 			{
 				// TODO: delete blocks if reorg
 				// this can be done periodically or 
