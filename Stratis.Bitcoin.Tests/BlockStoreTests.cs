@@ -50,30 +50,5 @@ namespace Stratis.Bitcoin.Tests
 				}
 			}
 		}
-
-		[Fact]
-		public void NodeRespondToGetData()
-		{
-		    using (NodeBuilder builder = NodeBuilder.Create())
-		    {
-				var stratisNode = builder.CreateStratisNode();
-				var stratisNodeSync = builder.CreateStratisNode();
-				var coreCreateNode = builder.CreateNode();
-				builder.StartAll();
-
-				// core discovers 10 blocks, sends to stratis 
-				var tip = coreCreateNode.FindBlock(5).Last();
-				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
-
-				// add a new stratis node, the node will download
-				// this will call GetData payload
-				stratisNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-
-				// wait for download and assert
-				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-				Assert.True(stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-		    }
-	    }
     }
 }

@@ -180,6 +180,57 @@ namespace Stratis.Bitcoin.Tests
 				//For Core synching from Stratis, need to save blocks in stratis
 			}
 		}
+
+		[Fact]
+		public void CanStratisSyncFromStratis()
+		{
+			using (NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNode = builder.CreateStratisNode();
+				var stratisNodeSync = builder.CreateStratisNode();
+				var coreCreateNode = builder.CreateNode();
+				builder.StartAll();
+
+				// first seed a core node with blocks and sync them to a stratis node
+				// and wait till the stratis node is fully synced
+				coreCreateNode.FindBlock(5);
+				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
+				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
+
+				// add a new stratis node which will download
+				// the blocks using the GetData payload
+				stratisNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
+
+				// wait for download and assert
+				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+			}
+		}
+
+		[Fact]
+		public void CanCoreSyncFromStratis()
+		{
+			using (NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNode = builder.CreateStratisNode();
+				var coreNodeSync = builder.CreateNode();
+				var coreCreateNode = builder.CreateNode();
+				builder.StartAll();
+
+				// first seed a core node with blocks and sync them to a stratis node
+				// and wait till the stratis node is fully synced
+				coreCreateNode.FindBlock(5);
+				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
+				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
+
+				// add a new stratis node which will download
+				// the blocks using the GetData payload
+				coreNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
+
+				// wait for download and assert
+				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNodeSync.CreateRPCClient().GetBestBlockHash());
+			}
+		}
+
 		public static void Eventually(Func<bool> act)
 		{
 			var cancel = new CancellationTokenSource(Debugger.IsAttached ? 1000000 : 10000);
