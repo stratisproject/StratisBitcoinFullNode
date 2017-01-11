@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -114,15 +115,13 @@ namespace Stratis.Bitcoin.Consensus
 		Task _Flushing = Task.CompletedTask;
 		public async Task FlushAsync()
 		{
-			//wait previous flushing to complete
-			await _Flushing.ConfigureAwait(false);
-
 			if(_InnerBlockHash == null)
 				_InnerBlockHash = await _Inner.GetBlockHashAsync().ConfigureAwait(false);
 
 			KeyValuePair<uint256, CacheItem>[] unspent = null;
 			using(_Lock.LockWrite())
 			{
+				WaitOngoingTasks();
 				if(_InnerBlockHash == null)
 					return;
 				unspent =
@@ -236,6 +235,8 @@ namespace Stratis.Bitcoin.Consensus
 			using(_Lock.LockWrite())
 			{
 				WaitOngoingTasks();
+				if(_BlockHash == _InnerBlockHash)
+					_Unspents.Clear();
 				if(_Unspents.Count != 0)
 				{
 					//More intelligent version can restore without throwing away the cache. (as the rewind data is in the cache)

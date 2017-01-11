@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			return _Session.Do(() =>
 			{
-				RewindData rewindData = originalOutputs == null ? null: new RewindData(oldBlockHash);
+				RewindData rewindData = originalOutputs == null ? null : new RewindData(oldBlockHash);
 				int insertedEntities = 0;
 				using(new StopWatch().Start(o => PerformanceCounter.AddInsertTime(o)))
 				{
@@ -95,18 +95,27 @@ namespace Stratis.Bitcoin.Consensus
 						throw new InvalidOperationException("Invalid oldBlockHash");
 					SetBlockHash(nextBlockHash);
 					var all = unspentOutputs.ToList();
+					Dictionary<uint256, TxOut[]> unspentToOriginal = new Dictionary<uint256, TxOut[]>(all.Count);
+					if(originalOutputs != null)
+					{
+						var originalEnumerator = originalOutputs.GetEnumerator();
+						foreach(var u in all)
+						{
+							originalEnumerator.MoveNext();
+							unspentToOriginal.Add(u.TransactionId, originalEnumerator.Current);
+						}
+					}
 					all.Sort(UnspentOutputsComparer.Instance);
-					var originalEnumerator = originalOutputs?.GetEnumerator();
-					originalEnumerator?.MoveNext();
 					foreach(var coin in all)
 					{
-						var original = originalEnumerator?.Current;
 						if(coin.IsPrunable)
 							_Session.Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
 						else
 							_Session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
-						if(originalEnumerator != null)
+						if(originalOutputs != null)
 						{
+							TxOut[] original = null;
+							unspentToOriginal.TryGetValue(coin.TransactionId, out original);
 							if(original == null)
 							{
 								//This one did not existed before, if we rewind, delete it
@@ -116,11 +125,11 @@ namespace Stratis.Bitcoin.Consensus
 							{
 								//We'll need to restore the original outputs
 								var clone = coin.Clone();
-								clone._Outputs = original;
+								var before = clone.UnspentCount;
+								clone._Outputs = original.ToArray();
 								rewindData.OutputsToRestore.Add(clone);
 							}
 						}
-						originalEnumerator?.MoveNext();
 					}
 					if(rewindData != null)
 					{

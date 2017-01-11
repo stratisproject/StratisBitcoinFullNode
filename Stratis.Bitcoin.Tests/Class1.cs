@@ -89,6 +89,82 @@ namespace Stratis.Bitcoin.Tests
 			}
 		}
 
+		[Fact]
+		public void CanRewind()
+		{
+			using(NodeContext ctx = NodeContext.Create())
+			{
+				var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView);
+				var tester = new CoinViewTester(cacheCoinView);
+
+				var coins = tester.CreateCoins(5);
+				var coin = tester.CreateCoins(1);
+
+				// 1
+				var h1 = tester.NewBlock();
+				cacheCoinView.FlushAsync().Wait();
+				Assert.True(tester.Exists(coins[2]));
+				Assert.True(tester.Exists(coin[0]));
+
+				tester.Spend(coins[2]);
+				tester.Spend(coin[0]);
+				//2
+				tester.NewBlock();
+				//3
+				tester.NewBlock();
+				//4
+				var coin2 = tester.CreateCoins(1);
+				tester.NewBlock();
+				Assert.True(tester.Exists(coins[0]));
+				Assert.True(tester.Exists(coin2[0]));
+				Assert.False(tester.Exists(coins[2]));
+				Assert.False(tester.Exists(coin[0]));
+				//1
+				tester.Rewind();
+				Assert.False(tester.Exists(coin2[0]));
+				Assert.True(tester.Exists(coins[2]));
+				Assert.True(tester.Exists(coin[0]));
+
+
+				tester.Spend(coins[2]);
+				tester.Spend(coin[0]);
+				//2
+				var h2 = tester.NewBlock();
+				cacheCoinView.FlushAsync().Wait();
+				Assert.False(tester.Exists(coins[2]));
+				Assert.False(tester.Exists(coin[0]));
+
+				//1
+				Assert.True(h1 == tester.Rewind());
+				Assert.True(tester.Exists(coins[2]));
+				Assert.True(tester.Exists(coin[0]));
+
+
+				var coins2 = tester.CreateCoins(7);
+				tester.Spend(coins2[0]);
+				coin2 = tester.CreateCoins(1);
+				tester.Spend(coin2[0]);
+				//2
+				tester.NewBlock();
+				Assert.True(tester.Exists(coins2[1]));
+				Assert.False(tester.Exists(coins2[0]));
+				cacheCoinView.FlushAsync().Wait();
+				//3
+				tester.NewBlock();
+				//2
+				tester.Rewind();
+				Assert.True(tester.Exists(coins2[1]));
+				Assert.False(tester.Exists(coins2[0]));
+				Assert.False(tester.Exists(coin2[0]));
+				Assert.True(tester.Exists(coins[2]));
+				Assert.True(tester.Exists(coin[0]));
+
+
+			}
+		}
+
+
+
 
 		[Fact]
 		public void NodesCanConnectToEachOthers()

@@ -109,6 +109,14 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
+		public int UnspentCount
+		{
+			get
+			{
+				return _Outputs.Count(o => o != null);
+			}
+		}
+
 		public bool IsAvailable(uint outputIndex)
 		{
 			return TryGetOutput(outputIndex) != null;
