@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			set;
 		}
-		public int Prune
+		public bool Prune
 		{
 			get;
 			set;
@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Configuration
 			var config = TextFileConfiguration.Parse(File.ReadAllText(nodeArgs.ConfigurationFile));
 			consoleConfig.MergeInto(config);
 
-			nodeArgs.Prune = config.GetOrDefault("prune", 0);
+			nodeArgs.Prune = config.GetOrDefault("prune", 0) != 0;
 
 			nodeArgs.RPC = config.GetOrDefault<bool>("server", false) ? new RPCArgs() : null;
 			if(nodeArgs.RPC != null)

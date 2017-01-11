@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
 			var connectionParameters = new NodeConnectionParameters();
-			connectionParameters.Services = NodeServices.Network | NodeServices.NODE_WITNESS;
+			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
 			_ChainBehaviorState = connectionParameters.TemplateBehaviors.Find<ChainBehavior>().SharedState;
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
-			if(_Args.Prune == 0)
+			if(!_Args.Prune)
 			{
 				// TODO: later use the prune size to limit storage size
 				BlockRepository = new BlockRepository(DataFolder.BlockPath);
