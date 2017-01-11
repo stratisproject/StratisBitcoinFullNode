@@ -193,9 +193,11 @@ namespace Stratis.Bitcoin.Tests
 
 				// first seed a core node with blocks and sync them to a stratis node
 				// and wait till the stratis node is fully synced
-				coreCreateNode.FindBlock(5);
+				var tip = coreCreateNode.FindBlock(5).Last();
 				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
+				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
+				var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
+				Assert.Equal(tip.GetHash(), bestBlockHash);
 
 				// add a new stratis node which will download
 				// the blocks using the GetData payload
@@ -203,6 +205,9 @@ namespace Stratis.Bitcoin.Tests
 
 				// wait for download and assert
 				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				bestBlockHash = stratisNodeSync.CreateRPCClient().GetBestBlockHash();
+				Assert.Equal(tip.GetHash(), bestBlockHash);
+
 			}
 		}
 
@@ -218,9 +223,11 @@ namespace Stratis.Bitcoin.Tests
 
 				// first seed a core node with blocks and sync them to a stratis node
 				// and wait till the stratis node is fully synced
-				coreCreateNode.FindBlock(5);
+				var tip = coreCreateNode.FindBlock(5).Last();
 				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
+				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
+				var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
+				Assert.Equal(tip.GetHash(), bestBlockHash);
 
 				// add a new stratis node which will download
 				// the blocks using the GetData payload
@@ -228,6 +235,8 @@ namespace Stratis.Bitcoin.Tests
 
 				// wait for download and assert
 				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNodeSync.CreateRPCClient().GetBestBlockHash());
+				bestBlockHash = coreNodeSync.CreateRPCClient().GetBestBlockHash();
+				Assert.Equal(tip.GetHash(), bestBlockHash);
 			}
 		}
 
