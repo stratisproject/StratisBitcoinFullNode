@@ -130,6 +130,17 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
+		public ConsensusFlags GetFlags(ChainedBlock block = null)
+		{
+			block = block ?? Tip;
+			lock(bip9)
+			{
+				var states = bip9.GetStates(block.Previous);
+				var flags = new ConsensusFlags(block, states, Validator.ConsensusParams);
+				return flags;
+			}
+		}
+
 		public BlockResult ExecuteNextBlock(CancellationToken cancellationToken)
 		{
 			BlockResult result = new BlockResult();
@@ -166,8 +177,7 @@ namespace Stratis.Bitcoin.Consensus
 					result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock; //Liberate from memory the block created above if possible
 					context = new ContextInformation(result.ChainedBlock, Validator.ConsensusParams);
 					Validator.ContextualCheckBlockHeader(result.Block.Header, context);
-					var states = bip9.GetStates(Tip);
-					flags = new ConsensusFlags(result.ChainedBlock, states, Validator.ConsensusParams);
+					flags = GetFlags(result.ChainedBlock);
 					Validator.ContextualCheckBlock(result.Block, flags, context);
 					Validator.CheckBlock(result.Block);
 				}

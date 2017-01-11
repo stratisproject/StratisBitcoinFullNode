@@ -105,8 +105,14 @@ namespace Stratis.Bitcoin
 				connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockRepository));
 			}
 
-			ConnectionManager.Start();
 			ConsensusLoop = new ConsensusLoop(new ConsensusValidator(Network.Consensus), Chain, CoinView, blockPuller);
+
+			var flags = ConsensusLoop.GetFlags();
+			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
+				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+
+			ConnectionManager.Start();
+
 			new Thread(RunLoop)
 			{
 				Name = "Consensus Loop"
@@ -143,13 +149,12 @@ namespace Stratis.Bitcoin
 					_Cancellation.Token.ThrowIfCancellationRequested();
 					if(block.Error != null)
 					{
-						//TODO: 
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
 						if(block.Error == ConsensusErrors.BadWitnessNonceSize)
 						{
 							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
 							ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
-							ConnectionManager.SetDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+							ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 							ConsensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
 							continue;
 						}

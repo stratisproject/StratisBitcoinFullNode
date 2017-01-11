@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin
 			{
 				var cloneParameters = _Parameters.Clone();
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
-				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters);
+				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, NodeServices.Nothing);
 				DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
 				DiscoveredNodeGroup.Connect();
 			}
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.None;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
-				ConnectNodeGroup = CreateNodeGroup(cloneParameters);
+				ConnectNodeGroup = CreateNodeGroup(cloneParameters, _DiscoveredNodeRequiredService);
 				ConnectNodeGroup.MaximumNodeConnection = _Args.Connect.Count;
 				ConnectNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
 				ConnectNodeGroup.Connect();
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.AdvertizeDiscover;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
-				AddNodeNodeGroup = CreateNodeGroup(cloneParameters);
+				AddNodeNodeGroup = CreateNodeGroup(cloneParameters, NodeServices.Nothing);
 				AddNodeNodeGroup.MaximumNodeConnection = _Args.AddNode.Count;
 				AddNodeNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
 				AddNodeNodeGroup.Connect();
@@ -186,8 +186,10 @@ namespace Stratis.Bitcoin
 			Logs.ConnectionManager.LogInformation(logs.ToString());
 		}
 
-		public void SetDiscoveredNodesRequirement(NodeServices services)
+		NodeServices _DiscoveredNodeRequiredService = NodeServices.Network;
+		public void AddDiscoveredNodesRequirement(NodeServices services)
 		{
+			_DiscoveredNodeRequiredService |= services;
 			var group = DiscoveredNodeGroup;
 			if(group != null &&
 			   !group.Requirements.RequiredServices.HasFlag(services))
@@ -247,12 +249,12 @@ namespace Stratis.Bitcoin
 
 		List<NodeServer> _Servers = new List<NodeServer>();
 
-		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters)
+		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters, NodeServices requiredServices)
 		{
 			return new NodesGroup(Network, cloneParameters, new NodeRequirement()
 			{
 				MinVersion = ProtocolVersion.SENDHEADERS_VERSION,
-				RequiredServices = NodeServices.Network,
+				RequiredServices = requiredServices,
 			});
 		}
 
