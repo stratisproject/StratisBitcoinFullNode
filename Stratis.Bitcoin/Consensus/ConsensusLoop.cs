@@ -117,7 +117,13 @@ namespace Stratis.Bitcoin.Consensus
 		private void Initialize()
 		{
 			var utxoHash = _utxoSet.GetBlockHashAsync().GetAwaiter().GetResult();
-			_Tip = Chain.GetBlock(utxoHash);
+			while(true)
+			{
+				_Tip = Chain.GetBlock(utxoHash);
+				if(_Tip != null)
+					break;
+				utxoHash = _utxoSet.Rewind().GetAwaiter().GetResult();
+			}
 			Puller.SetLocation(Tip);
 			bip9 = new ThresholdConditionCache(_Validator.ConsensusParams);
 		}

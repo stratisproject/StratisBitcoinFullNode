@@ -164,7 +164,6 @@ namespace Stratis.Bitcoin.Consensus
 			if(stream.Serializing)
 			{
 				var c = ToCoins();
-				stream.ReadWrite(ref _TransactionId);
 				stream.ReadWrite(c);
 			}
 			else
