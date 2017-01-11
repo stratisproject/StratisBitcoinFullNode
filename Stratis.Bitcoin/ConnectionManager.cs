@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin
 			{
 				var cloneParameters = _Parameters.Clone();
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
-				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, NodeServices.Nothing);
+				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, _DiscoveredNodeRequiredService);
 				DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
 				DiscoveredNodeGroup.Connect();
 			}
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.None;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
-				ConnectNodeGroup = CreateNodeGroup(cloneParameters, _DiscoveredNodeRequiredService);
+				ConnectNodeGroup = CreateNodeGroup(cloneParameters, NodeServices.Nothing);
 				ConnectNodeGroup.MaximumNodeConnection = _Args.Connect.Count;
 				ConnectNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
 				ConnectNodeGroup.Connect();

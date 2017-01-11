@@ -163,6 +163,10 @@ namespace Stratis.Bitcoin
 					if (block.Error == null)
 					{
 						this.TryStoreBlock(block.Block, reorg);
+						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
+						{
+							var unused = cache.FlushAsync();
+						}
 					}
 
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
@@ -222,6 +226,8 @@ namespace Stratis.Bitcoin
 
 		private Task TryStoreBlock(Block block, bool reorg)
 		{
+			if(BlockRepository == null)
+				return Task.CompletedTask;
 			if (reorg)
 			{
 				// TODO: delete blocks if reorg
@@ -230,7 +236,7 @@ namespace Stratis.Bitcoin
 			}
 			else
 			{
-				return this.BlockRepository?.PutAsync(block);
+				return this.BlockRepository.PutAsync(block);
 			}
 
 			return Task.CompletedTask;
