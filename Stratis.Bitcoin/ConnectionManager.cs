@@ -57,6 +57,17 @@ namespace Stratis.Bitcoin
 		protected override void AttachCore()
 		{
 			this.AttachedNode.StateChanged += AttachedNode_StateChanged;
+			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
+			_ChainBehavior = this.AttachedNode.Behaviors.Find<ChainBehavior>();
+		}
+
+		ChainBehavior _ChainBehavior;
+		private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+		{
+			if(_ChainBehavior.InvalidHeaderReceived && !Whitelisted)
+			{
+				node.DisconnectAsync("Invalid block received");
+			}
 		}
 
 		private void AttachedNode_StateChanged(Node node, NodeState oldState)
@@ -79,6 +90,7 @@ namespace Stratis.Bitcoin
 		protected override void DetachCore()
 		{
 			this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
+			this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
 		}
 	}
 
@@ -126,7 +138,7 @@ namespace Stratis.Bitcoin
 			{
 				var cloneParameters = _Parameters.Clone();
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
-				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters);
+				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, _DiscoveredNodeRequiredService);
 				DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
 				DiscoveredNodeGroup.Connect();
 			}
@@ -141,7 +153,7 @@ namespace Stratis.Bitcoin
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.None;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
-				ConnectNodeGroup = CreateNodeGroup(cloneParameters);
+				ConnectNodeGroup = CreateNodeGroup(cloneParameters, NodeServices.Nothing);
 				ConnectNodeGroup.MaximumNodeConnection = _Args.Connect.Count;
 				ConnectNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
 				ConnectNodeGroup.Connect();
@@ -157,7 +169,7 @@ namespace Stratis.Bitcoin
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.AdvertizeDiscover;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
-				AddNodeNodeGroup = CreateNodeGroup(cloneParameters);
+				AddNodeNodeGroup = CreateNodeGroup(cloneParameters, NodeServices.Nothing);
 				AddNodeNodeGroup.MaximumNodeConnection = _Args.AddNode.Count;
 				AddNodeNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
 				AddNodeNodeGroup.Connect();
@@ -184,6 +196,23 @@ namespace Stratis.Bitcoin
 				logs.AppendLine();
 			}
 			Logs.ConnectionManager.LogInformation(logs.ToString());
+		}
+
+		NodeServices _DiscoveredNodeRequiredService = NodeServices.Network;
+		public void AddDiscoveredNodesRequirement(NodeServices services)
+		{
+			_DiscoveredNodeRequiredService |= services;
+			var group = DiscoveredNodeGroup;
+			if(group != null &&
+			   !group.Requirements.RequiredServices.HasFlag(services))
+			{
+				group.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+				foreach(var node in group.ConnectedNodes)
+				{
+					if(!node.PeerVersion.Services.HasFlag(services))
+						node.DisconnectAsync("The peer does not support the required services requirement");
+				}
+			}
 		}
 
 		public string GetStats()
@@ -232,12 +261,12 @@ namespace Stratis.Bitcoin
 
 		List<NodeServer> _Servers = new List<NodeServer>();
 
-		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters)
+		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters, NodeServices requiredServices)
 		{
 			return new NodesGroup(Network, cloneParameters, new NodeRequirement()
 			{
 				MinVersion = ProtocolVersion.SENDHEADERS_VERSION,
-				RequiredServices = NodeServices.Network,
+				RequiredServices = requiredServices,
 			});
 		}
 

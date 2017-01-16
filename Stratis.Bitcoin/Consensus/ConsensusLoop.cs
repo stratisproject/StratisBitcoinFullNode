@@ -117,7 +117,13 @@ namespace Stratis.Bitcoin.Consensus
 		private void Initialize()
 		{
 			var utxoHash = _utxoSet.GetBlockHashAsync().GetAwaiter().GetResult();
-			_Tip = Chain.GetBlock(utxoHash);
+			while(true)
+			{
+				_Tip = Chain.GetBlock(utxoHash);
+				if(_Tip != null)
+					break;
+				utxoHash = _utxoSet.Rewind().GetAwaiter().GetResult();
+			}
 			Puller.SetLocation(Tip);
 			bip9 = new ThresholdConditionCache(_Validator.ConsensusParams);
 		}
@@ -127,6 +133,17 @@ namespace Stratis.Bitcoin.Consensus
 			while(true)
 			{
 				yield return ExecuteNextBlock(cancellationToken);
+			}
+		}
+
+		public ConsensusFlags GetFlags(ChainedBlock block = null)
+		{
+			block = block ?? Tip;
+			lock(bip9)
+			{
+				var states = bip9.GetStates(block.Previous);
+				var flags = new ConsensusFlags(block, states, Validator.ConsensusParams);
+				return flags;
 			}
 		}
 
@@ -166,8 +183,7 @@ namespace Stratis.Bitcoin.Consensus
 					result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock; //Liberate from memory the block created above if possible
 					context = new ContextInformation(result.ChainedBlock, Validator.ConsensusParams);
 					Validator.ContextualCheckBlockHeader(result.Block.Header, context);
-					var states = bip9.GetStates(Tip);
-					flags = new ConsensusFlags(result.ChainedBlock, states, Validator.ConsensusParams);
+					flags = GetFlags(result.ChainedBlock);
 					Validator.ContextualCheckBlock(result.Block, flags, context);
 					Validator.CheckBlock(result.Block);
 				}

@@ -135,13 +135,13 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			StringBuilder builder = new StringBuilder();
 
-			builder.AppendLine("====Overall Speed====");
+			builder.AppendLine("====Blk Fetching Speed====");
 			if(TotalProcessedInputs > 0)
-				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (Elapsed.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/input");
+				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (TotalBlockFetchingTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/input");
 			if(TotalProcessedTransactions > 0)
-				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (Elapsed.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (TotalBlockFetchingTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
 			if(TotalProcessedBlocks > 0)
-				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (Elapsed.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/block");
+				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (TotalBlockFetchingTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/block");
 			builder.AppendLine("====Validation Speed====");
 			if(TotalProcessedInputs > 0)
 				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
@@ -149,6 +149,13 @@ namespace Stratis.Bitcoin.Consensus
 				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
 			if(TotalProcessedBlocks > 0)
 				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
+			builder.AppendLine("====UTXO Fetching Speed====");
+			if(TotalProcessedInputs > 0)
+				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (TotalUTXOFetchingTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			if(TotalProcessedTransactions > 0)
+				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (TotalUTXOFetchingTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+			if(TotalProcessedBlocks > 0)
+				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (TotalUTXOFetchingTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
 			builder.AppendLine("====Speed breakdown(%)====");
 			var total = _TotalBlockFetchingTime + _TotalUTXOFetchingTime + _TotalBlockValidationTime;
 			if(total > 0)

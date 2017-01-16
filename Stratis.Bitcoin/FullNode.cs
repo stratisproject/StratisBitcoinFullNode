@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin
 			_Resources.Add(coinviewDB);
 			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
 
-			
+
 			_Cancellation = new CancellationTokenSource();
 			StartFlushAddrManThread();
 			StartFlushChainThread();
@@ -90,14 +90,15 @@ namespace Stratis.Bitcoin
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
 			var connectionParameters = new NodeConnectionParameters();
-			connectionParameters.Services = NodeServices.Network | NodeServices.NODE_WITNESS;
+			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
+			_ChainBehaviorState = connectionParameters.TemplateBehaviors.Find<ChainBehavior>().SharedState;
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
-			if (_Args.Prune == 0)
+			if(!_Args.Prune)
 			{
 				// TODO: later use the prune size to limit storage size
 				BlockRepository = new BlockRepository(DataFolder.BlockPath);
@@ -105,14 +106,23 @@ namespace Stratis.Bitcoin
 				connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockRepository));
 			}
 
-			ConnectionManager.Start();
 			ConsensusLoop = new ConsensusLoop(new ConsensusValidator(Network.Consensus), Chain, CoinView, blockPuller);
+
+			var flags = ConsensusLoop.GetFlags();
+			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
+				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+
+			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
+			ConnectionManager.Start();
+
 			new Thread(RunLoop)
 			{
 				Name = "Consensus Loop"
 			}.Start();
 			_IsStarted.Set();
 		}
+
+		ChainBehavior.State _ChainBehaviorState;
 
 		void RunLoop()
 		{
@@ -140,17 +150,37 @@ namespace Stratis.Bitcoin
 						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
 					}
 					lastTip = ConsensusLoop.Tip;
-					if(_IsDisposed.WaitOne(0))
-						break;
+					_Cancellation.Token.ThrowIfCancellationRequested();
 					if(block.Error != null)
 					{
-						//TODO: 
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
+
+						//Pull again
+						ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
+
+						if(block.Error == ConsensusErrors.BadWitnessNonceSize)
+						{
+							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
+							ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+							ConsensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
+							continue;
+						}
+
+						//Set the PoW chain back to ConsensusLoop.Tip
+						Chain.SetTip(ConsensusLoop.Tip);
+						//Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
+						Logs.FullNode.LogError("Marking block as invalid");
+						_ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
 					}
 
-					if (block.Error == null)
+					if(block.Error == null)
 					{
+						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 						this.TryStoreBlock(block.Block, reorg);
+						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
+						{
+							var unused = cache.FlushAsync();
+						}
 					}
 
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
@@ -210,7 +240,9 @@ namespace Stratis.Bitcoin
 
 		private Task TryStoreBlock(Block block, bool reorg)
 		{
-			if (reorg)
+			if(BlockRepository == null)
+				return Task.CompletedTask;
+			if(reorg)
 			{
 				// TODO: delete blocks if reorg
 				// this can be done periodically or 
@@ -218,7 +250,7 @@ namespace Stratis.Bitcoin
 			}
 			else
 			{
-				return this.BlockRepository?.PutAsync(block);
+				return this.BlockRepository.PutAsync(block);
 			}
 
 			return Task.CompletedTask;
