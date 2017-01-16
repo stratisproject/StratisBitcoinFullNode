@@ -144,11 +144,6 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void MempoolIndexingTest()
 		{
-			
-			//Transaction xxx = new Transaction();
-			//xxx.AddOutput(new TxOut(new Money(000 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
-			//pool.AddUnchecked(xxx.GetHash(), entry.Fee(new Money(000L)).Priority(000.0).FromTx(xxx));
-
 			var pool = new TxMemPool(new FeeRate(0));
 			var entry = new TestMemPoolEntryHelper();
 
@@ -290,43 +285,43 @@ namespace Stratis.Bitcoin.Tests
 			pool.RemoveRecursive(pool.MapTx.TryGet(tx10.GetHash()).Transaction);
 			CheckSort(pool, pool.MapTx.DescendantScore.ToList(), snapshotOrder);
 
-			//pool.removeRecursive(pool.MapTx.find(tx9.GetHash())->GetTx());
-			//pool.removeRecursive(pool.MapTx.find(tx8.GetHash())->GetTx());
-			///* Now check the sort on the mining score index.
-			// * Final order should be:
-			// *
-			// * tx7 (2M)
-			// * tx2 (20k)
-			// * tx4 (15000)
-			// * tx1/tx5 (10000)
-			// * tx3/6 (0)
-			// * (Ties resolved by hash)
-			// */
-			//sortedOrder.clear();
-			//sortedOrder.push_back(tx7.GetHash().ToString());
-			//sortedOrder.push_back(tx2.GetHash().ToString());
-			//sortedOrder.push_back(tx4.GetHash().ToString());
-			//if (tx1.GetHash() < tx5.GetHash())
-			//{
-			//	sortedOrder.push_back(tx5.GetHash().ToString());
-			//	sortedOrder.push_back(tx1.GetHash().ToString());
-			//}
-			//else
-			//{
-			//	sortedOrder.push_back(tx1.GetHash().ToString());
-			//	sortedOrder.push_back(tx5.GetHash().ToString());
-			//}
-			//if (tx3.GetHash() < tx6.GetHash())
-			//{
-			//	sortedOrder.push_back(tx6.GetHash().ToString());
-			//	sortedOrder.push_back(tx3.GetHash().ToString());
-			//}
-			//else
-			//{
-			//	sortedOrder.push_back(tx3.GetHash().ToString());
-			//	sortedOrder.push_back(tx6.GetHash().ToString());
-			//}
-			//CheckSort<mining_score>(pool, sortedOrder);
+			pool.RemoveRecursive(pool.MapTx.TryGet(tx9.GetHash()).Transaction);
+			pool.RemoveRecursive(pool.MapTx.TryGet(tx8.GetHash()).Transaction);
+			/* Now check the sort on the mining score index.
+			 * Final order should be:
+			 *
+			 * tx7 (2M)
+			 * tx2 (20k)
+			 * tx4 (15000)
+			 * tx1/tx5 (10000)
+			 * tx3/6 (0)
+			 * (Ties resolved by hash)
+			 */
+			sortedOrder.Clear();
+			sortedOrder.Add(tx7.GetHash().ToString());
+			sortedOrder.Add(tx2.GetHash().ToString());
+			sortedOrder.Add(tx4.GetHash().ToString());
+			if (tx1.GetHash() < tx5.GetHash())
+			{
+				sortedOrder.Add(tx5.GetHash().ToString());
+				sortedOrder.Add(tx1.GetHash().ToString());
+			}
+			else
+			{
+				sortedOrder.Add(tx1.GetHash().ToString());
+				sortedOrder.Add(tx5.GetHash().ToString());
+			}
+			if (tx3.GetHash() < tx6.GetHash())
+			{
+				sortedOrder.Add(tx6.GetHash().ToString());
+				sortedOrder.Add(tx3.GetHash().ToString());
+			}
+			else
+			{
+				sortedOrder.Add(tx3.GetHash().ToString());
+				sortedOrder.Add(tx6.GetHash().ToString());
+			}
+			CheckSort(pool, pool.MapTx.MiningScore.ToList(), sortedOrder);
 		}
 	}
 }

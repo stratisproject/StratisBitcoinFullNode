@@ -217,15 +217,13 @@ namespace Stratis.Bitcoin.MemoryPool
 					double f2 = (double) b.ModifiedFee*a.GetTxSize();
 					if (f1 == f2)
 					{
-						if (a.TransactionHash == b.TransactionHash)
-							return 0;
 						if (a.TransactionHash < b.TransactionHash)
-							return -1;
-						return 1;
+							return 1;
+						return -1;
 					}
 					if (f1 > f2)
-						return 1;
-					return -1;
+						return -1;
+					return 1;
 				}
 			}
 
