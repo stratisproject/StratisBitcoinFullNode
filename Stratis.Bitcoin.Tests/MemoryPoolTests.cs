@@ -323,5 +323,98 @@ namespace Stratis.Bitcoin.Tests
 			}
 			CheckSort(pool, pool.MapTx.MiningScore.ToList(), sortedOrder);
 		}
+
+		[Fact]
+		public void MempoolAncestorIndexingTest()
+		{
+			var pool = new TxMemPool(new FeeRate(0));
+			var entry = new TestMemPoolEntryHelper();
+
+			/* 3rd highest fee */
+			Transaction tx1 = new Transaction();
+			tx1.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx1.GetHash(), entry.Fee(new Money(10000L)).Priority(10.0).FromTx(tx1));
+
+			/* highest fee */
+			Transaction tx2 = new Transaction();
+			tx2.AddOutput(new TxOut(new Money(2 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx2.GetHash(), entry.Fee(new Money(20000L)).Priority(9.0).FromTx(tx2));
+			var tx2Size = tx2.GetVirtualSize();
+
+			/* lowest fee */
+			Transaction tx3 = new Transaction();
+			tx3.AddOutput(new TxOut(new Money(5 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx3.GetHash(), entry.Fee(new Money(0L)).Priority(100.0).FromTx(tx3));
+
+			/* 2nd highest fee */
+			Transaction tx4 = new Transaction();
+			tx4.AddOutput(new TxOut(new Money(6 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx4.GetHash(), entry.Fee(new Money(15000L)).Priority(1.0).FromTx(tx4));
+
+			/* equal fee rate to tx1, but newer */
+			Transaction tx5 = new Transaction();
+			tx5.AddOutput(new TxOut(new Money(11 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx5.GetHash(), entry.Fee(new Money(10000L)).Priority(1.0).FromTx(tx5));
+
+			// assert size
+			Assert.Equal(pool.Size, 5);
+
+			List<string> sortedOrder = new List<string>(5);
+			sortedOrder.Insert(0, tx2.GetHash().ToString()); // 20000
+			sortedOrder.Insert(1, tx4.GetHash().ToString()); // 15000
+
+			// tx1 and tx5 are both 10000
+			// Ties are broken by hash, not timestamp, so determine which
+			// hash comes first.
+			if (tx1.GetHash() < tx5.GetHash())
+			{
+				sortedOrder.Insert(2, tx1.GetHash().ToString()); 
+				sortedOrder.Insert(3, tx5.GetHash().ToString()); 
+			}
+			else
+			{
+				sortedOrder.Insert(2, tx5.GetHash().ToString());
+				sortedOrder.Insert(3, tx1.GetHash().ToString());
+			}
+			sortedOrder.Insert(4, tx3.GetHash().ToString()); // 0
+			CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
+
+			/* low fee parent with high fee child */
+			/* tx6 (0) -> tx7 (high) */
+			Transaction tx6 = new Transaction();
+			tx6.AddOutput(new TxOut(new Money(20 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx6.GetHash(), entry.Fee(new Money(0L)).FromTx(tx6));
+			var tx6Size = tx6.GetVirtualSize();
+			Assert.Equal(pool.Size, 6);
+			// Ties are broken by hash
+			if (tx3.GetHash() < tx6.GetHash())
+				sortedOrder.Add(tx6.GetHash().ToString());
+			else
+				sortedOrder.Insert(sortedOrder.Count - 1, tx6.GetHash().ToString());
+			CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
+
+			Transaction tx7 = new Transaction();
+			tx7.AddInput(new TxIn(new OutPoint(tx6.GetHash(), 0), new Script(OpcodeType.OP_11)));
+			tx7.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
+			var tx7Size = tx7.GetVirtualSize();
+			Money fee = (20000 / tx2Size) * (tx7Size + tx6Size) - 1;
+			pool.AddUnchecked(tx7.GetHash(), entry.Fee(fee).FromTx(tx7));
+			Assert.Equal(pool.Size, 7);
+			sortedOrder.Insert(1, tx7.GetHash().ToString());
+			CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
+
+			/* after tx6 is mined, tx7 should move up in the sort */
+			List<Transaction> vtx = new List<Transaction>(new[] {tx6});
+			pool.RemoveForBlock(vtx, 1);
+
+			sortedOrder.RemoveAt(1);
+			// Ties are broken by hash
+			if (tx3.GetHash() < tx6.GetHash())
+				sortedOrder.Remove(sortedOrder.Last());
+			else
+				sortedOrder.RemoveAt(sortedOrder.Count - 2);
+			sortedOrder.Insert(0, tx7.GetHash().ToString());
+			CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
+		}
 	}
 }

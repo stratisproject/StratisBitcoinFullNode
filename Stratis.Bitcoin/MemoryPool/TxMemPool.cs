@@ -243,17 +243,14 @@ namespace Stratis.Bitcoin.MemoryPool
 
 					if (f1 == f2)
 					{
-						{
-							if (a.TransactionHash == b.TransactionHash)
-								return 0;
-							if (a.TransactionHash < b.TransactionHash)
-								return -1;
-							return 1;
-						}
-					}
-					if (f1 > f2)
+						if (a.TransactionHash < b.TransactionHash)
+							return -1;
 						return 1;
-					return -1;
+					}
+
+					if (f1 > f2)
+						return -1;
+					return 1;
 				}
 			}
 		}
@@ -870,6 +867,70 @@ namespace Stratis.Bitcoin.MemoryPool
 			foreach (var updateIt in setMemPoolChildren)
 				UpdateParent(updateIt, it, false);
 		}
-	}
 
+		/**
+		* Called when a block is connected. Removes from mempool and updates the miner fee estimator.
+		*/
+
+		public void RemoveForBlock(IEnumerable<Transaction> vtx, int blockHeight)
+		{
+			//LOCK(cs);
+
+			// TODO: implement minerPolicyEstimator
+			//var entries = new List<TxMemPoolEntry>();
+			//foreach (var tx in vtx)
+			//{
+			//	uint256 hash = tx.GetHash();
+			//	var entry = this.MapTx.TryGet(hash);
+			//	if (entry != null)
+			//		entries.Add(entry);
+			//}
+
+
+			// Before the txs in the new block have been removed from the mempool, update policy estimates
+			//minerPolicyEstimator->processBlock(nBlockHeight, entries);
+			foreach (var tx in vtx)
+			{
+				uint256 hash = tx.GetHash();
+
+				var entry = this.MapTx.TryGet(hash);
+				if (entry != null)
+				{
+					SetEntries stage = new SetEntries();
+					stage.Add(entry);
+					RemoveStaged(stage, true);
+				}
+
+				RemoveConflicts(tx);
+				ClearPrioritisation(tx.GetHash());
+			}
+			lastRollingFeeUpdate = DateTime.UtcNow.ToUnixTimestamp();
+			blockSinceLastRollingFeeBump = true;
+		}
+
+		private void RemoveConflicts(Transaction tx)
+		{
+			// Remove transactions which depend on inputs of tx, recursively
+			//LOCK(cs);
+			foreach (var txInput in tx.Inputs)
+			{
+				var it = mapNextTx.FirstOrDefault(p => p.OutPoint == txInput.PrevOut);
+				if (it != null)
+				{
+					var txConflict = it.Transaction;
+					if (txConflict != tx)
+					{
+						ClearPrioritisation(txConflict.GetHash());
+						RemoveRecursive(txConflict);
+					}
+				}
+			}
+		}
+
+		private void ClearPrioritisation(uint256 hash)
+		{
+			//LOCK(cs);
+			mapDeltas.Remove(hash);
+		}
+	}
 }
