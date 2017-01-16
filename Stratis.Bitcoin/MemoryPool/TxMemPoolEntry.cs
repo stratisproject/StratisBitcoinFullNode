@@ -201,5 +201,10 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 
 		public volatile uint vTxHashesIdx; //!< Index in mempool's vTxHashes
+
+		public override string ToString()
+		{
+			return $"{this.TransactionHash} - {base.ToString()}";
+		}
 	}
 }
