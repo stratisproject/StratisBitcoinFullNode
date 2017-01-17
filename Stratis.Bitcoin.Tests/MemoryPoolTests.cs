@@ -416,5 +416,134 @@ namespace Stratis.Bitcoin.Tests
 			sortedOrder.Insert(0, tx7.GetHash().ToString());
 			CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
 		}
+
+		[Fact]
+		public void MempoolSizeLimitTest()
+		{
+			var pool = new TxMemPool(new FeeRate(1000));
+			var entry = new TestMemPoolEntryHelper();
+			entry.Priority(10.0);
+
+			Transaction tx1 = new Transaction();
+			tx1.AddInput(new TxIn(new Script(OpcodeType.OP_1)));
+			tx1.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_1, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx1.GetHash(), entry.Fee(10000L).FromTx(tx1, pool));
+
+			Transaction tx2 = new Transaction();
+			tx2.AddInput(new TxIn(new Script(OpcodeType.OP_2)));
+			tx2.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_2, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx2.GetHash(), entry.Fee(5000L).FromTx(tx2, pool));
+
+			pool.TrimToSize(pool.DynamicMemoryUsage()); // should do nothing
+			Assert.True(pool.Exists(tx1.GetHash()));
+			Assert.True(pool.Exists(tx2.GetHash()));
+
+			pool.TrimToSize(pool.DynamicMemoryUsage() * 3 / 4); // should remove the lower-feerate transaction
+			Assert.True(pool.Exists(tx1.GetHash()));
+			Assert.True(!pool.Exists(tx2.GetHash()));
+
+			pool.AddUnchecked(tx2.GetHash(), entry.FromTx(tx2, pool));
+			Transaction tx3 = new Transaction();
+			tx3.AddInput(new TxIn(new OutPoint(tx2.GetHash(), 0), new Script(OpcodeType.OP_2)));
+			tx3.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_3, OpcodeType.OP_EQUAL)));
+			pool.AddUnchecked(tx3.GetHash(), entry.Fee(20000L).FromTx(tx3, pool));
+
+			pool.TrimToSize(pool.DynamicMemoryUsage() * 3 / 4); // tx3 should pay for tx2 (CPFP)
+			Assert.True(!pool.Exists(tx1.GetHash()));
+			Assert.True(pool.Exists(tx2.GetHash()));
+			Assert.True(pool.Exists(tx3.GetHash()));
+
+			pool.TrimToSize(tx1.GetVirtualSize()); // mempool is limited to tx1's size in memory usage, so nothing fits
+			Assert.True(!pool.Exists(tx1.GetHash()));
+			Assert.True(!pool.Exists(tx2.GetHash()));
+			Assert.True(!pool.Exists(tx3.GetHash()));
+
+			FeeRate maxFeeRateRemoved = new FeeRate(25000, tx3.GetVirtualSize() + tx2.GetVirtualSize());
+			Assert.Equal(pool.GetMinFee(1).FeePerK, maxFeeRateRemoved.FeePerK + 1000); 
+
+			Transaction tx4 = new Transaction();
+			tx4.AddInput(new TxIn(new Script(OpcodeType.OP_4)));
+			tx4.AddInput(new TxIn(new Script(OpcodeType.OP_4)));
+			tx4.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_4, OpcodeType.OP_EQUAL)));
+			tx4.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_4, OpcodeType.OP_EQUAL)));
+
+			Transaction tx5 = new Transaction();
+			tx5.AddInput(new TxIn(new OutPoint(tx4.GetHash(), 0), new Script(OpcodeType.OP_4)));
+			tx5.AddInput(new TxIn(new Script(OpcodeType.OP_5)));
+			tx5.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_5, OpcodeType.OP_EQUAL)));
+			tx5.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_5, OpcodeType.OP_EQUAL)));
+
+			Transaction tx6 = new Transaction();
+			tx6.AddInput(new TxIn(new OutPoint(tx4.GetHash(), 0), new Script(OpcodeType.OP_4)));
+			tx6.AddInput(new TxIn(new Script(OpcodeType.OP_6)));
+			tx6.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_6, OpcodeType.OP_EQUAL)));
+			tx6.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_6, OpcodeType.OP_EQUAL)));
+
+			Transaction tx7 = new Transaction();
+			tx7.AddInput(new TxIn(new OutPoint(tx5.GetHash(), 0), new Script(OpcodeType.OP_5)));
+			tx7.AddInput(new TxIn(new OutPoint(tx6.GetHash(), 0), new Script(OpcodeType.OP_6)));
+			tx7.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_7, OpcodeType.OP_EQUAL)));
+			tx7.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_7, OpcodeType.OP_EQUAL)));
+
+
+			pool.AddUnchecked(tx4.GetHash(), entry.Fee(7000L).FromTx(tx4, pool));
+			pool.AddUnchecked(tx5.GetHash(), entry.Fee(1000L).FromTx(tx5, pool));
+			pool.AddUnchecked(tx6.GetHash(), entry.Fee(1100L).FromTx(tx6, pool));
+			pool.AddUnchecked(tx7.GetHash(), entry.Fee(9000L).FromTx(tx7, pool));
+
+			// we only require this remove, at max, 2 txn, because its not clear what we're really optimizing for aside from that
+			pool.TrimToSize(pool.DynamicMemoryUsage() - 1);
+			Assert.True(pool.Exists(tx4.GetHash()));
+			Assert.True(pool.Exists(tx6.GetHash()));
+			Assert.True(!pool.Exists(tx7.GetHash()));
+
+			if (!pool.Exists(tx5.GetHash()))
+				pool.AddUnchecked(tx5.GetHash(), entry.Fee(1000L).FromTx(tx5, pool));
+			pool.AddUnchecked(tx7.GetHash(), entry.Fee(9000L).FromTx(tx7, pool));
+
+			pool.TrimToSize(pool.DynamicMemoryUsage() / 2); // should maximize mempool size by only removing 5/7
+			Assert.True(pool.Exists(tx4.GetHash()));
+			Assert.True(!pool.Exists(tx5.GetHash()));
+			Assert.True(pool.Exists(tx6.GetHash()));
+			Assert.True(!pool.Exists(tx7.GetHash()));
+
+			pool.AddUnchecked(tx5.GetHash(), entry.Fee(1000L).FromTx(tx5, pool));
+			pool.AddUnchecked(tx7.GetHash(), entry.Fee(9000L).FromTx(tx7, pool));
+
+			List<Transaction> vtx = new List<Transaction>();
+			pool.TimeProvider = new DateTimeProviderSet {time = 42 + TxMemPool.ROLLING_FEE_HALFLIFE };
+			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, maxFeeRateRemoved.FeePerK.Satoshi + 1000);
+			// ... we should keep the same min fee until we get a block
+			pool.RemoveForBlock(vtx, 1);
+			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 2 * + TxMemPool.ROLLING_FEE_HALFLIFE };
+			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 2);
+			// ... then feerate should drop 1/2 each halflife
+
+			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 2 * TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE / 2};
+			Assert.Equal(pool.GetMinFee(pool.DynamicMemoryUsage() * 5 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 4);
+			// ... with a 1/2 halflife when mempool is < 1/2 its target size
+
+			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 2*TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 };
+			Assert.Equal(pool.GetMinFee(pool.DynamicMemoryUsage() * 9 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 8);
+			// ... with a 1/4 halflife when mempool is < 1/4 its target size
+
+			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 7*TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 };
+			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, 1000);
+			// ... but feerate should never drop below 1000
+
+			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 8*TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 };
+			Assert.Equal(pool.GetMinFee(1).FeePerK, 0);
+			// ... unless it has gone all the way to 0 (after getting past 1000/2)
+		}
+
+		public class DateTimeProviderSet : TxMemPool.DateTimeProvider
+		{
+			public long time;
+
+			public override long GetTime()
+			{
+				return time;
+			}
+		}
 	}
 }

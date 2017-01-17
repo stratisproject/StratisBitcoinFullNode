@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
@@ -100,6 +102,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		long lastRollingFeeUpdate;
 		bool blockSinceLastRollingFeeBump;
 		double rollingMinimumFeeRate; //!< minimum fee to get into the pool, decreases exponentially
+
+		public const int ROLLING_FEE_HALFLIFE = 60 * 60 * 12; // public only for testing
 
 		public class IndexedTransactionSet : Dictionary<uint256, TxMemPoolEntry>
 		{
@@ -318,6 +322,16 @@ namespace Stratis.Bitcoin.MemoryPool
 		private Dictionary<uint256, DeltaPair> mapDeltas = new Dictionary<uint256, DeltaPair>();
 		Dictionary<TxMemPoolEntry, uint256> vTxHashes = new Dictionary<TxMemPoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
 
+		public class DateTimeProvider
+		{
+			public virtual long GetTime()
+			{
+				return DateTime.UtcNow.ToUnixTimestamp();
+			}
+		}
+
+		public DateTimeProvider TimeProvider { get; set; }
+
 		/** Create a new CTxMemPool.
 		*  minReasonableRelayFee should be a feerate which is, roughly, somewhere
 		*  around what it "costs" to relay a transaction around the network and
@@ -325,6 +339,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		*/
 		public TxMemPool(FeeRate minReasonableRelayFee)
 		{
+			this.TimeProvider = new DateTimeProvider();
+
 			this.InnerClear(); //lock free clear
 
 			// Sanity checks off by default for performance, because otherwise
@@ -344,7 +360,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			mapNextTx.Clear();
 			totalTxSize = 0;
 			cachedInnerUsage = 0;
-			lastRollingFeeUpdate = DateTime.UtcNow.ToUnixTimestamp();
+			lastRollingFeeUpdate = this.TimeProvider.GetTime();
 			blockSinceLastRollingFeeBump = false;
 			rollingMinimumFeeRate = 0;
 			++nTransactionsUpdated;
@@ -523,11 +539,11 @@ namespace Stratis.Bitcoin.MemoryPool
 			//setEntries s;
 			if (add && mapLinks[entry].Children.Add(child))
 			{
-				cachedInnerUsage += 1;//memusage::IncrementalDynamicUsage(s);
+				cachedInnerUsage += child.DynamicMemoryUsage();
 			}
 			else if (!add && mapLinks[entry].Children.Remove(child))
 			{
-				cachedInnerUsage -= 1;//memusage::IncrementalDynamicUsage(s);
+				cachedInnerUsage -= child.DynamicMemoryUsage();
 			}
 		}
 
@@ -537,11 +553,11 @@ namespace Stratis.Bitcoin.MemoryPool
 			//SetEntries s;
 			if (add && mapLinks[entry].Parents.Add(parent))
 			{
-				cachedInnerUsage += 1; //memusage::IncrementalDynamicUsage(s);
+				cachedInnerUsage += parent.DynamicMemoryUsage();
 			}
 			else if (!add && mapLinks[entry].Parents.Remove(parent))
 			{
-				cachedInnerUsage -= 1;//memusage::IncrementalDynamicUsage(s);
+				cachedInnerUsage -= parent.DynamicMemoryUsage();
 			}
 		}
 
@@ -750,8 +766,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			//	vTxHashes.clear();
 
 			totalTxSize -= it.GetTxSize();
-			cachedInnerUsage -= 1; //it->DynamicMemoryUsage();
-			cachedInnerUsage -= mapLinks[it]?.Parents.Count ?? 0 + mapLinks[it]?.Children.Count ?? 0;
+			cachedInnerUsage -= it.DynamicMemoryUsage();
+			cachedInnerUsage -= mapLinks[it]?.Parents?.Sum(p => p.DynamicMemoryUsage()) ?? 0 + mapLinks[it]?.Children?.Sum(p => p.DynamicMemoryUsage()) ?? 0;
 			mapLinks.Remove(it);
 			MapTx.Remove(it);
 			nTransactionsUpdated++;
@@ -904,7 +920,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				RemoveConflicts(tx);
 				ClearPrioritisation(tx.GetHash());
 			}
-			lastRollingFeeUpdate = DateTime.UtcNow.ToUnixTimestamp();
+			lastRollingFeeUpdate = this.TimeProvider.GetTime();
 			blockSinceLastRollingFeeBump = true;
 		}
 
@@ -932,5 +948,114 @@ namespace Stratis.Bitcoin.MemoryPool
 			//LOCK(cs);
 			mapDeltas.Remove(hash);
 		}
+
+		public long DynamicMemoryUsage()
+		{
+			// TODO : calculate roughly the size of eas element in its list
+
+			//LOCK(cs);
+			// Estimate the overhead of mapTx to be 15 pointers + an allocation, as no exact formula for boost::multi_index_contained is implemented.
+			//int sizeofEntry = 10;
+			//int sizeofDelta = 10;
+			//int sizeofLinks = 10;
+			//int sizeofNextTx = 10;
+			//int sizeofHashes = 10;
+
+			//return sizeofEntry*this.MapTx.Count +
+			//       sizeofNextTx*this.mapNextTx.Count +
+			//       sizeofDelta*this.mapDeltas.Count +
+			//       sizeofLinks*this.mapLinks.Count +
+			//       sizeofHashes*this.vTxHashes.Count +
+			//       cachedInnerUsage;
+			
+			return this.MapTx.Values.Sum(m => m.DynamicMemoryUsage()) + cachedInnerUsage;
+		}
+
+		public void TrimToSize(long sizelimit, List<uint256> pvNoSpendsRemaining = null)
+		{
+			//LOCK(cs);
+
+			int nTxnRemoved = 0;
+			FeeRate maxFeeRateRemoved = new FeeRate(0);
+			while (this.MapTx.Any() && this.DynamicMemoryUsage() > sizelimit)
+			{
+				var it = this.MapTx.DescendantScore.First();
+
+				// We set the new mempool min fee to the feerate of the removed set, plus the
+				// "minimum reasonable fee rate" (ie some value under which we consider txn
+				// to have 0 fee). This way, we don't allow txn to enter mempool with feerate
+				// equal to txn which were removed with no block in between.
+				FeeRate removed = new FeeRate(it.ModFeesWithDescendants, (int)it.SizeWithDescendants);
+				removed = new FeeRate(new Money(removed.FeePerK + minReasonableRelayFee.FeePerK));
+
+				trackPackageRemoved(removed);
+				maxFeeRateRemoved = new FeeRate(Math.Max(maxFeeRateRemoved.FeePerK, removed.FeePerK));
+
+				SetEntries stage = new SetEntries();
+				this.CalculateDescendants(it, stage);
+				nTxnRemoved += stage.Count;
+
+				List<Transaction> txn = new List<Transaction>();
+				if (pvNoSpendsRemaining != null)
+				{
+					foreach (var setEntry in stage)
+						txn.Add(setEntry.Transaction);
+				}
+
+				RemoveStaged(stage, false);
+				if (pvNoSpendsRemaining != null)
+				{
+					foreach (var tx in txn) {
+						foreach (var txin in tx.Inputs)
+						{
+							if (this.Exists(txin.PrevOut.Hash))
+								continue;
+							var iter = mapNextTx.FirstOrDefault(p => p.OutPoint == new OutPoint(txin.PrevOut.Hash, 0));
+							if (iter == null || iter.OutPoint.Hash != txin.PrevOut.Hash)
+								pvNoSpendsRemaining.Add(txin.PrevOut.Hash);
+						}
+					}
+				}
+			}
+
+			if (maxFeeRateRemoved > new FeeRate(0))
+				Logs.Mempool.LogInformation($"Removed {nTxnRemoved} txn, rolling minimum fee bumped to {maxFeeRateRemoved}");
+		}
+
+		/** The minimum fee to get into the mempool, which may itself not be enough
+		*  for larger-sized transactions.
+		*  The minReasonableRelayFee constructor arg is used to bound the time it
+		*  takes the fee rate to go back down all the way to 0. When the feerate
+		*  would otherwise be half of this, it is set to 0 instead.
+		*/
+		public FeeRate GetMinFee(long sizelimit)
+		{
+			//LOCK(cs);
+			if (!blockSinceLastRollingFeeBump || rollingMinimumFeeRate == 0)
+				return new FeeRate(new Money((int)rollingMinimumFeeRate));
+
+			var time = this.TimeProvider.GetTime();
+			if (time > lastRollingFeeUpdate + 10)
+			{
+				double halflife = ROLLING_FEE_HALFLIFE;
+				if (DynamicMemoryUsage() < sizelimit / 4)
+					halflife /= 4;
+				else if (DynamicMemoryUsage() < sizelimit / 2)
+					halflife /= 2;
+
+				rollingMinimumFeeRate = rollingMinimumFeeRate / Math.Pow(2.0, (time - lastRollingFeeUpdate) / halflife);
+				lastRollingFeeUpdate = time;
+
+				if (rollingMinimumFeeRate < (double)minReasonableRelayFee.FeePerK.Satoshi / 2)
+				{
+					rollingMinimumFeeRate = 0;
+					return new FeeRate(0);
+				}
+			}
+
+			var ret =  Math.Max(rollingMinimumFeeRate, minReasonableRelayFee.FeePerK.Satoshi);
+			return new FeeRate(new Money((int)ret));
+		}
+
 	}
 }
