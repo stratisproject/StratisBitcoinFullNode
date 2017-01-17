@@ -115,7 +115,8 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			this.TxWeight = GetTransactionWeight(transaction);
 			nModSize = this.CalculateModifiedSize(this.Transaction.GetSerializedSize());
-			//nUsageSize = RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(Transaction);
+
+			nUsageSize = transaction.GetSerializedSize(); // RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(Transaction);
 
 			CountWithDescendants = 1;
 			SizeWithDescendants = GetTxSize();
@@ -158,9 +159,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public long DynamicMemoryUsage()
 		{
-			return 1;
-			//throw new NotImplementedException();
-			//return nUsageSize;
+			return nUsageSize;
 		}
 
 		// Adjusts the descendant state, if this entry is not dirty.
