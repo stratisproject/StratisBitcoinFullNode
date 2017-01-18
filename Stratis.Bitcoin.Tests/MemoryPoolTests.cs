@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
@@ -544,6 +545,34 @@ namespace Stratis.Bitcoin.Tests
 			{
 				return time;
 			}
+		}
+
+		[Fact]
+		public void MempoolConcurrencyTest()
+		{
+			var pool = new MempoolOperations(new TxMemPool(new FeeRate(1000)));
+			var rand = new Random();
+
+			var value = 10000;
+			List<Transaction> txs = new List<Transaction>();
+			for (int i = 0; i < 20; i++)
+			{
+				var tx = new Transaction();
+				tx.AddInput(new TxIn(new Script(OpcodeType.OP_11)));
+				tx.AddOutput(new TxOut(new Money(value++), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
+				txs.Add(tx);
+			}
+
+			List<Task> tasks = new List<Task>();
+			var options = new ParallelOptions {MaxDegreeOfParallelism = 10};
+			Parallel.ForEach(txs, options, transaction =>
+			{
+				var entry = new TxMemPoolEntry(transaction, new Money(rand.Next(100)), 0, 0.0, 1, transaction.TotalOut, false, 4, new LockPoints());
+				tasks.Add(pool.AddUncheckedAsync(transaction.GetHash(), entry));
+			});
+
+			Task.WaitAll(tasks.ToArray());
+			Assert.Equal(pool.SizeAsync.Result, 20);
 		}
 	}
 }
