@@ -421,7 +421,8 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void MempoolSizeLimitTest()
 		{
-			var pool = new TxMemPool(new FeeRate(1000));
+			var dateTimeSet = new DateTimeProviderSet();
+			var pool = new TxMemPool(new FeeRate(1000), dateTimeSet);
 			var entry = new TestMemPoolEntryHelper();
 			entry.Priority(10.0);
 
@@ -512,27 +513,27 @@ namespace Stratis.Bitcoin.Tests
 			pool.AddUnchecked(tx7.GetHash(), entry.Fee(9000L).FromTx(tx7, pool));
 
 			List<Transaction> vtx = new List<Transaction>();
-			pool.TimeProvider = new DateTimeProviderSet {time = 42 + TxMemPool.ROLLING_FEE_HALFLIFE };
+			dateTimeSet.time = 42 + TxMemPool.ROLLING_FEE_HALFLIFE ;
 			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, maxFeeRateRemoved.FeePerK.Satoshi + 1000);
 			// ... we should keep the same min fee until we get a block
 			pool.RemoveForBlock(vtx, 1);
-			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 2 * + TxMemPool.ROLLING_FEE_HALFLIFE };
+			dateTimeSet.time = 42 + 2*+TxMemPool.ROLLING_FEE_HALFLIFE;
 			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 2);
 			// ... then feerate should drop 1/2 each halflife
 
-			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 2 * TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE / 2};
+			dateTimeSet.time = 42 + 2 * TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE / 2;
 			Assert.Equal(pool.GetMinFee(pool.DynamicMemoryUsage() * 5 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 4);
 			// ... with a 1/2 halflife when mempool is < 1/2 its target size
 
-			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 2*TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 };
+			dateTimeSet.time = 42 + 2*TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 ;
 			Assert.Equal(pool.GetMinFee(pool.DynamicMemoryUsage() * 9 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 8);
 			// ... with a 1/4 halflife when mempool is < 1/4 its target size
 
-			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 7*TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 };
+			dateTimeSet.time = 42 + 7* TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 ;
 			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, 1000);
 			// ... but feerate should never drop below 1000
 
-			pool.TimeProvider = new DateTimeProviderSet { time = 42 + 8*TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 };
+			dateTimeSet.time = 42 + 8* TxMemPool.ROLLING_FEE_HALFLIFE + TxMemPool.ROLLING_FEE_HALFLIFE/2 + TxMemPool.ROLLING_FEE_HALFLIFE/4 ;
 			Assert.Equal(pool.GetMinFee(1).FeePerK, 0);
 			// ... unless it has gone all the way to 0 (after getting past 1000/2)
 		}
@@ -550,7 +551,8 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void MempoolConcurrencyTest()
 		{
-			var pool = new MempoolOperations(new TxMemPool(new FeeRate(1000)));
+			var pool = new TxMemPool(new FeeRate(1000));
+			var scheduler = new SchedulerPairSession();
 			var rand = new Random();
 
 			var value = 10000;
@@ -568,11 +570,11 @@ namespace Stratis.Bitcoin.Tests
 			Parallel.ForEach(txs, options, transaction =>
 			{
 				var entry = new TxMemPoolEntry(transaction, new Money(rand.Next(100)), 0, 0.0, 1, transaction.TotalOut, false, 4, new LockPoints());
-				tasks.Add(pool.AddUncheckedAsync(transaction.GetHash(), entry));
+				tasks.Add(scheduler.DoSequential(() => pool.AddUnchecked(transaction.GetHash(), entry)));
 			});
 
 			Task.WaitAll(tasks.ToArray());
-			Assert.Equal(pool.SizeAsync.Result, 20);
+			Assert.Equal(scheduler.DoConcurrent(() => pool.Size).Result, 20);
 		}
 	}
 }

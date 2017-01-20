@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 	}
 
-	public struct LockPoints
+	public class LockPoints // todo: replace with SequenceLock 
 	{
 		// Will be set to the blockchain height and median time past
 		// values that would be necessary to satisfy all relative locktime
@@ -63,39 +63,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		public long SigOpCostWithAncestors { get; private set; }
 
 
-		private const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
 
-		private const int WITNESS_SCALE_FACTOR = 4;
-
-		private static int GetTransactionWeight(Transaction tx)
-		{
-			
-			return
-				tx.GetSerializedSize(
-					(ProtocolVersion) ((uint) ProtocolVersion.PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS),
-					SerializationType.Network)*
-				(WITNESS_SCALE_FACTOR - 1) +
-				tx.GetSerializedSize(ProtocolVersion.PROTOCOL_VERSION, SerializationType.Network);
-		}
-
-		private int CalculateModifiedSize(int nTxSize)
-		{
-			// In order to avoid disincentivizing cleaning up the UTXO set we don't count
-			// the constant overhead for each txin and up to 110 bytes of scriptSig (which
-			// is enough to cover a compressed pubkey p2sh redemption) for priority.
-			// Providing any more cleanup incentive than making additional inputs free would
-			// risk encouraging people to create junk outputs to redeem later.
-			if (nTxSize == 0)
-				nTxSize = (GetTransactionWeight(this.Transaction) + WITNESS_SCALE_FACTOR - 1)/WITNESS_SCALE_FACTOR;
-
-			foreach (var txInput in this.Transaction.Inputs)
-			{
-				var offset = 41U + Math.Min(110U, txInput.ScriptSig.Length);
-				if (nTxSize > offset)
-					nTxSize -= (int) offset;
-			}
-			return nTxSize;
-		}
+		
 
 		public TxMemPoolEntry(Transaction transaction, Money nFee,
 			long nTime, double entryPriority, int entryHeight,
@@ -113,8 +82,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.SigOpCost = nSigOpsCost;
 			this.LockPoints = lp;
 
-			this.TxWeight = GetTransactionWeight(transaction);
-			nModSize = this.CalculateModifiedSize(this.Transaction.GetSerializedSize());
+			this.TxWeight = MempoolValidator.GetTransactionWeight(transaction);
+			nModSize = MempoolValidator.CalculateModifiedSize(this.Transaction.GetSerializedSize(), this.Transaction);
 
 			nUsageSize = transaction.GetSerializedSize(); // RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(Transaction);
 

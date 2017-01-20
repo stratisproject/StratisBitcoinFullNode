@@ -18,6 +18,9 @@ namespace Stratis.Bitcoin.Consensus
 		NBitcoin.Consensus _ConsensusParams;
 		const int MAX_BLOCK_WEIGHT = 4000000;
 		private readonly int WITNESS_SCALE_FACTOR = 4;
+		
+		// Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
+		public static LockTimeFlags StandardLocktimeVerifyFlags = LockTimeFlags.VerifySequence | LockTimeFlags.MedianTimePast;
 
 		public ConsensusValidator(NBitcoin.Consensus consensusParams)
 		{
@@ -283,7 +286,7 @@ namespace Stratis.Bitcoin.Consensus
 			return nSubsidy;
 		}
 
-		private long GetTransactionSigOpCost(Transaction tx, UnspentOutputSet inputs, ConsensusFlags flags)
+		public long GetTransactionSigOpCost(Transaction tx, UnspentOutputSet inputs, ConsensusFlags flags)
 		{
 			long nSigOps = GetLegacySigOpCount(tx) * WITNESS_SCALE_FACTOR;
 

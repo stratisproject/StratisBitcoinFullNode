@@ -90,6 +90,9 @@ namespace Stratis.Bitcoin.MemoryPool
 	*/
 	public class TxMemPool
 	{
+		// Fake height value used in CCoins to signify they are only in the memory pool (since 0.8) 
+		public const int MEMPOOL_HEIGHT = 0x7FFFFFFF;
+
 		double nCheckFrequency; //!< Value n means that n times in 2^32 we check.
 		int nTransactionsUpdated;
 		//CBlockPolicyEstimator* minerPolicyEstimator;
@@ -318,7 +321,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public IndexedTransactionSet MapTx = new IndexedTransactionSet();
 		TxlinksMap mapLinks = new TxlinksMap();
-		List<NextTxPair> mapNextTx = new List<NextTxPair>();
+		public List<NextTxPair> MapNextTx = new List<NextTxPair>();
 		private Dictionary<uint256, DeltaPair> mapDeltas = new Dictionary<uint256, DeltaPair>();
 		Dictionary<TxMemPoolEntry, uint256> vTxHashes = new Dictionary<TxMemPoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
 
@@ -328,19 +331,24 @@ namespace Stratis.Bitcoin.MemoryPool
 			{
 				return DateTime.UtcNow.ToUnixTimestamp();
 			}
+
+			public static DateTimeProvider Default => new DateTimeProvider();
 		}
 
-		public DateTimeProvider TimeProvider { get; set; }
+		private DateTimeProvider TimeProvider { get; }
+
+		public TxMemPool(FeeRate minReasonableRelayFee) : this(minReasonableRelayFee, DateTimeProvider.Default)
+		{
+		}
 
 		/** Create a new CTxMemPool.
 		*  minReasonableRelayFee should be a feerate which is, roughly, somewhere
 		*  around what it "costs" to relay a transaction around the network and
 		*  below which we would reasonably say a transaction has 0-effective-fee.
 		*/
-		public TxMemPool(FeeRate minReasonableRelayFee)
+		public TxMemPool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider)
 		{
-			this.TimeProvider = new DateTimeProvider();
-
+			this.TimeProvider = dateTimeProvider;
 			this.InnerClear(); //lock free clear
 
 			// Sanity checks off by default for performance, because otherwise
@@ -357,7 +365,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			mapLinks.Clear();
 			MapTx.Clear();
-			mapNextTx.Clear();
+			MapNextTx.Clear();
 			totalTxSize = 0;
 			cachedInnerUsage = 0;
 			lastRollingFeeUpdate = this.TimeProvider.GetTime();
@@ -443,7 +451,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			foreach (var txInput in tx.Inputs)
 			{
 
-				mapNextTx.Add(new NextTxPair {OutPoint = txInput.PrevOut, Transaction = tx});
+				MapNextTx.Add(new NextTxPair {OutPoint = txInput.PrevOut, Transaction = tx});
 				setParentTransactions.Add(txInput.PrevOut.Hash);
 			}
 			// Don't bother worrying about child transactions of this one.
@@ -698,7 +706,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					// the mempool for any reason.
 					for (int i = 0; i < origTx.Outputs.Count; i++)
 					{
-						var it = mapNextTx.FirstOrDefault(w => w.OutPoint == new OutPoint(origHahs, i));
+						var it = MapNextTx.FirstOrDefault(w => w.OutPoint == new OutPoint(origHahs, i));
 						if (it == null)
 							continue;
 						var nextit = MapTx.TryGet(it.Transaction.GetHash());
@@ -749,7 +757,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			var hash = it.TransactionHash;
 			foreach (var txin in it.Transaction.Inputs)
 			{
-				mapNextTx.Remove(mapNextTx.FirstOrDefault(w => w.OutPoint == txin.PrevOut));
+				MapNextTx.Remove(MapNextTx.FirstOrDefault(w => w.OutPoint == txin.PrevOut));
 			}
 			
 			if (vTxHashes.Any())
@@ -930,7 +938,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			//LOCK(cs);
 			foreach (var txInput in tx.Inputs)
 			{
-				var it = mapNextTx.FirstOrDefault(p => p.OutPoint == txInput.PrevOut);
+				var it = MapNextTx.FirstOrDefault(p => p.OutPoint == txInput.PrevOut);
 				if (it != null)
 				{
 					var txConflict = it.Transaction;
@@ -1010,7 +1018,7 @@ namespace Stratis.Bitcoin.MemoryPool
 						{
 							if (this.Exists(txin.PrevOut.Hash))
 								continue;
-							var iter = mapNextTx.FirstOrDefault(p => p.OutPoint == new OutPoint(txin.PrevOut.Hash, 0));
+							var iter = MapNextTx.FirstOrDefault(p => p.OutPoint == new OutPoint(txin.PrevOut.Hash, 0));
 							if (iter == null || iter.OutPoint.Hash != txin.PrevOut.Hash)
 								pvNoSpendsRemaining.Add(txin.PrevOut.Hash);
 						}
@@ -1055,6 +1063,17 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			var ret =  Math.Max(rollingMinimumFeeRate, minReasonableRelayFee.FeePerK.Satoshi);
 			return new FeeRate(new Money((int)ret));
+		}
+
+		public void ApplyDeltas(uint256 hash, ref double dPriorityDelta, ref Money nFeeDelta)
+		{
+			//LOCK(cs);
+			var delta = this.mapDeltas.TryGet(hash);
+			if (delta == null)
+				return;
+			
+			dPriorityDelta += delta.Delta;
+			nFeeDelta += delta.Amount;
 		}
 
 	}
