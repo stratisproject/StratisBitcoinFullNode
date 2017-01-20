@@ -23,10 +23,17 @@ namespace Stratis.Bitcoin.MemoryPool
 
 	public class MemepoolError
 	{
-		public MemepoolError(int code, string message)
+		public MemepoolError(int code, string messageCode, string message)
 		{
 			this.Code = code;
+			this.MessageCode = messageCode;
 			this.Message = message;
+		}
+
+		public MemepoolError(int code, string messageCode)
+		{
+			this.Code = code;
+			this.MessageCode = messageCode;
 		}
 
 		public MemepoolError(int code)
@@ -46,10 +53,12 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public int Code { get; set; }
 		public string Message { get; set; }
+		public string MessageCode { get; set; }
+
 		public ConsensusError ConsensusError { get; set; }
 	}
 
-	public class MemepoolValidationState
+	public class MemepoolErrors
 	{
 		//  "reject" message codes 
 		public const int REJECT_MALFORMED = 0x01;
@@ -60,7 +69,6 @@ namespace Stratis.Bitcoin.MemoryPool
 		public const int REJECT_DUST = 0x41;
 		public const int REJECT_INSUFFICIENTFEE = 0x42;
 		public const int REJECT_CHECKPOINT = 0x43;
-
 		// Reject codes greater or equal to this can be returned by AcceptToMemPool
 		// for transactions, to signal internal conditions. They cannot and should not
 		// be sent over the P2P network.
@@ -71,20 +79,6 @@ namespace Stratis.Bitcoin.MemoryPool
 		public const int REJECT_ALREADY_KNOWN = 0x101;
 		// Transaction conflicts with a transaction already known 
 		public const int REJECT_CONFLICT = 0x102;
-
-		public MemepoolError Error { get; set; }
-
-		public MemepoolValidationState Fail(MemepoolError error)
-		{
-			this.Error = error;
-			return this;
-		}
-
-		public bool MissingInputs { get; set; }
-
-		public void Throw()
-		{
-			throw new MempoolErrorException(this);
-		}
 	}
+
 }

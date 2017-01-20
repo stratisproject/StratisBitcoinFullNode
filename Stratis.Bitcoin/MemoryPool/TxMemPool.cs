@@ -734,7 +734,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		 *  Set updateDescendants to true when removing a tx that was in a block, so
 		 *  that any in-mempool descendants have their ancestor state updated.
 		 */
-		private void RemoveStaged(SetEntries stage, bool updateDescendants)
+		public void RemoveStaged(SetEntries stage, bool updateDescendants)
 		{
 			//AssertLockHeld(cs);
 			UpdateForRemoveFromMempool(stage, updateDescendants);
@@ -742,6 +742,26 @@ namespace Stratis.Bitcoin.MemoryPool
 			{ 
 				RemoveUnchecked(it);
 			}
+		}
+
+		// Expire all transaction (and their dependencies) in the mempool older than time. Return the number of removed transactions. 
+		public int Expire(long time)
+		{
+			//LOCK(cs);
+			SetEntries toremove = new SetEntries();
+			foreach (var entry in this.MapTx.EntryTime)
+			{
+				if (!(entry.Time < time)) break;
+				toremove.Add(entry);
+			}
+
+			SetEntries stage = new SetEntries();
+			foreach (var removeit in toremove)
+			{
+				CalculateDescendants(removeit, stage);
+			}
+			RemoveStaged(stage, false);
+			return stage.Count;
 		}
 
 		/** Before calling removeUnchecked for a given transaction,
@@ -788,7 +808,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		// Also assumes that if an entry is in setDescendants already, then all
 		// in-mempool descendants of it are already in setDescendants as well, so that we
 		// can save time by not iterating over those entries.
-		private void CalculateDescendants(TxMemPoolEntry entryit, SetEntries setDescendants)
+		public void CalculateDescendants(TxMemPoolEntry entryit, SetEntries setDescendants)
 		{
 			SetEntries stage = new SetEntries();
 			if (!setDescendants.Contains(entryit))
@@ -1076,5 +1096,16 @@ namespace Stratis.Bitcoin.MemoryPool
 			nFeeDelta += delta.Amount;
 		}
 
+		public static double AllowFreeThreshold()
+		{
+			return Money.COIN * 144 / 250;
+		}
+
+		public static bool AllowFree(double dPriority)
+		{
+			// Large (in bytes) low-priority (new, small-coin) transactions
+			// need a fee.
+			return dPriority > AllowFreeThreshold();
+		}
 	}
 }

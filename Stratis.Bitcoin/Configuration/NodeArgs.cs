@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Text;
 using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.MemoryPool;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -99,6 +100,33 @@ namespace Stratis.Bitcoin.Configuration
 			get; set;
 		} = 100000;
 	}
+
+	public class MempoolArgs
+	{
+		public int MaxMempool { get; set; }
+		public int MempoolExpiry { get; set; }
+		public bool RelayPriority { get; set; }
+		public int LimitFreeRelay { get; set; }
+		public int LimitAncestors { get; set; }
+		public int LimitAncestorSize { get; set; }
+		public int LimitDescendants { get; set; }
+		public int LimitDescendantSize { get; set; }
+
+		public void Load(TextFileConfiguration config)
+		{
+			this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DEFAULT_MAX_MEMPOOL_SIZE);
+			this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DEFAULT_MEMPOOL_EXPIRY);
+
+			this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DEFAULT_RELAYPRIORITY);
+			this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DEFAULT_LIMITFREERELAY);
+
+			this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DEFAULT_ANCESTOR_LIMIT);
+			this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DEFAULT_ANCESTOR_SIZE_LIMIT) ;
+			this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DEFAULT_DESCENDANT_LIMIT);
+			this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DEFAULT_DESCENDANT_SIZE_LIMIT) ;
+		}
+	}
+
 	public class NodeArgs
 	{
 		public RPCArgs RPC
@@ -113,6 +141,10 @@ namespace Stratis.Bitcoin.Configuration
 		{
 			get; set;
 		} = new ConnectionManagerArgs();
+		public MempoolArgs Mempool
+		{
+			get; set;
+		} = new MempoolArgs();
 		public bool Testnet
 		{
 			get; set;
@@ -136,6 +168,9 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			set;
 		}
+
+		
+
 		public static NodeArgs GetArgs(string[] args)
 		{
 			NodeArgs nodeArgs = new NodeArgs();
@@ -300,6 +335,8 @@ namespace Stratis.Bitcoin.Configuration
 				nodeArgs.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, network.DefaultPort);
 			}
 
+			nodeArgs.Mempool.Load(config);
+				
 			var folder = new DataFolder(nodeArgs.DataDir);
 			if(!Directory.Exists(folder.CoinViewPath))
 				Directory.CreateDirectory(folder.CoinViewPath);

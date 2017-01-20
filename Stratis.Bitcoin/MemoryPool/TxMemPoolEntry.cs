@@ -105,12 +105,10 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			throw new NotImplementedException();
 		}
-
-		/**
-		 * Fast calculation of lower bound of current priority as update
-		 * from entry priority. Only inputs that were originally in-chain will age.
-		 */
-		public double GetPriority(uint currentHeight)
+		
+		 // Fast calculation of lower bound of current priority as update
+		 // from entry priority. Only inputs that were originally in-chain will age.
+		public double GetPriority(int currentHeight)
 		{
 			double deltaPriority = ((double) (currentHeight - this.EntryHeight)*InChainInputValue.Satoshi)/nModSize;
 			double dResult = entryPriority + deltaPriority;

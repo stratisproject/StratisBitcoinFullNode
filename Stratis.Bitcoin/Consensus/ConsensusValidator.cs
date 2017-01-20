@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Consensus
 			set;
 		}
 
-		private void CheckIntputs(Transaction tx, UnspentOutputSet inputs, int nSpendHeight)
+		public void CheckIntputs(Transaction tx, UnspentOutputSet inputs, int nSpendHeight)
 		{
 			if(!inputs.HaveInputs(tx))
 				ConsensusErrors.BadTransactionMissingInput.Throw();
@@ -475,7 +475,7 @@ namespace Stratis.Bitcoin.Consensus
 		}
 
 		/** The maximum allowed number of signature check operations in a block (network rule) */
-		const int MAX_BLOCK_SIGOPS_COST = 80000;
+		public const int MAX_BLOCK_SIGOPS_COST = 80000;
 		const long MAX_MONEY = 21000000 * Money.COIN;
 		private readonly long COINBASE_MATURITY = 100;
 
