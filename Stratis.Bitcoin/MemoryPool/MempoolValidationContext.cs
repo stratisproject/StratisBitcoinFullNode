@@ -8,6 +8,13 @@ namespace Stratis.Bitcoin.MemoryPool
 {
 	public class MemepoolValidationState
 	{
+		public MemepoolValidationState(bool limitFree, bool overrideMempoolLimit, Money absurdFee)
+		{
+			this.LimitFree = limitFree;
+			this.AbsurdFee = absurdFee;
+			this.OverrideMempoolLimit = overrideMempoolLimit;
+		}
+
 		public MempoolError Error { get; set; }
 
 		public MemepoolValidationState Fail(MempoolError error)
@@ -16,7 +23,15 @@ namespace Stratis.Bitcoin.MemoryPool
 			return this;
 		}
 
+		public Money AbsurdFee { get; set; }
+
 		public bool MissingInputs { get; set; }
+
+		public bool OverrideMempoolLimit { get; set; }
+
+		public long AcceptTime { get; set; }
+
+		public bool LimitFree { get; set; }
 
 		public void Throw()
 		{
@@ -24,6 +39,10 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 	}
 
+	/// <summary>
+	/// A context to hold validation data when adding
+	/// a transaction to the memory pool.
+	/// </summary>
 	public class MempoolValidationContext
     {
 		public MemepoolValidationState State { get; }
@@ -38,9 +57,9 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public MemPoolCoinView View { get; set; }
 
-	    public int EntrySize { get; set; }
+		public int EntrySize { get; set; }
 
-	    public TxMemPool.SetEntries AllConflicting { get; set; }
+		public TxMemPool.SetEntries AllConflicting { get; set; }
 
 		public TxMemPool.SetEntries SetAncestors { get; set; }
 

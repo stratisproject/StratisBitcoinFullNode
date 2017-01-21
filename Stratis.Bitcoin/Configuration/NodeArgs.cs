@@ -114,16 +114,16 @@ namespace Stratis.Bitcoin.Configuration
 
 		public void Load(TextFileConfiguration config)
 		{
-			this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DEFAULT_MAX_MEMPOOL_SIZE);
-			this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DEFAULT_MEMPOOL_EXPIRY);
+			this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
+			this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry);
 
-			this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DEFAULT_RELAYPRIORITY);
-			this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DEFAULT_LIMITFREERELAY);
+			this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority);
+			this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DefaultLimitfreerelay);
 
-			this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DEFAULT_ANCESTOR_LIMIT);
-			this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DEFAULT_ANCESTOR_SIZE_LIMIT) ;
-			this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DEFAULT_DESCENDANT_LIMIT);
-			this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DEFAULT_DESCENDANT_SIZE_LIMIT) ;
+			this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DefaultAncestorLimit);
+			this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit) ;
+			this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit);
+			this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit) ;
 		}
 	}
 

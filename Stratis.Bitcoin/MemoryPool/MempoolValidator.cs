@@ -19,22 +19,22 @@ namespace Stratis.Bitcoin.MemoryPool
 		public const int WITNESS_SCALE_FACTOR = 4;
 
 		// Default for -maxmempool, maximum megabytes of mempool memory usage 
-		public const int DEFAULT_MAX_MEMPOOL_SIZE = 300;
-		public const bool DEFAULT_RELAYPRIORITY = true;
+		public const int DefaultMaxMempoolSize = 300;
+		public const bool DefaultRelaypriority = true;
 		// Default for -minrelaytxfee, minimum relay fee for transactions 
-		public const int DEFAULT_MIN_RELAY_TX_FEE = 1000;
-		public const int DEFAULT_LIMITFREERELAY = 0;
+		public const int DefaultMinRelayTxFee = 1000;
+		public const int DefaultLimitfreerelay = 0;
 
 		/** Default for -limitancestorcount, max number of in-mempool ancestors */
-		public const int DEFAULT_ANCESTOR_LIMIT = 25;
+		public const int DefaultAncestorLimit = 25;
 		/** Default for -limitancestorsize, maximum kilobytes of tx + all in-mempool ancestors */
-		public const int DEFAULT_ANCESTOR_SIZE_LIMIT = 101;
+		public const int DefaultAncestorSizeLimit = 101;
 		/** Default for -limitdescendantcount, max number of in-mempool descendants */
-		public const int DEFAULT_DESCENDANT_LIMIT = 25;
+		public const int DefaultDescendantLimit = 25;
 		/** Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants */
-		public const int DEFAULT_DESCENDANT_SIZE_LIMIT = 101;
+		public const int DefaultDescendantSizeLimit = 101;
 		/** Default for -mempoolexpiry, expiration time for mempool transactions in hours */
-		public const int DEFAULT_MEMPOOL_EXPIRY = 336;
+		public const int DefaultMempoolExpiry = 336;
 
 		private readonly SchedulerPairSession mempoolScheduler;
 		private readonly TxMemPool.DateTimeProvider dateTimeProvider;
@@ -44,9 +44,9 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly TxMemPool memPool;
 		private readonly ConsensusValidator consensusValidator;
 
-		private bool fEnableReplacement = true;
-		private bool fRequireStandard = true;
-		private static readonly FeeRate MinRelayTxFee = new FeeRate(DEFAULT_MIN_RELAY_TX_FEE);
+		private bool enableReplacement = true;
+		private bool requireStandard = true;
+		private static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
 		private FreeLimiterSection FreeLimiter;
 
 		private class FreeLimiterSection
@@ -67,23 +67,25 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.chain = chain;
 			this.cachedCoinView = cachedCoinView;
 
-			this.fRequireStandard = !(nodeArgs.RegTest || nodeArgs.Testnet);
+			this.requireStandard = !(nodeArgs.RegTest || nodeArgs.Testnet);
 			FreeLimiter = new FreeLimiterSection();
 		}
 
-		public async Task<bool> AcceptToMemoryPoolWithTime(MemepoolValidationState state, Transaction tx,
-			bool fLimitFree, long nAcceptTime, bool fOverrideMempoolLimit, Money nAbsurdFee)
+		public async Task<bool> AcceptToMemoryPoolWithTime(MemepoolValidationState state, Transaction tx)
 		{
 			try
 			{
 				List<uint256> vHashTxToUncache = new List<uint256>();
-				await this.AcceptToMemoryPoolWorker(state, tx, fLimitFree, nAcceptTime, fOverrideMempoolLimit, nAbsurdFee,
-						vHashTxToUncache);
+				await this.AcceptToMemoryPoolWorker(state, tx, vHashTxToUncache);
 				//if (!res) {
 				//    BOOST_FOREACH(const uint256& hashTx, vHashTxToUncache)
 				//        pcoinsTip->Uncache(hashTx);
 				//}
 				return true;
+			}
+			catch (MempoolErrorException)
+			{
+				return false;
 			}
 			catch (ConsensusErrorException consensusError)
 			{
@@ -96,11 +98,10 @@ namespace Stratis.Bitcoin.MemoryPool
 			//FlushStateToDisk(stateDummy, FLUSH_STATE_PERIODIC);
 		}
 
-		public Task<bool> AcceptToMemoryPool(MemepoolValidationState state, Transaction tx, bool fLimitFree,
-			bool fOverrideMempoolLimit, Money nAbsurdFee)
+		public Task<bool> AcceptToMemoryPool(MemepoolValidationState state, Transaction tx)
 		{
-			return AcceptToMemoryPoolWithTime(state, tx, fLimitFree, this.dateTimeProvider.GetTime(), fOverrideMempoolLimit,
-				nAbsurdFee);
+			state.AcceptTime = dateTimeProvider.GetTime();
+			return AcceptToMemoryPoolWithTime(state, tx);
 		}
 
 		// Check for conflicts with in-memory transactions
@@ -129,20 +130,20 @@ namespace Stratis.Bitcoin.MemoryPool
 						// first-seen mempool behavior should be checking all
 						// unconfirmed ancestors anyway; doing otherwise is hopelessly
 						// insecure.
-						bool fReplacementOptOut = true;
-						if (fEnableReplacement)
+						bool replacementOptOut = true;
+						if (enableReplacement)
 						{
 							foreach (var txiner in ptxConflicting.Inputs)
 							{
 								if (txiner.Sequence < Sequence.Final - 1)
 								{
-									fReplacementOptOut = false;
+									replacementOptOut = false;
 									break;
 								}
 							}
 						}
 
-						if (fReplacementOptOut)
+						if (replacementOptOut)
 							context.State.Fail(MempoolErrors.Conflict).Throw();
 
 						context.SetConflicts.Add(ptxConflicting.GetHash());
@@ -172,7 +173,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			//}
 
 			// Rather not work on nonstandard transactions (unless -testnet/-regtest)
-			if (this.fRequireStandard)
+			if (this.requireStandard)
 			{
 				var errors = new NBitcoin.Policy.StandardTransactionPolicy().Check(context.Transaction, null);
 				if (errors.Any())
@@ -225,6 +226,36 @@ namespace Stratis.Bitcoin.MemoryPool
 				context.State.Fail(new MempoolError(MempoolErrors.REJECT_DUPLICATE, "bad-txns-inputs-spent")).Throw();
 		}
 
+		private void CheckFee(MempoolValidationContext context)
+		{
+			Money mempoolRejectFee = this.memPool.GetMinFee(this.nodeArgs.Mempool.MaxMempool * 1000000).GetFee(context.EntrySize);
+			if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
+			{
+				context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE,
+					$"mempool-min-fee-not-met {context.Fees} < {mempoolRejectFee}")).Throw();
+			}
+			else if (nodeArgs.Mempool.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
+					 !TxMemPool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
+			{
+				// Require that free transactions have sufficient priority to be mined in the next block.
+				context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient priority")).Throw();
+			}
+
+			if (context.State.AbsurdFee != null && context.Fees > context.State.AbsurdFee)
+				context.State.Fail(new MempoolError(MempoolErrors.REJECT_HIGHFEE, $"absurdly-high-fee {context.Fees} > {context.State.AbsurdFee} ")).Throw();
+		}
+
+		private void CheckSigOps(MempoolValidationContext context)
+		{
+			// Check that the transaction doesn't have an excessive number of
+			// sigops, making it impossible to mine. Since the coinbase transaction
+			// itself can contain sigops MAX_STANDARD_TX_SIGOPS is less than
+			// MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
+			// merely non-standard transaction.
+			if (context.SigOpsCost > ConsensusValidator.MAX_BLOCK_SIGOPS_COST)
+				context.State.Fail(MempoolErrors.TooManySigops).Throw();
+		}
+
 		private void CreateMempoolEntry(MempoolValidationContext context, long acceptTime)
 		{
 			// TODO: borrow this code form ConsensusValidator
@@ -237,12 +268,12 @@ namespace Stratis.Bitcoin.MemoryPool
 				context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "non-BIP68-final")).Throw();
 
 			// Check for non-standard pay-to-script-hash in inputs
-			if (fRequireStandard && !this.AreInputsStandard(context.Transaction, context.View))
+			if (requireStandard && !this.AreInputsStandard(context.Transaction, context.View))
 				context.State.Fail(MempoolErrors.NonstandardInputs).Throw();
 
 			// TODO: Implement Witness Code
 			//// Check for non-standard witness in P2WSH
-			//if (tx.HasWitness && fRequireStandard && !IsWitnessStandard(tx, context.View))
+			//if (tx.HasWitness && requireStandard && !IsWitnessStandard(tx, context.View))
 			//	state.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "bad-witness-nonstandard")).Throw();
 
 			context.SigOpsCost = consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
@@ -448,8 +479,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		private async Task AcceptToMemoryPoolWorker(MemepoolValidationState state, Transaction tx, bool limitFree,
-			long acceptTime, bool fOverrideMempoolLimit, Money nAbsurdFee, List<uint256> vHashTxnToUncache)
+		private async Task AcceptToMemoryPoolWorker(MemepoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
 		{
 			var context = new MempoolValidationContext(tx, state);
 
@@ -467,78 +497,16 @@ namespace Stratis.Bitcoin.MemoryPool
 
 				await this.LoadAndCheckMempoolCoinView(context);
 
-				this.CreateMempoolEntry(context, acceptTime);
-			
-				// Check that the transaction doesn't have an excessive number of
-				// sigops, making it impossible to mine. Since the coinbase transaction
-				// itself can contain sigops MAX_STANDARD_TX_SIGOPS is less than
-				// MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
-				// merely non-standard transaction.
-				if (context.SigOpsCost > ConsensusValidator.MAX_BLOCK_SIGOPS_COST)
-					state.Fail(MempoolErrors.TooManySigops).Throw();
-
-				Money mempoolRejectFee = this.memPool.GetMinFee(this.nodeArgs.Mempool.MaxMempool*1000000).GetFee(context.EntrySize);
-				if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
-				{
-					state.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE,
-						$"mempool-min-fee-not-met {context.Fees} < {mempoolRejectFee}")).Throw();
-				}
-				else if (nodeArgs.Mempool.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
-				         !TxMemPool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
-				{
-					// Require that free transactions have sufficient priority to be mined in the next block.
-					state.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient priority")).Throw();
-				}
-
+				this.CreateMempoolEntry(context, state.AcceptTime);
+				this.CheckSigOps(context);
+				this.CheckFee(context);
+				
 				// TODO: this needs to happen sequentially s(either break this method to to parallel checks or make all this tests sequentially)
-				this.CheckRateLimit(context, limitFree);
-
-				if (nAbsurdFee != null && context.Fees > nAbsurdFee)
-					state.Fail(new MempoolError(MempoolErrors.REJECT_HIGHFEE, $"absurdly-high-fee {context.Fees} > {nAbsurdFee} ")).Throw();
+				this.CheckRateLimit(context, state.LimitFree);
 
 				this.CheckAncestors(context);
-
 				this.CheckReplacment(context);
-
-				var scriptVerifyFlags = ScriptVerify.Standard;
-				if (!this.fRequireStandard)
-				{
-					// TODO: implement -promiscuousmempoolflags
-					// scriptVerifyFlags = GetArg("-promiscuousmempoolflags", scriptVerifyFlags);
-				}
-
-				// Check against previous transactions
-				// This is done last to help prevent CPU exhaustion denial-of-service attacks.
-				PrecomputedTransactionData txdata = new PrecomputedTransactionData(tx);
-				if (!CheckInputs(context, scriptVerifyFlags, txdata))
-				{
-					// TODO: implement witness checks
-					//// SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
-					//// need to turn both off, and compare against just turning off CLEANSTACK
-					//// to see if the failure is specifically due to witness validation.
-					//if (!tx.HasWitness() && CheckInputs(tx, state, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, txdata) &&
-					//	!CheckInputs(tx, state, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, txdata))
-					//{
-					//	// Only the witness is missing, so the transaction itself may be fine.
-					//	state.SetCorruptionPossible();
-					//}
-
-					state.Fail(new MempoolError("check inputs")).Throw();
-				}
-
-				// Check again against just the consensus-critical mandatory script
-				// verification flags, in case of bugs in the standard flags that cause
-				// transactions to pass as valid when they're actually invalid. For
-				// instance the STRICTENC flag was incorrectly allowing certain
-				// CHECKSIG NOT scripts to pass, even though they were invalid.
-				//
-				// There is a similar check in CreateNewBlock() to prevent creating
-				// invalid blocks, however allowing such transactions into the mempool
-				// can be exploited as a DoS attack.
-				if (!CheckInputs(context, ScriptVerify.P2SH, txdata))
-				{
-					state.Fail(new MempoolError($"CheckInputs: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags {context.TransactionHash}")).Throw();
-				}
+				this.CheckAllInputs(context);
 			});
 
 			await this.mempoolScheduler.DoSequential(() =>
@@ -563,7 +531,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				this.memPool.AddUnchecked(context.TransactionHash, context.Entry, context.SetAncestors, validForFeeEstimation);
 
 				// trim mempool and check if tx was trimmed
-				if (!fOverrideMempoolLimit)
+				if (!state.OverrideMempoolLimit)
 				{
 					LimitMempoolSize(this.nodeArgs.Mempool.MaxMempool*1000000, this.nodeArgs.Mempool.MempoolExpiry*60*60);
 
@@ -601,6 +569,49 @@ namespace Stratis.Bitcoin.MemoryPool
 			//if (chainActive.Height() < pindexBestHeader->nHeight - 1)
 			//	return false;
 			return true;
+		}
+
+		private void CheckAllInputs(MempoolValidationContext context)
+		{
+			var scriptVerifyFlags = ScriptVerify.Standard;
+			if (!this.requireStandard)
+			{
+				// TODO: implement -promiscuousmempoolflags
+				// scriptVerifyFlags = GetArg("-promiscuousmempoolflags", scriptVerifyFlags);
+			}
+
+			// Check against previous transactions
+			// This is done last to help prevent CPU exhaustion denial-of-service attacks.
+			PrecomputedTransactionData txdata = new PrecomputedTransactionData(context.Transaction);
+			if (!CheckInputs(context, scriptVerifyFlags, txdata))
+			{
+				// TODO: implement witness checks
+				//// SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
+				//// need to turn both off, and compare against just turning off CLEANSTACK
+				//// to see if the failure is specifically due to witness validation.
+				//if (!tx.HasWitness() && CheckInputs(tx, state, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, txdata) &&
+				//	!CheckInputs(tx, state, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, txdata))
+				//{
+				//	// Only the witness is missing, so the transaction itself may be fine.
+				//	state.SetCorruptionPossible();
+				//}
+
+				context.State.Fail(new MempoolError("check inputs")).Throw();
+			}
+
+			// Check again against just the consensus-critical mandatory script
+			// verification flags, in case of bugs in the standard flags that cause
+			// transactions to pass as valid when they're actually invalid. For
+			// instance the STRICTENC flag was incorrectly allowing certain
+			// CHECKSIG NOT scripts to pass, even though they were invalid.
+			//
+			// There is a similar check in CreateNewBlock() to prevent creating
+			// invalid blocks, however allowing such transactions into the mempool
+			// can be exploited as a DoS attack.
+			if (!CheckInputs(context, ScriptVerify.P2SH, txdata))
+			{
+				context.State.Fail(new MempoolError($"CheckInputs: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags {context.TransactionHash}")).Throw();
+			}
 		}
 
 		private bool CheckInputs(MempoolValidationContext context, ScriptVerify scriptVerify,
