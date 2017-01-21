@@ -5,17 +5,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
-	public class MemPoolException : Exception
-	{
-		public MemPoolException()
-		{
-		}
-
-		public MemPoolException(string message) : base(message)
-		{
-		}
-	}
-
 	public class LockPoints // todo: replace with SequenceLock 
 	{
 		// Will be set to the blockchain height and median time past

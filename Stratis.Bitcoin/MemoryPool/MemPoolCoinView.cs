@@ -73,6 +73,18 @@ namespace Stratis.Bitcoin.MemoryPool
 		    return dPriorityInputs/nTxSize;
 	    }
 
+	    public bool SpendsCoinBase(Transaction tx)
+	    {
+		    foreach (var txInput in tx.Inputs)
+		    {
+			    var coins = this.Set.AccessCoins(txInput.PrevOut.Hash);
+			    if (coins.IsCoinbase)
+				    return true;
+		    }
+
+		    return false;
+	    }
+
 	    public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
 		    uint256 nextBlockHash)
 	    {

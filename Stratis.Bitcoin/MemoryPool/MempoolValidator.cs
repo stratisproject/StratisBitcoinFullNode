@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 			catch (ConsensusErrorException consensusError)
 			{
-				state.Error = new MemepoolError(consensusError.ConsensusError);
+				state.Error = new MempoolError(consensusError.ConsensusError);
 				return false;
 			}
 
@@ -133,7 +133,6 @@ namespace Stratis.Bitcoin.MemoryPool
 						if (fEnableReplacement)
 						{
 							foreach (var txiner in ptxConflicting.Inputs)
-
 							{
 								if (txiner.Sequence < Sequence.Final - 1)
 								{
@@ -144,7 +143,7 @@ namespace Stratis.Bitcoin.MemoryPool
 						}
 
 						if (fReplacementOptOut)
-							context.State.Fail(new MemepoolError("txn-mempool-conflict")).Throw();
+							context.State.Fail(MempoolErrors.Conflict).Throw();
 
 						context.SetConflicts.Add(ptxConflicting.GetHash());
 					}
@@ -152,339 +151,354 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		private async Task AcceptToMemoryPoolWorker(MemepoolValidationState state, Transaction tx, bool fLimitFree,
-			long nAcceptTime, bool fOverrideMempoolLimit, Money nAbsurdFee, List<uint256> vHashTxnToUncache)
+		/// <summary>
+		/// Checks that are done before touching the mem pool.
+		/// This checks don't need to run under the mempool scheduler 
+		/// </summary>
+		private void PreMempoolChecks(MempoolValidationContext context)
+		{
+			// state filled in by CheckTransaction
+			this.consensusValidator.CheckTransaction(context.Transaction);
+
+			// Coinbase is only valid in a block, not as a loose transaction
+			if (context.Transaction.IsCoinBase)
+				context.State.Fail(MempoolErrors.Coinbase).Throw();
+
+			// TODO: IsWitnessEnabled
+			//// Reject transactions with witness before segregated witness activates (override with -prematurewitness)
+			//bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus());
+			//if (!GetBoolArg("-prematurewitness",false) && tx.HasWitness() && !witnessEnabled) {
+			//    return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
+			//}
+
+			// Rather not work on nonstandard transactions (unless -testnet/-regtest)
+			if (this.fRequireStandard)
+			{
+				var errors = new NBitcoin.Policy.StandardTransactionPolicy().Check(context.Transaction, null);
+				if (errors.Any())
+					context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, errors.First().ToString())).Throw();
+			}
+
+			// Only accept nLockTime-using transactions that can be mined in the next
+			// block; we don't want our mempool filled up with transactions that can't
+			// be mined yet.
+			if (!CheckFinalTx(context.Transaction, ConsensusValidator.StandardLocktimeVerifyFlags))
+				context.State.Fail(MempoolErrors.NonFinal).Throw();
+		}
+
+		private async Task LoadAndCheckMempoolCoinView(MempoolValidationContext context)
+		{
+			// create the MemPoolCoinView and load relevant utxoset
+			context.View = new MemPoolCoinView(this.cachedCoinView, this.memPool);
+			await context.View.LoadView(context.Transaction);
+
+			Money nValueIn = 0;
+			context.LockPoints = new LockPoints();
+
+			// do we already have it?
+			//bool fHadTxInCache = pcoinsTip->HaveCoinsInCache(hash);
+
+			if (context.View.HaveCoins(context.TransactionHash))
+			{
+				//if (!fHadTxInCache)
+				//	vHashTxnToUncache.push_back(hash);
+				context.State.Fail(new MempoolError(MempoolErrors.REJECT_ALREADY_KNOWN, "txn-already-known")).Throw();
+			}
+
+			// do all inputs exist?
+			// Note that this does not check for the presence of actual outputs (see the next check for that),
+			// and only helps with filling in pfMissingInputs (to determine missing vs spent).
+			foreach (var txin in context.Transaction.Inputs)
+			{
+				//if (!pcoinsTip->HaveCoinsInCache(txin.prevout.hash))
+				//	vHashTxnToUncache.push_back(txin.prevout.hash);
+				if (!context.View.HaveCoins(txin.PrevOut.Hash))
+				{
+					context.State.MissingInputs = true;
+					context.State.Throw();
+					//return; // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
+				}
+			}
+
+			// are the actual inputs available?
+			if (!context.View.HaveInputs(context.Transaction))
+				context.State.Fail(new MempoolError(MempoolErrors.REJECT_DUPLICATE, "bad-txns-inputs-spent")).Throw();
+		}
+
+		private void CreateMempoolEntry(MempoolValidationContext context, long acceptTime)
+		{
+			// TODO: borrow this code form ConsensusValidator
+			// Only accept BIP68 sequence locked transactions that can be mined in the next
+			// block; we don't want our mempool filled up with transactions that can't
+			// be mined yet.
+			// Must keep pool.cs for this unless we change CheckSequenceLocks to take a
+			// CoinsViewCache instead of create its own
+			if (!CheckSequenceLocks(context.Transaction, ConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
+				context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "non-BIP68-final")).Throw();
+
+			// Check for non-standard pay-to-script-hash in inputs
+			if (fRequireStandard && !this.AreInputsStandard(context.Transaction, context.View))
+				context.State.Fail(MempoolErrors.NonstandardInputs).Throw();
+
+			// TODO: Implement Witness Code
+			//// Check for non-standard witness in P2WSH
+			//if (tx.HasWitness && fRequireStandard && !IsWitnessStandard(tx, context.View))
+			//	state.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "bad-witness-nonstandard")).Throw();
+
+			context.SigOpsCost = consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
+				new ConsensusFlags { ScriptFlags = ScriptVerify.Standard });
+
+			var nValueIn = context.View.GetValueIn(context.Transaction);
+
+			context.ValueOut = context.Transaction.TotalOut;
+			context.Fees = nValueIn - context.ValueOut;
+			// nModifiedFees includes any fee deltas from PrioritiseTransaction
+			Money nModifiedFees = context.Fees;
+			double priorityDummy = 0;
+			this.memPool.ApplyDeltas(context.TransactionHash, ref priorityDummy, ref nModifiedFees);
+			context.ModifiedFees = nModifiedFees;
+
+			Money inChainInputValue = Money.Zero;
+			double dPriority = context.View.GetPriority(context.Transaction, this.chain.Height, inChainInputValue);
+
+			// Keep track of transactions that spend a coinbase, which we re-scan
+			// during reorgs to ensure COINBASE_MATURITY is still met.
+			bool spendsCoinbase = context.View.SpendsCoinBase(context.Transaction);
+
+			context.Entry = new TxMemPoolEntry(context.Transaction, context.Fees, acceptTime, dPriority, this.chain.Height, inChainInputValue,
+				spendsCoinbase, context.SigOpsCost, context.LockPoints);
+			context.EntrySize = (int)context.Entry.GetTxSize();
+		}
+
+		private void CheckReplacment(MempoolValidationContext context)
+		{
+			// Check if it's economically rational to mine this transaction rather
+			// than the ones it replaces.
+			context.ConflictingFees = 0;
+			context.ConflictingSize = 0;
+			context.ConflictingCount = 0;
+			context.AllConflicting = new TxMemPool.SetEntries();
+
+			// If we don't hold the lock allConflicting might be incomplete; the
+			// subsequent RemoveStaged() and addUnchecked() calls don't guarantee
+			// mempool consistency for us.
+			//LOCK(pool.cs);
+			if (context.SetConflicts.Any())
+			{
+				FeeRate newFeeRate = new FeeRate(context.ModifiedFees, context.EntrySize);
+				List<uint256> setConflictsParents = new List<uint256>();
+				const int maxDescendantsToVisit = 100;
+				TxMemPool.SetEntries setIterConflicting = new TxMemPool.SetEntries();
+				foreach (var hashConflicting in context.SetConflicts)
+				{
+					var mi = this.memPool.MapTx.TryGet(hashConflicting);
+					if (mi == null)
+						continue;
+
+					// Save these to avoid repeated lookups
+					setIterConflicting.Add(mi);
+
+					// Don't allow the replacement to reduce the feerate of the
+					// mempool.
+					//
+					// We usually don't want to accept replacements with lower
+					// feerates than what they replaced as that would lower the
+					// feerate of the next block. Requiring that the feerate always
+					// be increased is also an easy-to-reason about way to prevent
+					// DoS attacks via replacements.
+					//
+					// The mining code doesn't (currently) take children into
+					// account (CPFP) so we only consider the feerates of
+					// transactions being directly replaced, not their indirect
+					// descendants. While that does mean high feerate children are
+					// ignored when deciding whether or not to replace, we do
+					// require the replacement to pay more overall fees too,
+					// mitigating most cases.
+					FeeRate oldFeeRate = new FeeRate(mi.ModifiedFee, (int)mi.GetTxSize());
+					if (newFeeRate <= oldFeeRate)
+					{
+						context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
+								$"rejecting replacement {context.TransactionHash}; new feerate {newFeeRate} <= old feerate {oldFeeRate}"))
+							.Throw();
+					}
+
+					foreach (var txin in mi.Transaction.Inputs)
+					{
+						setConflictsParents.Add(txin.PrevOut.Hash);
+					}
+
+					context.ConflictingCount += mi.CountWithDescendants;
+				}
+				// This potentially overestimates the number of actual descendants
+				// but we just want to be conservative to avoid doing too much
+				// work.
+				if (context.ConflictingCount <= maxDescendantsToVisit)
+				{
+					// If not too many to replace, then calculate the set of
+					// transactions that would have to be evicted
+					foreach (var it in setIterConflicting)
+					{
+						this.memPool.CalculateDescendants(it, context.AllConflicting);
+					}
+					foreach (var it in context.AllConflicting)
+					{
+						context.ConflictingFees += it.ModifiedFee;
+						context.ConflictingSize += it.GetTxSize();
+					}
+				}
+				else
+				{
+					context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "too many potential replacements",
+							$"rejecting replacement {context.TransactionHash}; too many potential replacements ({context.ConflictingCount} > {maxDescendantsToVisit})"))
+						.Throw();
+				}
+
+				for (int j = 0; j < context.Transaction.Inputs.Count; j++)
+				{
+					// We don't want to accept replacements that require low
+					// feerate junk to be mined first. Ideally we'd keep track of
+					// the ancestor feerates and make the decision based on that,
+					// but for now requiring all new inputs to be confirmed works.
+					if (!setConflictsParents.Contains(context.Transaction.Inputs[j].PrevOut.Hash))
+					{
+						// Rather than check the UTXO set - potentially expensive -
+						// it's cheaper to just check if the new input refers to a
+						// tx that's in the mempool.
+						if (this.memPool.MapTx.ContainsKey(context.Transaction.Inputs[j].PrevOut.Hash))
+							context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "replacement-adds-unconfirmed",
+								$"replacement {context.TransactionHash} adds unconfirmed input, idx {j}")).Throw();
+					}
+				}
+
+				// The replacement must pay greater fees than the transactions it
+				// replaces - if we did the bandwidth used by those conflicting
+				// transactions would not be paid for.
+				if (context.ModifiedFees < context.ConflictingFees)
+				{
+					context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
+							$"rejecting replacement {context.TransactionHash}, less fees than conflicting txs; {context.ModifiedFees} < {context.ConflictingFees}"))
+						.Throw();
+				}
+
+				// Finally in addition to paying more fees than the conflicts the
+				// new transaction must pay for its own bandwidth.
+				Money nDeltaFees = context.ModifiedFees - context.ConflictingFees;
+				if (nDeltaFees < MinRelayTxFee.GetFee(context.EntrySize))
+				{
+					context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
+							$"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {MinRelayTxFee.GetFee(context.EntrySize)}"))
+						.Throw();
+				}
+
+			}
+		}
+
+		private void CheckRateLimit(MempoolValidationContext context, bool limitFree)
+		{
+			// Continuously rate-limit free (really, very-low-fee) transactions
+			// This mitigates 'penny-flooding' -- sending thousands of free transactions just to
+			// be annoying or make others' transactions take longer to confirm.
+			if (limitFree && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize))
+			{
+				// todo: move this code to be called later in its own exclusive scheduler
+
+				var nNow = this.dateTimeProvider.GetTime();
+
+				// Use an exponentially decaying ~10-minute window:
+				this.FreeLimiter.FreeCount *= Math.Pow(1.0 - 1.0 / 600.0, (double)(nNow - this.FreeLimiter.LastTime));
+				this.FreeLimiter.LastTime = nNow;
+				// -limitfreerelay unit is thousand-bytes-per-minute
+				// At default rate it would take over a month to fill 1GB
+				if (this.FreeLimiter.FreeCount + context.EntrySize >= this.nodeArgs.Mempool.LimitFreeRelay * 10 * 1000)
+					context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "rate limited free transaction")).Throw();
+
+				Logging.Logs.Mempool.LogInformation(
+					$"Rate limit dFreeCount: {this.FreeLimiter.FreeCount} => {this.FreeLimiter.FreeCount + context.EntrySize}");
+				this.FreeLimiter.FreeCount += context.EntrySize;
+			}
+		}
+
+		private void CheckAncestors(MempoolValidationContext context)
+		{
+			// Calculate in-mempool ancestors, up to a limit.
+			context.SetAncestors = new TxMemPool.SetEntries();
+			var nLimitAncestors = nodeArgs.Mempool.LimitAncestors;
+			var nLimitAncestorSize = nodeArgs.Mempool.LimitAncestorSize * 1000;
+			var nLimitDescendants = nodeArgs.Mempool.LimitDescendants;
+			var nLimitDescendantSize = nodeArgs.Mempool.LimitDescendantSize * 1000;
+			string errString;
+			if (!this.memPool.CalculateMemPoolAncestors(context.Entry, context.SetAncestors, nLimitAncestors,
+				nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, out errString))
+			{
+				context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "too-long-mempool-chain", errString)).Throw();
+			}
+
+			// A transaction that spends outputs that would be replaced by it is invalid. Now
+			// that we have the set of all ancestors we can detect this
+			// pathological case by making sure setConflicts and setAncestors don't
+			// intersect.
+			foreach (var ancestorIt in context.SetAncestors)
+			{
+				var hashAncestor = ancestorIt.TransactionHash;
+				if (context.SetConflicts.Contains(hashAncestor))
+				{
+					context.State.Fail(new MempoolError(MempoolErrors.REJECT_INVALID, "bad-txns-spends-conflicting-tx",
+						$"{context.TransactionHash} spends conflicting transaction {hashAncestor}")).Throw();
+				}
+			}
+		}
+
+		private async Task AcceptToMemoryPoolWorker(MemepoolValidationState state, Transaction tx, bool limitFree,
+			long acceptTime, bool fOverrideMempoolLimit, Money nAbsurdFee, List<uint256> vHashTxnToUncache)
 		{
 			var context = new MempoolValidationContext(tx, state);
 
-			// any access to mempool has to be behind a scheduler
-			// the following code only reads from mempool 
-			// so we use the concurrent scheduler
+			this.PreMempoolChecks(context);
+
+			// check on mempool code running in parallel 
 			await this.mempoolScheduler.DoConcurrent(async () =>
 			{
-				// state filled in by CheckTransaction
-				this.consensusValidator.CheckTransaction(tx);
-
-				// Coinbase is only valid in a block, not as a loose transaction
-				if (tx.IsCoinBase)
-					state.Fail(new MemepoolError("coinbase")).Throw(); //.DoS(100, false, REJECT_INVALID, "coinbase");
-
-				// TODO: IsWitnessEnabled
-				//// Reject transactions with witness before segregated witness activates (override with -prematurewitness)
-				//bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus());
-				//if (!GetBoolArg("-prematurewitness",false) && tx.HasWitness() && !witnessEnabled) {
-				//    return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
-				//}
-
-				// Rather not work on nonstandard transactions (unless -testnet/-regtest)
-				if (this.fRequireStandard)
-				{
-					var errors = new NBitcoin.Policy.StandardTransactionPolicy().Check(tx, null);
-					if (errors.Any())
-						state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, errors.First().ToString())).Throw();
-				}
-
-				// Only accept nLockTime-using transactions that can be mined in the next
-				// block; we don't want our mempool filled up with transactions that can't
-				// be mined yet.
-				if (!CheckFinalTx(tx, ConsensusValidator.StandardLocktimeVerifyFlags))
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, "non final transaction")).Throw();
-
 				// is it already in the memory pool?
 				if (this.memPool.Exists(context.TransactionHash))
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_ALREADY_KNOWN, "txn-already-in-mempool")).Throw();
+					state.Fail(MempoolErrors.InPool).Throw();
 
 				// Check for conflicts with in-memory transactions
 				this.CheckConflicts(context);
 
-				// create the MemPoolCoinView and load relevant utxoset
-				context.View = new MemPoolCoinView(this.cachedCoinView, this.memPool);
-				await context.View.LoadView(tx);
+				await this.LoadAndCheckMempoolCoinView(context);
 
-				Money nValueIn = 0;
-				LockPoints lp = new LockPoints();
-
-				// do we already have it?
-				//bool fHadTxInCache = pcoinsTip->HaveCoinsInCache(hash);
-
-				if (context.View.HaveCoins(context.TransactionHash))
-				{
-					//if (!fHadTxInCache)
-					//	vHashTxnToUncache.push_back(hash);
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_ALREADY_KNOWN, "txn-already-known")).Throw();
-				}
-
-				// do all inputs exist?
-				// Note that this does not check for the presence of actual outputs (see the next check for that),
-				// and only helps with filling in pfMissingInputs (to determine missing vs spent).
-				foreach (var txin in tx.Inputs)
-				{
-					//if (!pcoinsTip->HaveCoinsInCache(txin.prevout.hash))
-					//	vHashTxnToUncache.push_back(txin.prevout.hash);
-					if (!context.View.HaveCoins(txin.PrevOut.Hash))
-					{
-						state.MissingInputs = true;
-						return; // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
-					}
-				}
-
-				// are the actual inputs available?
-				if (!context.View.HaveInputs(tx))
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_DUPLICATE, "bad-txns-inputs-spent")).Throw();
-
-				// Bring the best block into scope
-				//view.GetBestBlock();
-
-				nValueIn = context.View.GetValueIn(tx);
-
-				// we have all inputs cached now, so switch back to dummy, so we don't need to keep lock on mempool
-				//view.SetBackend(dummy);
-
-				// Only accept BIP68 sequence locked transactions that can be mined in the next
-				// block; we don't want our mempool filled up with transactions that can't
-				// be mined yet.
-				// Must keep pool.cs for this unless we change CheckSequenceLocks to take a
-				// CoinsViewCache instead of create its own
-				if (!CheckSequenceLocks(tx, ConsensusValidator.StandardLocktimeVerifyFlags, lp))
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, "non-BIP68-final")).Throw();
-
-				// Check for non-standard pay-to-script-hash in inputs
-				if (fRequireStandard && !this.AreInputsStandard(tx, context.View))
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, "bad-txns-nonstandard-inputs")).Throw();
-
-				// Check for non-standard witness in P2WSH
-				if (tx.HasWitness && fRequireStandard && !IsWitnessStandard(tx, context.View))
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, "bad-witness-nonstandard")).Throw();
-
-				var nSigOpsCost = consensusValidator.GetTransactionSigOpCost(tx, context.View.Set,
-					new ConsensusFlags {ScriptFlags = ScriptVerify.Standard});
-
-				Money nValueOut = tx.TotalOut;
-				Money nFees = nValueIn - nValueOut;
-				// nModifiedFees includes any fee deltas from PrioritiseTransaction
-				Money nModifiedFees = nFees;
-				double nPriorityDummy = 0;
-				this.memPool.ApplyDeltas(context.TransactionHash, ref nPriorityDummy, ref nModifiedFees);
-				context.ModifiedFees = nModifiedFees;
-
-				Money inChainInputValue = Money.Zero;
-				double dPriority = context.View.GetPriority(tx, this.chain.Height, inChainInputValue);
-
-				// Keep track of transactions that spend a coinbase, which we re-scan
-				// during reorgs to ensure COINBASE_MATURITY is still met.
-				bool fSpendsCoinbase = false;
-				foreach (var txInput in tx.Inputs)
-				{
-					var coins = context.View.Set.AccessCoins(txInput.PrevOut.Hash);
-					if (coins.IsCoinbase)
-					{
-						fSpendsCoinbase = true;
-						break;
-					}
-				}
-
-				context.Entry = new TxMemPoolEntry(tx, nFees, nAcceptTime, dPriority, this.chain.Height, inChainInputValue,
-					fSpendsCoinbase, nSigOpsCost, lp);
-				context.EntrySize = (int) context.Entry.GetTxSize();
-
+				this.CreateMempoolEntry(context, acceptTime);
+			
 				// Check that the transaction doesn't have an excessive number of
 				// sigops, making it impossible to mine. Since the coinbase transaction
 				// itself can contain sigops MAX_STANDARD_TX_SIGOPS is less than
 				// MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
 				// merely non-standard transaction.
-				if (nSigOpsCost > ConsensusValidator.MAX_BLOCK_SIGOPS_COST)
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, "bad-txns-too-many-sigops")).Throw();
+				if (context.SigOpsCost > ConsensusValidator.MAX_BLOCK_SIGOPS_COST)
+					state.Fail(MempoolErrors.TooManySigops).Throw();
 
 				Money mempoolRejectFee = this.memPool.GetMinFee(this.nodeArgs.Mempool.MaxMempool*1000000).GetFee(context.EntrySize);
 				if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
 				{
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_INSUFFICIENTFEE,
-						$"mempool-min-fee-not-met {nFees} < {mempoolRejectFee}")).Throw();
-
+					state.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE,
+						$"mempool-min-fee-not-met {context.Fees} < {mempoolRejectFee}")).Throw();
 				}
 				else if (nodeArgs.Mempool.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
 				         !TxMemPool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
 				{
 					// Require that free transactions have sufficient priority to be mined in the next block.
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_INSUFFICIENTFEE, "insufficient priority")).Throw();
+					state.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient priority")).Throw();
 				}
 
-				// Continuously rate-limit free (really, very-low-fee) transactions
-				// This mitigates 'penny-flooding' -- sending thousands of free transactions just to
-				// be annoying or make others' transactions take longer to confirm.
-				if (fLimitFree && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize))
-				{
-					// todo: move this code to be called later in its own exclusive scheduler
+				// TODO: this needs to happen sequentially s(either break this method to to parallel checks or make all this tests sequentially)
+				this.CheckRateLimit(context, limitFree);
 
-					var nNow = this.dateTimeProvider.GetTime();
-					//LOCK(csFreeLimiter);
+				if (nAbsurdFee != null && context.Fees > nAbsurdFee)
+					state.Fail(new MempoolError(MempoolErrors.REJECT_HIGHFEE, $"absurdly-high-fee {context.Fees} > {nAbsurdFee} ")).Throw();
 
-					// Use an exponentially decaying ~10-minute window:
+				this.CheckAncestors(context);
 
-					this.FreeLimiter.FreeCount *= Math.Pow(1.0 - 1.0/600.0, (double) (nNow - this.FreeLimiter.LastTime));
-					this.FreeLimiter.LastTime = nNow;
-					// -limitfreerelay unit is thousand-bytes-per-minute
-					// At default rate it would take over a month to fill 1GB
-					if (this.FreeLimiter.FreeCount + context.EntrySize >= this.nodeArgs.Mempool.LimitFreeRelay*10*1000)
-						state.Fail(new MemepoolError(MemepoolErrors.REJECT_INSUFFICIENTFEE, "rate limited free transaction")).Throw();
-
-					Logging.Logs.Mempool.LogInformation(
-						$"Rate limit dFreeCount: {this.FreeLimiter.FreeCount} => {this.FreeLimiter.FreeCount + context.EntrySize}");
-					this.FreeLimiter.FreeCount += context.EntrySize;
-				}
-
-				if (nAbsurdFee != null && nFees > nAbsurdFee)
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_HIGHFEE, $"absurdly-high-fee {nFees} > {nAbsurdFee} ")).Throw();
-
-				// Calculate in-mempool ancestors, up to a limit.
-				context.SetAncestors = new TxMemPool.SetEntries();
-				var nLimitAncestors = nodeArgs.Mempool.LimitAncestors;
-				var nLimitAncestorSize = nodeArgs.Mempool.LimitAncestorSize*1000;
-				var nLimitDescendants = nodeArgs.Mempool.LimitDescendants;
-				var nLimitDescendantSize = nodeArgs.Mempool.LimitDescendantSize*1000;
-				string errString;
-				if (!this.memPool.CalculateMemPoolAncestors(context.Entry, context.SetAncestors, nLimitAncestors, 
-					nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, out errString))
-				{
-					state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, "too-long-mempool-chain", errString)).Throw();
-				}
-
-				// A transaction that spends outputs that would be replaced by it is invalid. Now
-				// that we have the set of all ancestors we can detect this
-				// pathological case by making sure setConflicts and setAncestors don't
-				// intersect.
-				foreach (var ancestorIt in context.SetAncestors)
-				{
-					var hashAncestor = ancestorIt.TransactionHash;
-					if (context.SetConflicts.Contains(hashAncestor))
-					{
-						state.Fail(new MemepoolError(MemepoolErrors.REJECT_INVALID, "bad-txns-spends-conflicting-tx",
-							$"{context.TransactionHash} spends conflicting transaction {hashAncestor}")).Throw();
-					}
-				}
-
-
-
-				// Check if it's economically rational to mine this transaction rather
-				// than the ones it replaces.
-				context.ConflictingFees = 0;
-				context.ConflictingSize = 0;
-				context.ConflictingCount = 0;
-				context.AllConflicting = new TxMemPool.SetEntries();
-
-				// If we don't hold the lock allConflicting might be incomplete; the
-				// subsequent RemoveStaged() and addUnchecked() calls don't guarantee
-				// mempool consistency for us.
-				//LOCK(pool.cs);
-				if (context.SetConflicts.Any())
-				{
-					FeeRate newFeeRate = new FeeRate(context.ModifiedFees, context.EntrySize);
-					List<uint256> setConflictsParents = new List<uint256>();
-					const int maxDescendantsToVisit = 100;
-					TxMemPool.SetEntries setIterConflicting = new TxMemPool.SetEntries();
-					foreach (var hashConflicting in context.SetConflicts)
-					{
-						var mi = this.memPool.MapTx.TryGet(hashConflicting);
-						if (mi == null)
-							continue;
-
-						// Save these to avoid repeated lookups
-						setIterConflicting.Add(mi);
-
-						// Don't allow the replacement to reduce the feerate of the
-						// mempool.
-						//
-						// We usually don't want to accept replacements with lower
-						// feerates than what they replaced as that would lower the
-						// feerate of the next block. Requiring that the feerate always
-						// be increased is also an easy-to-reason about way to prevent
-						// DoS attacks via replacements.
-						//
-						// The mining code doesn't (currently) take children into
-						// account (CPFP) so we only consider the feerates of
-						// transactions being directly replaced, not their indirect
-						// descendants. While that does mean high feerate children are
-						// ignored when deciding whether or not to replace, we do
-						// require the replacement to pay more overall fees too,
-						// mitigating most cases.
-						FeeRate oldFeeRate = new FeeRate(mi.ModifiedFee, (int) mi.GetTxSize());
-						if (newFeeRate <= oldFeeRate)
-						{
-							state.Fail(new MemepoolError(MemepoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
-									$"rejecting replacement {context.TransactionHash}; new feerate {newFeeRate} <= old feerate {oldFeeRate}"))
-								.Throw();
-						}
-
-						foreach (var txin in mi.Transaction.Inputs)
-						{
-							setConflictsParents.Add(txin.PrevOut.Hash);
-						}
-
-						context.ConflictingCount += mi.CountWithDescendants;
-					}
-					// This potentially overestimates the number of actual descendants
-					// but we just want to be conservative to avoid doing too much
-					// work.
-					if (context.ConflictingCount <= maxDescendantsToVisit)
-					{
-						// If not too many to replace, then calculate the set of
-						// transactions that would have to be evicted
-						foreach (var it in setIterConflicting)
-						{
-							this.memPool.CalculateDescendants(it, context.AllConflicting);
-						}
-						foreach (var it in context.AllConflicting)
-						{
-							context.ConflictingFees += it.ModifiedFee;
-							context.ConflictingSize += it.GetTxSize();
-						}
-					}
-					else
-					{
-						state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, "too many potential replacements",
-								$"rejecting replacement {context.TransactionHash}; too many potential replacements ({context.ConflictingCount} > {maxDescendantsToVisit})"))
-							.Throw();
-					}
-
-					for (int j = 0; j < context.Transaction.Inputs.Count; j++)
-					{
-						// We don't want to accept replacements that require low
-						// feerate junk to be mined first. Ideally we'd keep track of
-						// the ancestor feerates and make the decision based on that,
-						// but for now requiring all new inputs to be confirmed works.
-						if (!setConflictsParents.Contains(context.Transaction.Inputs[j].PrevOut.Hash))
-						{
-							// Rather than check the UTXO set - potentially expensive -
-							// it's cheaper to just check if the new input refers to a
-							// tx that's in the mempool.
-							if (this.memPool.MapTx.ContainsKey(context.Transaction.Inputs[j].PrevOut.Hash))
-								state.Fail(new MemepoolError(MemepoolErrors.REJECT_NONSTANDARD, "replacement-adds-unconfirmed",
-									$"replacement {context.TransactionHash} adds unconfirmed input, idx {j}")).Throw();
-						}
-					}
-
-					// The replacement must pay greater fees than the transactions it
-					// replaces - if we did the bandwidth used by those conflicting
-					// transactions would not be paid for.
-					if (context.ModifiedFees < context.ConflictingFees)
-					{
-						state.Fail(new MemepoolError(MemepoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
-								$"rejecting replacement {context.TransactionHash}, less fees than conflicting txs; {context.ModifiedFees} < {context.ConflictingFees}"))
-							.Throw();
-					}
-
-					// Finally in addition to paying more fees than the conflicts the
-					// new transaction must pay for its own bandwidth.
-					Money nDeltaFees = context.ModifiedFees - context.ConflictingFees;
-					if (nDeltaFees < MinRelayTxFee.GetFee(context.EntrySize))
-					{
-						state.Fail(new MemepoolError(MemepoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
-								$"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {MinRelayTxFee.GetFee(context.EntrySize)}"))
-							.Throw();
-					}
-
-				}
-
+				this.CheckReplacment(context);
 
 				var scriptVerifyFlags = ScriptVerify.Standard;
 				if (!this.fRequireStandard)
@@ -509,7 +523,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					//	state.SetCorruptionPossible();
 					//}
 
-					state.Fail(new MemepoolError("check inputs")).Throw();
+					state.Fail(new MempoolError("check inputs")).Throw();
 				}
 
 				// Check again against just the consensus-critical mandatory script
@@ -523,20 +537,20 @@ namespace Stratis.Bitcoin.MemoryPool
 				// can be exploited as a DoS attack.
 				if (!CheckInputs(context, ScriptVerify.P2SH, txdata))
 				{
-					state.Fail(
-							new MemepoolError(
-								$"CheckInputs: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags {context.TransactionHash}"))
-						.Throw();
+					state.Fail(new MempoolError($"CheckInputs: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags {context.TransactionHash}")).Throw();
 				}
 			});
 
 			await this.mempoolScheduler.DoSequential(() =>
 			{
-				// Remove conflicting transactions from the mempool
+				// check again the trx was not added to the pool
+				if (this.memPool.Exists(context.TransactionHash))
+					return;
+
+					// Remove conflicting transactions from the mempool
 				foreach (var it in context.AllConflicting)
 				{
-					Logging.Logs.Mempool.LogInformation(
-						$"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
+					Logging.Logs.Mempool.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
 				}
 				this.memPool.RemoveStaged(context.AllConflicting, false);
 
@@ -554,7 +568,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					LimitMempoolSize(this.nodeArgs.Mempool.MaxMempool*1000000, this.nodeArgs.Mempool.MempoolExpiry*60*60);
 
 					if (!this.memPool.Exists(context.TransactionHash))
-						state.Fail(new MemepoolError(MemepoolErrors.REJECT_INSUFFICIENTFEE, "mempool-full")).Throw();
+						state.Fail(MempoolErrors.Full).Throw();
 				}
 			});
 

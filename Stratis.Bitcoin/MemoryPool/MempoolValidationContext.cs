@@ -8,9 +8,9 @@ namespace Stratis.Bitcoin.MemoryPool
 {
 	public class MemepoolValidationState
 	{
-		public MemepoolError Error { get; set; }
+		public MempoolError Error { get; set; }
 
-		public MemepoolValidationState Fail(MemepoolError error)
+		public MemepoolValidationState Fail(MempoolError error)
 		{
 			this.Error = error;
 			return this;
@@ -38,17 +38,22 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public MemPoolCoinView View { get; set; }
 
-		public Money ModifiedFees { get; set; }
-
 	    public int EntrySize { get; set; }
 
 	    public TxMemPool.SetEntries AllConflicting { get; set; }
 
 		public TxMemPool.SetEntries SetAncestors { get; set; }
 
+		public LockPoints LockPoints { get; set; }
+
 		public Money ConflictingFees { get; set; }
 		public long ConflictingSize { get; set; }
 		public long ConflictingCount { get; set; }
+
+		public Money ValueOut { get; set; }
+		public Money Fees { get; set; }
+		public Money ModifiedFees { get; set; }
+		public long SigOpsCost { get; set; }
 
 		public MempoolValidationContext(Transaction transaction, MemepoolValidationState state)
 		{
