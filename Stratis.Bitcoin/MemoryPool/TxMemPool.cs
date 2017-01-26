@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
 
@@ -88,58 +89,58 @@ namespace Stratis.Bitcoin.MemoryPool
 	* the feerate of the transaction without any descendants.
 	*
 	*/
-	public class TxMemPool
+	public class TxMempool
 	{
 		// Fake height value used in CCoins to signify they are only in the memory pool (since 0.8) 
-		public const int MEMPOOL_HEIGHT = 0x7FFFFFFF;
+		public const int MempoolHeight = 0x7FFFFFFF;
 
-		double nCheckFrequency; //!< Value n means that n times in 2^32 we check.
+		private double checkFrequency; //!< Value n means that n times in 2^32 we check.
 		int nTransactionsUpdated;
 		//CBlockPolicyEstimator* minerPolicyEstimator;
 
 		long totalTxSize;      //!< sum of all mempool tx's virtual sizes. Differs from serialized Transaction size since witness data is discounted. Defined in BIP 141.
 		long cachedInnerUsage; //!< sum of dynamic memory usage of all the map elements (NOT the maps themselves)
 
-		FeeRate minReasonableRelayFee;
+		readonly FeeRate minReasonableRelayFee;
 
 		long lastRollingFeeUpdate;
 		bool blockSinceLastRollingFeeBump;
 		double rollingMinimumFeeRate; //!< minimum fee to get into the pool, decreases exponentially
 
-		public const int ROLLING_FEE_HALFLIFE = 60 * 60 * 12; // public only for testing
+		public const int RollingFeeHalflife = 60 * 60 * 12; // public only for testing
 
-		public class IndexedTransactionSet : Dictionary<uint256, TxMemPoolEntry>
+		public class IndexedTransactionSet : Dictionary<uint256, TxMempoolEntry>
 		{
 			public IndexedTransactionSet() : base(new SaltedTxidHasher())
 			{
 			}
 
-			public void Add(TxMemPoolEntry entry)
+			public void Add(TxMempoolEntry entry)
 			{
 				this.Add(entry.TransactionHash, entry);
 			}
 
-			public void Remove(TxMemPoolEntry entry)
+			public void Remove(TxMempoolEntry entry)
 			{
 				this.Remove(entry.TransactionHash);
 			}
 
-			public IEnumerable<TxMemPoolEntry> DescendantScore
+			public IEnumerable<TxMempoolEntry> DescendantScore
 			{
 				get { return this.Values.OrderBy(o => o, new CompareTxMemPoolEntryByDescendantScore()); }
 			}
 
-			public IEnumerable<TxMemPoolEntry> EntryTime
+			public IEnumerable<TxMempoolEntry> EntryTime
 			{
 				get { return this.Values.OrderBy(o => o, new CompareTxMemPoolEntryByEntryTime()); }
 			}
 
-			public IEnumerable<TxMemPoolEntry> MiningScore
+			public IEnumerable<TxMempoolEntry> MiningScore
 			{
 				get { return this.Values.OrderBy(o => o, new CompareTxMemPoolEntryByScore()); }
 			}
 
-			public IEnumerable<TxMemPoolEntry> AncestorScore
+			public IEnumerable<TxMempoolEntry> AncestorScore
 			{
 				get { return this.Values.OrderBy(o => o, new CompareTxMemPoolEntryByAncestorFee()); }
 			}
@@ -163,9 +164,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			*  Sort an entry by max(score/size of entry's tx, score/size with all descendants).
 			*/
 
-			private class CompareTxMemPoolEntryByDescendantScore : IComparer<TxMemPoolEntry>
+			private class CompareTxMemPoolEntryByDescendantScore : IComparer<TxMempoolEntry>
 			{
-				public int Compare(TxMemPoolEntry a, TxMemPoolEntry b)
+				public int Compare(TxMempoolEntry a, TxMempoolEntry b)
 				{
 					bool fUseADescendants = UseDescendantScore(a);
 					bool fUseBDescendants = UseDescendantScore(b);
@@ -194,7 +195,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 				// Calculate which score to use for an entry (avoiding division).
 
-				bool UseDescendantScore(TxMemPoolEntry a)
+				bool UseDescendantScore(TxMempoolEntry a)
 				{
 					double f1 = (double) a.ModifiedFee*a.SizeWithDescendants;
 					double f2 = (double) a.ModFeesWithDescendants.Satoshi*a.GetTxSize();
@@ -202,9 +203,9 @@ namespace Stratis.Bitcoin.MemoryPool
 				}
 			}
 
-			private class CompareTxMemPoolEntryByEntryTime : IComparer<TxMemPoolEntry>
+			private class CompareTxMemPoolEntryByEntryTime : IComparer<TxMempoolEntry>
 			{
-				public int Compare(TxMemPoolEntry a, TxMemPoolEntry b)
+				public int Compare(TxMempoolEntry a, TxMempoolEntry b)
 				{
 					if (a.Time < b.Time)
 						return -1;
@@ -216,9 +217,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			*
 			*  Sort by score of entry ((fee+delta)/size) in descending order
 			*/
-			private class CompareTxMemPoolEntryByScore : IComparer<TxMemPoolEntry>
+			private class CompareTxMemPoolEntryByScore : IComparer<TxMempoolEntry>
 			{
-				public int Compare(TxMemPoolEntry a, TxMemPoolEntry b)
+				public int Compare(TxMempoolEntry a, TxMempoolEntry b)
 				{
 					double f1 = (double) a.ModifiedFee*b.GetTxSize();
 					double f2 = (double) b.ModifiedFee*a.GetTxSize();
@@ -234,9 +235,9 @@ namespace Stratis.Bitcoin.MemoryPool
 				}
 			}
 
-			private class CompareTxMemPoolEntryByAncestorFee : IComparer<TxMemPoolEntry>
+			private class CompareTxMemPoolEntryByAncestorFee : IComparer<TxMempoolEntry>
 			{
-				public int Compare(TxMemPoolEntry a, TxMemPoolEntry b)
+				public int Compare(TxMempoolEntry a, TxMempoolEntry b)
 				{
 					double aFees = a.ModFeesWithAncestors.Satoshi;
 					double aSize = a.SizeWithAncestors;
@@ -262,9 +263,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		private class CompareIteratorByHash : IComparer<TxMemPoolEntry>
+		private class CompareIteratorByHash : IComparer<TxMempoolEntry>
 		{
-			public int Compare(TxMemPoolEntry a, TxMemPoolEntry b)
+			public int Compare(TxMempoolEntry a, TxMempoolEntry b)
 			{
 				if (a.TransactionHash == b.TransactionHash) return 0;
 				if (a.TransactionHash < b.TransactionHash) return -1;
@@ -277,7 +278,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			public SetEntries Children;
 		};
 
-		public class SetEntries : SortedSet<TxMemPoolEntry>, IEquatable<SetEntries>, IEqualityComparer<TxMemPoolEntry>
+		public class SetEntries : SortedSet<TxMempoolEntry>, IEquatable<SetEntries>, IEqualityComparer<TxMempoolEntry>
 
 		{
 			public SetEntries() : base(new CompareIteratorByHash())
@@ -289,18 +290,18 @@ namespace Stratis.Bitcoin.MemoryPool
 				return this.SequenceEqual(other, this);
 			}
 
-			public bool Equals(TxMemPoolEntry x, TxMemPoolEntry y)
+			public bool Equals(TxMempoolEntry x, TxMempoolEntry y)
 			{
 				return x.TransactionHash == y.TransactionHash;
 			}
 
-			public int GetHashCode(TxMemPoolEntry obj)
+			public int GetHashCode(TxMempoolEntry obj)
 			{
 				return obj?.TransactionHash?.GetHashCode() ?? 0;
 			}
 		}
 
-		public class TxlinksMap : SortedList<TxMemPoolEntry, TxLinks>
+		public class TxlinksMap : SortedList<TxMempoolEntry, TxLinks>
 		{
 			public TxlinksMap() : base(new CompareIteratorByHash())
 			{
@@ -323,7 +324,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		TxlinksMap mapLinks = new TxlinksMap();
 		public List<NextTxPair> MapNextTx = new List<NextTxPair>();
 		private Dictionary<uint256, DeltaPair> mapDeltas = new Dictionary<uint256, DeltaPair>();
-		Dictionary<TxMemPoolEntry, uint256> vTxHashes = new Dictionary<TxMemPoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
+		Dictionary<TxMempoolEntry, uint256> vTxHashes = new Dictionary<TxMempoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
 
 		public class DateTimeProvider
 		{
@@ -337,7 +338,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private DateTimeProvider TimeProvider { get; }
 
-		public TxMemPool(FeeRate minReasonableRelayFee) : this(minReasonableRelayFee, DateTimeProvider.Default)
+		public TxMempool(FeeRate minReasonableRelayFee) : this(minReasonableRelayFee, DateTimeProvider.Default)
 		{
 		}
 
@@ -346,7 +347,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		*  around what it "costs" to relay a transaction around the network and
 		*  below which we would reasonably say a transaction has 0-effective-fee.
 		*/
-		public TxMemPool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider)
+		public TxMempool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider)
 		{
 			this.TimeProvider = dateTimeProvider;
 			this.InnerClear(); //lock free clear
@@ -354,7 +355,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Sanity checks off by default for performance, because otherwise
 			// accepting transactions becomes O(N^2) where N is the number
 			// of transactions in the pool
-			nCheckFrequency = 0;
+			checkFrequency = 0;
 
 			// TODO: implement CBlockPolicyEstimator
 			//minerPolicyEstimator = new CBlockPolicyEstimator(_minReasonableRelayFee);
@@ -398,18 +399,26 @@ namespace Stratis.Bitcoin.MemoryPool
 		 * all inputs are in the mapNextTx array). If sanity-checking is turned off,
 		 * check does nothing.
 		 */
-		public void check(Consensus.CachedCoinView pcoins)
+		public void Check(CoinView pcoins)
 		{
+			if (this.checkFrequency == 0)
+				return;
+
+			if (new Random(int.MaxValue).Next() >= checkFrequency)
+				return;
+
+			Logging.Logs.Mempool.LogInformation($"Checking mempool with {this.MapTx.Count} transactions and {this.MapNextTx.Count} inputs");
+
 			throw new NotImplementedException();
 		}
 
-		public void setSanityCheck(double dFrequency = 1.0) { nCheckFrequency = dFrequency * 4294967295.0; }
+		public void SetSanityCheck(double dFrequency = 1.0) { checkFrequency = dFrequency * 4294967295.0; }
 
 		// addUnchecked must updated state for all ancestors of a given transaction,
 		// to track size/count of descendant transactions.  First version of
 		// addUnchecked can be used to have it call CalculateMemPoolAncestors(), and
 		// then invoke the second version.
-		public bool AddUnchecked(uint256 hash, TxMemPoolEntry entry, bool validFeeEstimate = true)
+		public bool AddUnchecked(uint256 hash, TxMempoolEntry entry, bool validFeeEstimate = true)
 		{
 			//LOCK(cs);
 			SetEntries setAncestors = new SetEntries();
@@ -420,7 +429,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		}
 
-		public bool AddUnchecked(uint256 hash, TxMemPoolEntry entry, SetEntries setAncestors, bool validFeeEstimate = true)
+		public bool AddUnchecked(uint256 hash, TxMempoolEntry entry, SetEntries setAncestors, bool validFeeEstimate = true)
 		{
 			// Add to memory pool without checking anything.
 			// Used by main.cpp AcceptToMemoryPool(), which DOES do
@@ -486,7 +495,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		/** Set ancestor state for an entry */
 
-		void UpdateEntryForAncestors(TxMemPoolEntry it, SetEntries setAncestors)
+		void UpdateEntryForAncestors(TxMempoolEntry it, SetEntries setAncestors)
 		{
 			long updateCount = setAncestors.Count;
 			long updateSize = 0;
@@ -503,7 +512,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 
 		/** Update ancestors of hash to add/remove it as a descendant transaction. */
-		private void UpdateAncestorsOf(bool add, TxMemPoolEntry it, SetEntries setAncestors)
+		private void UpdateAncestorsOf(bool add, TxMempoolEntry it, SetEntries setAncestors)
 		{
 			SetEntries parentIters = GetMemPoolParents(it);
 			// add or remove this tx as a child of each parent
@@ -519,29 +528,29 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		private SetEntries GetMemPoolParents(TxMemPoolEntry entry)
+		private SetEntries GetMemPoolParents(TxMempoolEntry entry)
 		{
 			if(entry == null)
 				throw new ArgumentNullException(nameof(entry));
 
-			Check.Assert(MapTx.ContainsKey(entry.TransactionHash));
+			Utilities.Check.Assert(MapTx.ContainsKey(entry.TransactionHash));
 			var it = mapLinks.TryGet(entry);
-			Check.Assert(it != null);
+			Utilities.Check.Assert(it != null);
 			return it.Parents;
 		}
 
-		private SetEntries GetMemPoolChildren(TxMemPoolEntry entry)
+		private SetEntries GetMemPoolChildren(TxMempoolEntry entry)
 		{
 			if (entry == null)
 				throw new ArgumentNullException(nameof(entry));
 
-			Check.Assert(MapTx.ContainsKey(entry.TransactionHash));
+			Utilities.Check.Assert(MapTx.ContainsKey(entry.TransactionHash));
 			var it = mapLinks.TryGet(entry);
-			Check.Assert(it != null);
+			Utilities.Check.Assert(it != null);
 			return it.Children;
 		}
 
-		private void UpdateChild(TxMemPoolEntry entry, TxMemPoolEntry child, bool add)
+		private void UpdateChild(TxMempoolEntry entry, TxMempoolEntry child, bool add)
 		{
 			// todo: find how to take a memory size of SetEntries
 			//setEntries s;
@@ -555,7 +564,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		private void UpdateParent(TxMemPoolEntry entry, TxMemPoolEntry parent, bool add)
+		private void UpdateParent(TxMempoolEntry entry, TxMempoolEntry parent, bool add)
 		{
 			// todo: find how to take a memory size of SetEntries
 			//SetEntries s;
@@ -579,7 +588,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		 *  fSearchForParents = whether to search a tx's vin for in-mempool parents, or
 		 *    look up parents from mapLinks. Must be true for entries not in the mempool
 		 */
-		public bool CalculateMemPoolAncestors(TxMemPoolEntry entry, SetEntries setAncestors, long limitAncestorCount,
+		public bool CalculateMemPoolAncestors(TxMempoolEntry entry, SetEntries setAncestors, long limitAncestorCount,
 			long limitAncestorSize, long limitDescendantCount, long limitDescendantSize, out string errString,
 			bool fSearchForParents = true)
 		{
@@ -710,7 +719,7 @@ namespace Stratis.Bitcoin.MemoryPool
 						if (it == null)
 							continue;
 						var nextit = MapTx.TryGet(it.Transaction.GetHash());
-						Check.Assert(nextit != null);
+						Utilities.Check.Assert(nextit != null);
 						txToRemove.Add(nextit);
 					}
 				}
@@ -772,7 +781,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		 *  transactions in a chain before we've updated all the state for the
 		 *  removal.
 		 */
-		private void RemoveUnchecked(TxMemPoolEntry it)
+		private void RemoveUnchecked(TxMempoolEntry it)
 		{
 			var hash = it.TransactionHash;
 			foreach (var txin in it.Transaction.Inputs)
@@ -808,7 +817,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		// Also assumes that if an entry is in setDescendants already, then all
 		// in-mempool descendants of it are already in setDescendants as well, so that we
 		// can save time by not iterating over those entries.
-		public void CalculateDescendants(TxMemPoolEntry entryit, SetEntries setDescendants)
+		public void CalculateDescendants(TxMempoolEntry entryit, SetEntries setDescendants)
 		{
 			SetEntries stage = new SetEntries();
 			if (!setDescendants.Contains(entryit))
@@ -905,7 +914,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 
 		/** Sever link between specified transaction and direct children. */
-		private void UpdateChildrenForRemoval(TxMemPoolEntry it)
+		private void UpdateChildrenForRemoval(TxMempoolEntry it)
 		{
 			var setMemPoolChildren = GetMemPoolChildren(it);
 			foreach (var updateIt in setMemPoolChildren)
@@ -1065,7 +1074,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			var time = this.TimeProvider.GetTime();
 			if (time > lastRollingFeeUpdate + 10)
 			{
-				double halflife = ROLLING_FEE_HALFLIFE;
+				double halflife = RollingFeeHalflife;
 				if (DynamicMemoryUsage() < sizelimit / 4)
 					halflife /= 4;
 				else if (DynamicMemoryUsage() < sizelimit / 2)

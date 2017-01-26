@@ -8,6 +8,10 @@ namespace Stratis.Bitcoin.MemoryPool
 {
 	public class MemepoolValidationState
 	{
+		public MemepoolValidationState(bool limitFree) : this(limitFree, false, Money.Zero)
+		{
+		}
+
 		public MemepoolValidationState(bool limitFree, bool overrideMempoolLimit, Money absurdFee)
 		{
 			this.LimitFree = limitFree;
@@ -27,6 +31,9 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public bool MissingInputs { get; set; }
 
+		public bool CorruptionPossible { get; set; }
+		public bool IsInvalid { get; set; }
+
 		public bool OverrideMempoolLimit { get; set; }
 
 		public long AcceptTime { get; set; }
@@ -36,6 +43,11 @@ namespace Stratis.Bitcoin.MemoryPool
 		public void Throw()
 		{
 			throw new MempoolErrorException(this);
+		}
+
+		public override string ToString()
+		{
+			return $"{this.Error?.RejectCode}{this.Error?.Message} (code {this.Error?.Code})";
 		}
 	}
 
@@ -53,15 +65,15 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public uint256 TransactionHash { get; }
 
-		public TxMemPoolEntry Entry { get; set; }
+		public TxMempoolEntry Entry { get; set; }
 
-		public MemPoolCoinView View { get; set; }
+		public MempoolCoinView View { get; set; }
 
 		public int EntrySize { get; set; }
 
-		public TxMemPool.SetEntries AllConflicting { get; set; }
+		public TxMempool.SetEntries AllConflicting { get; set; }
 
-		public TxMemPool.SetEntries SetAncestors { get; set; }
+		public TxMempool.SetEntries SetAncestors { get; set; }
 
 		public LockPoints LockPoints { get; set; }
 

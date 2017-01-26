@@ -18,6 +18,7 @@ using Stratis.Bitcoin.BlockPulling;
 using System.Text;
 using System.Runtime.ExceptionServices;
 using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.MemoryPool;
 
 namespace Stratis.Bitcoin
 {
@@ -106,7 +107,15 @@ namespace Stratis.Bitcoin
 				connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockRepository));
 			}
 
-			ConsensusLoop = new ConsensusLoop(new ConsensusValidator(Network.Consensus), Chain, CoinView, blockPuller);
+			var consensusValidator = new ConsensusValidator(Network.Consensus);
+			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
+
+			// create the memory pool
+			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee);
+			this.MempoolManager = new MempoolManager(new SchedulerPairSession(), mempool, this.Chain);
+			var validator = new MempoolValidator(mempool, this.MempoolManager.MempoolScheduler, consensusValidator,
+				TxMempool.DateTimeProvider.Default, _Args, this.Chain, this.CoinView);
+			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(validator, this.MempoolManager));
 
 			var flags = ConsensusLoop.GetFlags();
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
@@ -288,6 +297,11 @@ namespace Stratis.Bitcoin
 		}
 
 		public ConnectionManager ConnectionManager
+		{
+			get; set;
+		}
+
+		public MempoolManager MempoolManager
 		{
 			get; set;
 		}

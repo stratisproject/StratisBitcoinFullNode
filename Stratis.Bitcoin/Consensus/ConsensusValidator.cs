@@ -17,8 +17,9 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		NBitcoin.Consensus _ConsensusParams;
 		const int MAX_BLOCK_WEIGHT = 4000000;
-		private readonly int WITNESS_SCALE_FACTOR = 4;
-		
+		public const int WITNESS_SCALE_FACTOR = 4;
+		public const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
+
 		// Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
 		public static LockTimeFlags StandardLocktimeVerifyFlags = LockTimeFlags.VerifySequence | LockTimeFlags.MedianTimePast;
 

@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.AspNetCore.Http;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace Stratis.Bitcoin.RPC
 {
@@ -21,8 +22,11 @@ namespace Stratis.Bitcoin.RPC
 		public static IApplicationBuilder UseRPC(this IApplicationBuilder app)
 		{
 			return app.UseMvc(o =>
-			 {
-				 o.Routes.Add(new RPCRouteHandler(o.DefaultHandler));
+			{
+				var actionDescriptor =
+					app.ApplicationServices.GetService(typeof(IActionDescriptorCollectionProvider)) as
+						IActionDescriptorCollectionProvider;
+				 o.Routes.Add(new RPCRouteHandler(o.DefaultHandler, actionDescriptor));
 			 });
 		}
 

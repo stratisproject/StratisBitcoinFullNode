@@ -45,11 +45,14 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
 		{
-			if (this.CanRespondeToGetDataPayload)
-				return message.Message.IfPayloadIsAsync<GetDataPayload>(data => this.ProcessGetDataAsync(node, data));
+			var getDataPayload = message.Message.Payload as GetDataPayload;
+			if (getDataPayload != null && this.CanRespondeToGetDataPayload)
+				return this.ProcessGetDataAsync(node, getDataPayload);
 
-			if (this.CanRespondToGetBlocksPayload)
-				return message.Message.IfPayloadIsAsync<GetBlocksPayload>(data => this.ProcessGetBlocksAsync(node, data));
+			var getBlocksPayload = message.Message.Payload as GetBlocksPayload;
+			if (getBlocksPayload != null && this.CanRespondToGetBlocksPayload)
+				return this.ProcessGetBlocksAsync(node, getBlocksPayload);
+
 			return Task.CompletedTask;
 		}
 
@@ -60,7 +63,7 @@ namespace Stratis.Bitcoin.BlockStore
 				var block = await this.blockRepository.GetAsync(item.Hash).ConfigureAwait(false);
 
 				if (block != null)
-					//TODO strip block of witness if not does not support
+					//TODO strip block of witness if node does not support
 					await node.SendMessageAsync(new BlockPayload(block.WithOptions(AttachedNode.SupportedTransactionOptions))).ConfigureAwait(false);
 			}
 		}
@@ -69,21 +72,22 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			ChainedBlock chainedBlock = this.concurrentChain.FindFork(getBlocksPayload.BlockLocators);
 
-			if (chainedBlock != null)
+			if (chainedBlock == null)
+				return Task.CompletedTask;
+
+			var inv = new InvPayload();
+			for (var limit = 0; limit < 500; limit++)
 			{
-				var inv = new InvPayload();
-				for (var limit = 0; limit < 500; limit++)
-				{
-					chainedBlock = this.concurrentChain.GetBlock(chainedBlock.Height + 1);
-					if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
-						break;
+				chainedBlock = this.concurrentChain.GetBlock(chainedBlock.Height + 1);
+				if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
+					break;
 
-					inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
-				}
-
-				if (inv.Inventory.Any())
-					return node.SendMessageAsync(inv);
+				inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
 			}
+
+			if (inv.Inventory.Any())
+				return node.SendMessageAsync(inv);
+
 			return Task.CompletedTask;
 		}
 

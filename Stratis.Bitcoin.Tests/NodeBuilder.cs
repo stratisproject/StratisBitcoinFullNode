@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Tests
 {
@@ -594,6 +595,11 @@ namespace Stratis.Bitcoin.Tests
 			MinerSecret = secret;
 		}
 
+		public void SetDummyMinerSecret(BitcoinSecret secret)
+		{
+			MinerSecret = secret;
+		}
+
 		public BitcoinSecret MinerSecret
 		{
 			get;
@@ -640,6 +646,51 @@ namespace Stratis.Bitcoin.Tests
 				if(broadcast)
 					BroadcastBlocks(blocks.ToArray(), node);
 			}
+			return blocks.ToArray();
+#endif
+		}
+
+		public Block[] GenerateStratis(int blockCount, FullNode fullNode)
+		{
+			//var rpc = CreateRPCClient();
+			BitcoinSecret dest = MinerSecret;
+			//var bestBlock = fullNode.Chain.Tip.HashBlock; // rpc.GetBestBlockHash();
+			ConcurrentChain chain = fullNode.Chain;
+			;
+			List<Block> blocks = new List<Block>();
+			DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
+#if !NOSOCKET
+
+			for (int i = 0; i < blockCount; i++)
+			{
+				uint nonce = 0;
+				Block block = new Block();
+				block.Header.HashPrevBlock = chain.Tip.HashBlock;
+				block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, chain.Tip);
+				block.Header.UpdateTime(now, fullNode.Network, chain.Tip);
+				var coinbase = new Transaction();
+				coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
+				coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(chain.Height + 1), dest.GetAddress()));
+				block.AddTransaction(coinbase);
+
+				//if (includeUnbroadcasted)
+				//{
+				//	transactions = Reorder(transactions);
+				//	block.Transactions.AddRange(transactions);
+				//	transactions.Clear();
+				//}
+				block.UpdateMerkleRoot();
+				while (!block.CheckProofOfWork())
+					block.Header.Nonce = ++nonce;
+				blocks.Add(block);
+				//chain.SetTip(block.Header);
+				var res = new BlockResult {Block = block};
+				fullNode.ConsensusLoop.AcceptBlock(res);
+				chain.SetTip(res.ChainedBlock);
+				fullNode.BlockRepository.PutAsync(block);
+			}
+
+
 			return blocks.ToArray();
 #endif
 		}

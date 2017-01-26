@@ -10,13 +10,13 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
-    public class MemPoolCoinView : CoinView , IBackedCoinView
+    public class MempoolCoinView : CoinView , IBackedCoinView
     {
-	    private readonly TxMemPool memPool;
+	    private readonly TxMempool memPool;
 	    public UnspentOutputSet Set { get; private set; }
 	    public CoinView Inner { get; }
 
-		public MemPoolCoinView(CachedCoinView inner, TxMemPool memPool)
+		public MempoolCoinView(CoinView inner, TxMempool memPool)
 		{
 			this.Inner = inner;
 			this.memPool = memPool;

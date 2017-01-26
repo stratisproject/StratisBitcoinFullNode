@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public ChainedBlock MaxInputBlock;
 	};
 
-	public class TxMemPoolEntry
+	public class TxMempoolEntry
 	{
 		public Transaction Transaction { get; private set; }
 		public uint256 TransactionHash { get; private set; }
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		
 
-		public TxMemPoolEntry(Transaction transaction, Money nFee,
+		public TxMempoolEntry(Transaction transaction, Money nFee,
 			long nTime, double entryPriority, int entryHeight,
 			Money inChainInputValue, bool spendsCoinbase,
 			long nSigOpsCost, LockPoints lp)
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			SigOpCostWithAncestors = SigOpCost;
 		}
 
-		public TxMemPoolEntry(TxMemPoolEntry other)
+		public TxMempoolEntry(TxMempoolEntry other)
 		{
 			throw new NotImplementedException();
 		}

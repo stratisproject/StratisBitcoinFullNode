@@ -9,45 +9,34 @@ using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
 	public class MempoolValidator
 	{
-		public const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
-
-		public const int WITNESS_SCALE_FACTOR = 4;
-
-		// Default for -maxmempool, maximum megabytes of mempool memory usage 
-		public const int DefaultMaxMempoolSize = 300;
 		public const bool DefaultRelaypriority = true;
-		// Default for -minrelaytxfee, minimum relay fee for transactions 
-		public const int DefaultMinRelayTxFee = 1000;
+		public const int DefaultMaxMempoolSize = 300; // Default for -maxmempool, maximum megabytes of mempool memory usage 
+		public const int DefaultMinRelayTxFee = 1000; // Default for -minrelaytxfee, minimum relay fee for transactions 
 		public const int DefaultLimitfreerelay = 0;
-
-		/** Default for -limitancestorcount, max number of in-mempool ancestors */
-		public const int DefaultAncestorLimit = 25;
-		/** Default for -limitancestorsize, maximum kilobytes of tx + all in-mempool ancestors */
-		public const int DefaultAncestorSizeLimit = 101;
-		/** Default for -limitdescendantcount, max number of in-mempool descendants */
-		public const int DefaultDescendantLimit = 25;
-		/** Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants */
-		public const int DefaultDescendantSizeLimit = 101;
-		/** Default for -mempoolexpiry, expiration time for mempool transactions in hours */
-		public const int DefaultMempoolExpiry = 336;
+		public const int DefaultAncestorLimit = 25; // Default for -limitancestorcount, max number of in-mempool ancestors 
+		public const int DefaultAncestorSizeLimit = 101; // Default for -limitancestorsize, maximum kilobytes of tx + all in-mempool ancestors 
+		public const int DefaultDescendantLimit = 25; // Default for -limitdescendantcount, max number of in-mempool descendants 
+		public const int DefaultDescendantSizeLimit = 101; // Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants 
+		public const int DefaultMempoolExpiry = 336; // Default for -mempoolexpiry, expiration time for mempool transactions in hours 
 
 		private readonly SchedulerPairSession mempoolScheduler;
-		private readonly TxMemPool.DateTimeProvider dateTimeProvider;
+		private readonly TxMempool.DateTimeProvider dateTimeProvider;
 		private readonly NodeArgs nodeArgs;
 		private readonly ConcurrentChain chain;
-		private readonly CachedCoinView cachedCoinView;
-		private readonly TxMemPool memPool;
+		private readonly CoinView coinView;
+		private readonly TxMempool memPool;
 		private readonly ConsensusValidator consensusValidator;
 
 		private bool enableReplacement = true;
 		private bool requireStandard = true;
-		private static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
-		private FreeLimiterSection FreeLimiter;
+		public static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
+		private readonly FreeLimiterSection FreeLimiter;
 
 		private class FreeLimiterSection
 		{
@@ -55,9 +44,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			public long LastTime;
 		}
 
-		public MempoolValidator(TxMemPool memPool, SchedulerPairSession mempoolScheduler,
-			ConsensusValidator consensusValidator, TxMemPool.DateTimeProvider dateTimeProvider, NodeArgs nodeArgs,
-			ConcurrentChain chain, CachedCoinView cachedCoinView)
+		public MempoolValidator(TxMempool memPool, SchedulerPairSession mempoolScheduler,
+			ConsensusValidator consensusValidator, TxMempool.DateTimeProvider dateTimeProvider, NodeArgs nodeArgs,
+			ConcurrentChain chain, CoinView coinView)
 		{
 			this.memPool = memPool;
 			this.mempoolScheduler = mempoolScheduler;
@@ -65,7 +54,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.dateTimeProvider = dateTimeProvider;
 			this.nodeArgs = nodeArgs;
 			this.chain = chain;
-			this.cachedCoinView = cachedCoinView;
+			this.coinView = coinView;
 
 			this.requireStandard = !(nodeArgs.RegTest || nodeArgs.Testnet);
 			FreeLimiter = new FreeLimiterSection();
@@ -102,6 +91,68 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			state.AcceptTime = dateTimeProvider.GetTime();
 			return AcceptToMemoryPoolWithTime(state, tx);
+		}
+
+		private async Task AcceptToMemoryPoolWorker(MemepoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
+		{
+			var context = new MempoolValidationContext(tx, state);
+
+			this.PreMempoolChecks(context);
+
+			// create the MemPoolCoinView and load relevant utxoset
+			context.View = new MempoolCoinView(this.coinView, this.memPool);
+			await context.View.LoadView(context.Transaction);
+
+			// adding to the mem pool can only be done sequentially
+			 // use the sequential scheduler for that.
+			await this.mempoolScheduler.DoSequential(() =>
+			{
+				// is it already in the memory pool?
+				if (this.memPool.Exists(context.TransactionHash))
+					state.Fail(MempoolErrors.InPool).Throw();
+
+				// Check for conflicts with in-memory transactions
+				this.CheckConflicts(context);
+
+				this.CheckMempoolCoinView(context);
+
+				this.CreateMempoolEntry(context, state.AcceptTime);
+				this.CheckSigOps(context);
+				this.CheckFee(context);
+
+				this.CheckRateLimit(context, state.LimitFree);
+
+				this.CheckAncestors(context);
+				this.CheckReplacment(context);
+				this.CheckAllInputs(context);
+			
+				// Remove conflicting transactions from the mempool
+				foreach (var it in context.AllConflicting)
+				{
+					Logging.Logs.Mempool.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
+				}
+				this.memPool.RemoveStaged(context.AllConflicting, false);
+
+				// This transaction should only count for fee estimation if
+				// the node is not behind and it is not dependent on any other
+				// transactions in the mempool
+				bool validForFeeEstimation = IsCurrentForFeeEstimation() && this.memPool.HasNoInputsOf(tx);
+
+				// Store transaction in memory
+				this.memPool.AddUnchecked(context.TransactionHash, context.Entry, context.SetAncestors, validForFeeEstimation);
+
+				// trim mempool and check if tx was trimmed
+				if (!state.OverrideMempoolLimit)
+				{
+					LimitMempoolSize(this.nodeArgs.Mempool.MaxMempool * 1000000, this.nodeArgs.Mempool.MempoolExpiry * 60 * 60);
+
+					if (!this.memPool.Exists(context.TransactionHash))
+						state.Fail(MempoolErrors.Full).Throw();
+				}
+			});
+
+			//	GetMainSignals().SyncTransaction(tx, NULL, CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK);
+
 		}
 
 		// Check for conflicts with in-memory transactions
@@ -177,7 +228,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			{
 				var errors = new NBitcoin.Policy.StandardTransactionPolicy().Check(context.Transaction, null);
 				if (errors.Any())
-					context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, errors.First().ToString())).Throw();
+					context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, errors.First().ToString())).Throw();
 			}
 
 			// Only accept nLockTime-using transactions that can be mined in the next
@@ -187,13 +238,10 @@ namespace Stratis.Bitcoin.MemoryPool
 				context.State.Fail(MempoolErrors.NonFinal).Throw();
 		}
 
-		private async Task LoadAndCheckMempoolCoinView(MempoolValidationContext context)
+		private void CheckMempoolCoinView(MempoolValidationContext context)
 		{
-			// create the MemPoolCoinView and load relevant utxoset
-			context.View = new MemPoolCoinView(this.cachedCoinView, this.memPool);
-			await context.View.LoadView(context.Transaction);
+			Check.Assert(context.View != null);
 
-			Money nValueIn = 0;
 			context.LockPoints = new LockPoints();
 
 			// do we already have it?
@@ -203,7 +251,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			{
 				//if (!fHadTxInCache)
 				//	vHashTxnToUncache.push_back(hash);
-				context.State.Fail(new MempoolError(MempoolErrors.REJECT_ALREADY_KNOWN, "txn-already-known")).Throw();
+				context.State.Fail(new MempoolError(MempoolErrors.RejectAlreadyKnown, "txn-already-known")).Throw();
 			}
 
 			// do all inputs exist?
@@ -223,7 +271,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// are the actual inputs available?
 			if (!context.View.HaveInputs(context.Transaction))
-				context.State.Fail(new MempoolError(MempoolErrors.REJECT_DUPLICATE, "bad-txns-inputs-spent")).Throw();
+				context.State.Fail(new MempoolError(MempoolErrors.RejectDuplicate, "bad-txns-inputs-spent")).Throw();
 		}
 
 		private void CheckFee(MempoolValidationContext context)
@@ -231,18 +279,18 @@ namespace Stratis.Bitcoin.MemoryPool
 			Money mempoolRejectFee = this.memPool.GetMinFee(this.nodeArgs.Mempool.MaxMempool * 1000000).GetFee(context.EntrySize);
 			if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
 			{
-				context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE,
+				context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee,
 					$"mempool-min-fee-not-met {context.Fees} < {mempoolRejectFee}")).Throw();
 			}
 			else if (nodeArgs.Mempool.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
-					 !TxMemPool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
+					 !TxMempool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
 			{
 				// Require that free transactions have sufficient priority to be mined in the next block.
-				context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient priority")).Throw();
+				context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee, "insufficient priority")).Throw();
 			}
 
-			if (context.State.AbsurdFee != null && context.Fees > context.State.AbsurdFee)
-				context.State.Fail(new MempoolError(MempoolErrors.REJECT_HIGHFEE, $"absurdly-high-fee {context.Fees} > {context.State.AbsurdFee} ")).Throw();
+			if (context.State.AbsurdFee > 0 && context.Fees > context.State.AbsurdFee)
+				context.State.Fail(new MempoolError(MempoolErrors.RejectHighfee, $"absurdly-high-fee {context.Fees} > {context.State.AbsurdFee} ")).Throw();
 		}
 
 		private void CheckSigOps(MempoolValidationContext context)
@@ -265,7 +313,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Must keep pool.cs for this unless we change CheckSequenceLocks to take a
 			// CoinsViewCache instead of create its own
 			if (!CheckSequenceLocks(context.Transaction, ConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
-				context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "non-BIP68-final")).Throw();
+				context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "non-BIP68-final")).Throw();
 
 			// Check for non-standard pay-to-script-hash in inputs
 			if (requireStandard && !this.AreInputsStandard(context.Transaction, context.View))
@@ -296,7 +344,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// during reorgs to ensure COINBASE_MATURITY is still met.
 			bool spendsCoinbase = context.View.SpendsCoinBase(context.Transaction);
 
-			context.Entry = new TxMemPoolEntry(context.Transaction, context.Fees, acceptTime, dPriority, this.chain.Height, inChainInputValue,
+			context.Entry = new TxMempoolEntry(context.Transaction, context.Fees, acceptTime, dPriority, this.chain.Height, inChainInputValue,
 				spendsCoinbase, context.SigOpsCost, context.LockPoints);
 			context.EntrySize = (int)context.Entry.GetTxSize();
 		}
@@ -308,7 +356,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			context.ConflictingFees = 0;
 			context.ConflictingSize = 0;
 			context.ConflictingCount = 0;
-			context.AllConflicting = new TxMemPool.SetEntries();
+			context.AllConflicting = new TxMempool.SetEntries();
 
 			// If we don't hold the lock allConflicting might be incomplete; the
 			// subsequent RemoveStaged() and addUnchecked() calls don't guarantee
@@ -319,7 +367,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				FeeRate newFeeRate = new FeeRate(context.ModifiedFees, context.EntrySize);
 				List<uint256> setConflictsParents = new List<uint256>();
 				const int maxDescendantsToVisit = 100;
-				TxMemPool.SetEntries setIterConflicting = new TxMemPool.SetEntries();
+				TxMempool.SetEntries setIterConflicting = new TxMempool.SetEntries();
 				foreach (var hashConflicting in context.SetConflicts)
 				{
 					var mi = this.memPool.MapTx.TryGet(hashConflicting);
@@ -348,7 +396,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					FeeRate oldFeeRate = new FeeRate(mi.ModifiedFee, (int)mi.GetTxSize());
 					if (newFeeRate <= oldFeeRate)
 					{
-						context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
+						context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee, "insufficient-fee",
 								$"rejecting replacement {context.TransactionHash}; new feerate {newFeeRate} <= old feerate {oldFeeRate}"))
 							.Throw();
 					}
@@ -379,7 +427,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				}
 				else
 				{
-					context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "too many potential replacements",
+					context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "too many potential replacements",
 							$"rejecting replacement {context.TransactionHash}; too many potential replacements ({context.ConflictingCount} > {maxDescendantsToVisit})"))
 						.Throw();
 				}
@@ -396,7 +444,7 @@ namespace Stratis.Bitcoin.MemoryPool
 						// it's cheaper to just check if the new input refers to a
 						// tx that's in the mempool.
 						if (this.memPool.MapTx.ContainsKey(context.Transaction.Inputs[j].PrevOut.Hash))
-							context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "replacement-adds-unconfirmed",
+							context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "replacement-adds-unconfirmed",
 								$"replacement {context.TransactionHash} adds unconfirmed input, idx {j}")).Throw();
 					}
 				}
@@ -406,7 +454,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				// transactions would not be paid for.
 				if (context.ModifiedFees < context.ConflictingFees)
 				{
-					context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
+					context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee, "insufficient-fee",
 							$"rejecting replacement {context.TransactionHash}, less fees than conflicting txs; {context.ModifiedFees} < {context.ConflictingFees}"))
 						.Throw();
 				}
@@ -416,7 +464,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				Money nDeltaFees = context.ModifiedFees - context.ConflictingFees;
 				if (nDeltaFees < MinRelayTxFee.GetFee(context.EntrySize))
 				{
-					context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "insufficient-fee",
+					context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee, "insufficient-fee",
 							$"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {MinRelayTxFee.GetFee(context.EntrySize)}"))
 						.Throw();
 				}
@@ -441,7 +489,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				// -limitfreerelay unit is thousand-bytes-per-minute
 				// At default rate it would take over a month to fill 1GB
 				if (this.FreeLimiter.FreeCount + context.EntrySize >= this.nodeArgs.Mempool.LimitFreeRelay * 10 * 1000)
-					context.State.Fail(new MempoolError(MempoolErrors.REJECT_INSUFFICIENTFEE, "rate limited free transaction")).Throw();
+					context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee, "rate limited free transaction")).Throw();
 
 				Logging.Logs.Mempool.LogInformation(
 					$"Rate limit dFreeCount: {this.FreeLimiter.FreeCount} => {this.FreeLimiter.FreeCount + context.EntrySize}");
@@ -452,7 +500,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private void CheckAncestors(MempoolValidationContext context)
 		{
 			// Calculate in-mempool ancestors, up to a limit.
-			context.SetAncestors = new TxMemPool.SetEntries();
+			context.SetAncestors = new TxMempool.SetEntries();
 			var nLimitAncestors = nodeArgs.Mempool.LimitAncestors;
 			var nLimitAncestorSize = nodeArgs.Mempool.LimitAncestorSize * 1000;
 			var nLimitDescendants = nodeArgs.Mempool.LimitDescendants;
@@ -461,7 +509,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			if (!this.memPool.CalculateMemPoolAncestors(context.Entry, context.SetAncestors, nLimitAncestors,
 				nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, out errString))
 			{
-				context.State.Fail(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "too-long-mempool-chain", errString)).Throw();
+				context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "too-long-mempool-chain", errString)).Throw();
 			}
 
 			// A transaction that spends outputs that would be replaced by it is invalid. Now
@@ -473,75 +521,10 @@ namespace Stratis.Bitcoin.MemoryPool
 				var hashAncestor = ancestorIt.TransactionHash;
 				if (context.SetConflicts.Contains(hashAncestor))
 				{
-					context.State.Fail(new MempoolError(MempoolErrors.REJECT_INVALID, "bad-txns-spends-conflicting-tx",
+					context.State.Fail(new MempoolError(MempoolErrors.RejectInvalid, "bad-txns-spends-conflicting-tx",
 						$"{context.TransactionHash} spends conflicting transaction {hashAncestor}")).Throw();
 				}
 			}
-		}
-
-		private async Task AcceptToMemoryPoolWorker(MemepoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
-		{
-			var context = new MempoolValidationContext(tx, state);
-
-			this.PreMempoolChecks(context);
-
-			// check on mempool code running in parallel 
-			await this.mempoolScheduler.DoConcurrent(async () =>
-			{
-				// is it already in the memory pool?
-				if (this.memPool.Exists(context.TransactionHash))
-					state.Fail(MempoolErrors.InPool).Throw();
-
-				// Check for conflicts with in-memory transactions
-				this.CheckConflicts(context);
-
-				await this.LoadAndCheckMempoolCoinView(context);
-
-				this.CreateMempoolEntry(context, state.AcceptTime);
-				this.CheckSigOps(context);
-				this.CheckFee(context);
-				
-				// TODO: this needs to happen sequentially s(either break this method to to parallel checks or make all this tests sequentially)
-				this.CheckRateLimit(context, state.LimitFree);
-
-				this.CheckAncestors(context);
-				this.CheckReplacment(context);
-				this.CheckAllInputs(context);
-			});
-
-			await this.mempoolScheduler.DoSequential(() =>
-			{
-				// check again the trx was not added to the pool
-				if (this.memPool.Exists(context.TransactionHash))
-					return;
-
-					// Remove conflicting transactions from the mempool
-				foreach (var it in context.AllConflicting)
-				{
-					Logging.Logs.Mempool.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
-				}
-				this.memPool.RemoveStaged(context.AllConflicting, false);
-
-				// This transaction should only count for fee estimation if
-				// the node is not behind and it is not dependent on any other
-				// transactions in the mempool
-				bool validForFeeEstimation = IsCurrentForFeeEstimation() && this.memPool.HasNoInputsOf(tx);
-
-				// Store transaction in memory
-				this.memPool.AddUnchecked(context.TransactionHash, context.Entry, context.SetAncestors, validForFeeEstimation);
-
-				// trim mempool and check if tx was trimmed
-				if (!state.OverrideMempoolLimit)
-				{
-					LimitMempoolSize(this.nodeArgs.Mempool.MaxMempool*1000000, this.nodeArgs.Mempool.MempoolExpiry*60*60);
-
-					if (!this.memPool.Exists(context.TransactionHash))
-						state.Fail(MempoolErrors.Full).Throw();
-				}
-			});
-
-			//	GetMainSignals().SyncTransaction(tx, NULL, CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK);
-
 		}
 
 		private void LimitMempoolSize(long limit, long age)
@@ -676,7 +659,6 @@ namespace Stratis.Bitcoin.MemoryPool
 			return tx.IsFinal(nBlockTime, nBlockHeight);
 		}
 
-
 		// Check if transaction will be BIP 68 final in the next block to be created.
 		// Simulates calling SequenceLocks() with data from the tip of the current active chain.
 		// Optionally stores in LockPoints the resulting height and time calculated and the hash
@@ -696,7 +678,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		// Check for standard transaction types
 		// @param[in] mapInputs    Map of previous transactions that have outputs we're spending
 		// @return True if all inputs (scriptSigs) use only standard transaction forms
-		private bool AreInputsStandard(Transaction tx, MemPoolCoinView mapInputs)
+		private bool AreInputsStandard(Transaction tx, MempoolCoinView mapInputs)
 		{
 			if (tx.IsCoinBase)
 				return true; // Coinbases don't use vin normally
@@ -718,7 +700,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			return true;
 		}
 
-		private bool IsWitnessStandard(Transaction tx, MemPoolCoinView mapInputs)
+		private bool IsWitnessStandard(Transaction tx, MempoolCoinView mapInputs)
 		{
 			// todo:
 			return true;
@@ -728,8 +710,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			return tx.GetSerializedSize(
 				       (ProtocolVersion)
-				       ((uint) ProtocolVersion.PROTOCOL_VERSION | MempoolValidator.SERIALIZE_TRANSACTION_NO_WITNESS),
-				       SerializationType.Network)*(WITNESS_SCALE_FACTOR - 1) +
+				       ((uint) ProtocolVersion.PROTOCOL_VERSION | ConsensusValidator.SERIALIZE_TRANSACTION_NO_WITNESS),
+				       SerializationType.Network)*(ConsensusValidator.WITNESS_SCALE_FACTOR - 1) +
 			       tx.GetSerializedSize(ProtocolVersion.PROTOCOL_VERSION, SerializationType.Network);
 		}
 
@@ -741,7 +723,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Providing any more cleanup incentive than making additional inputs free would
 			// risk encouraging people to create junk outputs to redeem later.
 			if (nTxSize == 0)
-				nTxSize = (GetTransactionWeight(trx) + WITNESS_SCALE_FACTOR - 1)/WITNESS_SCALE_FACTOR;
+				nTxSize = (GetTransactionWeight(trx) + ConsensusValidator.WITNESS_SCALE_FACTOR - 1)/ ConsensusValidator.WITNESS_SCALE_FACTOR;
 
 			foreach (var txInput in trx.Inputs)
 			{
@@ -750,6 +732,11 @@ namespace Stratis.Bitcoin.MemoryPool
 					nTxSize -= (int) offset;
 			}
 			return nTxSize;
+		}
+
+		public Task SanityCheck()
+		{
+			return this.mempoolScheduler.DoConcurrent(() => this.memPool.Check(this.coinView));
 		}
 	}
 }

@@ -174,43 +174,50 @@ namespace Stratis.Bitcoin.Consensus
 						}
 					}
 				}
-				ContextInformation context;
-				ConsensusFlags flags;
-				using(watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
-				{
-					Validator.CheckBlockHeader(result.Block.Header);
-					result.ChainedBlock = new ChainedBlock(result.Block.Header, result.Block.Header.GetHash(), Tip);
-					result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock; //Liberate from memory the block created above if possible
-					context = new ContextInformation(result.ChainedBlock, Validator.ConsensusParams);
-					Validator.ContextualCheckBlockHeader(result.Block.Header, context);
-					flags = GetFlags(result.ChainedBlock);
-					Validator.ContextualCheckBlock(result.Block, flags, context);
-					Validator.CheckBlock(result.Block);
-				}
 
-				var set = new UnspentOutputSet();
-				using(watch.Start(o => Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
-				{
-					var ids = GetIdsToFetch(result.Block, flags.EnforceBIP30);
-					var coins = UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
-					set.SetCoins(coins);
-				}
-
-				TryPrefetchAsync(flags);
-				using(watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
-				{
-					Validator.ExecuteBlock(result.Block, result.ChainedBlock, flags, set, null);
-				}
-
-				UTXOSet.SaveChangesAsync(set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);
-
-				_Tip = result.ChainedBlock;
+				this.AcceptBlock(result);
 			}
 			catch(ConsensusErrorException ex)
 			{
 				result.Error = ex.ConsensusError;
 			}
 			return result;
+		}
+
+		public void AcceptBlock(BlockResult result)
+		{
+			ContextInformation context;
+			ConsensusFlags flags;
+			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
+			{
+				Validator.CheckBlockHeader(result.Block.Header);
+				result.ChainedBlock = new ChainedBlock(result.Block.Header, result.Block.Header.GetHash(), Tip);
+				result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock;
+					//Liberate from memory the block created above if possible
+				context = new ContextInformation(result.ChainedBlock, Validator.ConsensusParams);
+				Validator.ContextualCheckBlockHeader(result.Block.Header, context);
+				flags = GetFlags(result.ChainedBlock);
+				Validator.ContextualCheckBlock(result.Block, flags, context);
+				Validator.CheckBlock(result.Block);
+			}
+
+			var set = new UnspentOutputSet();
+			using (watch.Start(o => Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
+			{
+				var ids = GetIdsToFetch(result.Block, flags.EnforceBIP30);
+				var coins = UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
+				set.SetCoins(coins);
+			}
+
+			TryPrefetchAsync(flags);
+			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
+			{
+				Validator.ExecuteBlock(result.Block, result.ChainedBlock, flags, set, null);
+			}
+
+			UTXOSet.SaveChangesAsync(set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);
+
+			_Tip = result.ChainedBlock;
 		}
 
 		private Task TryPrefetchAsync(ConsensusFlags flags)
