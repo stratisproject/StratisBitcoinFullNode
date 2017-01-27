@@ -586,10 +586,10 @@ namespace Stratis.Bitcoin.Tests
 				builder.StartAll();
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-				stratisNodeSync.GenerateStratis(105, stratisNodeSync.FullNode); // coinbase maturity = 100
+				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
 				
-				var last = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
-				var prevTrx = last.Transactions.First();
+				var block = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
+				var prevTrx = block.Transactions.First();
 				var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
 				Transaction tx = new Transaction();
@@ -601,6 +601,108 @@ namespace Stratis.Bitcoin.Tests
 				stratisNodeSync.Broadcast(tx);
 
 				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
+			}
+		}
+
+		[Fact]
+		public void MempoolReceiveFromManyNodes()
+		{
+			using (NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNodeSync = builder.CreateStratisNode();
+				builder.StartAll();
+
+				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+				stratisNodeSync.GenerateStratis(201); // coinbase maturity = 100
+
+				var trxs= new List<Transaction>();
+				foreach (var index in Enumerable.Range(1, 100))
+				{
+					var block = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
+					var prevTrx = block.Transactions.First();
+					var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
+
+					Transaction tx = new Transaction();
+					tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
+					tx.AddOutput(new TxOut("25", dest.PubKey.Hash));
+					tx.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee
+					tx.Sign(stratisNodeSync.MinerSecret, false);
+					trxs.Add(tx);
+				}
+				var options = new ParallelOptions { MaxDegreeOfParallelism = 10 };
+
+				Parallel.ForEach(trxs, options, transaction =>
+				{
+					stratisNodeSync.Broadcast(transaction);
+				});
+
+				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 100);
+			}
+		}
+
+		[Fact]
+		public void TxMempoolBlockDoublespend()
+		{
+			using (NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNodeSync = builder.CreateStratisNode();
+				builder.StartAll();
+
+				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+				stratisNodeSync.GenerateStratis(100); // coinbase maturity = 100
+
+				// Make sure skipping validation of transctions that were
+				// validated going into the memory pool does not allow
+				// double-spends in blocks to pass validation when they should not.
+
+				var scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey);
+				var genBlock = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
+
+				// Create a double-spend of mature coinbase txn:
+				List<Transaction> spends = new List<Transaction>(2);
+				foreach (var index in Enumerable.Range(1, 2))
+				{
+					var trx = new Transaction();
+					trx.AddInput(new TxIn(new OutPoint(genBlock.Transactions[0].GetHash(), 0), scriptPubKey));
+					trx.AddOutput(Money.Cents(11), new Key().PubKey.Hash);
+					// Sign:
+					trx.Sign(stratisNodeSync.MinerSecret, false);
+					spends.Add(trx);
+				}
+
+				// Test 1: block with both of those transactions should be rejected.
+				var block = stratisNodeSync.GenerateStratis(1, spends).Single();
+
+				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+
+				// Test 2: ... and should be rejected if spend1 is in the memory pool
+				Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
+				block = stratisNodeSync.GenerateStratis(1, spends).Single();
+
+				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+				stratisNodeSync.FullNode.MempoolManager.Clear().Wait();
+
+				// Test 3: ... and should be rejected if spend2 is in the memory pool
+				Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
+				block = stratisNodeSync.GenerateStratis(1, spends).Single();
+
+				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+				stratisNodeSync.FullNode.MempoolManager.Clear().Wait();
+
+				// Final sanity test: first spend in mempool, second in block, that's OK:
+				List<Transaction> oneSpend = new List<Transaction>();
+				oneSpend.Add(spends[0]);
+
+				Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
+				block = stratisNodeSync.GenerateStratis(1, oneSpend).Single();
+
+				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block.GetHash());
+
+				// TODO: uncomment the next line once the logic to remove from mempool when block is found is implemented 
+				// spends[1] should have been removed from the mempool when the
+				// block with spends[0] is accepted:
+				//Assert.Equal(stratisNodeSync.FullNode.MempoolManager.MempoolSize().Result, 0);
+
 			}
 		}
 	}

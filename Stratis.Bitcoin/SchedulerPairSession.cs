@@ -4,10 +4,24 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin
 {
-    public class SchedulerPairSession
+	/// <summary>
+	/// A scheduler session for concurrent and exclusive work
+	/// </summary>
+	/// <remarks>
+	/// From the TaskFactory.StartNew() remarks:
+	/// Calling StartNew is functionally equivalent to creating a Task using one of its constructors 
+	/// and then calling 
+	/// <see cref="System.Threading.Tasks.Task.Start()">Start</see> to schedule it for execution.  However,
+	/// unless creation and scheduling must be separated, StartNew is the recommended
+	/// approach for both simplicity and performance.
+	/// </remarks>
+	public class SchedulerPairSession
 	{
 		public CancellationTokenSource Cancellation { get; private set; }
-		private readonly ConcurrentExclusiveSchedulerPair schedulerPair;
+		private readonly ConcurrentExclusiveSchedulerPair schedulerPair; // reference kept for perf counter
+
+		private readonly TaskFactory concurrentFactory;
+		private readonly TaskFactory exclusiveFactory;
 
 		public SchedulerPairSession(CancellationTokenSource cancellation = null)
 		{
@@ -15,6 +29,8 @@ namespace Stratis.Bitcoin
 			int defaultMaxConcurrencyLevel = Environment.ProcessorCount; // concurrency count
 			int defaultMaxitemspertask = 5; // how many exclusive tasks to processes before checking concurrent tasks
 			this.schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, defaultMaxConcurrencyLevel, defaultMaxitemspertask);
+			this.concurrentFactory = new TaskFactory(this.schedulerPair.ConcurrentScheduler);
+			this.exclusiveFactory = new TaskFactory(this.schedulerPair.ExclusiveScheduler);
 		}
 
 		/// <summary>
@@ -23,10 +39,7 @@ namespace Stratis.Bitcoin
 		/// </summary>
 		public Task<T> DoConcurrent<T>(Func<T> func)
 		{
-			return Task.Factory.StartNew(func, 
-				this.Cancellation.Token, 
-				TaskCreationOptions.None, 
-				this.schedulerPair.ConcurrentScheduler);
+			return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
 		}
 
 		/// <summary>
@@ -36,10 +49,7 @@ namespace Stratis.Bitcoin
 		/// </summary>
 		public Task<T> DoSequential<T>(Func<T> func)
 		{
-			return Task.Factory.StartNew(func, 
-				this.Cancellation.Token, 
-				TaskCreationOptions.None, 
-				this.schedulerPair.ExclusiveScheduler);
+			return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
 		}
 
 		/// <summary>
@@ -48,10 +58,7 @@ namespace Stratis.Bitcoin
 		/// </summary>
 		public Task DoConcurrent(Action func)
 		{
-			return Task.Factory.StartNew(func,
-				this.Cancellation.Token,
-				TaskCreationOptions.None,
-				this.schedulerPair.ConcurrentScheduler);
+			return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
 		}
 
 		/// <summary>
@@ -61,10 +68,7 @@ namespace Stratis.Bitcoin
 		/// </summary>
 		public Task DoSequential(Action func)
 		{
-			return Task.Factory.StartNew(func,
-				this.Cancellation.Token,
-				TaskCreationOptions.None,
-				this.schedulerPair.ExclusiveScheduler);
+			return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
 		}
 	}
 }

@@ -474,13 +474,14 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private void CheckRateLimit(MempoolValidationContext context, bool limitFree)
 		{
+			// TODO: sort this logic
+			return;
+
 			// Continuously rate-limit free (really, very-low-fee) transactions
 			// This mitigates 'penny-flooding' -- sending thousands of free transactions just to
 			// be annoying or make others' transactions take longer to confirm.
 			if (limitFree && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize))
 			{
-				// todo: move this code to be called later in its own exclusive scheduler
-
 				var nNow = this.dateTimeProvider.GetTime();
 
 				// Use an exponentially decaying ~10-minute window:
