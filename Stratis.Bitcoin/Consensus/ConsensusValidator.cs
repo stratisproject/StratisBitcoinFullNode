@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Consensus
 
 				if(!tx.IsCoinBase)
 				{
-					CheckIntputs(tx, view, index.Height);
+					CheckInputs(tx, view, index.Height);
 					nFees += view.GetValueIn(tx) - tx.TotalOut;
 					int ii = i;
 					var localTx = tx;
@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Consensus
 			set;
 		}
 
-		public void CheckIntputs(Transaction tx, UnspentOutputSet inputs, int nSpendHeight)
+		public void CheckInputs(Transaction tx, UnspentOutputSet inputs, int nSpendHeight)
 		{
 			if(!inputs.HaveInputs(tx))
 				ConsensusErrors.BadTransactionMissingInput.Throw();

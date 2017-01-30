@@ -111,19 +111,21 @@ namespace Stratis.Bitcoin.Configuration
 		public int LimitAncestorSize { get; set; }
 		public int LimitDescendants { get; set; }
 		public int LimitDescendantSize { get; set; }
+		public bool EnableReplacement { get; set; }
+
 
 		public void Load(TextFileConfiguration config)
 		{
 			this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
 			this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry);
-
 			this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority);
 			this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DefaultLimitfreerelay);
-
 			this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DefaultAncestorLimit);
-			this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit) ;
+			this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit);
 			this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit);
-			this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit) ;
+			this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
+			this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
+
 		}
 	}
 
@@ -168,8 +170,12 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			set;
 		}
+		public bool RequireStandard
+		{
+			get;
+			set;
+		}
 
-		
 
 		public static NodeArgs GetArgs(string[] args)
 		{
@@ -217,6 +223,8 @@ namespace Stratis.Bitcoin.Configuration
 			consoleConfig.MergeInto(config);
 
 			nodeArgs.Prune = config.GetOrDefault("prune", 0) != 0;
+
+			nodeArgs.RequireStandard = config.GetOrDefault("acceptnonstdtxn", false);
 
 			nodeArgs.RPC = config.GetOrDefault<bool>("server", false) ? new RPCArgs() : null;
 			if(nodeArgs.RPC != null)

@@ -21,9 +21,33 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public MempoolError Error { get; set; }
 
+		public string ErrorMessage { get; set; }
+
+		public MemepoolValidationState Invalid(MempoolError error)
+		{
+			this.Error = error;
+			this.IsInvalid = true;
+			return this;
+		}
+
+		public MemepoolValidationState Invalid(MempoolError error, string errorMessage)
+		{
+			this.Error = error;
+			this.IsInvalid = true;
+			this.ErrorMessage = errorMessage;
+			return this;
+		}
+
 		public MemepoolValidationState Fail(MempoolError error)
 		{
 			this.Error = error;
+			return this;
+		}
+
+		public MemepoolValidationState Fail(MempoolError error, string errorMessage)
+		{
+			this.Error = error;
+			this.ErrorMessage = errorMessage;
 			return this;
 		}
 
@@ -47,7 +71,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public override string ToString()
 		{
-			return $"{this.Error?.RejectCode}{this.Error?.Message} (code {this.Error?.Code})";
+			return $"{this.Error?.RejectCode}{this.ErrorMessage} (code {this.Error?.Code})";
 		}
 	}
 

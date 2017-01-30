@@ -9,9 +9,9 @@ namespace Stratis.Bitcoin.MemoryPool
 
 	public class MempoolErrorException : Exception
 	{
-		public MempoolErrorException(MemepoolValidationState error) : base(error.Error.Message)
+		public MempoolErrorException(MemepoolValidationState state) : base(state.ErrorMessage)
 		{
-			ValidationState = error;
+			ValidationState = state;
 		}
 
 		public MemepoolValidationState ValidationState
@@ -23,11 +23,8 @@ namespace Stratis.Bitcoin.MemoryPool
 
 	public class MempoolError 
 	{
-		public MempoolError(int rejectCode, string code, string message)
+		public MempoolError()
 		{
-			this.Code = code;
-			this.RejectCode = rejectCode;
-			this.Message = message;
 		}
 
 		public MempoolError(int rejectCode, string code)
@@ -36,18 +33,12 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.RejectCode = rejectCode;
 		}
 
-		public MempoolError(string message)
-		{
-			this.Message = message;
-		}
-
 		public MempoolError(ConsensusError consensusError)
 		{
 			this.ConsensusError = consensusError;
 		}
 
 		public string Code { get; set; }
-		public string Message { get; set; }
 		public int RejectCode { get; set; }
 
 		public ConsensusError ConsensusError { get; set; }
@@ -82,6 +73,20 @@ namespace Stratis.Bitcoin.MemoryPool
 		public static MempoolError NonstandardInputs = new MempoolError(RejectNonstandard, "bad-txns-nonstandard-inputs");
 		public static MempoolError TooManySigops = new MempoolError(RejectNonstandard, "bad-txns-too-many-sigops");
 		public static MempoolError Full = new MempoolError(RejectInsufficientfee, "mempool-full");
+		public static MempoolError InsufficientFee = new MempoolError(RejectInsufficientfee, "insufficient-fee");
+		public static MempoolError AlreadyKnown = new MempoolError(RejectAlreadyKnown, "txn-already-known");
+		public static MempoolError BadInputsSpent = new MempoolError(RejectDuplicate, "bad-txns-inputs-spent");
+		public static MempoolError NonBIP68Final = new MempoolError(RejectNonstandard, "non-BIP68-final");
+		public static MempoolError MinFeeNotMet = new MempoolError(RejectInsufficientfee,"mempool-min-fee-not-met");
+		public static MempoolError InsufficientPriority = new MempoolError(RejectInsufficientfee, "insufficient-priority");
+		public static MempoolError AbsurdlyHighFee = new MempoolError(RejectHighfee, $"absurdly-high-fee");
+		public static MempoolError TooLongMempoolChain = new MempoolError(RejectNonstandard, "too-long-mempool-chain");
+		public static MempoolError BadTxnsSpendsConflictingTx = new MempoolError(RejectInvalid, "bad-txns-spends-conflicting-tx");
+		public static MempoolError TooManyPotentialReplacements = new MempoolError(RejectNonstandard, "too-many-potential-replacements");
+		public static MempoolError ReplacementAddsUnconfirmed = new MempoolError(RejectNonstandard, "replacement-adds-unconfirmed");
+		public static MempoolError Insufficientfee = new MempoolError(RejectInsufficientfee, "insufficient-fee");
+		public static MempoolError MandatoryScriptVerifyFlagFailed = new MempoolError(RejectInvalid, "mandatory-script-verify-flag-failed");
+
 	}
 
 }

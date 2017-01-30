@@ -670,11 +670,10 @@ namespace Stratis.Bitcoin.MemoryPool
 			return true;
 		}
 
-		/**
-		 * Check that none of this transactions inputs are in the mempool, and thus
-		 * the tx is not dependent on other mempool transactions to be included in a block.
-		 */
-		public bool HasNoInputsOf(Transaction tx)
+		
+		//  Check that none of this transactions inputs are in the mempool, and thus
+		//  the tx is not dependent on other mempool transactions to be included in a block.
+		 public bool HasNoInputsOf(Transaction tx)
 		{
 			foreach (var txInput in tx.Inputs)
 				if (this.Exists(txInput.PrevOut.Hash))
@@ -684,56 +683,51 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public bool Exists(uint256 hash)
 		{
-			//LOCK(cs);
 			return MapTx.ContainsKey(hash);
 		}
 
 		public long Size
 		{
-			//LOCK(cs);
 			get { return this.MapTx.Count; }
 		}
 
 		public void RemoveRecursive(Transaction origTx)
 		{
 			// Remove transaction from memory pool
+			var origHahs = origTx.GetHash();
+
+			SetEntries txToRemove = new SetEntries();
+			var origit = MapTx.TryGet(origHahs);
+			if (origit != null)
 			{
-				var origHahs = origTx.GetHash();
-
-				//LOCK(cs);
-				SetEntries txToRemove = new SetEntries();
-				var origit = MapTx.TryGet(origHahs);
-				if (origit != null)
-				{
-					txToRemove.Add(origit);
-				}
-				else
-				{
-					// When recursively removing but origTx isn't in the mempool
-					// be sure to remove any children that are in the pool. This can
-					// happen during chain re-orgs if origTx isn't re-accepted into
-					// the mempool for any reason.
-					for (int i = 0; i < origTx.Outputs.Count; i++)
-					{
-						var it = MapNextTx.FirstOrDefault(w => w.OutPoint == new OutPoint(origHahs, i));
-						if (it == null)
-							continue;
-						var nextit = MapTx.TryGet(it.Transaction.GetHash());
-						Utilities.Check.Assert(nextit != null);
-						txToRemove.Add(nextit);
-					}
-				}
-				SetEntries setAllRemoves = new SetEntries();
-
-				foreach (var item in txToRemove)
-				{
-
-
-					CalculateDescendants(item, setAllRemoves);
-				}
-
-				RemoveStaged(setAllRemoves, false);
+				txToRemove.Add(origit);
 			}
+			else
+			{
+				// When recursively removing but origTx isn't in the mempool
+				// be sure to remove any children that are in the pool. This can
+				// happen during chain re-orgs if origTx isn't re-accepted into
+				// the mempool for any reason.
+				for (int i = 0; i < origTx.Outputs.Count; i++)
+				{
+					var it = MapNextTx.FirstOrDefault(w => w.OutPoint == new OutPoint(origHahs, i));
+					if (it == null)
+						continue;
+					var nextit = MapTx.TryGet(it.Transaction.GetHash());
+					Utilities.Check.Assert(nextit != null);
+					txToRemove.Add(nextit);
+				}
+			}
+			SetEntries setAllRemoves = new SetEntries();
+
+			foreach (var item in txToRemove)
+			{
+
+
+				CalculateDescendants(item, setAllRemoves);
+			}
+
+			RemoveStaged(setAllRemoves, false);
 		}
 
 		/** Remove a set of transactions from the mempool.
