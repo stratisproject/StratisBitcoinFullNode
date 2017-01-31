@@ -43,7 +43,8 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public Task<bool> AlreadyHave(Transaction trx)
 		{
-			// TODO: implement recentRejects and hashRecentRejectsChainTip
+			// TODO: Implement OrphanTransactions 
+
 			//if (this.chain.Tip()->GetBlockHash() != hashRecentRejectsChainTip)
 			//{
 			//	// If the chain tip has changed previously rejected transactions

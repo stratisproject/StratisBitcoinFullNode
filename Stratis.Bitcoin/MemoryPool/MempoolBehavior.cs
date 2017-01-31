@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
@@ -55,20 +56,19 @@ namespace Stratis.Bitcoin.MemoryPool
 			if (!await this.manager.AlreadyHave(trx) && await this.validator.AcceptToMemoryPool(state, trx))
 			{
 				await this.validator.SanityCheck();
-				this.RelayTransaction(trx);
+				await this.RelayTransaction(trx).ConfigureAwait(false);
 				var mmsize = await this.manager.MempoolSize();
 				var memdyn = await this.manager.MempoolDynamicMemoryUsage();
 				Logging.Logs.Mempool.LogInformation(
-					$"AcceptToMemoryPool: peer={node.PeerVersion.Nonce}: accepted {trx.GetHash()} (poolsz {mmsize} txn, {memdyn} kB)");
+					$"AcceptToMemoryPool: peer={node.PeerVersion.Nonce}: accepted {trx.GetHash()} (poolsz {mmsize} txn, {memdyn/ 1000} kb)");
 
-				// TODO: processes orphans
+				// TODO: Implement OrphanTransactions 
 				// Recursively process any orphan transactions that depended on this one
 
 			}
 			else if (state.MissingInputs)
 			{
-				// TODO: processes MissingInputs
-
+				// TODO: Implement OrphanTransactions (processes MissingInputs)
 			}
 			else
 			{
@@ -77,8 +77,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 				}
 
-				// TODO: processes whitelistforcerelay
-
+				// TODO: Implement Processes whitelistforcerelay
 			}
 
 			if (state.IsInvalid)
@@ -87,9 +86,20 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		private void RelayTransaction(NBitcoin.Transaction tx)
+		private Task RelayTransaction(NBitcoin.Transaction tx)
 		{
-			// TODO: relay to all connected nodes
+			// TODO: Relay inventory
+			// To relay the transaction their needs to be a track of inventory already relayed on each node
+			// this could be implemented using a RelayBehaviour on each node that tracks inv messages
+
+			//var managerBehavior = this.AttachedNode.Behaviors.Find<ConnectionManagerBehavior>();
+			//var nodes = managerBehavior?.ConnectionManager?.ConnectedNodes ?? Enumerable.Empty<Node>();
+			//foreach (var node in nodes)
+			//{
+			//	await node.SendMessageAsync(new TxPayload(tx)).ConfigureAwait(false);
+			//}
+
+			return Task.CompletedTask;
 		}
 
 		public override object Clone()
