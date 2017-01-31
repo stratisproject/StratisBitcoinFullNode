@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Configuration
 
 			nodeArgs.Prune = config.GetOrDefault("prune", 0) != 0;
 
-			nodeArgs.RequireStandard = config.GetOrDefault("acceptnonstdtxn", false);
+			nodeArgs.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeArgs.RegTest || nodeArgs.Testnet));
 
 			nodeArgs.RPC = config.GetOrDefault<bool>("server", false) ? new RPCArgs() : null;
 			if(nodeArgs.RPC != null)

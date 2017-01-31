@@ -215,9 +215,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			if (context.Transaction.IsCoinBase)
 				context.State.Fail(MempoolErrors.Coinbase).Throw();
 
-			// TODO: IsWitnessEnabled
+			// TODO: Implement Witness Code
 			//// Reject transactions with witness before segregated witness activates (override with -prematurewitness)
-			//bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus());
+			bool witnessEnabled = false;//IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus());
 			//if (!GetBoolArg("-prematurewitness",false) && tx.HasWitness() && !witnessEnabled) {
 			//    return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
 			//}
@@ -225,10 +225,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Rather not work on nonstandard transactions (unless -testnet/-regtest)
 			if (this.nodeArgs.RequireStandard)
 			{
-				// TODO:
-				var errors = new NBitcoin.Policy.StandardTransactionPolicy().Check(context.Transaction, null);
-				if (errors.Any())
-					context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, errors.First().ToString())).Throw();
+				this.CheckStandardTransaction(context, witnessEnabled);
 			}
 
 			// Only accept nLockTime-using transactions that can be mined in the next
@@ -236,6 +233,69 @@ namespace Stratis.Bitcoin.MemoryPool
 			// be mined yet.
 			if (!CheckFinalTransaction(context.Transaction, ConsensusValidator.StandardLocktimeVerifyFlags))
 				context.State.Fail(MempoolErrors.NonFinal).Throw();
+		}
+
+		private void CheckStandardTransaction(MempoolValidationContext context, bool witnessEnabled)
+		{
+			// TODO: Implement Witness Code
+
+			var tx = context.Transaction;
+			if (tx.Version > ConsensusValidator.MAX_STANDARD_VERSION || tx.Version < 1)
+				context.State.Fail(MempoolErrors.Version).Throw();
+
+			// Extremely large transactions with lots of inputs can cost the network
+			// almost as much to process as they cost the sender in fees, because
+			// computing signature hashes is O(ninputs*txsize). Limiting transactions
+			// to MAX_STANDARD_TX_WEIGHT mitigates CPU exhaustion attacks.
+			var sz = GetTransactionWeight(tx);
+			if (sz >= ConsensusValidator.MAX_STANDARD_TX_WEIGHT)
+				context.State.Fail(MempoolErrors.TxSize).Throw();
+
+			foreach (var txin in tx.Inputs)
+			{
+				// Biggest 'standard' txin is a 15-of-15 P2SH multisig with compressed
+				// keys (remember the 520 byte limit on redeemScript size). That works
+				// out to a (15*(33+1))+3=513 byte redeemScript, 513+1+15*(73+1)+3=1627
+				// bytes of scriptSig, which we round off to 1650 bytes for some minor
+				// future-proofing. That's also enough to spend a 20-of-20
+				// CHECKMULTISIG scriptPubKey, though such a scriptPubKey is not
+				// considered standard.
+				if (txin.ScriptSig.Length > 1650)
+				{
+					context.State.Fail(MempoolErrors.ScriptsigSize).Throw();
+				}
+
+				if (!txin.ScriptSig.IsPushOnly)
+				{
+					context.State.Fail(MempoolErrors.ScriptsigNotPushonly).Throw();
+				}
+			}
+
+			int dataOut = 0;
+			foreach (var txout in tx.Outputs)
+			{
+				var script = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
+				if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))
+				{
+					context.State.Fail(MempoolErrors.Scriptpubkey).Throw();
+				}
+
+				if (script.Type == TxOutType.TX_NULL_DATA)
+					dataOut++;
+				// TODO: fIsBareMultisigStd
+				//else if ((script == PayToMultiSigTemplate.Instance))  (!fIsBareMultisigStd)) 
+				//{
+				//	context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
+				//}
+				else if (txout.IsDust(MinRelayTxFee))
+				{
+					context.State.Fail(MempoolErrors.Dust).Throw();
+				}
+			}
+
+			// only one OP_RETURN txout is permitted
+			if (dataOut > 1)
+				context.State.Fail(MempoolErrors.MultiOpReturn).Throw();
 		}
 
 		private void CheckMempoolCoinView(MempoolValidationContext context)
@@ -530,7 +590,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private bool IsCurrentForFeeEstimation()
 		{
-			// TODO: implement method
+			// TODO: implement method (find a way to know if in IBD)
 
 			//if (IsInitialBlockDownload())
 			//	return false;
@@ -555,7 +615,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			PrecomputedTransactionData txdata = new PrecomputedTransactionData(context.Transaction);
 			if (!CheckInputs(context, scriptVerifyFlags, txdata))
 			{
-				// TODO: implement witness checks
+				// TODO: Implement Witness Code
 				//// SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
 				//// need to turn both off, and compare against just turning off CLEANSTACK
 				//// to see if the failure is specifically due to witness validation.
@@ -791,7 +851,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private bool IsWitnessStandard(Transaction tx, MempoolCoinView mapInputs)
 		{
-			// todo:
+			// TODO: Implement Witness Code
 			return true;
 		}
 

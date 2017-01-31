@@ -647,6 +647,7 @@ namespace Stratis.Bitcoin.Tests
 			{
 				var stratisNodeSync = builder.CreateStratisNode();
 				builder.StartAll();
+				stratisNodeSync.FullNode.Args.RequireStandard = true; // make sure to test standard tx
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(100); // coinbase maturity = 100

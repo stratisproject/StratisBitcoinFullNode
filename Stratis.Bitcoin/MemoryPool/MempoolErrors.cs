@@ -86,7 +86,13 @@ namespace Stratis.Bitcoin.MemoryPool
 		public static MempoolError ReplacementAddsUnconfirmed = new MempoolError(RejectNonstandard, "replacement-adds-unconfirmed");
 		public static MempoolError Insufficientfee = new MempoolError(RejectInsufficientfee, "insufficient-fee");
 		public static MempoolError MandatoryScriptVerifyFlagFailed = new MempoolError(RejectInvalid, "mandatory-script-verify-flag-failed");
-
+		public static MempoolError Version = new MempoolError(RejectNonstandard, "version");
+		public static MempoolError TxSize = new MempoolError(RejectNonstandard, "tx-size");
+		public static MempoolError ScriptsigSize = new MempoolError(RejectNonstandard, "scriptsig-size");
+		public static MempoolError ScriptsigNotPushonly = new MempoolError(RejectNonstandard, "scriptsig-not-pushonly");
+		public static MempoolError Scriptpubkey = new MempoolError(RejectNonstandard, "scriptpubkey");
+		public static MempoolError Dust = new MempoolError(RejectNonstandard, "dust");
+		public static MempoolError MultiOpReturn = new MempoolError(RejectNonstandard, "multi-op-return");
 	}
 
 }

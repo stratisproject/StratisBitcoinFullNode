@@ -19,6 +19,14 @@ namespace Stratis.Bitcoin.Consensus
 		const int MAX_BLOCK_WEIGHT = 4000000;
 		public const int WITNESS_SCALE_FACTOR = 4;
 		public const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
+		
+		// Changing the default transaction version requires a two step process: first
+		// adapting relay policy by bumping MAX_STANDARD_VERSION, and then later date
+		// bumping the default CURRENT_VERSION at which point both CURRENT_VERSION and
+		// MAX_STANDARD_VERSION will be equal.
+		public const int MAX_STANDARD_VERSION = 2;
+		// The maximum weight for transactions we're willing to relay/mine 
+		public const int MAX_STANDARD_TX_WEIGHT = 400000;
 
 		// Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
 		public static LockTimeFlags StandardLocktimeVerifyFlags = LockTimeFlags.VerifySequence | LockTimeFlags.MedianTimePast;
