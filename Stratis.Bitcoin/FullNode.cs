@@ -113,9 +113,10 @@ namespace Stratis.Bitcoin
 			// create the memory pool
 			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee);
 			var mempoolScheduler = new SchedulerPairSession();
-			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, TxMempool.DateTimeProvider.Default, _Args, this.Chain, this.CoinView);
-			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator);
-			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager));
+			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, DateTimeProvider.Default, _Args, this.Chain, this.CoinView);
+			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, DateTimeProvider.Default, _Args);
+			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans);
+			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans));
 
 			var flags = ConsensusLoop.GetFlags();
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))

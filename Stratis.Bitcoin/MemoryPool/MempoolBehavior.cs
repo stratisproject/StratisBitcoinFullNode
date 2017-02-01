@@ -10,13 +10,15 @@ namespace Stratis.Bitcoin.MemoryPool
 	{
 		private readonly MempoolValidator validator;
 		private readonly MempoolManager manager;
+		private readonly MempoolOrphans orphans;
 
 		public bool CanRespondToMempool { get; set; }
 
-		public MempoolBehavior(MempoolValidator validator, MempoolManager manager)
+		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans)
 		{
 			this.validator = validator;
 			this.manager = manager;
+			this.orphans = orphans;
 
 			this.CanRespondToMempool = true;
 		}
@@ -53,7 +55,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			var trx = transactionPayload.Object;
 			var state = new MemepoolValidationState(true);
-			if (!await this.manager.AlreadyHave(trx) && await this.validator.AcceptToMemoryPool(state, trx))
+			if (!await this.orphans.AlreadyHave(trx.GetHash()) && await this.validator.AcceptToMemoryPool(state, trx))
 			{
 				await this.validator.SanityCheck();
 				await this.RelayTransaction(trx).ConfigureAwait(false);
@@ -62,13 +64,12 @@ namespace Stratis.Bitcoin.MemoryPool
 				Logging.Logs.Mempool.LogInformation(
 					$"AcceptToMemoryPool: peer={node.PeerVersion.Nonce}: accepted {trx.GetHash()} (poolsz {mmsize} txn, {memdyn/ 1000} kb)");
 
-				// TODO: Implement OrphanTransactions 
-				// Recursively process any orphan transactions that depended on this one
+				await this.orphans.ProcessesOrphans(this, trx);
 
 			}
 			else if (state.MissingInputs)
 			{
-				// TODO: Implement OrphanTransactions (processes MissingInputs)
+				await this.orphans.ProcessesOrphansMissingInputs(node, trx);
 			}
 			else
 			{
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		private Task RelayTransaction(NBitcoin.Transaction tx)
+		public Task RelayTransaction(NBitcoin.Transaction tx)
 		{
 			// TODO: Relay inventory
 			// To relay the transaction their needs to be a track of inventory already relayed on each node
@@ -104,7 +105,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public override object Clone()
 		{
-			return new MempoolBehavior(this.validator, this.manager)
+			return new MempoolBehavior(this.validator, this.manager, this.orphans)
 			{
 				CanRespondToMempool = this.CanRespondToMempool
 			};

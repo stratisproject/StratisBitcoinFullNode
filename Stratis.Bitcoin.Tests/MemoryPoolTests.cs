@@ -538,7 +538,7 @@ namespace Stratis.Bitcoin.Tests
 			// ... unless it has gone all the way to 0 (after getting past 1000/2)
 		}
 
-		public class DateTimeProviderSet : TxMempool.DateTimeProvider
+		public class DateTimeProviderSet : DateTimeProvider
 		{
 			public long time;
 
@@ -703,6 +703,120 @@ namespace Stratis.Bitcoin.Tests
 				// spends[1] should have been removed from the mempool when the
 				// block with spends[0] is accepted:
 				//Assert.Equal(stratisNodeSync.FullNode.MempoolManager.MempoolSize().Result, 0);
+
+			}
+		}
+
+		[Fact]
+		public void TxMempoolMapOrphans()
+		{
+			var rand = new Random();
+			var randByte = new byte[32];
+			Func<uint256> randHash = () =>
+			{
+				rand.NextBytes(randByte);
+				return new uint256(randByte);
+			};
+
+			using (NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNode = builder.CreateStratisNode();
+				builder.StartAll();
+
+				stratisNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode.FullNode.Network));
+
+				// 50 orphan transactions:
+				for (ulong i = 0; i < 50; i++)
+				{
+					Transaction tx = new Transaction();
+					tx.AddInput(new TxIn(new OutPoint(randHash(), 0), new Script(OpcodeType.OP_1)));
+					tx.AddOutput(new TxOut(new Money(1*Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
+					
+					stratisNode.FullNode.MempoolManager.Orphans.AddOrphanTx(i, tx).Wait();
+				}
+
+				Assert.Equal(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 50);
+
+				// ... and 50 that depend on other orphans:
+				for (ulong i = 0; i < 50; i++)
+				{
+					var txPrev = stratisNode.FullNode.MempoolManager.Orphans.OrphansList().ElementAt(rand.Next(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count));
+
+					Transaction tx = new Transaction();
+					tx.AddInput(new TxIn(new OutPoint(txPrev.Tx.GetHash(), 0), new Script(OpcodeType.OP_1)));
+					tx.AddOutput(new TxOut(new Money((1 + i + 100) * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
+					stratisNode.FullNode.MempoolManager.Orphans.AddOrphanTx(i, tx).Wait();
+				}
+
+				Assert.Equal(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 100);
+
+				// This really-big orphan should be ignored:
+				for (ulong i = 0; i < 10; i++)
+				{
+					var txPrev = stratisNode.FullNode.MempoolManager.Orphans.OrphansList().ElementAt(rand.Next(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count));
+					Transaction tx = new Transaction();
+					tx.AddOutput(new TxOut(new Money(1 * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
+					foreach (var index in Enumerable.Range(0, 2777))
+						tx.AddInput(new TxIn(new OutPoint(txPrev.Tx.GetHash(), index), new Script(OpcodeType.OP_1)));
+
+					Assert.False(stratisNode.FullNode.MempoolManager.Orphans.AddOrphanTx(i, tx).Result);
+				}
+
+				Assert.Equal(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 100);
+
+				// Test EraseOrphansFor:
+				for (ulong i = 0; i < 3; i++)
+				{
+					var sizeBefore = stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count;
+					stratisNode.FullNode.MempoolManager.Orphans.EraseOrphansFor(i).Wait();
+					Assert.True(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count < sizeBefore);
+				}
+
+				// Test LimitOrphanTxSize() function:
+				stratisNode.FullNode.MempoolManager.Orphans.LimitOrphanTxSize(40).Wait();
+				Assert.True(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count <= 40);
+				stratisNode.FullNode.MempoolManager.Orphans.LimitOrphanTxSize(10).Wait();
+				Assert.True(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count <= 10);
+				stratisNode.FullNode.MempoolManager.Orphans.LimitOrphanTxSize(0).Wait();
+				Assert.True(!stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Any());
+			}
+		}
+
+		[Fact]
+		public void MempoolAddNodeWithOrphans()
+		{
+			using (NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNodeSync = builder.CreateStratisNode();
+				builder.StartAll();
+
+				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+				stratisNodeSync.GenerateStratis(101); // coinbase maturity = 100
+
+				var block = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
+				var prevTrx = block.Transactions.First();
+				var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
+
+				var key = new Key();
+				Transaction tx = new Transaction();
+				tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
+				tx.AddOutput(new TxOut("25", dest.PubKey.Hash));
+				tx.AddOutput(new TxOut("24", key.PubKey.Hash)); // 1 btc fee
+				tx.Sign(stratisNodeSync.MinerSecret, false);
+
+				Transaction txOrphan = new Transaction();
+				txOrphan.AddInput(new TxIn(new OutPoint(tx.GetHash(), 1), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(key.PubKey)));
+				txOrphan.AddOutput(new TxOut("10", new Key().PubKey.Hash));
+				txOrphan.Sign(key.GetBitcoinSecret(stratisNodeSync.FullNode.Network), false);
+
+				// broadcast the orphan
+				stratisNodeSync.Broadcast(txOrphan);
+				Class1.Eventually(() => stratisNodeSync.FullNode.MempoolManager.Orphans.OrphansList().Count == 1);
+
+				stratisNodeSync.Broadcast(tx);
+				Class1.Eventually(() => stratisNodeSync.FullNode.MempoolManager.Orphans.OrphansList().Count == 0);
+
+				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 2);
 
 			}
 		}

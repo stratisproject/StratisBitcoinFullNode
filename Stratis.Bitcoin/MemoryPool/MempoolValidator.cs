@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		const int MAX_FEE_ESTIMATION_TIP_AGE = 3 * 60 * 60;
 
 		private readonly SchedulerPairSession mempoolScheduler;
-		private readonly TxMempool.DateTimeProvider dateTimeProvider;
+		private readonly DateTimeProvider dateTimeProvider;
 		private readonly NodeArgs nodeArgs;
 		private readonly ConcurrentChain chain;
 		private readonly CoinView coinView;
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 
 		public MempoolValidator(TxMempool memPool, SchedulerPairSession mempoolScheduler,
-			ConsensusValidator consensusValidator, TxMempool.DateTimeProvider dateTimeProvider, NodeArgs nodeArgs,
+			ConsensusValidator consensusValidator, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs,
 			ConcurrentChain chain, CoinView coinView)
 		{
 			this.memPool = memPool;
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.PreMempoolChecks(context);
 
 			// create the MemPoolCoinView and load relevant utxoset
-			context.View = new MempoolCoinView(this.coinView, this.memPool);
+			context.View = new MempoolCoinView(this.coinView, this.memPool, this.mempoolScheduler);
 			await context.View.LoadView(context.Transaction).ConfigureAwait(false);
 
 			// adding to the mem pool can only be done sequentially

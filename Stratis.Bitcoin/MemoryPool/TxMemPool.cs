@@ -326,16 +326,6 @@ namespace Stratis.Bitcoin.MemoryPool
 		private Dictionary<uint256, DeltaPair> mapDeltas = new Dictionary<uint256, DeltaPair>();
 		Dictionary<TxMempoolEntry, uint256> vTxHashes = new Dictionary<TxMempoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
 
-		public class DateTimeProvider
-		{
-			public virtual long GetTime()
-			{
-				return DateTime.UtcNow.ToUnixTimestamp();
-			}
-
-			public static DateTimeProvider Default => new DateTimeProvider();
-		}
-
 		private DateTimeProvider TimeProvider { get; }
 
 		public TxMempool(FeeRate minReasonableRelayFee) : this(minReasonableRelayFee, DateTimeProvider.Default)

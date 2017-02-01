@@ -13,21 +13,31 @@ namespace Stratis.Bitcoin.MemoryPool
     public class MempoolCoinView : CoinView , IBackedCoinView
     {
 	    private readonly TxMempool memPool;
-	    public UnspentOutputSet Set { get; private set; }
+		private readonly SchedulerPairSession mempoolScheduler;
+
+		public UnspentOutputSet Set { get; private set; }
 	    public CoinView Inner { get; }
 
-		public MempoolCoinView(CoinView inner, TxMempool memPool)
+		public MempoolCoinView(CoinView inner, TxMempool memPool, SchedulerPairSession mempoolScheduler)
 		{
 			this.Inner = inner;
 			this.memPool = memPool;
+			this.mempoolScheduler = mempoolScheduler;
 			this.Set = new UnspentOutputSet();
 		}
 
 	    public async Task LoadView(Transaction trx)
 	    {
 			// lookup all ids
-		    var ids = trx.Inputs.Select(n => n.PrevOut.Hash).Append(trx.GetHash());
+		    var ids = trx.Inputs.Select(n => n.PrevOut.Hash).Append(trx.GetHash()).ToList();
 			var coins = await this.Inner.FetchCoinsAsync(ids.ToArray());
+			// find coins currently in the mempool
+			var mempoolcoins = await this.mempoolScheduler.DoConcurrent(() =>
+			{
+				return this.memPool.MapTx.Values.Where(t => ids.Contains(t.TransactionHash)).Select(s => s.Transaction).ToList();
+			});
+			var memouts = mempoolcoins.Select(s => new UnspentOutputs(TxMempool.MempoolHeight, s));
+			coins.UnspentOutputs = coins.UnspentOutputs.Concat(memouts).ToArray();
 		    this.Set.SetCoins(coins);
 	    }
 

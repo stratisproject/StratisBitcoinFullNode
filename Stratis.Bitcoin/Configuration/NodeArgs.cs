@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Configuration
 		public int LimitDescendants { get; set; }
 		public int LimitDescendantSize { get; set; }
 		public bool EnableReplacement { get; set; }
-
+		public int MaxOrphanTx { get; set; }
 
 		public void Load(TextFileConfiguration config)
 		{
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Configuration
 			this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit);
 			this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
 			this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
-
+			this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DEFAULT_MAX_ORPHAN_TRANSACTIONS);
 		}
 	}
 
