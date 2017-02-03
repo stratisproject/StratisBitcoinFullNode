@@ -64,6 +64,10 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public bool LimitFree { get; set; }
 
+		// variables helpful for logging
+		public long MempoolSize { get; set; }
+		public long MempoolDynamicSize { get; set; }
+
 		public void Throw()
 		{
 			throw new MempoolErrorException(this);

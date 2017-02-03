@@ -643,7 +643,6 @@ namespace Stratis.Bitcoin.Tests
 		{
 			var fullNode = (_Runner as StratisBitcoinRunner).FullNode;
 			BitcoinSecret dest = MinerSecret;
-			ConcurrentChain chain = fullNode.Chain;
 			List<Block> blocks = new List<Block>();
 			DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
 #if !NOSOCKET
@@ -652,12 +651,12 @@ namespace Stratis.Bitcoin.Tests
 			{
 				uint nonce = 0;
 				Block block = new Block();
-				block.Header.HashPrevBlock = chain.Tip.HashBlock;
-				block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, chain.Tip);
-				block.Header.UpdateTime(now, fullNode.Network, chain.Tip);
+				block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
+				block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
+				block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
 				var coinbase = new Transaction();
-				coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
-				coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(chain.Height + 1), dest.GetAddress()));
+				coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
+				coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), dest.GetAddress()));
 				block.AddTransaction(coinbase);
 				if (passedTransactions?.Any() ?? false)
 				{
@@ -670,15 +669,17 @@ namespace Stratis.Bitcoin.Tests
 				blocks.Add(block);
 				if (broadcast)
 				{
-					var res = new BlockResult {Block = block};
+					//var res = new BlockResult {Block = block};
 					try
 					{
-						fullNode.ConsensusLoop.AcceptBlock(res);
-						if (res.Error == null)
-						{
-							chain.SetTip(res.ChainedBlock);
-							fullNode.BlockRepository.PutAsync(block);
-						}
+						fullNode.Chain.SetTip(new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip));
+						fullNode.ConsensusLoop.LookaheadBlockPuller.PushBlock(block.GetSerializedSize(), block, CancellationToken.None);
+						//fullNode.ConsensusLoop.AcceptBlock(res);
+						//if (res.Error == null)
+						//{
+						//	chain.SetTip(res.ChainedBlock);
+						//	fullNode.BlockRepository.PutAsync(block);
+						//}
 					}
 					catch (ConsensusErrorException)
 					{

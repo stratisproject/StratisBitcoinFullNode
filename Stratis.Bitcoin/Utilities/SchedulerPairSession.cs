@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin
+namespace Stratis.Bitcoin.Utilities
 {
 	/// <summary>
 	/// A scheduler session for concurrent and exclusive work
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin
 		/// Delegates calling this method will be done in sequentially, 
 		/// the first task will be queued on the Default scheduler subsequent exclusive tasks will run in that same thread.
 		/// </summary>
-		public Task<T> DoSequential<T>(Func<T> func)
+		public Task<T> DoExclusive<T>(Func<T> func)
 		{
 			return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
 		}
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin
 		/// Delegates calling this method will be done in sequentially, 
 		/// the first task will be queued on the Default scheduler subsequent exclusive tasks will run in that same thread.
 		/// </summary>
-		public Task DoSequential(Action func)
+		public Task DoExclusive(Action func)
 		{
 			return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
 		}

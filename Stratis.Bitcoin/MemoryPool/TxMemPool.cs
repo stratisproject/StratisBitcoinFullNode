@@ -9,6 +9,23 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
+	
+	// Information about a mempool transaction.
+	public class TxMempoolInfo
+	{
+		/** The transaction itself */
+		public Transaction tx;
+
+		/** Time the transaction entered the mempool. */
+		public long nTime;
+
+		/** Feerate of the transaction. */
+		public FeeRate feeRate;
+
+		/** The fee delta. */
+		public long nFeeDelta;
+	};
+
 	/**
 	* CTxMemPool stores valid-according-to-the-current-best-chain transactions
 	* that may be included in the next block.

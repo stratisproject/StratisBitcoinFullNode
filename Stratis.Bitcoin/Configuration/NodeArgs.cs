@@ -103,6 +103,11 @@ namespace Stratis.Bitcoin.Configuration
 
 	public class MempoolArgs
 	{
+		// Default for blocks only 
+		const bool DEFAULT_BLOCKSONLY = false;
+		// Default for DEFAULT_WHITELISTRELAY. 
+		const bool DEFAULT_WHITELISTRELAY = true;
+
 		public int MaxMempool { get; set; }
 		public int MempoolExpiry { get; set; }
 		public bool RelayPriority { get; set; }
@@ -113,6 +118,8 @@ namespace Stratis.Bitcoin.Configuration
 		public int LimitDescendantSize { get; set; }
 		public bool EnableReplacement { get; set; }
 		public int MaxOrphanTx { get; set; }
+		public bool RelayTxes { get; set; }
+		public bool Whitelistrelay { get; set; }
 
 		public void Load(TextFileConfiguration config)
 		{
@@ -126,6 +133,8 @@ namespace Stratis.Bitcoin.Configuration
 			this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
 			this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
 			this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DEFAULT_MAX_ORPHAN_TRANSACTIONS);
+			this.RelayTxes = !config.GetOrDefault("blocksonly", DEFAULT_BLOCKSONLY);
+			this.Whitelistrelay = config.GetOrDefault("whitelistrelay", DEFAULT_WHITELISTRELAY);
 		}
 	}
 

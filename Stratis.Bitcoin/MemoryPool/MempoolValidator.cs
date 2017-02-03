@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// adding to the mem pool can only be done sequentially
 			 // use the sequential scheduler for that.
-			await this.mempoolScheduler.DoSequential(() =>
+			await this.mempoolScheduler.DoExclusive(() =>
 			{
 				// is it already in the memory pool?
 				if (this.memPool.Exists(context.TransactionHash))
@@ -150,6 +150,11 @@ namespace Stratis.Bitcoin.MemoryPool
 					if (!this.memPool.Exists(context.TransactionHash))
 						state.Fail(MempoolErrors.Full).Throw();
 				}
+
+				// do this here inside the exclusive scheduler for better accuracy
+				// and to avoid springing more concurrent tasks later 
+				state.MempoolSize = this.memPool.Size;
+				state.MempoolDynamicSize = this.memPool.DynamicMemoryUsage();
 			});
 
 			//	GetMainSignals().SyncTransaction(tx, NULL, CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK);

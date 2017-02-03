@@ -19,6 +19,8 @@ using System.Text;
 using System.Runtime.ExceptionServices;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin
 {
@@ -91,6 +93,7 @@ namespace Stratis.Bitcoin
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
 			var connectionParameters = new NodeConnectionParameters();
+			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
 			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
 			_ChainBehaviorState = connectionParameters.TemplateBehaviors.Find<ChainBehavior>().SharedState;
@@ -115,8 +118,8 @@ namespace Stratis.Bitcoin
 			var mempoolScheduler = new SchedulerPairSession();
 			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, DateTimeProvider.Default, _Args, this.Chain, this.CoinView);
 			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, DateTimeProvider.Default, _Args);
-			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans);
-			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans));
+			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, DateTimeProvider.Default, _Args);
+			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager));
 
 			var flags = ConsensusLoop.GetFlags();
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))

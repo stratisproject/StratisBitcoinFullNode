@@ -7,16 +7,12 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
     public class MempoolOrphans
     {
-		// TODO: Implement Orphan Transactions
-		// MempoolManager is there place where we'll implement Orphan Transactions 
-		// This will relay for concurrency on the MempoolScheduler
-		// Tests are in DosTests.cpp - BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
-
 		// Expiration time for orphan transactions in seconds 
 		const long ORPHAN_TX_EXPIRE_TIME = 20 * 60;
 		// Default for -maxorphantx, maximum number of orphan transactions kept in memory 
@@ -73,7 +69,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			if (this.chain.Tip.HashBlock != hashRecentRejectsChainTip)
 			{
-				await this.MempoolScheduler.DoSequential(() =>
+				await this.MempoolScheduler.DoExclusive(() =>
 				{
 					// If the chain tip has changed previously rejected transactions
 					// might be now valid, e.g. due to a nLockTime'd tx becoming valid,
@@ -125,7 +121,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					if (await this.Validator.AcceptToMemoryPool(stateDummy, orphanTx))
 					{
 						Logging.Logs.Mempool.LogInformation($"accepted orphan tx{orphanHash}");
-						await behavior.RelayTransaction(orphanTx);
+						await behavior.RelayTransaction(orphanTx.GetHash());
 						for (var index = 0; index < orphanTx.Outputs.Count; index++)
 							vWorkQueue.Enqueue(new OutPoint(orphanHash, index));
 						vEraseQueue.Add(orphanHash);
@@ -149,7 +145,7 @@ namespace Stratis.Bitcoin.MemoryPool
 							// Do not use rejection cache for witness transactions or
 							// witness-stripped transactions, as they can have been malleated.
 							// See https://github.com/bitcoin/bitcoin/issues/8279 for details.
-							await this.MempoolScheduler.DoSequential(() => this.recentRejects.TryAdd(orphanHash, orphanHash));
+							await this.MempoolScheduler.DoExclusive(() => this.recentRejects.TryAdd(orphanHash, orphanHash));
 						}
 					}
 					this.memPool.Check(new MempoolCoinView(this.coinView, this.memPool, this.MempoolScheduler));
@@ -162,37 +158,34 @@ namespace Stratis.Bitcoin.MemoryPool
 
 	    public async Task<bool> ProcessesOrphansMissingInputs(Node from, Transaction tx)
 	    {
-			// It may be the case that the orphans parents have all been rejected
+		    // It may be the case that the orphans parents have all been rejected
 		    var rejectedParents = await this.MempoolScheduler.DoConcurrent(() =>
-			{
-				return tx.Inputs.Any(txin => this.recentRejects.ContainsKey(txin.PrevOut.Hash));
-			});
+		    {
+			    return tx.Inputs.Any(txin => this.recentRejects.ContainsKey(txin.PrevOut.Hash));
+		    });
 
-		    var ret = false;
+		    if (rejectedParents)
+		    {
+			    Logging.Logs.Mempool.LogInformation($"not keeping orphan with rejected parents {tx.GetHash()}");
+			    return false;
+		    }
 
-			if (!rejectedParents)
-			{
-				int nFetchFlags = 0; //GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
-				foreach (var txin in tx.Inputs)
-				{ 
-					// TODO: this goes in the RelayBehaviour
-					//CInv _inv(MSG_TX | nFetchFlags, txin.prevout.hash);
-					//behavior.AttachedNode.Behaviors.Find<RelayBehaviour>() pfrom->AddInventoryKnown(_inv);
-					//if (!await this.AlreadyHave(txin.PrevOut.Hash))
-					//	from. pfrom->AskFor(_inv);
-				}
-				ret = await this.AddOrphanTx(from.PeerVersion.Nonce, tx);
+		    int nFetchFlags = 0; //GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
+		    foreach (var txin in tx.Inputs)
+		    {
+			    // TODO: this goes in the RelayBehaviour
+			    //CInv _inv(MSG_TX | nFetchFlags, txin.prevout.hash);
+			    //behavior.AttachedNode.Behaviors.Find<RelayBehaviour>() pfrom->AddInventoryKnown(_inv);
+			    //if (!await this.AlreadyHave(txin.PrevOut.Hash))
+			    //	from. pfrom->AskFor(_inv);
+		    }
+		    var ret = await this.AddOrphanTx(from.PeerVersion.Nonce, tx);
 
-				// DoS prevention: do not allow mapOrphanTransactions to grow unbounded
-				int nMaxOrphanTx = this.nodeArgs.Mempool.MaxOrphanTx;
-				int nEvicted = await this.LimitOrphanTxSize(nMaxOrphanTx);
-				if (nEvicted > 0)
-					Logging.Logs.Mempool.LogInformation($"mapOrphan overflow, removed {nEvicted} tx", nEvicted);
-			}
-			else
-			{
-				Logging.Logs.Mempool.LogInformation($"not keeping orphan with rejected parents {tx.GetHash()}");
-			}
+		    // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
+		    int nMaxOrphanTx = this.nodeArgs.Mempool.MaxOrphanTx;
+		    int nEvicted = await this.LimitOrphanTxSize(nMaxOrphanTx);
+		    if (nEvicted > 0)
+			    Logging.Logs.Mempool.LogInformation($"mapOrphan overflow, removed {nEvicted} tx", nEvicted);
 
 		    return ret;
 	    }
@@ -241,7 +234,7 @@ namespace Stratis.Bitcoin.MemoryPool
 	  
 		public Task<bool> AddOrphanTx(ulong nodeId, Transaction tx)
 		{
-			return this.MempoolScheduler.DoSequential(() =>
+			return this.MempoolScheduler.DoExclusive(() =>
 			{
 				var hash = tx.GetHash();
 				if (this.mapOrphanTransactions.ContainsKey(hash))
@@ -290,7 +283,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private Task<bool> EraseOrphanTx(uint256 hash)
 		{
-			return this.MempoolScheduler.DoSequential(() =>
+			return this.MempoolScheduler.DoExclusive(() =>
 			{
 				var it = this.mapOrphanTransactions.TryGet(hash);
 				if (it == null)

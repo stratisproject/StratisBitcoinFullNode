@@ -25,6 +25,7 @@ using System.Net;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging.Console;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.Tests
 {

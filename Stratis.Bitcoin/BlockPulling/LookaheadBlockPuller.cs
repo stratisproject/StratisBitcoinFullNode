@@ -211,7 +211,9 @@ namespace Stratis.Bitcoin.BlockPulling
 			internal set;
 		}
 
-		protected void PushBlock(int length, Block block, CancellationToken cancellation)
+		// making this method public allows to push blocks directly 
+		// to the downloader, this is mainly usefull for testing.
+		public void PushBlock(int length, Block block, CancellationToken cancellation) 
 		{
 			var hash = block.Header.GetHash();
 			var header = Chain.GetBlock(hash);

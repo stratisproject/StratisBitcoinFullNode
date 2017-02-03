@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			{
 				return this.memPool.MapTx.Values.Where(t => ids.Contains(t.TransactionHash)).Select(s => s.Transaction).ToList();
 			});
-			var memouts = mempoolcoins.Select(s => new UnspentOutputs(TxMempool.MempoolHeight, s));
-			coins.UnspentOutputs = coins.UnspentOutputs.Concat(memouts).ToArray();
+			var memOutputs = mempoolcoins.Select(s => new UnspentOutputs(TxMempool.MempoolHeight, s));
+			coins.UnspentOutputs = coins.UnspentOutputs.Concat(memOutputs).ToArray();
 		    this.Set.SetCoins(coins);
 	    }
 
