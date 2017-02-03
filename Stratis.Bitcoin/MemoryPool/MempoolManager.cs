@@ -16,15 +16,17 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly TxMempool memPool;
 
 		private readonly ConcurrentChain chain;
+		private readonly FullNode fullNode;
 		public DateTimeProvider DateTimeProvider { get; }
 		public NodeArgs NodeArgs { get; set; }
 
 		public MempoolManager(SchedulerPairSession mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
-			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
+			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs, FullNode fullNode)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
 			this.chain = chain;
+			this.fullNode = fullNode;
 			this.DateTimeProvider = dateTimeProvider;
 			this.NodeArgs = nodeArgs;
 			this.Orphans = orphans;
@@ -35,6 +37,10 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			return this.MempoolScheduler.DoConcurrent(() => this.memPool.MapTx.Keys.ToList());
 		}
+		
+		// TODO: how to do this without the fullnode class
+		// TODO: use some cache on the IBD value
+		public bool IsInitialBlockDownload => this.fullNode.IsInitialBlockDownload();
 
 		public List<TxMempoolInfo> InfoAll()
 		{

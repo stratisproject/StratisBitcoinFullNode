@@ -140,6 +140,8 @@ namespace Stratis.Bitcoin.Configuration
 
 	public class NodeArgs
 	{
+		const int DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
+
 		public RPCArgs RPC
 		{
 			get; set;
@@ -184,7 +186,11 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			set;
 		}
-
+		public int MaxTipAge
+		{
+			get;
+			set;
+		}
 
 		public static NodeArgs GetArgs(string[] args)
 		{
@@ -232,8 +238,8 @@ namespace Stratis.Bitcoin.Configuration
 			consoleConfig.MergeInto(config);
 
 			nodeArgs.Prune = config.GetOrDefault("prune", 0) != 0;
-
 			nodeArgs.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeArgs.RegTest || nodeArgs.Testnet));
+			nodeArgs.MaxTipAge = config.GetOrDefault("maxtipage", DEFAULT_MAX_TIP_AGE);
 
 			nodeArgs.RPC = config.GetOrDefault<bool>("server", false) ? new RPCArgs() : null;
 			if(nodeArgs.RPC != null)

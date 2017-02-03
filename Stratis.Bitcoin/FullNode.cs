@@ -59,6 +59,29 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
+		public bool IsInitialBlockDownload()
+		{
+			//if (fImporting || fReindex)
+			//	return true;
+			if (this.ConsensusLoop.Tip == null)
+				return true;
+			if (this.ConsensusLoop.Tip.ChainWork < MinimumChainWork(this.Args))
+				return true;
+			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (DateTime.UtcNow.UnixTimestamp() - this.Args.MaxTipAge))
+				return true;
+			return false;
+		}
+
+		private static uint256 MinimumChainWork(NodeArgs args)
+		{
+			// TODO: move this to Network.Consensus
+			if (args.RegTest)
+				return uint256.Zero;
+			if (args.Testnet)
+				return uint256.Parse("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6");
+			return uint256.Parse("0x0000000000000000000000000000000000000000002cb971dd56d1c583c20f90");
+		}
+
 		List<IDisposable> _Resources = new List<IDisposable>();
 		public void Start()
 		{
@@ -118,7 +141,7 @@ namespace Stratis.Bitcoin
 			var mempoolScheduler = new SchedulerPairSession();
 			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, DateTimeProvider.Default, _Args, this.Chain, this.CoinView);
 			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, DateTimeProvider.Default, _Args);
-			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, DateTimeProvider.Default, _Args);
+			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, DateTimeProvider.Default, _Args, this);
 			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager));
 
 			var flags = ConsensusLoop.GetFlags();

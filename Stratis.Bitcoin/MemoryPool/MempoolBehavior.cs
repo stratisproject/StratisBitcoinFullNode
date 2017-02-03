@@ -119,6 +119,9 @@ namespace Stratis.Bitcoin.MemoryPool
 				return; //error("message inv size() = %u", vInv.size());
 			}
 
+			if(this.manager.IsInitialBlockDownload)
+				return;
+
 			bool blocksOnly = !this.manager.NodeArgs.Mempool.RelayTxes;
 			// Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
 			if (node.Behavior<ConnectionManagerBehavior>().Whitelisted && this.manager.NodeArgs.Mempool.Whitelistrelay)
@@ -134,9 +137,6 @@ namespace Stratis.Bitcoin.MemoryPool
 				if (blocksOnly)
 					Logging.Logs.Mempool.LogInformation(
 						$"transaction ({inv.Hash}) inv sent in violation of protocol peer={node.PeerVersion.Nonce}");
-
-				// TODO: sort this arguments
-				//if (!fAlreadyHave && !fImporting && !fReindex && !IsInitialBlockDownload())
 
 				if (await this.orphans.AlreadyHave(inv.Hash))
 					continue;
