@@ -19,9 +19,35 @@ namespace Stratis.Bitcoin.Tests
 		// example when a exclusive delegate breaks in to a concurrent delegate 
 		// and back the two parts of the exclusive delegate need to be called sequentially
 
-		//[Fact]
+		public static bool IsSequential(int[] a)
+		{
+			return Enumerable.Range(1, a.Length - 1).All(i => a[i] - 1 == a[i - 1]);
+		}
+
+		[Fact]
 		public void SchedulerPairSessionTest()
-	    {
+		{
+			var session = new SchedulerPairSession();
+			var collector = new List<int>();
+
+			var task = Task.Run(async () =>
+			{
+				await await session.DoExclusive(async () =>
+				{
+					collector.Add(1);
+					// push another exclusive task to the scheduler
+					session.DoExclusive(() => collector.Add(2));
+					// await a concurrent task, this will split the current method in two tasks
+					// the pushed exclusive task will processes before the await yields back control
+				    await session.DoConcurrent(() =>  collector.Add(3));
+					collector.Add(4);
+				});
+
+			});
+
+			task.Wait();
+
+			Assert.True(IsSequential(collector.ToArray()));
 		}
 	}
 }

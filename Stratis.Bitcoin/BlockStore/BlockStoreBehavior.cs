@@ -58,6 +58,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
 		{
+			// TODO: bring logic from core 
+
 			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
 			{
 				var block = await this.blockRepository.GetAsync(item.Hash).ConfigureAwait(false);

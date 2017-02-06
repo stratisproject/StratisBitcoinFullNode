@@ -9,21 +9,20 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
-	
 	// Information about a mempool transaction.
 	public class TxMempoolInfo
 	{
-		/** The transaction itself */
-		public Transaction tx;
+		// The transaction itself 
+		public Transaction Trx { get; set; }
 
-		/** Time the transaction entered the mempool. */
-		public long nTime;
+		// Time the transaction entered the mempool. 
+		public long Time { get; set; }
 
-		/** Feerate of the transaction. */
-		public FeeRate feeRate;
+		// Feerate of the transaction. 
+		public FeeRate FeeRate { get; set; }
 
-		/** The fee delta. */
-		public long nFeeDelta;
+		// The fee delta. 
+		public long FeeDelta { get; set; }
 	};
 
 	/**

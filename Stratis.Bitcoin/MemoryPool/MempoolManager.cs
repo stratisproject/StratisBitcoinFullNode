@@ -37,10 +37,22 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			return this.MempoolScheduler.DoConcurrent(() => this.memPool.MapTx.Keys.ToList());
 		}
-		
+
 		// TODO: how to do this without the fullnode class
-		// TODO: use some cache on the IBD value
-		public bool IsInitialBlockDownload => this.fullNode.IsInitialBlockDownload();
+		private long lastupdate;
+		private bool lastresult;
+		public bool IsInitialBlockDownload
+		{
+			get
+			{
+				if (lastupdate < DateTime.UtcNow.Ticks)
+				{
+					lastupdate = DateTime.UtcNow.AddMinutes(1).Ticks; // sample every minute
+					lastresult = this.fullNode.IsInitialBlockDownload();
+				}
+				return lastresult;
+			}
+		}
 
 		public List<TxMempoolInfo> InfoAll()
 		{
@@ -48,10 +60,10 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			return this.memPool.MapTx.DescendantScore.Select(item => new TxMempoolInfo
 			{
-				tx = item.Transaction,
-				nTime = item.Time,
-				feeRate = new FeeRate(item.Fee, (int) item.GetTxSize()),
-				nFeeDelta = item.ModifiedFee - item.Fee
+				Trx = item.Transaction,
+				Time = item.Time,
+				FeeRate = new FeeRate(item.Fee, (int) item.GetTxSize()),
+				FeeDelta = item.ModifiedFee - item.Fee
 			}).ToList();
 		}
 
@@ -60,10 +72,10 @@ namespace Stratis.Bitcoin.MemoryPool
 			var item = this.memPool.MapTx.TryGet(hash);
 			return item == null ? null : new TxMempoolInfo
 			{
-				tx = item.Transaction,
-				nTime = item.Time,
-				feeRate = new FeeRate(item.Fee, (int) item.GetTxSize()),
-				nFeeDelta = item.ModifiedFee - item.Fee
+				Trx = item.Transaction,
+				Time = item.Time,
+				FeeRate = new FeeRate(item.Fee, (int) item.GetTxSize()),
+				FeeDelta = item.ModifiedFee - item.Fee
 			};
 		}
 
@@ -92,6 +104,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			return this.MempoolScheduler.DoConcurrent(() => this.memPool.DynamicMemoryUsage());
 		}
 
-
+		public Task RemoveForBlock(Block block, int blockHeight)
+		{			
+			return this.MempoolScheduler.DoExclusive(() => this.memPool.RemoveForBlock(block.Transactions, blockHeight));
+		}
 	}
 }

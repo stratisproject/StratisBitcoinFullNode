@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				if (trxInfo != null)
 					//TODO strip block of witness if node does not support
 					if (node.IsConnected)
-						await node.SendMessageAsync(new TxPayload(trxInfo.tx.WithOptions(node.SupportedTransactionOptions))).ConfigureAwait(false);
+						await node.SendMessageAsync(new TxPayload(trxInfo.Trx.WithOptions(node.SupportedTransactionOptions))).ConfigureAwait(false);
 			}
 		}
 
@@ -269,17 +269,17 @@ namespace Stratis.Bitcoin.MemoryPool
 				var ret = new List<TxMempoolInfo>();
 				foreach (var txinfo in vtxinfo)
 				{
-					var hash = txinfo.tx.GetHash();
+					var hash = txinfo.Trx.GetHash();
 					this.inventoryTxToSend.Remove(hash);
 					if (filterrate != Money.Zero)
-						if (txinfo.feeRate.FeePerK < filterrate)
+						if (txinfo.FeeRate.FeePerK < filterrate)
 							continue;
 					filterInventoryKnown.TryAdd(hash, hash);
 				}
 				return ret;
 			});
 
-			await this.SendAsTxInventory(node, sends.Select(s => s.tx.GetHash()));
+			await this.SendAsTxInventory(node, sends.Select(s => s.Trx.GetHash()));
 			this.LastMempoolReq = this.manager.DateTimeProvider.GetTime();
 		}
 
@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.MemoryPool
 						if (this.CanSendTrickle)
 							await this.SendTrickle();
 
-						// TODO: this cen be smarter by making the wait time similar to the PoissonNextSend result
+						// TODO: this can be smarter by making the wait time similar to the PoissonNextSend result
 						await Task.Delay(10000, token); 
 					}
 					catch (OperationCanceledException opx)

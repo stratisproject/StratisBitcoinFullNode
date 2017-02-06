@@ -377,7 +377,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// TODO: Implement Witness Code
 			//// Check for non-standard witness in P2WSH
-			//if (tx.HasWitness && requireStandard && !IsWitnessStandard(tx, context.View))
+			//if (tx.HasWitness && requireStandard && !IsWitnessStandard(Trx, context.View))
 			//	state.Invalid(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "bad-witness-nonstandard")).Throw();
 
 			context.SigOpsCost = consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
@@ -624,7 +624,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				//// SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
 				//// need to turn both off, and compare against just turning off CLEANSTACK
 				//// to see if the failure is specifically due to witness validation.
-				//if (!tx.HasWitness() && CheckInputs(tx, state, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, txdata) &&
+				//if (!tx.HasWitness() && CheckInputs(Trx, state, view, true, scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK), true, txdata) &&
 				//	!CheckInputs(tx, state, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, txdata))
 				//{
 				//	// Only the witness is missing, so the transaction itself may be fine.

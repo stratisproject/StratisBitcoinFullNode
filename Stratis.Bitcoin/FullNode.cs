@@ -212,11 +212,14 @@ namespace Stratis.Bitcoin
 					if(block.Error == null)
 					{
 						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						this.TryStoreBlock(block.Block, reorg);
+						var unusedstore = this.TryStoreBlock(block.Block, reorg);
 						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
 						{
 							var unused = cache.FlushAsync();
 						}
+
+						var poolTask = this.MempoolManager.RemoveForBlock(block.Block, block.ChainedBlock.Height);
+						poolTask.Wait();// when the consensus loop will be awaitable replace this with await
 					}
 
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))

@@ -702,11 +702,9 @@ namespace Stratis.Bitcoin.Tests
 				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block.GetHash());
 
-				// TODO: uncomment the next line once the logic to remove from mempool when block is found is implemented 
 				// spends[1] should have been removed from the mempool when the
 				// block with spends[0] is accepted:
-				//Assert.Equal(stratisNodeSync.FullNode.MempoolManager.MempoolSize().Result, 0);
-
+				Class1.Eventually(() => stratisNodeSync.FullNode.MempoolManager.MempoolSize().Result == 0);
 			}
 		}
 
@@ -878,6 +876,18 @@ namespace Stratis.Bitcoin.Tests
 
 				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 5);
 				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 5);
+
+
+				// TODO: enable this code when announcement of new blocks is supported
+				//// mine the transactions in the mempool
+				//stratisNodeSync.GenerateStratis(1, stratisNodeSync.FullNode.MempoolManager.InfoAllAsync().Result.Select(s => s.Trx).ToList());
+				//Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
+
+				//// wait for block and mempool to change
+				//Class1.Eventually(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				//Class1.Eventually(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				//Class1.Eventually(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 0);
+				//Class1.Eventually(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 0);
 			}
 		}
 	}
