@@ -46,8 +46,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			this.inventoryTxToSend = new Dictionary<uint256, uint256>();
 			this.filterInventoryKnown = new Dictionary<uint256, uint256>();
-			this.periodicToken =
-				CancellationTokenSource.CreateLinkedTokenSource(new[] {this.manager.MempoolScheduler.Cancellation.Token});
+			this.periodicToken = CancellationTokenSource.CreateLinkedTokenSource(new[] {this.manager.MempoolScheduler.Cancellation.Token});
 		}
 
 		protected override void AttachCore()

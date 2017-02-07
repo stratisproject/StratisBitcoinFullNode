@@ -591,7 +591,7 @@ namespace Stratis.Bitcoin.Tests
 				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
 				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
-				var block = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
+				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
 				var prevTrx = block.Transactions.First();
 				var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -622,7 +622,7 @@ namespace Stratis.Bitcoin.Tests
 				var trxs = new List<Transaction>();
 				foreach (var index in Enumerable.Range(1, 100))
 				{
-					var block = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
+					var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
 					var prevTrx = block.Transactions.First();
 					var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -661,7 +661,7 @@ namespace Stratis.Bitcoin.Tests
 				// double-spends in blocks to pass validation when they should not.
 
 				var scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey);
-				var genBlock = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
+				var genBlock = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
 
 				// Create a double-spend of mature coinbase txn:
 				List<Transaction> spends = new List<Transaction>(2);
@@ -795,7 +795,7 @@ namespace Stratis.Bitcoin.Tests
 				stratisNodeSync.GenerateStratis(101); // coinbase maturity = 100
 				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
-				var block = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
+				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
 				var prevTrx = block.Transactions.First();
 				var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -836,7 +836,8 @@ namespace Stratis.Bitcoin.Tests
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
 				// wait for block repo for block sync to work
-				Class1.Eventually(() => stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null); 
+				Class1.Eventually(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null); 
 
 				// sync both nodes
 				stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
@@ -848,7 +849,7 @@ namespace Stratis.Bitcoin.Tests
 				var trxs = new List<Transaction>();
 				foreach (var index in Enumerable.Range(1, 5))
 				{
-					var block = stratisNodeSync.FullNode.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
+					var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
 					var prevTrx = block.Transactions.First();
 					var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -877,17 +878,15 @@ namespace Stratis.Bitcoin.Tests
 				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 5);
 				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 5);
 
+				// mine the transactions in the mempool
+				stratisNodeSync.GenerateStratis(1, stratisNodeSync.FullNode.MempoolManager.InfoAllAsync().Result.Select(s => s.Trx).ToList());
+				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
 
-				// TODO: enable this code when announcement of new blocks is supported
-				//// mine the transactions in the mempool
-				//stratisNodeSync.GenerateStratis(1, stratisNodeSync.FullNode.MempoolManager.InfoAllAsync().Result.Select(s => s.Trx).ToList());
-				//Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
-
-				//// wait for block and mempool to change
-				//Class1.Eventually(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-				//Class1.Eventually(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-				//Class1.Eventually(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 0);
-				//Class1.Eventually(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 0);
+				// wait for block and mempool to change
+				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash()); 
+				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 0);
+				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 0);
 			}
 		}
 	}

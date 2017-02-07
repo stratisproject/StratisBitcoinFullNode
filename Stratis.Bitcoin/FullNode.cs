@@ -125,13 +125,11 @@ namespace Stratis.Bitcoin
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
-			if(!_Args.Prune)
-			{
 				// TODO: later use the prune size to limit storage size
-				BlockRepository = new BlockRepository(DataFolder.BlockPath);
-				_Resources.Add(BlockRepository);
-				connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockRepository));
-			}
+				this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
+					new BlockRepository(DataFolder.BlockPath), DateTimeProvider.Default, _Args, this);
+				_Resources.Add(this.BlockStoreManager.BlockRepository);
+				connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository));
 
 			var consensusValidator = new ConsensusValidator(Network.Consensus);
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
@@ -212,7 +210,7 @@ namespace Stratis.Bitcoin
 					if(block.Error == null)
 					{
 						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						var unusedstore = this.TryStoreBlock(block.Block, reorg);
+						var unusedstore = this.BlockStoreManager.TryStoreBlock(block.Block, reorg);
 						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
 						{
 							var unused = cache.FlushAsync();
@@ -220,6 +218,7 @@ namespace Stratis.Bitcoin
 
 						var poolTask = this.MempoolManager.RemoveForBlock(block.Block, block.ChainedBlock.Height);
 						poolTask.Wait();// when the consensus loop will be awaitable replace this with await
+						this.BlockStoreManager.RelayBlock(block.ChainedBlock.HashBlock);
 					}
 
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
@@ -277,30 +276,10 @@ namespace Stratis.Bitcoin
 			}
 		}
 
-		private Task TryStoreBlock(Block block, bool reorg)
-		{
-			if(BlockRepository == null)
-				return Task.CompletedTask;
-			if(reorg)
-			{
-				// TODO: delete blocks if reorg
-				// this can be done periodically or 
-				// on a separate loop not to block consensus
-			}
-			else
-			{
-				return this.BlockRepository.PutAsync(block);
-			}
-
-			return Task.CompletedTask;
-		}
-
 		public ConsensusLoop ConsensusLoop
 		{
 			get; set;
 		}
-
-
 
 		public IWebHost RPCHost
 		{
@@ -346,7 +325,7 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
-		public BlockRepository BlockRepository
+		public BlockStoreManager BlockStoreManager
 		{
 			get; set;
 		}
