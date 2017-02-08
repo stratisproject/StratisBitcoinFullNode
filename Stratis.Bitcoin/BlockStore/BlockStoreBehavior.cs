@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,7 +61,25 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
-			await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
+			try
+			{
+				await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
+			}
+			catch (OperationCanceledException opx)
+			{
+				if (!opx.CancellationToken.IsCancellationRequested)
+					if (this.AttachedNode?.IsConnected ?? false)
+						throw;
+
+				// do nothing
+			}
+			catch (Exception ex)
+			{
+				Logging.Logs.BlockStore.LogError(ex.ToString());
+
+				// while in dev catch any unhandled exceptions
+				Debugger.Break();
+			}
 		}
 
 		private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)

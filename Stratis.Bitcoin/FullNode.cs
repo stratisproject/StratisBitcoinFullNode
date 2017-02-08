@@ -112,6 +112,8 @@ namespace Stratis.Bitcoin
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
 
+			this.Signals = new Signals();
+
 			if(AddressManager.Count == 0)
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
@@ -125,11 +127,12 @@ namespace Stratis.Bitcoin
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
-				// TODO: later use the prune size to limit storage size
-				this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-					new BlockRepository(DataFolder.BlockPath), DateTimeProvider.Default, _Args, this);
-				_Resources.Add(this.BlockStoreManager.BlockRepository);
-				connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository));
+			// TODO: later use the prune size to limit storage size
+			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
+				new BlockRepository(DataFolder.BlockPath), DateTimeProvider.Default, _Args, this);
+			_Resources.Add(this.BlockStoreManager.BlockRepository);
+			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository));
+			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain));
 
 			var consensusValidator = new ConsensusValidator(Network.Consensus);
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
@@ -141,6 +144,7 @@ namespace Stratis.Bitcoin
 			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, DateTimeProvider.Default, _Args);
 			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, DateTimeProvider.Default, _Args, this);
 			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager));
+			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain));
 
 			var flags = ConsensusLoop.GetFlags();
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
@@ -210,15 +214,12 @@ namespace Stratis.Bitcoin
 					if(block.Error == null)
 					{
 						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						var unusedstore = this.BlockStoreManager.TryStoreBlock(block.Block, reorg);
 						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
 						{
 							var unused = cache.FlushAsync();
 						}
 
-						var poolTask = this.MempoolManager.RemoveForBlock(block.Block, block.ChainedBlock.Height);
-						poolTask.Wait();// when the consensus loop will be awaitable replace this with await
-						this.BlockStoreManager.RelayBlock(block.ChainedBlock.HashBlock);
+						this.Signals.Blocks.Broadcast(block.Block);
 					}
 
 					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
@@ -274,6 +275,11 @@ namespace Stratis.Bitcoin
 					Dispose();
 				}
 			}
+		}
+
+		public Signals Signals
+		{
+			get; set;
 		}
 
 		public ConsensusLoop ConsensusLoop
