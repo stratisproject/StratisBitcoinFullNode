@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Configuration
 			{
 				lineCount++;
 				var line = l.Trim();
-				if(line.StartsWith("#"))
+				if(string.IsNullOrEmpty(line) || line.StartsWith("#"))
 					continue;
 				var split = line.Split('=');
 				if(split.Length == 0)
@@ -91,13 +91,15 @@ namespace Stratis.Bitcoin.Configuration
 		public bool Contains(string key)
 		{
 			List<string> values;
-			return _Args.TryGetValue(key, out values);
+			return _Args.TryGetValue(key, out values) 
+				|| _Args.TryGetValue($"-{key}", out values);
 		}
 		public string[] GetAll(string key)
 		{
 			List<string> values;
 			if(!_Args.TryGetValue(key, out values))
-				return new string[0];
+				if (!_Args.TryGetValue($"-{key}", out values))
+					return new string[0];
 			return values.ToArray();
 		}
 
@@ -105,7 +107,9 @@ namespace Stratis.Bitcoin.Configuration
 		{
 			List<string> values;
 			if(!_Args.TryGetValue(key, out values))
-				return defaultValue;
+				if (!_Args.TryGetValue($"-{key}", out values))
+					return defaultValue;
+
 			if(values.Count != 1)
 				throw new ConfigurationException("Duplicate value for key " + key);
 			try

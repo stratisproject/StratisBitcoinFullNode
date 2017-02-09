@@ -222,6 +222,9 @@ namespace Stratis.Bitcoin.Configuration
 				nodeArgs.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
 			}
 
+			if (nodeArgs.Testnet && nodeArgs.RegTest)
+				throw new ConfigurationException("Invalid combination of -regtest and -testnet");
+
 			var network = nodeArgs.GetNetwork();
 			if(nodeArgs.DataDir == null)
 			{
