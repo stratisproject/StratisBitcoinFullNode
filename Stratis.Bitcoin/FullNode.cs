@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
 
 			// create the memory pool
-			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee);
+			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee, _Args);
 			var mempoolScheduler = new SchedulerPairSession();
 			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, DateTimeProvider.Default, _Args, this.Chain, this.CoinView);
 			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, DateTimeProvider.Default, _Args);

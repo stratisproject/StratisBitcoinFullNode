@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Fee;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
 
@@ -111,8 +113,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		public const int MempoolHeight = 0x7FFFFFFF;
 
 		private double checkFrequency; //!< Value n means that n times in 2^32 we check.
-		int nTransactionsUpdated;
-		//CBlockPolicyEstimator* minerPolicyEstimator;
+		private int nTransactionsUpdated;
+		public BlockPolicyEstimator MinerPolicyEstimator { get; }
 
 		long totalTxSize;      //!< sum of all mempool tx's virtual sizes. Differs from serialized Transaction size since witness data is discounted. Defined in BIP 141.
 		long cachedInnerUsage; //!< sum of dynamic memory usage of all the map elements (NOT the maps themselves)
@@ -336,15 +338,14 @@ namespace Stratis.Bitcoin.MemoryPool
 			public Transaction Transaction;
 		}
 
-		public IndexedTransactionSet MapTx = new IndexedTransactionSet();
-		TxlinksMap mapLinks = new TxlinksMap();
-		public List<NextTxPair> MapNextTx = new List<NextTxPair>();
-		private Dictionary<uint256, DeltaPair> mapDeltas = new Dictionary<uint256, DeltaPair>();
-		Dictionary<TxMempoolEntry, uint256> vTxHashes = new Dictionary<TxMempoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
-
+		public IndexedTransactionSet MapTx;
+		private TxlinksMap mapLinks;
+		public List<NextTxPair> MapNextTx;
+		private Dictionary<uint256, DeltaPair> mapDeltas;
+		private Dictionary<TxMempoolEntry, uint256> vTxHashes;  //!< All tx witness hashes/entries in mapTx, in random order
 		private DateTimeProvider TimeProvider { get; }
 
-		public TxMempool(FeeRate minReasonableRelayFee) : this(minReasonableRelayFee, DateTimeProvider.Default)
+		public TxMempool(FeeRate minReasonableRelayFee, NodeArgs nodeArgs) : this(minReasonableRelayFee, DateTimeProvider.Default, nodeArgs)
 		{
 		}
 
@@ -353,18 +354,23 @@ namespace Stratis.Bitcoin.MemoryPool
 		*  around what it "costs" to relay a transaction around the network and
 		*  below which we would reasonably say a transaction has 0-effective-fee.
 		*/
-		public TxMempool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider)
+		public TxMempool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
 		{
+			this.MapTx = new IndexedTransactionSet();
+			this.mapLinks = new TxlinksMap();
+			this.MapNextTx = new List<NextTxPair>();
+			this.mapDeltas = new Dictionary<uint256, DeltaPair>();
+			this.vTxHashes = new Dictionary<TxMempoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
+
 			this.TimeProvider = dateTimeProvider;
 			this.InnerClear(); //lock free clear
 
 			// Sanity checks off by default for performance, because otherwise
 			// accepting transactions becomes O(N^2) where N is the number
 			// of transactions in the pool
-			checkFrequency = 0;
+			this.checkFrequency = 0;
 
-			// TODO: implement CBlockPolicyEstimator
-			//minerPolicyEstimator = new CBlockPolicyEstimator(_minReasonableRelayFee);
+			this.MinerPolicyEstimator = new BlockPolicyEstimator(minReasonableRelayFee, nodeArgs);
 			this.minReasonableRelayFee = minReasonableRelayFee;
 		}
 
@@ -416,6 +422,35 @@ namespace Stratis.Bitcoin.MemoryPool
 			Logging.Logs.Mempool.LogInformation($"Checking mempool with {this.MapTx.Count} transactions and {this.MapNextTx.Count} inputs");
 
 			throw new NotImplementedException();
+		}
+
+		public Transaction Get(uint256 hash)
+		{
+			return this.MapTx.TryGet(hash)?.Transaction;
+		}
+
+		public FeeRate EstimateFee(int nBlocks)
+		{
+
+			return MinerPolicyEstimator.EstimateFee(nBlocks);
+		}
+
+		public FeeRate EstimateSmartFee(int nBlocks, out int answerFoundAtBlocks)
+		{
+
+			return MinerPolicyEstimator.EstimateSmartFee(nBlocks, this, out answerFoundAtBlocks);
+		}
+
+		public double EstimatePriority(int nBlocks)
+		{
+
+			return MinerPolicyEstimator.EstimatePriority(nBlocks);
+		}
+
+		public double EstimateSmartPriority(int nBlocks, out int answerFoundAtBlocks)
+		{
+
+			return MinerPolicyEstimator.EstimateSmartPriority(nBlocks, this, out answerFoundAtBlocks);
 		}
 
 		public void SetSanityCheck(double dFrequency = 1.0) { checkFrequency = dFrequency * 4294967295.0; }
@@ -490,8 +525,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			nTransactionsUpdated++;
 			totalTxSize += entry.GetTxSize();
 
-			// TODO: implemented CBlockPolicyEstimator
-			//minerPolicyEstimator->processTransaction(entry, validFeeEstimate);
+			this.MinerPolicyEstimator.ProcessTransaction(entry, validFeeEstimate);
 
 			vTxHashes.Add(entry, tx.GetWitHash());
 			//entry.vTxHashesIdx = vTxHashes.size() - 1;
@@ -808,7 +842,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			mapLinks.Remove(it);
 			MapTx.Remove(it);
 			nTransactionsUpdated++;
-			//minerPolicyEstimator->removeTx(hash);
+			MinerPolicyEstimator.RemoveTx(hash);
 		}
 
 		// Calculates descendants of entry that are not already in setDescendants, and adds to
@@ -927,21 +961,17 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public void RemoveForBlock(IEnumerable<Transaction> vtx, int blockHeight)
 		{
-			//LOCK(cs);
-
-			// TODO: implement minerPolicyEstimator
-			//var entries = new List<TxMemPoolEntry>();
-			//foreach (var tx in vtx)
-			//{
-			//	uint256 hash = tx.GetHash();
-			//	var entry = this.MapTx.TryGet(hash);
-			//	if (entry != null)
-			//		entries.Add(entry);
-			//}
-
+			var entries = new List<TxMempoolEntry>();
+			foreach (var tx in vtx)
+			{
+				uint256 hash = tx.GetHash();
+				var entry = this.MapTx.TryGet(hash);
+				if (entry != null)
+					entries.Add(entry);
+			}
 
 			// Before the txs in the new block have been removed from the mempool, update policy estimates
-			//minerPolicyEstimator->processBlock(nBlockHeight, entries);
+			MinerPolicyEstimator.ProcessBlock(blockHeight, entries);
 			foreach (var tx in vtx)
 			{
 				uint256 hash = tx.GetHash();
@@ -1115,6 +1145,26 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Large (in bytes) low-priority (new, small-coin) transactions
 			// need a fee.
 			return dPriority > AllowFreeThreshold();
+		}
+
+		public void WriteFeeEstimates(BitcoinStream stream)
+		{
+			
+		}
+
+		public void ReadFeeEstimates(BitcoinStream stream)
+		{
+			
+		}
+
+		public int GetTransactionsUpdated()
+		{
+			return nTransactionsUpdated;
+		}
+
+		public void AddTransactionsUpdated(int n)
+		{
+			nTransactionsUpdated += n;
 		}
 	}
 }

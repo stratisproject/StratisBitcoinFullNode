@@ -21,6 +21,8 @@ namespace Stratis.Bitcoin.Logging
 			Bench = factory.CreateLogger("Bench");
 			Mempool = factory.CreateLogger("Mempool");
 			BlockStore = factory.CreateLogger("BlockStore");
+			EstimateFee = factory.CreateLogger("EstimateFee");
+
 		}
 		public static ILogger Configuration
 		{
@@ -47,6 +49,10 @@ namespace Stratis.Bitcoin.Logging
 			get; set;
 		}
 		public static ILogger BlockStore
+		{
+			get; set;
+		}
+		public static ILogger EstimateFee
 		{
 			get; set;
 		}

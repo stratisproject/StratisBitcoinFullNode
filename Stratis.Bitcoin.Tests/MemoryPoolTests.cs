@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
@@ -16,37 +17,6 @@ namespace Stratis.Bitcoin.Tests
 {
     public class MemoryPoolTests
 	{
-		public class TestMemPoolEntryHelper
-		{
-			// Default values
-			Money nFee = Money.Zero;
-			long nTime = 0;
-			double dPriority = 0.0;
-			int nHeight = 1;
-			bool spendsCoinbase = false;
-			long sigOpCost = 4;
-			LockPoints lp;
-
-
-			public TxMempoolEntry FromTx(Transaction tx, TxMempool pool = null)
-			{
-				Money inChainValue = (pool != null && pool.HasNoInputsOf(tx)) ? tx.TotalOut : 0;
-
-				return new TxMempoolEntry(tx, nFee, nTime, dPriority, nHeight,
-									   inChainValue, spendsCoinbase, sigOpCost, lp);
-
-			}
-
-			// Change the default value
-			public TestMemPoolEntryHelper Fee(Money _fee) { nFee = _fee; return this; }
-			public TestMemPoolEntryHelper Time(long _time) { nTime = _time; return this; }
-			public TestMemPoolEntryHelper Priority(double _priority) { dPriority = _priority; return this; }
-			public TestMemPoolEntryHelper Height(int _height) { nHeight = _height; return this; }
-			public TestMemPoolEntryHelper SpendsCoinbase(bool _flag) { spendsCoinbase = _flag; return this; }
-			public TestMemPoolEntryHelper SigOpsCost(long _sigopsCost) { sigOpCost = _sigopsCost; return this; }
-
-		}
-
 		[Fact]
 		public void MempoolRemoveTest()
 	    {
@@ -82,7 +52,7 @@ namespace Stratis.Bitcoin.Tests
 				txGrandChild[i].AddOutput(new TxOut(new Money(11000L), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
 			}
 
-			TxMempool testPool = new TxMempool(new FeeRate(0));
+			TxMempool testPool = new TxMempool(new FeeRate(0), NodeArgs.Default());
 
 			// Nothing in pool, remove should do nothing:
 			var poolSize = testPool.Size;
@@ -147,7 +117,7 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void MempoolIndexingTest()
 		{
-			var pool = new TxMempool(new FeeRate(0));
+			var pool = new TxMempool(new FeeRate(0), NodeArgs.Default());
 			var entry = new TestMemPoolEntryHelper();
 
 			/* 3rd highest fee */
@@ -330,7 +300,7 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void MempoolAncestorIndexingTest()
 		{
-			var pool = new TxMempool(new FeeRate(0));
+			var pool = new TxMempool(new FeeRate(0), NodeArgs.Default());
 			var entry = new TestMemPoolEntryHelper();
 
 			/* 3rd highest fee */
@@ -424,7 +394,7 @@ namespace Stratis.Bitcoin.Tests
 		public void MempoolSizeLimitTest()
 		{
 			var dateTimeSet = new DateTimeProviderSet();
-			var pool = new TxMempool(new FeeRate(1000), dateTimeSet);
+			var pool = new TxMempool(new FeeRate(1000), dateTimeSet, NodeArgs.Default());
 			var entry = new TestMemPoolEntryHelper();
 			entry.Priority(10.0);
 
@@ -553,7 +523,7 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void MempoolConcurrencyTest()
 		{
-			var pool = new TxMempool(new FeeRate(1000));
+			var pool = new TxMempool(new FeeRate(1000), NodeArgs.Default());
 			var scheduler = new SchedulerPairSession();
 			var rand = new Random();
 
@@ -889,5 +859,36 @@ namespace Stratis.Bitcoin.Tests
 				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 0);
 			}
 		}
+	}
+
+	public class TestMemPoolEntryHelper
+	{
+		// Default values
+		Money nFee = Money.Zero;
+		long nTime = 0;
+		double dPriority = 0.0;
+		int nHeight = 1;
+		bool spendsCoinbase = false;
+		long sigOpCost = 4;
+		LockPoints lp;
+
+
+		public TxMempoolEntry FromTx(Transaction tx, TxMempool pool = null)
+		{
+			Money inChainValue = (pool != null && pool.HasNoInputsOf(tx)) ? tx.TotalOut : 0;
+
+			return new TxMempoolEntry(tx, nFee, nTime, dPriority, nHeight,
+				inChainValue, spendsCoinbase, sigOpCost, lp);
+
+		}
+
+		// Change the default value
+		public TestMemPoolEntryHelper Fee(Money _fee) { nFee = _fee; return this; }
+		public TestMemPoolEntryHelper Time(long _time) { nTime = _time; return this; }
+		public TestMemPoolEntryHelper Priority(double _priority) { dPriority = _priority; return this; }
+		public TestMemPoolEntryHelper Height(int _height) { nHeight = _height; return this; }
+		public TestMemPoolEntryHelper SpendsCoinbase(bool _flag) { spendsCoinbase = _flag; return this; }
+		public TestMemPoolEntryHelper SigOpsCost(long _sigopsCost) { sigOpCost = _sigopsCost; return this; }
+
 	}
 }

@@ -105,7 +105,10 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 
 		public Task RemoveForBlock(Block block, int blockHeight)
-		{			
+		{
+			//if (this.IsInitialBlockDownload)
+			//	return Task.CompletedTask;
+
 			return this.MempoolScheduler.DoExclusive(() => this.memPool.RemoveForBlock(block.Transactions, blockHeight));
 		}
 	}

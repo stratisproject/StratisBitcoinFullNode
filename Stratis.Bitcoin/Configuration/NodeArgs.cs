@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using System.Net;
 using System.Text;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 
@@ -190,6 +191,11 @@ namespace Stratis.Bitcoin.Configuration
 		{
 			get;
 			set;
+		}
+
+		public static NodeArgs Default()
+		{
+			return NodeArgs.GetArgs(new string[0]);
 		}
 
 		public static NodeArgs GetArgs(string[] args)
