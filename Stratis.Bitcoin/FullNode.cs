@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin
 			_ChainBehaviorState = connectionParameters.TemplateBehaviors.Find<BlockStore.ChainBehavior>().SharedState;
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
-			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes, this._ChainBehaviorState);
+			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
 			// TODO: later use the prune size to limit storage size

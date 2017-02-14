@@ -669,17 +669,25 @@ namespace Stratis.Bitcoin.Tests
 				blocks.Add(block);
 				if (broadcast)
 				{
-					//var res = new BlockResult {Block = block};
 					try
 					{
-						fullNode.Chain.SetTip(new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip));
-						fullNode.ConsensusLoop.LookaheadBlockPuller.PushBlock(block.GetSerializedSize(), block, CancellationToken.None);
-						//fullNode.ConsensusLoop.AcceptBlock(res);
-						//if (res.Error == null)
-						//{
-						//	chain.SetTip(res.ChainedBlock);
-						//	fullNode.BlockRepository.PutAsync(block);
-						//}
+						var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
+						fullNode.Chain.SetTip(newChain);
+
+						var blockResult = new BlockResult { Block = block };
+						fullNode.ConsensusLoop.AcceptBlock(blockResult);
+
+
+						// similar logic to what's in the full node code
+						if (blockResult.Error == null)
+						{
+							fullNode.ChainBehaviorState.HighestValidatedPoW = fullNode.ConsensusLoop.Tip;
+							//if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
+							//{
+							//	var unused = cache.FlushAsync();
+							//}
+							fullNode.Signals.Blocks.Broadcast(block);
+						}
 					}
 					catch (ConsensusErrorException)
 					{

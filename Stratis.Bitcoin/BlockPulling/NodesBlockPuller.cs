@@ -191,13 +191,11 @@ namespace Stratis.Bitcoin.BlockPulling
 		}
 
 		private NodesCollection _Nodes;
-		private readonly BlockStore.ChainBehavior.ChainState chainState;
 
-		public NodesBlockPuller(ConcurrentChain chain, NodesCollection nodes, BlockStore.ChainBehavior.ChainState chainState)
+		public NodesBlockPuller(ConcurrentChain chain, NodesCollection nodes)
 		{
 			Chain = chain;
 			_Nodes = nodes;
-			this.chainState = chainState;
 		}
 
 		private ConcurrentDictionary<uint256, NodesBlockPullerBehavior> _Map = new ConcurrentDictionary<uint256, NodesBlockPullerBehavior>();
@@ -263,8 +261,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			foreach (var behavior in nodes)
 			{
 				// filter nodes that are still behind
-				// TODO: this is effectively similar to Consensus.Tip consider using that instead by setting consensus to the parent of the puller
-				if(behavior.BestKnownTip?.Height >= this.chainState.HighestValidatedPoW.Height)
+				if(behavior.BestKnownTip?.Height >= this.Location.Height)
 					selectnodes.Add(behavior);
 			}
 			nodes = selectnodes.ToArray();
