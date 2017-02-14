@@ -16,17 +16,15 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly TxMempool memPool;
 
 		private readonly ConcurrentChain chain;
-		private readonly FullNode fullNode;
 		public DateTimeProvider DateTimeProvider { get; }
 		public NodeArgs NodeArgs { get; set; }
 
 		public MempoolManager(SchedulerPairSession mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
-			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs, FullNode fullNode)
+			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
 			this.chain = chain;
-			this.fullNode = fullNode;
 			this.DateTimeProvider = dateTimeProvider;
 			this.NodeArgs = nodeArgs;
 			this.Orphans = orphans;
@@ -36,22 +34,6 @@ namespace Stratis.Bitcoin.MemoryPool
 		public Task<List<uint256>> GetMempoolAsync()
 		{
 			return this.MempoolScheduler.DoConcurrent(() => this.memPool.MapTx.Keys.ToList());
-		}
-
-		// TODO: how to do this without the fullnode class
-		private long lastupdate;
-		private bool lastresult;
-		public bool IsInitialBlockDownload
-		{
-			get
-			{
-				if (lastupdate < DateTime.UtcNow.Ticks)
-				{
-					lastupdate = DateTime.UtcNow.AddMinutes(1).Ticks; // sample every minute
-					lastresult = this.fullNode.IsInitialBlockDownload();
-				}
-				return lastresult;
-			}
 		}
 
 		public List<TxMempoolInfo> InfoAll()

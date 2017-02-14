@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
@@ -28,6 +26,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly MempoolManager manager;
 		private readonly MempoolOrphans orphans;
 		private readonly ConnectionManager connectionManager;
+		private readonly BlockStore.ChainBehavior.ChainState chainState;
 
 		public long LastMempoolReq { get; private set; }
 		public long NextInvSend { get; set; }
@@ -38,12 +37,13 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private readonly CancellationTokenSource periodicToken;
 
-		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, ConnectionManager connectionManager)
+		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
 		{
 			this.validator = validator;
 			this.manager = manager;
 			this.orphans = orphans;
 			this.connectionManager = connectionManager;
+			this.chainState = chainState;
 
 			this.inventoryTxToSend = new Dictionary<uint256, uint256>();
 			this.filterInventoryKnown = new Dictionary<uint256, uint256>();
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				return; //error("message inv size() = %u", vInv.size());
 			}
 
-			if(this.manager.IsInitialBlockDownload)
+			if(this.chainState.IsInitialBlockDownload)
 				return;
 
 			bool blocksOnly = !this.manager.NodeArgs.Mempool.RelayTxes;
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 				if (blocksOnly)
 					Logging.Logs.Mempool.LogInformation(
-						$"transaction ({inv.Hash}) inv sent in violation of protocol peer={node.PeerVersion.Nonce}");
+						$"transaction ({inv.Hash}) inv sent in violation of protocol peer={node.RemoteSocketEndpoint}");
 
 				if (await this.orphans.AlreadyHave(inv.Hash))
 					continue;
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				var mmsize = state.MempoolSize;
 				var memdyn = state.MempoolDynamicSize;
 				Logging.Logs.Mempool.LogInformation(
-					$"AcceptToMemoryPool: peer={node.PeerVersion.Nonce}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
+					$"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
 
 				await this.orphans.ProcessesOrphans(this, trx);
 			}
@@ -210,7 +210,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			if (state.IsInvalid)
 			{
-				Logging.Logs.Mempool.LogInformation($"{trxHash} from peer={node.PeerVersion.Nonce} was not accepted: {state}");
+				Logging.Logs.Mempool.LogInformation($"{trxHash} from peer={node.Peer.Endpoint} was not accepted: {state}");
 			}
 		}
 
@@ -374,9 +374,13 @@ namespace Stratis.Bitcoin.MemoryPool
 
 						// do nothing
 					}
-					catch (Exception)
+					catch (Exception ex)
 					{
 						// handle this so it doesn't hit the execution context
+						Logging.Logs.BlockStore.LogError(ex.ToString());
+
+						// while in dev catch any unhandled exceptions
+						Debugger.Break();
 					}
 				}
 				
@@ -385,7 +389,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public override object Clone()
 		{
-			return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager);
+			return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState);
 		}
 	}
 }

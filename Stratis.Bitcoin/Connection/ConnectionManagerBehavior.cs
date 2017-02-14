@@ -2,6 +2,7 @@ using System;
 using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.Connection
@@ -48,10 +49,10 @@ namespace Stratis.Bitcoin.Connection
 		{
 			this.AttachedNode.StateChanged += AttachedNode_StateChanged;
 			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
-			_ChainBehavior = this.AttachedNode.Behaviors.Find<ChainBehavior>();
+			_ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
 		}
 
-		ChainBehavior _ChainBehavior;
+		BlockStore.ChainBehavior _ChainBehavior;
 		private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
 			if(_ChainBehavior.InvalidHeaderReceived && !Whitelisted)
@@ -65,12 +66,12 @@ namespace Stratis.Bitcoin.Connection
 			if(node.State == NodeState.HandShaked)
 			{
 				ConnectionManager.ConnectedNodes.Add(node);
-				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " connected (" + (Inbound ? "inbound" : "outbound") + "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
+				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketEndpoint + " connected (" + (Inbound ? "inbound" : "outbound") + "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
 				node.SendMessageAsync(new SendHeadersPayload());
 			}
 			if(node.State == NodeState.Failed || node.State == NodeState.Offline)
 			{
-				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketAddress + " offline");
+				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketEndpoint + " offline");
 				if(node.DisconnectReason != null && !String.IsNullOrEmpty(node.DisconnectReason.Reason))
 					Logs.ConnectionManager.LogInformation("Reason: " + node.DisconnectReason.Reason);
 				ConnectionManager.ConnectedNodes.Remove(node);

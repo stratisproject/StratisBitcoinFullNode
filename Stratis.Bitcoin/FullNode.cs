@@ -21,6 +21,7 @@ using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Miner;
 
 namespace Stratis.Bitcoin
 {
@@ -113,6 +114,7 @@ namespace Stratis.Bitcoin
 			}
 
 			this.Signals = new Signals();
+			this._ChainBehaviorState = new BlockStore.ChainBehavior.ChainState(this);
 
 			if(AddressManager.Count == 0)
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
@@ -120,31 +122,34 @@ namespace Stratis.Bitcoin
 			var connectionParameters = new NodeConnectionParameters();
 			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
 			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
-			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(Chain));
-			_ChainBehaviorState = connectionParameters.TemplateBehaviors.Find<ChainBehavior>().SharedState;
+			connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
+			_ChainBehaviorState = connectionParameters.TemplateBehaviors.Find<BlockStore.ChainBehavior>().SharedState;
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
-			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
+			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes, this._ChainBehaviorState);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
 			// TODO: later use the prune size to limit storage size
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-				new BlockRepository(DataFolder.BlockPath), DateTimeProvider.Default, _Args, this);
+				new BlockRepository(DataFolder.BlockPath), DateTimeProvider.Default, _Args, this._ChainBehaviorState);
 			_Resources.Add(this.BlockStoreManager.BlockRepository);
-			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository));
+			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, this.BlockStoreManager));
 			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain));
 
 			var consensusValidator = new ConsensusValidator(Network.Consensus);
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
+			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 
 			// create the memory pool
 			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee, _Args);
 			var mempoolScheduler = new SchedulerPairSession();
 			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, DateTimeProvider.Default, _Args, this.Chain, this.CoinView);
 			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, DateTimeProvider.Default, _Args);
-			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, DateTimeProvider.Default, _Args, this);
-			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager));
+			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, DateTimeProvider.Default, _Args);
+			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager, this.ChainBehaviorState));
 			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain));
+
+			this.Miner = new Mining(this, DateTimeProvider.Default);
 
 			var flags = ConsensusLoop.GetFlags();
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
@@ -160,7 +165,11 @@ namespace Stratis.Bitcoin
 			_IsStarted.Set();
 		}
 
-		ChainBehavior.State _ChainBehaviorState;
+		private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
+		public BlockStore.ChainBehavior.ChainState ChainBehaviorState
+		{
+			get { return _ChainBehaviorState; } 
+		}
 
 		void RunLoop()
 		{
@@ -277,6 +286,11 @@ namespace Stratis.Bitcoin
 			}
 		}
 
+		public Mining Miner
+		{
+			get; set;
+		}
+
 		public Signals Signals
 		{
 			get; set;
@@ -304,6 +318,7 @@ namespace Stratis.Bitcoin
 			Logs.FullNode.LogInformation("Loading chain");
 			Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
 			Chain = Chain ?? new ConcurrentChain(Network);
+			Check.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
 			Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
 			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
 			{

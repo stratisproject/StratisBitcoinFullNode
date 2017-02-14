@@ -63,6 +63,7 @@ namespace Stratis.Bitcoin.Connection
 				var cloneParameters = _Parameters.Clone();
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
 				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, _DiscoveredNodeRequiredService);
+				//DiscoveredNodeGroup.MaximumNodeConnection = 0;// TODO: add the default from node args
 				DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
 				DiscoveredNodeGroup.Connect();
 			}
@@ -88,7 +89,7 @@ namespace Stratis.Bitcoin.Connection
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
 				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
 				var addrman = new AddressManager();
-				addrman.Add(_Args.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
+				addrman.Add(_Args.AddNode.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
 				var addrmanBehavior = new AddressManagerBehavior(addrman);
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.AdvertizeDiscover;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
@@ -184,6 +185,8 @@ namespace Stratis.Bitcoin.Connection
 		Dictionary<Node, PerformanceSnapshot> _Downloads = new Dictionary<Node, PerformanceSnapshot>();
 
 		List<NodeServer> _Servers = new List<NodeServer>();
+
+		public List<NodeServer> Servers => this._Servers;
 
 		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters, NodeServices requiredServices)
 		{

@@ -16,33 +16,17 @@ namespace Stratis.Bitcoin.BlockStore
 		public BlockRepository BlockRepository { get; } // public for testing
 		private readonly DateTimeProvider dateTimeProvider;
 		private readonly NodeArgs nodeArgs;
-		private readonly FullNode fullNode;
+		public BlockStore.ChainBehavior.ChainState ChainState { get; }
 
 		public BlockStoreManager(ConcurrentChain chain, ConnectionManager connection, BlockRepository blockRepository,
-			DateTimeProvider dateTimeProvider, NodeArgs nodeArgs, FullNode fullNode)
+			DateTimeProvider dateTimeProvider, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState)
 		{
 			this.chain = chain;
 			this.connection = connection;
 			this.BlockRepository = blockRepository;
 			this.dateTimeProvider = dateTimeProvider;
 			this.nodeArgs = nodeArgs;
-			this.fullNode = fullNode;
-		}
-
-		// TODO: how to do this without the fullnode class
-		private long lastupdate;
-		private bool lastresult;
-		public bool IsInitialBlockDownload
-		{
-			get
-			{
-				if (lastupdate < DateTime.UtcNow.Ticks)
-				{
-					lastupdate = DateTime.UtcNow.AddMinutes(1).Ticks; // sample every minute
-					lastresult = this.fullNode.IsInitialBlockDownload();
-				}
-				return lastresult;
-			}
+			this.ChainState = chainState;
 		}
 
 		public Task TryStoreBlock(Block block, bool reorg)
@@ -69,7 +53,7 @@ namespace Stratis.Bitcoin.BlockStore
 			if (this.nodeArgs.Prune)
 				return Task.CompletedTask;
 
-			if(this.IsInitialBlockDownload)
+			if(this.ChainState.IsInitialBlockDownload)
 				return Task.CompletedTask;
 
 			var nodes = this.connection.ConnectedNodes;

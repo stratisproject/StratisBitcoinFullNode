@@ -42,6 +42,17 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			private void Node_MessageReceived(Node node, IncomingMessage message)
 			{
+				// Attempting to find the peers current best chain
+				// to be used by the puller to determine if the peer can server blocks
+				message.Message.IfPayloadIs<HeadersPayload>(header =>
+				{
+					foreach (var blockHeader in header.Headers)
+					{
+						var cahinedBlock = this._Puller.Chain.GetBlock(blockHeader.GetHash());
+						this.TrySetBestKnownTip(cahinedBlock);
+					}
+				});
+
 				message.Message.IfPayloadIs<BlockPayload>((block) =>
 				{
 					block.Object.Header.CacheHashes();
@@ -58,7 +69,7 @@ namespace Stratis.Bitcoin.BlockPulling
 						foreach(var tx in block.Object.Transactions)
 							tx.CacheHashes();
 						_Puller.PushBlock((int)message.Length, block.Object, _Cts.Token);
-						AssignPendingVector();
+						this.AssignPendingVector();
 					}
 				});
 			}
@@ -131,13 +142,62 @@ namespace Stratis.Bitcoin.BlockPulling
 					Release(h);
 				}
 			}
+
+			public ChainedBlock BestKnownTip { get; private set; }
+
+			private void TrySetBestKnownTip(ChainedBlock block)
+			{
+				if (block != null && block.ChainWork > 0)
+					if (this.BestKnownTip == null || block.ChainWork > this.BestKnownTip.ChainWork)
+						this.BestKnownTip = block;
+			}
+
+			//public uint256 LastUnknownBlock { get; private set; }
+			//public ChainedBlock BestKnownBlock { get; private set; }
+
+			//// Check whether the last unknown block a peer advertised is not yet known. 
+			//private void ProcessBlockAvailability()
+			//{
+			//	if (this.LastUnknownBlock != null)
+			//	{
+			//		var chainedBlock = this._Puller.Chain.GetBlock(this.LastUnknownBlock);
+			//		if (chainedBlock != null && chainedBlock.ChainWork > 0)
+			//		{
+			//			if (this.BestKnownBlock == null || chainedBlock.ChainWork >= this.BestKnownBlock.ChainWork)
+			//				this.BestKnownBlock = chainedBlock;
+			//			this.LastUnknownBlock = null;
+			//		}
+			//	}
+			//}
+
+			//// Update tracking information about which blocks a peer is assumed to have. 
+			//private void UpdateBlockAvailability(uint256 hash)
+			//{
+			//	ProcessBlockAvailability();
+
+			//	var chainedBlock = this._Puller.Chain.GetBlock(hash);
+			//	if (chainedBlock != null && chainedBlock.ChainWork > 0)
+			//	{
+			//		// An actually better block was announced.
+			//		if (this.BestKnownBlock == null || chainedBlock.ChainWork >= this.BestKnownBlock.ChainWork)
+			//			this.BestKnownBlock = chainedBlock;
+			//	}
+			//	else
+			//	{
+			//		// An unknown block was announced; just assume that the latest one is the best one.
+			//		this.LastUnknownBlock = hash;
+			//	}
+			//}
 		}
 
 		private NodesCollection _Nodes;
-		public NodesBlockPuller(ConcurrentChain chain, NodesCollection nodes)
+		private readonly BlockStore.ChainBehavior.ChainState chainState;
+
+		public NodesBlockPuller(ConcurrentChain chain, NodesCollection nodes, BlockStore.ChainBehavior.ChainState chainState)
 		{
 			Chain = chain;
 			_Nodes = nodes;
+			this.chainState = chainState;
 		}
 
 		private ConcurrentDictionary<uint256, NodesBlockPullerBehavior> _Map = new ConcurrentDictionary<uint256, NodesBlockPullerBehavior>();
@@ -196,16 +256,29 @@ namespace Stratis.Bitcoin.BlockPulling
 		{
 			if(vectors.Length == 0)
 				return;
-			if(nodes.Length == 0)
+
+			// Be careful to not ask block to a node that do not have it 
+			// (we can check the ChainBehavior.PendingTip to know where the node is standing)
+			List<NodesBlockPullerBehavior> selectnodes = new List<NodesBlockPullerBehavior>();
+			foreach (var behavior in nodes)
+			{
+				// filter nodes that are still behind
+				// TODO: this is effectively similar to Consensus.Tip consider using that instead by setting consensus to the parent of the puller
+				if(behavior.BestKnownTip?.Height >= this.chainState.HighestValidatedPoW.Height)
+					selectnodes.Add(behavior);
+			}
+			nodes = selectnodes.ToArray();
+
+			if (nodes.Length == 0)
 			{
 				foreach(var v in vectors)
 					_PendingInventoryVectors.Add(v.Hash);
 				return;
 			}
+
 			var scores = nodes.Select(n => n.QualityScore == MaxQualityScore ? MaxQualityScore * 2 : n.QualityScore).ToArray();
 			var totalScore = scores.Sum();
 			GetDataPayload[] getDatas = nodes.Select(n => new GetDataPayload()).ToArray();
-			//TODO: Be careful to not ask block to a node that do not have it (we can check the ChainBehavior.PendingTip to know where the node is standing)
 			foreach(var inv in vectors)
 			{
 				var index = GetNodeIndex(scores, totalScore);
