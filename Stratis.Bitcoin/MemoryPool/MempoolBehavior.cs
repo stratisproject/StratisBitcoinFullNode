@@ -87,6 +87,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 				// while in dev catch any unhandled exceptions
 				Debugger.Break();
+				throw;
 			}
 			
 		}
@@ -381,6 +382,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 						// while in dev catch any unhandled exceptions
 						Debugger.Break();
+						throw;
 					}
 				}
 				
