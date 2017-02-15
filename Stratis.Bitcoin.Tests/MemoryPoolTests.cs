@@ -578,6 +578,47 @@ namespace Stratis.Bitcoin.Tests
 		}
 
 		[Fact]
+		public void AddToMempoolTrxSpendingTwoOutputFromSameTrx()
+		{
+			using (NodeBuilder builder = NodeBuilder.Create())
+			{
+				var stratisNodeSync = builder.CreateStratisNode();
+				builder.StartAll();
+
+				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
+				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+
+				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
+				var prevTrx = block.Transactions.First();
+				var dest1 = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
+				var dest2 = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
+
+				Transaction parentTx = new Transaction();
+				parentTx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
+				parentTx.AddOutput(new TxOut("25", dest1.PubKey.Hash));
+				parentTx.AddOutput(new TxOut("24", dest2.PubKey.Hash)); // 1 btc fee
+				parentTx.Sign(stratisNodeSync.MinerSecret, false);
+				stratisNodeSync.Broadcast(parentTx);
+				// wiat for the trx to enter the pool
+				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
+				// mine the transactions in the mempool
+				stratisNodeSync.GenerateStratis(1, stratisNodeSync.FullNode.MempoolManager.InfoAllAsync().Result.Select(s => s.Trx).ToList());
+				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
+				
+				//create a new trx spending both outputs
+				Transaction tx = new Transaction();
+				tx.AddInput(new TxIn(new OutPoint(parentTx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(dest1.PubKey)));
+				tx.AddInput(new TxIn(new OutPoint(parentTx.GetHash(), 1), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(dest2.PubKey)));
+				tx.AddOutput(new TxOut("48", new Key().PubKey.Hash)); // 1 btc fee
+				var signed = new TransactionBuilder().AddKeys(dest1, dest2).AddCoins(parentTx.Outputs.AsCoins()).SignTransaction(tx);
+
+				stratisNodeSync.Broadcast(signed);
+				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
+			}
+		}
+
+		[Fact]
 		public void MempoolReceiveFromManyNodes()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
