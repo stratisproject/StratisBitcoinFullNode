@@ -18,5 +18,10 @@ namespace Stratis.Bitcoin.Connection
 			for (int i = 0; i < count; i++)
 				yield return queue.Dequeue();
 		}
+
+		public static string RemoteInfo(this Node node)
+		{
+			return node.RemoteSocketAddress + ":" + node.RemoteSocketPort;
+		}
 	}
 }

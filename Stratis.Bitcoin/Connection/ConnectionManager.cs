@@ -176,6 +176,23 @@ namespace Stratis.Bitcoin.Connection
 			return builder.ToString();
 		}
 
+		public string GetNodeStats()
+		{
+			var builder = new StringBuilder();
+
+			foreach (var node in this.ConnectedNodes)
+			{
+				var connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
+				var chainBehavior = node.Behavior<BlockStore.ChainBehavior>();
+				builder.AppendLine(
+					"Node:" + (node.RemoteInfo() + ", ").PadRight(Logs.ColumnLength + 15) + 
+					(" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(Logs.ColumnLength + 7) + 
+					(" agent " + node.PeerVersion.UserAgent + ", ").PadRight(Logs.ColumnLength + 2) + 
+					" height " + chainBehavior.PendingTip.Height);
+			}
+			return builder.ToString();
+		}
+
 		private string ToKBSec(ulong bytesPerSec)
 		{
 			double speed = ((double)bytesPerSec / 1024.0);

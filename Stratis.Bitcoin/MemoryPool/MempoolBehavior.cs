@@ -190,6 +190,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 				var mmsize = state.MempoolSize;
 				var memdyn = state.MempoolDynamicSize;
+
 				Logging.Logs.Mempool.LogInformation(
 					$"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
 

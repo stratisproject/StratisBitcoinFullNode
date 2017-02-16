@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly CoinView coinView;
 		private readonly TxMempool memPool;
 		private readonly ConsensusValidator consensusValidator;
+		public MempoolPerformanceCounter PerformanceCounter { get; }
 
 		public static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
 		private readonly FreeLimiterSection freeLimiter;
@@ -59,6 +60,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.coinView = coinView;
 
 			freeLimiter = new FreeLimiterSection();
+			this.PerformanceCounter = new MempoolPerformanceCounter();
 		}
 
 		public async Task<bool> AcceptToMemoryPoolWithTime(MemepoolValidationState state, Transaction tx)
@@ -155,6 +157,10 @@ namespace Stratis.Bitcoin.MemoryPool
 				// and to avoid springing more concurrent tasks later 
 				state.MempoolSize = this.memPool.Size;
 				state.MempoolDynamicSize = this.memPool.DynamicMemoryUsage();
+
+				this.PerformanceCounter.SetMempoolSize(state.MempoolSize);
+				this.PerformanceCounter.SetMempoolDynamicSize(state.MempoolDynamicSize);
+				this.PerformanceCounter.AddHitCount(1);
 			});
 
 			//	GetMainSignals().SyncTransaction(tx, NULL, CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK);

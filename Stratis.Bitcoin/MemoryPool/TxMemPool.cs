@@ -1018,7 +1018,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public long DynamicMemoryUsage()
 		{
-			// TODO : calculate roughly the size of eas element in its list
+			// TODO : calculate roughly the size of each element in its list
 
 			//LOCK(cs);
 			// Estimate the overhead of mapTx to be 15 pointers + an allocation, as no exact formula for boost::multi_index_contained is implemented.

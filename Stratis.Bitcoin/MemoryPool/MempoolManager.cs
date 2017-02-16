@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public DateTimeProvider DateTimeProvider { get; }
 		public NodeArgs NodeArgs { get; set; }
 
+
 		public MempoolManager(SchedulerPairSession mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
 			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
 		{
@@ -30,6 +31,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.Orphans = orphans;
 			this.Validator = validator;
 		}
+
+		public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
 
 		public Task<List<uint256>> GetMempoolAsync()
 		{

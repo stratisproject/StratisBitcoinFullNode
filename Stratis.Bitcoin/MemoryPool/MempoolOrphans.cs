@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					MemepoolValidationState stateDummy = new MemepoolValidationState(true);
 					if (await this.Validator.AcceptToMemoryPool(stateDummy, orphanTx))
 					{
-						Logging.Logs.Mempool.LogInformation($"accepted orphan tx{orphanHash}");
+						Logging.Logs.Mempool.LogInformation($"accepted orphan tx {orphanHash}");
 						await behavior.RelayTransaction(orphanTx.GetHash());
 						for (var index = 0; index < orphanTx.Outputs.Count; index++)
 							vWorkQueue.Enqueue(new OutPoint(orphanHash, index));
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		    int nMaxOrphanTx = this.nodeArgs.Mempool.MaxOrphanTx;
 		    int nEvicted = await this.LimitOrphanTxSize(nMaxOrphanTx);
 		    if (nEvicted > 0)
-			    Logging.Logs.Mempool.LogInformation($"mapOrphan overflow, removed {nEvicted} tx", nEvicted);
+			    Logging.Logs.Mempool.LogInformation($"mapOrphan overflow, removed {nEvicted} tx");
 
 		    return ret;
 	    }
@@ -274,8 +274,10 @@ namespace Stratis.Bitcoin.MemoryPool
 					}
 				}
 
+				var orphanSize = this.mapOrphanTransactions.Count;
 				Logging.Logs.Mempool.LogInformation(
-					$"stored orphan tx {hash} (mapsz {this.mapOrphanTransactions.Count} outsz {this.mapOrphanTransactionsByPrev.Count})");
+					$"stored orphan tx {hash} (mapsz {orphanSize} outsz {this.mapOrphanTransactionsByPrev.Count})");
+				this.Validator.PerformanceCounter.SetMempoolOrphanSize(orphanSize);
 
 				return true;
 			});

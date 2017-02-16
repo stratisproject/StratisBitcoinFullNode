@@ -1,6 +1,7 @@
 ﻿using Stratis.Bitcoin.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -123,7 +124,6 @@ namespace Stratis.Bitcoin
 			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
 			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
-			_ChainBehaviorState = connectionParameters.TemplateBehaviors.Find<BlockStore.ChainBehavior>().SharedState;
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
@@ -163,6 +163,8 @@ namespace Stratis.Bitcoin
 				Name = "Consensus Loop"
 			}.Start();
 			_IsStarted.Set();
+
+			this.StartPeriodicLog();
 		}
 
 		private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
@@ -171,22 +173,91 @@ namespace Stratis.Bitcoin
 			get { return _ChainBehaviorState; } 
 		}
 
+		public class ConsensusStats
+		{
+			private readonly FullNode fullNode;
+			private CoinViewStack stack;
+			private CachedCoinView cache;
+			private DBreezeCoinView dbreeze;
+			private CoinView bottom;
+
+			private LookaheadBlockPuller lookaheadPuller;
+			private ConsensusPerformanceSnapshot lastSnapshot;
+			private BackendPerformanceSnapshot lastSnapshot2;
+			private CachePerformanceSnapshot lastSnapshot3;
+
+			public ConsensusStats(FullNode fullNode, CoinViewStack stack)
+			{
+				this.fullNode = fullNode;
+
+				stack = new CoinViewStack(fullNode.CoinView);
+				cache = stack.Find<CachedCoinView>();
+				dbreeze = stack.Find<DBreezeCoinView>();
+				bottom = stack.Bottom;
+
+				lookaheadPuller = fullNode.ConsensusLoop.Puller as LookaheadBlockPuller;
+
+				lastSnapshot = fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
+				lastSnapshot2 = dbreeze?.PerformanceCounter.Snapshot();
+				lastSnapshot3 = cache?.PerformanceCounter.Snapshot();
+			}
+
+			public bool CanLog
+			{
+				get
+				{
+					return this.fullNode._ChainBehaviorState.IsInitialBlockDownload && 
+						(DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
+				}
+			}
+
+			public void Log()
+			{
+				StringBuilder benchLogs = new StringBuilder();
+
+				if (lookaheadPuller != null)
+				{
+					benchLogs.AppendLine("======Block Puller======");
+					benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + lookaheadPuller.ActualLookahead + " blocks");
+					benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + lookaheadPuller.MedianDownloadCount + " blocks");
+					benchLogs.AppendLine("==========================");
+				}
+				benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
+				if (cache != null)
+				{
+					benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
+					benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + cache.CacheEntryCount);
+				}
+
+				var snapshot = this.fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
+				benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
+				lastSnapshot = snapshot;
+
+				if (dbreeze != null)
+				{
+					var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
+					benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
+					lastSnapshot2 = snapshot2;
+				}
+				if (cache != null)
+				{
+					var snapshot3 = cache.PerformanceCounter.Snapshot();
+					benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
+					lastSnapshot3 = snapshot3;
+				}
+				benchLogs.AppendLine(this.fullNode.ConnectionManager.GetStats());
+				Logs.Bench.LogInformation(benchLogs.ToString());
+			}
+		}
+
 		void RunLoop()
 		{
 			try
 			{
-
 				var stack = new CoinViewStack(CoinView);
 				var cache = stack.Find<CachedCoinView>();
-				var dbreeze = stack.Find<DBreezeCoinView>();
-				var bottom = stack.Bottom;
-
-				var lookaheadPuller = ConsensusLoop.Puller as LookaheadBlockPuller;
-
-				var lastSnapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-				var lastSnapshot2 = dbreeze == null ? null : dbreeze.PerformanceCounter.Snapshot();
-				var lastSnapshot3 = cache == null ? null : cache.PerformanceCounter.Snapshot();
-
+				var stats = new ConsensusStats(this, stack);
+				
 				ChainedBlock lastTip = ConsensusLoop.Tip;
 				foreach(var block in ConsensusLoop.Execute(_Cancellation.Token))
 				{
@@ -231,43 +302,8 @@ namespace Stratis.Bitcoin
 						this.Signals.Blocks.Broadcast(block.Block);
 					}
 
-					if((DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0))
-					{
-						StringBuilder benchLogs = new StringBuilder();
-
-						if(lookaheadPuller != null)
-						{
-							benchLogs.AppendLine("======Block Puller======");
-							benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + lookaheadPuller.ActualLookahead + " blocks");
-							benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + lookaheadPuller.MedianDownloadCount + " blocks");
-							benchLogs.AppendLine("==========================");
-						}
-						benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
-						if(cache != null)
-						{
-							benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
-							benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + cache.CacheEntryCount);
-						}
-
-						var snapshot = ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-						benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
-						lastSnapshot = snapshot;
-
-						if(dbreeze != null)
-						{
-							var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
-							benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
-							lastSnapshot2 = snapshot2;
-						}
-						if(cache != null)
-						{
-							var snapshot3 = cache.PerformanceCounter.Snapshot();
-							benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
-							lastSnapshot3 = snapshot3;
-						}
-						benchLogs.AppendLine(ConnectionManager.GetStats());
-						Logs.Bench.LogInformation(benchLogs.ToString());
-					}
+					if (stats.CanLog)
+						stats.Log();
 				}
 			}
 			catch(Exception ex) //TODO: Barbaric clean exit
@@ -323,7 +359,7 @@ namespace Stratis.Bitcoin
 			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
 			{
 				ChainRepository.Save(Chain);
-			}).Start(_Cancellation.Token);
+			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0));
 		}
 
 		public ConnectionManager ConnectionManager
@@ -397,7 +433,31 @@ namespace Stratis.Bitcoin
 			FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) =>
 			{
 				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-			}).Start(_Cancellation.Token);
+			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0));
+		}
+
+		private void StartPeriodicLog()
+		{
+			new PeriodicTask("PeriodicLog", (cancellation) =>
+			{
+				// TODO: move stats to each of its components 
+
+				StringBuilder benchLogs = new StringBuilder();
+				
+				benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)); 
+				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength) + this.Chain.Tip.HashBlock);
+				benchLogs.AppendLine("Blocks.Height: ".PadRight(Logs.ColumnLength) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Blocks.Hash: ".PadRight(Logs.ColumnLength) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
+				benchLogs.AppendLine();
+
+				benchLogs.AppendLine("======Mempool======");
+				benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+
+				benchLogs.AppendLine("======Connection======");
+				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
+				Logs.Bench.LogInformation(benchLogs.ToString());
+
+
+			}).StartAsync(_Cancellation.Token, TimeSpan.FromSeconds(5.0));
 		}
 
 		public void WaitDisposed()

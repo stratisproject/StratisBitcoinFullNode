@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin
 			}
 		}
 
-		public PeriodicTask Start(CancellationToken cancellation)
+		public PeriodicTask Start(CancellationToken cancellation, TimeSpan refreshRate)
 		{
 			var t = new Thread(() =>
 			{
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin
 				{
 					while(true)
 					{
-						cancellation.WaitHandle.WaitOne(TimeSpan.FromMinutes(5.0));
+						cancellation.WaitHandle.WaitOne(refreshRate);//TimeSpan.FromMinutes(5.0));
 						cancellation.ThrowIfCancellationRequested();
 						_Loop(cancellation);
 					}
@@ -59,6 +59,39 @@ namespace Stratis.Bitcoin
 			t.IsBackground = true;
 			t.Name = _Name;
 			t.Start();
+			return this;
+		}
+
+		public PeriodicTask StartAsync(CancellationToken cancellation, TimeSpan refreshRate)
+		{
+			Task.Run(async () =>
+			{
+				Exception uncatchException = null;
+				Logs.FullNode.LogInformation(_Name + " starting");
+				try
+				{
+					while (!cancellation.IsCancellationRequested)
+					{
+						await Task.Delay(refreshRate, cancellation);
+						if (!cancellation.IsCancellationRequested)
+							_Loop(cancellation);
+					}
+				}
+				catch (OperationCanceledException ex)
+				{
+					if (!cancellation.IsCancellationRequested)
+						uncatchException = ex;
+				}
+				catch (Exception ex)
+				{
+					uncatchException = ex;
+				}
+				if (uncatchException != null)
+				{
+					Logs.FullNode.LogCritical(new EventId(0), uncatchException, _Name + " threw an unhandled exception");
+				}
+			}, cancellation);
+
 			return this;
 		}
 
