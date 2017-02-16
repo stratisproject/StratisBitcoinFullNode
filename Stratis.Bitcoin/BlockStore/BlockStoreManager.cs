@@ -28,45 +28,5 @@ namespace Stratis.Bitcoin.BlockStore
 			this.nodeArgs = nodeArgs;
 			this.ChainState = chainState;
 		}
-
-		public Task TryStoreBlock(Block block, bool reorg)
-		{
-			if (this.nodeArgs.Prune)
-				return Task.CompletedTask;
-
-			if (reorg)
-			{
-				// TODO: delete blocks if reorg
-				// this can be done periodically or 
-				// on a separate loop not to block consensus
-			}
-			else
-			{
-				return this.BlockRepository.PutAsync(block);
-			}
-
-			return Task.CompletedTask;
-		}
-
-		public Task RelayBlock(uint256 hash)
-		{
-			if (this.nodeArgs.Prune)
-				return Task.CompletedTask;
-
-			if(this.ChainState.IsInitialBlockDownload)
-				return Task.CompletedTask;
-
-			var nodes = this.connection.ConnectedNodes;
-			if (!nodes.Any())
-				return Task.CompletedTask;
-
-			// find all behaviours then start an exclusive task 
-			// to add the hash to each local collection
-			var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
-			foreach (var behaviour in behaviours)
-				behaviour.BlockHashesToAnnounce.TryAdd(hash, hash);
-
-			return Task.CompletedTask;
-		}
 	}
 }

@@ -343,13 +343,20 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				get
 				{
-					if (lastupdate < DateTime.UtcNow.Ticks)
+					if (lastupdate < this.fullNode.DateTimeProvider.GetUtcNow().Ticks)
 					{
-						lastupdate = DateTime.UtcNow.AddMinutes(1).Ticks; // sample every minute
+						lastupdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks; // sample every minute
 						lastresult = this.fullNode.IsInitialBlockDownload();
 					}
 					return lastresult;
 				}
+			}
+
+			// for testing to be able to move the IBD
+			public void SetIsInitialBlockDownload(bool val, DateTime time)
+			{
+				this.lastupdate = time.Ticks;
+				this.lastresult = val;
 			}
 
 			/// <summary>

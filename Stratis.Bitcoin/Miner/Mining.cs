@@ -78,6 +78,13 @@ namespace Stratis.Bitcoin.Miner
 					//}
 					fullNode.Signals.Blocks.Broadcast(block);
 				}
+
+				// ensure the block is written to disk
+				retry = 0;
+				while (++retry < maxTries && this.fullNode.BlockStoreManager.BlockRepository.GetAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult() == null)
+					Thread.Sleep(100);	
+				if (retry >= maxTries)
+					return blocks.Select(b => b.GetHash()).ToList();
 			}
 
 		    return blocks.Select(b => b.GetHash()).ToList();

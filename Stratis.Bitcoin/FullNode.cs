@@ -61,6 +61,11 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
+		public DateTimeProvider DateTimeProvider
+		{
+			get; set;
+		}
+
 		public bool IsInitialBlockDownload()
 		{
 			//if (fImporting || fReindex)
@@ -69,7 +74,7 @@ namespace Stratis.Bitcoin
 				return true;
 			if (this.ConsensusLoop.Tip.ChainWork < MinimumChainWork(this.Args))
 				return true;
-			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (DateTime.UtcNow.UnixTimestamp() - this.Args.MaxTipAge))
+			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Args.MaxTipAge))
 				return true;
 			return false;
 		}
@@ -115,6 +120,8 @@ namespace Stratis.Bitcoin
 			}
 
 			this.Signals = new Signals();
+			this.DateTimeProvider = DateTimeProvider.Default;
+
 			this._ChainBehaviorState = new BlockStore.ChainBehavior.ChainState(this);
 
 			if(AddressManager.Count == 0)
@@ -131,10 +138,10 @@ namespace Stratis.Bitcoin
 
 			// TODO: later use the prune size to limit storage size
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-				new BlockRepository(DataFolder.BlockPath), DateTimeProvider.Default, _Args, this._ChainBehaviorState);
+				new BlockRepository(DataFolder.BlockPath), this.DateTimeProvider, _Args, this._ChainBehaviorState);
 			_Resources.Add(this.BlockStoreManager.BlockRepository);
 			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, this.BlockStoreManager));
-			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain));
+			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager));
 
 			var consensusValidator = new ConsensusValidator(Network.Consensus);
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
@@ -143,13 +150,13 @@ namespace Stratis.Bitcoin
 			// create the memory pool
 			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee, _Args);
 			var mempoolScheduler = new SchedulerPairSession();
-			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, DateTimeProvider.Default, _Args, this.Chain, this.CoinView);
-			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, DateTimeProvider.Default, _Args);
-			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, DateTimeProvider.Default, _Args);
+			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, this.DateTimeProvider, _Args, this.Chain, this.CoinView);
+			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, this.DateTimeProvider, _Args);
+			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, this.DateTimeProvider, _Args);
 			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager, this.ChainBehaviorState));
 			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain));
 
-			this.Miner = new Mining(this, DateTimeProvider.Default);
+			this.Miner = new Mining(this, this.DateTimeProvider);
 
 			var flags = ConsensusLoop.GetFlags();
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))

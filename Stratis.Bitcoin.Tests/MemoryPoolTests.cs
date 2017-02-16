@@ -513,10 +513,16 @@ namespace Stratis.Bitcoin.Tests
 		public class DateTimeProviderSet : DateTimeProvider
 		{
 			public long time;
+			public DateTime timeutc;
 
 			public override long GetTime()
 			{
 				return time;
+			}
+
+			public override DateTime GetUtcNow()
+			{
+				return timeutc;
 			}
 		}
 
@@ -842,6 +848,11 @@ namespace Stratis.Bitcoin.Tests
 				var stratisNode1 = builder.CreateStratisNode();
 				var stratisNode2 = builder.CreateStratisNode();
 				builder.StartAll();
+
+				// not in IBD
+				stratisNodeSync.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+				stratisNode1.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+				stratisNode2.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
 				// generate blocks and wait for the downloader to pickup
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));

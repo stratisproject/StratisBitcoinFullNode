@@ -669,10 +669,11 @@ namespace Stratis.Bitcoin.Tests
 				blocks.Add(block);
 				if (broadcast)
 				{
+					var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
+					var oldTip = fullNode.Chain.SetTip(newChain);
 					try
 					{
-						var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
-						fullNode.Chain.SetTip(newChain);
+						
 
 						var blockResult = new BlockResult { Block = block };
 						fullNode.ConsensusLoop.AcceptBlock(blockResult);
@@ -691,6 +692,8 @@ namespace Stratis.Bitcoin.Tests
 					}
 					catch (ConsensusErrorException)
 					{
+						// set back the old tip
+						fullNode.Chain.SetTip(oldTip);
 					}
 				}
 			}
