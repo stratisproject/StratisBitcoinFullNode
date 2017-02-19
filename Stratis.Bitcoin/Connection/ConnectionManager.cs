@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Connection
 					"Node:" + (node.RemoteInfo() + ", ").PadRight(Logs.ColumnLength + 15) + 
 					(" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(Logs.ColumnLength + 7) + 
 					(" agent " + node.PeerVersion.UserAgent + ", ").PadRight(Logs.ColumnLength + 2) + 
-					" height " + chainBehavior.PendingTip.Height);
+					" height=" + chainBehavior.PendingTip.Height + "(" + chainBehavior.LastFork?.Height + ")");
 			}
 			return builder.ToString();
 		}

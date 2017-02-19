@@ -147,6 +147,9 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			private void TrySetBestKnownTip(ChainedBlock block)
 			{
+				// best know tip is only set when the headers is at the same
+				// height as us or ahead, its an indicator if the node can be used
+				// to download blocks from, nodes which are behind do not send headers
 				if (block != null && block.ChainWork > 0)
 					if (this.BestKnownTip == null || block.ChainWork > this.BestKnownTip.ChainWork)
 						this.BestKnownTip = block;
@@ -240,8 +243,11 @@ namespace Stratis.Bitcoin.BlockPulling
 				behavior.QualityScore = Math.Max(MinQualityScore, behavior.QualityScore - 1);
 				if(behavior.QualityScore == MinQualityScore)
 				{
-					//behavior.ReleaseAll();
-					//AssignPendingVectors();
+					// TODO: this does not necessarily mean the node is slow
+					// the best way is to check the nodes download speed, how
+					// many kb/s the node for the node download speed.
+					behavior.ReleaseAll();
+					AssignPendingVectors();
 				}
 			}
 			else
