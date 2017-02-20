@@ -130,10 +130,6 @@ namespace Stratis.Bitcoin.BlockStore
 
 				if (fork != null)
 				{
-					// this is the only indicator to know the
-					// height of peers that are behind
-					this.LastFork = fork;
-
 					if (fork.Height > highestPow.Height)
 					{
 						fork = null; //fork not yet validated
@@ -152,7 +148,7 @@ namespace Stratis.Bitcoin.BlockStore
 				}
 				AttachedNode.SendMessageAsync(headers);
 			}
-			
+
 			// == HeadersPayload ==
 			// represents the peers height from our point view
 			// this updates the pending tip parameter which is the 
@@ -163,6 +159,13 @@ namespace Stratis.Bitcoin.BlockStore
 			// peer when a new block is validated (and not in IBD)
 
 			var newheaders = message.Message.Payload as HeadersPayload;
+			this.ProcessesHeadersPayload(newheaders);
+
+			act();
+		}
+
+		public void ProcessesHeadersPayload(HeadersPayload newheaders)
+		{
 			var pendingTipBefore = GetPendingTipOrChainTip();
 			if (newheaders != null && CanSync)
 			{
@@ -201,8 +204,6 @@ namespace Stratis.Bitcoin.BlockStore
 
 				Interlocked.Decrement(ref _SynchingCount);
 			}
-
-			act();
 		}
 
 		/// <summary>
@@ -234,8 +235,6 @@ namespace Stratis.Bitcoin.BlockStore
 			}
 			return !invalidHeaderReceived;
 		}
-
-		public ChainedBlock LastFork { get; private set; }
 
 		/// <summary>
 		/// Sync the chain as headers come from the network (Default : true)

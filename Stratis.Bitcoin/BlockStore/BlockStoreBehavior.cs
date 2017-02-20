@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.BlockStore
 		// Maximum number of headers to announce when relaying blocks with headers message.
 		const int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
-		private readonly ConcurrentChain concurrentChain;
+		private readonly ConcurrentChain chain;
 		private readonly BlockRepository blockRepository;
 		private readonly BlockStoreManager storeManager;
 
@@ -34,9 +34,9 @@ namespace Stratis.Bitcoin.BlockStore
 		public bool PreferHeaders; // public for testing
 		private bool preferHeaderAndIDs;
 
-		public BlockStoreBehavior(ConcurrentChain concurrentChain, BlockRepository blockRepository, BlockStoreManager storeManager)
+		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository, BlockStoreManager storeManager)
 		{
-			this.concurrentChain = concurrentChain;
+			this.chain = chain;
 			this.blockRepository = blockRepository;
 			this.storeManager = storeManager;
 
@@ -91,9 +91,10 @@ namespace Stratis.Bitcoin.BlockStore
 			if (getDataPayload != null && this.CanRespondeToGetDataPayload)
 				return this.ProcessGetDataAsync(node, getDataPayload);
 
-			var getBlocksPayload = message.Message.Payload as GetBlocksPayload;
-			if (getBlocksPayload != null && this.CanRespondToGetBlocksPayload)
-				return this.ProcessGetBlocksAsync(node, getBlocksPayload);
+			// TODO: this is not used in core anymore consider deleting it
+			////var getBlocksPayload = message.Message.Payload as GetBlocksPayload;
+			////if (getBlocksPayload != null && this.CanRespondToGetBlocksPayload)
+			////	return this.ProcessGetBlocksAsync(node, getBlocksPayload);
 
 			var sendCmpctPayload = message.Message.Payload as SendCmpctPayload;
 			if (sendCmpctPayload != null)
@@ -117,9 +118,10 @@ namespace Stratis.Bitcoin.BlockStore
 			Check.Assert(node != null); 
 
 			// TODO: bring logic from core 
-
 			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
 			{
+				// TODO: check if we need to add support for "not found" 
+
 				var block = await this.blockRepository.GetAsync(item.Hash).ConfigureAwait(false);
 
 
@@ -129,28 +131,28 @@ namespace Stratis.Bitcoin.BlockStore
 			}
 		}
 
-		private Task ProcessGetBlocksAsync(Node node, GetBlocksPayload getBlocksPayload)
-		{
-			ChainedBlock chainedBlock = this.concurrentChain.FindFork(getBlocksPayload.BlockLocators);
+		////private Task ProcessGetBlocksAsync(Node node, GetBlocksPayload getBlocksPayload)
+		////{
+		////	ChainedBlock chainedBlock = this.chain.FindFork(getBlocksPayload.BlockLocators);
 
-			if (chainedBlock == null)
-				return Task.CompletedTask;
+		////	if (chainedBlock == null)
+		////		return Task.CompletedTask;
 
-			var inv = new InvPayload();
-			for (var limit = 0; limit < 500; limit++)
-			{
-				chainedBlock = this.concurrentChain.GetBlock(chainedBlock.Height + 1);
-				if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
-					break;
+		////	var inv = new InvPayload();
+		////	for (var limit = 0; limit < 500; limit++)
+		////	{
+		////		chainedBlock = this.chain.GetBlock(chainedBlock.Height + 1);
+		////		if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
+		////			break;
 
-				inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
-			}
+		////		inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
+		////	}
 
-			if (inv.Inventory.Any())
-				return node.SendMessageAsync(inv);
+		////	if (inv.Inventory.Any())
+		////		return node.SendMessageAsync(inv);
 
-			return Task.CompletedTask;
-		}
+		////	return Task.CompletedTask;
+		////}
 
 		private async Task SendAsBlockInventory(Node node, IEnumerable<uint256> blocks)
 		{
@@ -189,7 +191,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 					foreach (var hash in blocks)
 					{
-						var chainedBlock = this.concurrentChain.GetBlock(hash);
+						var chainedBlock = this.chain.GetBlock(hash);
 						if (chainedBlock == null)
 						{
 							// Bail out if we reorged away from this block
@@ -235,8 +237,10 @@ namespace Stratis.Bitcoin.BlockStore
 							Logging.Logs.BlockStore.LogInformation(
 								$"sending header ({headers.First()}), to peer={node.RemoteSocketEndpoint}");
 						}
-						//TODO: Set ChainBehavior.BestHeaderSent if needed
-						return node.SendMessageAsync(new HeadersPayload(headers.ToArray()));
+					
+						var newHeaders = new HeadersPayload(headers.ToArray());
+						chainBehavior.ProcessesHeadersPayload(newHeaders);
+						return node.SendMessageAsync(newHeaders);
 					}
 					else
 					{
@@ -253,7 +257,7 @@ namespace Stratis.Bitcoin.BlockStore
 					if (blocks.Any())
 					{
 						var hashToAnnounce = blocks.Last();
-						var chainedBlock = this.concurrentChain.GetBlock(hashToAnnounce);
+						var chainedBlock = this.chain.GetBlock(hashToAnnounce);
 						if (chainedBlock != null)
 						{
 							if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
@@ -312,7 +316,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override object Clone()
 		{
-			return new BlockStoreBehavior(this.concurrentChain, this.blockRepository, this.storeManager)
+			return new BlockStoreBehavior(this.chain, this.blockRepository, this.storeManager)
 			{
 				CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
 				CanRespondeToGetDataPayload = this.CanRespondeToGetDataPayload

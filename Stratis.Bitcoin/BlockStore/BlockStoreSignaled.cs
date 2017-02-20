@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 
-namespace Stratis.Bitcoin.MemoryPool
+namespace Stratis.Bitcoin.BlockStore
 {
     public class BlockStoreSignaled : SignaleObserve<Block>
 	{

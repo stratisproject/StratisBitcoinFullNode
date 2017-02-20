@@ -165,6 +165,8 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
 			{
+				// TODO: check if we need to add support for "not found" 
+
 				var trxInfo = await this.manager.InfoAsync(item.Hash).ConfigureAwait(false);
 
 				if (trxInfo != null)
