@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.BlockStore
 					this.BlockHashesToAnnounce.TryRemove(blockHash, out outer);
 
 				var chainBehavior = node.Behavior<BlockStore.ChainBehavior>();
-
+				ChainedBlock bestIndex = null;
 				if (!revertToInv)
 				{
 					bool foundStartingHeader = false;
@@ -198,6 +198,7 @@ namespace Stratis.Bitcoin.BlockStore
 							revertToInv = true;
 							break;
 						}
+						bestIndex = chainedBlock;
 						if (foundStartingHeader)
 							headers.Add(chainedBlock.Header);
 						else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) != null)
@@ -238,9 +239,8 @@ namespace Stratis.Bitcoin.BlockStore
 								$"sending header ({headers.First()}), to peer={node.RemoteSocketEndpoint}");
 						}
 					
-						var newHeaders = new HeadersPayload(headers.ToArray());
-						chainBehavior.ProcessesHeadersPayload(newHeaders);
-						return node.SendMessageAsync(newHeaders);
+						chainBehavior.SetPendingTip(bestIndex);
+						return node.SendMessageAsync(new HeadersPayload(headers.ToArray()));
 					}
 					else
 					{

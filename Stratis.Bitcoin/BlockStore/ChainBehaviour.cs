@@ -159,13 +159,6 @@ namespace Stratis.Bitcoin.BlockStore
 			// peer when a new block is validated (and not in IBD)
 
 			var newheaders = message.Message.Payload as HeadersPayload;
-			this.ProcessesHeadersPayload(newheaders);
-
-			act();
-		}
-
-		public void ProcessesHeadersPayload(HeadersPayload newheaders)
-		{
 			var pendingTipBefore = GetPendingTipOrChainTip();
 			if (newheaders != null && CanSync)
 			{
@@ -203,6 +196,21 @@ namespace Stratis.Bitcoin.BlockStore
 					TrySync();
 
 				Interlocked.Decrement(ref _SynchingCount);
+			}
+
+			act();
+		}
+
+		public void SetPendingTip(ChainedBlock newTip)
+		{
+			if (newTip.ChainWork > this.PendingTip.ChainWork)
+			{
+				var chainedPendingTip = Chain.GetBlock(newTip.HashBlock);
+				if (chainedPendingTip != null)
+				{
+					_PendingTip = chainedPendingTip;
+						//This allows garbage collection to collect the duplicated pendingtip and ancestors
+				}
 			}
 		}
 
