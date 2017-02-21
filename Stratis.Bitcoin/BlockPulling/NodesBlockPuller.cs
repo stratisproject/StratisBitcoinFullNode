@@ -60,7 +60,13 @@ namespace Stratis.Bitcoin.BlockPulling
 					uint256 unused;
 					if(!_PendingDownloads.TryRemove(block.Object.Header.GetHash(), out unused))
 					{
-						//Unsollicited
+						//TODO: Add support for unsollicited block
+						// This can be sent by a miner discovering new block
+						// the expected logic:
+						// - partially validate the header
+						// - check if block is a new best chain
+						// - set Chain.Tip (and corresponding ChainBehaviour.PendingTIp for this node)
+						// - push the block to the download dictionary
 						return;
 					}
 					NodesBlockPullerBehavior unused2;
