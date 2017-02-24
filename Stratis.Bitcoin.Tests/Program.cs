@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging.Console;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Tests
 	{
 		public static void Main(string[] args)
 		{
-			Logs.Configure(new FuncLoggerFactory(n => new ConsoleLogger(n, (a, b) => true, false)));
+			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
 			new Class1().CanRewind();
 		}
 

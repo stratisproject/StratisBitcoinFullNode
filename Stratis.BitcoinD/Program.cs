@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging.Console;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
@@ -14,7 +15,7 @@ namespace Stratis.BitcoinD
 	{
 		public static void Main(string[] args)
 		{
-			Logs.Configure(new FuncLoggerFactory(n => new ConsoleLogger(n, (a, b) => true, false)));
+			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
 			NodeArgs nodeArgs = NodeArgs.GetArgs(args);
 			FullNode node = new FullNode(nodeArgs);
 			CancellationTokenSource cts = new CancellationTokenSource();
