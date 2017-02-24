@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Tests
 
 		public static void Eventually(Func<bool> act)
 		{
-			var cancel = new CancellationTokenSource(Debugger.IsAttached ? 1000000 : 10000);
+			var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
 			while(!act())
 			{
 				cancel.Token.ThrowIfCancellationRequested();
