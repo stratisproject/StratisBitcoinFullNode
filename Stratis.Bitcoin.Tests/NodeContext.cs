@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging.Console;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Tests
 
 		public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
 		{
-			Logs.Configure(new FuncLoggerFactory(n => new ConsoleLogger(n, (a, b) => true, false)));
+			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
 			return new NodeContext(name, network, clean);
 		}
 

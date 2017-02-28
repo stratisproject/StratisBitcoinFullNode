@@ -10,8 +10,9 @@ namespace Stratis.Bitcoin.Logging
 	{
 		static Logs()
 		{
-			Configure(new FuncLoggerFactory(n => new NullLogger()));
+			Configure(new LoggerFactory());
 		}
+
 		public static void Configure(ILoggerFactory factory)
 		{
 			Configuration = factory.CreateLogger("Configuration");
@@ -24,6 +25,7 @@ namespace Stratis.Bitcoin.Logging
 			EstimateFee = factory.CreateLogger("EstimateFee");
 
 		}
+
 		public static ILogger Configuration
 		{
 			get; set;
