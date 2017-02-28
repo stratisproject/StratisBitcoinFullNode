@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -14,13 +17,19 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly ConnectionManager connection;
 
-		public BlockStoreSignaled(BlockStoreManager manager, ConcurrentChain chain, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection)
+		private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
+
+
+		public BlockStoreSignaled(BlockStoreManager manager, ConcurrentChain chain, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
 		{
 			this.manager = manager;
 			this.chain = chain;
 			this.nodeArgs = nodeArgs;
 			this.chainState = chainState;
 			this.connection = connection;
+
+			this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
+			this.RelayWorker(globalCancellationTokenSource.Token);
 		}
 
 		protected override void OnNextCore(Block value)
@@ -38,16 +47,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 				if (this.chainState.IsInitialBlockDownload)
 					return;
-
-				var nodes = this.connection.ConnectedNodes;
-				if (!nodes.Any())
-					return;
-
-				// add the block to relay to each behaviour
-				var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
-				var hash = value.GetHash();
-				foreach (var behaviour in behaviours)
-					behaviour.BlockHashesToAnnounce.TryAdd(hash, hash);
+				
+				this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
 			});
 
 			// if in IBD don't wait for the store to write to disk
@@ -58,6 +59,31 @@ namespace Stratis.Bitcoin.BlockStore
 				return;
 
 			task.GetAwaiter().GetResult(); //add the full node cancelation here.
+		}
+
+		private void RelayWorker(CancellationToken cancellationToken)
+		{
+			new PeriodicAsyncTask("BlockStore.RelayWorker", async token =>
+			{
+				var blocks = this.blockHashesToAnnounce.Keys.ToList();
+
+				if (!blocks.Any())
+					return;
+
+				uint256 outer;
+				foreach (var blockHash in blocks)
+					this.blockHashesToAnnounce.TryRemove(blockHash, out outer);
+
+				var nodes = this.connection.ConnectedNodes;
+				if (!nodes.Any())
+					return;
+
+				// announce the blocks on each nodes behaviour
+				var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
+				foreach (var behaviour in behaviours)
+					await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
+
+			}).StartAsync(cancellationToken, TimeSpan.FromMilliseconds(1000), true);
 		}
 	}
 }

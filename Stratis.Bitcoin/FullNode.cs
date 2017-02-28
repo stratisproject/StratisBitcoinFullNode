@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin
 				new BlockRepository(DataFolder.BlockPath), this.DateTimeProvider, _Args, this._ChainBehaviorState);
 			_Resources.Add(this.BlockStoreManager.BlockRepository);
 			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, this.BlockStoreManager));
-			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager));
+			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
 			var consensusValidator = new ConsensusValidator(Network.Consensus);
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin
 			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, this.DateTimeProvider, _Args);
 			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, this.DateTimeProvider, _Args);
 			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager, this.ChainBehaviorState));
-			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain));
+			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain, this.ConnectionManager, this._Cancellation));
 
 			this.Miner = new Mining(this, this.DateTimeProvider);
 
@@ -309,6 +309,7 @@ namespace Stratis.Bitcoin
 						this.Signals.Blocks.Broadcast(block.Block);
 					}
 
+					// TODO: replace this with a signalling object
 					if (stats.CanLog)
 						stats.Log();
 				}
@@ -366,7 +367,7 @@ namespace Stratis.Bitcoin
 			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
 			{
 				ChainRepository.Save(Chain);
-			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0));
+			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		public ConnectionManager ConnectionManager
@@ -440,12 +441,12 @@ namespace Stratis.Bitcoin
 			FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) =>
 			{
 				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0));
+			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		private void StartPeriodicLog()
 		{
-			new PeriodicTask("PeriodicLog", (cancellation) =>
+			new PeriodicAsyncTask("PeriodicLog", (cancellation) =>
 			{
 				// TODO: move stats to each of its components 
 
@@ -462,7 +463,7 @@ namespace Stratis.Bitcoin
 				benchLogs.AppendLine("======Connection======");
 				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
 				Logs.Bench.LogInformation(benchLogs.ToString());
-
+				return Task.CompletedTask;
 
 			}).StartAsync(_Cancellation.Token, TimeSpan.FromSeconds(5.0));
 		}

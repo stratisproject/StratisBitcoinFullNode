@@ -671,30 +671,32 @@ namespace Stratis.Bitcoin.Tests
 				{
 					var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
 					var oldTip = fullNode.Chain.SetTip(newChain);
-					try
-					{
+					fullNode.ConsensusLoop.LookaheadBlockPuller.PushBlock(block.GetSerializedSize(), block, CancellationToken.None);
+
+					//try
+					//{
 						
 
-						var blockResult = new BlockResult { Block = block };
-						fullNode.ConsensusLoop.AcceptBlock(blockResult);
+					//	var blockResult = new BlockResult { Block = block };
+					//	fullNode.ConsensusLoop.AcceptBlock(blockResult);
 
 
-						// similar logic to what's in the full node code
-						if (blockResult.Error == null)
-						{
-							fullNode.ChainBehaviorState.HighestValidatedPoW = fullNode.ConsensusLoop.Tip;
-							//if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
-							//{
-							//	var unused = cache.FlushAsync();
-							//}
-							fullNode.Signals.Blocks.Broadcast(block);
-						}
-					}
-					catch (ConsensusErrorException)
-					{
-						// set back the old tip
-						fullNode.Chain.SetTip(oldTip);
-					}
+					//	// similar logic to what's in the full node code
+					//	if (blockResult.Error == null)
+					//	{
+					//		fullNode.ChainBehaviorState.HighestValidatedPoW = fullNode.ConsensusLoop.Tip;
+					//		//if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
+					//		//{
+					//		//	var unused = cache.FlushAsync();
+					//		//}
+					//		fullNode.Signals.Blocks.Broadcast(block);
+					//	}
+					//}
+					//catch (ConsensusErrorException)
+					//{
+					//	// set back the old tip
+					//	fullNode.Chain.SetTip(oldTip);
+					//}
 				}
 			}
 

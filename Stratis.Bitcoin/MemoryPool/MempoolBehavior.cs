@@ -35,8 +35,6 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly Dictionary<uint256, uint256> inventoryTxToSend;
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
-		private readonly CancellationTokenSource periodicToken;
-
 		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
 		{
 			this.validator = validator;
@@ -47,19 +45,16 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			this.inventoryTxToSend = new Dictionary<uint256, uint256>();
 			this.filterInventoryKnown = new Dictionary<uint256, uint256>();
-			this.periodicToken = CancellationTokenSource.CreateLinkedTokenSource(new[] {this.manager.MempoolScheduler.Cancellation.Token});
 		}
 
 		protected override void AttachCore()
 		{
 			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
-			this.PeriodicTrickle(this.periodicToken.Token);
 		}
 
 		protected override void DetachCore()
 		{
 			this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
-			this.periodicToken.Cancel();
 		}
 
 		private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
@@ -245,7 +240,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			Check.Assert(node == this.AttachedNode); // just in case
 
-			if (!this.CanSendTrickle)
+			if (!this.CanSend)
 				return;
 
 			//if (!(pfrom->GetLocalServices() & NODE_BLOOM) && !pfrom->fWhitelisted)
@@ -301,7 +296,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		public bool CanSendTrickle
+		public bool CanSend
 		{
 			get
 			{
@@ -325,6 +320,14 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public async Task SendTrickle()
 		{
+			if (!this.CanSend)
+				return;
+
+			// before locking an exclusive task 
+			// check if there is anything to processes
+			if(!await this.manager.MempoolScheduler.DoConcurrent(() => this.inventoryTxToSend.Keys.Any()))
+				return;
+
 			var sends = await this.manager.MempoolScheduler.DoExclusive(() =>
 			{
 				// Determine transactions to relay
@@ -353,43 +356,6 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			if (sends.Any())
 				await this.SendAsTxInventory(this.AttachedNode, sends);
-		}
-
-		public Task PeriodicTrickle(CancellationToken token)
-		{
-			// hope on the mempool scheduler (which is the Default scheduler)
-			return this.manager.MempoolScheduler.DoConcurrent(async () =>
-			{
-				while (!token.IsCancellationRequested)
-				{
-					try
-					{
-						if (this.CanSendTrickle)
-							await this.SendTrickle();
-
-						// TODO: this can be smarter by making the wait time similar to the PoissonNextSend result
-						await Task.Delay(10000, token); 
-					}
-					catch (OperationCanceledException opx)
-					{
-						if (!opx.CancellationToken.IsCancellationRequested)
-							if (this.AttachedNode?.IsConnected ?? false)
-								throw;
-
-						// do nothing
-					}
-					catch (Exception ex)
-					{
-						// handle this so it doesn't hit the execution context
-						Logging.Logs.BlockStore.LogError(ex.ToString());
-
-						// while in dev catch any unhandled exceptions
-						Debugger.Break();
-						throw;
-					}
-				}
-				
-			}).Unwrap(); // unwrap doesn't matter much as no one will be listening/awaiting
 		}
 
 		public override object Clone()

@@ -29,8 +29,6 @@ namespace Stratis.Bitcoin.BlockStore
 		public bool CanRespondeToGetDataPayload { get; set; }
 
 		// local resources
-		public ConcurrentDictionary<uint256, uint256> BlockHashesToAnnounce; // maybe replace with a task scheduler
-		private readonly CancellationTokenSource periodicToken;
 		public bool PreferHeaders; // public for testing
 		private bool preferHeaderAndIDs;
 
@@ -42,8 +40,6 @@ namespace Stratis.Bitcoin.BlockStore
 
 			this.CanRespondToGetBlocksPayload = false;
 			this.CanRespondeToGetDataPayload = true;
-			this.periodicToken = new CancellationTokenSource();
-			this.BlockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
 
 			this.PreferHeaders = false;
 			this.preferHeaderAndIDs = false;
@@ -52,13 +48,11 @@ namespace Stratis.Bitcoin.BlockStore
 		protected override void AttachCore()
 		{	
 			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
-			this.PeriodicTrickle(this.periodicToken.Token);
 		}
 
 		protected override void DetachCore()
 		{
 			this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
-			this.periodicToken.Cancel();
 		}
 
 		private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
@@ -165,110 +159,109 @@ namespace Stratis.Bitcoin.BlockStore
 			}
 		}
 
-		private Task AnnounceBlocks(Node node)
+		public Task AnnounceBlocks(List<uint256> blockHashesToAnnounce)
 		{
+			if (!blockHashesToAnnounce.Any())
+				return Task.CompletedTask;
+
+			var node = this.AttachedNode;
+
 			bool revertToInv = ((!this.PreferHeaders &&
-			                     (!this.preferHeaderAndIDs || this.BlockHashesToAnnounce.Count > 1)) ||
-			                    this.BlockHashesToAnnounce.Count > MAX_BLOCKS_TO_ANNOUNCE);
+			                     (!this.preferHeaderAndIDs || blockHashesToAnnounce.Count > 1)) ||
+								blockHashesToAnnounce.Count > MAX_BLOCKS_TO_ANNOUNCE);
 
 			var headers = new List<BlockHeader>();
 			var inventoryBlockToSend = new List<uint256>();
-			var blocks = this.BlockHashesToAnnounce.Keys.ToList();
-			if (blocks.Any())
+
+			var chainBehavior = node.Behavior<BlockStore.ChainBehavior>();
+			ChainedBlock bestIndex = null;
+			if (!revertToInv)
 			{
-				uint256 outer;
-				foreach (var blockHash in blocks)
-					this.BlockHashesToAnnounce.TryRemove(blockHash, out outer);
+				bool foundStartingHeader = false;
+				// Try to find first header that our peer doesn't have, and
+				// then send all headers past that one.  If we come across any
+				// headers that aren't on chainActive, give up.
 
-				var chainBehavior = node.Behavior<BlockStore.ChainBehavior>();
-				ChainedBlock bestIndex = null;
-				if (!revertToInv)
+				foreach (var hash in blockHashesToAnnounce)
 				{
-					bool foundStartingHeader = false;
-					// Try to find first header that our peer doesn't have, and
-					// then send all headers past that one.  If we come across any
-					// headers that aren't on chainActive, give up.
-
-					foreach (var hash in blocks)
+					var chainedBlock = this.chain.GetBlock(hash);
+					if (chainedBlock == null)
 					{
-						var chainedBlock = this.chain.GetBlock(hash);
-						if (chainedBlock == null)
-						{
-							// Bail out if we reorged away from this block
-							revertToInv = true;
-							break;
-						}
-						bestIndex = chainedBlock;
-						if (foundStartingHeader)
-							headers.Add(chainedBlock.Header);
-						else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) != null)
-							continue;
-						else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height) != null)
-						{
-							// Peer doesn't have this header but they do have the prior one.
-							// Start sending headers.
-							foundStartingHeader = true;
-							headers.Add(chainedBlock.Header);
-						}
-						else
-						{
-							// Peer doesn't have this header or the prior one -- nothing will
-							// connect, so bail out.
-							revertToInv = true;
-							break;
-						}
+						// Bail out if we reorged away from this block
+						revertToInv = true;
+						break;
 					}
-				}
-
-				if (!revertToInv && headers.Any())
-				{
-					if (headers.Count == 1 && this.preferHeaderAndIDs)
+					bestIndex = chainedBlock;
+					if (foundStartingHeader)
+						headers.Add(chainedBlock.Header);
+					else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) != null)
+						continue;
+					else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height) != null)
 					{
-						// TODO:
-					}
-					else if (this.PreferHeaders)
-					{
-						if (headers.Count > 1)
-						{
-							Logging.Logs.BlockStore.LogInformation(
-								$"{headers.Count} headers, range ({headers.First()}, {headers.Last()}), to peer={node.RemoteSocketEndpoint}");
-						}
-						else
-						{
-							Logging.Logs.BlockStore.LogInformation(
-								$"sending header ({headers.First()}), to peer={node.RemoteSocketEndpoint}");
-						}
-					
-						chainBehavior.SetPendingTip(bestIndex);
-						return node.SendMessageAsync(new HeadersPayload(headers.ToArray()));
+						// Peer doesn't have this header but they do have the prior one.
+						// Start sending headers.
+						foundStartingHeader = true;
+						headers.Add(chainedBlock.Header);
 					}
 					else
 					{
+						// Peer doesn't have this header or the prior one -- nothing will
+						// connect, so bail out.
 						revertToInv = true;
+						break;
 					}
 				}
+			}
 
-				if (revertToInv)
+			if (!revertToInv && headers.Any())
+			{
+				if (headers.Count == 1 && this.preferHeaderAndIDs)
 				{
-					// If falling back to using an inv, just try to inv the tip.
-					// The last entry in vBlockHashesToAnnounce was our tip at some point
-					// in the past.
-
-					if (blocks.Any())
+					// TODO:
+				}
+				else if (this.PreferHeaders)
+				{
+					if (headers.Count > 1)
 					{
-						var hashToAnnounce = blocks.Last();
-						var chainedBlock = this.chain.GetBlock(hashToAnnounce);
-						if (chainedBlock != null)
+						Logging.Logs.BlockStore.LogInformation(
+							$"{headers.Count} headers, range ({headers.First()}, {headers.Last()}), to peer={node.RemoteSocketEndpoint}");
+					}
+					else
+					{
+						Logging.Logs.BlockStore.LogInformation(
+							$"sending header ({headers.First()}), to peer={node.RemoteSocketEndpoint}");
+					}
+					
+					chainBehavior.SetPendingTip(bestIndex);
+					return node.SendMessageAsync(new HeadersPayload(headers.ToArray()));
+				}
+				else
+				{
+					revertToInv = true;
+				}
+			}
+
+			if (revertToInv)
+			{
+				// If falling back to using an inv, just try to inv the tip.
+				// The last entry in vBlockHashesToAnnounce was our tip at some point
+				// in the past.
+
+				if (blockHashesToAnnounce.Any())
+				{
+					var hashToAnnounce = blockHashesToAnnounce.Last();
+					var chainedBlock = this.chain.GetBlock(hashToAnnounce);
+					if (chainedBlock != null)
+					{
+						if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
 						{
-							if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
-							{
-								inventoryBlockToSend.Add(hashToAnnounce);
-								Logging.Logs.BlockStore.LogInformation($"sending inv peer={node.RemoteSocketEndpoint} hash={hashToAnnounce}");
-							}
+							inventoryBlockToSend.Add(hashToAnnounce);
+							Logging.Logs.BlockStore.LogInformation($"sending inv peer={node.RemoteSocketEndpoint} hash={hashToAnnounce}");
 						}
 					}
 				}
 			}
+			
 
 			if (inventoryBlockToSend.Any())
 			{
@@ -276,42 +269,6 @@ namespace Stratis.Bitcoin.BlockStore
 			}
 
 			return Task.CompletedTask;
-		}
-
-		public Task PeriodicTrickle(CancellationToken token)
-		{
-			// run on the Default scheduler
-			return Task.Run(async () =>
-			{
-				while (!token.IsCancellationRequested)
-				{
-					try
-					{
-						if (this.AttachedNode != null)
-							await this.AnnounceBlocks(this.AttachedNode);
-
-						await Task.Delay(1000, token);
-					}
-					catch (OperationCanceledException opx)
-					{
-						if (!opx.CancellationToken.IsCancellationRequested)
-							if (this.AttachedNode?.IsConnected ?? false)
-								throw;
-
-						// do nothing
-					}
-					catch (Exception ex)
-					{
-						// handle this so it doesn't hit the execution context
-						Logging.Logs.BlockStore.LogError(ex.ToString());
-
-						// while in dev catch any unhandled exceptions
-						Debugger.Break();
-						throw;
-					}
-				}
-
-			}, token); // unwrap doesn't matter much as no one will be listening/awaiting
 		}
 
 		public override object Clone()

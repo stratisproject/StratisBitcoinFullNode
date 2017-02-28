@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
@@ -10,11 +13,14 @@ namespace Stratis.Bitcoin.MemoryPool
 	{
 		private readonly MempoolManager manager;
 		private readonly ConcurrentChain chain;
+		private readonly ConnectionManager connection;
 
-		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain)
+		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
 		{
 			this.manager = manager;
 			this.chain = chain;
+			this.connection = connection;
+			this.RelayWorker(globalCancellationTokenSource.Token);
 		}
 
 		protected override void OnNextCore(Block value)
@@ -23,8 +29,23 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// wait for the mempool code to complete
 			// until the signaler becomes async 
-			task.Wait();
+			task.GetAwaiter().GetResult();
+		}
 
+		private void RelayWorker(CancellationToken cancellationToken)
+		{
+			new PeriodicAsyncTask("MemoryPool.RelayWorker", async token =>
+			{
+				var nodes = this.connection.ConnectedNodes;
+				if (!nodes.Any())
+					return;
+
+				// announce the blocks on each nodes behaviour
+				var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
+				foreach (var behaviour in behaviours)
+					await behaviour.SendTrickle().ConfigureAwait(false);
+
+			}).StartAsync(cancellationToken, TimeSpan.FromSeconds(10), true);
 		}
 	}
 }
