@@ -111,6 +111,8 @@ namespace Stratis.Bitcoin
 
 			if(_Args.RPC != null)
 			{
+				// TODO: The web host wants to create IServiceProvider, so build (but not start) 
+				// earlier, if you want to use dependency injection elsewhere
 				RPCHost = new WebHostBuilder()
 					.UseLoggerFactory(Logs.LoggerFactory)
 					.UseKestrel()
@@ -119,6 +121,9 @@ namespace Stratis.Bitcoin
 					.UseIISIntegration()
 					.UseStartup<RPC.Startup>()
 					.Build();
+				// TODO: use .ConfigureServices() to configure non-ASP.NET services
+				// TODO: grab RPCHost.Services to use as IServiceProvider elsewhere
+
 				RPCHost.Start();
 				_Resources.Add(RPCHost);
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
