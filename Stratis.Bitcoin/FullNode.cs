@@ -112,12 +112,13 @@ namespace Stratis.Bitcoin
 			if(_Args.RPC != null)
 			{
 				RPCHost = new WebHostBuilder()
-				.UseKestrel()
-				.ForFullNode(this)
-				.UseUrls(_Args.RPC.GetUrls())
-				.UseIISIntegration()
-				.UseStartup<RPC.Startup>()
-				.Build();
+					.UseLoggerFactory(Logs.LoggerFactory)
+					.UseKestrel()
+					.ForFullNode(this)
+					.UseUrls(_Args.RPC.GetUrls())
+					.UseIISIntegration()
+					.UseStartup<RPC.Startup>()
+					.Build();
 				RPCHost.Start();
 				_Resources.Add(RPCHost);
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));

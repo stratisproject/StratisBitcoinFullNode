@@ -60,18 +60,21 @@ namespace Stratis.Bitcoin.Logging
 					{ "configuration", "Stratis.Bitcoin.Configuration" },
 					{ "fullnode", "Stratis.Bitcoin.FullNode" },
 				};
-			var filterLoggerSettings = new FilterLoggerSettings();
+			var filterSettings = new FilterLoggerSettings();
 			// Default level is Information
-			filterLoggerSettings.Add("Default", LogLevel.Information);
+			filterSettings.Add("Default", LogLevel.Information);
 			// TODO: Probably should have a way to configure these as well
-			filterLoggerSettings.Add("System", LogLevel.Warning);
-			filterLoggerSettings.Add("Microsoft", LogLevel.Warning);
+			filterSettings.Add("System", LogLevel.Warning);
+			filterSettings.Add("Microsoft", LogLevel.Warning);
+			//Disable aspnet core logs
+			filterSettings.Add("Microsoft.AspNetCore", LogLevel.Error);
+
 			if (!string.IsNullOrWhiteSpace(debugArgs))
 			{
 				if (debugArgs.Trim() == "1")
 				{
 					// Increase all logging to Trace
-					filterLoggerSettings.Add("Stratis.Bitcoin", LogLevel.Trace);
+					filterSettings.Add("Stratis.Bitcoin", LogLevel.Trace);
 				}
 				else
 				{
@@ -82,12 +85,12 @@ namespace Stratis.Bitcoin.Logging
 						string category;
 						if (keyToCategory.TryGetValue(key.Trim(), out category))
 						{
-							filterLoggerSettings.Add(category, LogLevel.Trace);
+							filterSettings.Add(category, LogLevel.Trace);
 						}
 						else
 						{
 							// Can directly specify something like -debug=Stratis.Bitcoin.Miner
-							filterLoggerSettings.Add(key, LogLevel.Trace);
+							filterSettings.Add(key, LogLevel.Trace);
 						}
 					}
 				}
@@ -98,7 +101,7 @@ namespace Stratis.Bitcoin.Logging
 			//var printtoconsoleArgs = args.Where(a => a.StartsWith("-printtoconsole=")).Select(a => a.Substring("-printtoconsole=".Length).Replace("\"", "")).FirstOrDefault();
 
 			ILoggerFactory loggerFactory = new LoggerFactory()
-				.WithFilter(filterLoggerSettings);
+				.WithFilter(filterSettings);
 			loggerFactory.AddDebug(LogLevel.Trace);
 			loggerFactory.AddConsole(LogLevel.Trace);
 			return loggerFactory;
