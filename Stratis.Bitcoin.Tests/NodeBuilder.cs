@@ -19,6 +19,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Tests
 {
@@ -47,11 +49,15 @@ namespace Stratis.Bitcoin.Tests
 
 		public void Kill()
 		{
-			FullNode.Dispose();
+			if (FullNode != null)
+			{
+				FullNode.Dispose();
+			}
 		}
 
 		public void Start(string dataDir)
 		{
+			Logs.Configure(new LoggerFactory());
 			var args = NodeArgs.GetArgs(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
 			FullNode = new FullNode(args);
 			FullNode.Start();
