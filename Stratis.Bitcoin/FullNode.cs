@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin
 	public class FullNode : IDisposable
 	{
 		NodeArgs _Args;
+		ILogger _logger;
+
 		public NodeArgs Args
 		{
 			get
@@ -43,6 +45,8 @@ namespace Stratis.Bitcoin
 				throw new ArgumentNullException("args");
 			_Args = args;
 			Network = _Args.GetNetwork();
+			_logger = Logs.LoggerFactory.CreateLogger<FullNode>();
+			_logger.LogDebug("Full node created on {0}", Network.Name);
 		}
 
 		public Network Network
