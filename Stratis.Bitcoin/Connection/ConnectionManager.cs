@@ -63,7 +63,6 @@ namespace Stratis.Bitcoin.Connection
 				var cloneParameters = _Parameters.Clone();
 				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
 				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, _DiscoveredNodeRequiredService);
-				//DiscoveredNodeGroup.MaximumNodeConnection = 0;// TODO: add the default from node args
 				DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
 				DiscoveredNodeGroup.Connect();
 			}

@@ -2,12 +2,16 @@
     "version": "1.0.0-*",
     "testRunner": "xunit",
     "buildOptions": { "emitEntryPoint": true },
-    "dependencies": {
-        "xunit": "2.2.0-beta4-build3444",
-        "Stratis.Bitcoin": "1.0.0-*",
-        "NBitcoin": "3.0.1.6",
-        "dotnet-test-xunit": "2.2.0-preview2-build1029"
-    },
+  "dependencies": {
+    "Stratis.Bitcoin": "1.0.0-*",
+    "NBitcoin": "3.0.2.4",
+    "xunit": "2.2.0",
+    "dotnet-test-xunit": "1.0.0-rc2-build10025",
+    
+    // xuint hack https://github.com/xunit/xunit/issues/1015
+    "Microsoft.DotNet.InternalAbstractions": "1.0.0"
+
+  },
 
     "frameworks": {
         "netcoreapp1.0": {
