@@ -22,7 +22,6 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private readonly ConcurrentChain chain;
 		private readonly BlockRepository blockRepository;
-		private readonly BlockStoreManager storeManager;
 
 		public bool CanRespondToGetBlocksPayload { get; set; }
 
@@ -32,11 +31,10 @@ namespace Stratis.Bitcoin.BlockStore
 		public bool PreferHeaders; // public for testing
 		private bool preferHeaderAndIDs;
 
-		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository, BlockStoreManager storeManager)
+		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository)
 		{
 			this.chain = chain;
 			this.blockRepository = blockRepository;
-			this.storeManager = storeManager;
 
 			this.CanRespondToGetBlocksPayload = false;
 			this.CanRespondeToGetDataPayload = true;
@@ -273,7 +271,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override object Clone()
 		{
-			return new BlockStoreBehavior(this.chain, this.blockRepository, this.storeManager)
+			return new BlockStoreBehavior(this.chain, this.blockRepository)
 			{
 				CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
 				CanRespondeToGetDataPayload = this.CanRespondeToGetDataPayload

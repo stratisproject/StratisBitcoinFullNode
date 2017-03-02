@@ -15,11 +15,11 @@ namespace Stratis.Bitcoin.Tests
     public class BlockStoreTests
     {
 		[Fact]
-		public void BlockRepositoryPutGetDeleteBlock()
+		public void BlockRepositoryPutBatch()
 	    {
 			using (var dir = TestDirectory.Create())
 			{
-				using (var blockRepo = new BlockStore.BlockRepository(dir.FolderName))
+				using (var blockRepo = new BlockStore.BlockRepository(Network.Main, dir.FolderName))
 				{
 					var lst = new List<Block>();
 					for (int i = 0; i < 5; i++)
@@ -28,28 +28,49 @@ namespace Stratis.Bitcoin.Tests
 						var block = new Block();
 						block.AddTransaction(new Transaction());
 						block.AddTransaction(new Transaction());
+						block.Transactions[0].AddInput(new TxIn(Script.Empty));
+						block.Transactions[0].AddOutput(Money.COIN + i * 2, Script.Empty);
+						block.Transactions[1].AddInput(new TxIn(Script.Empty));
+						block.Transactions[1].AddOutput(Money.COIN + i * 2 + 1, Script.Empty);
 						block.UpdateMerkleRoot();
 						block.Header.HashPrevBlock = lst.Any() ? lst.Last().GetHash() : Network.Main.GenesisHash;
-						blockRepo.PutAsync(block).GetAwaiter().GetResult();
-
-						// get
-						var received = blockRepo.GetAsync(block.GetHash()).GetAwaiter().GetResult();
-						Assert.True(block.ToBytes().SequenceEqual(received.ToBytes()));
-
 						lst.Add(block);
 					}
+
+					blockRepo.PutAsync(lst, true).GetAwaiter().GetResult();
 
 					// check each block
 					foreach (var block in lst)
 					{
 						var received = blockRepo.GetAsync(block.GetHash()).GetAwaiter().GetResult();
 						Assert.True(block.ToBytes().SequenceEqual(received.ToBytes()));
+
+						foreach (var transaction in block.Transactions)
+						{
+							var trx = blockRepo.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
+							Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
+						}
 					}
 
 					// delete
 					blockRepo.DeleteAsync(lst.ElementAt(2).GetHash());
 					var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
 					Assert.Null(deleted);
+				}
+			}
+		}
+
+		[Fact]
+		public void BlockRepositoryBlockHash()
+		{
+			using (var dir = TestDirectory.Create())
+			{
+				using (var blockRepo = new BlockStore.BlockRepository(Network.Main, dir.FolderName))
+				{
+					Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
+					var hash = new Block().GetHash();
+					blockRepo.SethBlockHash(hash).GetAwaiter().GetResult();
+					Assert.Equal(hash, blockRepo.BlockHash);
 				}
 			}
 		}

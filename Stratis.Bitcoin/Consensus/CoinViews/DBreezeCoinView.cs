@@ -24,18 +24,18 @@ namespace Stratis.Bitcoin.Consensus
 
 			_Session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
 			_Network = network;
-			Initialize(network.GetGenesis());
+			Initialize(network.GetGenesis()).GetAwaiter().GetResult(); // hmm...
 		}
 
-		private void Initialize(Block genesis)
+		private Task Initialize(Block genesis)
 		{
-			_Session.Do(() =>
+			var sync = _Session.Do(() =>
 			{
 				_Session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind");
 				_Session.Transaction.ValuesLazyLoadingIsOn = false;
 			});
 
-			_Session.Do(() =>
+			var hash = _Session.Do(() =>
 			{
 				if(GetCurrentHash() == null)
 				{
@@ -44,6 +44,8 @@ namespace Stratis.Bitcoin.Consensus
 					_Session.Transaction.Commit();
 				}
 			});
+
+			return Task.WhenAll(new[] { sync, hash });
 		}
 
 		static byte[] BlockHashKey = new byte[0];

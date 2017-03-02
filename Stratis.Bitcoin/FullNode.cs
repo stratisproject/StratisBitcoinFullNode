@@ -138,9 +138,9 @@ namespace Stratis.Bitcoin
 
 			// TODO: later use the prune size to limit storage size
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-				new BlockRepository(DataFolder.BlockPath), this.DateTimeProvider, _Args, this._ChainBehaviorState);
+				new BlockRepository(this.Network, DataFolder.BlockPath), this.DateTimeProvider, _Args, this._ChainBehaviorState);
 			_Resources.Add(this.BlockStoreManager.BlockRepository);
-			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, this.BlockStoreManager));
+			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository));
 			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
 			var consensusValidator = new ConsensusValidator(Network.Consensus);

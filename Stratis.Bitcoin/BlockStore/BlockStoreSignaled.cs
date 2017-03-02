@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.BlockStore
 				// TODO: add exception handling in this task
 
 				// ensure the block is written to disk before relaying
-				await this.manager.BlockRepository.PutAsync(value).ConfigureAwait(false);
+				await this.manager.BlockRepository.PutAsync(new List<Block>() {value}, false).ConfigureAwait(false);
 
 				if (this.chainState.IsInitialBlockDownload)
 					return;
