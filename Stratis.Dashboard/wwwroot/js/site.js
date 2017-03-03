@@ -57,7 +57,7 @@ $(document).ready(function() {
          $.get("/Home/TopPeers/2", function(data) { container.html(data); });
       };
 
-      $(function() { window.setInterval(refreshComponent, 1000); });
+      $(function() { window.setInterval(refreshComponent, 5000); });
       refreshComponent();
    }
 
