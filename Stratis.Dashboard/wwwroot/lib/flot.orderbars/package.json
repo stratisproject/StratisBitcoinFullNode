@@ -1,0 +1,21 @@
+{
+  "name": "flot-orderbars",
+  "version": "1.0.0",
+  "description": "Fork of the Flot OrderBars plugin.",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emmerich/flot-orderBars.git"
+  },
+  "author": "emmerich <http://www.github.com/emmerich>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/emmerich/flot-orderBars/issues"
+  },
+  "homepage": "https://github.com/emmerich/flot-orderBars#readme"
+}

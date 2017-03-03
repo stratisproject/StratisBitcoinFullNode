@@ -1,0 +1,22 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "noEmitOnError": true,
+        "outDir": "./dist/",
+        "sourceMap": true,
+        "noImplicitAny": false,
+        "module": "commonjs",
+        "target": "es5",
+        "jsx": "react",
+        "typeRoots": [
+            "node_modules",
+            "typings/modules",
+            "typings/global"
+        ]
+    },
+    "exclude": [
+        "node_modules",
+        "wwwroot",
+        "typings"
+    ]
+}

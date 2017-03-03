@@ -1,0 +1,29 @@
+﻿@model IEnumerable<Stratis.Dashboard.Model.Message>
+<li role="presentation" class="dropdown">
+   <a href="javascript:;" class="dropdown-toggle info-number" data-toggle="dropdown" aria-expanded="false">
+      <i class="fa fa-envelope-o"></i>
+      <span class="badge bg-green">@Model.Count()</span>
+   </a>
+   <ul id="menu1" class="dropdown-menu list-unstyled msg_list" role="menu">
+      @foreach (var item in Model) {
+         <li>
+            <a>
+               <span class="image"><img src="~/images/user.png" alt="Profile Image" /></span>
+               <span>
+                  <span>@item.From</span>
+                  <span class="time">@item.Date</span>
+               </span>
+               <span class="message">@item.Text</span>
+            </a>
+         </li>
+      }
+      <li>
+         <div class="text-center">
+            <a>
+               <strong>See All Alerts</strong>
+               <i class="fa fa-angle-right"></i>
+            </a>
+         </div>
+      </li>
+   </ul>
+</li>
