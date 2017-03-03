@@ -73,10 +73,7 @@ namespace Stratis.BitcoinD
          node.WaitDisposed();
 
 
-            
-
-            node.Start();			
-			node.WaitDisposed();
+         
 
 			node.Dispose();
 		}

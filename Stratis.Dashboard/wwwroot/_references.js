@@ -1,5 +1,4 @@
 ﻿/// <autosync enabled="true" />
-
 /// <reference path="js/custom.js" />
 /// <reference path="js/site.js" />
 /// <reference path="lib/angular/angular.js" />
@@ -8,7 +7,6 @@
 /// <reference path="lib/bootstrap-daterangepicker/daterangepicker.js" />
 /// <reference path="lib/bootstrap-progressbar/bootstrap-progressbar.js" />
 /// <reference path="lib/chart.js/dist/Chart.js" />
-/// <reference path="lib/DateJS/build/production/date.min.js" />
 /// <reference path="lib/fastclick/lib/fastclick.js" />
 /// <reference path="lib/flot.curvedlines/curvedLines.js" />
 /// <reference path="lib/flot/jquery.flot.js" />
