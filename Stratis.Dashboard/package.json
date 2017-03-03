@@ -2,7 +2,6 @@
   "name": "myproject",
   "version": "1.0.0",
   "devDependencies": {
-    "@types/angular": "^1.6.7",
-    "@types/jquery": "^2.0.40"
+
   }
 }
