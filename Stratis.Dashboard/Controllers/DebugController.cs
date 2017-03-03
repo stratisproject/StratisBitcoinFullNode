@@ -7,6 +7,7 @@ using Stratis.Dashboard.Model;
 using Stratis.Dashboard.Infrastructure;
 
 namespace Stratis.Dashboard.Controllers {
+   [Route("/api/debug/[action]")]
    public class DebugController : Controller {
       public IFullNodeGetter FullNodeGetter { get; private set; }
 
@@ -14,43 +15,25 @@ namespace Stratis.Dashboard.Controllers {
          this.FullNodeGetter = nodeGetter;
       }
 
-      public void Mine(int? blockNumbers) {
+
+      public IActionResult Mine() {
          var node = FullNodeGetter.GetFullNode();
 
-         if (node != null) { 
-                  // generate 1 block
-         node.Miner.GenerateBlocks(new Stratis.Bitcoin.Miner.ReserveScript() {
-                     reserveSfullNodecript = new NBitcoin.Key().ScriptPubKey
-                  }, 1, 100000000, false);
+         List<NBitcoin.uint256> result = null;
+
+         if (node != null) {
+            // generate 1 block
+            result = node.Miner.GenerateBlocks(
+               new Stratis.Bitcoin.Miner.ReserveScript() { reserveSfullNodecript = new NBitcoin.Key().ScriptPubKey },
+               1,
+               100000000,
+               false
+            );
          }
-      }
 
-
-      public IActionResult NodeSettings() {
-         var nodeSettings = FullNodeGetter.GetFullNode()?.Args;
-
-         return View("NodeSettings", nodeSettings);
-      }
-
-
-      public IActionResult Error() {
-         return View();
-      }
-
-
-
-      /// <summary>
-      /// returns top peers
-      /// </summary>
-      /// <returns></returns>
-      public IActionResult TopPeers(int? howMany) {
-         return ViewComponent(typeof(ViewComponents.PeerListViewComponent), new {
-            limit = howMany
+         return Json(new {
+            result = result
          });
-      }
-
-      public IActionResult BandStatistics() {
-         return ViewComponent(typeof(ViewComponents.BandStatisticsViewComponent));
       }
    }
 }
