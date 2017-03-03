@@ -28,6 +28,31 @@ namespace Stratis.BitcoinD
 			{
 				IsBackground = true //so the process terminate
 			}.Start();
+      if (args.Any(a => a.Contains("mine")))
+            {
+                new Thread(() =>
+                {
+                    Thread.Sleep(10000); // let the node start
+
+                    while (!node.IsDisposed)
+                    {
+                        Thread.Sleep(1000); // wait 1 sec
+
+                        // generate 1 block
+                        node.Miner.GenerateBlocks(new Stratis.Bitcoin.Miner.ReserveScript()
+                        {
+                            reserveSfullNodecript = new NBitcoin.Key().ScriptPubKey
+                        }, 1, 100000000, false);
+
+                        Console.WriteLine("mined tip at: " + node?.Chain.Tip.Height);
+                    }
+                })
+                {
+                    IsBackground = true //so the process terminate
+                }.Start();
+
+            }
+
 			node.Start();
 
 #if DEBUG
@@ -46,6 +71,13 @@ namespace Stratis.BitcoinD
          webWallet.Start();
 
          node.WaitDisposed();
+
+
+            
+
+            node.Start();			
+			node.WaitDisposed();
+
 			node.Dispose();
 		}
 	}
