@@ -1,5 +1,5 @@
 ﻿/// <autosync enabled="true" />
-/// <reference path="app/dist/app.js" />
+
 /// <reference path="js/custom.js" />
 /// <reference path="js/site.js" />
 /// <reference path="lib/angular/angular.js" />
