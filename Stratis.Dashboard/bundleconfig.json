@@ -1,0 +1,48 @@
+[
+  {
+    "outputFileName": "wwwroot/css/site.min.css",
+    "inputFiles": [
+      "wwwroot/css/site.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/js/site.min.js",
+    "inputFiles": [
+      "wwwroot/js/site.js"
+    ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    }
+  },
+  {
+    "outputFileName": "wwwroot/css/sb-admin.min.css",
+    "inputFiles": [
+      "wwwroot/css/sb-admin.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/css/plugins/morris.min.css",
+    "inputFiles": [
+      "wwwroot/css/plugins/morris.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/css/custom.min.css",
+    "inputFiles": [
+      "wwwroot/css/custom.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/lib/bootstrap-daterangepicker/daterangepicker.min.css",
+    "inputFiles": [
+      "wwwroot/lib/bootstrap-daterangepicker/daterangepicker.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/js/custom.min.js",
+    "inputFiles": [
+      "wwwroot/js/custom.js"
+    ]
+  }
+]
