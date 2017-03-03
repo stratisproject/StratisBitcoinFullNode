@@ -364,7 +364,7 @@ namespace Stratis.Bitcoin.Configuration
 
 			if(nodeArgs.ConnectionManager.ExternalEndpoint == null)
 			{
-				nodeArgs.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, network.DefaultPort);
+				nodeArgs.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, port);
 			}
 
 			nodeArgs.Mempool.Load(config);
