@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin
 			}
 		}
 
-		public PeriodicAsyncTask StartAsync(CancellationToken cancellation, TimeSpan refreshRate, bool delayStart = false)
+		public PeriodicAsyncTask StartAsync(CancellationToken cancellation, TimeSpan refreshRate, TimeSpan? delayStart = null)
 		{
 			Task.Run(async () =>
 			{
@@ -35,8 +35,8 @@ namespace Stratis.Bitcoin
 				Logs.FullNode.LogInformation(_Name + " starting");
 				try
 				{
-					if (delayStart)
-						await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
+					if (delayStart != null)
+						await Task.Delay(delayStart.Value, cancellation).ConfigureAwait(false);
 
 					while (!cancellation.IsCancellationRequested)
 					{

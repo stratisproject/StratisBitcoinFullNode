@@ -379,6 +379,15 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				get; set;
 			}
+
+			/// <summary>
+			/// Represents the last block stored to disk
+			/// </summary>
+			public ChainedBlock HighestPersistedBlock
+			{
+				get; set;
+			}
+
 		}
 
 		#region ICloneable Members

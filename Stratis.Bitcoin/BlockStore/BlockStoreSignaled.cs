@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.BlockStore
 {
     public class BlockStoreSignaled : SignaleObserve<Block>
 	{
-		private readonly BlockStoreManager manager;
+		private readonly BlockStoreLoop storeLoop;
 		private readonly ConcurrentChain chain;
 		private readonly NodeArgs nodeArgs;
 		private readonly ChainBehavior.ChainState chainState;
@@ -21,9 +21,9 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 
-		public BlockStoreSignaled(BlockStoreManager manager, ConcurrentChain chain, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
+		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
 		{
-			this.manager = manager;
+			this.storeLoop = storeLoop;
 			this.chain = chain;
 			this.nodeArgs = nodeArgs;
 			this.chainState = chainState;
@@ -39,27 +39,27 @@ namespace Stratis.Bitcoin.BlockStore
 				return;
 
 			// release the signaler from waiting 
-			var task = Task.Run(async () =>
-			{
+			//var task = Task.Run(() =>
+			//{
 				// TODO: add exception handling in this task
 
 				// ensure the block is written to disk before relaying
-				await this.manager.BlockRepository.PutAsync(new List<Block>() {value}, false).ConfigureAwait(false);
+				this.storeLoop.AddToPending(value);
 
 				if (this.chainState.IsInitialBlockDownload)
 					return;
-				
+
 				this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
-			});
+			//});
 
 			// if in IBD don't wait for the store to write to disk
 			// so not to slow down the IBD work, when in IBD and
 			// in case of a crash the store will be able to (in future) 
 			// recover itself by downloading from other peers
-			if (this.chainState.IsInitialBlockDownload)
-				return;
+			//if (this.chainState.IsInitialBlockDownload)
+			//	return;
 
-			task.GetAwaiter().GetResult(); //add the full node cancelation here.
+			//task.GetAwaiter().GetResult(); //add the full node cancelation here.
 		}
 
 		private void RelayWorker(CancellationToken cancellationToken)
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.BlockStore
 				foreach (var behaviour in behaviours)
 					await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
 
-			}).StartAsync(cancellationToken, TimeSpan.FromMilliseconds(1000), true);
+			}).StartAsync(cancellationToken, TimeSpan.FromMilliseconds(1000), TimeSpan.FromSeconds(4));
 		}
 	}
 }

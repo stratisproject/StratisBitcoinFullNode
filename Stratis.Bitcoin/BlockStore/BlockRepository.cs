@@ -71,24 +71,30 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task PutAsync(List<Block> blocks, bool txIndex)
 		{
+			// dbreeze is faster if sort ascending by key in memory before insert
+			// however we need to find how byte arrays are sorted in dbreeze this link can help 
+			// https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
+
 			return this.session.Do(() =>
 			{
 				foreach (var block in blocks)
 				{
-					// if the block is already in store don't write it again
-					const bool dontUpdateIfExists = true;
-					var updated = false;
-					byte[] bytes;
 					var blockId = block.GetHash();
-					this.session.Transaction.Insert<byte[], Block>("Block", blockId.ToBytes(), block, out bytes, out updated, dontUpdateIfExists);
-
-					if (txIndex)
+					
+					// if the block is already in store don't write it again
+					var item = this.session.Transaction.Select<byte[], Block>("Block", blockId.ToBytes());
+					if (!item.Exists)
 					{
-						// index transactions
-						foreach (var transaction in block.Transactions)
+						this.session.Transaction.Insert<byte[], Block>("Block", blockId.ToBytes(), block);
+
+						if (txIndex)
 						{
-							var trxId = transaction.GetHash();
-							this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId, out bytes, out updated, dontUpdateIfExists);
+							// index transactions
+							foreach (var transaction in block.Transactions)
+							{
+								var trxId = transaction.GetHash();
+								this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId);
+							}
 						}
 					}
 				}
@@ -125,6 +131,16 @@ namespace Stratis.Bitcoin.BlockStore
 				var key = hash.ToBytes();
 				var item = this.session.Transaction.Select<byte[], Block>("Block", key, readVisibilityScope);
 				return item?.Value;
+			});
+		}
+
+		public Task<bool> ExistAsync(uint256 hash)
+		{
+			return this.session.Do(() =>
+			{
+				var key = hash.ToBytes();
+				var item = this.session.Transaction.Select<byte[], Block>("Block", key);
+				return item.Exists; // lazy loading is on so we don't fetch the whole value, just the row.
 			});
 		}
 

@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				foreach (var behaviour in behaviours)
 					await behaviour.SendTrickle().ConfigureAwait(false);
 
-			}).StartAsync(cancellationToken, TimeSpan.FromSeconds(10), true);
+			}).StartAsync(cancellationToken, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
 		}
 	}
 }

@@ -387,6 +387,12 @@ namespace Stratis.Bitcoin.Tests
 			get { return ports[0]; }
 		}
 
+		public void NotInIBD()
+		{
+			// not in IBD
+			this.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+		}
+
 		public void Start()
 		{
 			StartAsync().Wait();

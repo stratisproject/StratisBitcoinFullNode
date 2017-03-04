@@ -1,6 +1,7 @@
 ﻿using Stratis.Bitcoin.Configuration;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -127,6 +128,7 @@ namespace Stratis.Bitcoin
 			if(AddressManager.Count == 0)
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
+			// == Connection == 
 			var connectionParameters = new NodeConnectionParameters();
 			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
 			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
@@ -136,18 +138,24 @@ namespace Stratis.Bitcoin
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
-			// TODO: later use the prune size to limit storage size
+			// === BlockSgtore ===
+			var blockRepository = new BlockRepository(this.Network, DataFolder.BlockPath);
+			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
+			var blockStoreLoop = new BlockStoreLoop(this.Chain, this.ConnectionManager,
+				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, this._Cancellation, lightBlockPuller);
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-				new BlockRepository(this.Network, DataFolder.BlockPath), this.DateTimeProvider, _Args, this._ChainBehaviorState);
+				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
 			_Resources.Add(this.BlockStoreManager.BlockRepository);
 			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository));
-			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
+			connectionParameters.TemplateBehaviors.Add(new BlockingPuller.LightBlockPullerBehavior(lightBlockPuller));
+			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
+			// === Consensus ===
 			var consensusValidator = new ConsensusValidator(Network.Consensus);
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
 			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 
-			// create the memory pool
+			// === memory pool ==
 			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee, _Args);
 			var mempoolScheduler = new SchedulerPairSession();
 			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, this.DateTimeProvider, _Args, this.Chain, this.CoinView);
@@ -156,6 +164,7 @@ namespace Stratis.Bitcoin
 			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager, this.ChainBehaviorState));
 			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain, this.ConnectionManager, this._Cancellation));
 
+			// === Miner ===
 			this.Miner = new Mining(this, this.DateTimeProvider);
 
 			var flags = ConsensusLoop.GetFlags();
@@ -453,8 +462,9 @@ namespace Stratis.Bitcoin
 				StringBuilder benchLogs = new StringBuilder();
 				
 				benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)); 
-				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength) + this.Chain.Tip.HashBlock);
-				benchLogs.AppendLine("Blocks.Height: ".PadRight(Logs.ColumnLength) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Blocks.Hash: ".PadRight(Logs.ColumnLength) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
+				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+				benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
+				benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
 				benchLogs.AppendLine();
 
 				benchLogs.AppendLine("======Mempool======");
@@ -509,6 +519,10 @@ namespace Stratis.Bitcoin
 					Logs.FullNode.LogInformation("Flushing Cache CoinView...");
 					cache.FlushAsync().GetAwaiter().GetResult();
 				}
+
+				Logs.FullNode.LogInformation("Flushing BlockStore...");
+				this.BlockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
+
 				ConnectionManager.Dispose();
 				foreach(var dispo in _Resources)
 					dispo.Dispose();

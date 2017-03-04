@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -7,6 +8,7 @@ using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
 using Xunit;
 
@@ -14,6 +16,55 @@ namespace Stratis.Bitcoin.Tests
 {
     public class BlockStoreTests
     {
+
+		//[Fact]
+		public void BlockRepositoryBench()
+		{
+			using (var dir = TestDirectory.Create())
+			{
+				using (var blockRepo = new BlockStore.BlockRepository(Network.Main, dir.FolderName))
+				{
+					var lst = new List<Block>();
+					for (int i = 0; i < 30; i++)
+					{
+						// roughly 1mb blocks
+						var block = new Block();
+						for (int j = 0; j < 3000; j++)
+						{
+							var trx = new Transaction();
+							block.AddTransaction(new Transaction());
+							trx.AddInput(new TxIn(Script.Empty));
+							trx.AddOutput(Money.COIN + j + i, new Script(Guid.NewGuid().ToByteArray()
+								.Concat(Guid.NewGuid().ToByteArray())
+								.Concat(Guid.NewGuid().ToByteArray())
+								.Concat(Guid.NewGuid().ToByteArray())
+								.Concat(Guid.NewGuid().ToByteArray())
+								.Concat(Guid.NewGuid().ToByteArray())));
+							trx.AddInput(new TxIn(Script.Empty));
+							trx.AddOutput(Money.COIN + j + i + 1, new Script(Guid.NewGuid().ToByteArray()
+								.Concat(Guid.NewGuid().ToByteArray())
+								.Concat(Guid.NewGuid().ToByteArray())
+								.Concat(Guid.NewGuid().ToByteArray())
+								.Concat(Guid.NewGuid().ToByteArray())
+								.Concat(Guid.NewGuid().ToByteArray())));
+							block.AddTransaction(trx);
+						}
+						block.UpdateMerkleRoot();
+						block.Header.HashPrevBlock = lst.Any() ? lst.Last().GetHash() : Network.Main.GenesisHash;
+						lst.Add(block);
+					}
+
+					Stopwatch stopwatch = new Stopwatch();
+					stopwatch.Start();
+					blockRepo.PutAsync(lst, true).GetAwaiter().GetResult();
+					var first = stopwatch.ElapsedMilliseconds;
+					blockRepo.PutAsync(lst, true).GetAwaiter().GetResult();
+					var second = stopwatch.ElapsedMilliseconds;
+
+				}
+			}
+		}
+
 		[Fact]
 		public void BlockRepositoryPutBatch()
 	    {
