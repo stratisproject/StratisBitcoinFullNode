@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin
 				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
 			_Resources.Add(this.BlockStoreManager.BlockRepository);
 			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository));
-			connectionParameters.TemplateBehaviors.Add(new BlockingPuller.LightBlockPullerBehavior(lightBlockPuller));
+			connectionParameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
 			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
 			// === Consensus ===
@@ -455,7 +455,7 @@ namespace Stratis.Bitcoin
 
 		private void StartPeriodicLog()
 		{
-			new PeriodicAsyncTask("PeriodicLog", (cancellation) =>
+            AsyncLoop.Run("PeriodicLog", (cancellation) =>
 			{
 				// TODO: move stats to each of its components 
 
@@ -474,8 +474,10 @@ namespace Stratis.Bitcoin
 				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
 				Logs.Bench.LogInformation(benchLogs.ToString());
 				return Task.CompletedTask;
-
-			}).StartAsync(_Cancellation.Token, TimeSpan.FromSeconds(5.0));
+            },
+            _Cancellation.Token,
+            repeateEvery: TimeSpans.FiveSeconds,
+            startAfter: TimeSpans.FiveSeconds);
 		}
 
 		public void WaitDisposed()

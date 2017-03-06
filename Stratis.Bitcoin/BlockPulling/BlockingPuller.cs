@@ -18,18 +18,18 @@ namespace Stratis.Bitcoin.BlockPulling
 	/// </summary>
 	public class BlockingPuller
 	{
-		public class LightBlockPullerBehavior : NodeBehavior
+		public class BlockingPullerBehavior : NodeBehavior
 		{
 			private readonly BlockingPuller puller;
 			private CancellationTokenSource _Cts = new CancellationTokenSource();
 
-			public LightBlockPullerBehavior(BlockingPuller puller)
+			public BlockingPullerBehavior(BlockingPuller puller)
 			{
 				this.puller = puller;
 			}
 			public override object Clone()
 			{
-				return new LightBlockPullerBehavior(puller);
+				return new BlockingPullerBehavior(puller);
 			}
 
 			public int QualityScore
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.BlockPulling
 						// not for this behaviour
 						return;
 					}
-					LightBlockPullerBehavior unused2;
+					BlockingPullerBehavior unused2;
 					if(this.puller.map.TryRemove(block.Object.Header.GetHash(), out unused2))
 					{
 						foreach(var tx in block.Object.Transactions)
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			internal void Release(uint256 blockHash)
 			{
-				LightBlockPullerBehavior unused;
+				BlockingPullerBehavior unused;
 				uint256 unused2;
 				if(this.puller.map.TryRemove(blockHash, out unused))
 				{
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			this.nodes = nodes;
 		}
 
-		private readonly ConcurrentDictionary<uint256, LightBlockPullerBehavior> map = new ConcurrentDictionary<uint256, LightBlockPullerBehavior>();
+		private readonly ConcurrentDictionary<uint256, BlockingPullerBehavior> map = new ConcurrentDictionary<uint256, BlockingPullerBehavior>();
 		private readonly ConcurrentBag<uint256> pendingInventoryVectors = new ConcurrentBag<uint256>();
 
 		private int running = 0;
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			// no one should enter if already running
 			Check.Assert(Interlocked.Increment(ref running) == 1);
 
-			LightBlockPullerBehavior[] nodes = GetNodeBehaviors();
+			BlockingPullerBehavior[] nodes = GetNodeBehaviors();
 			var vectors = downloadRequests.Select(r => new InventoryVector(InventoryType.MSG_BLOCK, r.HashBlock)).ToArray();
 
 			// find the best block
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			// Be careful to not ask block to a node that do not have it 
 			// (we can check the ChainBehavior.PendingTip to know where the node is standing)
-			List<LightBlockPullerBehavior> selectnodes = new List<LightBlockPullerBehavior>();
+			List<BlockingPullerBehavior> selectnodes = new List<BlockingPullerBehavior>();
 			foreach (var behavior in nodes)
 			{
 				// filter nodes that are still behind
@@ -224,9 +224,9 @@ namespace Stratis.Bitcoin.BlockPulling
 			return downloaded;
 		}
 
-		private LightBlockPullerBehavior[] GetNodeBehaviors()
+		private BlockingPullerBehavior[] GetNodeBehaviors()
 		{
-			return nodes.Where(n => this.requirements.Check(n.PeerVersion)).Select(n => n.Behaviors.Find<LightBlockPullerBehavior>()).ToArray();
+			return nodes.Where(n => this.requirements.Check(n.PeerVersion)).Select(n => n.Behaviors.Find<BlockingPullerBehavior>()).ToArray();
 		}
 
 		private void AssignPendingVectors()
@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		protected void OnStalling(ChainedBlock chainedBlock)
 		{
-			LightBlockPullerBehavior behavior = null;
+			BlockingPullerBehavior behavior = null;
 			if(this.map.TryGetValue(chainedBlock.HashBlock, out behavior))
 			{
 				behavior.QualityScore = Math.Max(MinQualityScore, behavior.QualityScore - 1);
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			this.downloadedBlocks.TryAdd(hash, block);
 		}
 
-		private void StartDownload(InventoryVector[] vectors, LightBlockPullerBehavior[] nodes)
+		private void StartDownload(InventoryVector[] vectors, BlockingPullerBehavior[] nodes)
 		{
 			if(vectors.Length == 0)
 				return;
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			if(transactionOptions == TransactionOptions.Witness)
 			{
 				requirements.RequiredServices |= NodeServices.NODE_WITNESS;
-				foreach(var node in this.nodes.Select(n => n.Behaviors.Find<LightBlockPullerBehavior>()))
+				foreach(var node in this.nodes.Select(n => n.Behaviors.Find<BlockingPullerBehavior>()))
 				{
 					if(!requirements.Check(node.AttachedNode.PeerVersion))
 					{

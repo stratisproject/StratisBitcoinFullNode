@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private void RelayWorker(CancellationToken cancellationToken)
 		{
-			new PeriodicAsyncTask("BlockStore.RelayWorker", async token =>
+            AsyncLoop.Run("BlockStore.RelayWorker", async token =>
 			{
 				var blocks = this.blockHashesToAnnounce.Keys.ToList();
 
@@ -83,8 +84,10 @@ namespace Stratis.Bitcoin.BlockStore
 				var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
 				foreach (var behaviour in behaviours)
 					await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
-
-			}).StartAsync(cancellationToken, TimeSpan.FromMilliseconds(1000), TimeSpan.FromSeconds(4));
+            },
+            cancellationToken,
+            repeateEvery: TimeSpans.Second,
+            startAfter: TimeSpans.FiveSeconds);
 		}
 	}
 }

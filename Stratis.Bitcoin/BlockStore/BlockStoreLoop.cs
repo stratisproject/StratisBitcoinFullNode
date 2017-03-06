@@ -66,20 +66,17 @@ namespace Stratis.Bitcoin.BlockStore
 			}
 
 			this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair {Block = block, ChainedBlock = chainedBlock});
-
-			//if (!this.ChainState.IsInitialBlockDownload)
-			//	this.signalTask?.TrySetResult(true);
 		}
 
-		public async Task FlushPending(CancellationToken token)
+		public async Task FlushPendingBlocks(CancellationToken token)
 		{
 			while (!token.IsCancellationRequested)
 			{
 				// if in IBD insert in batches	
 				if (this.ChainState.IsInitialBlockDownload)
 				{
-					if (this.PendingStorage.Count < batchsize)
-						return;
+					if (this.PendingStorage.Skip(0).Count() < batchsize) // ConcurrentDictionary perg
+                        return;
 				}
 				else
 				{
@@ -97,8 +94,8 @@ namespace Stratis.Bitcoin.BlockStore
 				if(!this.PendingStorage.Any())
 					return;
 				// take a batch of entries and push them to store
-				var entries = this.PendingStorage.Values.Take(batchsize).ToList();
-				await this.BlockRepository.PutAsync(entries.Select(b => b.Block).ToList(), false);
+				var entries = this.PendingStorage.Select(s =>s .Value).Take(batchsize).ToList(); // ConcurrentDictionary perg
+                await this.BlockRepository.PutAsync(entries.Select(b => b.Block).ToList(), false);
 				BlockPair outvar;
 				foreach (var entry in entries)
 					this.PendingStorage.TryRemove(entry.ChainedBlock.HashBlock, out outvar);
@@ -112,93 +109,86 @@ namespace Stratis.Bitcoin.BlockStore
 		public Task Flush()
 		{
 			// just try to write everything to disk
-			return this.BlockRepository.PutAsync(this.PendingStorage.Values.Select(b => b.Block).ToList(), false);
+			return this.BlockRepository.PutAsync(this.PendingStorage.Select(b => b.Value.Block).ToList(), false);
 		}
 
 		public ChainedBlock StoredBlock { get; private set; }
 
-		private TaskCompletionSource<bool> signalTask;
-
 		public void Loop(CancellationToken cancellationToken)
 		{
-			// two loops: one for flushing the pending blocks to disk, 
-			// blocks received from the consensus loop validation.
-			// the other to keep track stored blocks and download missing blocks
-			new PeriodicAsyncTask("BlockStoreLoop.FlushPending", async token =>
+            //// two loops: one for flushing the pending blocks to disk, 
+            //// blocks received from the consensus loop validation.
+            //// the other to keep track of stored blocks and download missing blocks
+
+            AsyncLoop.Run("BlockStoreLoop.FlushPendingBlocks", async token =>
+            {
+                await FlushPendingBlocks(token);
+            },
+            cancellationToken, 
+            repeateEvery: TimeSpans.Second,
+            startAfter: TimeSpans.FiveSeconds);
+
+            AsyncLoop.Run("BlockStoreLoop.DownloadBlocks", async token =>
 			{
-				//if (this.ChainState.IsInitialBlockDownload)
-				//{
-				//	await Task.Delay(TimeSpan.FromSeconds(1), token);
-				//}
-				//else
-				//{
-				//	this.signalTask = new TaskCompletionSource<bool>();
-				//	await Task.WhenAny(this.signalTask.Task, Task.Delay(TimeSpan.FromMinutes(1), token));
-				//}
+				await DownloadBlocks(cancellationToken);
+            },
+            cancellationToken,
+            repeateEvery: TimeSpans.Second,
+            startAfter: TimeSpans.FiveSeconds);
+        }
 
-				await Task.Delay(TimeSpan.FromSeconds(1), token);
-				await FlushPending(token);
-
-			}).StartAsync(cancellationToken, TimeSpan.Zero, TimeSpan.FromSeconds(5));
-
-			new PeriodicAsyncTask("BlockStoreLoop.Catchup", async token =>
-			{
-				await Catchup(cancellationToken);
-
-			}).StartAsync(cancellationToken, TimeSpan.FromMilliseconds(1000), TimeSpan.FromSeconds(5));
-		}
-
-
-		public async Task Catchup(CancellationToken token)
+        public async Task DownloadBlocks(CancellationToken token)
 		{
-			while (!token.IsCancellationRequested)
-			{
-				// build a batch of blocks to store
-				if (StoredBlock.Height < this.ChainState.HighestValidatedPoW?.Height)
-				{
-					var next = this.chain.GetBlock(StoredBlock.Height + 1);
-					if (next == null)
-						break; //no blocks to store
+		    while (!token.IsCancellationRequested)
+		    {
+		        if (StoredBlock.Height == this.ChainState.HighestValidatedPoW?.Height)
+		            break;
 
-					if (await this.BlockRepository.ExistAsync(next.HashBlock))
-					{
-						// next block is in storage update StoredBlock 
-						await this.BlockRepository.SethBlockHash(next.HashBlock);
-						this.StoredBlock = next;
-						this.ChainState.HighestPersistedBlock = this.StoredBlock;
-						continue;
-					}
+                // find next block to download
+                var next = this.chain.GetBlock(StoredBlock.Height + 1);
+		        if (next == null)
+		            break; //no blocks to store
 
-					// check if the next block is pending storage
-					if (this.PendingStorage.ContainsKey(next.HashBlock))
-						break;
+		        if (await this.BlockRepository.ExistAsync(next.HashBlock))
+		        {
+		            // next block is in storage update StoredBlock 
+		            await this.BlockRepository.SethBlockHash(next.HashBlock);
+		            this.StoredBlock = next;
+		            this.ChainState.HighestPersistedBlock = this.StoredBlock;
+		            continue;
+		        }
 
-					// block is not in store and not in pending 
-					// download the block or blocks
-					// find a batch of blocks to download
-					var todownload = new List<ChainedBlock>(new[] {next});
-					var bestfound = next;
-					foreach (var index in Enumerable.Range(1, batchsize - 1))
-					{
-						next = this.chain.GetBlock(next.Height + 1);
+		        // check if the next block is pending storage
+		        if (this.PendingStorage.ContainsKey(next.HashBlock))
+		            break;
 
-						// stop if at the tip or block is already in store or pending insertion
-						if(next == null) break;
-						if (await this.BlockRepository.ExistAsync(next.HashBlock)) break;
-						if(this.PendingStorage.ContainsKey(next.HashBlock)) break;
+		        // block is not in store and not in pending 
+		        // download the block or blocks
+		        // find a batch of blocks to download
+		        var todownload = new List<ChainedBlock>(new[] {next});
+		        var bestfound = next;
+		        foreach (var index in Enumerable.Range(1, batchsize - 1))
+		        {
+		            next = this.chain.GetBlock(next.Height + 1);
 
-						todownload.Add(next);
-						bestfound = next;
-					}
+		            // stop if at the tip or block is already in store or pending insertion
+		            if (next == null) break;
+                    if (next.Height == this.ChainState.HighestValidatedPoW?.Height) break;
+                    if (await this.BlockRepository.ExistAsync(next.HashBlock)) break;
+		            if (this.PendingStorage.ContainsKey(next.HashBlock)) break;
 
-					// download and store missing blocks
-					var blocks = await this.blockPuller.AskBlocks(token, todownload.ToArray());
-					await this.BlockRepository.PutAsync(blocks, false);
-					await this.BlockRepository.SethBlockHash(bestfound.HashBlock);
-					this.StoredBlock = bestfound;
-					this.ChainState.HighestPersistedBlock = this.StoredBlock;
-				}
-			}
+		            todownload.Add(next);
+		            bestfound = next;
+		        }
+
+		        // download and store missing blocks
+		        var blocks = await this.blockPuller.AskBlocks(token, todownload.ToArray());
+		        await this.BlockRepository.PutAsync(blocks, false);
+		        // TODO: it mat be safer to update StoredBlock at the next loop instead of using bestfound
+		        await this.BlockRepository.SethBlockHash(bestfound.HashBlock);
+		        this.StoredBlock = bestfound;
+		        this.ChainState.HighestPersistedBlock = this.StoredBlock;
+		    }
 		}
 	}
 }

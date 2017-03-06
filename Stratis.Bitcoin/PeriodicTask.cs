@@ -8,65 +8,61 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin
 {
-	public class PeriodicAsyncTask
-	{
-		public PeriodicAsyncTask(string name, Func<CancellationToken, Task> loop)
-		{
-			_Name = name;
-			this.loopAsync = loop;
-		}
+    public class AsyncLoop
+    {
+        private AsyncLoop(string name, Func<CancellationToken, Task> loop)
+        {
+            this.Name = name;
+            this.loopAsync = loop;
+        }
 
-		readonly Func<CancellationToken, Task> loopAsync;
+        readonly Func<CancellationToken, Task> loopAsync;
 
-		private readonly string _Name;
-		public string Name
-		{
-			get
-			{
-				return _Name;
-			}
-		}
+        public string Name { get; }
 
-		public PeriodicAsyncTask StartAsync(CancellationToken cancellation, TimeSpan refreshRate, TimeSpan? delayStart = null)
-		{
-			Task.Run(async () =>
-			{
-				Exception uncatchException = null;
-				Logs.FullNode.LogInformation(_Name + " starting");
-				try
-				{
-					if (delayStart != null)
-						await Task.Delay(delayStart.Value, cancellation).ConfigureAwait(false);
+        public static Task Run(string name, Func<CancellationToken, Task> loop, TimeSpan repeateEvery, TimeSpan? startAfter = null)
+        {
+            return new AsyncLoop(name, loop).StartAsync(CancellationToken.None, repeateEvery, startAfter);
+        }
 
-					while (!cancellation.IsCancellationRequested)
-					{
-						await loopAsync(cancellation).ConfigureAwait(false);
-						await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
-					}
-				}
-				catch (OperationCanceledException ex)
-				{
-					if (!cancellation.IsCancellationRequested)
-						uncatchException = ex;
-				}
-				catch (Exception ex)
-				{
-					uncatchException = ex;
-				}
-				if (uncatchException != null)
-				{
-					Logs.FullNode.LogCritical(new EventId(0), uncatchException, _Name + " threw an unhandled exception");
-				}
-			}, cancellation);
+        public static Task Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeateEvery = null, TimeSpan? startAfter = null)
+        {
+            return new AsyncLoop(name, loop).StartAsync(cancellation, repeateEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
+        }
 
-			return this;
-		}
+        private Task StartAsync(CancellationToken cancellation, TimeSpan refreshRate, TimeSpan? delayStart = null)
+        {
+            return Task.Run(async () =>
+            {
+                Exception uncatchException = null;
+                Logs.FullNode.LogInformation(Name + " starting");
+                try
+                {
+                    if (delayStart != null)
+                        await Task.Delay(delayStart.Value, cancellation).ConfigureAwait(false);
 
-		public Task RunOnce()
-		{
-			return loopAsync(CancellationToken.None);
-		}
-	}
+                    while (!cancellation.IsCancellationRequested)
+                    {
+                        await loopAsync(cancellation).ConfigureAwait(false);
+                        await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
+                    }
+                }
+                catch (OperationCanceledException ex)
+                {
+                    if (!cancellation.IsCancellationRequested)
+                        uncatchException = ex;
+                }
+                catch (Exception ex)
+                {
+                    uncatchException = ex;
+                }
+                if (uncatchException != null)
+                {
+                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, Name + " threw an unhandled exception");
+                }
+            }, cancellation);
+        }
+    }
 
 	public class PeriodicTask
 	{

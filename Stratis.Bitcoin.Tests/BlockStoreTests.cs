@@ -135,16 +135,20 @@ namespace Stratis.Bitcoin.Tests
 				var stratisNode1 = builder.CreateStratisNode();
 				var stratisNode2 = builder.CreateStratisNode();
 				builder.StartAll();
+                stratisNodeSync.NotInIBD();
+                stratisNode1.NotInIBD();
+                stratisNode2.NotInIBD();
 
-				// generate blocks and wait for the downloader to pickup
-				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+                // generate blocks and wait for the downloader to pickup
+                stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(10); // coinbase maturity = 10
 				// wait for block repo for block sync to work
-				Class1.Eventually(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null);
+                Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
-				// sync both nodes
-				stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
+                // sync both nodes
+                stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
 				stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
 				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
 				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
