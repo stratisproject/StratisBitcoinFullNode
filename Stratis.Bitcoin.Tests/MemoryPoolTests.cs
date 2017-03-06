@@ -530,7 +530,7 @@ namespace Stratis.Bitcoin.Tests
 		public void MempoolConcurrencyTest()
 		{
 			var pool = new TxMempool(new FeeRate(1000), NodeArgs.Default());
-			var scheduler = new SchedulerPairSession();
+			var scheduler = new AsyncLock();
 			var rand = new Random();
 
 			var value = 10000;
@@ -548,11 +548,11 @@ namespace Stratis.Bitcoin.Tests
 			Parallel.ForEach(txs, options, transaction =>
 			{
 				var entry = new TxMempoolEntry(transaction, new Money(rand.Next(100)), 0, 0.0, 1, transaction.TotalOut, false, 4, new LockPoints());
-				tasks.Add(scheduler.DoExclusive(() => pool.AddUnchecked(transaction.GetHash(), entry)));
+				tasks.Add(scheduler.WriteAsync(() => pool.AddUnchecked(transaction.GetHash(), entry)));
 			});
 
 			Task.WaitAll(tasks.ToArray());
-			Assert.Equal(scheduler.DoConcurrent(() => pool.Size).Result, 20);
+			Assert.Equal(scheduler.ReadAsync(() => pool.Size).Result, 20);
 		}
 
 		[Fact]

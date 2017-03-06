@@ -15,45 +15,45 @@ namespace Stratis.Bitcoin.Utilities
     public class AsyncDictionary<TKey, TValue>
     {
         private readonly Dictionary<TKey, TValue> dictionary;
-        private readonly SchedulerPairSession schedulerPair;
+        private readonly AsyncLock asyncLock;
 
         public AsyncDictionary()
         {
-            this.schedulerPair = new SchedulerPairSession();
+            this.asyncLock = new AsyncLock();
             this.dictionary = new Dictionary<TKey, TValue>();
         }
 
         public Task Add(TKey key, TValue value)
         {
-           return this.schedulerPair.DoExclusive(() => this.dictionary.Add(key, value));
+           return this.asyncLock.WriteAsync(() => this.dictionary.Add(key, value));
         }
 
         public Task Clear()
         {
-            return this.schedulerPair.DoExclusive(() => this.dictionary.Clear());
+            return this.asyncLock.WriteAsync(() => this.dictionary.Clear());
         }
 
         public Task<int> Count
         {
             get
             {
-                return this.schedulerPair.DoConcurrent(() => this.dictionary.Count);
+                return this.asyncLock.ReadAsync(() => this.dictionary.Count);
             }
         }
 
         public Task<bool> ContainsKey(TKey key)
         {
-            return this.schedulerPair.DoConcurrent(() => this.dictionary.ContainsKey(key));
+            return this.asyncLock.ReadAsync(() => this.dictionary.ContainsKey(key));
         }
 
         public Task<bool> Remove(TKey key)
         {
-            return this.schedulerPair.DoExclusive(() => this.dictionary.Remove(key));
+            return this.asyncLock.WriteAsync(() => this.dictionary.Remove(key));
         }
 
         public Task<TValue> TryGetValue(TKey key)
         {
-            return this.schedulerPair.DoConcurrent(() =>
+            return this.asyncLock.ReadAsync(() =>
             {
                 TValue outval;
                 this.dictionary.TryGetValue(key, out outval);
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                return this.schedulerPair.DoConcurrent(() => new Collection<TKey>(this.dictionary.Keys.ToList()));
+                return this.asyncLock.ReadAsync(() => new Collection<TKey>(this.dictionary.Keys.ToList()));
             }
         }
 
@@ -73,14 +73,14 @@ namespace Stratis.Bitcoin.Utilities
         {
             get
             {
-                return this.schedulerPair.DoConcurrent(() => new Collection<TValue>(this.dictionary.Values.ToList()));
+                return this.asyncLock.ReadAsync(() => new Collection<TValue>(this.dictionary.Values.ToList()));
             }
         }
 
     }
 
     /// <summary>
-    /// A scheduler session for concurrent and exclusive work
+    /// An async reader writer lock for concurrent and exclusive work
     /// </summary>
     /// <remarks>
     /// From the TaskFactory.StartNew() remarks:
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Utilities
     /// unless creation and scheduling must be separated, StartNew is the recommended
     /// approach for both simplicity and performance.
     /// </remarks>
-    public class SchedulerPairSession
+    public class AsyncLock
 	{
 		public CancellationTokenSource Cancellation { get; private set; }
 		private readonly ConcurrentExclusiveSchedulerPair schedulerPair; // reference kept for perf counter
@@ -98,11 +98,11 @@ namespace Stratis.Bitcoin.Utilities
 		private readonly TaskFactory concurrentFactory;
 		private readonly TaskFactory exclusiveFactory;
 
-		public SchedulerPairSession(CancellationTokenSource cancellation = null)
+		public AsyncLock(CancellationTokenSource cancellation = null, int? maxitemspertask = null)
 		{
 			this.Cancellation = cancellation ?? new CancellationTokenSource();
 			int defaultMaxConcurrencyLevel = Environment.ProcessorCount; // concurrency count
-			int defaultMaxitemspertask = 5; // how many exclusive tasks to processes before checking concurrent tasks
+			int defaultMaxitemspertask = maxitemspertask ?? 5; // how many exclusive tasks to processes before checking concurrent tasks
 			this.schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, defaultMaxConcurrencyLevel, defaultMaxitemspertask);
 			this.concurrentFactory = new TaskFactory(this.schedulerPair.ConcurrentScheduler);
 			this.exclusiveFactory = new TaskFactory(this.schedulerPair.ExclusiveScheduler);
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Utilities
 		/// Queue concurrent work to the ConcurrentScheduler.
 		/// Delegates calling this method will be done in parallel on the Default scheduler.
 		/// </summary>
-		public Task<T> DoConcurrent<T>(Func<T> func)
+		public Task<T> ReadAsync<T>(Func<T> func)
 		{
 			return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
 		}
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Utilities
 		/// Delegates calling this method will be done in sequentially, 
 		/// the first task will be queued on the Default scheduler subsequent exclusive tasks will run in that same thread.
 		/// </summary>
-		public Task<T> DoExclusive<T>(Func<T> func)
+		public Task<T> WriteAsync<T>(Func<T> func)
 		{
 			return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
 		}
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Utilities
 		/// Queue concurrent work to the ConcurrentScheduler.
 		/// Delegates calling this method will be done in parallel on the Default scheduler.
 		/// </summary>
-		public Task DoConcurrent(Action func)
+		public Task ReadAsync(Action func)
 		{
 			return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
 		}
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Utilities
 		/// Delegates calling this method will be done in sequentially, 
 		/// the first task will be queued on the Default scheduler subsequent exclusive tasks will run in that same thread.
 		/// </summary>
-		public Task DoExclusive(Action func)
+		public Task WriteAsync(Action func)
 		{
 			return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
 		}

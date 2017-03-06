@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		/** Maximum age of our tip in seconds for us to be considered current for fee estimation */
 		const int MAX_FEE_ESTIMATION_TIP_AGE = 3 * 60 * 60;
 
-		private readonly SchedulerPairSession mempoolScheduler;
+		private readonly AsyncLock mempoolScheduler;
 		private readonly DateTimeProvider dateTimeProvider;
 		private readonly NodeArgs nodeArgs;
 		private readonly ConcurrentChain chain;
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			public long LastTime;
 		}
 
-		public MempoolValidator(TxMempool memPool, SchedulerPairSession mempoolScheduler,
+		public MempoolValidator(TxMempool memPool, AsyncLock mempoolScheduler,
 			ConsensusValidator consensusValidator, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs,
 			ConcurrentChain chain, CoinView coinView)
 		{
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// adding to the mem pool can only be done sequentially
 			 // use the sequential scheduler for that.
-			await this.mempoolScheduler.DoExclusive(() =>
+			await this.mempoolScheduler.WriteAsync(() =>
 			{
 				// is it already in the memory pool?
 				if (this.memPool.Exists(context.TransactionHash))
@@ -896,7 +896,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public Task SanityCheck()
 		{
-			return this.mempoolScheduler.DoConcurrent(() => this.memPool.Check(this.coinView));
+			return this.mempoolScheduler.ReadAsync(() => this.memPool.Check(this.coinView));
 		}
 	}
 }

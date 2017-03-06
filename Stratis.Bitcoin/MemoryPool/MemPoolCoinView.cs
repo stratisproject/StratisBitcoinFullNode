@@ -13,12 +13,12 @@ namespace Stratis.Bitcoin.MemoryPool
     public class MempoolCoinView : CoinView , IBackedCoinView
     {
 	    private readonly TxMempool memPool;
-		private readonly SchedulerPairSession mempoolScheduler;
+		private readonly AsyncLock mempoolScheduler;
 
 		public UnspentOutputSet Set { get; private set; }
 	    public CoinView Inner { get; }
 
-		public MempoolCoinView(CoinView inner, TxMempool memPool, SchedulerPairSession mempoolScheduler)
+		public MempoolCoinView(CoinView inner, TxMempool memPool, AsyncLock mempoolScheduler)
 		{
 			this.Inner = inner;
 			this.memPool = memPool;
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		    var ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Append(trx.GetHash()).ToList();
 			var coins = await this.Inner.FetchCoinsAsync(ids.ToArray());
 			// find coins currently in the mempool
-			var mempoolcoins = await this.mempoolScheduler.DoConcurrent(() =>
+			var mempoolcoins = await this.mempoolScheduler.ReadAsync(() =>
 			{
 				return this.memPool.MapTx.Values.Where(t => ids.Contains(t.TransactionHash)).Select(s => s.Transaction).ToList();
 			});

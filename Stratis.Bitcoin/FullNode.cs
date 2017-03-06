@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin
 
 			// === memory pool ==
 			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee, _Args);
-			var mempoolScheduler = new SchedulerPairSession();
+			var mempoolScheduler = new AsyncLock();
 			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, this.DateTimeProvider, _Args, this.Chain, this.CoinView);
 			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, this.DateTimeProvider, _Args);
 			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, this.DateTimeProvider, _Args);
