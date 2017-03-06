@@ -56,9 +56,9 @@ namespace Stratis.Bitcoin.Tests
 
 					Stopwatch stopwatch = new Stopwatch();
 					stopwatch.Start();
-					blockRepo.PutAsync(lst, true).GetAwaiter().GetResult();
+					blockRepo.PutAsync(lst.Last().GetHash(), lst, true).GetAwaiter().GetResult();
 					var first = stopwatch.ElapsedMilliseconds;
-					blockRepo.PutAsync(lst, true).GetAwaiter().GetResult();
+					blockRepo.PutAsync(lst.Last().GetHash(), lst, true).GetAwaiter().GetResult();
 					var second = stopwatch.ElapsedMilliseconds;
 
 				}
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Tests
 						lst.Add(block);
 					}
 
-					blockRepo.PutAsync(lst, true).GetAwaiter().GetResult();
+					blockRepo.PutAsync(lst.Last().GetHash(), lst, true).GetAwaiter().GetResult();
 
 					// check each block
 					foreach (var block in lst)
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Tests
 				{
 					Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
 					var hash = new Block().GetHash();
-					blockRepo.SethBlockHash(hash).GetAwaiter().GetResult();
+					blockRepo.SetBlockHash(hash).GetAwaiter().GetResult();
 					Assert.Equal(hash, blockRepo.BlockHash);
 				}
 			}

@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.BlockStore
 {
 	public interface IBlockRepository
 	{
-		Task PutAsync(List<Block> blocks, bool txIndex);
+		Task PutAsync(uint256 nextBlockHash, List<Block> blocks, bool txIndex);
 
 		Task<Block> GetAsync(uint256 hash);
 
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.BlockStore
 		static readonly byte[] BlockHashKey = new byte[0];
 		public uint256 BlockHash { get; private set; }
 
-		public Task PutAsync(List<Block> blocks, bool txIndex)
+		public Task PutAsync(uint256 nextBlockHash, List<Block> blocks, bool txIndex)
 		{
 			// dbreeze is faster if sort ascending by key in memory before insert
 			// however we need to find how byte arrays are sorted in dbreeze this link can help 
@@ -99,6 +99,7 @@ namespace Stratis.Bitcoin.BlockStore
 					}
 				}
 
+				this.FlushBlockHash(nextBlockHash);
 				this.session.Transaction.Commit();
 			});
 		}
@@ -109,11 +110,12 @@ namespace Stratis.Bitcoin.BlockStore
 			return this.BlockHash;
 		}
 
-		public Task SethBlockHash(uint256 nextBlockHash)
+		public Task SetBlockHash(uint256 nextBlockHash)
 		{
 			return this.session.Do(() =>
 			{
 				this.FlushBlockHash(nextBlockHash);
+				this.session.Transaction.Commit();
 			});
 		}
 
