@@ -1,4 +1,7 @@
 {
+    "title": "Stratis Dashboard",
+    "description": "Stratis Dashboard",
+    "language": "en",
     "dependencies": {
         "Microsoft.NETCore.App": {
             "type": "platform",
