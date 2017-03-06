@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -49,5 +50,28 @@ namespace Stratis.Bitcoin.Tests
 
 			Assert.True(IsSequential(collector.ToArray()));
 		}
-	}
+
+        [Fact]
+        public void AsyncDictionaryTest()
+        {
+            var dic = new AsyncDictionary<int, int>();
+            var tasks = new ConcurrentBag<Task>();
+            var task = Task.Run(() =>
+            {
+                Parallel.ForEach(Enumerable.Range(0, 1000), index =>
+                {
+                    tasks.Add(dic.Add(index, Thread.CurrentThread.ManagedThreadId));
+                    tasks.Add(dic.Values);
+                    tasks.Add(dic.Count);
+                    tasks.Add(dic.TryGetValue(index));
+                });
+
+                return Task.WhenAll(tasks);
+            });
+
+            task.Wait();
+
+            Assert.Equal(1000, dic.Count.Result);
+        }
+    }
 }

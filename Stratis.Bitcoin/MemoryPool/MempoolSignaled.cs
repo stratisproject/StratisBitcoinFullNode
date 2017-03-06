@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private void RelayWorker(CancellationToken cancellationToken)
 		{
-			new PeriodicAsyncTask("MemoryPool.RelayWorker", async token =>
+            AsyncLoop.Run("MemoryPool.RelayWorker", async token =>
 			{
 				var nodes = this.connection.ConnectedNodes;
 				if (!nodes.Any())
@@ -44,8 +45,10 @@ namespace Stratis.Bitcoin.MemoryPool
 				var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
 				foreach (var behaviour in behaviours)
 					await behaviour.SendTrickle().ConfigureAwait(false);
-
-			}).StartAsync(cancellationToken, TimeSpan.FromSeconds(10), true);
+            },
+            cancellationToken,
+            repeateEvery: TimeSpans.TenSeconds,
+            startAfter: TimeSpans.TenSeconds);
 		}
 	}
 }

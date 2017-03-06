@@ -314,6 +314,8 @@ namespace Stratis.Bitcoin.Tests
 				var tip = coreCreateNode.FindBlock(5).Last();
 				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
 				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
+				Class1.Eventually(() => stratisNode.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNode.FullNode.Chain.Tip.HashBlock);
+
 				var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
 				Assert.Equal(tip.GetHash(), bestBlockHash);
 

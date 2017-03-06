@@ -566,6 +566,7 @@ namespace Stratis.Bitcoin.Tests
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
 				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
 				var prevTrx = block.Transactions.First();
@@ -590,10 +591,12 @@ namespace Stratis.Bitcoin.Tests
 			{
 				var stratisNodeSync = builder.CreateStratisNode();
 				builder.StartAll();
+				stratisNodeSync.NotInIBD();
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
 				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
 				var prevTrx = block.Transactions.First();
@@ -631,10 +634,12 @@ namespace Stratis.Bitcoin.Tests
 			{
 				var stratisNodeSync = builder.CreateStratisNode();
 				builder.StartAll();
+				stratisNodeSync.NotInIBD();
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(201); // coinbase maturity = 100
 				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				var trxs = new List<Transaction>();
 				foreach (var index in Enumerable.Range(1, 100))
@@ -667,11 +672,13 @@ namespace Stratis.Bitcoin.Tests
 			{
 				var stratisNodeSync = builder.CreateStratisNode();
 				builder.StartAll();
+				stratisNodeSync.NotInIBD();
 				stratisNodeSync.FullNode.Args.RequireStandard = true; // make sure to test standard tx
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(100); // coinbase maturity = 100
 				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				// Make sure skipping validation of transctions that were
 				// validated going into the memory pool does not allow
@@ -807,10 +814,13 @@ namespace Stratis.Bitcoin.Tests
 			{
 				var stratisNodeSync = builder.CreateStratisNode();
 				builder.StartAll();
+				stratisNodeSync.NotInIBD();
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(101); // coinbase maturity = 100
 				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
 				var prevTrx = block.Transactions.First();
@@ -859,6 +869,9 @@ namespace Stratis.Bitcoin.Tests
 				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
 				// wait for block repo for block sync to work
 				Class1.Eventually(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+
 				Class1.Eventually(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null); 
 
 				// sync both nodes
