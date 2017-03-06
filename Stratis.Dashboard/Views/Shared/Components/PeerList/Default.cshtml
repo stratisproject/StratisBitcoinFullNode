@@ -9,8 +9,8 @@
             <th>Connected At</th>
             <th>User Agent</th>
             <th>Version</th>
-            <th>Read (Kb)</th>
-            <th>Write (Kb)</th>
+            <th>Read</th>
+            <th>Write</th>
             <th>Info</th>
          </tr>
       </thead>
@@ -23,8 +23,8 @@
                <td>@item.ConnectedAt</td>
                <td>@item.PeerUserAgent</td>
                <td>@item.PeerVersion</td>
-               <td>@(item.Read/1024)</td>
-               <td>@(item.Written/1024)</td>
+               <td>@Html.PrettySize(item.Read)</td>
+               <td>@Html.PrettySize(item.Written)</td>
                <td data-ip="@item.EndPoint.Address"><span class="fa fa-info-circle"></span></td> 
                @*http://freegeoip.net/json/::ffff:98.229.139.101*@
             </tr>

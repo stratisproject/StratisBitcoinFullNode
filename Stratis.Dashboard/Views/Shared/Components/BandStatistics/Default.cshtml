@@ -3,30 +3,6 @@
    var id = "bandStatistics_" + Guid.NewGuid().ToString();
 }
 
-@functions{
-   public string GetSize(long size) {
-      string postfix = "Bytes";
-      long result = size;
-      if (size >= 1073741824)//more than 1 GB
-      {
-         result = size / 1073741824;
-         postfix = "GB";
-      }
-      else if (size >= 1048576)//more that 1 MB
-      {
-         result = size / 1048576;
-         postfix = "MB";
-      }
-      else if (size >= 1024)//more that 1 KB
-      {
-         result = size / 1024;
-         postfix = "KB";
-      }
-
-      return result.ToString("F1") + " " + postfix;
-   }
-}
-
 <table id="@id">
    <tr>
       <th style="width:37%;">
@@ -49,11 +25,11 @@
          <table class="tile_info">
             <tr>
                <td><p><i class="fa fa-square blue"></i>Received </p></td>
-               <td class="text-nowrap">@GetSize(Model.Received)</td>
+               <td class="text-nowrap">@Html.PrettySize(Model.Received)</td>
             </tr>
             <tr>
                <td><p><i class="fa fa-square green"></i>Sent </p></td>
-               <td class="text-nowrap">@GetSize(Model.Sent)</td>
+               <td class="text-nowrap">@Html.PrettySize(Model.Sent)</td>
             </tr>
          </table>
       </td>
