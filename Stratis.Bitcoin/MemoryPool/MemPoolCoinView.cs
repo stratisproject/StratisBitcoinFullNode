@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		    foreach (var txInput in tx.Inputs)
 		    {
 			    var coins = this.Set.AccessCoins(txInput.PrevOut.Hash);
-			    Check.Assert(coins != null);
+			    Guard.Assert(coins != null);
 			    if (!coins.IsAvailable(txInput.PrevOut.N)) continue;
 			    if (coins.Height <= nHeight)
 			    {

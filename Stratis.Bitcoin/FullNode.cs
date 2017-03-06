@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin
 			Logs.FullNode.LogInformation("Loading chain");
 			Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
 			Chain = Chain ?? new ConcurrentChain(Network);
-			Check.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
+			Guard.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
 			Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
 			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
 			{

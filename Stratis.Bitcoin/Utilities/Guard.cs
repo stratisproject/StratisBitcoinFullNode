@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Utilities
 {
-    public static class Check
+    public static class Guard
     {
 		public static void Assert(bool v)
 		{
