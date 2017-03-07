@@ -9,12 +9,12 @@ namespace Stratis.Bitcoin.MemoryPool
 
 	public class MempoolErrorException : Exception
 	{
-		public MempoolErrorException(MemepoolValidationState state) : base(state.ErrorMessage)
+		public MempoolErrorException(MempoolValidationState state) : base(state.ErrorMessage)
 		{
 			ValidationState = state;
 		}
 
-		public MemepoolValidationState ValidationState
+		public MempoolValidationState ValidationState
 		{
 			get;
 			private set;

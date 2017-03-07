@@ -10,7 +10,9 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
+
     public class MempoolSignaled : SignaleObserver<Block>
+
 	{
 		private readonly MempoolManager manager;
 		private readonly ConcurrentChain chain;
