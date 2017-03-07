@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Stratis.Dashboard</title>
+
+    <environment names="Development">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+
+        <!-- Custom CSS -->
+        <link href="css/sb-admin.css" rel="stylesheet">
+        <!-- Morris Charts CSS -->
+        <link href="css/plugins/morris.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="font-awesome/css/font-awesome.css" rel="stylesheet" type="text/css">
+
+        <link rel="stylesheet" href="~/css/site.css" />
+    </environment>
+    <environment names="Staging,Production">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+        <link href="css/sb-admin.min.css" rel="stylesheet">
+        <link href="css/plugins/morris.min.css" rel="stylesheet">
+        <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    </environment>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Navigation -->
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <environment names="Development">
+                    <a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand">Stratis.Dashboard - <b style="color:red">DEVELOPMENT BUILD</b></a>
+                </environment>
+                <environment names="Staging,Production">
+                    <a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand">Stratis.Dashboard</a>
+                </environment>
+            </div>
+            <!-- Top Menu Items -->
+            <ul class="nav navbar-right top-nav">
+                @await Component.InvokeAsync("Messages")
+                @await Component.InvokeAsync("Alerts")
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-user"></i> John Smith <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#"><i class="fa fa-fw fa-user"></i> Profile</a></li>
+                        <li><a href="#"><i class="fa fa-fw fa-envelope"></i> Inbox</a></li>
+                        <li><a href="#"><i class="fa fa-fw fa-gear"></i> Settings</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#"><i class="fa fa-fw fa-power-off"></i> Log Out</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <!-- Sidebar Menu Items - These collapse to the responsive navigation menu on small screens -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul class="nav navbar-nav side-nav">
+                    <li class="active">
+                    <li is-active-route asp-controller="Home" asp-action="Index">
+                        <a asp-controller="Home" asp-action="Index"><i class="fa fa-fw fa-dashboard"></i> Dashboard</a>
+                    </li>
+                    <li is-active-route asp-controller="Home" asp-action="NodeSettings">
+                        <a asp-controller="Home" asp-action="NodeSettings"><i class="fa fa-fw fa-cog"></i> Node Settings</a>
+                    </li>
+                    @*<li>
+                            <a href="charts.html"><i class="fa fa-fw fa-bar-chart-o"></i> Charts</a>
+                        </li>*@
+                    @*<li>
+                            <a href="javascript:;" data-toggle="collapse" data-target="#demo"><i class="fa fa-fw fa-arrows-v"></i> Dropdown <i class="fa fa-fw fa-caret-down"></i></a>
+                            <ul id="demo" class="collapse">
+                                <li>
+                                    <a href="#">Dropdown Item</a>
+                                </li>
+                                <li>
+                                    <a href="#">Dropdown Item</a>
+                                </li>
+                            </ul>
+                        </li>*@
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </nav>
+
+        <div id="page-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1 class="page-header">@ViewData["Title"]</h1>
+                        @*<ol class="breadcrumb">
+                                <li class="active">
+                                    <i class="fa fa-dashboard"></i> Dashboard
+                                </li>
+                            </ol>*@
+                    </div>
+                </div>
+                @RenderBody()
+
+                <footer>
+                    <p>&copy; 2017 - Stratis.Dashboard</p>
+                </footer>
+            </div>
+            <!-- /.container-fluid -->
+        </div>
+        <!-- /#page-wrapper -->
+    </div>
+
+    <environment names="Development">
+        <script src="~/lib/jquery/dist/jquery.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+
+        <script src="js/plugins/morris/raphael.min.js"></script>
+        <script src="js/plugins/morris/morris.min.js"></script>
+        <script src="js/plugins/morris/morris-data.js"></script>
+
+        <script src="~/js/site.js" asp-append-version="true"></script>
+    </environment>
+    <environment names="Staging,Production">
+        <script src="~/lib/jquery/dist/jquery.min.js"></script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+
+        <script src="js/plugins/morris/raphael.min.js"></script>
+        <script src="js/plugins/morris/morris.min.js"></script>
+        <script src="js/plugins/morris/morris-data.js"></script>
+
+        <script src="~/js/site.min.js" asp-append-version="true"></script>
+    </environment>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

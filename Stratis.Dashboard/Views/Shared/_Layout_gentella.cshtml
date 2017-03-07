@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Stratis.Dashboard</title>
+
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Font Awesome -->
+    <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <!-- NProgress -->
+    <link href="~/lib/nprogress/nprogress.css" rel="stylesheet">
+    <!-- iCheck -->
+    <link href="~/lib/iCheck/skins/flat/green.css" rel="stylesheet">
+    <!-- bootstrap-progressbar -->
+    <link href="~/lib/bootstrap-progressbar/css/bootstrap-progressbar-3.3.4.min.css" rel="stylesheet">
+    <!-- bootstrap-daterangepicker -->
+    <link href="~/lib/bootstrap-daterangepicker/daterangepicker.min.css" rel="stylesheet">
+    <!-- Custom Theme Style -->
+    <link href="~/css/custom.min.css" rel="stylesheet">
+</head>
+<body class="nav-md footer_fixed">
+    <div class="container body">
+        <div class="main_container">
+            @Html.Partial("_Layout_gentella_SideMenu")
+
+            @Html.Partial("_Layout_gentella_TopMenu")
+
+            <div class="right_col" role="main">
+                @RenderBody()
+            </div>
+
+            @Html.Partial("_Layout_gentella_Footer")
+        </div>
+    </div>
+    <!-- jQuery -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!-- FastClick -->
+    <script src="~/lib/fastclick/lib/fastclick.js"></script>
+    <!-- NProgress -->
+    <script src="~/lib/nprogress/nprogress.js"></script>
+    <!-- Chart.js -->
+    <script src="~/lib/Chart.js/dist/Chart.min.js"></script>
+    <!-- gauge.js -->
+    <script src="~/lib/gauge.js/dist/gauge.min.js"></script>
+    <!-- bootstrap-progressbar -->
+    <script src="~/lib/bootstrap-progressbar/bootstrap-progressbar.min.js"></script>
+    <!-- iCheck -->
+    <script src="~/lib/iCheck/icheck.min.js"></script>
+    <!-- Flot -->
+    <script src="~/lib/Flot/jquery.flot.js"></script>
+    <script src="~/lib/Flot/jquery.flot.pie.js"></script>
+    <script src="~/lib/Flot/jquery.flot.time.js"></script>
+    <script src="~/lib/Flot/jquery.flot.stack.js"></script>
+    <script src="~/lib/Flot/jquery.flot.resize.js"></script>
+    <!-- Flot plugins -->
+    <script src="~/lib/flot.orderbars/js/jquery.flot.orderBars.js"></script>
+    <script src="~/lib/flot-spline/js/jquery.flot.spline.min.js"></script>
+    <script src="~/lib/flot.curvedlines/curvedLines.js"></script>
+    <!-- DateJS -->
+    <script src="~/lib/DateJS/build/date.js"></script>
+    <!-- bootstrap-daterangepicker -->
+    <script src="~/lib/moment/min/moment.min.js"></script>
+    <script src="~/lib/bootstrap-daterangepicker/daterangepicker.js"></script>
+    <!-- Custom Theme Scripts -->
+    <environment names="Development">
+        <script src="~/js/custom.js"></script>
+       <script src="~/js/site.js"></script>
+    </environment>
+    <environment names="Staging,Production">
+        <script src="~/js/custom.min.js"></script>
+       <script src="~/js/site.min.js"></script>
+    </environment>
+</body>
+</html>

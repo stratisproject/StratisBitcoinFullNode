@@ -1,0 +1,74 @@
+{
+    "title": "Stratis Dashboard",
+    "description": "Stratis Dashboard",
+    "language": "en",
+    "dependencies": {
+        "Microsoft.NETCore.App": {
+            "type": "platform",
+            "version": "1.1.0"
+        },
+        "BundlerMinifier.Core": "2.3.327",
+        "Microsoft.AspNetCore.Diagnostics": "1.1.0",
+        "Microsoft.AspNetCore.Mvc": "1.1.1",
+        "Microsoft.AspNetCore.Razor.Tools": "1.1.0-preview4-final",
+        "Microsoft.AspNetCore.Routing": "1.1.0",
+        "Microsoft.AspNetCore.Server.IISIntegration": "1.1.0",
+        "Microsoft.AspNetCore.Server.IISIntegration.Tools": "1.1.0-preview4-final",
+        "Microsoft.AspNetCore.Server.Kestrel": "1.1.0",
+        "Microsoft.AspNetCore.StaticFiles": "1.1.0",
+        "Microsoft.Extensions.Configuration.EnvironmentVariables": "1.1.0",
+        "Microsoft.Extensions.Configuration.Json": "1.1.0",
+        "Microsoft.Extensions.FileProviders.Embedded": "1.1.0",
+        "Microsoft.Extensions.Logging": "1.1.0",
+        "Microsoft.Extensions.Logging.Console": "1.1.0",
+        "Microsoft.Extensions.Logging.Debug": "1.1.0",
+        "Microsoft.Extensions.Options.ConfigurationExtensions": "1.1.0",
+        "Microsoft.VisualStudio.Web.BrowserLink.Loader": "14.1.0",
+        "Microsoft.AspNetCore.Mvc.TagHelpers": "1.1.1",
+        "Stratis.Bitcoin": "1.0.0-*"
+    },
+
+    "tools": {
+        "Microsoft.AspNetCore.Razor.Tools": "1.1.0-preview4-final",
+        "BundlerMinifier.Core": "2.2.281"
+    },
+
+    "frameworks": {
+        "netcoreapp1.1": {
+            "imports": [
+                "dotnet5.6",
+                "portable-net45+win8"
+            ]
+        }
+    },
+
+    "buildOptions": {
+        "emitEntryPoint": true,
+        "preserveCompilationContext": true,
+        "embed": [
+            "wwwroot/**",
+            "Views/**"
+        ]
+    },
+
+    "runtimeOptions": {
+        "configProperties": {
+            "System.GC.Server": true,
+            "System.GC.Concurrent": true
+        }
+    },
+
+    "publishOptions": {
+        //"include": [
+        //    "wwwroot",
+        //    "**/*.cshtml",
+        //    "appsettings.json",
+        //    "web.config"
+        //]
+    },
+
+    "scripts": {
+        "prepublish": [ "bower install", "dotnet bundle" ],
+        "postpublish": []
+    }
+}
