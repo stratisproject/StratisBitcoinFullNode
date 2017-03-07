@@ -45,6 +45,14 @@ namespace Stratis.Bitcoin.BlockStore
 			
 			PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
 			StoredBlock = chain.GetBlock(this.BlockRepository.BlockHash);
+			if (StoredBlock == null)
+			{
+				// TODO: load and delete all blocks till a common fork with Chain is found
+				// this is a rare event where a reorg happened and the ChainedBlock is lost
+				// to solve this each block needs to be pulled from storage and deleted 
+				// all the way till a common fork is found with Chain
+				throw new NotImplementedException();
+			}
 			chainState.HighestPersistedBlock = this.StoredBlock;
 			this.Loop(globalCancellationTokenSource.Token);
 		}
@@ -98,15 +106,25 @@ namespace Stratis.Bitcoin.BlockStore
 		        if (next == null)
 		            break; //no blocks to store
 
+				// reorg logic
 			    if (this.StoredBlock.HashBlock != next.Header.HashPrevBlock)
 			    {
 					if(disposemode)
 						break;
 
-					// reorg - we need to delete blocks
-					// find the common fork and delete all blocks down to the fork
-					throw new NotImplementedException();
-					//break;
+					var blockstoremove = new List<uint256>();
+				    var remove = this.StoredBlock;
+					// reorg - we need to delete blocks, start walking back the chain
+				    while (this.chain.GetBlock(remove.HashBlock) == null)
+				    {
+					    blockstoremove.Add(remove.HashBlock);
+					    remove = remove.Previous;
+				    }
+
+					await this.BlockRepository.DeleteAsync(remove.HashBlock, blockstoremove, false);
+					this.StoredBlock = remove;
+					this.ChainState.HighestPersistedBlock = this.StoredBlock;
+					break;
 			    }
 
 		        if (await this.BlockRepository.ExistAsync(next.HashBlock))

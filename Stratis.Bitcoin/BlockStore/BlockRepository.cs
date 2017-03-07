@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 
-		Task DeleteAsync(uint256 hash);
+		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes, bool txIndex);
 	}
 
 	public class BlockRepository : IDisposable, IBlockRepository
@@ -129,9 +129,8 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			return this.session.Do(() =>
 			{
-				const bool readVisibilityScope = true;
 				var key = hash.ToBytes();
-				var item = this.session.Transaction.Select<byte[], Block>("Block", key, readVisibilityScope);
+				var item = this.session.Transaction.Select<byte[], Block>("Block", key);
 				return item?.Value;
 			});
 		}
@@ -146,13 +145,27 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 		}
 
-		public Task DeleteAsync(uint256 hash)
+		public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes, bool txIndex)
 		{
 			return this.session.Do(() =>
 			{
-				// if the block is already in store don't write it again
-				var key = hash.ToBytes();
-				this.session.Transaction.RemoveKey<byte[]>("Block", key);
+				foreach (var hash in hashes)
+				{
+					// if the block is already in store don't write it again
+					var key = hash.ToBytes();
+
+					if (txIndex)
+					{
+						var block = this.session.Transaction.Select<byte[], Block>("Block", key);
+						if (block.Exists)
+							foreach (var transaction in block.Value.Transactions)
+								this.session.Transaction.RemoveKey<byte[]>("Transaction", transaction.GetHash().ToBytes());
+					}
+
+					this.session.Transaction.RemoveKey<byte[]>("Block", key);
+				}
+
+				this.FlushBlockHash(newlockHash);
 				this.session.Transaction.Commit();
 			});
 		}
