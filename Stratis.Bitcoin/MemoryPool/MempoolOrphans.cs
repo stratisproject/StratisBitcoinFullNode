@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					// Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan
 					// resolution (that is, feeding people an invalid transaction based on LegitTxX in order to get
 					// anyone relaying LegitTxX banned)
-					MemepoolValidationState stateDummy = new MemepoolValidationState(true);
+					MempoolValidationState stateDummy = new MempoolValidationState(true);
 					if (await this.Validator.AcceptToMemoryPool(stateDummy, orphanTx))
 					{
 						Logging.Logs.Mempool.LogInformation($"accepted orphan tx {orphanHash}");
