@@ -15,9 +15,7 @@ namespace Stratis.Bitcoin
 		void Broadcast(T item);
 	}
 
-
 	public abstract class SignaleObserver<T> : ObserverBase<T>
-
 	{
 		protected override void OnErrorCore(Exception error)
 		{

@@ -8,7 +8,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.MemoryPool;
-
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
@@ -75,6 +74,5 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			this.cache.Dispose();
 		}
-
 	}
 }

@@ -56,11 +56,9 @@ namespace Stratis.Bitcoin.Tests
 
 					Stopwatch stopwatch = new Stopwatch();
 					stopwatch.Start();
-
 					blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
 					var first = stopwatch.ElapsedMilliseconds;
 					blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
-
 					var second = stopwatch.ElapsedMilliseconds;
 
 				}
@@ -92,9 +90,7 @@ namespace Stratis.Bitcoin.Tests
 						lst.Add(block);
 					}
 
-
 					blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
-
 
 					// check each block
 					foreach (var block in lst)
@@ -110,9 +106,7 @@ namespace Stratis.Bitcoin.Tests
 					}
 
 					// delete
-
 					blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] {lst.ElementAt(2).GetHash()}.ToList());
-
 					var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
 					Assert.Null(deleted);
 				}
@@ -227,7 +221,6 @@ namespace Stratis.Bitcoin.Tests
 			}
 		}
 
-
 		[Fact]
 		public void BlockStoreIndexTx()
 		{
@@ -257,6 +250,5 @@ namespace Stratis.Bitcoin.Tests
 				Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
 			}
 		}
-
 	}
 }

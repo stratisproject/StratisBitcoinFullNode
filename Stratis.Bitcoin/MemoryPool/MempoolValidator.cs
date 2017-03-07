@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.PerformanceCounter = new MempoolPerformanceCounter();
 		}
 
-		public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
+		public async Task<bool> AcceptToMemoryPoolWithTime(MemepoolValidationState state, Transaction tx)
 		{
 			try
 			{
@@ -90,13 +90,13 @@ namespace Stratis.Bitcoin.MemoryPool
 			//FlushStateToDisk(stateDummy, FLUSH_STATE_PERIODIC);
 		}
 
-		public Task<bool> AcceptToMemoryPool(MempoolValidationState state, Transaction tx)
+		public Task<bool> AcceptToMemoryPool(MemepoolValidationState state, Transaction tx)
 		{
 			state.AcceptTime = dateTimeProvider.GetTime();
 			return AcceptToMemoryPoolWithTime(state, tx);
 		}
 
-		private async Task AcceptToMemoryPoolWorker(MempoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
+		private async Task AcceptToMemoryPoolWorker(MemepoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
 		{
 			var context = new MempoolValidationContext(tx, state);
 
