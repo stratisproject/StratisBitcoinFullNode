@@ -11,9 +11,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
-
     public class BlockStoreSignaled : SignaleObserver<Block>
-
 	{
 		private readonly BlockStoreLoop storeLoop;
 		private readonly ConcurrentChain chain;
@@ -24,10 +22,8 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 
-
 		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeArgs nodeArgs, 
 			BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
-
 		{
 			this.storeLoop = storeLoop;
 			this.chain = chain;
@@ -51,7 +47,6 @@ namespace Stratis.Bitcoin.BlockStore
 				return;
 
 			this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
-
 		}
 
 		private void RelayWorker(CancellationToken cancellationToken)

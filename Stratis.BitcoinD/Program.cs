@@ -29,22 +29,6 @@ namespace Stratis.BitcoinD
 				IsBackground = true //so the process terminate
 			}.Start();
 			node.Start();
-
-#if DEBUG
-         var webWallet = new Dashboard.DashboardService(config => {
-            //in debug mode, it gets files from physical path, so i set a relative path to my web content.
-            //in production mode, it gets contents from embedded resource and this parameter isn't used
-            var appFolder = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
-            config.ContentRoot = System.IO.Path.Combine(appFolder, "..", "..", "..", "..", "Stratis.Dashboard");
-            Console.WriteLine($"ContentRoot set to {config.ContentRoot}");
-         });
-#else
-         var webWallet = new Dashboard.DashboardService();
-#endif
-
-         webWallet.AttachNode(node);
-         webWallet.Start();
-
          node.WaitDisposed();
 			node.Dispose();
 		}
