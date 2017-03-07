@@ -102,6 +102,25 @@ namespace Stratis.Bitcoin.Configuration
 		} = 100000;
 	}
 
+	public class StoreArgs
+	{
+		public bool TxIndex { get; set; }
+		public bool ReIndex { get; set; }
+		public bool Prune { get; set; }
+
+		public void Load(TextFileConfiguration config)
+		{
+			this.Prune = config.GetOrDefault("prune", 0) != 0;
+			this.TxIndex = config.GetOrDefault("txindex", 0) != 0;
+			if (this.Prune && this.TxIndex)
+				throw new ConfigurationException("Prune mode is incompatible with -txindex");
+
+			this.ReIndex = config.GetOrDefault("reindex", 0) != 0;
+			
+			// TODO: --reindex
+		}
+	}
+
 	public class MempoolArgs
 	{
 		// Default for blocks only 
@@ -159,6 +178,10 @@ namespace Stratis.Bitcoin.Configuration
 		{
 			get; set;
 		} = new MempoolArgs();
+		public StoreArgs Store
+		{
+			get; set;
+		} = new StoreArgs();
 		public bool Testnet
 		{
 			get; set;
@@ -173,11 +196,6 @@ namespace Stratis.Bitcoin.Configuration
 			set;
 		}
 		public string ConfigurationFile
-		{
-			get;
-			set;
-		}
-		public bool Prune
 		{
 			get;
 			set;
@@ -246,7 +264,6 @@ namespace Stratis.Bitcoin.Configuration
 			var config = TextFileConfiguration.Parse(File.ReadAllText(nodeArgs.ConfigurationFile));
 			consoleConfig.MergeInto(config);
 
-			nodeArgs.Prune = config.GetOrDefault("prune", 0) != 0;
 			nodeArgs.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeArgs.RegTest || nodeArgs.Testnet));
 			nodeArgs.MaxTipAge = config.GetOrDefault("maxtipage", DEFAULT_MAX_TIP_AGE);
 
@@ -368,7 +385,8 @@ namespace Stratis.Bitcoin.Configuration
 			}
 
 			nodeArgs.Mempool.Load(config);
-				
+			nodeArgs.Store.Load(config);
+
 			var folder = new DataFolder(nodeArgs.DataDir);
 			if(!Directory.Exists(folder.CoinViewPath))
 				Directory.CreateDirectory(folder.CoinViewPath);

@@ -11,7 +11,9 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
-    public class BlockStoreSignaled : SignalObserver<Block>
+
+    public class BlockStoreSignaled : SignaleObserver<Block>
+
 	{
 		private readonly BlockStoreLoop storeLoop;
 		private readonly ConcurrentChain chain;
@@ -22,7 +24,10 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 
-		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
+
+		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeArgs nodeArgs, 
+			BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
+
 		{
 			this.storeLoop = storeLoop;
 			this.chain = chain;
@@ -36,31 +41,17 @@ namespace Stratis.Bitcoin.BlockStore
 
 		protected override void OnNextCore(Block value)
 		{
-			if (this.nodeArgs.Prune)
+			if (this.nodeArgs.Store.Prune)
 				return;
 
-			// release the signaler from waiting 
-			//var task = Task.Run(() =>
-			//{
-				// TODO: add exception handling in this task
+			// ensure the block is written to disk before relaying
+			this.storeLoop.AddToPending(value);
 
-				// ensure the block is written to disk before relaying
-				this.storeLoop.AddToPending(value);
+			if (this.chainState.IsInitialBlockDownload)
+				return;
 
-				if (this.chainState.IsInitialBlockDownload)
-					return;
+			this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
 
-				this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
-			//});
-
-			// if in IBD don't wait for the store to write to disk
-			// so not to slow down the IBD work, when in IBD and
-			// in case of a crash the store will be able to (in future) 
-			// recover itself by downloading from other peers
-			//if (this.chainState.IsInitialBlockDownload)
-			//	return;
-
-			//task.GetAwaiter().GetResult(); //add the full node cancelation here.
 		}
 
 		private void RelayWorker(CancellationToken cancellationToken)

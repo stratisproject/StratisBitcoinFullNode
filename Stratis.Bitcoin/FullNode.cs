@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin
 			// == Connection == 
 			var connectionParameters = new NodeConnectionParameters();
 			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
-			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
+			connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
@@ -140,13 +140,19 @@ namespace Stratis.Bitcoin
 
 			// === BlockSgtore ===
 			var blockRepository = new BlockRepository(this.Network, DataFolder.BlockPath);
+
+			var blockStoreCache = new BlockStoreCache(blockRepository);
+			_Resources.Add(blockStoreCache);
+			_Resources.Add(blockRepository);
+
 			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
 			var blockStoreLoop = new BlockStoreLoop(this.Chain, this.ConnectionManager,
 				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, this._Cancellation, lightBlockPuller);
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
 				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
-			_Resources.Add(this.BlockStoreManager.BlockRepository);
-			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository));
+
+			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
+
 			connectionParameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
 			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
