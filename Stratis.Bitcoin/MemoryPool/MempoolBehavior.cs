@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 
 			// add to known inventory
-			await this.manager.MempoolScheduler.DoExclusive(() =>
+			await this.manager.MempoolScheduler.WriteAsync(() =>
 			{
 				foreach (var inventoryVector in send.Inventory)
 					this.filterInventoryKnown.TryAdd(inventoryVector.Hash, inventoryVector.Hash);
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			var trxHash = trx.GetHash();
 
 			// add to local filter
-			await this.manager.MempoolScheduler.DoExclusive(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
+			await this.manager.MempoolScheduler.WriteAsync(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
 
 			var state = new MemepoolValidationState(true);
 			if (!await this.orphans.AlreadyHave(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// find all behaviours then start an exclusive task 
 			// to add the hash to each local collection
 			var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
-			return this.manager.MempoolScheduler.DoExclusive(() =>
+			return this.manager.MempoolScheduler.WriteAsync(() =>
 			{
 				foreach (var mempoolBehavior in behaviours)
 				{
@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			//	filterrate = pto->minFeeFilter;
 			//}
 
-			var sends = await this.manager.MempoolScheduler.DoExclusive(() =>
+			var sends = await this.manager.MempoolScheduler.WriteAsync(() =>
 			{
 				var ret = new List<TxMempoolInfo>();
 				foreach (var txinfo in vtxinfo)
@@ -325,10 +325,10 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// before locking an exclusive task 
 			// check if there is anything to processes
-			if(!await this.manager.MempoolScheduler.DoConcurrent(() => this.inventoryTxToSend.Keys.Any()))
+			if(!await this.manager.MempoolScheduler.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
 				return;
 
-			var sends = await this.manager.MempoolScheduler.DoExclusive(() =>
+			var sends = await this.manager.MempoolScheduler.WriteAsync(() =>
 			{
 				// Determine transactions to relay
 				// Produce a vector with all candidates for sending

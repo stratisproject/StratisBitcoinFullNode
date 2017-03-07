@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 				if (fork != null)
 				{
-					if (fork.Height > highestPow.Height)
+					if (highestPow == null || fork.Height > highestPow.Height)
 					{
 						fork = null; //fork not yet validated
 					}

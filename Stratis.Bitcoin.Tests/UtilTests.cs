@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Tests
 {
     public class UtilTests
 	{
-		// TODO: write test scenarios for the SchedulerPairSession
+		// TODO: write test scenarios for the AsyncLock
 		// example when a exclusive delegate breaks in to a concurrent delegate 
 		// and back the two parts of the exclusive delegate need to be called sequentially
 
@@ -28,19 +28,19 @@ namespace Stratis.Bitcoin.Tests
 		[Fact]
 		public void SchedulerPairSessionTest()
 		{
-			var session = new SchedulerPairSession();
+			var session = new AsyncLock();
 			var collector = new List<int>();
 
 			var task = Task.Run(async () =>
 			{
-				await await session.DoExclusive(async () =>
+				await await session.WriteAsync(async () =>
 				{
 					collector.Add(1);
 					// push another exclusive task to the scheduler
-					session.DoExclusive(() => collector.Add(2));
+					session.WriteAsync(() => collector.Add(2));
 					// await a concurrent task, this will split the current method in two tasks
 					// the pushed exclusive task will processes before the await yields back control
-				    await session.DoConcurrent(() =>  collector.Add(3));
+				    await session.ReadAsync(() =>  collector.Add(3));
 					collector.Add(4);
 				});
 
