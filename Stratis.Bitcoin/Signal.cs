@@ -28,6 +28,29 @@ namespace Stratis.Bitcoin
 		}
 	}
 
+	public abstract class PassthroughSignale<T> : SignaleObserver<T>
+	{
+		protected override void OnNextCore(T value)
+		{
+			this.OnSignaled(value);
+		}
+
+		public abstract void OnSignaled(T item);
+	}
+
+	public abstract class AsyncSignale<T> : SignaleObserver<T>
+	{
+		protected override void OnNextCore(T value)
+		{
+			Task.Run(async () =>
+			{
+				await this.OnSignaled(value);
+			});
+		}
+
+		public abstract Task OnSignaled(T item);
+	}
+
 	public class Signaler<T> : IBroadcast<T>, IObservable<T>
 	{
 		private readonly ISubject<T> subject;
@@ -61,15 +84,5 @@ namespace Stratis.Bitcoin
 
 		public Signaler<Block> Blocks { get; }
 		public Signaler<Transaction> Transactions { get; }
-
-		public void Signal(Block block)
-		{
-			this.Blocks.Broadcast(block);
-		}
-
-		public void Signal(Transaction trx)
-		{
-			this.Transactions.Broadcast(trx);
-		}
 	}
 }
