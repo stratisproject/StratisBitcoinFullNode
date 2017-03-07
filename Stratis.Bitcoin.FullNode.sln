@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Stratis.Dashboard", "Stratis.Dashboard\Stratis.Dashboard.xproj", "{DEDF3FE0-9C57-40AB-AE15-C75BFD05B71A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{878232F0-1FF1-4836-B5BC-E9B1279AA616}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{878232F0-1FF1-4836-B5BC-E9B1279AA616}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{878232F0-1FF1-4836-B5BC-E9B1279AA616}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DEDF3FE0-9C57-40AB-AE15-C75BFD05B71A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEDF3FE0-9C57-40AB-AE15-C75BFD05B71A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEDF3FE0-9C57-40AB-AE15-C75BFD05B71A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEDF3FE0-9C57-40AB-AE15-C75BFD05B71A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
