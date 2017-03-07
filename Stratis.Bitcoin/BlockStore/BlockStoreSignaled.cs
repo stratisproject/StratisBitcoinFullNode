@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
-    public class BlockStoreSignaled : SignaleObserve<Block>
+    public class BlockStoreSignaled : SignalObserver<Block>
 	{
 		private readonly BlockStoreLoop storeLoop;
 		private readonly ConcurrentChain chain;
