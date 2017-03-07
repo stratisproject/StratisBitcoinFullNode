@@ -1,0 +1,97 @@
+﻿@model Stratis.Bitcoin.Configuration.NodeArgs
+
+@{
+   ViewData["Title"] = "Node Settings";
+}
+<div>
+   <h1 class="">
+      Running on <span class="bg-blue-sky">@Model.GetNetwork().Name</span> Network
+   </h1>
+</div>
+
+<div class="row">
+   @*Generic*@
+   <div class="col-md-4 col-sm-4 col-xs-12">
+      <div class="x_panel tile fixed_height_320 overflow_hidden">
+         <div class="x_title clearfix">
+            <h2>Miscellanous</h2>
+            <ul class="nav navbar-right panel_toolbox">
+               <li>
+                  <a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+               </li>
+            </ul>
+         </div>
+         <div class="x_content">
+            <table class="table-responsive table-striped col-md-12">
+               <tr><td>DataDir</td><td>@Model.DataDir</td></tr>
+               <tr><td>Configuration File</td><td>@Model.ConfigurationFile</td></tr>
+               <tr><td>MaxTipAge</td><td>@Model.MaxTipAge</td></tr>
+               <tr><td>Prune</td><td>@Model.Prune</td></tr>
+            </table>
+         </div>
+      </div>
+   </div>
+
+
+
+   @*ConnectionManager*@
+   <div class="col-md-4 col-sm-4 col-xs-12">
+      <div class="x_panel tile fixed_height_320 overflow_hidden">
+         <div class="x_title clearfix">
+            <h2>Connection</h2>
+            <ul class="nav navbar-right panel_toolbox">
+               <li>
+                  <a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+               </li>
+            </ul>
+         </div>
+         <div class="x_content">
+            <table class="table-responsive table-striped col-md-12">
+               <tr>
+                  <td>ExternalEndpoint</td>
+                  <td>@Model.ConnectionManager.ExternalEndpoint</td>
+               </tr>
+               <tr>
+                  <th colspan="2" class="tile_header"><div class="mid_center panel-title">-connection</div></th>
+               </tr>
+               @foreach (var node in @Model.ConnectionManager.Connect) {
+                  <tr>
+                     <th>&nbsp;</th>
+                     <td>@node.Address.ToString()</td>
+                  </tr>
+               }
+            </table>
+         </div>
+      </div>
+   </div>
+
+   @*ConnectionManager*@
+   <div class="col-md-4 col-sm-4 col-xs-12">
+      <div class="x_panel tile fixed_height_320 overflow_hidden">
+         <div class="x_title clearfix">
+            <h2>Memory Pool</h2>
+            <ul class="nav navbar-right panel_toolbox">
+               <li>
+                  <a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+               </li>
+            </ul>
+         </div>
+         <div class="x_content">
+            <table class="table-responsive table-striped col-md-12">
+               <tr><th>Enable Replacement</th><td>@Model.Mempool.EnableReplacement</td></tr>
+               <tr><th>Limit Ancestors Count</th><td>@Model.Mempool.LimitAncestors</td></tr>
+               <tr><th>Limit Ancestor Size</th><td>@Model.Mempool.LimitAncestorSize</td></tr>
+               <tr><th>Limit Descendants Count</th><td>@Model.Mempool.LimitDescendants</td></tr>
+               <tr><th>Limit Descendants Size</th><td>@Model.Mempool.LimitDescendantSize</td></tr>
+               <tr><th>Limit Free Relay</th><td>@Model.Mempool.LimitFreeRelay</td></tr>
+               <tr><th>Max Mempool</th><td>@Model.Mempool.MaxMempool</td></tr>
+               <tr><th>Max Orphan Tx Count</th><td>@Model.Mempool.MaxOrphanTx</td></tr>
+               <tr><th>Mempool Expiry</th><td>@Model.Mempool.MempoolExpiry</td></tr>
+               <tr><th>Relay Priority</th><td>@Model.Mempool.RelayPriority</td></tr>
+               <tr><th>Relay Txes</th><td>@Model.Mempool.RelayTxes</td></tr>
+               <tr><th>Whitelist Relay</th><td>@Model.Mempool.Whitelistrelay</td></tr>
+            </table>
+         </div>
+      </div>
+   </div>
+</div>

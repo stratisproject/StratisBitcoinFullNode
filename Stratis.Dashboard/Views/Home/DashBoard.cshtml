@@ -1,0 +1,65 @@
+﻿@model DashBoard
+
+@{
+   ViewData["Title"] = "Stratis Dashboard";
+}
+
+
+<!-- top tiles -->
+<div class="row tile_count">
+   @*<div class="col-md-2 col-sm-4 col-xs-6 tile_stats_count">
+          <span class="count_top"><i class="fa fa-user"></i> Peers connected</span>
+          <div class="count">@Model.ConnectedPeers</div>
+          <span class="count_bottom"><i class="green">4% </i> From last Week</span>
+      </div>*@
+   <div class="col-md-2 col-sm-4 col-xs-6 tile_stats_count">
+      <span class="count_top"><i class="fa fa-user"></i> Current Height</span>
+      <div class="count">@Model.CurrentHeight</div>
+   </div>
+   <div class="col-md-2 col-sm-4 col-xs-6 tile_stats_count">
+      <span class="count_top"><i class="fa fa-user"></i> Peers connected</span>
+      <div class="count">@Model.ConnectedPeers</div>
+   </div>
+   <div class="col-md-2 col-sm-4 col-xs-6 tile_stats_count">
+      <span class="count_top"><i class="fa fa-user"></i> Tx in MemPool</span>
+      <div class="count">@Model.MemPoolTransactionsCount</div>
+   </div>
+</div>
+<!-- /top tiles -->
+
+
+<div class="row">
+   <div class="x_panel tile">
+      <div class="x_title clearfix">
+         <h2>Top Peers</h2>
+         <ul class="nav navbar-right panel_toolbox">
+            <li>
+               <a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+            </li>
+         </ul>
+      </div>
+      <div class="x_content">
+         <h4>Top 10 connected peers</h4>
+         <div id="topPeers">
+            <vc:peer-list limit="10"></vc:peer-list>
+         </div>
+      </div>
+   </div>
+</div>
+<div class="row">
+   <div class="col-md-4 col-sm-4 col-xs-12">
+      <div class="x_panel tile fixed_height_320 overflow_hidden">
+         <div class="x_title clearfix">
+            <h2>Band Usage</h2>
+            <ul class="nav navbar-right panel_toolbox">
+               <li>
+                  <a class="collapse-link"><i class="fa fa-chevron-up"></i></a>
+               </li>
+            </ul>
+         </div>
+         <div class="x_content" id="bandStatistics">
+            <vc:band-usage-component></vc:band-usage-component>
+         </div>
+      </div>
+   </div>
+</div>

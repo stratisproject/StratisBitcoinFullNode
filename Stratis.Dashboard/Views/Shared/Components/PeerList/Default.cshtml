@@ -1,0 +1,34 @@
+﻿@model IEnumerable<PeerItem>
+
+<div class="table-responsive">
+   <table class="table table-striped table-responsive">
+      <thead>
+         <tr>
+            <th>#</th>
+            <th>EndPoint</th>
+            <th>Connected At</th>
+            <th>User Agent</th>
+            <th>Version</th>
+            <th>Read</th>
+            <th>Write</th>
+            <th>Info</th>
+         </tr>
+      </thead>
+      <tbody>
+         @{int itemCount = 0;}
+         @foreach (var item in Model) {
+            <tr>
+               <th scope="row">@(++itemCount)</th>
+               <td>@item.EndPoint</td>
+               <td>@item.ConnectedAt</td>
+               <td>@item.PeerUserAgent</td>
+               <td>@item.PeerVersion</td>
+               <td>@Html.PrettySize(item.Read)</td>
+               <td>@Html.PrettySize(item.Written)</td>
+               <td data-ip="@item.EndPoint.Address"><span class="fa fa-info-circle"></span></td> 
+               @*http://freegeoip.net/json/::ffff:98.229.139.101*@
+            </tr>
+         }
+      </tbody>
+   </table>
+</div>

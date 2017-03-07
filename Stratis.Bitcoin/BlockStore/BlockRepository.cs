@@ -8,13 +8,17 @@ namespace Stratis.Bitcoin.BlockStore
 {
 	public interface IBlockRepository
 	{
+
 		Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
+
 
 		Task<Block> GetAsync(uint256 hash);
 
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 
+
 		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
+
 	}
 
 	public class BlockRepository : IDisposable, IBlockRepository
@@ -46,17 +50,20 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				if (this.LoadBlockHash() == null)
 				{
+
 					this.SaveBlockHash(genesis.GetHash());
 					this.session.Transaction.Commit();
 				}
 				if (this.LoadTxIndex() == null)
 				{
 					this.SaveTxIndex(false);
+
 					this.session.Transaction.Commit();
 				}
 			});
 
 			return Task.WhenAll(new[] {sync, hash});
+
 		}
 
 		public Task<Transaction> GetTrxAsync(uint256 trxid)
@@ -161,11 +168,14 @@ namespace Stratis.Bitcoin.BlockStore
 			return this.session.Do(() =>
 			{
 				this.SaveBlockHash(nextBlockHash);
+
 				this.session.Transaction.Commit();
 			});
 		}
 
+
 		private void SaveBlockHash(uint256 nextBlockHash)
+
 		{
 			this.BlockHash = nextBlockHash;
 			this.session.Transaction.Insert<byte[], uint256>("Common", BlockHashKey, nextBlockHash);
@@ -191,7 +201,9 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 		}
 
+
 		public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
+
 		{
 			return this.session.Do(() =>
 			{
@@ -200,7 +212,9 @@ namespace Stratis.Bitcoin.BlockStore
 					// if the block is already in store don't write it again
 					var key = hash.ToBytes();
 
+
 					if (this.TxIndex)
+
 					{
 						var block = this.session.Transaction.Select<byte[], Block>("Block", key);
 						if (block.Exists)
@@ -211,7 +225,9 @@ namespace Stratis.Bitcoin.BlockStore
 					this.session.Transaction.RemoveKey<byte[]>("Block", key);
 				}
 
+
 				this.SaveBlockHash(newlockHash);
+
 				this.session.Transaction.Commit();
 			});
 		}
