@@ -73,21 +73,11 @@ namespace Stratis.Bitcoin
 			//	return true;
 			if (this.ConsensusLoop.Tip == null)
 				return true;
-			if (this.ConsensusLoop.Tip.ChainWork < MinimumChainWork(this.Args))
+			if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
 				return true;
 			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Args.MaxTipAge))
 				return true;
 			return false;
-		}
-
-		private static uint256 MinimumChainWork(NodeArgs args)
-		{
-			// TODO: move this to Network.Consensus
-			if (args.RegTest)
-				return uint256.Zero;
-			if (args.Testnet)
-				return uint256.Parse("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6");
-			return uint256.Parse("0x0000000000000000000000000000000000000000002cb971dd56d1c583c20f90");
 		}
 
 		List<IDisposable> _Resources = new List<IDisposable>();
