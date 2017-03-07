@@ -22,7 +22,8 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 
-		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
+		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeArgs nodeArgs, 
+			BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
 		{
 			this.storeLoop = storeLoop;
 			this.chain = chain;
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		protected override void OnNextCore(Block value)
 		{
-			if (this.nodeArgs.Prune)
+			if (this.nodeArgs.Store.Prune)
 				return;
 
 			// ensure the block is written to disk before relaying

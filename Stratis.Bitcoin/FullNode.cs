@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin
 			// == Connection == 
 			var connectionParameters = new NodeConnectionParameters();
 			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
-			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
+			connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
 			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
