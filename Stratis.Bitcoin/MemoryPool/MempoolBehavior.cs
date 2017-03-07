@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// add to local filter
 			await this.manager.MempoolScheduler.WriteAsync(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
 
-			var state = new MemepoolValidationState(true);
+			var state = new MempoolValidationState(true);
 			if (!await this.orphans.AlreadyHave(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
 			{
 				await this.validator.SanityCheck();
