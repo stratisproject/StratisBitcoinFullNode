@@ -146,20 +146,6 @@ namespace Stratis.Bitcoin.Tests
 						bitcoind.Kill();
 					}
 				}
-				// kill all dotnet instances no us
-				//foreach (var dotnet in Process.GetProcessesByName("dotnet"))
-				//{
-				//	if (Process.GetCurrentProcess().Id == dotnet.Id)
-				//		continue;
-				//	try
-				//	{
-				//		dotnet.Kill();
-				//	}
-				//	catch
-				//	{
-				//		// ignored
-				//	}
-				//}
 				Thread.Sleep(1000);
 				Directory.Delete(caller, true);
 			}

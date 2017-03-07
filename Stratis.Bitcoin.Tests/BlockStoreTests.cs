@@ -56,11 +56,9 @@ namespace Stratis.Bitcoin.Tests
 
 					Stopwatch stopwatch = new Stopwatch();
 					stopwatch.Start();
-
-					blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
+					blockRepo.PutAsync(lst.Last().GetHash(), lst, true).GetAwaiter().GetResult();
 					var first = stopwatch.ElapsedMilliseconds;
-					blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
-
+					blockRepo.PutAsync(lst.Last().GetHash(), lst, true).GetAwaiter().GetResult();
 					var second = stopwatch.ElapsedMilliseconds;
 
 				}
@@ -74,8 +72,6 @@ namespace Stratis.Bitcoin.Tests
 			{
 				using (var blockRepo = new BlockStore.BlockRepository(Network.Main, dir.FolderName))
 				{
-					blockRepo.SetTxIndex(true).Wait();
-
 					var lst = new List<Block>();
 					for (int i = 0; i < 5; i++)
 					{
@@ -92,9 +88,7 @@ namespace Stratis.Bitcoin.Tests
 						lst.Add(block);
 					}
 
-
-					blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
-
+					blockRepo.PutAsync(lst.Last().GetHash(), lst, true).GetAwaiter().GetResult();
 
 					// check each block
 					foreach (var block in lst)
@@ -110,9 +104,7 @@ namespace Stratis.Bitcoin.Tests
 					}
 
 					// delete
-
-					blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] {lst.ElementAt(2).GetHash()}.ToList());
-
+					blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] {lst.ElementAt(2).GetHash()}.ToList(), true);
 					var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
 					Assert.Null(deleted);
 				}
@@ -226,37 +218,5 @@ namespace Stratis.Bitcoin.Tests
 				Class1.Eventually(() => stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 			}
 		}
-
-
-		[Fact]
-		public void BlockStoreIndexTx()
-		{
-			using (NodeBuilder builder = NodeBuilder.Create())
-			{
-				var stratisNode1 = builder.CreateStratisNode();
-				var stratisNode2 = builder.CreateStratisNode();
-				builder.StartAll();
-				stratisNode1.NotInIBD();
-				stratisNode2.NotInIBD();
-
-				// generate blocks and wait for the downloader to pickup
-				stratisNode1.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode1.FullNode.Network));
-				stratisNode2.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode2.FullNode.Network));
-				// sync both nodes
-				stratisNode1.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
-				stratisNode1.GenerateStratis(10);
-				Class1.Eventually(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 10);
-				Class1.Eventually(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
-
-				var bestBlock1 = stratisNode1.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNode1.FullNode.Chain.Tip.HashBlock).Result;
-				Assert.NotNull(bestBlock1);
-
-				// get the block coinbase trx 
-				var trx = stratisNode2.FullNode.BlockStoreManager.BlockRepository.GetTrxAsync(bestBlock1.Transactions.First().GetHash()).Result;
-				Assert.NotNull(trx);
-				Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
-			}
-		}
-
 	}
 }

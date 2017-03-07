@@ -23,9 +23,6 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly ConcurrentChain chain;
 		private readonly BlockRepository blockRepository;
 
-		private readonly BlockStoreCache blockStoreCache;
-		
-
 		public bool CanRespondToGetBlocksPayload { get; set; }
 
 		public bool CanRespondeToGetDataPayload { get; set; }
@@ -34,13 +31,10 @@ namespace Stratis.Bitcoin.BlockStore
 		public bool PreferHeaders; // public for testing
 		private bool preferHeaderAndIDs;
 
-
-		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository, BlockStoreCache blockStoreCache)
+		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository)
 		{
 			this.chain = chain;
 			this.blockRepository = blockRepository;
-			this.blockStoreCache = blockStoreCache;
-
 
 			this.CanRespondToGetBlocksPayload = false;
 			this.CanRespondeToGetDataPayload = true;
@@ -120,7 +114,7 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				// TODO: check if we need to add support for "not found" 
 
-				var block = await this.blockStoreCache.GetBlockAsync(item.Hash).ConfigureAwait(false);
+				var block = await this.blockRepository.GetAsync(item.Hash).ConfigureAwait(false);
 
 
 				if (block != null)
@@ -277,9 +271,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override object Clone()
 		{
-
-			return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache)
-
+			return new BlockStoreBehavior(this.chain, this.blockRepository)
 			{
 				CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
 				CanRespondeToGetDataPayload = this.CanRespondeToGetDataPayload
