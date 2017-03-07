@@ -43,11 +43,6 @@ namespace Stratis.Bitcoin.BlockStore
 			this.blockPuller = blockPuller;
 			this.ChainState = chainState;
 			
-
-			if(this.nodeArgs.Store.ReIndex)
-				throw new NotImplementedException();
-
-
 			PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
 			StoredBlock = chain.GetBlock(this.BlockRepository.BlockHash);
 			if (StoredBlock == null)
@@ -58,16 +53,6 @@ namespace Stratis.Bitcoin.BlockStore
 				// all the way till a common fork is found with Chain
 				throw new NotImplementedException();
 			}
-
-
-			if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
-			{
-				if (this.chain.Tip != this.chain.Genesis)
-					throw new BlockStoreException("You need to rebuild the database using -reindex-chainstate to change -txindex");
-				if (this.nodeArgs.Store.TxIndex)
-					this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
-			}
-
 			chainState.HighestPersistedBlock = this.StoredBlock;
 			this.Loop(globalCancellationTokenSource.Token);
 		}
@@ -136,9 +121,7 @@ namespace Stratis.Bitcoin.BlockStore
 					    remove = remove.Previous;
 				    }
 
-
-					await this.BlockRepository.DeleteAsync(remove.HashBlock, blockstoremove);
-
+					await this.BlockRepository.DeleteAsync(remove.HashBlock, blockstoremove, false);
 					this.StoredBlock = remove;
 					this.ChainState.HighestPersistedBlock = this.StoredBlock;
 					break;
@@ -179,9 +162,7 @@ namespace Stratis.Bitcoin.BlockStore
 					}
 
 					// store missing blocks and remove them from pending blocks
-
-					await this.BlockRepository.PutAsync(storebest.HashBlock, tostore.Select(b => b.Block).ToList());
-
+					await this.BlockRepository.PutAsync(storebest.HashBlock, tostore.Select(b => b.Block).ToList(), false);
 					this.StoredBlock = storebest;
 					this.ChainState.HighestPersistedBlock = this.StoredBlock;
 
@@ -218,9 +199,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		        // download and store missing blocks
 		        var blocks = await this.blockPuller.AskBlocks(token, todownload.ToArray());
-
-		        await this.BlockRepository.PutAsync(downloadbest.HashBlock, blocks);
-
+		        await this.BlockRepository.PutAsync(downloadbest.HashBlock, blocks, false);
 		        this.StoredBlock = downloadbest;
 		        this.ChainState.HighestPersistedBlock = this.StoredBlock;
 		    }

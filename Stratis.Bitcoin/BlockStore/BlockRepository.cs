@@ -8,17 +8,13 @@ namespace Stratis.Bitcoin.BlockStore
 {
 	public interface IBlockRepository
 	{
-
-		Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
-
+		Task PutAsync(uint256 nextBlockHash, List<Block> blocks, bool txIndex);
 
 		Task<Block> GetAsync(uint256 hash);
 
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 
-
-		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
-
+		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes, bool txIndex);
 	}
 
 	public class BlockRepository : IDisposable, IBlockRepository
@@ -50,56 +46,30 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				if (this.LoadBlockHash() == null)
 				{
-
-					this.SaveBlockHash(genesis.GetHash());
-					this.session.Transaction.Commit();
-				}
-				if (this.LoadTxIndex() == null)
-				{
-					this.SaveTxIndex(false);
-
+					this.FlushBlockHash(genesis.GetHash());
 					this.session.Transaction.Commit();
 				}
 			});
 
 			return Task.WhenAll(new[] {sync, hash});
-
 		}
 
 		public Task<Transaction> GetTrxAsync(uint256 trxid)
 		{
-			if (!this.TxIndex)
-				return Task.FromResult(default(Transaction));
-
 			return this.session.Do(() =>
 			{
 				var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
-				if (!blockid.Exists)
+				if (blockid?.Value == null)
 					return null;
 				var block = this.session.Transaction.Select<byte[], Block>("Block", blockid.Value.ToBytes());
 				return block?.Value?.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
 			});
 		}
 
-		public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
-		{
-			if (!this.TxIndex)
-				return Task.FromResult(default(uint256));
-
-			return this.session.Do(() =>
-			{
-				var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
-				return !blockid.Exists ? null : blockid.Value;
-			});
-		}
-
 		static readonly byte[] BlockHashKey = new byte[0];
-		static readonly byte[] TxIndexKey = new byte[1];
-
 		public uint256 BlockHash { get; private set; }
-		public bool TxIndex { get; private set; }
 
-		public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
+		public Task PutAsync(uint256 nextBlockHash, List<Block> blocks, bool txIndex)
 		{
 			// dbreeze is faster if sort ascending by key in memory before insert
 			// however we need to find how byte arrays are sorted in dbreeze this link can help 
@@ -117,7 +87,7 @@ namespace Stratis.Bitcoin.BlockStore
 					{
 						this.session.Transaction.Insert<byte[], Block>("Block", blockId.ToBytes(), block);
 
-						if (this.TxIndex)
+						if (txIndex)
 						{
 							// index transactions
 							foreach (var transaction in block.Transactions)
@@ -129,30 +99,7 @@ namespace Stratis.Bitcoin.BlockStore
 					}
 				}
 
-				this.SaveBlockHash(nextBlockHash);
-				this.session.Transaction.Commit();
-			});
-		}
-
-		private bool? LoadTxIndex()
-		{
-			var item = this.session.Transaction.Select<byte[], bool>("Common", TxIndexKey);
-			if (!item.Exists)
-				return null;
-			this.TxIndex = item.Value;
-			return item.Value;
-		}
-		private void SaveTxIndex(bool txIndex)
-		{
-			this.TxIndex = txIndex;
-			this.session.Transaction.Insert<byte[], bool>("Common", TxIndexKey, txIndex);
-		}
-
-		public Task SetTxIndex(bool txIndex)
-		{
-			return this.session.Do(() =>
-			{
-				this.SaveTxIndex(txIndex);
+				this.FlushBlockHash(nextBlockHash);
 				this.session.Transaction.Commit();
 			});
 		}
@@ -167,15 +114,12 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			return this.session.Do(() =>
 			{
-				this.SaveBlockHash(nextBlockHash);
-
+				this.FlushBlockHash(nextBlockHash);
 				this.session.Transaction.Commit();
 			});
 		}
 
-
-		private void SaveBlockHash(uint256 nextBlockHash)
-
+		private void FlushBlockHash(uint256 nextBlockHash)
 		{
 			this.BlockHash = nextBlockHash;
 			this.session.Transaction.Insert<byte[], uint256>("Common", BlockHashKey, nextBlockHash);
@@ -201,9 +145,7 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 		}
 
-
-		public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
-
+		public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes, bool txIndex)
 		{
 			return this.session.Do(() =>
 			{
@@ -212,9 +154,7 @@ namespace Stratis.Bitcoin.BlockStore
 					// if the block is already in store don't write it again
 					var key = hash.ToBytes();
 
-
-					if (this.TxIndex)
-
+					if (txIndex)
 					{
 						var block = this.session.Transaction.Select<byte[], Block>("Block", key);
 						if (block.Exists)
@@ -225,9 +165,7 @@ namespace Stratis.Bitcoin.BlockStore
 					this.session.Transaction.RemoveKey<byte[]>("Block", key);
 				}
 
-
-				this.SaveBlockHash(newlockHash);
-
+				this.FlushBlockHash(newlockHash);
 				this.session.Transaction.Commit();
 			});
 		}
