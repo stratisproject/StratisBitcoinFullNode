@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin
 		void Broadcast(T item);
 	}
 
-	public abstract class SignaleObserver<T> : ObserverBase<T>
+	public abstract class SignalObserver<T> : ObserverBase<T>
 	{
 		protected override void OnErrorCore(Exception error)
 		{
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin
 		}
 	}
 
-	public abstract class PassthroughSignale<T> : SignaleObserver<T>
+	public abstract class PassthroughSignal<T> : SignalObserver<T>
 	{
 		protected override void OnNextCore(T value)
 		{
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin
 		public abstract void OnSignaled(T item);
 	}
 
-	public abstract class AsyncSignale<T> : SignaleObserver<T>
+	public abstract class AsyncSignal<T> : SignalObserver<T>
 	{
 		protected override void OnNextCore(T value)
 		{
