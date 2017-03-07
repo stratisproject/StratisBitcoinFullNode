@@ -6,13 +6,13 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
-	public class MempoolValidationState
+	public class MemepoolValidationState
 	{
-		public MempoolValidationState(bool limitFree) : this(limitFree, false, Money.Zero)
+		public MemepoolValidationState(bool limitFree) : this(limitFree, false, Money.Zero)
 		{
 		}
 
-		public MempoolValidationState(bool limitFree, bool overrideMempoolLimit, Money absurdFee)
+		public MemepoolValidationState(bool limitFree, bool overrideMempoolLimit, Money absurdFee)
 		{
 			this.LimitFree = limitFree;
 			this.AbsurdFee = absurdFee;
@@ -23,14 +23,14 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public string ErrorMessage { get; set; }
 
-		public MempoolValidationState Invalid(MempoolError error)
+		public MemepoolValidationState Invalid(MempoolError error)
 		{
 			this.Error = error;
 			this.IsInvalid = true;
 			return this;
 		}
 
-		public MempoolValidationState Invalid(MempoolError error, string errorMessage)
+		public MemepoolValidationState Invalid(MempoolError error, string errorMessage)
 		{
 			this.Error = error;
 			this.IsInvalid = true;
@@ -38,13 +38,13 @@ namespace Stratis.Bitcoin.MemoryPool
 			return this;
 		}
 
-		public MempoolValidationState Fail(MempoolError error)
+		public MemepoolValidationState Fail(MempoolError error)
 		{
 			this.Error = error;
 			return this;
 		}
 
-		public MempoolValidationState Fail(MempoolError error, string errorMessage)
+		public MemepoolValidationState Fail(MempoolError error, string errorMessage)
 		{
 			this.Error = error;
 			this.ErrorMessage = errorMessage;
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.MemoryPool
 	/// </summary>
 	public class MempoolValidationContext
     {
-		public MempoolValidationState State { get; }
+		public MemepoolValidationState State { get; }
 
 		public List<uint256> SetConflicts { get; set; }
 
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public Money ModifiedFees { get; set; }
 		public long SigOpsCost { get; set; }
 
-		public MempoolValidationContext(Transaction transaction, MempoolValidationState state)
+		public MempoolValidationContext(Transaction transaction, MemepoolValidationState state)
 		{
 			this.Transaction = transaction;
 			this.TransactionHash = transaction.GetHash();

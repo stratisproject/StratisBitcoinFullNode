@@ -56,8 +56,8 @@ namespace Stratis.Bitcoin.Miner
 				//}
 				block.UpdateMerkleRoot();
 				var retry = 0;
-			    while (!block.CheckProofOfWork() && !fullNode.IsDisposed && ++retry < maxTries)
-			        block.Header.Nonce = ++nonce;
+				while (!block.CheckProofOfWork() && !fullNode.IsDisposed && ++retry < maxTries)
+					block.Header.Nonce = ++nonce;
 				if (fullNode.IsDisposed || retry >= maxTries)
 					return blocks.Select(b => b.GetHash()).ToList();
 				blocks.Add(block);

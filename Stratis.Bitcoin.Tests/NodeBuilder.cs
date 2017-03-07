@@ -654,7 +654,7 @@ namespace Stratis.Bitcoin.Tests
 		public bool AddToStratisMempool(Transaction trx)
 		{
 			var fullNode = (_Runner as StratisBitcoinRunner).FullNode;
-			var state = new MempoolValidationState(true);
+			var state = new MemepoolValidationState(true);
 
 			return fullNode.MempoolManager.Validator.AcceptToMemoryPool(state, trx).Result;
 		}

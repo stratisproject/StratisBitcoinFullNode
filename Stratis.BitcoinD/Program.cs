@@ -28,8 +28,8 @@ namespace Stratis.BitcoinD
 			{
 				IsBackground = true //so the process terminate
 			}.Start();
-			node.Start();
-         node.WaitDisposed();
+			node.Start();			
+			node.WaitDisposed();
 			node.Dispose();
 		}
 	}
