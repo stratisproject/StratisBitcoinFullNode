@@ -59,10 +59,19 @@ namespace Stratis.Bitcoin.BlockStore
 			return this.session.Do(() =>
 			{
 				var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
-				if (blockid?.Value == null)
+				if (!blockid.Exists)
 					return null;
 				var block = this.session.Transaction.Select<byte[], Block>("Block", blockid.Value.ToBytes());
 				return block?.Value?.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
+			});
+		}
+
+		public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
+		{
+			return this.session.Do(() =>
+			{
+				var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
+				return !blockid.Exists ? null : blockid.Value;
 			});
 		}
 
