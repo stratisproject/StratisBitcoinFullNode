@@ -19,6 +19,7 @@ using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.BlockPulling;
 using System.Text;
 using System.Runtime.ExceptionServices;
+using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
@@ -27,6 +28,7 @@ using Stratis.Bitcoin.Miner;
 
 namespace Stratis.Bitcoin
 {
+
 	public class FullNode : IDisposable
 	{
 		NodeArgs _Args;
@@ -80,6 +82,12 @@ namespace Stratis.Bitcoin
 			return false;
 		}
 
+		private readonly List<Module> modules = new List<Module>();
+		public void RegisterModule(Module module)
+		{
+			this.modules.Add(module);
+		}
+
 		List<IDisposable> _Resources = new List<IDisposable>();
 		public void Start()
 		{
@@ -93,6 +101,8 @@ namespace Stratis.Bitcoin
 
 
 			_Cancellation = new CancellationTokenSource();
+			this.GlobalCancellation = new CancellationProvider() {Cancellation = _Cancellation};
+
 			StartFlushAddrManThread();
 			StartFlushChainThread();
 
@@ -148,13 +158,7 @@ namespace Stratis.Bitcoin
 			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 
 			// === memory pool ==
-			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee, _Args);
-			var mempoolScheduler = new AsyncLock();
-			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, this.DateTimeProvider, _Args, this.Chain, this.CoinView);
-			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, this.DateTimeProvider, _Args);
-			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, this.DateTimeProvider, _Args);
-			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager, this.ChainBehaviorState));
-			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain, this.ConnectionManager, this._Cancellation));
+			this.RegisterModule(new MempooModule());
 
 			// === Miner ===
 			this.Miner = new Mining(this, this.DateTimeProvider);
@@ -162,6 +166,19 @@ namespace Stratis.Bitcoin
 			var flags = ConsensusLoop.GetFlags();
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
 				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+
+			// TODO: create a FullNodeBuilder that takes modules/services and builds them
+			// configure and start DI modules
+			var serviceCollection = new ServiceCollection();
+			var sortedModules = this.modules.OrderBy(o => o.Priority).ToList();
+			foreach (var module in sortedModules)
+				module.Configure(this, serviceCollection);
+			var service = serviceCollection.BuildServiceProvider();
+			foreach (var module in sortedModules)
+				module.Start(this, service);
+			var serviceDispose = service as IDisposable;
+			if (serviceDispose != null)
+				_Resources.Add(serviceDispose);
 
 			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 			ConnectionManager.Start();
@@ -412,6 +429,15 @@ namespace Stratis.Bitcoin
 		public PeriodicTask FlushChainTask
 		{
 			get; set;
+		}
+
+		public CancellationProvider GlobalCancellation
+		{
+			get; set;
+		}
+		public class CancellationProvider
+		{
+			public CancellationTokenSource Cancellation { get; set; }
 		}
 
 		ManualResetEvent _IsDisposed = new ManualResetEvent(false);

@@ -35,7 +35,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly Dictionary<uint256, uint256> inventoryTxToSend;
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
-		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
+		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, 
+			ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
 		{
 			this.validator = validator;
 			this.manager = manager;

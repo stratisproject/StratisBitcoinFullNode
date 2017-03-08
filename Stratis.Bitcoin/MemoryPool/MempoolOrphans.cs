@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		// Minimum time between orphan transactions expire time checks in seconds 
 		public const int ORPHAN_TX_EXPIRE_INTERVAL = 5 * 60;
 
-		public AsyncLock MempoolScheduler { get; }
+		public MempoolScheduler MempoolScheduler { get; }
 		public MempoolValidator Validator { get; } // public for testing
 		private readonly TxMempool memPool;
 		private readonly ConcurrentChain chain;
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.MemoryPool
 	    private readonly Random random = new Random();
 		private uint256 hashRecentRejectsChainTip;
 
-		public MempoolOrphans(AsyncLock mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
+		public MempoolOrphans(MempoolScheduler mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
 			MempoolValidator validator, CoinView coinView, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
