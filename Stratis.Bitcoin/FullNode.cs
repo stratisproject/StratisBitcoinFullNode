@@ -73,21 +73,11 @@ namespace Stratis.Bitcoin
 			//	return true;
 			if (this.ConsensusLoop.Tip == null)
 				return true;
-			if (this.ConsensusLoop.Tip.ChainWork < MinimumChainWork(this.Args))
+			if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
 				return true;
 			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Args.MaxTipAge))
 				return true;
 			return false;
-		}
-
-		private static uint256 MinimumChainWork(NodeArgs args)
-		{
-			// TODO: move this to Network.Consensus
-			if (args.RegTest)
-				return uint256.Zero;
-			if (args.Testnet)
-				return uint256.Parse("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6");
-			return uint256.Parse("0x0000000000000000000000000000000000000000002cb971dd56d1c583c20f90");
 		}
 
 		List<IDisposable> _Resources = new List<IDisposable>();
@@ -140,19 +130,15 @@ namespace Stratis.Bitcoin
 
 			// === BlockSgtore ===
 			var blockRepository = new BlockRepository(this.Network, DataFolder.BlockPath);
-
 			var blockStoreCache = new BlockStoreCache(blockRepository);
 			_Resources.Add(blockStoreCache);
 			_Resources.Add(blockRepository);
-
 			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
 			var blockStoreLoop = new BlockStoreLoop(this.Chain, this.ConnectionManager,
 				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, this._Cancellation, lightBlockPuller);
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
 				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
-
 			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
-
 			connectionParameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
 			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 

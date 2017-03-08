@@ -15,9 +15,7 @@ namespace Stratis.Bitcoin
 		void Broadcast(T item);
 	}
 
-
-	public abstract class SignaleObserver<T> : ObserverBase<T>
-
+	public abstract class SignalObserver<T> : ObserverBase<T>
 	{
 		protected override void OnErrorCore(Exception error)
 		{
@@ -63,15 +61,5 @@ namespace Stratis.Bitcoin
 
 		public Signaler<Block> Blocks { get; }
 		public Signaler<Transaction> Transactions { get; }
-
-		public void Signal(Block block)
-		{
-			this.Blocks.Broadcast(block);
-		}
-
-		public void Signal(Transaction trx)
-		{
-			this.Transactions.Broadcast(trx);
-		}
 	}
 }
