@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Consensus
             return _Code + ": " + _Message;
         }
     }
-    public class ConsensusErrors
+    public static class ConsensusErrors
     {
         public readonly static ConsensusError HighHash = new ConsensusError("high-hash", "proof of work failed");
         public readonly static ConsensusError BadCoinbaseHeight = new ConsensusError("bad-cb-height", "block height mismatch in coinbase");

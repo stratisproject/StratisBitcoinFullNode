@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.IntegrationTests
 {
 	public enum CoreNodeState
 	{

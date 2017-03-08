@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Miner
 			// Go back by what we want to be 14 days worth of blocks
 			var pastHeight = pindexLast.Height - (consensus.DifficultyAdjustmentInterval - 1);
 			ChainedBlock pindexFirst = chainedBlock.EnumerateToGenesis().FirstOrDefault(o => o.Height == pastHeight);
-			Check.Assert(pindexFirst != null);
+			Guard.Assert(pindexFirst != null);
 
 			if (consensus.PowNoRetargeting)
 				return pindexLast.Header.Bits;

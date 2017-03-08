@@ -27,7 +27,7 @@ using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Stratis.Bitcoin.Connection;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.IntegrationTests
 {
 	public class Class1
 	{

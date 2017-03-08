@@ -12,7 +12,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.IntegrationTests
 {
     public class BlockStoreTests
     {

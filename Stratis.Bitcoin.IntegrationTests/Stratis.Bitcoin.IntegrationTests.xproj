@@ -6,8 +6,8 @@
   </PropertyGroup>
   <Import Project="$(VSToolsPath)\DotNet\Microsoft.DotNet.Props" Condition="'$(VSToolsPath)' != ''" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>94feb14e-d123-486d-a24d-d2be725d96e3</ProjectGuid>
-    <RootNamespace>Stratis.Bitcoin.Tests</RootNamespace>
+    <ProjectGuid>800a5906-c050-4e75-9d7c-0cb1c404a0f8</ProjectGuid>
+    <RootNamespace>Stratis.Bitcoin.IntegrationTests</RootNamespace>
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)'=='' ">.\obj</BaseIntermediateOutputPath>
     <OutputPath Condition="'$(OutputPath)'=='' ">.\bin\</OutputPath>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
