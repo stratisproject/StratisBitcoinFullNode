@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private void CheckMempoolCoinView(MempoolValidationContext context)
 		{
-			Check.Assert(context.View != null);
+			Guard.Assert(context.View != null);
 
 			context.LockPoints = new LockPoints();
 
@@ -775,7 +775,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			SequenceLock lockPair;
 			if (useExistingLockPoints)
 			{
-				Check.Assert(lp != null);
+				Guard.Assert(lp != null);
 				lockPair = new SequenceLock(lp.Height, lp.Time);
 			}
 			else

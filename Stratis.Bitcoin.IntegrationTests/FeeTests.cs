@@ -12,7 +12,7 @@ using Stratis.Bitcoin.Fee;
 using Stratis.Bitcoin.MemoryPool;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.IntegrationTests
 {
     public class FeeTests
 	{

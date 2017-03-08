@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.BlockPulling
 		public async Task<List<Block>> AskBlocks(CancellationToken token, ChainedBlock[] downloadRequests)
 		{
 			// no one should enter if already running
-			Check.Assert(Interlocked.Increment(ref running) == 1);
+			Guard.Assert(Interlocked.Increment(ref running) == 1);
 
 			BlockingPullerBehavior[] nodes = GetNodeBehaviors();
 			var vectors = downloadRequests.Select(r => new InventoryVector(InventoryType.MSG_BLOCK, r.HashBlock)).ToArray();
