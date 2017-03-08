@@ -63,9 +63,11 @@
 }
 
 .nav-sm .nav.child_menu li.active,
-.nav-sm .nav.side-menu li.active-sm {
+.nav-sm .nav.side-menu li.active-sm,
+.nav-sm .nav.side-menu li.current-page {
     border-right: 5px solid #1ABB9C;
 }
+
 
 .nav-sm ul.nav.child_menu ul,
 .nav-sm .nav.side-menu li.active-sm ul ul {
@@ -411,7 +413,7 @@ body .container.body .right_col {
 
 body {
     color: #73879C;
-    background: #2A3F54;
+    background: #f7f7f7;
     font-family: "Helvetica Neue", Roboto, Arial, "Droid Sans", sans-serif;
     font-size: 13px;
     font-weight: 400;
@@ -646,6 +648,10 @@ a:hover, a:focus {
 
 .nav.child_menu li {
     padding-left: 36px;
+
+    &.active:before {
+        background: #1abb9c !important;
+    }
 }
 
 .nav-md ul.nav.child_menu li:before {
