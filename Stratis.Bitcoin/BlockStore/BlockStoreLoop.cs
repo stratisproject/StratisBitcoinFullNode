@@ -95,129 +95,129 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public void Loop(CancellationToken cancellationToken)
 		{
-            // A loop that writes pending blocks to store 
-            // or downloads missing blocks then writing to store
-            AsyncLoop.Run("BlockStoreLoop.DownloadBlocks", async token =>
+			// A loop that writes pending blocks to store 
+			// or downloads missing blocks then writing to store
+			AsyncLoop.Run("BlockStoreLoop.DownloadBlocks", async token =>
 			{
 				await DownloadAndStoreBlocks(cancellationToken);
-            },
-            cancellationToken,
-            repeateEvery: TimeSpans.Second,
-            startAfter: TimeSpans.FiveSeconds);
-        }
+			},
+			cancellationToken,
+			repeateEvery: TimeSpans.Second,
+			startAfter: TimeSpans.FiveSeconds);
+		}
 
-        public async Task DownloadAndStoreBlocks(CancellationToken token, bool disposemode = false)
-		{
-            while (!token.IsCancellationRequested)
-            {
-	            if (StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
-		            break;
+			public async Task DownloadAndStoreBlocks(CancellationToken token, bool disposemode = false)
+			{
+			while (!token.IsCancellationRequested)
+			{
+				if (StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
+					break;
 
-	            // find next block to download
-	            var next = this.chain.GetBlock(StoredBlock.Height + 1);
-	            if (next == null)
-		            break; //no blocks to store
+				// find next block to download
+				var next = this.chain.GetBlock(StoredBlock.Height + 1);
+				if (next == null)
+					break; //no blocks to store
 
-	            // reorg logic
-	            if (this.StoredBlock.HashBlock != next.Header.HashPrevBlock)
-	            {
-		            if(disposemode)
-			            break;
+				// reorg logic
+				if (this.StoredBlock.HashBlock != next.Header.HashPrevBlock)
+				{
+					if(disposemode)
+						break;
 
-		            var blockstoremove = new List<uint256>();
-		            var remove = this.StoredBlock;
-		            // reorg - we need to delete blocks, start walking back the chain
-		            while (this.chain.GetBlock(remove.HashBlock) == null)
-		            {
-			            blockstoremove.Add(remove.HashBlock);
-			            remove = remove.Previous;
-		            }
+					var blockstoremove = new List<uint256>();
+					var remove = this.StoredBlock;
+					// reorg - we need to delete blocks, start walking back the chain
+					while (this.chain.GetBlock(remove.HashBlock) == null)
+					{
+						blockstoremove.Add(remove.HashBlock);
+						remove = remove.Previous;
+					}
 
-		            await this.BlockRepository.DeleteAsync(remove.HashBlock, blockstoremove);
-		            this.StoredBlock = remove;
-		            this.ChainState.HighestPersistedBlock = this.StoredBlock;
-		            break;
-	            }
+					await this.BlockRepository.DeleteAsync(remove.HashBlock, blockstoremove);
+					this.StoredBlock = remove;
+					this.ChainState.HighestPersistedBlock = this.StoredBlock;
+					break;
+				}
 
-	            if (await this.BlockRepository.ExistAsync(next.HashBlock))
-	            {
-		            // next block is in storage update StoredBlock 
-		            await this.BlockRepository.SetBlockHash(next.HashBlock);
-		            this.StoredBlock = next;
-		            this.ChainState.HighestPersistedBlock = this.StoredBlock;
-		            continue;
-	            }
+				if (await this.BlockRepository.ExistAsync(next.HashBlock))
+				{
+					// next block is in storage update StoredBlock 
+					await this.BlockRepository.SetBlockHash(next.HashBlock);
+					this.StoredBlock = next;
+					this.ChainState.HighestPersistedBlock = this.StoredBlock;
+					continue;
+				}
 
-	            // check if the next block is in pending storage
-	            BlockPair insert;
-	            if (this.PendingStorage.TryGetValue(next.HashBlock, out insert))
-	            {
-		            // if in IBD and batch will not be full then wait for more blocks
-		            if (this.ChainState.IsInitialBlockDownload && !disposemode)
-			            if (this.PendingStorage.Skip(0).Count() < batchsize) // ConcurrentDictionary perf
-				            break;
+				// check if the next block is in pending storage
+				BlockPair insert;
+				if (this.PendingStorage.TryGetValue(next.HashBlock, out insert))
+				{
+					// if in IBD and batch will not be full then wait for more blocks
+					if (this.ChainState.IsInitialBlockDownload && !disposemode)
+						if (this.PendingStorage.Skip(0).Count() < batchsize) // ConcurrentDictionary perf
+							break;
 
-                    if (!this.PendingStorage.TryRemove(next.HashBlock, out insert))
-	                    break;
+					if (!this.PendingStorage.TryRemove(next.HashBlock, out insert))
+						break;
 
-		            var tostore = new List<BlockPair>(new[] { insert });
-		            var storebest = next;
-		            foreach (var index in Enumerable.Range(1, batchsize - 1))
-		            {
-			            var old = next;
-			            next = this.chain.GetBlock(next.Height + 1);
+					var tostore = new List<BlockPair>(new[] { insert });
+					var storebest = next;
+					foreach (var index in Enumerable.Range(1, batchsize - 1))
+					{
+						var old = next;
+						next = this.chain.GetBlock(next.Height + 1);
 						
-			            // stop if at the tip or block is already in store or pending insertion
-			            if (next == null) break;
-			            if (next.Header.HashPrevBlock != old.HashBlock) break;
-			            if (next.Height > this.ChainState.HighestValidatedPoW?.Height) break;
-			            if (!this.PendingStorage.TryRemove(next.HashBlock, out insert)) break;
-			            tostore.Add(insert);
-			            storebest = next;
-		            }
+						// stop if at the tip or block is already in store or pending insertion
+						if (next == null) break;
+						if (next.Header.HashPrevBlock != old.HashBlock) break;
+						if (next.Height > this.ChainState.HighestValidatedPoW?.Height) break;
+						if (!this.PendingStorage.TryRemove(next.HashBlock, out insert)) break;
+						tostore.Add(insert);
+						storebest = next;
+					}
 
-		            // store missing blocks and remove them from pending blocks
-		            await this.BlockRepository.PutAsync(storebest.HashBlock, tostore.Select(b => b.Block).ToList());
-		            this.StoredBlock = storebest;
-		            this.ChainState.HighestPersistedBlock = this.StoredBlock;
+					// store missing blocks and remove them from pending blocks
+					await this.BlockRepository.PutAsync(storebest.HashBlock, tostore.Select(b => b.Block).ToList());
+					this.StoredBlock = storebest;
+					this.ChainState.HighestPersistedBlock = this.StoredBlock;
 
-		            // this can be twicked if insert is effecting the consensus speed
-		            if (this.ChainState.IsInitialBlockDownload)
-			            await Task.Delay(pushIntervalIBD, token);
+					// this can be twicked if insert is effecting the consensus speed
+					if (this.ChainState.IsInitialBlockDownload)
+						await Task.Delay(pushIntervalIBD, token);
 
-		            continue;
-	            }
+					continue;
+				}
 
-	            if(disposemode)
-		            break;
+				if(disposemode)
+					break;
 
-	            // block is not in store and not in pending 
-	            // download the block or blocks
-	            // find a batch of blocks to download
-	            var todownload = new List<ChainedBlock>(new[] {next});
-	            var downloadbest = next;
-	            foreach (var index in Enumerable.Range(1, batchsize - 1))
-	            {
-		            var old = next;
-		            next = this.chain.GetBlock(old.Height + 1);
+				// block is not in store and not in pending 
+				// download the block or blocks
+				// find a batch of blocks to download
+				var todownload = new List<ChainedBlock>(new[] {next});
+				var downloadbest = next;
+				foreach (var index in Enumerable.Range(1, batchsize - 1))
+				{
+					var old = next;
+					next = this.chain.GetBlock(old.Height + 1);
 
-		            // stop if at the tip or block is already in store or pending insertion
-		            if (next == null) break;
-		            if (next.Header.HashPrevBlock != old.HashBlock) break;
-		            if (next.Height > this.ChainState.HighestValidatedPoW?.Height) break;
-		            if (this.PendingStorage.ContainsKey(next.HashBlock)) break;
-		            if (await this.BlockRepository.ExistAsync(next.HashBlock)) break;
+					// stop if at the tip or block is already in store or pending insertion
+					if (next == null) break;
+					if (next.Header.HashPrevBlock != old.HashBlock) break;
+					if (next.Height > this.ChainState.HighestValidatedPoW?.Height) break;
+					if (this.PendingStorage.ContainsKey(next.HashBlock)) break;
+					if (await this.BlockRepository.ExistAsync(next.HashBlock)) break;
 
-		            todownload.Add(next);
-		            downloadbest = next;
-	            }
+					todownload.Add(next);
+					downloadbest = next;
+				}
 
-	            // download and store missing blocks
-	            var blocks = await this.blockPuller.AskBlocks(token, todownload.ToArray());
-	            await this.BlockRepository.PutAsync(downloadbest.HashBlock, blocks);
-	            this.StoredBlock = downloadbest;
-	            this.ChainState.HighestPersistedBlock = this.StoredBlock;
-            }
+				// download and store missing blocks
+				var blocks = await this.blockPuller.AskBlocks(token, todownload.ToArray());
+				await this.BlockRepository.PutAsync(downloadbest.HashBlock, blocks);
+				this.StoredBlock = downloadbest;
+				this.ChainState.HighestPersistedBlock = this.StoredBlock;
+			}
 		}
 	}
 }
