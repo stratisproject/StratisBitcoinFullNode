@@ -8,6 +8,7 @@ namespace Stratis.Bitcoin.MemoryPool
 	{
 		public override void Configure(FullNode node, ServiceCollection serviceCollection)
 		{
+			// TODO: some of this types are required and will move to a NodeBuilder implementations
 			// temporary types
 			serviceCollection.AddSingleton(node.Chain);
 			serviceCollection.AddSingleton(node.Args);
