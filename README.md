@@ -1,29 +1,11 @@
-Stratis.Bitcoin
+Stratis Bitcoin
 ===============
 
+An implementation of the Bitcoin protocol in C#.
 Bitcoin full node written in C# for the .NET Core platform, based on NBitcoin.
 
 The daemon is a full implementation of the Stratis Bitcoin Full Node, with the following characteristics:
 
-* Full blockchain validation
-* Blockchain database
-* Mempool
-* Wallet system & wallet database (HD keys w/ bip44 derivation)
-* Bitcoind-compatible JSON rpc api
-* A TransactionBuilder supporting Stealth, Open Asset, and all standard transactions
-* Full script evaluation and parsing
-* A SPV Wallet implementation with sample
-* The parsing of standard scripts and creation of custom ones
-* The serialization of blocks, transactions and script
-* The signing and verification with private keys (with support for compact signatures) for proving ownership
-* Bloom filters and partial merkle trees
-* Segregated Witness (BIP 141, BIP 143, BIP 144)
-* Mnemonic code for generating deterministic keys (BIP 39), credits to Thasshiznets
-* Hierarchical Deterministic Wallets (BIP 32)
-* Payment Protocol (BIP 70)
-* Payment URLs (BIP 21,BIP 72)
-* Two-Factor keys (BIP 38)
-* Stealth Addresses (Also on codeproject)
 
 NOTE: Some of these are in the NBitcoin project.
 
