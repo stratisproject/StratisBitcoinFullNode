@@ -29,7 +29,7 @@ using Stratis.Bitcoin.Miner;
 namespace Stratis.Bitcoin
 {
 
-	public class FullNode : IDisposable
+	public partial class FullNode : IDisposable
 	{
 		NodeArgs _Args;
 		public NodeArgs Args
@@ -546,6 +546,8 @@ namespace Stratis.Bitcoin
 				ConnectionManager.Dispose();
 				foreach(var dispo in _Resources)
 					dispo.Dispose();
+
+            DisposeBuilderStuff();
 			}
 			_IsDisposed.Set();
 			_HasExited = true;
