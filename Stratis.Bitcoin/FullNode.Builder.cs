@@ -105,11 +105,11 @@ namespace Stratis.Bitcoin {
       }
 
       private void EnsureStartup() {
-         if (_startup != null) {
-            return;
-         }
+         //if (_startup != null) {
+         //   return;
+         //}
 
-         _startup = _fullNodeServiceProvider.GetRequiredService<IStartup>();
+         //_startup = _fullNodeServiceProvider.GetRequiredService<IStartup>();
       }
    }
 }
