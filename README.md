@@ -12,9 +12,10 @@ Stratis Bitcoins is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin
 
   
 We're building the Bitcoin protocol in C#, 
-but plan to add many more features on top of Bitcoin: 
+but plan to add many more features on top of Bitcoin:  
 Adding POS support, Compiled Smart Contracts, NTumbleBit and Breeze wallet.
 
+Join the community at [slack](https://stratisplatform.slack.com)
 
 A Modular Approach 
 ------------------
@@ -44,12 +45,13 @@ Create a Blockchain in a netcore style programing
 Development
 -----------
 Up for some blockchain development? 
-We welcome contributers developers and testers 
 
 Check this guides for more info.
 * [Contributing Guide](Documentation/contributing.md)
 * [Coding Style](Documentation/coding-style.md.md)
 
+There is a alot to do and we welcome contributers developers and testers who want to get some Blockchin experiance.  
+You can find tasks at the issues/projects or visit our [C# dev](https://stratisplatform.slack.com/messages/csharp_development/) slack channel
 
 Testing
 -------
