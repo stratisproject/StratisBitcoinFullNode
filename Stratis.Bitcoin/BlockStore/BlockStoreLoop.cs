@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.BlockStore
 							break;
 
                     if (!this.PendingStorage.TryRemove(next.HashBlock, out insert))
-			            break;
+	                    break;
 
 					var tostore = new List<BlockPair>(new[] { insert });
 					var storebest = next;
