@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin
 			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 
 			// === memory pool ==
-			this.RegisterModule(new MempooModule());
+			this.RegisterModule(new MempoolModule());
 
 			// === Miner ===
 			this.Miner = new Mining(this, this.DateTimeProvider);

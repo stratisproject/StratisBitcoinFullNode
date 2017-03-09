@@ -4,7 +4,7 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
-	public class MempooModule : Module
+	public class MempoolModule : Module
 	{
 		public override void Configure(FullNode node, ServiceCollection serviceCollection)
 		{
