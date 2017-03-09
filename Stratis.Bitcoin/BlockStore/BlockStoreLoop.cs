@@ -157,6 +157,9 @@ namespace Stratis.Bitcoin.BlockStore
 						if (this.PendingStorage.Skip(0).Count() < batchsize) // ConcurrentDictionary perf
 							break;
 
+                    if (!this.PendingStorage.TryRemove(next.HashBlock, out insert))
+			            break;
+
 					var tostore = new List<BlockPair>(new[] { insert });
 					var storebest = next;
 					foreach (var index in Enumerable.Range(1, batchsize - 1))
