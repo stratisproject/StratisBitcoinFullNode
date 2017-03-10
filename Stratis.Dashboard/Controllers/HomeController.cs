@@ -35,9 +35,20 @@ namespace Stratis.Dashboard.Controllers {
 
 
       public IActionResult NodeSettings() {
-         var nodeSettings = FullNodeGetter.GetFullNode()?.Args;
+         var nodeArgs = FullNodeGetter.GetFullNode()?.Args;
+         string configFileContent;
 
-         return View("NodeSettings", nodeSettings);
+         try {
+            configFileContent = System.IO.File.ReadAllText(nodeArgs.ConfigurationFile);
+         }
+         catch (Exception e) {
+            configFileContent = "Failed to load configuration file";
+         }
+
+         return View("NodeSettings", new NodeSettings() {
+            NodeArgs = nodeArgs,
+            ConfigurationFileContent = configFileContent
+         });
       }
 
 
