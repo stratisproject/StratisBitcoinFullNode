@@ -16,12 +16,12 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly ConcurrentChain chain;
 		private readonly ConnectionManager connection;
 
-		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
+		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, ConnectionManager connection, FullNode.CancellationProvider cancellationProvider)
 		{
 			this.manager = manager;
 			this.chain = chain;
 			this.connection = connection;
-			this.RelayWorker(globalCancellationTokenSource.Token);
+			this.RelayWorker(cancellationProvider.Cancellation.Token);
 		}
 
 		protected override void OnNextCore(Block value)
