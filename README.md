@@ -8,9 +8,10 @@ Bitcoin Implementation in C#
 
 Stratis is implementation the Bitcoin protocol in C# on the [.NET Core](https://dotnet.github.io/) platform.  
 The daemon is a full implementation of the Stratis Bitcoin Full Node.  
-Stratis Bitcoins is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin) project.
+Stratis Bitcoin is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin) project.  
+At some point the code will be forked to support the Stratis Token using [NStratis](https://github.com/stratisproject/NStratis) which is a POS implementation of NBitcoin
 
-The [.NET Core](https://dotnet.github.io/) is cross-platform, supporting Windows, macOS and Linux.    
+The [.NET Core](https://dotnet.github.io/) is cross-platform supporting Windows, macOS and Linux.    
 Join the community at [slack](https://stratisplatform.slack.com)
 
 Running a FullNode 
