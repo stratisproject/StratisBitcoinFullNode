@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin {
       /// Builds an <see cref="IFullNode"/>.
       /// </summary>
       /// <param name="nodeSettings"></param>
-      IFullNode Build(NodeArgs nodeSettings);
+      IFullNode Build();
 
       /// <summary>
       /// Specify the delegate that is used to configure the services of the full node.
@@ -20,5 +20,13 @@ namespace Stratis.Bitcoin {
       /// <param name="configureServices">The delegate that configures the <see cref="IServiceCollection"/>.</param>
       /// <returns>The <see cref="IFullNodeBuilder"/>.</returns>
       IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices);
+
+
+      /// <summary>
+      /// Specify the delegate that is used to configure one of the registered services
+      /// </summary>
+      /// <param name="configure">The delegate that configures registered services</param>
+      /// <returns></returns>
+      IFullNodeBuilder Configure(Action<IServiceProvider> configure);
    }
 }

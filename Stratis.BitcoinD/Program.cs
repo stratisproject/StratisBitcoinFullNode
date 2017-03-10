@@ -23,8 +23,9 @@ namespace Stratis.BitcoinD {
          ///should the node expose its internals?
          ///would be better to return FullNode instead?
          var node = (FullNode)new FullNodeBuilder()
+            .UseNodeArgs(nodeArgs)
             .UseMempool()
-            .Build(nodeArgs);
+            .Build();
 
          CancellationTokenSource cts = new CancellationTokenSource();
          new Thread(() => {

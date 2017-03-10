@@ -30,17 +30,19 @@ using Microsoft.Extensions.Configuration;
 namespace Stratis.Bitcoin {
 
    public partial class FullNode : IFullNode {
-      private IServiceCollection _applicationServiceCollection;
+      private IServiceCollection _fullNodeServiceServiceCollection;
       private ApplicationLifetime _applicationLifetime;
       private FullNodeFeatureExecutor _fullNodeFeatureExecutor;
 
-      private IServiceProvider _fullNodeServiceProvider;
+      private IServiceProvider _fullNodeServices;
 
-      private IServiceProvider _applicationServices;
       private ILogger<FullNode> _logger;
 
 
-      public IServiceProvider Services { get { return _applicationServices; } }
+      public IServiceProvider Services { get { return _fullNodeServices; } }
+
+
+
 
 
       /// <summary>
@@ -48,19 +50,19 @@ namespace Stratis.Bitcoin {
       /// </summary>
       /// <param name="appServices"></param>
       /// <param name="fullNodeServiceProvider"></param>
-      internal void InitializeServiceLayer(IServiceCollection appServices, IServiceProvider fullNodeServiceProvider) {
-         if (appServices == null) {
-            throw new ArgumentNullException(nameof(appServices));
+      internal FullNode(IServiceCollection nodeServices, NodeArgs nodeArgs) : this(nodeArgs) {
+         if (nodeServices == null) {
+            throw new ArgumentNullException(nameof(nodeServices));
          }
 
-         if (fullNodeServiceProvider == null) {
-            throw new ArgumentNullException(nameof(fullNodeServiceProvider));
+         if (nodeArgs == null) {
+            throw new ArgumentNullException(nameof(nodeArgs));
          }
 
-         _applicationServiceCollection = appServices;
-         _fullNodeServiceProvider = fullNodeServiceProvider;
-         _applicationServiceCollection.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
-         _applicationServiceCollection.AddSingleton<FullNodeFeatureExecutor>();
+         _fullNodeServiceServiceCollection = nodeServices;
+         _fullNodeServiceServiceCollection.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
+         _fullNodeServiceServiceCollection.AddSingleton<FullNodeFeatureExecutor>();
+         _fullNodeServices = _fullNodeServiceServiceCollection.BuildServiceProvider();
       }
 
 
@@ -69,10 +71,8 @@ namespace Stratis.Bitcoin {
       /// temporary method that should merged into the Start() method
       /// </summary>
       protected void StartBuilderStuff() {
-         _applicationServices = _applicationServiceCollection.BuildServiceProvider();
-
-         _applicationLifetime = _applicationServices?.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
-         _fullNodeFeatureExecutor = _applicationServices?.GetRequiredService<FullNodeFeatureExecutor>();
+         _applicationLifetime = _fullNodeServices?.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
+         _fullNodeFeatureExecutor = _fullNodeServices?.GetRequiredService<FullNodeFeatureExecutor>();
 
          // Fire IApplicationLifetime.Started
          _applicationLifetime?.NotifyStarted();
@@ -91,8 +91,8 @@ namespace Stratis.Bitcoin {
          _applicationLifetime?.StopApplication();
          // Fire the IHostedService.Stop
          _fullNodeFeatureExecutor?.Stop();
-         (_fullNodeServiceProvider as IDisposable)?.Dispose();
-         (_applicationServices as IDisposable)?.Dispose();
+         (_fullNodeServices as IDisposable)?.Dispose();
+         (_fullNodeServices as IDisposable)?.Dispose();
          // Fire IApplicationLifetime.Stopped
          _applicationLifetime?.NotifyStopped();
       }
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin {
       /// updates the _applicationServices from the services list
       /// </summary>
       public void UpdateApplicationServiceProvider() {
-         _applicationServices = _applicationServiceCollection.BuildServiceProvider();
+         _fullNodeServices = _fullNodeServiceServiceCollection.BuildServiceProvider();
       }
    }
 }

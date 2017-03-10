@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.PlatformAbstractions;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin {
    /// <summary>
@@ -21,6 +22,7 @@ namespace Stratis.Bitcoin {
    /// </summary>
    public class FullNodeBuilder : IFullNodeBuilder {
       private readonly List<Action<IServiceCollection>> _configureServicesDelegates;
+      private readonly List<Action<IServiceProvider>> _configureDelegates;
 
       private bool _fullNodeBuilt;
 
@@ -29,6 +31,7 @@ namespace Stratis.Bitcoin {
       /// </summary>
       public FullNodeBuilder() {
          _configureServicesDelegates = new List<Action<IServiceCollection>>();
+         _configureDelegates = new List<Action<IServiceProvider>>();
       }
 
 
@@ -47,10 +50,29 @@ namespace Stratis.Bitcoin {
          return this;
       }
 
+
+
+      /// <summary>
+      /// Specify the delegate that is used to configure one of the registered services.
+      /// This delegate should be used to configure a service once it has been registered within a ConfigureService action
+      /// </summary>
+      /// <param name="configure">The delegate that configures registered services</param>
+      /// <returns></returns>
+      public IFullNodeBuilder Configure(Action<IServiceProvider> configure) {
+         if (configure == null) {
+            throw new ArgumentNullException(nameof(configure));
+         }
+
+         _configureDelegates.Add(configure);
+         return this;
+      }
+
+
+
       /// <summary>
       /// Builds the required features and an <see cref="IFullNode"/> which orchestrate them.
       /// </summary>
-      public IFullNode Build(NodeArgs nodeSettings) {
+      public IFullNode Build() {
          if (_fullNodeBuilt) {
             //ref. to use localized exceptions
             //throw new InvalidOperationException(Resources.WebHostBuilder_SingleInstance);
@@ -59,25 +81,39 @@ namespace Stratis.Bitcoin {
          _fullNodeBuilt = true;
 
 
-         var fullNodeServices = BuildCommonServices();
-
-         var applicationServices = fullNodeServices.Clone();
+         var fullNodeServices = BuildServices();
          var fullNodeServiceProvider = fullNodeServices.BuildServiceProvider();
+         ConfigureServices(fullNodeServiceProvider);
 
-         var fullNode = new FullNode(nodeSettings);
-         fullNode.InitializeServiceLayer(applicationServices, fullNodeServiceProvider);
+         //obtain the nodeArgs from the service (it's set used FullNodeBuilder.UseNodeArgs)
+         var nodeArgs = fullNodeServiceProvider.GetService<NodeArgs>();
+         if (nodeArgs == null) {
+            Logs.FullNode?.LogWarning("Using default NodeArgs");
+            nodeArgs = NodeArgs.Default();
+         }
+
+         var fullNode = new FullNode(fullNodeServices, nodeArgs);
 
          return fullNode;
       }
 
-      private IServiceCollection BuildCommonServices() {
+      private IServiceCollection BuildServices() {
          var services = new ServiceCollection();
 
+         //register services
          foreach (var configureServices in _configureServicesDelegates) {
             configureServices(services);
          }
 
          return services;
+      }
+
+
+      private void ConfigureServices(IServiceProvider serviceProvider) {
+         //configure registered services
+         foreach (var configure in _configureDelegates) {
+            configure(serviceProvider);
+         }
       }
    }
 }
