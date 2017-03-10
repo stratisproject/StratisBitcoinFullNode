@@ -8,43 +8,48 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin
 {
-    public class AsyncLoop
+    public interface IPeriodicTask
     {
-        private AsyncLoop(string name, Func<CancellationToken, Task> loop)
+        string Name { get; }
+
+        void RunOnce();
+        PeriodicTask Start(CancellationToken cancellation, TimeSpan refreshRate, bool delayStart = false);
+    }
+
+    public class PeriodicTask : IPeriodicTask
+    {
+        public PeriodicTask(string name, Action<CancellationToken> loop)
         {
-            this.Name = name;
-            this.loopAsync = loop;
+            _Name = name;
+            this._Loop = loop;
         }
 
-        readonly Func<CancellationToken, Task> loopAsync;
+        Action<CancellationToken> _Loop;
 
-        public string Name { get; }
-
-        public static Task Run(string name, Func<CancellationToken, Task> loop, TimeSpan repeateEvery, TimeSpan? startAfter = null)
+        private readonly string _Name;
+        public string Name
         {
-            return new AsyncLoop(name, loop).StartAsync(CancellationToken.None, repeateEvery, startAfter);
+            get
+            {
+                return _Name;
+            }
         }
 
-        public static Task Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeateEvery = null, TimeSpan? startAfter = null)
+        public PeriodicTask Start(CancellationToken cancellation, TimeSpan refreshRate, bool delayStart = false)
         {
-            return new AsyncLoop(name, loop).StartAsync(cancellation, repeateEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
-        }
-
-        private Task StartAsync(CancellationToken cancellation, TimeSpan refreshRate, TimeSpan? delayStart = null)
-        {
-            return Task.Run(async () =>
+            var t = new Thread(() =>
             {
                 Exception uncatchException = null;
-                Logs.FullNode.LogInformation(Name + " starting");
+                Logs.FullNode.LogInformation(_Name + " starting");
                 try
                 {
-                    if (delayStart != null)
-                        await Task.Delay(delayStart.Value, cancellation).ConfigureAwait(false);
+                    if (delayStart)
+                        cancellation.WaitHandle.WaitOne(refreshRate);
 
                     while (!cancellation.IsCancellationRequested)
                     {
-                        await loopAsync(cancellation).ConfigureAwait(false);
-                        await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
+                        _Loop(cancellation);
+                        cancellation.WaitHandle.WaitOne(refreshRate);
                     }
                 }
                 catch (OperationCanceledException ex)
@@ -56,73 +61,25 @@ namespace Stratis.Bitcoin
                 {
                     uncatchException = ex;
                 }
+                finally
+                {
+                    Logs.FullNode.LogInformation(Name + " stopping");
+                }
+
                 if (uncatchException != null)
                 {
-                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, Name + " threw an unhandled exception");
+                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, _Name + " threw an unhandled exception");
                 }
-            }, cancellation);
+            });
+            t.IsBackground = true;
+            t.Name = _Name;
+            t.Start();            
+            return this;
+        }
+
+        public void RunOnce()
+        {
+            _Loop(CancellationToken.None);
         }
     }
-
-	public class PeriodicTask
-	{
-		public PeriodicTask(string name, Action<CancellationToken> loop)
-		{
-			_Name = name;
-			this._Loop = loop;
-		}
-
-		Action<CancellationToken> _Loop;
-
-		private readonly string _Name;
-		public string Name
-		{
-			get
-			{
-				return _Name;
-			}
-		}
-
-		public PeriodicTask Start(CancellationToken cancellation, TimeSpan refreshRate, bool delayStart = false)
-		{
-			var t = new Thread(() =>
-			{
-				Exception uncatchException = null;
-				Logs.FullNode.LogInformation(_Name + " starting");
-				try
-				{
-					if (delayStart)
-						cancellation.WaitHandle.WaitOne(refreshRate);//TimeSpan.FromMinutes(5.0));
-
-					while (!cancellation.IsCancellationRequested)
-					{
-						_Loop(cancellation);
-						cancellation.WaitHandle.WaitOne(refreshRate);//TimeSpan.FromMinutes(5.0));
-					}
-				}
-				catch(OperationCanceledException ex)
-				{
-					if(!cancellation.IsCancellationRequested)
-						uncatchException = ex;
-				}
-				catch(Exception ex)
-				{
-					uncatchException = ex;
-				}
-				if(uncatchException != null)
-				{
-					Logs.FullNode.LogCritical(new EventId(0), uncatchException, _Name + " threw an unhandled exception");
-				}
-			});
-			t.IsBackground = true;
-			t.Name = _Name;
-			t.Start();
-			return this;
-		}
-
-		public void RunOnce()
-		{
-			_Loop(CancellationToken.None);
-		}
-	}
 }

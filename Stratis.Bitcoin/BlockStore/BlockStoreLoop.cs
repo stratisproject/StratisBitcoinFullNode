@@ -98,13 +98,13 @@ namespace Stratis.Bitcoin.BlockStore
 			// A loop that writes pending blocks to store 
 			// or downloads missing blocks then writing to store
 			AsyncLoop.Run("BlockStoreLoop.DownloadBlocks", async token =>
-			{
-				await DownloadAndStoreBlocks(cancellationToken);
-			},
-			cancellationToken,
-			repeateEvery: TimeSpans.Second,
-			startAfter: TimeSpans.FiveSeconds);
-		}
+			  {
+          await DownloadAndStoreBlocks(cancellationToken);
+        },
+          cancellationToken,
+          repeatEvery: TimeSpans.Second,
+          startAfter: TimeSpans.FiveSeconds);
+    }
 
 			public async Task DownloadAndStoreBlocks(CancellationToken token, bool disposemode = false)
 			{
