@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.PlatformAbstractions;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 
@@ -31,6 +32,11 @@ namespace Stratis.Bitcoin {
       /// </summary>
       public FullNodeBuilder() {
          _configureServicesDelegates = new List<Action<IServiceCollection>>();
+         _configureServicesDelegates.Add(services => {
+            //add required node features
+            services.AddRequiredNodeFeature();
+         });
+
          _configureDelegates = new List<Action<IServiceProvider>>();
       }
 

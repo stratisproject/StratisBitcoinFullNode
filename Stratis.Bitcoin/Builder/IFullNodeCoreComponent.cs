@@ -1,8 +1,8 @@
 ﻿namespace Stratis.Bitcoin {
    /// <summary>
-   /// Defines methods for features that are managed by the FullNode.
+   /// Defines methods for core components that are managed by the FullNode.
    /// </summary>
-   public interface IFullNodeFeature {
+   public interface IFullNodeCoreComponent {
       /// <summary>
       /// Triggered when the FullNode host has fully started
       /// </summary>

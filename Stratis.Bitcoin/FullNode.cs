@@ -72,10 +72,6 @@ namespace Stratis.Bitcoin {
          return false;
       }
 
-      //private readonly List<Module> modules = new List<Module>();
-      //public void RegisterModule(Module module) {
-      //   this.modules.Add(module);
-      //}
 
       List<IDisposable> _Resources = new List<IDisposable>();
       public void Start() {
@@ -91,8 +87,8 @@ namespace Stratis.Bitcoin {
          _Cancellation = new CancellationTokenSource();
          this.GlobalCancellation = new CancellationProvider() { Cancellation = _Cancellation };
 
-         StartFlushAddrManThread();
-         StartFlushChainThread();
+         //StartFlushAddrManThread();
+         //StartFlushChainThread();
 
          if (_Args.RPC != null) {
             RPCHost = new WebHostBuilder()
@@ -144,10 +140,6 @@ namespace Stratis.Bitcoin {
          ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
          this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 
-         // === memory pool ==
-         //this.RegisterModule(new MempoolModule());
-         //module registration happens using FullNodeBuilder
-
          // === Miner ===
          this.Miner = new Mining(this, this.DateTimeProvider);
 
@@ -155,29 +147,7 @@ namespace Stratis.Bitcoin {
          if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
             ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
-         #region Removed by MithrilMan (see comments inside)
-         ///The lifecycle of service is handled by the FullNodeServiceExecutor.
-         ///It contains the Start and Stop methods that will start and stop all registered "modules" (aka services).
-         ///The Start method is called inside the StartBuilderStuff()
-         ///The Stop method is called inside the dispose of the fullnode (actually inside DisposeBuilderStuff)
-         /// 
-         /// 
-         //// TODO: create a FullNodeBuilder that takes modules/services and builds them
-         //// configure and start DI modules
-         //var serviceCollection = new ServiceCollection();
-         //var sortedModules = this.modules.OrderBy(o => o.Priority).ToList();
-         //foreach (var module in sortedModules)
-         //   module.Configure(this, serviceCollection);
-         //var service = serviceCollection.BuildServiceProvider();
-         //foreach (var module in sortedModules)
-         //   module.Start(this, service);
-         //var serviceDispose = service as IDisposable;
-         //if (serviceDispose != null)
-         //   _Resources.Add(serviceDispose); 
-         #endregion
-         
          StartBuilderStuff();
-
 
          _ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
          ConnectionManager.Start();
@@ -342,22 +312,22 @@ namespace Stratis.Bitcoin {
          get; set;
       }
 
-      private void StartFlushChainThread() {
-         if (!Directory.Exists(DataFolder.ChainPath)) {
-            Logs.FullNode.LogInformation("Creating " + DataFolder.ChainPath);
-            Directory.CreateDirectory(DataFolder.ChainPath);
-         }
-         ChainRepository = new ChainRepository(DataFolder.ChainPath);
-         _Resources.Add(ChainRepository);
-         Logs.FullNode.LogInformation("Loading chain");
-         Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
-         Chain = Chain ?? new ConcurrentChain(Network);
-         Guard.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
-         Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
-         FlushChainTask = new PeriodicTask("FlushChain", (cancellation) => {
-            ChainRepository.Save(Chain);
-         }).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
-      }
+      //private void StartFlushChainThread() {
+      //   if (!Directory.Exists(DataFolder.ChainPath)) {
+      //      Logs.FullNode.LogInformation("Creating " + DataFolder.ChainPath);
+      //      Directory.CreateDirectory(DataFolder.ChainPath);
+      //   }
+      //   ChainRepository = new ChainRepository(DataFolder.ChainPath);
+      //   _Resources.Add(ChainRepository);
+      //   Logs.FullNode.LogInformation("Loading chain");
+      //   Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
+      //   Chain = Chain ?? new ConcurrentChain(Network);
+      //   Guard.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
+      //   Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
+      //   FlushChainTask = new PeriodicTask("FlushChain", (cancellation) => {
+      //      ChainRepository.Save(Chain);
+      //   }).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+      //}
 
       public ConnectionManager ConnectionManager {
          get; set;
@@ -386,13 +356,13 @@ namespace Stratis.Bitcoin {
          get; set;
       }
 
-      public PeriodicTask FlushAddrmanTask {
-         get; set;
-      }
+      //public PeriodicTask FlushAddrmanTask {
+      //   get; set;
+      //}
 
-      public PeriodicTask FlushChainTask {
-         get; set;
-      }
+      //public PeriodicTask FlushChainTask {
+      //   get; set;
+      //}
 
       public CancellationProvider GlobalCancellation {
          get; set;
@@ -410,21 +380,21 @@ namespace Stratis.Bitcoin {
          }
       }
 
-      private void StartFlushAddrManThread() {
-         if (!File.Exists(DataFolder.AddrManFile)) {
-            Logs.FullNode.LogInformation("Creating " + DataFolder.AddrManFile);
-            AddressManager = new AddressManager();
-            AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-         }
-         else {
-            Logs.FullNode.LogInformation("Loading addrman");
-            AddressManager = AddressManager.LoadPeerFile(DataFolder.AddrManFile);
-            Logs.FullNode.LogInformation("Loaded");
-         }
-         FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) => {
-            AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-         }).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
-      }
+      //private void StartFlushAddrManThread() {
+      //   if (!File.Exists(DataFolder.AddrManFile)) {
+      //      Logs.FullNode.LogInformation("Creating " + DataFolder.AddrManFile);
+      //      AddressManager = new AddressManager();
+      //      AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
+      //   }
+      //   else {
+      //      Logs.FullNode.LogInformation("Loading addrman");
+      //      AddressManager = AddressManager.LoadPeerFile(DataFolder.AddrManFile);
+      //      Logs.FullNode.LogInformation("Loaded");
+      //   }
+      //   FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) => {
+      //      AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
+      //   }).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+      //}
 
       private void StartPeriodicLog() {
          AsyncLoop.Run("PeriodicLog", (cancellation) => {
@@ -476,10 +446,10 @@ namespace Stratis.Bitcoin {
          _IsStarted.WaitOne();
          if (_Cancellation != null) {
             _Cancellation.Cancel();
-            FlushAddrmanTask.RunOnce();
-            Logs.FullNode.LogInformation("FlushAddrMan stopped");
-            FlushChainTask.RunOnce();
-            Logs.FullNode.LogInformation("FlushChain stopped");
+            //FlushAddrmanTask.RunOnce();
+            //Logs.FullNode.LogInformation("FlushAddrMan stopped");
+            //FlushChainTask.RunOnce();
+            //Logs.FullNode.LogInformation("FlushChain stopped");
 
             var cache = CoinView as CachedCoinView;
             if (cache != null) {

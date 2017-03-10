@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin {
          // Fire IApplicationLifetime.Stopping
          _applicationLifetime?.StopApplication();
          // Fire the IHostedService.Stop
-         _fullNodeFeatureExecutor?.Stop();
+         _fullNodeFeatureExecutor?.Stop(this);
          (_fullNodeServices as IDisposable)?.Dispose();
          (_fullNodeServices as IDisposable)?.Dispose();
          // Fire IApplicationLifetime.Stopped

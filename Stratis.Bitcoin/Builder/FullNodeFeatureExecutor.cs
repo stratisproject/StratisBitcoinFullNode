@@ -8,11 +8,8 @@ namespace Stratis.Bitcoin {
    /// </summary>
    public class FullNodeFeatureExecutor {
       private readonly IEnumerable<IFullNodeFeature> _features;
-      //private readonly ILogger<FullNodeFeatureExecutor> _logger;
 
-      //public FullNodeFeatureExecutor(ILogger<FullNodeServiceExecutor> logger, IEnumerable<IFullNodeFeature> services) {
       public FullNodeFeatureExecutor(IEnumerable<IFullNodeFeature> features) {
-         //_logger = logger;
          _features = features;
       }
 
@@ -21,19 +18,15 @@ namespace Stratis.Bitcoin {
             Execute(service => service.Start(nodeInstance));
          }
          catch (Exception ex) {
-            //todo: log properly
-            //_logger.ApplicationError(LoggerEventIds.HostedServiceStartException, "An error occurred starting the application", ex);
             Logging.Logs.FullNode.LogError("An error occured starting the application");
          }
       }
 
-      public void Stop() {
+      public void Stop(FullNode nodeInstance) {
          try {
-            Execute(service => service.Stop());
+            Execute(service => service.Stop(nodeInstance));
          }
          catch (Exception ex) {
-            //todo: log properly
-            //_logger.ApplicationError(LoggerEventIds.HostedServiceStopException, "An error occurred stopping the application", ex);
             Logging.Logs.FullNode.LogError("An error occurred stopping the application");
          }
       }

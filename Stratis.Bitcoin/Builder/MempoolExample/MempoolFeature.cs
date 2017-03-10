@@ -25,14 +25,14 @@ namespace Stratis.Bitcoin.Builder {
       public void Start(FullNode nodeInstance) {
          _nodeInstance = nodeInstance;
 
-         EnsureNodeServiceAreSet(nodeInstance);
+         //EnsureNodeServiceAreSet(nodeInstance);
 
          _nodeInstance.ConnectionManager.Parameters.TemplateBehaviors.Add(_nodeInstance.Services.GetService<MempoolBehavior>());
          _nodeInstance.Signals.Blocks.Subscribe(_nodeInstance.Services.GetService<MempoolSignaled>());
          _nodeInstance.MempoolManager = _nodeInstance.Services.GetService<MempoolManager>();
       }
 
-      public void Stop() {
+      public void Stop(FullNode nodeInstance) {
          //todo cleanup
       }
 
@@ -47,7 +47,6 @@ namespace Stratis.Bitcoin.Builder {
             // TODO: some of this types are required and will move to a NodeBuilder implementations
             // temporary types
             _serviceCollection.AddSingleton(nodeInstance.Chain);
-            _serviceCollection.AddSingleton(nodeInstance.Args);
             _serviceCollection.AddSingleton(nodeInstance.ConnectionManager);
             _serviceCollection.AddSingleton(nodeInstance.CoinView);
             _serviceCollection.AddSingleton(nodeInstance.ConsensusLoop.Validator);
