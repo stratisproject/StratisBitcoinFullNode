@@ -13,7 +13,7 @@ Stratis Bitcoins is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin
 The [.NET Core](https://dotnet.github.io/) is cross-platform, supporting Windows, macOS and Linux.    
 Join the community at [slack](https://stratisplatform.slack.com)
 
-Running A FullNode 
+Running a FullNode 
 ------------------
 
 Our full node is currently in alpha, to run on the main bitcoin network:
