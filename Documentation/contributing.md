@@ -21,7 +21,7 @@ Adding Features
 ---------------
 Before Adding new features please discuss that on public channels first (issue/slack).  
 Don't start coding before we have a clear design and direction.
-It's preferd to make small incremental commits (unless its impossible) and not a massive all in commit. 
+It's preferred to make small incremental commits (unless its impossible) and not a massive all in commit. 
 Unit tests are a MUST!
 
 Typos and small changes
