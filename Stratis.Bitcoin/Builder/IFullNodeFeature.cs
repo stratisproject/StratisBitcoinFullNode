@@ -1,12 +1,12 @@
 ﻿namespace Stratis.Bitcoin {
    /// <summary>
-   /// Defines methods for services that are managed by the FullNode.
+   /// Defines methods for modules that are managed by the FullNode.
    /// </summary>
-   public interface IFullNodeService {
+   public interface IFullNodeFeature {
       /// <summary>
       /// Triggered when the FullNode host has fully started
       /// </summary>
-      void Start();
+      void Start(FullNode fullNodeInstance);
 
       /// <summary>
       /// Triggered when the FullNode is performing a graceful shutdown.

@@ -26,543 +26,488 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Miner;
 
-namespace Stratis.Bitcoin
-{
-
-	public partial class FullNode : IDisposable
-	{
-		NodeArgs _Args;
-		public NodeArgs Args
-		{
-			get
-			{
-				return _Args;
-			}
-		}
-
-		public FullNode(NodeArgs args)
-		{
-			if(args == null)
-				throw new ArgumentNullException("args");
-			_Args = args;
-			Network = _Args.GetNetwork();
-		}
-
-		public Network Network
-		{
-			get;
-			internal set;
-		}
-
-		public CoinView CoinView
-		{
-			get; set;
-		}
-
-		public DataFolder DataFolder
-		{
-			get; set;
-		}
-
-		public DateTimeProvider DateTimeProvider
-		{
-			get; set;
-		}
-
-		public bool IsInitialBlockDownload()
-		{
-			//if (fImporting || fReindex)
-			//	return true;
-			if (this.ConsensusLoop.Tip == null)
-				return true;
-			if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
-				return true;
-			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Args.MaxTipAge))
-				return true;
-			return false;
-		}
-
-		private readonly List<Module> modules = new List<Module>();
-		public void RegisterModule(Module module)
-		{
-			this.modules.Add(module);
-		}
-
-		List<IDisposable> _Resources = new List<IDisposable>();
-		public void Start()
-		{
-			if(IsDisposed)
-				throw new ObjectDisposedException("FullNode");
-			_IsStarted.Reset();
-			DataFolder = new DataFolder(_Args.DataDir);
-			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
-			_Resources.Add(coinviewDB);
-			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
-
-
-			_Cancellation = new CancellationTokenSource();
-			this.GlobalCancellation = new CancellationProvider() {Cancellation = _Cancellation};
-
-			StartFlushAddrManThread();
-			StartFlushChainThread();
-
-			if(_Args.RPC != null)
-			{
-				RPCHost = new WebHostBuilder()
-				.UseKestrel()
-				.ForFullNode(this)
-				.UseUrls(_Args.RPC.GetUrls())
-				.UseIISIntegration()
-				.UseStartup<RPC.Startup>()
-				.Build();
-				RPCHost.Start();
-				_Resources.Add(RPCHost);
-				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
-			}
-
-			this.Signals = new Signals();
-			this.DateTimeProvider = DateTimeProvider.Default;
-
-			this._ChainBehaviorState = new BlockStore.ChainBehavior.ChainState(this);
-
-			if(AddressManager.Count == 0)
-				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
-
-			// == Connection == 
-			var connectionParameters = new NodeConnectionParameters();
-			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
-			connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
-			connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
-			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
-			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
-			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
-			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
-
-			// === BlockSgtore ===
-			var blockRepository = new BlockRepository(this.Network, DataFolder.BlockPath);
-			var blockStoreCache = new BlockStoreCache(blockRepository);
-			_Resources.Add(blockStoreCache);
-			_Resources.Add(blockRepository);
-			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
-			var blockStoreLoop = new BlockStoreLoop(this.Chain, this.ConnectionManager,
-				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, this._Cancellation, lightBlockPuller);
-			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
-			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
-			connectionParameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
-			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
-
-			// === Consensus ===
-			var consensusValidator = new ConsensusValidator(Network.Consensus);
-			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
-			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-
-			// === memory pool ==
-			this.RegisterModule(new MempoolModule());
-
-			// === Miner ===
-			this.Miner = new Mining(this, this.DateTimeProvider);
-
-			var flags = ConsensusLoop.GetFlags();
-			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-
-			// TODO: create a FullNodeBuilder that takes modules/services and builds them
-			// configure and start DI modules
-			var serviceCollection = new ServiceCollection();
-			var sortedModules = this.modules.OrderBy(o => o.Priority).ToList();
-			foreach (var module in sortedModules)
-				module.Configure(this, serviceCollection);
-			var service = serviceCollection.BuildServiceProvider();
-			foreach (var module in sortedModules)
-				module.Start(this, service);
-			var serviceDispose = service as IDisposable;
-			if (serviceDispose != null)
-				_Resources.Add(serviceDispose);
-
-			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-			ConnectionManager.Start();
-
-			new Thread(RunLoop)
-			{
-				Name = "Consensus Loop"
-			}.Start();
-			_IsStarted.Set();
-
-			this.StartPeriodicLog();
-		}
-
-		private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
-		public BlockStore.ChainBehavior.ChainState ChainBehaviorState
-		{
-			get { return _ChainBehaviorState; } 
-		}
-
-		public class ConsensusStats
-		{
-			private readonly FullNode fullNode;
-			private CoinViewStack stack;
-			private CachedCoinView cache;
-			private DBreezeCoinView dbreeze;
-			private CoinView bottom;
-
-			private LookaheadBlockPuller lookaheadPuller;
-			private ConsensusPerformanceSnapshot lastSnapshot;
-			private BackendPerformanceSnapshot lastSnapshot2;
-			private CachePerformanceSnapshot lastSnapshot3;
-
-			public ConsensusStats(FullNode fullNode, CoinViewStack stack)
-			{
-				this.fullNode = fullNode;
-
-				stack = new CoinViewStack(fullNode.CoinView);
-				cache = stack.Find<CachedCoinView>();
-				dbreeze = stack.Find<DBreezeCoinView>();
-				bottom = stack.Bottom;
-
-				lookaheadPuller = fullNode.ConsensusLoop.Puller as LookaheadBlockPuller;
-
-				lastSnapshot = fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-				lastSnapshot2 = dbreeze?.PerformanceCounter.Snapshot();
-				lastSnapshot3 = cache?.PerformanceCounter.Snapshot();
-			}
-
-			public bool CanLog
-			{
-				get
-				{
-					return this.fullNode._ChainBehaviorState.IsInitialBlockDownload && 
-						(DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
-				}
-			}
-
-			public void Log()
-			{
-				StringBuilder benchLogs = new StringBuilder();
-
-				if (lookaheadPuller != null)
-				{
-					benchLogs.AppendLine("======Block Puller======");
-					benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + lookaheadPuller.ActualLookahead + " blocks");
-					benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + lookaheadPuller.MedianDownloadCount + " blocks");
-					benchLogs.AppendLine("==========================");
-				}
-				benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
-				if (cache != null)
-				{
-					benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
-					benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + cache.CacheEntryCount);
-				}
-
-				var snapshot = this.fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-				benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
-				lastSnapshot = snapshot;
-
-				if (dbreeze != null)
-				{
-					var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
-					benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
-					lastSnapshot2 = snapshot2;
-				}
-				if (cache != null)
-				{
-					var snapshot3 = cache.PerformanceCounter.Snapshot();
-					benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
-					lastSnapshot3 = snapshot3;
-				}
-				benchLogs.AppendLine(this.fullNode.ConnectionManager.GetStats());
-				Logs.Bench.LogInformation(benchLogs.ToString());
-			}
-		}
-
-		void RunLoop()
-		{
-			try
-			{
-				var stack = new CoinViewStack(CoinView);
-				var cache = stack.Find<CachedCoinView>();
-				var stats = new ConsensusStats(this, stack);
-				
-				ChainedBlock lastTip = ConsensusLoop.Tip;
-				foreach(var block in ConsensusLoop.Execute(_Cancellation.Token))
-				{
-					bool reorg = false;
-					if(ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
-					{
-						reorg = true;
-						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
-					}
-					lastTip = ConsensusLoop.Tip;
-					_Cancellation.Token.ThrowIfCancellationRequested();
-					if(block.Error != null)
-					{
-						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
-
-						//Pull again
-						ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
-
-						if(block.Error == ConsensusErrors.BadWitnessNonceSize)
-						{
-							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
-							ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-							ConsensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
-							continue;
-						}
-
-						//Set the PoW chain back to ConsensusLoop.Tip
-						Chain.SetTip(ConsensusLoop.Tip);
-						//Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
-						Logs.FullNode.LogError("Marking block as invalid");
-						_ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
-					}
-
-					if(block.Error == null)
-					{
-						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
-						{
-							var unused = cache.FlushAsync();
-						}
-
-						this.Signals.Blocks.Broadcast(block.Block);
-					}
-
-					// TODO: replace this with a signalling object
-					if (stats.CanLog)
-						stats.Log();
-				}
-			}
-			catch(Exception ex) //TODO: Barbaric clean exit
-			{
-				if(ex is OperationCanceledException)
-				{
-					if(_Cancellation.IsCancellationRequested)
-						return;
-				}
-				if(!IsDisposed)
-				{
-					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + ConsensusLoop.Tip?.Height + ")");
-					_UncatchedException = ex;
-					Dispose();
-				}
-			}
-		}
-
-		public Mining Miner
-		{
-			get; set;
-		}
-
-		public Signals Signals
-		{
-			get; set;
-		}
-
-		public ConsensusLoop ConsensusLoop
-		{
-			get; set;
-		}
-
-		public IWebHost RPCHost
-		{
-			get; set;
-		}
-
-		private void StartFlushChainThread()
-		{
-			if(!Directory.Exists(DataFolder.ChainPath))
-			{
-				Logs.FullNode.LogInformation("Creating " + DataFolder.ChainPath);
-				Directory.CreateDirectory(DataFolder.ChainPath);
-			}
-			ChainRepository = new ChainRepository(DataFolder.ChainPath);
-			_Resources.Add(ChainRepository);
-			Logs.FullNode.LogInformation("Loading chain");
-			Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
-			Chain = Chain ?? new ConcurrentChain(Network);
-			Guard.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
-			Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
-			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
-			{
-				ChainRepository.Save(Chain);
-			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
-		}
-
-		public ConnectionManager ConnectionManager
-		{
-			get; set;
-		}
-
-		public MempoolManager MempoolManager
-		{
-			get; set;
-		}
-
-		public AddressManager AddressManager
-		{
-			get; set;
-		}
-
-		public ChainRepository ChainRepository
-		{
-			get; set;
-		}
-
-		public BlockStoreManager BlockStoreManager
-		{
-			get; set;
-		}
-
-		/// <summary>
-		/// The longest PoW chain
-		/// </summary>
-		public ConcurrentChain Chain
-		{
-			get; set;
-		}
-
-		public PeriodicTask FlushAddrmanTask
-		{
-			get; set;
-		}
-
-		public PeriodicTask FlushChainTask
-		{
-			get; set;
-		}
-
-		public CancellationProvider GlobalCancellation
-		{
-			get; set;
-		}
-		public class CancellationProvider
-		{
-			public CancellationTokenSource Cancellation { get; set; }
-		}
-
-		ManualResetEvent _IsDisposed = new ManualResetEvent(false);
-		ManualResetEvent _IsStarted = new ManualResetEvent(false);
-		CancellationTokenSource _Cancellation = new CancellationTokenSource();
-		public bool IsDisposed
-		{
-			get
-			{
-				return _IsDisposedValue;
-			}
-		}
-
-		private void StartFlushAddrManThread()
-		{
-			if(!File.Exists(DataFolder.AddrManFile))
-			{
-				Logs.FullNode.LogInformation("Creating " + DataFolder.AddrManFile);
-				AddressManager = new AddressManager();
-				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-			}
-			else
-			{
-				Logs.FullNode.LogInformation("Loading addrman");
-				AddressManager = AddressManager.LoadPeerFile(DataFolder.AddrManFile);
-				Logs.FullNode.LogInformation("Loaded");
-			}
-			FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) =>
-			{
-				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
-		}
-
-		private void StartPeriodicLog()
-		{
-            AsyncLoop.Run("PeriodicLog", (cancellation) =>
-			{
-				// TODO: move stats to each of its components 
-
-				StringBuilder benchLogs = new StringBuilder();
-				
-				benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)); 
-				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
-				benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
-				benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
-				benchLogs.AppendLine();
-
-				benchLogs.AppendLine("======Mempool======");
-				benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
-
-				benchLogs.AppendLine("======Connection======");
-				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-				Logs.Bench.LogInformation(benchLogs.ToString());
-				return Task.CompletedTask;
-            },
-            _Cancellation.Token,
-            repeateEvery: TimeSpans.FiveSeconds,
-            startAfter: TimeSpans.FiveSeconds);
-		}
-
-		public void WaitDisposed()
-		{
-			_IsDisposed.WaitOne();
-			Dispose();
-		}
-
-		bool _IsDisposedValue;
-
-
-		private bool _HasExited;
-		private Exception _UncatchedException;
-
-		public bool HasExited
-		{
-			get
-			{
-				return _HasExited;
-			}
-		}
-
-		public void Dispose()
-		{
-			if(IsDisposed)
-				return;
-			_IsDisposedValue = true;
-			Logs.FullNode.LogInformation("Closing node pending...");
-			_IsStarted.WaitOne();
-			if(_Cancellation != null)
-			{
-				_Cancellation.Cancel();
-				FlushAddrmanTask.RunOnce();
-				Logs.FullNode.LogInformation("FlushAddrMan stopped");
-				FlushChainTask.RunOnce();
-				Logs.FullNode.LogInformation("FlushChain stopped");
-
-				var cache = CoinView as CachedCoinView;
-				if(cache != null)
-				{
-					Logs.FullNode.LogInformation("Flushing Cache CoinView...");
-					cache.FlushAsync().GetAwaiter().GetResult();
-				}
-
-				Logs.FullNode.LogInformation("Flushing BlockStore...");
-				this.BlockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
-
-				ConnectionManager.Dispose();
-				foreach(var dispo in _Resources)
-					dispo.Dispose();
+namespace Stratis.Bitcoin {
+
+   public partial class FullNode : IDisposable {
+      NodeArgs _Args;
+      public NodeArgs Args {
+         get {
+            return _Args;
+         }
+      }
+
+      public FullNode(NodeArgs args) {
+         if (args == null)
+            throw new ArgumentNullException("args");
+         _Args = args;
+         Network = _Args.GetNetwork();
+      }
+
+      public Network Network {
+         get;
+         internal set;
+      }
+
+      public CoinView CoinView {
+         get; set;
+      }
+
+      public DataFolder DataFolder {
+         get; set;
+      }
+
+      public DateTimeProvider DateTimeProvider {
+         get; set;
+      }
+
+      public bool IsInitialBlockDownload() {
+         //if (fImporting || fReindex)
+         //	return true;
+         if (this.ConsensusLoop.Tip == null)
+            return true;
+         if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
+            return true;
+         if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Args.MaxTipAge))
+            return true;
+         return false;
+      }
+
+      //private readonly List<Module> modules = new List<Module>();
+      //public void RegisterModule(Module module) {
+      //   this.modules.Add(module);
+      //}
+
+      List<IDisposable> _Resources = new List<IDisposable>();
+      public void Start() {
+         if (IsDisposed)
+            throw new ObjectDisposedException("FullNode");
+         _IsStarted.Reset();
+         DataFolder = new DataFolder(_Args.DataDir);
+         var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
+         _Resources.Add(coinviewDB);
+         CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
+
+
+         _Cancellation = new CancellationTokenSource();
+         this.GlobalCancellation = new CancellationProvider() { Cancellation = _Cancellation };
+
+         StartFlushAddrManThread();
+         StartFlushChainThread();
+
+         if (_Args.RPC != null) {
+            RPCHost = new WebHostBuilder()
+            .UseKestrel()
+            .ForFullNode(this)
+            .UseUrls(_Args.RPC.GetUrls())
+            .UseIISIntegration()
+            .UseStartup<RPC.Startup>()
+            .Build();
+            RPCHost.Start();
+            _Resources.Add(RPCHost);
+            Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
+         }
+
+         this.Signals = new Signals();
+         this.DateTimeProvider = DateTimeProvider.Default;
+
+         this._ChainBehaviorState = new BlockStore.ChainBehavior.ChainState(this);
+
+         if (AddressManager.Count == 0)
+            Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
+
+         // == Connection == 
+         var connectionParameters = new NodeConnectionParameters();
+         connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
+         connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+         connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
+         connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
+         ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
+         var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
+         connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
+
+         // === BlockSgtore ===
+         var blockRepository = new BlockRepository(this.Network, DataFolder.BlockPath);
+         var blockStoreCache = new BlockStoreCache(blockRepository);
+         _Resources.Add(blockStoreCache);
+         _Resources.Add(blockRepository);
+         var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
+         var blockStoreLoop = new BlockStoreLoop(this.Chain, this.ConnectionManager,
+            blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, this._Cancellation, lightBlockPuller);
+         this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
+            blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
+         connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
+         connectionParameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
+         this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
+
+         // === Consensus ===
+         var consensusValidator = new ConsensusValidator(Network.Consensus);
+         ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
+         this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
+
+         // === memory pool ==
+         //this.RegisterModule(new MempoolModule());
+         //module registration happens using FullNodeBuilder
+
+         // === Miner ===
+         this.Miner = new Mining(this, this.DateTimeProvider);
+
+         var flags = ConsensusLoop.GetFlags();
+         if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
+            ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+
+         #region Removed by MithrilMan (see comments inside)
+         ///The lifecycle of service is handled by the FullNodeServiceExecutor.
+         ///It contains the Start and Stop methods that will start and stop all registered "modules" (aka services).
+         ///The Start method is called inside the StartBuilderStuff()
+         ///The Stop method is called inside the dispose of the fullnode (actually inside DisposeBuilderStuff)
+         /// 
+         /// 
+         //// TODO: create a FullNodeBuilder that takes modules/services and builds them
+         //// configure and start DI modules
+         //var serviceCollection = new ServiceCollection();
+         //var sortedModules = this.modules.OrderBy(o => o.Priority).ToList();
+         //foreach (var module in sortedModules)
+         //   module.Configure(this, serviceCollection);
+         //var service = serviceCollection.BuildServiceProvider();
+         //foreach (var module in sortedModules)
+         //   module.Start(this, service);
+         //var serviceDispose = service as IDisposable;
+         //if (serviceDispose != null)
+         //   _Resources.Add(serviceDispose); 
+         #endregion
+         
+         StartBuilderStuff();
+
+
+         _ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
+         ConnectionManager.Start();
+
+         new Thread(RunLoop) {
+            Name = "Consensus Loop"
+         }.Start();
+         _IsStarted.Set();
+
+         this.StartPeriodicLog();
+      }
+
+      private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
+      public BlockStore.ChainBehavior.ChainState ChainBehaviorState {
+         get { return _ChainBehaviorState; }
+      }
+
+      public class ConsensusStats {
+         private readonly FullNode fullNode;
+         private CoinViewStack stack;
+         private CachedCoinView cache;
+         private DBreezeCoinView dbreeze;
+         private CoinView bottom;
+
+         private LookaheadBlockPuller lookaheadPuller;
+         private ConsensusPerformanceSnapshot lastSnapshot;
+         private BackendPerformanceSnapshot lastSnapshot2;
+         private CachePerformanceSnapshot lastSnapshot3;
+
+         public ConsensusStats(FullNode fullNode, CoinViewStack stack) {
+            this.fullNode = fullNode;
+
+            stack = new CoinViewStack(fullNode.CoinView);
+            cache = stack.Find<CachedCoinView>();
+            dbreeze = stack.Find<DBreezeCoinView>();
+            bottom = stack.Bottom;
+
+            lookaheadPuller = fullNode.ConsensusLoop.Puller as LookaheadBlockPuller;
+
+            lastSnapshot = fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
+            lastSnapshot2 = dbreeze?.PerformanceCounter.Snapshot();
+            lastSnapshot3 = cache?.PerformanceCounter.Snapshot();
+         }
+
+         public bool CanLog {
+            get {
+               return this.fullNode._ChainBehaviorState.IsInitialBlockDownload &&
+                  (DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
+            }
+         }
+
+         public void Log() {
+            StringBuilder benchLogs = new StringBuilder();
+
+            if (lookaheadPuller != null) {
+               benchLogs.AppendLine("======Block Puller======");
+               benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + lookaheadPuller.ActualLookahead + " blocks");
+               benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + lookaheadPuller.MedianDownloadCount + " blocks");
+               benchLogs.AppendLine("==========================");
+            }
+            benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
+            if (cache != null) {
+               benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
+               benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + cache.CacheEntryCount);
+            }
+
+            var snapshot = this.fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
+            benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
+            lastSnapshot = snapshot;
+
+            if (dbreeze != null) {
+               var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
+               benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
+               lastSnapshot2 = snapshot2;
+            }
+            if (cache != null) {
+               var snapshot3 = cache.PerformanceCounter.Snapshot();
+               benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
+               lastSnapshot3 = snapshot3;
+            }
+            benchLogs.AppendLine(this.fullNode.ConnectionManager.GetStats());
+            Logs.Bench.LogInformation(benchLogs.ToString());
+         }
+      }
+
+      void RunLoop() {
+         try {
+            var stack = new CoinViewStack(CoinView);
+            var cache = stack.Find<CachedCoinView>();
+            var stats = new ConsensusStats(this, stack);
+
+            ChainedBlock lastTip = ConsensusLoop.Tip;
+            foreach (var block in ConsensusLoop.Execute(_Cancellation.Token)) {
+               bool reorg = false;
+               if (ConsensusLoop.Tip.FindFork(lastTip) != lastTip) {
+                  reorg = true;
+                  Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
+               }
+               lastTip = ConsensusLoop.Tip;
+               _Cancellation.Token.ThrowIfCancellationRequested();
+               if (block.Error != null) {
+                  Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
+
+                  //Pull again
+                  ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
+
+                  if (block.Error == ConsensusErrors.BadWitnessNonceSize) {
+                     Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
+                     ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+                     ConsensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
+                     continue;
+                  }
+
+                  //Set the PoW chain back to ConsensusLoop.Tip
+                  Chain.SetTip(ConsensusLoop.Tip);
+                  //Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
+                  Logs.FullNode.LogError("Marking block as invalid");
+                  _ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
+               }
+
+               if (block.Error == null) {
+                  _ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
+                  if (Chain.Tip.HashBlock == block.ChainedBlock.HashBlock) {
+                     var unused = cache.FlushAsync();
+                  }
+
+                  this.Signals.Blocks.Broadcast(block.Block);
+               }
+
+               // TODO: replace this with a signalling object
+               if (stats.CanLog)
+                  stats.Log();
+            }
+         }
+         catch (Exception ex) //TODO: Barbaric clean exit
+         {
+            if (ex is OperationCanceledException) {
+               if (_Cancellation.IsCancellationRequested)
+                  return;
+            }
+            if (!IsDisposed) {
+               Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + ConsensusLoop.Tip?.Height + ")");
+               _UncatchedException = ex;
+               Dispose();
+            }
+         }
+      }
+
+      public Mining Miner {
+         get; set;
+      }
+
+      public Signals Signals {
+         get; set;
+      }
+
+      public ConsensusLoop ConsensusLoop {
+         get; set;
+      }
+
+      public IWebHost RPCHost {
+         get; set;
+      }
+
+      private void StartFlushChainThread() {
+         if (!Directory.Exists(DataFolder.ChainPath)) {
+            Logs.FullNode.LogInformation("Creating " + DataFolder.ChainPath);
+            Directory.CreateDirectory(DataFolder.ChainPath);
+         }
+         ChainRepository = new ChainRepository(DataFolder.ChainPath);
+         _Resources.Add(ChainRepository);
+         Logs.FullNode.LogInformation("Loading chain");
+         Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
+         Chain = Chain ?? new ConcurrentChain(Network);
+         Guard.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
+         Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
+         FlushChainTask = new PeriodicTask("FlushChain", (cancellation) => {
+            ChainRepository.Save(Chain);
+         }).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+      }
+
+      public ConnectionManager ConnectionManager {
+         get; set;
+      }
+
+      public MempoolManager MempoolManager {
+         get; set;
+      }
+
+      public AddressManager AddressManager {
+         get; set;
+      }
+
+      public ChainRepository ChainRepository {
+         get; set;
+      }
+
+      public BlockStoreManager BlockStoreManager {
+         get; set;
+      }
+
+      /// <summary>
+      /// The longest PoW chain
+      /// </summary>
+      public ConcurrentChain Chain {
+         get; set;
+      }
+
+      public PeriodicTask FlushAddrmanTask {
+         get; set;
+      }
+
+      public PeriodicTask FlushChainTask {
+         get; set;
+      }
+
+      public CancellationProvider GlobalCancellation {
+         get; set;
+      }
+      public class CancellationProvider {
+         public CancellationTokenSource Cancellation { get; set; }
+      }
+
+      ManualResetEvent _IsDisposed = new ManualResetEvent(false);
+      ManualResetEvent _IsStarted = new ManualResetEvent(false);
+      CancellationTokenSource _Cancellation = new CancellationTokenSource();
+      public bool IsDisposed {
+         get {
+            return _IsDisposedValue;
+         }
+      }
+
+      private void StartFlushAddrManThread() {
+         if (!File.Exists(DataFolder.AddrManFile)) {
+            Logs.FullNode.LogInformation("Creating " + DataFolder.AddrManFile);
+            AddressManager = new AddressManager();
+            AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
+         }
+         else {
+            Logs.FullNode.LogInformation("Loading addrman");
+            AddressManager = AddressManager.LoadPeerFile(DataFolder.AddrManFile);
+            Logs.FullNode.LogInformation("Loaded");
+         }
+         FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) => {
+            AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
+         }).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+      }
+
+      private void StartPeriodicLog() {
+         AsyncLoop.Run("PeriodicLog", (cancellation) => {
+            // TODO: move stats to each of its components 
+
+            StringBuilder benchLogs = new StringBuilder();
+
+            benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture));
+            benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+            benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
+            benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
+            benchLogs.AppendLine();
+
+            benchLogs.AppendLine("======Mempool======");
+            benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+
+            benchLogs.AppendLine("======Connection======");
+            benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
+            Logs.Bench.LogInformation(benchLogs.ToString());
+            return Task.CompletedTask;
+         },
+         _Cancellation.Token,
+         repeateEvery: TimeSpans.FiveSeconds,
+         startAfter: TimeSpans.FiveSeconds);
+      }
+
+      public void WaitDisposed() {
+         _IsDisposed.WaitOne();
+         Dispose();
+      }
+
+      bool _IsDisposedValue;
+
+
+      private bool _HasExited;
+      private Exception _UncatchedException;
+
+      public bool HasExited {
+         get {
+            return _HasExited;
+         }
+      }
+
+      public void Dispose() {
+         if (IsDisposed)
+            return;
+         _IsDisposedValue = true;
+         Logs.FullNode.LogInformation("Closing node pending...");
+         _IsStarted.WaitOne();
+         if (_Cancellation != null) {
+            _Cancellation.Cancel();
+            FlushAddrmanTask.RunOnce();
+            Logs.FullNode.LogInformation("FlushAddrMan stopped");
+            FlushChainTask.RunOnce();
+            Logs.FullNode.LogInformation("FlushChain stopped");
+
+            var cache = CoinView as CachedCoinView;
+            if (cache != null) {
+               Logs.FullNode.LogInformation("Flushing Cache CoinView...");
+               cache.FlushAsync().GetAwaiter().GetResult();
+            }
+
+            Logs.FullNode.LogInformation("Flushing BlockStore...");
+            this.BlockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
+
+            ConnectionManager.Dispose();
+            foreach (var dispo in _Resources)
+               dispo.Dispose();
 
             DisposeBuilderStuff();
-			}
-			_IsDisposed.Set();
-			_HasExited = true;
-		}
+         }
+         _IsDisposed.Set();
+         _HasExited = true;
+      }
 
-		public void ThrowIfUncatchedException()
-		{
-			if(_UncatchedException != null)
-			{
-				var ex = _UncatchedException;
-				var aex = _UncatchedException as AggregateException;
-				if(aex != null)
-					ex = aex.InnerException;
-				ExceptionDispatchInfo.Capture(ex).Throw();
-			}
-		}
-	}
+      public void ThrowIfUncatchedException() {
+         if (_UncatchedException != null) {
+            var ex = _UncatchedException;
+            var aex = _UncatchedException as AggregateException;
+            if (aex != null)
+               ex = aex.InnerException;
+            ExceptionDispatchInfo.Capture(ex).Throw();
+         }
+      }
+   }
 }

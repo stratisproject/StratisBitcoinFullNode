@@ -30,30 +30,25 @@ using Microsoft.Extensions.Configuration;
 namespace Stratis.Bitcoin {
 
    public partial class FullNode : IFullNode {
-      private readonly IServiceCollection _applicationServiceCollection;
-      private IStartup _startup;
+      private IServiceCollection _applicationServiceCollection;
       private ApplicationLifetime _applicationLifetime;
-      private FullNodeServiceExecutor _fullNodeServiceExecutor;
+      private FullNodeFeatureExecutor _fullNodeFeatureExecutor;
 
-      private readonly IServiceProvider _fullNodeServiceProvider;
-      private readonly FullNodeOptions _options;
-      private readonly IConfiguration _config;
+      private IServiceProvider _fullNodeServiceProvider;
 
       private IServiceProvider _applicationServices;
       private ILogger<FullNode> _logger;
 
 
-      public IServiceProvider Services {
-         get {
-            EnsureApplicationServices();
-            return _applicationServices;
-         }
-      }
+      public IServiceProvider Services { get { return _applicationServices; } }
 
 
-
-
-      public FullNode(IServiceCollection appServices, IServiceProvider fullNodeServiceProvider, FullNodeOptions options, IConfiguration config) {
+      /// <summary>
+      /// internal implementation that wire the services to the FullNode instance
+      /// </summary>
+      /// <param name="appServices"></param>
+      /// <param name="fullNodeServiceProvider"></param>
+      internal void InitializeServiceLayer(IServiceCollection appServices, IServiceProvider fullNodeServiceProvider) {
          if (appServices == null) {
             throw new ArgumentNullException(nameof(appServices));
          }
@@ -62,54 +57,52 @@ namespace Stratis.Bitcoin {
             throw new ArgumentNullException(nameof(fullNodeServiceProvider));
          }
 
-         if (config == null) {
-            throw new ArgumentNullException(nameof(config));
-         }
-
-         _config = config;
-         _options = options;
          _applicationServiceCollection = appServices;
          _fullNodeServiceProvider = fullNodeServiceProvider;
          _applicationServiceCollection.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
-         _applicationServiceCollection.AddSingleton<FullNodeServiceExecutor>();
-      }
-
-
-      public void Initialize() {
-         //if (_application == null) {
-         //   _application = BuildApplication();
-         //}
+         _applicationServiceCollection.AddSingleton<FullNodeFeatureExecutor>();
       }
 
 
 
-      private void DisposeBuilderStuff() {
-         //_logger?.Shutdown();
+      /// <summary>
+      /// temporary method that should merged into the Start() method
+      /// </summary>
+      protected void StartBuilderStuff() {
+         _applicationServices = _applicationServiceCollection.BuildServiceProvider();
+
+         _applicationLifetime = _applicationServices?.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
+         _fullNodeFeatureExecutor = _applicationServices?.GetRequiredService<FullNodeFeatureExecutor>();
+
+         // Fire IApplicationLifetime.Started
+         _applicationLifetime?.NotifyStarted();
+
+         //start all registered features
+         _fullNodeFeatureExecutor?.Start(this);
+      }
+
+
+
+      /// <summary>
+      /// temporary method that should merged into the Dispose method
+      /// </summary>
+      protected void DisposeBuilderStuff() {
          // Fire IApplicationLifetime.Stopping
          _applicationLifetime?.StopApplication();
          // Fire the IHostedService.Stop
-         _fullNodeServiceExecutor?.Stop();
+         _fullNodeFeatureExecutor?.Stop();
          (_fullNodeServiceProvider as IDisposable)?.Dispose();
          (_applicationServices as IDisposable)?.Dispose();
          // Fire IApplicationLifetime.Stopped
          _applicationLifetime?.NotifyStopped();
-         //HostingEventSource.Log.HostStop();
       }
 
 
-      private void EnsureApplicationServices() {
-         if (_applicationServices == null) {
-            EnsureStartup();
-            _applicationServices = _startup.ConfigureServices(_applicationServiceCollection);
-         }
-      }
-
-      private void EnsureStartup() {
-         //if (_startup != null) {
-         //   return;
-         //}
-
-         //_startup = _fullNodeServiceProvider.GetRequiredService<IStartup>();
+      /// <summary>
+      /// updates the _applicationServices from the services list
+      /// </summary>
+      public void UpdateApplicationServiceProvider() {
+         _applicationServices = _applicationServiceCollection.BuildServiceProvider();
       }
    }
 }
