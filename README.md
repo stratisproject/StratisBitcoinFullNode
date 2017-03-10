@@ -11,14 +11,29 @@ The daemon is a full implementation of the Stratis Bitcoin Full Node.
 Stratis Bitcoins is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin) project.
 
   
-We're building the Bitcoin protocol in C#, 
-but plan to add many more features on top of Bitcoin:  
-Adding POS support, Compiled Smart Contracts, NTumbleBit and Breeze wallet.
-
+We're using [.NET Core](https://dotnet.github.io/) for cross platform capabilities.  
 Join the community at [slack](https://stratisplatform.slack.com)
 
-A Modular Approach 
+Running A FullNode 
 ------------------
+
+Our full node is currently in alpha, to run on the main bitcoin network:
+
+```
+git clone https://github.com/stratisproject/StratisBitcoinFullNode.git
+dotnet restore
+dotnet run
+```
+
+Whats Next 
+----------
+
+We plan to add many more features on top of the Stratis Bitcoin blockchain:  
+POS/DPOS, Sidechains, Private/Permissioned blockchain, Compiled Smart Contracts, NTumbleBit/Breeze wallet and more..  
+And build tailored Blockchian solutions for enterprices.
+
+**A Modular Approach**
+
 A Blockchain is made of many components, from a FullNode that validates blocks to a Simple Wallet that track addresses.
 The end goal is to develop a set of [Nget](https://en.wikipedia.org/wiki/NuGet) packages where an implementer can cheery pick from.
 
