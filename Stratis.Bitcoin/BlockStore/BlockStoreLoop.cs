@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.BlockStore
 				await DownloadAndStoreBlocks(cancellationToken);
             },
             cancellationToken,
-            repeateEvery: TimeSpans.Second,
+            repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.FiveSeconds);
         }
 

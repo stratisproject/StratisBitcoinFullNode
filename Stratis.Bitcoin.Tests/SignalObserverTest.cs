@@ -8,27 +8,19 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.Tests.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests
 {
-    public class SignalObserverTest
+    public class SignalObserverTest : LogsTestBase
     {
         SignalObserver<Block> observer;
         Mock<ILoggerFactory> loggerFactory;
         Mock<Microsoft.Extensions.Logging.ILogger> fullNodeLogger;
 
-        public SignalObserverTest()
+        public SignalObserverTest() : base()
         {
-            fullNodeLogger = new Mock<ILogger>();
-            loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-               .Returns(new Mock<ILogger>().Object);
-            loggerFactory.Setup(l=> l.CreateLogger("FullNode"))
-               .Returns(fullNodeLogger.Object)
-               .Verifiable();
-            Logs.Configure(loggerFactory.Object);
-
             observer = new TestBlockSignalObserver();
         }
 
@@ -39,17 +31,8 @@ namespace Stratis.Bitcoin.Tests
 
             observer.OnError(exception);
 
-            AssertLog(fullNodeLogger, LogLevel.Error, exception.ToString());
-        }
-       
-        private void AssertLog(Mock<ILogger> logger, LogLevel logLevel, string message)
-        {
-            logger.Verify(f => f.Log<Object>(logLevel,
-                It.IsAny<EventId>(),
-                It.Is<Object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
-                null,
-                It.IsAny<Func<Object, Exception, string>>()));
-        }
+            AssertLog(FullNodeLogger, LogLevel.Error, exception.ToString());
+        }            
 
         private class TestBlockSignalObserver : SignalObserver<Block>
         {

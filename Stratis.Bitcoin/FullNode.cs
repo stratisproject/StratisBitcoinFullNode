@@ -468,7 +468,7 @@ namespace Stratis.Bitcoin
 				return Task.CompletedTask;
             },
             _Cancellation.Token,
-            repeateEvery: TimeSpans.FiveSeconds,
+            repeatEvery: TimeSpans.FiveSeconds,
             startAfter: TimeSpans.FiveSeconds);
 		}
 
