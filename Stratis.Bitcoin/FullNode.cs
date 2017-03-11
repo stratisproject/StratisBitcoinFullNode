@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin
 						_ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
 					}
 
-					if(block.Error == null)
+					if(!reorg && block.Error == null)
 					{
 						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)

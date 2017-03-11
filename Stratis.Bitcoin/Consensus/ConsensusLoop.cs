@@ -188,6 +188,9 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			ContextInformation context;
 			ConsensusFlags flags;
+			if (result.Block.Header.HashPrevBlock != Tip.HashBlock)
+				return; // reorg
+
 			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
 			{
 				Validator.CheckBlockHeader(result.Block.Header);
