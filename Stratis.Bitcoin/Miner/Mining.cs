@@ -62,7 +62,8 @@ namespace Stratis.Bitcoin.Miner
 				if (fullNode.IsDisposed || retry >= maxTries)
 					return blocks.Select(b => b.GetHash()).ToList();
 				blocks.Add(block);
-
+				if (block.Header.HashPrevBlock != fullNode.Chain.Tip.HashBlock)
+					return Enumerable.Empty<uint256>().ToList(); // a new block was found
 				var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
 				fullNode.Chain.SetTip(newChain);
 
