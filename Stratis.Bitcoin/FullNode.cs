@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin
 					if(!reorg && block.Error == null)
 					{
 						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
+						if(Chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
 						{
 							var unused = cache.FlushAsync();
 						}
