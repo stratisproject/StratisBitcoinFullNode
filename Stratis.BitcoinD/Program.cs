@@ -35,12 +35,13 @@ namespace Stratis.BitcoinD
 					{
 						Thread.Sleep(100); // wait 1 sec
 						// generate 1 block
-						node.Miner.GenerateBlocks(new Stratis.Bitcoin.Miner.ReserveScript()
+						var res = node.Miner.GenerateBlocks(new Stratis.Bitcoin.Miner.ReserveScript()
 						{
 							reserveSfullNodecript = new NBitcoin.Key().ScriptPubKey
 						}, 1, int.MaxValue, false);
-						Console.WriteLine("mined tip at: " + node?.Chain.Tip.Height + " h:" + node?.Chain.Tip.HashBlock + " d:" +
-						                  node?.Chain.Tip.Header.Bits.ToUInt256());
+						if (res.Any())
+							Console.WriteLine("mined tip at: " + node?.Chain.Tip.Height + " h:" + node?.Chain.Tip.HashBlock + " d:" +
+							                  node?.Chain.Tip.Header.Bits.ToUInt256());
 					}
 				})
 
