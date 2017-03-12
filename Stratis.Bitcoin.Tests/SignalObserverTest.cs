@@ -15,9 +15,7 @@ namespace Stratis.Bitcoin.Tests
 {
     public class SignalObserverTest : LogsTestBase
     {
-        SignalObserver<Block> observer;
-        Mock<ILoggerFactory> loggerFactory;
-        Mock<Microsoft.Extensions.Logging.ILogger> fullNodeLogger;
+        SignalObserver<Block> observer;               
 
         public SignalObserverTest() : base()
         {

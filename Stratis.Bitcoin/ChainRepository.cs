@@ -10,8 +10,14 @@ using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin
 {
-	public class ChainRepository : IDisposable
-	{		
+    public interface IChainRepository : IDisposable
+    {
+        Task<ConcurrentChain> GetChain();
+        Task Save(ConcurrentChain chain);
+    }
+
+    public class ChainRepository : IChainRepository
+    {		
 		DBreezeSingleThreadSession _Session;
 
 		public ChainRepository(string folder)
