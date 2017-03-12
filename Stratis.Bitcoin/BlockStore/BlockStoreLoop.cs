@@ -42,19 +42,40 @@ namespace Stratis.Bitcoin.BlockStore
 			this.nodeArgs = nodeArgs;
 			this.blockPuller = blockPuller;
 			this.ChainState = chainState;
-			
-			if(this.nodeArgs.Store.ReIndex)
-				throw new NotImplementedException();
 
 			PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
+
+			this.Initialize(globalCancellationTokenSource).Wait(); // bad practice 
+		}
+
+		private int batchsize = 30;
+		private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
+		private readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
+
+		public async Task Initialize(CancellationTokenSource tokenSource)
+		{
+			if (this.nodeArgs.Store.ReIndex)
+				throw new NotImplementedException();
+
 			StoredBlock = chain.GetBlock(this.BlockRepository.BlockHash);
 			if (StoredBlock == null)
 			{
-				// TODO: load and delete all blocks till a common fork with Chain is found
-				// this is a rare event where a reorg happened and the ChainedBlock is lost
+				// a reorg happened and the ChainedBlock is lost
 				// to solve this each block needs to be pulled from storage and deleted 
 				// all the way till a common fork is found with Chain
-				throw new NotImplementedException();
+
+				var blockstoremove = new List<uint256>();
+				var remove = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
+				// reorg - we need to delete blocks, start walking back the chain
+				while (this.chain.GetBlock(remove.GetHash()) == null)
+				{
+					blockstoremove.Add(remove.GetHash());
+					remove = await this.BlockRepository.GetAsync(remove.Header.HashPrevBlock);
+				}
+
+				var newTip = this.chain.GetBlock(remove.GetHash());
+				await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockstoremove);
+				this.StoredBlock = newTip;
 			}
 
 			if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
@@ -62,16 +83,13 @@ namespace Stratis.Bitcoin.BlockStore
 				if (this.chain.Tip != this.chain.Genesis)
 					throw new BlockStoreException("You need to rebuild the database using -reindex-chainstate to change -txindex");
 				if (this.nodeArgs.Store.TxIndex)
-					this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
+					await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
 			}
 
-			chainState.HighestPersistedBlock = this.StoredBlock;
-			this.Loop(globalCancellationTokenSource.Token);
+			this.ChainState.HighestPersistedBlock = this.StoredBlock;
+			this.Loop(tokenSource.Token);
 		}
 
-		private int batchsize = 30;
-		private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
-		private readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
 		public void AddToPending(Block block)
 		{

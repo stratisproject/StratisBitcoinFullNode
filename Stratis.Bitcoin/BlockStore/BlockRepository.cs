@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.BlockStore
 			var sync = this.session.Do(() =>
 			{
 				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Common");
-				this.session.Transaction.ValuesLazyLoadingIsOn = false;
+				this.session.Transaction.ValuesLazyLoadingIsOn = true;
 			});
 
 			var hash = this.session.Do(() =>
