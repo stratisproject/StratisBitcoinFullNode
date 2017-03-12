@@ -36,5 +36,6 @@ using Xunit;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
+// todo: instance the logging framework so this can be enabled again.
 // disable parallel running of tests because of concurrency issues with the log class being static (see LogsTestBase).
 [assembly: CollectionBehavior(DisableTestParallelization = true, MaxParallelThreads = 1)]

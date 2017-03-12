@@ -12,8 +12,16 @@ using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin
 {
-	public class DBreezeSingleThreadSession : IDisposable
-	{
+    public interface IDBreezeSingleThreadSession : IDisposable
+    {
+        DBreeze.Transactions.Transaction Transaction { get; }
+
+        Task Do(Action act);
+        Task<T> Do<T>(Func<T> act);
+    }
+
+    public class DBreezeSingleThreadSession : IDBreezeSingleThreadSession
+    {
 		public DBreezeSingleThreadSession(string threadName, string folder)
 		{
 			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
@@ -26,8 +34,6 @@ namespace Stratis.Bitcoin
 			}).Start(_SingleThread);
 		}
 
-
-
 		internal static byte[] NBitcoinSerialize(object obj)
 		{
 			IBitcoinSerializable serializable = obj as IBitcoinSerializable;
@@ -38,6 +44,7 @@ namespace Stratis.Bitcoin
 				return u.ToBytes();
 			throw new NotSupportedException();
 		}
+
 		internal static object NBitcoinDeserialize(byte[] bytes, Type type)
 		{
 			if(type == typeof(Coins))
@@ -93,8 +100,6 @@ namespace Stratis.Bitcoin
 			}).Start(_SingleThread);
 			cleaned.Wait();
 		}
-
-
 
 		private DBreeze.Transactions.Transaction _Transaction;
 		private DBreezeEngine _Engine;
