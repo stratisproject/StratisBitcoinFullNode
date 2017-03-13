@@ -246,3 +246,4 @@ ModelManifest.xml
 /Stratis.Bitcoin.IntegrationTests/TestData
 /Stratis.Bitcoin.IntegrationTests/ValidSomeBlocks
 /Stratis.BitcoinD/Properties/launchSettings.json
+/Stratis.Bitcoin.Tests/TestData/
