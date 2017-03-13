@@ -34,11 +34,15 @@ namespace Stratis.Bitcoin
 
         public IDisposable Subscribe(IObserver<T> observer)
         {
+            Guard.NotNull(observer, nameof(observer));
+
             return observable.Subscribe(observer);
         }
 
         public void Broadcast(T item)
         {
+            Guard.NotNull(item, nameof(item));
+
             subject.OnNext(item);
         }
     }
