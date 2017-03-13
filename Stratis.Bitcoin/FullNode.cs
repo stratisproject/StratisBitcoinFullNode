@@ -365,10 +365,6 @@ namespace Stratis.Bitcoin {
          _IsStarted.WaitOne();
          if (_Cancellation != null) {
             _Cancellation.Cancel();
-            //FlushAddrmanTask.RunOnce();
-            //Logs.FullNode.LogInformation("FlushAddrMan stopped");
-            //FlushChainTask.RunOnce();
-            //Logs.FullNode.LogInformation("FlushChain stopped");
 
             var cache = CoinView as CachedCoinView;
             if (cache != null) {
