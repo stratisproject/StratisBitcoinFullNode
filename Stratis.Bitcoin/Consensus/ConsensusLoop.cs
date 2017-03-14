@@ -189,6 +189,8 @@ namespace Stratis.Bitcoin.Consensus
 			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
 			{
 				Validator.CheckBlockHeader(result.Block.Header);
+				if (result.Block.Header.HashPrevBlock != Tip.HashBlock)
+					return; // reorg
 				result.ChainedBlock = new ChainedBlock(result.Block.Header, result.Block.Header.GetHash(), Tip);
 				result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock;
 					//Liberate from memory the block created above if possible

@@ -24,7 +24,10 @@ namespace Stratis.Bitcoin
     {
 		public DBreezeSingleThreadSession(string threadName, string folder)
 		{
-			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
+            Guard.NotEmpty(threadName, nameof(threadName));
+            Guard.NotEmpty(folder, nameof(folder));
+
+            _SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
 			new Task(() =>
 			{
 				DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
@@ -115,6 +118,8 @@ namespace Stratis.Bitcoin
 
 		public Task Do(Action act)
 		{
+            Guard.NotNull(act, nameof(act));
+
 			AssertNotDisposed();
 			var task = new Task(() =>
 			{
@@ -133,7 +138,9 @@ namespace Stratis.Bitcoin
 
 		public Task<T> Do<T>(Func<T> act)
 		{
-			AssertNotDisposed();
+            Guard.NotNull(act, nameof(act));
+
+            AssertNotDisposed();
 			var task = new Task<T>(() =>
 			{
 				AssertNotDisposed();

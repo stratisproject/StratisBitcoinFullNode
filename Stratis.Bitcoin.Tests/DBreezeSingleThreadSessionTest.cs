@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using NBitcoin;
@@ -12,7 +13,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests
 {
-    public class DBreezeSingleThreadSessionTest
+    public class DBreezeSingleThreadSessionTest : TestBase
     {
         public DBreezeSingleThreadSessionTest()
         {
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Tests
         {
             var network = Network.RegTest;
             var genesis = network.GetGenesis();
-            var coins = new Coins(genesis.Transactions[0], 0);            
+            var coins = new Coins(genesis.Transactions[0], 0);
 
             var result = (Coins)DBreezeSingleThreadSession.NBitcoinDeserialize(coins.ToBytes(), typeof(Coins));
 
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.Tests
         public void NBitcoinDeserializeWithRewindDataDeserializesObject()
         {
             var network = Network.RegTest;
-            var genesis = network.GetGenesis();            
+            var genesis = network.GetGenesis();
             var rewindData = new RewindData(genesis.GetHash());
 
             var result = (RewindData)DBreezeSingleThreadSession.NBitcoinDeserialize(rewindData.ToBytes(), typeof(RewindData));
@@ -127,9 +128,36 @@ namespace Stratis.Bitcoin.Tests
         }
 
         [Fact]
+        public void DoRunsSameThreadAsSessionCreated()
+        {
+            using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoRunsSameThreadAsSessionCreated")))
+            {
+                session.Do(() =>
+                {
+                    Assert.Equal("TestThread", Thread.CurrentThread.Name);
+                });
+            }
+        }
+
+        [Fact]
+        public void DoWithTypeRunsSameThreadAsSessionCreated()
+        {
+            using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoWithTypeRunsSameThreadAsSessionCreated")))
+            {
+                var thread = session.Do<string>(() =>
+                {
+                    return Thread.CurrentThread.Name;
+                });
+                thread.Wait();
+
+                Assert.Equal("TestThread", thread.Result);
+            }
+        }
+
+        [Fact]
         public void DoStartsTransaction()
-        {            
-            using (var session = new DBreezeSingleThreadSession("TestThread", "TestData/DBreezeSingleThreadSession/DoStartsTransaction"))
+        {
+            using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoStartsTransaction")))
             {
                 session.Do(() =>
                 {
@@ -140,12 +168,8 @@ namespace Stratis.Bitcoin.Tests
 
         [Fact]
         public void DoAbleToAccessExistingTransactionData()
-        {
-            var dir = "TestData/DBreezeSingleThreadSession/DoAbleToAccessExistingTransactionData";
-            if (Directory.Exists(dir))
-            {
-                Directory.Delete(dir, true);
-            }
+        {            
+            var dir = AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoAbleToAccessExistingTransactionData");
             uint256[] data = SetupTransactionData(dir);
 
             using (var session = new DBreezeSingleThreadSession("TestThread", dir))
@@ -168,12 +192,12 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public void DoWithTypePerformsTask()
         {
-            using (var session = new DBreezeSingleThreadSession("TestThread", "TestData/DBreezeSingleThreadSession/DoWithTypePerformsTask"))
+            using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoWithTypePerformsTask")))
             {
                 var task = session.Do<string>(() =>
                 {
                     return "TaskResult";
-                   
+
                 });
                 task.Wait();
 

@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.BlockStore
 			var sync = this.session.Do(() =>
 			{
 				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Common");
-				this.session.Transaction.ValuesLazyLoadingIsOn = false;
+				this.session.Transaction.ValuesLazyLoadingIsOn = true;
 			});
 
 			var hash = this.session.Do(() =>
@@ -56,6 +56,12 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 
 			return Task.WhenAll(new[] {sync, hash});
+		}
+
+		public bool LazyLoadingOn
+		{
+			get { return this.session.Transaction.ValuesLazyLoadingIsOn; }
+			set { this.session.Transaction.ValuesLazyLoadingIsOn = value; }
 		}
 
 		public Task<Transaction> GetTrxAsync(uint256 trxid)

@@ -32,11 +32,15 @@ namespace Stratis.Bitcoin
 
         public void Signal(Block block)
         {
+            Guard.NotNull(block, nameof(block));
+
             this.Blocks.Broadcast(block);
         }
 
         public void Signal(Transaction trx)
         {
+            Guard.NotNull(trx, nameof(trx));
+
             this.Transactions.Broadcast(trx);
         }
     }

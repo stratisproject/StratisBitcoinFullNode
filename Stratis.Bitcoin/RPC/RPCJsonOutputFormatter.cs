@@ -15,8 +15,14 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.RPC
 {
-	public class RPCJsonOutputFormatter : TextOutputFormatter
-	{
+    public interface IRPCJsonOutputFormatter
+    {
+        void WriteObject(TextWriter writer, object value);
+        Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding);
+    }
+
+    public class RPCJsonOutputFormatter : TextOutputFormatter, IRPCJsonOutputFormatter
+    {
 		private readonly IArrayPool<char> _charPool;
 
 		private JsonSerializer _serializer;
@@ -83,13 +89,13 @@ namespace Stratis.Bitcoin.RPC
 		/// <param name="writer">The <see cref="T:System.IO.TextWriter" /> used to write.</param>
 		/// <returns>The <see cref="T:Newtonsoft.Json.JsonWriter" /> used during serialization.</returns>
 		protected virtual JsonWriter CreateJsonWriter(TextWriter writer)
-		{
+		{			
             Guard.NotNull(writer, nameof(writer));
 
-            JsonTextWriter expr_14 = new JsonTextWriter(writer);
-			expr_14.ArrayPool = this._charPool;
-			expr_14.CloseOutput = false;
-			return expr_14;
+			JsonTextWriter jsonTextWriter = new JsonTextWriter(writer);
+			jsonTextWriter.ArrayPool = this._charPool;
+			jsonTextWriter.CloseOutput = false;
+			return jsonTextWriter;
 		}
 
 		/// <summary>
@@ -102,6 +108,7 @@ namespace Stratis.Bitcoin.RPC
 			{
 				this._serializer = JsonSerializer.Create(this.SerializerSettings);
 			}
+
 			return this._serializer;
 		}
 
@@ -109,8 +116,8 @@ namespace Stratis.Bitcoin.RPC
 		public override async Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
 		{
             Guard.NotNull(context, nameof(context));
-            Guard.NotNull(selectedEncoding, nameof(selectedEncoding));
-            
+            Guard.NotNull(selectedEncoding, nameof(selectedEncoding));          
+
 			MemoryStream result = new MemoryStream();
 			using(var writer = context.WriterFactory(result, selectedEncoding))
 			{

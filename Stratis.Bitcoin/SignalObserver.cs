@@ -5,6 +5,7 @@ using System.Reactive;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
 {
@@ -16,6 +17,8 @@ namespace Stratis.Bitcoin
     {
         protected override void OnErrorCore(Exception error)
         {
+            Guard.NotNull(error, nameof(error));
+
             Logging.Logs.FullNode.LogError(error.ToString());
         }
 
