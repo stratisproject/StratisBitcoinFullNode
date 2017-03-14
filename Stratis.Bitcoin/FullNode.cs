@@ -50,6 +50,15 @@ namespace Stratis.Bitcoin
 
 			this.Services = serviceProvider;
 
+			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+			this.DateTimeProvider = this.Services.ServiceProvider.GetService<DateTimeProvider>();
+			this.Network = this.Services.ServiceProvider.GetService<Network>();
+			this._Args = this.Services.ServiceProvider.GetService<NodeArgs>();
+			this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
+			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
+			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
+			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
+
 			return this;
 		}
 
@@ -120,18 +129,11 @@ namespace Stratis.Bitcoin
 				throw new ObjectDisposedException("FullNode");
 			_IsStarted.Reset();
 
-			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
-			this.DateTimeProvider = this.Services.ServiceProvider.GetService<DateTimeProvider>();
-			this.Network = this.Services.ServiceProvider.GetService<Network>();
-			this._Args = this.Services.ServiceProvider.GetService<NodeArgs>();
-			this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
-			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
-			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
-
 			StartFlushAddrManThread();
 			StartFlushChainThread();
 
-			if(_Args.RPC != null)
+			// == RPC ==  // todo: add an RPC feature
+			if (_Args.RPC != null)
 			{
 				RPCHost = new WebHostBuilder()
 				.UseKestrel()
@@ -166,8 +168,7 @@ namespace Stratis.Bitcoin
 			_Resources.Add(blockStoreCache);
 			_Resources.Add(blockRepository);
 			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
-			var blockStoreLoop = new BlockStoreLoop(this.Chain, this.ConnectionManager,
-				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, this._Cancellation, lightBlockPuller);
+			var blockStoreLoop = new BlockStoreLoop(this.Chain,blockRepository, _Args, this._ChainBehaviorState, this.GlobalCancellation, lightBlockPuller);
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
 				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
 			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
@@ -327,10 +328,10 @@ namespace Stratis.Bitcoin
 						_ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
 					}
 
-					if(block.Error == null)
+					if(!reorg && block.Error == null)
 					{
 						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
+						if(Chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
 						{
 							var unused = cache.FlushAsync();
 						}
