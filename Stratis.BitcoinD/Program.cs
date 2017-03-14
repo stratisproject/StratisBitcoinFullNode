@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging.Console;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Extensions;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using System;
@@ -10,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.MemoryPool;
 
 namespace Stratis.BitcoinD {
    public class Program {
@@ -17,17 +17,15 @@ namespace Stratis.BitcoinD {
          Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
          NodeArgs nodeArgs = NodeArgs.GetArgs(args);
 
-         //FullNode node = new FullNode(nodeArgs);
+			//FullNode node = new FullNode(nodeArgs);
 
-         ///actually cast to FullNode because fullnodebuilder return an interface to the node.
-         ///should the node expose its internals?
-         ///would be better to return FullNode instead?
-         var node = (FullNode)new FullNodeBuilder()
-            .UseNodeArgs(nodeArgs)
-            .UseMempool()
-            .Build();
+	      var node = (FullNode) new FullNodeBuilder()
+		      .UseNodeArgs(nodeArgs)
+		      .UseMempool()
+		      .Build();
 
-         CancellationTokenSource cts = new CancellationTokenSource();
+
+			CancellationTokenSource cts = new CancellationTokenSource();
          new Thread(() => {
             Console.WriteLine("Press one key to stop");
             Console.ReadLine();

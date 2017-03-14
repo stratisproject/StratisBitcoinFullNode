@@ -1,25 +1,12 @@
 ﻿using System;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
 
-namespace Stratis.Bitcoin {
-   /// <summary>
-   /// Represents a configured web host.
-   /// </summary>
-   public interface IFullNode : IDisposable {
-      ///// <summary>
-      ///// The <see cref="IFeatureCollection"/> exposed by the configured server.
-      ///// </summary>
-      //IFeatureCollection ServerFeatures { get; }
+namespace Stratis.Bitcoin.Builder
+{
+	public interface IFullNode 
+	{
+		FullNodeServiceProvider Services { get; }
 
-      /// <summary>
-      /// The <see cref="IServiceProvider"/> for the host.
-      /// </summary>
-      IServiceProvider Services { get; }
-
-      /// <summary>
-      /// Starts listening on the configured addresses.
-      /// </summary>
-      void Start();
-   }
+		void Start();
+	}
 }

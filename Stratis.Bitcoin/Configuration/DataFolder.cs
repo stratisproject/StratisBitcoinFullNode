@@ -6,15 +6,23 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Configuration
 {
+	/// <summary>
+	/// Contains path locations to folders and files on disk.
+	/// Used by various components of the full node.
+	/// </summary>
     public class DataFolder
     {
-		public DataFolder(string path)
+		// Note: a location name should described if its a file or a folder
+		// File - location name end with "File" (i.e AddrMan[File])
+		// Folder - location name end with "Path" (i.e CoinView[Path])
+		public DataFolder(NodeArgs args)
 		{
+			string path = args.DataDir;
 			CoinViewPath = Path.Combine(path, "coinview");
 			AddrManFile = Path.Combine(path, "addrman.dat");
 			ChainPath = Path.Combine(path, "chain");
 			BlockPath = Path.Combine(path, "blocks");
-			RPCCookiePath = Path.Combine(path, ".cookie");
+			RPCCookieFile = Path.Combine(path, ".cookie");
 		}
 
 		public string AddrManFile
@@ -36,7 +44,7 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			internal set;
 		}
-		public string RPCCookiePath
+		public string RPCCookieFile
 		{
 			get;
 			internal set;
