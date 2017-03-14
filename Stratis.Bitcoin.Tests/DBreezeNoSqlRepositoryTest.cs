@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Tests
 
             using (var repo = new DBreezeTestNoSqlRepository("TestRepo", dir))
             {
-                var task = repo.GetBytesWithKey("testKey");
+                var task = repo.GetBytes("testKey");
                 task.Wait();
 
                 Assert.Equal("keyValueResult", Encoding.UTF8.GetString(task.Result));
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests
         {
             using (var repo = new DBreezeTestNoSqlRepository("TestRepo", AssureEmptyDir("TestData/DBreezeNoSqlRepository/GetBytesWithKeyRetrievesNullWhenKeyNotExists")))
             {
-                var task = repo.GetBytesWithKey("testKey");
+                var task = repo.GetBytes("testKey");
                 task.Wait();
 
                 Assert.Equal(null, task.Result);
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests
             var expected = Encoding.UTF8.GetBytes("keyData");
             using (var repo = new DBreezeTestNoSqlRepository("TestRepo2", dir))
             {
-                var task = repo.PutBytesWithKeyAndData("dataKey", expected);
+                var task = repo.PutBytes("dataKey", expected);
                 task.Wait();
             }
 
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Tests
 
             using (var repo = new DBreezeTestNoSqlRepository("TestRepo3", dir))
             {
-                var task = repo.PutBytesBatchWithList(expected);
+                var task = repo.PutBytesBatch(expected);
                 task.Wait();
             }
 
@@ -98,17 +98,17 @@ namespace Stratis.Bitcoin.Tests
             {
             }
 
-            public Task<byte[]> GetBytesWithKey(string key)
+            public new Task<byte[]> GetBytes(string key)
             {
                 return base.GetBytes(key);
             }
 
-            public Task PutBytesWithKeyAndData(string key, byte[] data)
+            public new Task PutBytes(string key, byte[] data)
             {
                 return base.PutBytes(key, data);
             }
 
-            public Task PutBytesBatchWithList(IEnumerable<Tuple<string, byte[]>> enumerable)
+            public new Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable)
             {
                 return base.PutBytesBatch(enumerable);
             }
