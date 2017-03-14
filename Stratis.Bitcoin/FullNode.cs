@@ -45,11 +45,9 @@ namespace Stratis.Bitcoin
 
 		public FullNode Initialize(FullNodeServiceProvider serviceProvider)
 		{
-			if (serviceProvider == null)
-				throw new ArgumentNullException(nameof(serviceProvider));
-
+            Guard.NotNull(serviceProvider, nameof(serviceProvider));
+            
 			this.Services = serviceProvider;
-
 			return this;
 		}
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -16,9 +17,9 @@ namespace Stratis.Bitcoin.Consensus
 		}
 		public UnspentOutputs(uint height, Transaction tx)
 		{
-			if(tx == null)
-				throw new ArgumentNullException("tx");
-			_Outputs = tx.Outputs.ToArray();
+            Guard.NotNull(tx, nameof(tx));
+
+            _Outputs = tx.Outputs.ToArray();
 			_TransactionId = tx.GetHash();
 			_Height = height;
 			_Version = tx.Version;

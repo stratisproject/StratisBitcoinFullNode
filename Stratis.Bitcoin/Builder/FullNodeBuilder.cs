@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Builder
 {
@@ -63,19 +64,17 @@ namespace Stratis.Bitcoin.Builder
 
 		public IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices)
 		{
-			if (configureServices == null)
-				throw new ArgumentNullException(nameof(configureServices));
+            Guard.NotNull(configureServices, nameof(configureServices));
 
-			configureServicesDelegates.Add(configureServices);
+            configureServicesDelegates.Add(configureServices);
 			return this;
 		}
 
 		public IFullNodeBuilder ConfigureFeature(Action<FeatureCollection> configureFeatures)
 		{
-			if (configureFeatures == null)
-				throw new ArgumentNullException(nameof(configureFeatures));
+            Guard.NotNull(configureFeatures, nameof(configureFeatures));
 
-			featuresRegistrationDelegates.Add(configureFeatures);
+            featuresRegistrationDelegates.Add(configureFeatures);
 			return this;
 		}
 

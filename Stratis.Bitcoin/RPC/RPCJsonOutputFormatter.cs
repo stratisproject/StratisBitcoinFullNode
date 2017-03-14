@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.RPC
 {
@@ -43,14 +44,9 @@ namespace Stratis.Bitcoin.RPC
 		/// <param name="charPool">The <see cref="T:System.Buffers.ArrayPool`1" />.</param>
 		public RPCJsonOutputFormatter(JsonSerializerSettings serializerSettings, ArrayPool<char> charPool)
 		{
-			if(serializerSettings == null)
-			{
-				throw new ArgumentNullException("serializerSettings");
-			}
-			if(charPool == null)
-			{
-				throw new ArgumentNullException("charPool");
-			}
+            Guard.NotNull(serializerSettings, nameof(serializerSettings));
+            Guard.NotNull(charPool, nameof(charPool));
+            
 			SerializerSettings = serializerSettings;
 			this._charPool = new JsonArrayPool<char>(charPool);
 			base.SupportedEncodings.Add(Encoding.UTF8);
@@ -73,11 +69,9 @@ namespace Stratis.Bitcoin.RPC
 		/// <param name="value">The value to write as JSON.</param>
 		public void WriteObject(TextWriter writer, object value)
 		{
-			if(writer == null)
-			{
-				throw new ArgumentNullException("writer");
-			}
-			using(JsonWriter jsonWriter = this.CreateJsonWriter(writer))
+            Guard.NotNull(writer, nameof(writer));
+
+            using (JsonWriter jsonWriter = this.CreateJsonWriter(writer))
 			{
 				this.CreateJsonSerializer().Serialize(jsonWriter, value);
 			}
@@ -90,11 +84,9 @@ namespace Stratis.Bitcoin.RPC
 		/// <returns>The <see cref="T:Newtonsoft.Json.JsonWriter" /> used during serialization.</returns>
 		protected virtual JsonWriter CreateJsonWriter(TextWriter writer)
 		{
-			if(writer == null)
-			{
-				throw new ArgumentNullException("writer");
-			}
-			JsonTextWriter expr_14 = new JsonTextWriter(writer);
+            Guard.NotNull(writer, nameof(writer));
+
+            JsonTextWriter expr_14 = new JsonTextWriter(writer);
 			expr_14.ArrayPool = this._charPool;
 			expr_14.CloseOutput = false;
 			return expr_14;
@@ -116,16 +108,9 @@ namespace Stratis.Bitcoin.RPC
 		/// <inheritdoc />
 		public override async Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
 		{
-			if(context == null)
-			{
-				throw new ArgumentNullException(nameof(context));
-			}
-
-			if(selectedEncoding == null)
-			{
-				throw new ArgumentNullException(nameof(selectedEncoding));
-			}
-
+            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(selectedEncoding, nameof(selectedEncoding));
+            
 			MemoryStream result = new MemoryStream();
 			using(var writer = context.WriterFactory(result, selectedEncoding))
 			{

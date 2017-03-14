@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -98,8 +99,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public override void SetLocation(ChainedBlock tip)
 		{
-			if(tip == null)
-				throw new ArgumentNullException(nameof(tip));
+		    Guard.NotNull(tip, nameof(tip));
 			_Location = tip;
 		}
 

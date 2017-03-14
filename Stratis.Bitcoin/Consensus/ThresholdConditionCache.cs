@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -29,8 +30,8 @@ namespace Stratis.Bitcoin.Consensus
 
 		public ThresholdConditionCache(NBitcoin.Consensus consensus)
 		{
-			if(consensus == null)
-				throw new ArgumentNullException("consensus");
+            Guard.NotNull(consensus, nameof(consensus));
+
 			_Consensus = consensus;
 		}
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -46,10 +47,9 @@ namespace Stratis.Bitcoin.Consensus
 
         public ConsensusError(string code, string message)
         {
-            if(code == null)
-                throw new ArgumentNullException("code");
-            if(message == null)
-                throw new ArgumentNullException("message");
+            Guard.NotEmpty(code, nameof(code));
+            Guard.NotEmpty(message, nameof(message));
+            
             _Code = code;
             _Message = message;
         }

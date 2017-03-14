@@ -7,6 +7,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
@@ -19,9 +20,9 @@ namespace Stratis.Bitcoin.BlockStore
 		ChainState _State;
 		public ChainBehavior(ConcurrentChain chain, ChainState chainState)
 		{
-			if (chain == null)
-				throw new ArgumentNullException("chain");
-			_State = chainState;
+            Guard.NotNull(chain, nameof(chain));
+
+            _State = chainState;
 			_Chain = chain;
 			AutoSync = true;
 			CanSync = true;

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -15,8 +16,8 @@ namespace Stratis.Bitcoin.Consensus
 		}
 		public ContextBlockInformation(ChainedBlock bestBlock, NBitcoin.Consensus consensus)
 		{
-			if(bestBlock == null)
-				throw new ArgumentNullException("bestBlock");       
+            Guard.NotNull(bestBlock, nameof(bestBlock));
+            
 			Header = bestBlock.Header;
 			Height = bestBlock.Height;
 			MedianTimePast = bestBlock.GetMedianTimePast();
@@ -48,9 +49,9 @@ namespace Stratis.Bitcoin.Consensus
 
 		public ContextInformation(ChainedBlock nextBlock, NBitcoin.Consensus consensus)
 		{
-			if(nextBlock == null)
-				throw new ArgumentNullException("nextBlock");
-			BestBlock = new ContextBlockInformation(nextBlock.Previous, consensus);
+            Guard.NotNull(nextBlock, nameof(nextBlock));
+
+            BestBlock = new ContextBlockInformation(nextBlock.Previous, consensus);
 			Time = DateTimeOffset.UtcNow;
 			NextWorkRequired = nextBlock.GetWorkRequired(consensus);
 		}

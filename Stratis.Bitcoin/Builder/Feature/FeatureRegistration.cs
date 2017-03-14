@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Builder.Feature
 {
@@ -22,10 +23,9 @@ namespace Stratis.Bitcoin.Builder.Feature
 
 		public FeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
 		{
-			if (configureServices == null)
-				throw new ArgumentNullException(nameof(configureServices));
-
-			ConfigureServicesDelegates.Add(configureServices);
+            Guard.NotNull(configureServices, nameof(configureServices));
+            
+            ConfigureServicesDelegates.Add(configureServices);
 
 			return this;
 		}
