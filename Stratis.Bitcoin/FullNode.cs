@@ -45,9 +45,8 @@ namespace Stratis.Bitcoin
 
 		public FullNode Initialize(FullNodeServiceProvider serviceProvider)
 		{
-			if (serviceProvider == null)
-				throw new ArgumentNullException(nameof(serviceProvider));
-
+			Guard.NotNull(serviceProvider, nameof(serviceProvider));
+			
 			this.Services = serviceProvider;
 
 			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
@@ -484,7 +483,7 @@ namespace Stratis.Bitcoin
 
 		private void StartPeriodicLog()
 		{
-            AsyncLoop.Run("PeriodicLog", (cancellation) =>
+			AsyncLoop.Run("PeriodicLog", (cancellation) =>
 			{
 				// TODO: move stats to each of its components 
 
@@ -503,10 +502,10 @@ namespace Stratis.Bitcoin
 				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
 				Logs.Bench.LogInformation(benchLogs.ToString());
 				return Task.CompletedTask;
-            },
-            _Cancellation.Token,
-            repeatEvery: TimeSpans.FiveSeconds,
-            startAfter: TimeSpans.FiveSeconds);
+			},
+			_Cancellation.Token,
+			repeatEvery: TimeSpans.FiveSeconds,
+			startAfter: TimeSpans.FiveSeconds);
 		}
 
 		public void WaitDisposed()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
@@ -24,10 +25,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public BlockRepository(Network network, string folder)
 		{
-			if (folder == null)
-				throw new ArgumentNullException("folder");
-			if (network == null)
-				throw new ArgumentNullException("network");
+			Guard.NotNull(network, nameof(network));
+			Guard.NotEmpty(folder, nameof(folder));
 
 			this.session = new DBreezeSingleThreadSession("DBreeze BlockRepository", folder);
 			this.network = network;
