@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			SizeWithDescendants = GetTxSize();
 			ModFeesWithDescendants = Fee;
 			Money nValueIn = transaction.TotalOut + Fee;
-			Check.Assert(InChainInputValue <= nValueIn);
+			Guard.Assert(InChainInputValue <= nValueIn);
 
 			feeDelta = 0;
 
@@ -122,22 +122,22 @@ namespace Stratis.Bitcoin.MemoryPool
 		public void UpdateDescendantState(long modifySize, Money modifyFee, long modifyCount)
 		{
 			SizeWithDescendants += modifySize;
-			Check.Assert(SizeWithDescendants > 0);
+			Guard.Assert(SizeWithDescendants > 0);
 			ModFeesWithDescendants += modifyFee;
 			CountWithDescendants += modifyCount;
-			Check.Assert(CountWithDescendants > 0);
+			Guard.Assert(CountWithDescendants > 0);
 		}
 
 		// Adjusts the ancestor state
 		public void UpdateAncestorState(long modifySize, Money modifyFee, long modifyCount, long modifySigOps)
 		{
 			SizeWithAncestors += modifySize;
-			Check.Assert(SizeWithAncestors > 0);
+			Guard.Assert(SizeWithAncestors > 0);
 			ModFeesWithAncestors += modifyFee;
 			CountWithAncestors += modifyCount;
-			Check.Assert(CountWithAncestors > 0);
+			Guard.Assert(CountWithAncestors > 0);
 			SigOpCostWithAncestors += modifySigOps;
-			Check.Assert(SigOpCostWithAncestors >= 0);
+			Guard.Assert(SigOpCostWithAncestors >= 0);
 		}
 
 		// Updates the fee delta used for mining priority score, and the

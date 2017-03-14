@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.BlockStore
 					await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
             },
             cancellationToken,
-            repeateEvery: TimeSpans.Second,
+            repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.FiveSeconds);
 		}
 	}

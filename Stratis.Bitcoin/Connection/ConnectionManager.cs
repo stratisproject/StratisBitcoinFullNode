@@ -46,6 +46,11 @@ namespace Stratis.Bitcoin.Connection
 			private set;
 		}
 
+		public  NodeConnectionParameters Parameters
+		{
+			get { return this._Parameters; }
+		}
+
 		NodeConnectionParameters _Parameters;
 		ConnectionManagerArgs _Args;
 		public ConnectionManager(Network network, NodeConnectionParameters parameters, ConnectionManagerArgs args)

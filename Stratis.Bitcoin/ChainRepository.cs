@@ -10,8 +10,14 @@ using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin
 {
-	public class ChainRepository : IDisposable
-	{		
+    public interface IChainRepository : IDisposable
+    {
+	    Task Load(ConcurrentChain chain);
+		Task Save(ConcurrentChain chain);
+    }
+
+    public class ChainRepository : IChainRepository
+    {		
 		DBreezeSingleThreadSession _Session;
 
 		public ChainRepository(string folder)
@@ -20,8 +26,10 @@ namespace Stratis.Bitcoin
 		}
 		
 		BlockLocator _Locator;
-		public Task<ConcurrentChain> GetChain()
+		public Task Load(ConcurrentChain chain)
 		{
+			Guard.Assert(chain.Tip == chain.Genesis);
+
 			return _Session.Do(() =>
 			{
 				ChainedBlock tip = null;
@@ -32,11 +40,9 @@ namespace Stratis.Bitcoin
 					tip = new ChainedBlock(row.Value, null, tip);
 				}
 				if(tip == null)
-					return null;
+					return;
 				_Locator = tip.GetLocator();
-				var chain = new ConcurrentChain();
 				chain.SetTip(tip);
-				return chain;
 			});
 		}
 

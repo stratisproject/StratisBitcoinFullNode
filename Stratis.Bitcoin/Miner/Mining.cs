@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Miner
 				Block block = new Block();
 				block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
 				//block.Header.Bits = GetWorkRequired(fullNode.Network.Consensus,new ChainedBlock(block.Header, (uint256) null, fullNode.Chain.Tip));
-				block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
+				block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
 				block.Header.UpdateTime(dateTimeProvider.GetTimeOffset(), fullNode.Network, fullNode.Chain.Tip);
 				var coinbase = new Transaction();
 				coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
@@ -56,14 +56,16 @@ namespace Stratis.Bitcoin.Miner
 				//}
 				block.UpdateMerkleRoot();
 				var retry = 0;
-			    while (!block.CheckProofOfWork() && !fullNode.IsDisposed && ++retry < maxTries)
-			        block.Header.Nonce = ++nonce;
-                
+				while (!block.CheckProofOfWork() && !fullNode.IsDisposed && ++retry < maxTries)
+					block.Header.Nonce = ++nonce;
 				if (fullNode.IsDisposed || retry >= maxTries)
 					return blocks.Select(b => b.GetHash()).ToList();
-				blocks.Add(block);
 				if (block.Header.HashPrevBlock != fullNode.Chain.Tip.HashBlock)
-					return Enumerable.Empty<uint256>().ToList(); // a new block was found
+				{
+					i--;
+					continue; // a new block was found continue to look
+				}
+				blocks.Add(block);
 				var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
 				fullNode.Chain.SetTip(newChain);
 
@@ -129,7 +131,7 @@ namespace Stratis.Bitcoin.Miner
 			// Go back by what we want to be 14 days worth of blocks
 			var pastHeight = pindexLast.Height - (consensus.DifficultyAdjustmentInterval - 1);
 			ChainedBlock pindexFirst = chainedBlock.EnumerateToGenesis().FirstOrDefault(o => o.Height == pastHeight);
-			Check.Assert(pindexFirst != null);
+			Guard.Assert(pindexFirst != null);
 
 			if (consensus.PowNoRetargeting)
 				return pindexLast.Header.Bits;

@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.Configuration
 			nodeArgs.Mempool.Load(config);
 			nodeArgs.Store.Load(config);
 
-			var folder = new DataFolder(nodeArgs.DataDir);
+			var folder = new DataFolder(nodeArgs);
 			if(!Directory.Exists(folder.CoinViewPath))
 				Directory.CreateDirectory(folder.CoinViewPath);
 			return nodeArgs;

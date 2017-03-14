@@ -59,6 +59,12 @@ namespace Stratis.Bitcoin.BlockStore
 			return Task.WhenAll(new[] {sync, hash});
 		}
 
+		public bool LazyLoadingOn
+		{
+			get { return this.session.Transaction.ValuesLazyLoadingIsOn; }
+			set { this.session.Transaction.ValuesLazyLoadingIsOn = value; }
+		}
+
 		public Task<Transaction> GetTrxAsync(uint256 trxid)
 		{
 			if (!this.TxIndex)

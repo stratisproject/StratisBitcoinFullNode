@@ -1,49 +1,89 @@
-﻿using Stratis.Bitcoin.Configuration;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using System.Linq;
+using System.IO;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using System.IO;
-using Stratis.Bitcoin.RPC;
-using NBitcoin;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Logging;
-using Stratis.Bitcoin.Consensus;
-using NBitcoin.Protocol;
 using Microsoft.AspNetCore.Hosting.Internal;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.BlockPulling;
-using System.Text;
-using System.Runtime.ExceptionServices;
 using Stratis.Bitcoin.BlockStore;
-using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
+using Stratis.Bitcoin.RPC;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
 {
-	public class FullNode : IDisposable
+
+	public class FullNode : IFullNode, IDisposable
 	{
+		private ApplicationLifetime applicationLifetime; // this will replace the cancellation token on the full node
+		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
+
+		public FullNodeServiceProvider Services { get; set; }
+
 		NodeArgs _Args;
+
 		public NodeArgs Args
 		{
-			get
-			{
-				return _Args;
-			}
+			get { return _Args; }
 		}
 
-		public FullNode(NodeArgs args)
+		public FullNode Initialize(FullNodeServiceProvider serviceProvider)
 		{
-			if(args == null)
-				throw new ArgumentNullException("args");
-			_Args = args;
-			Network = _Args.GetNetwork();
+			if (serviceProvider == null)
+				throw new ArgumentNullException(nameof(serviceProvider));
+
+			this.Services = serviceProvider;
+
+			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+			this.DateTimeProvider = this.Services.ServiceProvider.GetService<DateTimeProvider>();
+			this.Network = this.Services.ServiceProvider.GetService<Network>();
+			this._Args = this.Services.ServiceProvider.GetService<NodeArgs>();
+			this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
+			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
+			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
+			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
+
+			return this;
+		}
+
+		protected void StartFeatures()
+		{
+			this.applicationLifetime = this.Services?.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
+			this.fullNodeFeatureExecutor = this.Services?.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
+
+			// Fire IApplicationLifetime.Started
+			this.applicationLifetime?.NotifyStarted();
+
+			//start all registered features
+			this.fullNodeFeatureExecutor?.Start();
+		}
+
+		protected void DisposeFeatures()
+		{
+			// Fire IApplicationLifetime.Stopping
+			this.applicationLifetime?.StopApplication();
+			// Fire the IHostedService.Stop
+			this.fullNodeFeatureExecutor?.Stop();
+			(this.Services.ServiceProvider as IDisposable)?.Dispose();
+			//(this.Services.ServiceProvider as IDisposable)?.Dispose();
+			// Fire IApplicationLifetime.Stopped
+			this.applicationLifetime?.NotifyStopped();
 		}
 
 		public Network Network
@@ -81,22 +121,19 @@ namespace Stratis.Bitcoin
 		}
 
 		List<IDisposable> _Resources = new List<IDisposable>();
+		public List<IDisposable> Resources => _Resources;
+
 		public void Start()
 		{
 			if(IsDisposed)
 				throw new ObjectDisposedException("FullNode");
 			_IsStarted.Reset();
-			DataFolder = new DataFolder(_Args.DataDir);
-			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
-			_Resources.Add(coinviewDB);
-			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
 
-
-			_Cancellation = new CancellationTokenSource();
 			StartFlushAddrManThread();
 			StartFlushChainThread();
 
-			if(_Args.RPC != null)
+			// == RPC ==  // todo: add an RPC feature
+			if (_Args.RPC != null)
 			{
 				RPCHost = new WebHostBuilder()
 				.UseKestrel()
@@ -111,20 +148,17 @@ namespace Stratis.Bitcoin
 			}
 
 			this.Signals = new Signals();
-			this.DateTimeProvider = DateTimeProvider.Default;
-
-			this._ChainBehaviorState = new BlockStore.ChainBehavior.ChainState(this);
 
 			if(AddressManager.Count == 0)
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
 			// == Connection == 
-			var connectionParameters = new NodeConnectionParameters();
+			ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();// new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
+			var connectionParameters = ConnectionManager.Parameters; //new NodeConnectionParameters();
 			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
 			connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
 			connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
-			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
@@ -134,27 +168,17 @@ namespace Stratis.Bitcoin
 			_Resources.Add(blockStoreCache);
 			_Resources.Add(blockRepository);
 			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
-			var blockStoreLoop = new BlockStoreLoop(this.Chain, this.ConnectionManager,
-				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, this._Cancellation, lightBlockPuller);
+			var blockStoreLoop = new BlockStoreLoop(this.Chain,blockRepository, _Args, this._ChainBehaviorState, this.GlobalCancellation, lightBlockPuller);
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
 				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
-			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
-			connectionParameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
+			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
+			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
 			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
 			// === Consensus ===
-			var consensusValidator = new ConsensusValidator(Network.Consensus);
+			var consensusValidator = this.Services.ServiceProvider.GetService<ConsensusValidator>();// new ConsensusValidator(Network.Consensus);
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
 			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-
-			// === memory pool ==
-			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee, _Args);
-			var mempoolScheduler = new AsyncLock();
-			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, this.DateTimeProvider, _Args, this.Chain, this.CoinView);
-			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, this.DateTimeProvider, _Args);
-			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, this.DateTimeProvider, _Args);
-			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager, this.ChainBehaviorState));
-			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain, this.ConnectionManager, this._Cancellation));
 
 			// === Miner ===
 			this.Miner = new Mining(this, this.DateTimeProvider);
@@ -162,6 +186,11 @@ namespace Stratis.Bitcoin
 			var flags = ConsensusLoop.GetFlags();
 			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
 				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+
+			// add disposables (TODO: move this to the consensus feature)
+			this.Resources.Add(this.Services.ServiceProvider.GetService<DBreezeCoinView>());
+
+			this.StartFeatures();
 
 			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 			ConnectionManager.Start();
@@ -361,9 +390,8 @@ namespace Stratis.Bitcoin
 			ChainRepository = new ChainRepository(DataFolder.ChainPath);
 			_Resources.Add(ChainRepository);
 			Logs.FullNode.LogInformation("Loading chain");
-			Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
-			Chain = Chain ?? new ConcurrentChain(Network);
-			Check.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
+			ChainRepository.Load(Chain).GetAwaiter().GetResult();
+			Guard.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
 			Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
 			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
 			{
@@ -412,6 +440,15 @@ namespace Stratis.Bitcoin
 		public PeriodicTask FlushChainTask
 		{
 			get; set;
+		}
+
+		public CancellationProvider GlobalCancellation
+		{
+			get; set;
+		}
+		public class CancellationProvider
+		{
+			public CancellationTokenSource Cancellation { get; set; }
 		}
 
 		ManualResetEvent _IsDisposed = new ManualResetEvent(false);
@@ -468,7 +505,7 @@ namespace Stratis.Bitcoin
 				return Task.CompletedTask;
             },
             _Cancellation.Token,
-            repeateEvery: TimeSpans.FiveSeconds,
+            repeatEvery: TimeSpans.FiveSeconds,
             startAfter: TimeSpans.FiveSeconds);
 		}
 

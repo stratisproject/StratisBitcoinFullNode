@@ -27,7 +27,7 @@ using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Stratis.Bitcoin.Connection;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.IntegrationTests
 {
 	public class Class1
 	{
@@ -441,15 +441,19 @@ namespace Stratis.Bitcoin.Tests
 				using(var repo = new ChainRepository(dir.FolderName))
 				{
 					var chain = new ConcurrentChain(Network.RegTest);
+					repo.Load(chain).GetAwaiter().GetResult();
+					Assert.True(chain.Tip == chain.Genesis);
+					chain = new ConcurrentChain(Network.RegTest);
 					var tip = AppendBlock(chain);
-					Assert.Null(repo.GetChain().GetAwaiter().GetResult());
 					repo.Save(chain).GetAwaiter().GetResult();
-					chain = repo.GetChain().GetAwaiter().GetResult();
-					Assert.Equal(tip, chain.Tip);
+					var newChain = new ConcurrentChain();
+					repo.Load(newChain).GetAwaiter().GetResult();
+					Assert.Equal(tip, newChain.Tip);
 					tip = AppendBlock(chain);
 					repo.Save(chain).GetAwaiter().GetResult();
-					chain = repo.GetChain().GetAwaiter().GetResult();
-					Assert.Equal(tip, chain.Tip);
+					newChain = new ConcurrentChain();
+					repo.Load(newChain).GetAwaiter().GetResult();
+					Assert.Equal(tip, newChain.Tip);
 				}
 			}
 		}

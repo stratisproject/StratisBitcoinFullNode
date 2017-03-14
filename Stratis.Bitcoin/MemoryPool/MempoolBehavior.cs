@@ -35,7 +35,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly Dictionary<uint256, uint256> inventoryTxToSend;
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
-		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
+		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, 
+			ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
 		{
 			this.validator = validator;
 			this.manager = manager;
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private async Task ProcessInvAsync(Node node, InvPayload invPayload)
 		{
-			Check.Assert(node == this.AttachedNode); // just in case
+			Guard.Assert(node == this.AttachedNode); // just in case
 
 			if (invPayload.Inventory.Count > ConnectionManager.MAX_INV_SZ)
 			{
@@ -156,7 +157,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
 		{
-			Check.Assert(node == this.AttachedNode); // just in case
+			Guard.Assert(node == this.AttachedNode); // just in case
 
 			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
 			{
@@ -238,7 +239,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		/// </summary>
 		public async Task SendMempoolPayload(Node node, MempoolPayload message)
 		{
-			Check.Assert(node == this.AttachedNode); // just in case
+			Guard.Assert(node == this.AttachedNode); // just in case
 
 			if (!this.CanSend)
 				return;
