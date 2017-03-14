@@ -25,6 +25,12 @@ namespace Stratis.BitcoinD
 				.UseMempool()
 				.Build();
 
+			// new mining code
+			node.Network.Consensus.PowNoRetargeting = false;
+			node.Network.Consensus.PowAllowMinDifficultyBlocks = false;
+			node.Network.Consensus.PowTargetTimespan = TimeSpan.FromMinutes(10);
+			node.Network.Consensus.PowTargetSpacing = TimeSpan.FromMinutes(1);
+
 			// == shout down thread ==
 			new Thread(() =>
 			{

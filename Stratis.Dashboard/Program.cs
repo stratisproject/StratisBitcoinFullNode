@@ -8,14 +8,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.MemoryPool;
 
 namespace Stratis.Dashboard {
    public class Program {
       public static void Main(string[] args) {
          Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
          NodeArgs nodeArgs = NodeArgs.GetArgs(args);
-         FullNode node = new FullNode(nodeArgs);
-         CancellationTokenSource cts = new CancellationTokenSource();
+			var node = (FullNode)new FullNodeBuilder()
+				 .UseNodeArgs(nodeArgs)
+				 .UseMempool()
+				 .Build();
+			CancellationTokenSource cts = new CancellationTokenSource();
          new Thread(() => {
             Console.WriteLine("Press one key to stop");
             Console.ReadLine();
