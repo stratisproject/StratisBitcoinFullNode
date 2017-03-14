@@ -60,8 +60,12 @@ namespace Stratis.Bitcoin.Miner
 					block.Header.Nonce = ++nonce;
 				if (fullNode.IsDisposed || retry >= maxTries)
 					return blocks.Select(b => b.GetHash()).ToList();
+				if (block.Header.HashPrevBlock != fullNode.Chain.Tip.HashBlock)
+				{
+					i--;
+					continue; // a new block was found continue to look
+				}
 				blocks.Add(block);
-
 				var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
 				fullNode.Chain.SetTip(newChain);
 
