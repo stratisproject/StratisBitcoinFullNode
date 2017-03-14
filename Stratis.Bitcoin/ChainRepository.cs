@@ -22,6 +22,8 @@ namespace Stratis.Bitcoin
 
 		public ChainRepository(string folder)
 		{
+            Guard.NotEmpty(folder, nameof(folder));
+
 			_Session = new DBreezeSingleThreadSession("DBreeze ChainRepository", folder);
 		}
 		
@@ -48,6 +50,8 @@ namespace Stratis.Bitcoin
 
 		public Task Save(ConcurrentChain chain)
 		{
+            Guard.NotNull(chain, nameof(chain));
+
 			return _Session.Do(() =>
 			{
 				var fork = _Locator == null ? null : chain.FindFork(_Locator);

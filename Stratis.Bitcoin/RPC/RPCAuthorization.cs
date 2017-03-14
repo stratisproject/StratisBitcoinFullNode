@@ -3,35 +3,59 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.RPC
 {
-    public class RPCAuthorization
+    public interface IRPCAuthorization
     {
+        List<IPAddress> AllowIp { get; }
+        List<string> Authorized { get; }
 
-		private readonly List<string> _Authorized = new List<string>();
-		public List<string> Authorized
-		{
-			get
-			{
-				return _Authorized;
-			}
-		}
+        bool IsAuthorized(string user);
+        bool IsAuthorized(IPAddress ip);
+    }
 
-		public List<IPAddress> AllowIp
-		{
-			get; set;
-		} = new List<IPAddress>();
+    public class RPCAuthorization : IRPCAuthorization
+    {
+        private readonly List<string> authorized;
+        private readonly List<IPAddress> allowIp;
 
-		public bool IsAuthorized(string user)
-		{
-			return Authorized.Any(a => a.Equals(user, StringComparison.OrdinalIgnoreCase));
-		}
-		public bool IsAuthorized(IPAddress ip)
-		{
-			if(AllowIp.Count == 0)
-				return true;
-			return AllowIp.Any(i => i.AddressFamily == ip.AddressFamily && i.Equals(ip));
-		}
-	}
+        public RPCAuthorization()
+        {
+            this.allowIp = new List<IPAddress>();
+            this.authorized = new List<string>();
+        }
+
+        public List<string> Authorized
+        {
+            get
+            {
+                return this.authorized;
+            }
+        }
+
+        public List<IPAddress> AllowIp
+        {
+            get
+            {
+                return this.allowIp;
+            }
+        }
+
+        public bool IsAuthorized(string user)
+        {
+            Guard.NotEmpty(user, nameof(user));
+
+            return Authorized.Any(a => a.Equals(user, StringComparison.OrdinalIgnoreCase));
+        }
+        public bool IsAuthorized(IPAddress ip)
+        {
+            Guard.NotNull(ip, nameof(ip));
+
+            if (AllowIp.Count == 0)
+                return true;
+            return AllowIp.Any(i => i.AddressFamily == ip.AddressFamily && i.Equals(ip));
+        }
+    }
 }
