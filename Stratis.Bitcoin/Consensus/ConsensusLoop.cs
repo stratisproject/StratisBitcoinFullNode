@@ -29,11 +29,11 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, BlockPuller puller)
 		{
-            Guard.NotNull(validator, nameof(validator));
-            Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(utxoSet, nameof(utxoSet));
-            Guard.NotNull(puller, nameof(puller));
-            
+			Guard.NotNull(validator, nameof(validator));
+			Guard.NotNull(chain, nameof(chain));
+			Guard.NotNull(utxoSet, nameof(utxoSet));
+			Guard.NotNull(puller, nameof(puller));
+			
 			_Validator = validator;
 			_Chain = chain;
 			_utxoSet = utxoSet;

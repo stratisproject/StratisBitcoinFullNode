@@ -17,9 +17,9 @@ namespace Stratis.Bitcoin.Consensus
 		}
 		public UnspentOutputs(uint height, Transaction tx)
 		{
-            Guard.NotNull(tx, nameof(tx));
+			Guard.NotNull(tx, nameof(tx));
 
-            _Outputs = tx.Outputs.ToArray();
+			_Outputs = tx.Outputs.ToArray();
 			_TransactionId = tx.GetHash();
 			_Height = height;
 			_Version = tx.Version;

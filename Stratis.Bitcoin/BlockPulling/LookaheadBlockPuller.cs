@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public override void SetLocation(ChainedBlock tip)
 		{
-		    Guard.NotNull(tip, nameof(tip));
+			Guard.NotNull(tip, nameof(tip));
 			_Location = tip;
 		}
 

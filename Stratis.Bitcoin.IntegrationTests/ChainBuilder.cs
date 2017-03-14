@@ -16,8 +16,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		Network _Network;
 		public ChainBuilder(Network network)
 		{
-            Guard.NotNull(network, nameof(network));
-            
+			Guard.NotNull(network, nameof(network));
+			
 			_Network = network;
 			_Chain = new ConcurrentChain(_Network);
 			MinerKey = new Key();

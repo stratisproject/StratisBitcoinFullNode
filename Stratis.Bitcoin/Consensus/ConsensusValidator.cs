@@ -34,9 +34,9 @@ namespace Stratis.Bitcoin.Consensus
 
 		public ConsensusValidator(NBitcoin.Consensus consensusParams)
 		{
-            Guard.NotNull(consensusParams, nameof(consensusParams));
+			Guard.NotNull(consensusParams, nameof(consensusParams));
 
-            _ConsensusParams = consensusParams;
+			_ConsensusParams = consensusParams;
 		}
 
 		public NBitcoin.Consensus ConsensusParams
@@ -697,9 +697,9 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void ContextualCheckBlockHeader(BlockHeader header, ContextInformation context)
 		{
-            Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
+			Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
 
-            int nHeight = context.BestBlock.Height + 1;
+			int nHeight = context.BestBlock.Height + 1;
 
 			// Check proof of work
 			if(header.Bits != context.NextWorkRequired)

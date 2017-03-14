@@ -23,9 +23,9 @@ namespace Stratis.Bitcoin.Builder.Feature
 
 		public FeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
 		{
-            Guard.NotNull(configureServices, nameof(configureServices));
-            
-            ConfigureServicesDelegates.Add(configureServices);
+			Guard.NotNull(configureServices, nameof(configureServices));
+			
+			ConfigureServicesDelegates.Add(configureServices);
 
 			return this;
 		}

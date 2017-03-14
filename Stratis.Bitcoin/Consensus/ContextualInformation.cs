@@ -16,8 +16,8 @@ namespace Stratis.Bitcoin.Consensus
 		}
 		public ContextBlockInformation(ChainedBlock bestBlock, NBitcoin.Consensus consensus)
 		{
-            Guard.NotNull(bestBlock, nameof(bestBlock));
-            
+			Guard.NotNull(bestBlock, nameof(bestBlock));
+			
 			Header = bestBlock.Header;
 			Height = bestBlock.Height;
 			MedianTimePast = bestBlock.GetMedianTimePast();
@@ -49,9 +49,9 @@ namespace Stratis.Bitcoin.Consensus
 
 		public ContextInformation(ChainedBlock nextBlock, NBitcoin.Consensus consensus)
 		{
-            Guard.NotNull(nextBlock, nameof(nextBlock));
+			Guard.NotNull(nextBlock, nameof(nextBlock));
 
-            BestBlock = new ContextBlockInformation(nextBlock.Previous, consensus);
+			BestBlock = new ContextBlockInformation(nextBlock.Previous, consensus);
 			Time = DateTimeOffset.UtcNow;
 			NextWorkRequired = nextBlock.GetWorkRequired(consensus);
 		}

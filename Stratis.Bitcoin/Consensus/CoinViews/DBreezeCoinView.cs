@@ -17,9 +17,9 @@ namespace Stratis.Bitcoin.Consensus
 		Network _Network;
 		public DBreezeCoinView(Network network, string folder)
 		{
-            Guard.NotNull(network, nameof(network));
-            Guard.NotEmpty(folder, nameof(folder));
-            
+			Guard.NotNull(network, nameof(network));
+			Guard.NotEmpty(folder, nameof(folder));
+			
 			_Session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
 			_Network = network;
 			Initialize(network.GetGenesis()).GetAwaiter().GetResult(); // hmm...

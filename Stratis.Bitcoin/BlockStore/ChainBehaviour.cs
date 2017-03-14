@@ -20,9 +20,9 @@ namespace Stratis.Bitcoin.BlockStore
 		ChainState _State;
 		public ChainBehavior(ConcurrentChain chain, ChainState chainState)
 		{
-            Guard.NotNull(chain, nameof(chain));
+			Guard.NotNull(chain, nameof(chain));
 
-            _State = chainState;
+			_State = chainState;
 			_Chain = chain;
 			AutoSync = true;
 			CanSync = true;
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.BlockStore
 			// Ignoring getheaders from peers because node is in initial block download
 			var getheaders = message.Message.Payload as GetHeadersPayload;
 			if (getheaders != null && CanRespondToGetHeaders &&
-			    (!this.SharedState.IsInitialBlockDownload || 
+				(!this.SharedState.IsInitialBlockDownload || 
 				this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted)) // if not in IBD whitelisted won't be checked
 			{
 				HeadersPayload headers = new HeadersPayload();

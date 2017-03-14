@@ -64,17 +64,17 @@ namespace Stratis.Bitcoin.Builder
 
 		public IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices)
 		{
-            Guard.NotNull(configureServices, nameof(configureServices));
+			Guard.NotNull(configureServices, nameof(configureServices));
 
-            configureServicesDelegates.Add(configureServices);
+			configureServicesDelegates.Add(configureServices);
 			return this;
 		}
 
 		public IFullNodeBuilder ConfigureFeature(Action<FeatureCollection> configureFeatures)
 		{
-            Guard.NotNull(configureFeatures, nameof(configureFeatures));
+			Guard.NotNull(configureFeatures, nameof(configureFeatures));
 
-            featuresRegistrationDelegates.Add(configureFeatures);
+			featuresRegistrationDelegates.Add(configureFeatures);
 			return this;
 		}
 

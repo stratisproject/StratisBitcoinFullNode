@@ -570,7 +570,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private SetEntries GetMemPoolParents(TxMempoolEntry entry)
 		{
-            Guard.NotNull(entry, nameof(entry));
+			Guard.NotNull(entry, nameof(entry));
 
 			Utilities.Guard.Assert(MapTx.ContainsKey(entry.TransactionHash));
 			var it = mapLinks.TryGet(entry);
@@ -580,8 +580,8 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private SetEntries GetMemPoolChildren(TxMempoolEntry entry)
 		{
-            Guard.NotNull(entry, nameof(entry));
-            
+			Guard.NotNull(entry, nameof(entry));
+			
 			Utilities.Guard.Assert(MapTx.ContainsKey(entry.TransactionHash));
 			var it = mapLinks.TryGet(entry);
 			Utilities.Guard.Assert(it != null);

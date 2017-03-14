@@ -25,8 +25,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public BlockRepository(Network network, string folder)
 		{
-            Guard.NotNull(network, nameof(network));
-            Guard.NotEmpty(folder, nameof(folder));
+			Guard.NotNull(network, nameof(network));
+			Guard.NotEmpty(folder, nameof(folder));
 
 			this.session = new DBreezeSingleThreadSession("DBreeze BlockRepository", folder);
 			this.network = network;
