@@ -22,9 +22,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		private void WaitReachBlock(FullNode fullNode, int height)
 		{
-			while(true)
+			while (true)
 			{
-				if(fullNode?.ConsensusLoop?.Tip?.Height >= height)
+				if (fullNode?.ConsensusLoop?.Tip?.Height >= height)
 				{
 					break;
 				}
@@ -33,16 +33,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public void ValidSomeBlocksOnMainnet()
 		{
-			using(NodeContext ctx = NodeContext.Create(network: Network.Main))
+			using (NodeContext ctx = NodeContext.Create(network: Network.Main))
 			{
 				var nodeArgs = new NodeArgs();
 				nodeArgs.DataDir = ctx.FolderName;
 				nodeArgs.ConnectionManager.Connect.Add(new IPEndPoint(IPAddress.Loopback, ctx.Network.DefaultPort));
-				var fullNode = new FullNode(nodeArgs);
+				var fullNode = StratisBitcoinRunner.BuildFullNode(nodeArgs);
 				fullNode.Start();
 				int increment = 20000;
 				int reachNext = increment;
-				for(int i = 0; i < 10; i++)
+				for (int i = 0; i < 10; i++)
 				{
 					WaitReachBlock(fullNode, reachNext);
 					fullNode = Restart(fullNode);
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			fullNode.Dispose();
 			fullNode.ThrowIfUncatchedException();
-			fullNode = new FullNode(fullNode.Args);
+			fullNode = StratisBitcoinRunner.BuildFullNode(fullNode.Args);
 			fullNode.Start();
 			return fullNode;
 		}

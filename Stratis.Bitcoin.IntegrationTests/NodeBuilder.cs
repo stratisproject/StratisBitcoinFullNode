@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
 
@@ -53,8 +54,21 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public void Start(string dataDir)
 		{
 			var args = NodeArgs.GetArgs(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
-			FullNode = new FullNode(args);
+
+			var node = BuildFullNode(args);
+
+			FullNode = node;
 			FullNode.Start();
+		}
+
+		public static FullNode BuildFullNode(NodeArgs args)
+		{
+			var node = (FullNode)new FullNodeBuilder()
+				.UseNodeArgs(args)
+				.UseMempool()
+				.Build();
+
+			return node;
 		}
 
 		public FullNode FullNode;
