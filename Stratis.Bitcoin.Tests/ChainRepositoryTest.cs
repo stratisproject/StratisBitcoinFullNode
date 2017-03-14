@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests
 {
-    public class ChainRepositoryTest
+    public class ChainRepositoryTest : TestBase
     {
         [Fact]
         public void SaveWritesChainToDisk()
@@ -69,17 +69,7 @@ namespace Stratis.Bitcoin.Tests
                 repo.Load(testChain).GetAwaiter().GetResult();
                 Assert.Equal(tip, testChain.Tip);
             }
-        }
-
-        private static string AssureEmptyDir(string dir)
-        {
-            if (Directory.Exists(dir))
-            {
-                Directory.Delete(dir, true);
-            }
-
-            return dir;
-        }
+        }        
 
         public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
         {
