@@ -57,7 +57,8 @@ namespace Stratis.Bitcoin
 			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
 			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
 			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
-
+			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
+			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
 			return this;
 		}
 
@@ -145,9 +146,7 @@ namespace Stratis.Bitcoin
 				_Resources.Add(RPCHost);
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
-
-			this.Signals = new Signals();
-
+			
 			if(AddressManager.Count == 0)
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
@@ -161,7 +160,7 @@ namespace Stratis.Bitcoin
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
-			// === BlockSgtore ===
+			// === BlockStore ===
 			var blockRepository = new BlockRepository(this.Network, DataFolder.BlockPath);
 			var blockStoreCache = new BlockStoreCache(blockRepository);
 			_Resources.Add(blockStoreCache);
@@ -189,6 +188,7 @@ namespace Stratis.Bitcoin
 			// add disposables (TODO: move this to the consensus feature)
 			this.Resources.Add(this.Services.ServiceProvider.GetService<DBreezeCoinView>());
 
+			// start all the features defined 
 			this.StartFeatures();
 
 			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
