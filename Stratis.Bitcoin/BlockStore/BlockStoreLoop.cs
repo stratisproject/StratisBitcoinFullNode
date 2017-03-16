@@ -23,13 +23,13 @@ namespace Stratis.Bitcoin.BlockStore
 	{
 		private readonly ConcurrentChain chain;
 		public BlockRepository BlockRepository { get; } // public for testing
-		private readonly NodeArgs nodeArgs;
+		private readonly NodeSettings nodeArgs;
 		private readonly BlockingPuller blockPuller;
 		public BlockStore.ChainBehavior.ChainState ChainState { get; }
 
 		public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
-		public BlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, NodeArgs nodeArgs,
+		public BlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, NodeSettings nodeArgs,
 			BlockStore.ChainBehavior.ChainState chainState,
 			FullNode.CancellationProvider cancellationProvider, BlockingPuller blockPuller)
 		{

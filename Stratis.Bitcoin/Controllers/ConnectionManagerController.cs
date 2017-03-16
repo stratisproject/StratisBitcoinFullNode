@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Controllers
 		[ActionName("addnode")]
 		public bool AddNode(string endpointStr, string command)
 		{
-			var endpoint = NodeArgs.ConvertToEndpoint(endpointStr, _FullNode.Network.DefaultPort);
+			var endpoint = NodeSettings.ConvertToEndpoint(endpointStr, _FullNode.Network.DefaultPort);
 			switch(command)
 			{
 				case "add":

@@ -19,11 +19,11 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly TxMempool memPool;
 
 		public DateTimeProvider DateTimeProvider { get; }
-		public NodeArgs NodeArgs { get; set; }
+		public NodeSettings NodeArgs { get; set; }
 
 
 		public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool, 
-			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
+			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;

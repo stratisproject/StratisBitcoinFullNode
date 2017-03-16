@@ -36,11 +36,11 @@ namespace Stratis.Bitcoin
 
 		public FullNodeServiceProvider Services { get; set; }
 
-		NodeArgs _Args;
+		NodeSettings _Settings;
 
-		public NodeArgs Args
+		public NodeSettings Settings
 		{
-			get { return _Args; }
+			get { return _Settings; }
 		}
 
 		public FullNode Initialize(FullNodeServiceProvider serviceProvider)
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin
 			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
 			this.DateTimeProvider = this.Services.ServiceProvider.GetService<DateTimeProvider>();
 			this.Network = this.Services.ServiceProvider.GetService<Network>();
-			this._Args = this.Services.ServiceProvider.GetService<NodeArgs>();
+			this._Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
 			this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
 			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
 			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin
 				return true;
 			if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
 				return true;
-			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Args.MaxTipAge))
+			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
 				return true;
 			return false;
 		}
@@ -135,24 +135,24 @@ namespace Stratis.Bitcoin
 			this.StartFeatures();
 
 			// == RPC ==  // todo: add an RPC feature
-			if (_Args.RPC != null)
+			if (_Settings.RPC != null)
 			{
 				RPCHost = new WebHostBuilder()
 				.UseKestrel()
 				.ForFullNode(this)
-				.UseUrls(_Args.RPC.GetUrls())
+				.UseUrls(_Settings.RPC.GetUrls())
 				.UseIISIntegration()
 				.UseStartup<RPC.Startup>()
 				.Build();
 				RPCHost.Start();
 				_Resources.Add(RPCHost);
-				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
+				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Settings.RPC.GetUrls()));
 			}
 
 			// == Connection == 
 			var connectionParameters = ConnectionManager.Parameters; //new NodeConnectionParameters();
-			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
-			connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+			connectionParameters.IsRelay = _Settings.Mempool.RelayTxes;
+			connectionParameters.Services = (Settings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
@@ -162,12 +162,12 @@ namespace Stratis.Bitcoin
 			_Resources.Add(blockStoreCache);
 			_Resources.Add(blockRepository);
 			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
-			var blockStoreLoop = new BlockStoreLoop(this.Chain, blockRepository, _Args, this._ChainBehaviorState, this.GlobalCancellation, lightBlockPuller);
+			var blockStoreLoop = new BlockStoreLoop(this.Chain, blockRepository, _Settings, this._ChainBehaviorState, this.GlobalCancellation, lightBlockPuller);
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
+				blockRepository, this.DateTimeProvider, _Settings, this._ChainBehaviorState, blockStoreLoop);
 			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
 			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
-			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
+			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Settings, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
 			// === Consensus ===
 			var consensusValidator = this.Services.ServiceProvider.GetService<ConsensusValidator>();// new ConsensusValidator(Network.Consensus);

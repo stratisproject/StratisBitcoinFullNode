@@ -58,17 +58,17 @@ namespace Stratis.Bitcoin.Builder
 		}
 
 		/// <summary>
-		/// accepts a NodeArgs instance and register required services
+		/// accepts a NodeSettings instance and register required services
 		/// </summary>
-		/// <param name="nodeArgs"></param>
-		public FullNodeBuilder(NodeArgs nodeArgs) : base()
+		/// <param name="nodeSettings"></param>
+		public FullNodeBuilder(NodeSettings nodeSettings) : base()
 		{
-			this.NodeArgs = nodeArgs ?? NodeArgs.Default();
-			this.Network = nodeArgs.GetNetwork();
+			this.NodeSettings = nodeSettings ?? NodeSettings.Default();
+			this.Network = nodeSettings.GetNetwork();
 
 			ConfigureServices(service =>
 			{
-				service.AddSingleton(this.NodeArgs);
+				service.AddSingleton(this.NodeSettings);
 				service.AddSingleton(this.Network);
 			});
 
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Builder
 
 		public FeatureCollection Features { get; }
 
-		public NodeArgs NodeArgs { get; set; }
+		public NodeSettings NodeSettings { get; set; }
 		public Network Network { get; set; }
 
 		/// <summary>
@@ -128,10 +128,10 @@ namespace Stratis.Bitcoin.Builder
 			var fullNodeServiceProvider = Services.BuildServiceProvider();
 			ConfigureServices(fullNodeServiceProvider);
 
-			//obtain the nodeArgs from the service (it's set used FullNodeBuilder.UseNodeArgs)
-			var nodeArgs = fullNodeServiceProvider.GetService<NodeArgs>();
-			if (nodeArgs == null)
-				throw new NodeBuilderException("NodeArgs not specified");
+			//obtain the nodeSettings from the service (it's set used FullNodeBuilder.UseNodeSettings)
+			var nodeSettings = fullNodeServiceProvider.GetService<NodeSettings>();
+			if (nodeSettings == null)
+				throw new NodeBuilderException("NodeSettings not specified");
 
 			var fullNode = fullNodeServiceProvider.GetService<FullNode>();
 
