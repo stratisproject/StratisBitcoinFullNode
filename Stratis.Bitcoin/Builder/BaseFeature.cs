@@ -1,20 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Builder.Feature;
@@ -52,14 +46,11 @@ namespace Stratis.Bitcoin.Builder
 		private BlockStore.ChainBehavior.ChainState _chainBehaviorState;
 		private Signals _signals;
 		private ConnectionManager _connectionManager;
-		private NodesBlockPuller _nodesBlockPuller;
 
 
 		private PeriodicTask _flushChainTask;
 
 		private PeriodicTask _flushAddressManagerTask;
-
-		public BlockStoreManager BlockStoreManager { get; private set; }
 
 		public BaseFeature(
 			NodeArgs nodeArgs, //node settings
@@ -71,8 +62,7 @@ namespace Stratis.Bitcoin.Builder
 			ConcurrentChain chain,
 			BlockStore.ChainBehavior.ChainState chainState,
 			Signals signals, //event aggregator
-			ConnectionManager connectionManager,
-			NodesBlockPuller nodesBlockPuller
+			ConnectionManager connectionManager
 			)
 		{
 			this._nodeArgs = Guard.NotNull(nodeArgs, nameof(nodeArgs));
@@ -85,7 +75,6 @@ namespace Stratis.Bitcoin.Builder
 			this._chainBehaviorState = Guard.NotNull(chainState, nameof(chainState));
 			this._signals = Guard.NotNull(signals, nameof(signals));
 			this._connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
-			this._nodesBlockPuller = Guard.NotNull(nodesBlockPuller, nameof(nodesBlockPuller));
 		}
 
 		public override void Start()
@@ -94,25 +83,8 @@ namespace Stratis.Bitcoin.Builder
 
 			StartAddressManager();
 			StartChain();
-			StartBlockStore();
 		}
 
-		private void StartBlockStore()
-		{
-			var blockRepository = AutoDispose(new BlockStore.BlockRepository(_network, _dataFolder.BlockPath));
-			var blockStoreCache = AutoDispose(new BlockStoreCache(blockRepository));
-
-			var lightBlockPuller = new BlockingPuller(_chain, _connectionManager.ConnectedNodes);
-			var blockStoreLoop = new BlockStoreLoop(_chain, blockRepository, _nodeArgs, _chainBehaviorState, _fullNodeInstance.GlobalCancellation, lightBlockPuller);
-			BlockStoreManager = new BlockStoreManager(_chain, _connectionManager,
-			   blockRepository, _dateTimeProvider, _nodeArgs, _chainBehaviorState, blockStoreLoop);
-
-			AddNodeBehavior(new BlockStoreBehavior(_chain, BlockStoreManager.BlockRepository, blockStoreCache));
-			AddNodeBehavior(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
-
-			_signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, _chain, _nodeArgs, _chainBehaviorState, _connectionManager, _cancellationProvider.Cancellation));
-			_fullNodeInstance.BlockStoreManager = BlockStoreManager;
-		}
 
 		private void StartConnectionManager()
 		{
@@ -194,10 +166,6 @@ namespace Stratis.Bitcoin.Builder
 			Logs.FullNode.LogInformation("FlushChain stopped");
 			_flushChainTask?.RunOnce();
 
-
-			Logs.FullNode.LogInformation("Flushing BlockStore...");
-			BlockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
-
 			foreach (var disposable in _disposableResources)
 			{
 				disposable.Dispose();
@@ -237,37 +205,15 @@ namespace Stratis.Bitcoin.Builder
 					var network = fullNodeBuilder.Network;
 
 					services.AddSingleton<DataFolder>((serviceProvider) => new DataFolder(nodeArgs));
-
 					services.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
 					services.AddSingleton<FullNodeFeatureExecutor>();
 					services.AddSingleton<FullNode>();
+					services.AddSingleton<Signals>();
 					services.AddSingleton<ConcurrentChain>((serviceProvider) => new ConcurrentChain(network));
 					services.AddSingleton(DateTimeProvider.Default);
-
-					services.AddSingleton((serviceProvider) =>
-					{
-						return new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() };
-					});
-
 					services.AddSingleton<BlockStore.ChainBehavior.ChainState>();
-
-
-					services.AddSingleton<ConnectionManager>(serviceProvider =>
-					{
-						return new ConnectionManager(network, new NodeConnectionParameters(), nodeArgs);
-					});
-
-
-					services.AddSingleton<NodesBlockPuller>(serviceProvider =>
-				   {
-					   var chain = Guard.NotNull(serviceProvider.GetService<ConcurrentChain>(), nameof(ConcurrentChain));
-					   var connectionManager = Guard.NotNull(serviceProvider.GetService<ConnectionManager>(), nameof(ConnectionManager));
-
-					   var nodePuller = new NodesBlockPuller(chain, connectionManager.ConnectedNodes);
-					   connectionManager.Parameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(nodePuller));
-
-					   return nodePuller;
-				   });
+					services.AddSingleton(serviceProvider => new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() });
+					services.AddSingleton<ConnectionManager>(serviceProvider => new ConnectionManager(network, new NodeConnectionParameters(), nodeArgs));
 				});
 			});
 

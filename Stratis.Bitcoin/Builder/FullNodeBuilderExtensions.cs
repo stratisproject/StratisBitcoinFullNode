@@ -51,7 +51,6 @@ namespace Stratis.Bitcoin.Builder
 				service.AddSingleton(consensusValidator);
 				service.AddSingleton<DBreezeCoinView>(coinviewdb);
 				service.AddSingleton<CoinView>(coinView);
-				service.AddSingleton<Signals>();
 			});
 
 		}

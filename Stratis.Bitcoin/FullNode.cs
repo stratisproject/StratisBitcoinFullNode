@@ -91,22 +91,22 @@ namespace Stratis.Bitcoin
 		public Network Network
 		{
 			get;
-			private set;
+			internal set;
 		}
 
 		public CoinView CoinView
 		{
-			get; private set;
+			get; set;
 		}
 
 		public DataFolder DataFolder
 		{
-			get; private set;
+			get; set;
 		}
 
 		public DateTimeProvider DateTimeProvider
 		{
-			get; private set;
+			get; set;
 		}
 
 		public bool IsInitialBlockDownload()
@@ -131,6 +131,9 @@ namespace Stratis.Bitcoin
 				throw new ObjectDisposedException("FullNode");
 			_IsStarted.Reset();
 
+			// start all the features defined 
+			this.StartFeatures();
+
 			// == RPC ==  // todo: add an RPC feature
 			if (_Args.RPC != null)
 			{
@@ -146,14 +149,28 @@ namespace Stratis.Bitcoin
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
 
-			// start all the features defined 
-			this.StartFeatures();
+			// == Connection == 
+			var connectionParameters = ConnectionManager.Parameters; //new NodeConnectionParameters();
+			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
+			connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
+			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
-			//moved after StartFeatures because it needs a loaded Chain
+			// === BlockStore ===
+			var blockRepository = new BlockRepository(this.Network, DataFolder.BlockPath);
+			var blockStoreCache = new BlockStoreCache(blockRepository);
+			_Resources.Add(blockStoreCache);
+			_Resources.Add(blockRepository);
+			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
+			var blockStoreLoop = new BlockStoreLoop(this.Chain, blockRepository, _Args, this._ChainBehaviorState, this.GlobalCancellation, lightBlockPuller);
+			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
+				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
+			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
+			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
+			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
 			// === Consensus ===
 			var consensusValidator = this.Services.ServiceProvider.GetService<ConsensusValidator>();// new ConsensusValidator(Network.Consensus);
-			var blockPuller = this.Services.ServiceProvider.GetService<NodesBlockPuller>();
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
 			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 
@@ -166,6 +183,7 @@ namespace Stratis.Bitcoin
 
 			// add disposables (TODO: move this to the consensus feature)
 			this.Resources.Add(this.Services.ServiceProvider.GetService<DBreezeCoinView>());
+
 
 			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 			ConnectionManager.Start();
@@ -355,7 +373,6 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
-
 		public ConnectionManager ConnectionManager
 		{
 			get; set;
@@ -366,6 +383,15 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
+		public AddressManager AddressManager
+		{
+			get; set;
+		}
+
+		public ChainRepository ChainRepository
+		{
+			get; set;
+		}
 
 		public BlockStoreManager BlockStoreManager
 		{
@@ -467,6 +493,7 @@ namespace Stratis.Bitcoin
 			if (_Cancellation != null)
 			{
 				_Cancellation.Cancel();
+
 				var cache = CoinView as CachedCoinView;
 				if (cache != null)
 				{
@@ -474,7 +501,10 @@ namespace Stratis.Bitcoin
 					cache.FlushAsync().GetAwaiter().GetResult();
 				}
 
+				Logs.FullNode.LogInformation("Flushing BlockStore...");
+				this.BlockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
 
+				ConnectionManager.Dispose();
 				foreach (var dispo in _Resources)
 					dispo.Dispose();
 
