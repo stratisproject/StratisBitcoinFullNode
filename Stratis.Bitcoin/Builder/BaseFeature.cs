@@ -111,6 +111,7 @@ namespace Stratis.Bitcoin.Builder
 			AddNodeBehavior(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
 
 			_signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, _chain, _nodeArgs, _chainBehaviorState, _connectionManager, _cancellationProvider.Cancellation));
+			_fullNodeInstance.BlockStoreManager = BlockStoreManager;
 		}
 
 		private void StartConnectionManager()
