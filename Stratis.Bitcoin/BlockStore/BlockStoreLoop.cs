@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 			if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
 			{
-				if (this.chain.Tip != this.chain.Genesis)
+				if (this.StoredBlock != this.chain.Genesis)
 					throw new BlockStoreException("You need to rebuild the database using -reindex-chainstate to change -txindex");
 				if (this.nodeArgs.Store.TxIndex)
 					await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
