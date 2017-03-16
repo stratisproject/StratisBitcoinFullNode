@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin
 		public FullNode Initialize(FullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
-			
+
 			this.Services = serviceProvider;
 
 			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
@@ -59,6 +59,8 @@ namespace Stratis.Bitcoin
 			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
 			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
 			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
+
+			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
 			return this;
 		}
 
@@ -125,12 +127,12 @@ namespace Stratis.Bitcoin
 
 		public void Start()
 		{
-			if(IsDisposed)
+			if (IsDisposed)
 				throw new ObjectDisposedException("FullNode");
 			_IsStarted.Reset();
 
-			StartFlushAddrManThread();
-			StartFlushChainThread();
+			// start all the features defined 
+			this.StartFeatures();
 
 			// == RPC ==  // todo: add an RPC feature
 			if (_Args.RPC != null)
@@ -146,17 +148,11 @@ namespace Stratis.Bitcoin
 				_Resources.Add(RPCHost);
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
 			}
-			
-			if(AddressManager.Count == 0)
-				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 
 			// == Connection == 
-			ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();// new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
 			var connectionParameters = ConnectionManager.Parameters; //new NodeConnectionParameters();
 			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
-			connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
-			connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
-			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
+			connectionParameters.Services = (Args.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
 
@@ -166,7 +162,7 @@ namespace Stratis.Bitcoin
 			_Resources.Add(blockStoreCache);
 			_Resources.Add(blockRepository);
 			var lightBlockPuller = new BlockingPuller(this.Chain, this.ConnectionManager.ConnectedNodes);
-			var blockStoreLoop = new BlockStoreLoop(this.Chain,blockRepository, _Args, this._ChainBehaviorState, this.GlobalCancellation, lightBlockPuller);
+			var blockStoreLoop = new BlockStoreLoop(this.Chain, blockRepository, _Args, this._ChainBehaviorState, this.GlobalCancellation, lightBlockPuller);
 			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
 				blockRepository, this.DateTimeProvider, _Args, this._ChainBehaviorState, blockStoreLoop);
 			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
@@ -182,14 +178,12 @@ namespace Stratis.Bitcoin
 			this.Miner = new Mining(this, this.DateTimeProvider);
 
 			var flags = ConsensusLoop.GetFlags();
-			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
+			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
 				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
 			// add disposables (TODO: move this to the consensus feature)
 			this.Resources.Add(this.Services.ServiceProvider.GetService<DBreezeCoinView>());
 
-			// start all the features defined 
-			this.StartFeatures();
 
 			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
 			ConnectionManager.Start();
@@ -206,7 +200,7 @@ namespace Stratis.Bitcoin
 		private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
 		public BlockStore.ChainBehavior.ChainState ChainBehaviorState
 		{
-			get { return _ChainBehaviorState; } 
+			get { return _ChainBehaviorState; }
 		}
 
 		public class ConsensusStats
@@ -242,7 +236,7 @@ namespace Stratis.Bitcoin
 			{
 				get
 				{
-					return this.fullNode._ChainBehaviorState.IsInitialBlockDownload && 
+					return this.fullNode._ChainBehaviorState.IsInitialBlockDownload &&
 						(DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
 				}
 			}
@@ -293,26 +287,26 @@ namespace Stratis.Bitcoin
 				var stack = new CoinViewStack(CoinView);
 				var cache = stack.Find<CachedCoinView>();
 				var stats = new ConsensusStats(this, stack);
-				
+
 				ChainedBlock lastTip = ConsensusLoop.Tip;
-				foreach(var block in ConsensusLoop.Execute(_Cancellation.Token))
+				foreach (var block in ConsensusLoop.Execute(_Cancellation.Token))
 				{
 					bool reorg = false;
-					if(ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
+					if (ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
 					{
 						reorg = true;
 						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
 					}
 					lastTip = ConsensusLoop.Tip;
 					_Cancellation.Token.ThrowIfCancellationRequested();
-					if(block.Error != null)
+					if (block.Error != null)
 					{
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
 
 						//Pull again
 						ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
 
-						if(block.Error == ConsensusErrors.BadWitnessNonceSize)
+						if (block.Error == ConsensusErrors.BadWitnessNonceSize)
 						{
 							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
 							ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
@@ -327,10 +321,10 @@ namespace Stratis.Bitcoin
 						_ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
 					}
 
-					if(!reorg && block.Error == null)
+					if (!reorg && block.Error == null)
 					{
 						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						if(Chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
+						if (Chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
 						{
 							var unused = cache.FlushAsync();
 						}
@@ -343,14 +337,14 @@ namespace Stratis.Bitcoin
 						stats.Log();
 				}
 			}
-			catch(Exception ex) //TODO: Barbaric clean exit
+			catch (Exception ex) //TODO: Barbaric clean exit
 			{
-				if(ex is OperationCanceledException)
+				if (ex is OperationCanceledException)
 				{
-					if(_Cancellation.IsCancellationRequested)
+					if (_Cancellation.IsCancellationRequested)
 						return;
 				}
-				if(!IsDisposed)
+				if (!IsDisposed)
 				{
 					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + ConsensusLoop.Tip?.Height + ")");
 					_UncatchedException = ex;
@@ -377,25 +371,6 @@ namespace Stratis.Bitcoin
 		public IWebHost RPCHost
 		{
 			get; set;
-		}
-
-		private void StartFlushChainThread()
-		{
-			if(!Directory.Exists(DataFolder.ChainPath))
-			{
-				Logs.FullNode.LogInformation("Creating " + DataFolder.ChainPath);
-				Directory.CreateDirectory(DataFolder.ChainPath);
-			}
-			ChainRepository = new ChainRepository(DataFolder.ChainPath);
-			_Resources.Add(ChainRepository);
-			Logs.FullNode.LogInformation("Loading chain");
-			ChainRepository.Load(Chain).GetAwaiter().GetResult();
-			Guard.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
-			Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
-			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
-			{
-				ChainRepository.Save(Chain);
-			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		public ConnectionManager ConnectionManager
@@ -461,26 +436,6 @@ namespace Stratis.Bitcoin
 			}
 		}
 
-		private void StartFlushAddrManThread()
-		{
-			if(!File.Exists(DataFolder.AddrManFile))
-			{
-				Logs.FullNode.LogInformation("Creating " + DataFolder.AddrManFile);
-				AddressManager = new AddressManager();
-				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-			}
-			else
-			{
-				Logs.FullNode.LogInformation("Loading addrman");
-				AddressManager = AddressManager.LoadPeerFile(DataFolder.AddrManFile);
-				Logs.FullNode.LogInformation("Loaded");
-			}
-			FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) =>
-			{
-				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
-		}
-
 		private void StartPeriodicLog()
 		{
 			AsyncLoop.Run("PeriodicLog", (cancellation) =>
@@ -488,8 +443,8 @@ namespace Stratis.Bitcoin
 				// TODO: move stats to each of its components 
 
 				StringBuilder benchLogs = new StringBuilder();
-				
-				benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)); 
+
+				benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture));
 				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
 				benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
 				benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
@@ -530,21 +485,17 @@ namespace Stratis.Bitcoin
 
 		public void Dispose()
 		{
-			if(IsDisposed)
+			if (IsDisposed)
 				return;
 			_IsDisposedValue = true;
 			Logs.FullNode.LogInformation("Closing node pending...");
 			_IsStarted.WaitOne();
-			if(_Cancellation != null)
+			if (_Cancellation != null)
 			{
 				_Cancellation.Cancel();
-				FlushAddrmanTask.RunOnce();
-				Logs.FullNode.LogInformation("FlushAddrMan stopped");
-				FlushChainTask.RunOnce();
-				Logs.FullNode.LogInformation("FlushChain stopped");
 
 				var cache = CoinView as CachedCoinView;
-				if(cache != null)
+				if (cache != null)
 				{
 					Logs.FullNode.LogInformation("Flushing Cache CoinView...");
 					cache.FlushAsync().GetAwaiter().GetResult();
@@ -554,8 +505,10 @@ namespace Stratis.Bitcoin
 				this.BlockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
 
 				ConnectionManager.Dispose();
-				foreach(var dispo in _Resources)
+				foreach (var dispo in _Resources)
 					dispo.Dispose();
+
+				DisposeFeatures();
 			}
 			_IsDisposed.Set();
 			_HasExited = true;
@@ -563,11 +516,11 @@ namespace Stratis.Bitcoin
 
 		public void ThrowIfUncatchedException()
 		{
-			if(_UncatchedException != null)
+			if (_UncatchedException != null)
 			{
 				var ex = _UncatchedException;
 				var aex = _UncatchedException as AggregateException;
-				if(aex != null)
+				if (aex != null)
 					ex = aex.InnerException;
 				ExceptionDispatchInfo.Capture(ex).Throw();
 			}

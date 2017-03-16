@@ -1,11 +1,17 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Builder
 {
 	public interface IFullNodeBuilder
 	{
+		NodeArgs NodeArgs { get; }
+
+		Network Network { get; }
+
 		IServiceCollection Services { get; }
 
 		IFullNode Build();

@@ -18,12 +18,12 @@ namespace Stratis.Bitcoin.Builder
 			nodeBuilder.NodeArgs = nodeArgs;
 			nodeBuilder.Network = nodeArgs.GetNetwork();
 
-			builder.ConfigureServices(service => 
+			builder.ConfigureServices(service =>
 			{
 				service.AddSingleton(nodeBuilder.NodeArgs);
 				service.AddSingleton(nodeBuilder.Network);
 			});
-			
+
 			// the required services can be added once the args are set
 			return builder.AddRequired();
 		}
@@ -39,45 +39,18 @@ namespace Stratis.Bitcoin.Builder
 
 			return builder.ConfigureServices(service =>
 			{
-				var nodeBuilder = builder as FullNodeBuilder;
+				builder.UseBaseFeature();
 
-				// Base node services, this are the services a node has to have
-				// the ConnectionManagerFeature is also part of the base but may go in a feature of its own
-				// the base features are the minimal components required to connect to peers and maintain the best chain
-				// the base node services for a node are: 
-				// - the ConcurrentChain to keep track of the best chain 
-				// - the ConnectionManager to connect with the network
-				// - DatetimeProvider and Cancellation
-				// - CancellationProvider and Cancellation
-				// - DataFolder 
-				// - ChainState
 
-				// TODO: move to NodeBaseFeature (or a RequiredFeature)
-				service.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
-				service.AddSingleton<FullNodeFeatureExecutor>();
-				service.AddSingleton<FullNode>();
-				service.AddSingleton(new ConcurrentChain(nodeBuilder.Network));
-				service.AddSingleton(DateTimeProvider.Default);
-				var dataFolder = new DataFolder(nodeBuilder.NodeArgs);
-				service.AddSingleton(dataFolder);
-				var cancellation = new CancellationTokenSource();
-				var cancellationProvider = new FullNode.CancellationProvider() { Cancellation = cancellation };
-				service.AddSingleton(cancellationProvider);
-				service.AddSingleton<BlockStore.ChainBehavior.ChainState>();
+				var dataFolder = new DataFolder(builder.NodeArgs);
 
 				// TODO: move to ConsensusFeature (required for mempool)
-				var coinviewdb = new DBreezeCoinView(nodeBuilder.Network, dataFolder.CoinViewPath);
-				var coinView = new CachedCoinView(coinviewdb) {MaxItems = nodeBuilder.NodeArgs.Cache.MaxItems};
-				var consensusValidator = new ConsensusValidator(nodeBuilder.Network.Consensus);
+				var coinviewdb = new DBreezeCoinView(builder.Network, dataFolder.CoinViewPath);
+				var coinView = new CachedCoinView(coinviewdb) { MaxItems = builder.NodeArgs.Cache.MaxItems };
+				var consensusValidator = new ConsensusValidator(builder.Network.Consensus);
 				service.AddSingleton(consensusValidator);
 				service.AddSingleton<DBreezeCoinView>(coinviewdb);
 				service.AddSingleton<CoinView>(coinView);
-				service.AddSingleton<Signals>();
-
-				// TODO: move to ConnectionManagerFeature
-				var connectionManager = new ConnectionManager(nodeBuilder.Network, new NodeConnectionParameters(),
-					nodeBuilder.NodeArgs.ConnectionManager);
-				service.AddSingleton(connectionManager);
 			});
 
 		}

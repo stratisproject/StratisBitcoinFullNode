@@ -54,7 +54,25 @@ namespace Stratis.Bitcoin.Builder
 			configureServicesDelegates = new List<Action<IServiceCollection>>();
 			configureDelegates = new List<Action<IServiceProvider>>();
 			featuresRegistrationDelegates = new List<Action<FeatureCollection>>();
-			Features = new FeatureCollection();			
+			Features = new FeatureCollection();
+		}
+
+		/// <summary>
+		/// accepts a NodeArgs instance and register required services
+		/// </summary>
+		/// <param name="nodeArgs"></param>
+		public FullNodeBuilder(NodeArgs nodeArgs) : base()
+		{
+			this.NodeArgs = nodeArgs ?? NodeArgs.Default();
+			this.Network = nodeArgs.GetNetwork();
+
+			ConfigureServices(service =>
+			{
+				service.AddSingleton(this.NodeArgs);
+				service.AddSingleton(this.Network);
+			});
+
+			this.AddRequired();
 		}
 
 		public FeatureCollection Features { get; }
@@ -87,7 +105,7 @@ namespace Stratis.Bitcoin.Builder
 			featuresRegistrationDelegates.Add(configureFeatures);
 			return this;
 		}
-		
+
 		public IFullNodeBuilder Configure(Action<IServiceProvider> configure)
 		{
 			if (configure == null)
