@@ -72,6 +72,9 @@ namespace Stratis.Bitcoin.Miner
 				var blockResult = new BlockResult {Block = block};
 				fullNode.ConsensusLoop.AcceptBlock(blockResult);
 
+				if(blockResult.ChainedBlock == null)
+					break; //reorg
+
 				// similar logic to what's in the full node code
 				if (blockResult.Error == null)
 				{

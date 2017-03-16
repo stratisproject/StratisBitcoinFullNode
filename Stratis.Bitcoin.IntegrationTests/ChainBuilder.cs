@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -15,8 +16,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		Network _Network;
 		public ChainBuilder(Network network)
 		{
-			if(network == null)
-				throw new ArgumentNullException("network");
+			Guard.NotNull(network, nameof(network));
+			
 			_Network = network;
 			_Chain = new ConcurrentChain(_Network);
 			MinerKey = new Key();
