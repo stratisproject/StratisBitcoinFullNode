@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
 {
@@ -12,7 +13,10 @@ namespace Stratis.Bitcoin
 		string _Name;
 		public DBreezeNoSqlRepository(string name, string folder)
 		{
-			_Name = name;
+            Guard.NotEmpty(name, nameof(name));
+            Guard.NotEmpty(folder, nameof(folder));
+
+            _Name = name;
 			_Session = new DBreezeSingleThreadSession(name, folder);
 			_Session.Do(() =>
 			{
@@ -27,17 +31,22 @@ namespace Stratis.Bitcoin
 
 		protected override Task<byte[]> GetBytes(string key)
 		{
+            Guard.NotEmpty(key, nameof(key));
+
 			return _Session.Do(() =>
 			{
 				var row = _Session.Transaction.Select<string, byte[]>(_Name, key);
-				if(row == null || row.Exists)
+				if(row == null || !row.Exists)
 					return null;
 				return row.Value;
 			});
 		}
 		protected override Task PutBytes(string key, byte[] data)
 		{
-			return _Session.Do(() =>
+            Guard.NotEmpty(key, nameof(key));
+            Guard.NotNull(data, nameof(data));
+
+            return _Session.Do(() =>
 			{
 				_Session.Transaction.Insert(_Name, key, data);
 				_Session.Transaction.Commit();
@@ -45,8 +54,10 @@ namespace Stratis.Bitcoin
 		}
 
 		protected override async Task PutBytesBatch(IEnumerable<Tuple<string, byte[]>> enumerable)
-		{
-			foreach(var kv in enumerable)
+		{            
+            Guard.NotNull(enumerable, nameof(enumerable));
+
+            foreach (var kv in enumerable)
 			{
 				await PutBytes(kv.Item1, kv.Item2).ConfigureAwait(false);
 			}
