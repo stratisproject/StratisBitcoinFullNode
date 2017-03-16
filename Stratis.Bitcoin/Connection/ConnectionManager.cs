@@ -53,10 +53,10 @@ namespace Stratis.Bitcoin.Connection
 
 		NodeConnectionParameters _Parameters;
 		ConnectionManagerArgs _Args;
-		public ConnectionManager(Network network, NodeConnectionParameters parameters, ConnectionManagerArgs args)
+		public ConnectionManager(Network network, NodeConnectionParameters parameters, NodeArgs args)
 		{
 			_Network = network;
-			_Args = args;
+			_Args = args.ConnectionManager;
 			_Parameters = parameters;
 		}
 

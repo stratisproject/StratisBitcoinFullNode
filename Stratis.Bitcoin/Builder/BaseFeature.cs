@@ -1,0 +1,280 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.BitcoinCore;
+using NBitcoin.Protocol;
+using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Builder.Feature;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Internal;
+
+namespace Stratis.Bitcoin.Builder
+{
+	/// <summary>
+	/// Base node services, this are the services a node has to have
+	/// the ConnectionManagerFeature is also part of the base but may go in a feature of its own
+	/// the base features are the minimal components required to connect to peers and maintain the best chain
+	/// the base node services for a node are: 
+	/// - the ConcurrentChain to keep track of the best chain 
+	/// - the ConnectionManager to connect with the network
+	/// - DatetimeProvider and Cancellation
+	/// - CancellationProvider and Cancellation
+	/// - DataFolder 
+	/// - ChainState
+	/// </summary>
+	public class BaseFeature : FullNodeFeature
+	{
+		/// <summary>
+		/// disposable resources that will be disposed when the feature stops
+		/// </summary>
+		private List<IDisposable> _disposableResources = new List<IDisposable>();
+
+		private NodeArgs _nodeArgs;
+		private DataFolder _dataFolder;
+		private Network _network;
+		private FullNode _fullNodeInstance;
+		private FullNode.CancellationProvider _cancellationProvider;
+		private DateTimeProvider _dateTimeProvider;
+		private ConcurrentChain _chain;
+		private BlockStore.ChainBehavior.ChainState _chainBehaviorState;
+		private Signals _signals;
+		private ConnectionManager _connectionManager;
+		private NodesBlockPuller _nodesBlockPuller;
+
+
+		private PeriodicTask _flushChainTask;
+
+		private PeriodicTask _flushAddressManagerTask;
+		public AddressManager AddressManager { get; private set; }
+
+
+		public NodeConnectionParameters ConnectionParameters { get; private set; }
+
+		public BlockStoreManager BlockStoreManager { get; private set; }
+		public ConsensusLoop ConsensusLoop { get; private set; }
+
+		public BaseFeature(
+			NodeArgs nodeArgs, //node settings
+			DataFolder dataFolder, //data folders
+			Network network, //network (regtest/testnet/default)
+			FullNode fullNodeInstance, //node instance
+			FullNode.CancellationProvider cancellationProvider, //trigger when to dispose resources because of a global cancellation
+			DateTimeProvider dateTimeProvider,
+			ConcurrentChain chain,
+			BlockStore.ChainBehavior.ChainState chainState,
+			Signals signals, //event aggregator
+			ConnectionManager connectionManager,
+			NodesBlockPuller nodesBlockPuller
+			)
+		{
+			this._nodeArgs = Guard.NotNull(nodeArgs, nameof(nodeArgs));
+			this._dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
+			this._network = Guard.NotNull(network, nameof(network));
+			this._fullNodeInstance = Guard.NotNull(fullNodeInstance, nameof(fullNodeInstance));
+			this._cancellationProvider = Guard.NotNull(cancellationProvider, nameof(cancellationProvider));
+			this._dateTimeProvider = Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+			this._chain = Guard.NotNull(chain, nameof(chain));
+			this._chainBehaviorState = Guard.NotNull(chainState, nameof(chainState));
+			this._signals = Guard.NotNull(signals, nameof(signals));
+			this._connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
+			this._nodesBlockPuller = Guard.NotNull(nodesBlockPuller, nameof(nodesBlockPuller));
+		}
+
+		public override void Start()
+		{
+			StartConnectionManager();
+
+			StartAddressManager();
+			StartChain();
+			StartBlockStore();
+		}
+
+		private void StartBlockStore()
+		{
+			var blockRepository = AutoDispose(new BlockStore.BlockRepository(_network, _dataFolder.BlockPath));
+			var blockStoreCache = AutoDispose(new BlockStoreCache(blockRepository));
+
+			var lightBlockPuller = new BlockingPuller(_chain, _connectionManager.ConnectedNodes);
+			var blockStoreLoop = new BlockStoreLoop(_chain, blockRepository, _nodeArgs, _chainBehaviorState, _fullNodeInstance.GlobalCancellation, lightBlockPuller);
+			BlockStoreManager = new BlockStoreManager(_chain, _connectionManager,
+			   blockRepository, _dateTimeProvider, _nodeArgs, _chainBehaviorState, blockStoreLoop);
+
+			AddNodeBehavior(new BlockStoreBehavior(_chain, BlockStoreManager.BlockRepository, blockStoreCache));
+			AddNodeBehavior(new BlockingPuller.BlockingPullerBehavior(lightBlockPuller));
+
+			_signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, _chain, _nodeArgs, _chainBehaviorState, _connectionManager, _cancellationProvider.Cancellation));
+		}
+
+		private void StartConnectionManager()
+		{
+			ConnectionParameters = _connectionManager.Parameters;
+			ConnectionParameters.IsRelay = _nodeArgs.Mempool.RelayTxes;
+			ConnectionParameters.Services = (_nodeArgs.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+
+			_connectionManager = AutoDispose(new ConnectionManager(_network, ConnectionParameters, _nodeArgs));
+		}
+
+		private void StartChain()
+		{
+			if (!Directory.Exists(_dataFolder.ChainPath))
+			{
+				Logs.FullNode.LogInformation("Creating " + _dataFolder.ChainPath);
+				Directory.CreateDirectory(_dataFolder.ChainPath);
+			}
+
+			var chainRepository = AutoDispose(new ChainRepository(_dataFolder.ChainPath));
+
+			Logs.FullNode.LogInformation("Loading chain");
+
+			chainRepository.Load(_chain).GetAwaiter().GetResult();
+
+			Guard.Assert(_chain.Genesis.HashBlock == _network.GenesisHash); // can't swap networks
+			Logs.FullNode.LogInformation("Chain loaded at height " + _chain.Height);
+
+			_flushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
+			{
+				chainRepository.Save(_chain);
+			})
+			.Start(_cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+
+			AddNodeBehavior(new BlockStore.ChainBehavior(_chain, _chainBehaviorState));
+		}
+
+		private void StartAddressManager()
+		{
+			if (!File.Exists(_dataFolder.AddrManFile))
+			{
+				Logs.FullNode.LogInformation($"Creating {_dataFolder.AddrManFile}");
+				AddressManager = new AddressManager();
+				AddressManager.SavePeerFile(_dataFolder.AddrManFile, _network);
+				Logs.FullNode.LogInformation("Created");
+			}
+			else
+			{
+				Logs.FullNode.LogInformation("Loading  {dataFolder.AddrManFile}");
+				AddressManager = AddressManager.LoadPeerFile(_dataFolder.AddrManFile);
+				Logs.FullNode.LogInformation("Loaded");
+			}
+
+			if (AddressManager.Count == 0)
+			{
+				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
+			}
+
+			_flushAddressManagerTask = new PeriodicTask("FlushAddressManager", (cancellation) =>
+			{
+				AddressManager.SavePeerFile(_dataFolder.AddrManFile, _network);
+			})
+		   .Start(_cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+
+
+			AddNodeBehavior(new AddressManagerBehavior(AddressManager));
+		}
+
+
+
+		public override void Stop()
+		{
+			_cancellationProvider.Cancellation.Cancel();
+
+			Logs.FullNode.LogInformation("FlushAddressManager stopped");
+			_flushAddressManagerTask?.RunOnce();
+
+
+			Logs.FullNode.LogInformation("FlushChain stopped");
+			_flushChainTask?.RunOnce();
+
+
+			Logs.FullNode.LogInformation("Flushing BlockStore...");
+			BlockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
+
+			foreach (var disposable in _disposableResources)
+			{
+				disposable.Dispose();
+			}
+		}
+
+
+		#region Helpers
+		private void AddNodeBehavior(INodeBehavior behavior)
+		{
+			ConnectionParameters.TemplateBehaviors.Add(behavior);
+		}
+
+		public TDisposable AutoDispose<TDisposable>(TDisposable resource) where TDisposable : IDisposable
+		{
+			_disposableResources.Add(resource);
+			return resource;
+		}
+		#endregion
+
+	}
+
+
+
+	internal static class BaseFeatureBuilderExtension
+	{
+		public static IFullNodeBuilder UseBaseFeature(this IFullNodeBuilder fullNodeBuilder)
+		{
+			fullNodeBuilder.ConfigureFeature(features =>
+			{
+
+				features
+				.AddFeature<BaseFeature>()
+				.FeatureServices(services =>
+				{
+					var nodeArgs = fullNodeBuilder.NodeArgs;
+					var network = fullNodeBuilder.Network;
+
+					services.AddSingleton<DataFolder>((serviceProvider) => new DataFolder(nodeArgs));
+
+					services.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
+					services.AddSingleton<FullNodeFeatureExecutor>();
+					services.AddSingleton<FullNode>();
+					services.AddSingleton<ConcurrentChain>((serviceProvider) => new ConcurrentChain(network));
+					services.AddSingleton(DateTimeProvider.Default);
+
+					services.AddSingleton((serviceProvider) =>
+					{
+						return new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() };
+					});
+
+					services.AddSingleton<BlockStore.ChainBehavior.ChainState>();
+
+
+					services.AddSingleton<ConnectionManager>(serviceProvider =>
+					{
+						return new ConnectionManager(network, new NodeConnectionParameters(), nodeArgs);
+					});
+
+
+					services.AddSingleton<NodesBlockPuller>(serviceProvider =>
+				   {
+					   var chain = Guard.NotNull(serviceProvider.GetService<ConcurrentChain>(), nameof(ConcurrentChain));
+					   var connectionManager = Guard.NotNull(serviceProvider.GetService<ConnectionManager>(), nameof(ConnectionManager));
+
+					   var nodePuller = new NodesBlockPuller(chain, connectionManager.ConnectedNodes);
+					   connectionManager.Parameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(nodePuller));
+
+					   return nodePuller;
+				   });
+				});
+			});
+
+			return fullNodeBuilder;
+		}
+	}
+}
