@@ -6,7 +6,7 @@ Getting started
 *On the current version of the node*
 
 
-1. Install .NET Core [1.0.0-preview2-1-003177](https://github.com/dotnet/core/blob/master/release-notes/download-archives/preview-download.md)
+1. Install .NET Core [1.0.0-preview2-1-003177](https://github.com/dotnet/core/blob/master/release-notes/download-archives/1.1-preview2.1-download.md)
 
 2. Clone the reposiroty 
 ```
