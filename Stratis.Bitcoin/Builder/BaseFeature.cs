@@ -58,13 +58,8 @@ namespace Stratis.Bitcoin.Builder
 		private PeriodicTask _flushChainTask;
 
 		private PeriodicTask _flushAddressManagerTask;
-		public AddressManager AddressManager { get; private set; }
-
-
-		public NodeConnectionParameters ConnectionParameters { get; private set; }
 
 		public BlockStoreManager BlockStoreManager { get; private set; }
-		public ConsensusLoop ConsensusLoop { get; private set; }
 
 		public BaseFeature(
 			NodeArgs nodeArgs, //node settings
@@ -120,11 +115,11 @@ namespace Stratis.Bitcoin.Builder
 
 		private void StartConnectionManager()
 		{
-			ConnectionParameters = _connectionManager.Parameters;
-			ConnectionParameters.IsRelay = _nodeArgs.Mempool.RelayTxes;
-			ConnectionParameters.Services = (_nodeArgs.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+			var connectionParameters = _connectionManager.Parameters;
+			connectionParameters.IsRelay = _nodeArgs.Mempool.RelayTxes;
+			connectionParameters.Services = (_nodeArgs.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 
-			_connectionManager = AutoDispose(new ConnectionManager(_network, ConnectionParameters, _nodeArgs));
+			_connectionManager = AutoDispose(new ConnectionManager(_network, connectionParameters, _nodeArgs));
 		}
 
 		private void StartChain()
@@ -155,33 +150,34 @@ namespace Stratis.Bitcoin.Builder
 
 		private void StartAddressManager()
 		{
+			AddressManager addressManager;
 			if (!File.Exists(_dataFolder.AddrManFile))
 			{
 				Logs.FullNode.LogInformation($"Creating {_dataFolder.AddrManFile}");
-				AddressManager = new AddressManager();
-				AddressManager.SavePeerFile(_dataFolder.AddrManFile, _network);
+				addressManager = new AddressManager();
+				addressManager.SavePeerFile(_dataFolder.AddrManFile, _network);
 				Logs.FullNode.LogInformation("Created");
 			}
 			else
 			{
 				Logs.FullNode.LogInformation("Loading  {dataFolder.AddrManFile}");
-				AddressManager = AddressManager.LoadPeerFile(_dataFolder.AddrManFile);
+				addressManager = AddressManager.LoadPeerFile(_dataFolder.AddrManFile);
 				Logs.FullNode.LogInformation("Loaded");
 			}
 
-			if (AddressManager.Count == 0)
+			if (addressManager.Count == 0)
 			{
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 			}
 
 			_flushAddressManagerTask = new PeriodicTask("FlushAddressManager", (cancellation) =>
 			{
-				AddressManager.SavePeerFile(_dataFolder.AddrManFile, _network);
+				addressManager.SavePeerFile(_dataFolder.AddrManFile, _network);
 			})
 		   .Start(_cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
 
 
-			AddNodeBehavior(new AddressManagerBehavior(AddressManager));
+			AddNodeBehavior(new AddressManagerBehavior(addressManager));
 		}
 
 
@@ -211,7 +207,7 @@ namespace Stratis.Bitcoin.Builder
 		#region Helpers
 		private void AddNodeBehavior(INodeBehavior behavior)
 		{
-			ConnectionParameters.TemplateBehaviors.Add(behavior);
+			_connectionManager.Parameters.TemplateBehaviors.Add(behavior);
 		}
 
 		public TDisposable AutoDispose<TDisposable>(TDisposable resource) where TDisposable : IDisposable
