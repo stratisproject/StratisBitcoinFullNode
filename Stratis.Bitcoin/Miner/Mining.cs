@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Miner
 				Block block = new Block();
 				block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
 				//block.Header.Bits = GetWorkRequired(fullNode.Network.Consensus,new ChainedBlock(block.Header, (uint256) null, fullNode.Chain.Tip));
-				block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
+				block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
 				block.Header.UpdateTime(dateTimeProvider.GetTimeOffset(), fullNode.Network, fullNode.Chain.Tip);
 				var coinbase = new Transaction();
 				coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));

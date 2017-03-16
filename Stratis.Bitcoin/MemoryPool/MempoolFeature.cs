@@ -2,27 +2,29 @@
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
 	public class MempoolFeature : FullNodeFeature 
 	{
-		private readonly FullNode fullNode;
-		private readonly MempoolManager manager;
+		private readonly Signals signals;
+		private readonly ConnectionManager connectionManager;
+		private readonly MempoolSignaled mempoolSignaled;
+		private readonly MempoolBehavior mempoolBehavior;
 
-		public MempoolFeature(FullNode fullNode, MempoolManager manager)
+		public MempoolFeature(ConnectionManager connectionManager, Signals signals, MempoolSignaled mempoolSignaled, MempoolBehavior mempoolBehavior)
 		{
-			this.fullNode = fullNode;
-			this.manager = manager;
+			this.signals = signals;
+			this.connectionManager = connectionManager;
+			this.mempoolSignaled = mempoolSignaled;
+			this.mempoolBehavior = mempoolBehavior;
 		}
 
 		public override void Start()
 		{
-			// TODO: move service resolver types to the constructor
-			this.fullNode.ConnectionManager.Parameters.TemplateBehaviors.Add(this.fullNode.Services.ServiceProvider.GetService<MempoolBehavior>());
-			this.fullNode.Signals.Blocks.Subscribe(this.fullNode.Services.ServiceProvider.GetService<MempoolSignaled>());
-
-			this.fullNode.MempoolManager = this.manager;
+			this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
+			this.signals.Blocks.Subscribe(this.mempoolSignaled);
 		}
 	}
 
@@ -44,7 +46,6 @@ namespace Stratis.Bitcoin.MemoryPool
 						services.AddSingleton<MempoolManager>();
 						services.AddSingleton<MempoolBehavior>();
 						services.AddSingleton<MempoolSignaled>();
-
 					});
 			});
 

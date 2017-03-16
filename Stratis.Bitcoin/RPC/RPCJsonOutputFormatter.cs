@@ -15,14 +15,14 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.RPC
 {
-    public interface IRPCJsonOutputFormatter
-    {
-        void WriteObject(TextWriter writer, object value);
-        Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding);
-    }
+	public interface IRPCJsonOutputFormatter
+	{
+		void WriteObject(TextWriter writer, object value);
+		Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding);
+	}
 
-    public class RPCJsonOutputFormatter : TextOutputFormatter, IRPCJsonOutputFormatter
-    {
+	public class RPCJsonOutputFormatter : TextOutputFormatter, IRPCJsonOutputFormatter
+	{
 		private readonly IArrayPool<char> _charPool;
 
 		private JsonSerializer _serializer;
@@ -50,9 +50,9 @@ namespace Stratis.Bitcoin.RPC
 		/// <param name="charPool">The <see cref="T:System.Buffers.ArrayPool`1" />.</param>
 		public RPCJsonOutputFormatter(JsonSerializerSettings serializerSettings, ArrayPool<char> charPool)
 		{
-            Guard.NotNull(serializerSettings, nameof(serializerSettings));
-            Guard.NotNull(charPool, nameof(charPool));
-          
+			Guard.NotNull(serializerSettings, nameof(serializerSettings));
+			Guard.NotNull(charPool, nameof(charPool));
+			
 			SerializerSettings = serializerSettings;
 			this._charPool = new JsonArrayPool<char>(charPool);
 			base.SupportedEncodings.Add(Encoding.UTF8);
@@ -75,9 +75,9 @@ namespace Stratis.Bitcoin.RPC
 		/// <param name="value">The value to write as JSON.</param>
 		public void WriteObject(TextWriter writer, object value)
 		{
-            Guard.NotNull(writer, nameof(writer));
+			Guard.NotNull(writer, nameof(writer));
 
-            using (JsonWriter jsonWriter = this.CreateJsonWriter(writer))
+			using (JsonWriter jsonWriter = this.CreateJsonWriter(writer))
 			{
 				this.CreateJsonSerializer().Serialize(jsonWriter, value);
 			}
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.RPC
 		/// <returns>The <see cref="T:Newtonsoft.Json.JsonWriter" /> used during serialization.</returns>
 		protected virtual JsonWriter CreateJsonWriter(TextWriter writer)
 		{			
-            Guard.NotNull(writer, nameof(writer));
+			Guard.NotNull(writer, nameof(writer));
 
 			JsonTextWriter jsonTextWriter = new JsonTextWriter(writer);
 			jsonTextWriter.ArrayPool = this._charPool;
@@ -115,8 +115,8 @@ namespace Stratis.Bitcoin.RPC
 		/// <inheritdoc />
 		public override async Task WriteResponseBodyAsync(OutputFormatterWriteContext context, Encoding selectedEncoding)
 		{
-            Guard.NotNull(context, nameof(context));
-            Guard.NotNull(selectedEncoding, nameof(selectedEncoding));          
+			Guard.NotNull(context, nameof(context));
+			Guard.NotNull(selectedEncoding, nameof(selectedEncoding));          
 
 			MemoryStream result = new MemoryStream();
 			using(var writer = context.WriterFactory(result, selectedEncoding))
