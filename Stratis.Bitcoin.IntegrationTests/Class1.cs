@@ -446,12 +446,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 					chain = new ConcurrentChain(Network.RegTest);
 					var tip = AppendBlock(chain);
 					repo.Save(chain).GetAwaiter().GetResult();
-					var newChain = new ConcurrentChain();
+					var newChain = new ConcurrentChain(Network.RegTest);
 					repo.Load(newChain).GetAwaiter().GetResult();
 					Assert.Equal(tip, newChain.Tip);
 					tip = AppendBlock(chain);
 					repo.Save(chain).GetAwaiter().GetResult();
-					newChain = new ConcurrentChain();
+					newChain = new ConcurrentChain(Network.RegTest);
 					repo.Load(newChain).GetAwaiter().GetResult();
 					Assert.Equal(tip, newChain.Tip);
 				}
