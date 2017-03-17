@@ -35,10 +35,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			using (NodeContext ctx = NodeContext.Create(network: Network.Main))
 			{
-				var nodeArgs = new NodeArgs();
-				nodeArgs.DataDir = ctx.FolderName;
-				nodeArgs.ConnectionManager.Connect.Add(new IPEndPoint(IPAddress.Loopback, ctx.Network.DefaultPort));
-				var fullNode = StratisBitcoinRunner.BuildFullNode(nodeArgs);
+				var nodeSettings = new NodeSettings();
+				nodeSettings.DataDir = ctx.FolderName;
+				nodeSettings.ConnectionManager.Connect.Add(new IPEndPoint(IPAddress.Loopback, ctx.Network.DefaultPort));
+				var fullNode = StratisBitcoinRunner.BuildFullNode(nodeSettings);
 				fullNode.Start();
 				int increment = 20000;
 				int reachNext = increment;
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			fullNode.Dispose();
 			fullNode.ThrowIfUncatchedException();
-			fullNode = StratisBitcoinRunner.BuildFullNode(fullNode.Args);
+			fullNode = StratisBitcoinRunner.BuildFullNode(fullNode.Settings);
 			fullNode.Start();
 			return fullNode;
 		}

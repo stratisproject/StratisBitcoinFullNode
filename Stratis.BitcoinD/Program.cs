@@ -18,10 +18,10 @@ namespace Stratis.BitcoinD
 		public static void Main(string[] args)
 		{
 			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
-			NodeArgs nodeArgs = NodeArgs.GetArgs(args);
+			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
 			var node = (FullNode) new FullNodeBuilder()
-				.UseNodeArgs(nodeArgs)
+				.UseNodeSettings(nodeSettings)
 				.UseMempool()
 				.Build();
 

@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private readonly MempoolScheduler mempoolScheduler;
 		private readonly DateTimeProvider dateTimeProvider;
-		private readonly NodeArgs nodeArgs;
+		private readonly NodeSettings nodeArgs;
 		private readonly ConcurrentChain chain;
 		private readonly CoinView coinView;
 		private readonly TxMempool memPool;
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 
 		public MempoolValidator(TxMempool memPool, MempoolScheduler mempoolScheduler,
-			ConsensusValidator consensusValidator, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs,
+			ConsensusValidator consensusValidator, DateTimeProvider dateTimeProvider, NodeSettings nodeArgs,
 			ConcurrentChain chain, CoinView coinView)
 		{
 			this.memPool = memPool;

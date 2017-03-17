@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Fee
 		private static Money MAX_MONEY = new Money(21000000 * Money.COIN);
 		private static double INF_FEERATE = MAX_MONEY.Satoshi;
 
-		public BlockPolicyEstimator(FeeRate minRelayFee, NodeArgs nodeArgs)
+		public BlockPolicyEstimator(FeeRate minRelayFee, NodeSettings nodeArgs)
 		{
 			this.mapMemPoolTxs = new Dictionary<uint256, TxStatsInfo>();
 			this.nodeArgs = nodeArgs;
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Fee
 		private int trackedTxs;
 		private int untrackedTxs;
 
-		private NodeArgs nodeArgs;
+		private NodeSettings nodeArgs;
 
 		// Process a transaction confirmed in a block
 		bool ProcessBlockTx(int nBlockHeight, TxMempoolEntry entry)

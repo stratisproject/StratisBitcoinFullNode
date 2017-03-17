@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Builder
 		/// </summary>
 		private List<IDisposable> _disposableResources = new List<IDisposable>();
 
-		private NodeArgs _nodeArgs;
+		private NodeSettings _nodeSettings;
 		private DataFolder _dataFolder;
 		private Network _network;
 		private FullNode _fullNodeInstance;
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Builder
 		private PeriodicTask _flushAddressManagerTask;
 
 		public BaseFeature(
-			NodeArgs nodeArgs, //node settings
+			NodeSettings nodeSettings, //node settings
 			DataFolder dataFolder, //data folders
 			Network network, //network (regtest/testnet/default)
 			FullNode fullNodeInstance, //node instance
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Builder
 			ConnectionManager connectionManager
 			)
 		{
-			this._nodeArgs = Guard.NotNull(nodeArgs, nameof(nodeArgs));
+			this._nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
 			this._dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
 			this._network = Guard.NotNull(network, nameof(network));
 			this._fullNodeInstance = Guard.NotNull(fullNodeInstance, nameof(fullNodeInstance));
@@ -89,10 +89,10 @@ namespace Stratis.Bitcoin.Builder
 		private void StartConnectionManager()
 		{
 			var connectionParameters = _connectionManager.Parameters;
-			connectionParameters.IsRelay = _nodeArgs.Mempool.RelayTxes;
-			connectionParameters.Services = (_nodeArgs.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+			connectionParameters.IsRelay = _nodeSettings.Mempool.RelayTxes;
+			connectionParameters.Services = (_nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 
-			_connectionManager = AutoDispose(new ConnectionManager(_network, connectionParameters, _nodeArgs));
+			_connectionManager = AutoDispose(new ConnectionManager(_network, connectionParameters, _nodeSettings));
 		}
 
 		private void StartChain()
@@ -201,10 +201,10 @@ namespace Stratis.Bitcoin.Builder
 				.AddFeature<BaseFeature>()
 				.FeatureServices(services =>
 				{
-					var nodeArgs = fullNodeBuilder.NodeArgs;
+					var nodeSettings = fullNodeBuilder.NodeSettings;
 					var network = fullNodeBuilder.Network;
 
-					services.AddSingleton<DataFolder>((serviceProvider) => new DataFolder(nodeArgs));
+					services.AddSingleton<DataFolder>((serviceProvider) => new DataFolder(nodeSettings));
 					services.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
 					services.AddSingleton<FullNodeFeatureExecutor>();
 					services.AddSingleton<FullNode>();
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Builder
 					services.AddSingleton(DateTimeProvider.Default);
 					services.AddSingleton<BlockStore.ChainBehavior.ChainState>();
 					services.AddSingleton(serviceProvider => new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() });
-					services.AddSingleton<ConnectionManager>(serviceProvider => new ConnectionManager(network, new NodeConnectionParameters(), nodeArgs));
+					services.AddSingleton<ConnectionManager>(serviceProvider => new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings));
 				});
 			});
 

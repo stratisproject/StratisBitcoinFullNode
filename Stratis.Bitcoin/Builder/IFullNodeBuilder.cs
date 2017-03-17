@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Builder
 {
 	public interface IFullNodeBuilder
 	{
-		NodeArgs NodeArgs { get; }
+		NodeSettings NodeSettings { get; }
 
 		Network Network { get; }
 

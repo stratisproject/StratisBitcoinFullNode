@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private Dictionary<TxMempoolEntry, uint256> vTxHashes;  //!< All tx witness hashes/entries in mapTx, in random order
 		private DateTimeProvider TimeProvider { get; }
 
-		public TxMempool(FeeRate minReasonableRelayFee, NodeArgs nodeArgs) : this(minReasonableRelayFee, DateTimeProvider.Default, nodeArgs)
+		public TxMempool(FeeRate minReasonableRelayFee, NodeSettings nodeArgs) : this(minReasonableRelayFee, DateTimeProvider.Default, nodeArgs)
 		{
 		}
 
@@ -354,7 +354,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		*  around what it "costs" to relay a transaction around the network and
 		*  below which we would reasonably say a transaction has 0-effective-fee.
 		*/
-		public TxMempool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
+		public TxMempool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MapTx = new IndexedTransactionSet();
 			this.mapLinks = new TxlinksMap();

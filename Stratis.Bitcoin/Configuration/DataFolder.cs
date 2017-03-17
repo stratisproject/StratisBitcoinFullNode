@@ -15,9 +15,9 @@ namespace Stratis.Bitcoin.Configuration
 		// Note: a location name should described if its a file or a folder
 		// File - location name end with "File" (i.e AddrMan[File])
 		// Folder - location name end with "Path" (i.e CoinView[Path])
-		public DataFolder(NodeArgs args)
+		public DataFolder(NodeSettings settings)
 		{
-			string path = args.DataDir;
+			string path = settings.DataDir;
 			CoinViewPath = Path.Combine(path, "coinview");
 			AddrManFile = Path.Combine(path, "addrman.dat");
 			ChainPath = Path.Combine(path, "chain");
