@@ -35,11 +35,18 @@ namespace Stratis.Bitcoin
 			return _Session.Do(() =>
 			{
 				ChainedBlock tip = null;
+				bool first = true;
 				foreach(var row in _Session.Transaction.SelectForward<int, BlockHeader>("Chain"))
 				{
-					if(tip != null && row.Value.HashPrevBlock != tip.HashBlock)
+					if (tip != null && row.Value.HashPrevBlock != tip.HashBlock)
 						break;
 					tip = new ChainedBlock(row.Value, null, tip);
+					
+					if (first)
+					{
+						first = false;
+						Guard.Assert(tip.HashBlock == chain.Genesis.HashBlock); // can't swap networks
+					}
 				}
 				if(tip == null)
 					return;
