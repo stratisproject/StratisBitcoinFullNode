@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.MemoryPool
 		/** Maximum age of our tip in seconds for us to be considered current for fee estimation */
 		const int MAX_FEE_ESTIMATION_TIP_AGE = 3 * 60 * 60;
 
-		private readonly AsyncLock mempoolScheduler;
+		private readonly MempoolScheduler mempoolScheduler;
 		private readonly DateTimeProvider dateTimeProvider;
-		private readonly NodeArgs nodeArgs;
+		private readonly NodeSettings nodeArgs;
 		private readonly ConcurrentChain chain;
 		private readonly CoinView coinView;
 		private readonly TxMempool memPool;
@@ -47,8 +47,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			public long LastTime;
 		}
 
-		public MempoolValidator(TxMempool memPool, AsyncLock mempoolScheduler,
-			ConsensusValidator consensusValidator, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs,
+		public MempoolValidator(TxMempool memPool, MempoolScheduler mempoolScheduler,
+			ConsensusValidator consensusValidator, DateTimeProvider dateTimeProvider, NodeSettings nodeArgs,
 			ConcurrentChain chain, CoinView coinView)
 		{
 			this.memPool = memPool;
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private void CheckMempoolCoinView(MempoolValidationContext context)
 		{
-			Check.Assert(context.View != null);
+			Guard.Assert(context.View != null);
 
 			context.LockPoints = new LockPoints();
 
@@ -775,7 +775,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			SequenceLock lockPair;
 			if (useExistingLockPoints)
 			{
-				Check.Assert(lp != null);
+				Guard.Assert(lp != null);
 				lockPair = new SequenceLock(lp.Height, lp.Time);
 			}
 			else

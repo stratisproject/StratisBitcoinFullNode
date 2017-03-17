@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
@@ -24,10 +25,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public BlockRepository(Network network, string folder)
 		{
-			if (folder == null)
-				throw new ArgumentNullException("folder");
-			if (network == null)
-				throw new ArgumentNullException("network");
+			Guard.NotNull(network, nameof(network));
+			Guard.NotEmpty(folder, nameof(folder));
 
 			this.session = new DBreezeSingleThreadSession("DBreeze BlockRepository", folder);
 			this.network = network;
@@ -39,7 +38,7 @@ namespace Stratis.Bitcoin.BlockStore
 			var sync = this.session.Do(() =>
 			{
 				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Common");
-				this.session.Transaction.ValuesLazyLoadingIsOn = false;
+				this.session.Transaction.ValuesLazyLoadingIsOn = true;
 			});
 
 			var hash = this.session.Do(() =>
@@ -57,6 +56,12 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 
 			return Task.WhenAll(new[] {sync, hash});
+		}
+
+		public bool LazyLoadingOn
+		{
+			get { return this.session.Transaction.ValuesLazyLoadingIsOn; }
+			set { this.session.Transaction.ValuesLazyLoadingIsOn = value; }
 		}
 
 		public Task<Transaction> GetTrxAsync(uint256 trxid)

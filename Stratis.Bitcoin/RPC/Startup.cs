@@ -62,13 +62,13 @@ namespace Stratis.Bitcoin.RPC
 
 			RPCAuthorization authorizedAccess = new RPCAuthorization();
 			var cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
-			File.WriteAllText(fullNode.DataFolder.RPCCookiePath, cookieStr);
+			File.WriteAllText(fullNode.DataFolder.RPCCookieFile, cookieStr);
 			authorizedAccess.Authorized.Add(cookieStr);
-			if(fullNode.Args.RPC.RpcPassword != null)
+			if(fullNode.Settings.RPC.RpcPassword != null)
 			{
-				authorizedAccess.Authorized.Add(fullNode.Args.RPC.RpcUser + ":" + fullNode.Args.RPC.RpcPassword);
+				authorizedAccess.Authorized.Add(fullNode.Settings.RPC.RpcUser + ":" + fullNode.Settings.RPC.RpcPassword);
 			}
-			authorizedAccess.AllowIp.AddRange(fullNode.Args.RPC.AllowIp);
+			authorizedAccess.AllowIp.AddRange(fullNode.Settings.RPC.AllowIp);
 
 
 			var options = GetMVCOptions(serviceProvider);

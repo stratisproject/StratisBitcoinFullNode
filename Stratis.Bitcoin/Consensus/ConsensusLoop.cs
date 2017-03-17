@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -28,14 +29,11 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, BlockPuller puller)
 		{
-			if(validator == null)
-				throw new ArgumentNullException("validator");
-			if(chain == null)
-				throw new ArgumentNullException("chain");
-			if(utxoSet == null)
-				throw new ArgumentNullException("utxoSet");
-			if(puller == null)
-				throw new ArgumentNullException("puller");
+			Guard.NotNull(validator, nameof(validator));
+			Guard.NotNull(chain, nameof(chain));
+			Guard.NotNull(utxoSet, nameof(utxoSet));
+			Guard.NotNull(puller, nameof(puller));
+			
 			_Validator = validator;
 			_Chain = chain;
 			_utxoSet = utxoSet;
@@ -191,6 +189,8 @@ namespace Stratis.Bitcoin.Consensus
 			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
 			{
 				Validator.CheckBlockHeader(result.Block.Header);
+				if (result.Block.Header.HashPrevBlock != Tip.HashBlock)
+					return; // reorg
 				result.ChainedBlock = new ChainedBlock(result.Block.Header, result.Block.Header.GetHash(), Tip);
 				result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock;
 					//Liberate from memory the block created above if possible

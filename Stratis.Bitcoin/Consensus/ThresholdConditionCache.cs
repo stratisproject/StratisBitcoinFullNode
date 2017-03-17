@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -29,8 +30,8 @@ namespace Stratis.Bitcoin.Consensus
 
 		public ThresholdConditionCache(NBitcoin.Consensus consensus)
 		{
-			if(consensus == null)
-				throw new ArgumentNullException("consensus");
+			Guard.NotNull(consensus, nameof(consensus));
+
 			_Consensus = consensus;
 		}
 
@@ -138,8 +139,8 @@ namespace Stratis.Bitcoin.Consensus
 
 		private ThresholdState Get(uint256 hash, BIP9Deployments deployment)
 		{
-            if(hash == null)
-                return ThresholdState.Defined;
+			if(hash == null)
+				return ThresholdState.Defined;
 			ThresholdState?[] threshold;
 			if(!cache.TryGetValue(hash, out threshold))
 				throw new InvalidOperationException("Should never happen");
@@ -150,8 +151,8 @@ namespace Stratis.Bitcoin.Consensus
 
 		private void Set(uint256 hash, BIP9Deployments deployment, ThresholdState state)
 		{
-            if(hash == null)
-                return;
+			if(hash == null)
+				return;
 			ThresholdState?[] threshold;
 			if(!cache.TryGetValue(hash, out threshold))
 			{
@@ -163,8 +164,8 @@ namespace Stratis.Bitcoin.Consensus
 
 		private bool ContainsKey(uint256 hash, BIP9Deployments deployment)
 		{
-            if(hash == null)
-                return true;
+			if(hash == null)
+				return true;
 			ThresholdState?[] threshold;
 			if(!cache.TryGetValue(hash, out threshold))
 				return false;

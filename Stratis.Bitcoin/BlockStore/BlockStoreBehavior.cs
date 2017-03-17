@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
 		{
-			Check.Assert(node != null); 
+			Guard.Assert(node != null); 
 
 			// TODO: bring logic from core 
 			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))

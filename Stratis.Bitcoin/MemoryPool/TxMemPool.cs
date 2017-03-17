@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private Dictionary<TxMempoolEntry, uint256> vTxHashes;  //!< All tx witness hashes/entries in mapTx, in random order
 		private DateTimeProvider TimeProvider { get; }
 
-		public TxMempool(FeeRate minReasonableRelayFee, NodeArgs nodeArgs) : this(minReasonableRelayFee, DateTimeProvider.Default, nodeArgs)
+		public TxMempool(FeeRate minReasonableRelayFee, NodeSettings nodeArgs) : this(minReasonableRelayFee, DateTimeProvider.Default, nodeArgs)
 		{
 		}
 
@@ -354,7 +354,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		*  around what it "costs" to relay a transaction around the network and
 		*  below which we would reasonably say a transaction has 0-effective-fee.
 		*/
-		public TxMempool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
+		public TxMempool(FeeRate minReasonableRelayFee, DateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MapTx = new IndexedTransactionSet();
 			this.mapLinks = new TxlinksMap();
@@ -570,23 +570,21 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private SetEntries GetMemPoolParents(TxMempoolEntry entry)
 		{
-			if(entry == null)
-				throw new ArgumentNullException(nameof(entry));
+			Guard.NotNull(entry, nameof(entry));
 
-			Utilities.Check.Assert(MapTx.ContainsKey(entry.TransactionHash));
+			Utilities.Guard.Assert(MapTx.ContainsKey(entry.TransactionHash));
 			var it = mapLinks.TryGet(entry);
-			Utilities.Check.Assert(it != null);
+			Utilities.Guard.Assert(it != null);
 			return it.Parents;
 		}
 
 		private SetEntries GetMemPoolChildren(TxMempoolEntry entry)
 		{
-			if (entry == null)
-				throw new ArgumentNullException(nameof(entry));
-
-			Utilities.Check.Assert(MapTx.ContainsKey(entry.TransactionHash));
+			Guard.NotNull(entry, nameof(entry));
+			
+			Utilities.Guard.Assert(MapTx.ContainsKey(entry.TransactionHash));
 			var it = mapLinks.TryGet(entry);
-			Utilities.Check.Assert(it != null);
+			Utilities.Guard.Assert(it != null);
 			return it.Children;
 		}
 
@@ -754,7 +752,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					if (it == null)
 						continue;
 					var nextit = MapTx.TryGet(it.Transaction.GetHash());
-					Utilities.Check.Assert(nextit != null);
+					Utilities.Guard.Assert(nextit != null);
 					txToRemove.Add(nextit);
 				}
 			}

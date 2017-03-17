@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Stratis.Bitcoin.Consensus;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.IntegrationTests
 {
 	public class CoinViewTester
 	{

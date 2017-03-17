@@ -10,18 +10,18 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
-    public class MempoolSignaled : SignalObserver<Block>
+	public class MempoolSignaled : SignalObserver<Block>
 	{
 		private readonly MempoolManager manager;
 		private readonly ConcurrentChain chain;
 		private readonly ConnectionManager connection;
 
-		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, ConnectionManager connection, CancellationTokenSource globalCancellationTokenSource)
+		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, ConnectionManager connection, FullNode.CancellationProvider cancellationProvider)
 		{
 			this.manager = manager;
 			this.chain = chain;
 			this.connection = connection;
-			this.RelayWorker(globalCancellationTokenSource.Token);
+			this.RelayWorker(cancellationProvider.Cancellation.Token);
 		}
 
 		protected override void OnNextCore(Block value)
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private void RelayWorker(CancellationToken cancellationToken)
 		{
-            AsyncLoop.Run("MemoryPool.RelayWorker", async token =>
+			AsyncLoop.Run("MemoryPool.RelayWorker", async token =>
 			{
 				var nodes = this.connection.ConnectedNodes;
 				if (!nodes.Any())
@@ -45,10 +45,10 @@ namespace Stratis.Bitcoin.MemoryPool
 				var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
 				foreach (var behaviour in behaviours)
 					await behaviour.SendTrickle().ConfigureAwait(false);
-            },
-            cancellationToken,
-            repeateEvery: TimeSpans.TenSeconds,
-            startAfter: TimeSpans.TenSeconds);
+			},
+			cancellationToken,
+			repeatEvery: TimeSpans.TenSeconds,
+			startAfter: TimeSpans.TenSeconds);
 		}
 	}
 }

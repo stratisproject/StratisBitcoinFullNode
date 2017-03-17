@@ -8,24 +8,25 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
+	public class MempoolScheduler : AsyncLock
+	{ }
+
 	public class MempoolManager
 	{
-		public AsyncLock MempoolScheduler { get; }
+		public MempoolScheduler MempoolScheduler { get; }
 		public MempoolValidator Validator { get; } // public for testing
 		public MempoolOrphans Orphans { get; } // public for testing
 		private readonly TxMempool memPool;
 
-		private readonly ConcurrentChain chain;
 		public DateTimeProvider DateTimeProvider { get; }
-		public NodeArgs NodeArgs { get; set; }
+		public NodeSettings NodeArgs { get; set; }
 
 
-		public MempoolManager(AsyncLock mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
-			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
+		public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool, 
+			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
-			this.chain = chain;
 			this.DateTimeProvider = dateTimeProvider;
 			this.NodeArgs = nodeArgs;
 			this.Orphans = orphans;

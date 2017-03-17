@@ -22,9 +22,9 @@ namespace Stratis.Bitcoin.Consensus
 		
 		public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
-			if(txIds == null)
-				throw new ArgumentNullException("txIds");
-			using(_Lock.LockRead())
+			Guard.NotNull(txIds, nameof(txIds));
+
+			using (_Lock.LockRead())
 			{
 				UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
 				for(int i = 0; i < txIds.Length; i++)
@@ -39,12 +39,10 @@ namespace Stratis.Bitcoin.Consensus
 
 		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
-			if(oldBlockHash == null)
-				throw new ArgumentNullException("oldBlockHash");
-			if(nextBlockHash == null)
-				throw new ArgumentNullException("nextBlockHash");
-			if(unspentOutputs == null)
-				throw new ArgumentNullException("unspentOutputs");
+			Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
+			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
+			Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
+
 			using(_Lock.LockWrite())
 			{
 				if(_BlockHash != null && oldBlockHash != _BlockHash)

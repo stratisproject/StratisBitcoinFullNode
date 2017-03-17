@@ -22,56 +22,79 @@ namespace Stratis.Bitcoin.BlockStore
 	public class BlockStoreLoop
 	{
 		private readonly ConcurrentChain chain;
-		private readonly ConnectionManager connection;
 		public BlockRepository BlockRepository { get; } // public for testing
-		private readonly DateTimeProvider dateTimeProvider;
-		private readonly NodeArgs nodeArgs;
+		private readonly NodeSettings nodeArgs;
 		private readonly BlockingPuller blockPuller;
 		public BlockStore.ChainBehavior.ChainState ChainState { get; }
 
 		public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
-		public BlockStoreLoop(ConcurrentChain chain, ConnectionManager connection, BlockRepository blockRepository,
-			DateTimeProvider dateTimeProvider, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState, 
-			CancellationTokenSource globalCancellationTokenSource, BlockingPuller blockPuller)
+		public BlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, NodeSettings nodeArgs,
+			BlockStore.ChainBehavior.ChainState chainState,
+			FullNode.CancellationProvider cancellationProvider, BlockingPuller blockPuller)
 		{
 			this.chain = chain;
-			this.connection = connection;
 			this.BlockRepository = blockRepository;
-			this.dateTimeProvider = dateTimeProvider;
 			this.nodeArgs = nodeArgs;
 			this.blockPuller = blockPuller;
 			this.ChainState = chainState;
-			
-			if(this.nodeArgs.Store.ReIndex)
-				throw new NotImplementedException();
 
 			PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
+			this.Initialize(cancellationProvider.Cancellation).Wait(); // bad practice 
+		}
+
+		// downaloading 5mb is not much in case the store need to catchup
+		private uint insertsizebyte = 1000000 * 5; // Block.MAX_BLOCK_SIZE 
+		private int batchtriggersize = 5;
+		private int batchdownloadsize = 30;
+		private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
+		private readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
+
+		public async Task Initialize(CancellationTokenSource tokenSource)
+		{
+			if (this.nodeArgs.Store.ReIndex)
+				throw new NotImplementedException();
+
 			StoredBlock = chain.GetBlock(this.BlockRepository.BlockHash);
 			if (StoredBlock == null)
 			{
-				// TODO: load and delete all blocks till a common fork with Chain is found
-				// this is a rare event where a reorg happened and the ChainedBlock is lost
+				// a reorg happened and the ChainedBlock is lost
 				// to solve this each block needs to be pulled from storage and deleted 
 				// all the way till a common fork is found with Chain
-				throw new NotImplementedException();
+
+				var blockstoremove = new List<uint256>();
+				var remove = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
+				var removeHash = remove.GetHash();
+				// reorg - we need to delete blocks, start walking back the chain
+				while (this.chain.GetBlock(removeHash) == null)
+				{
+					blockstoremove.Add(removeHash);
+					if (remove.Header.HashPrevBlock == chain.Genesis.HashBlock)
+					{
+						removeHash = chain.Genesis.HashBlock;
+						break;
+					}
+					remove = await this.BlockRepository.GetAsync(remove.Header.HashPrevBlock);
+					Guard.NotNull(remove, nameof(remove));
+					removeHash = remove.GetHash();
+				}
+
+				var newTip = this.chain.GetBlock(removeHash);
+				await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockstoremove);
+				this.StoredBlock = newTip;
 			}
 
 			if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
 			{
-				if (this.chain.Tip != this.chain.Genesis)
+				if (this.StoredBlock != this.chain.Genesis)
 					throw new BlockStoreException("You need to rebuild the database using -reindex-chainstate to change -txindex");
 				if (this.nodeArgs.Store.TxIndex)
-					this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
+					await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
 			}
 
-			chainState.HighestPersistedBlock = this.StoredBlock;
-			this.Loop(globalCancellationTokenSource.Token);
+			this.ChainState.HighestPersistedBlock = this.StoredBlock;
+			this.Loop(tokenSource.Token);
 		}
-
-		private int batchsize = 30;
-		private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
-		private readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
 		public void AddToPending(Block block)
 		{
@@ -102,12 +125,18 @@ namespace Stratis.Bitcoin.BlockStore
 				await DownloadAndStoreBlocks(cancellationToken);
 			},
 			cancellationToken,
-			repeateEvery: TimeSpans.Second,
+			repeatEvery: TimeSpans.Second,
 			startAfter: TimeSpans.FiveSeconds);
 		}
 
-			public async Task DownloadAndStoreBlocks(CancellationToken token, bool disposemode = false)
-			{
+		public async Task DownloadAndStoreBlocks(CancellationToken token, bool disposemode = false)
+		{
+			// TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
+			// When in IBD we may need many reads for the block key without fetching the block
+			// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
+			// a read is normally done when a peer is asking for the entire block (not just the key) 
+			// then if LazyLoadingOn = false the read will be faster on the entire block
+
 			while (!token.IsCancellationRequested)
 			{
 				if (StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
@@ -121,7 +150,7 @@ namespace Stratis.Bitcoin.BlockStore
 				// reorg logic
 				if (this.StoredBlock.HashBlock != next.Header.HashPrevBlock)
 				{
-					if(disposemode)
+					if (disposemode)
 						break;
 
 					var blockstoremove = new List<uint256>();
@@ -152,9 +181,9 @@ namespace Stratis.Bitcoin.BlockStore
 				BlockPair insert;
 				if (this.PendingStorage.TryGetValue(next.HashBlock, out insert))
 				{
-					// if in IBD and batch will not be full then wait for more blocks
+					// if in IBD and batch is not full then wait for more blocks
 					if (this.ChainState.IsInitialBlockDownload && !disposemode)
-						if (this.PendingStorage.Skip(0).Count() < batchsize) // ConcurrentDictionary perf
+						if (this.PendingStorage.Skip(0).Count() < batchtriggersize) // ConcurrentDictionary perf
 							break;
 
 					if (!this.PendingStorage.TryRemove(next.HashBlock, out insert))
@@ -162,11 +191,12 @@ namespace Stratis.Bitcoin.BlockStore
 
 					var tostore = new List<BlockPair>(new[] { insert });
 					var storebest = next;
-					foreach (var index in Enumerable.Range(1, batchsize - 1))
+					var insertSize = insert.Block.GetSerializedSize();
+					while (insertSize < insertsizebyte)
 					{
 						var old = next;
 						next = this.chain.GetBlock(next.Height + 1);
-						
+
 						// stop if at the tip or block is already in store or pending insertion
 						if (next == null) break;
 						if (next.Header.HashPrevBlock != old.HashBlock) break;
@@ -174,6 +204,7 @@ namespace Stratis.Bitcoin.BlockStore
 						if (!this.PendingStorage.TryRemove(next.HashBlock, out insert)) break;
 						tostore.Add(insert);
 						storebest = next;
+						insertSize += insert.Block.GetSerializedSize(); // TODO: add the size to the result coming from the signaler
 					}
 
 					// store missing blocks and remove them from pending blocks
@@ -188,7 +219,7 @@ namespace Stratis.Bitcoin.BlockStore
 					continue;
 				}
 
-				if(disposemode)
+				if (disposemode)
 					break;
 
 				// block is not in store and not in pending 
@@ -196,7 +227,7 @@ namespace Stratis.Bitcoin.BlockStore
 				// find a batch of blocks to download
 				var todownload = new List<ChainedBlock>(new[] {next});
 				var downloadbest = next;
-				foreach (var index in Enumerable.Range(1, batchsize - 1))
+				foreach (var index in Enumerable.Range(1, batchdownloadsize - 1))
 				{
 					var old = next;
 					next = this.chain.GetBlock(old.Height + 1);

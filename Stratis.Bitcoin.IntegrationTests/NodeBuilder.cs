@@ -17,10 +17,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.IntegrationTests
 {
 	public enum CoreNodeState
 	{
@@ -52,9 +53,22 @@ namespace Stratis.Bitcoin.Tests
 
 		public void Start(string dataDir)
 		{
-			var args = NodeArgs.GetArgs(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
-			FullNode = new FullNode(args);
+			var args = NodeSettings.FromArguments(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
+
+			var node = BuildFullNode(args);
+
+			FullNode = node;
 			FullNode.Start();
+		}
+
+		public static FullNode BuildFullNode(NodeSettings args)
+		{
+			var node = (FullNode)new FullNodeBuilder()
+				.UseNodeSettings(args)
+				.UseMempool()
+				.Build();
+
+			return node;
 		}
 
 		public FullNode FullNode;
