@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.BlockStore
 		// downaloading 5mb is not much in case the store need to catchup
 		private uint insertsizebyte = 1000000 * 5; // Block.MAX_BLOCK_SIZE 
 		private int batchtriggersize = 5;
-		private int batchdownloadsize = 30;
+		private int batchdownloadsize = 1000;
 		private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
 		private readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
@@ -176,8 +176,10 @@ namespace Stratis.Bitcoin.BlockStore
 					this.ChainState.HighestPersistedBlock = this.StoredBlock;
 					continue;
 				}
-
+			
 				// check if the next block is in pending storage
+				// then loop over the pending items and push to store in batches
+				// if a stop condition is met break from the loop back to the start
 				BlockPair insert;
 				if (this.PendingStorage.TryGetValue(next.HashBlock, out insert))
 				{
@@ -192,29 +194,47 @@ namespace Stratis.Bitcoin.BlockStore
 					var tostore = new List<BlockPair>(new[] { insert });
 					var storebest = next;
 					var insertSize = insert.Block.GetSerializedSize();
-					while (insertSize < insertsizebyte)
+					while (!token.IsCancellationRequested)
 					{
 						var old = next;
 						next = this.chain.GetBlock(next.Height + 1);
 
+						var stop = false;
 						// stop if at the tip or block is already in store or pending insertion
-						if (next == null) break;
-						if (next.Header.HashPrevBlock != old.HashBlock) break;
-						if (next.Height > this.ChainState.HighestValidatedPoW?.Height) break;
-						if (!this.PendingStorage.TryRemove(next.HashBlock, out insert)) break;
-						tostore.Add(insert);
-						storebest = next;
-						insertSize += insert.Block.GetSerializedSize(); // TODO: add the size to the result coming from the signaler
+						if (next == null) stop = true;
+						else if (next.Header.HashPrevBlock != old.HashBlock) stop = true;
+						else if (next.Height > this.ChainState.HighestValidatedPoW?.Height) stop = true;
+						else if (!this.PendingStorage.TryRemove(next.HashBlock, out insert)) stop = true;
+
+						if (stop)
+						{
+							if(!tostore.Any())
+								break;
+						}
+						else
+						{
+							tostore.Add(insert);
+							storebest = next;
+							insertSize += insert.Block.GetSerializedSize(); // TODO: add the size to the result coming from the signaler	
+						}
+
+						if (insertSize > insertsizebyte || stop)
+						{
+							// store missing blocks and remove them from pending blocks
+							await this.BlockRepository.PutAsync(storebest.HashBlock, tostore.Select(b => b.Block).ToList());
+							this.StoredBlock = storebest;
+							this.ChainState.HighestPersistedBlock = this.StoredBlock;
+
+							if (stop) break;
+
+							tostore.Clear();
+							insertSize = 0;
+
+							// this can be twicked if insert is effecting the consensus speed
+							if (this.ChainState.IsInitialBlockDownload)
+								await Task.Delay(pushIntervalIBD, token);
+						}
 					}
-
-					// store missing blocks and remove them from pending blocks
-					await this.BlockRepository.PutAsync(storebest.HashBlock, tostore.Select(b => b.Block).ToList());
-					this.StoredBlock = storebest;
-					this.ChainState.HighestPersistedBlock = this.StoredBlock;
-
-					// this can be twicked if insert is effecting the consensus speed
-					if (this.ChainState.IsInitialBlockDownload)
-						await Task.Delay(pushIntervalIBD, token);
 
 					continue;
 				}
@@ -222,32 +242,69 @@ namespace Stratis.Bitcoin.BlockStore
 				if (disposemode)
 					break;
 
-				// block is not in store and not in pending 
-				// download the block or blocks
-				// find a batch of blocks to download
-				var todownload = new List<ChainedBlock>(new[] {next});
-				var downloadbest = next;
-				foreach (var index in Enumerable.Range(1, batchdownloadsize - 1))
+				// continuously download blocks until a stop condition is found.
+				// there are two operations, one is finding blocks to download 
+				// and asking them to the puller and the other is collecting
+				// downloaded blocks and persisting them as a batch.
+				var store = new List<BlockPair>();
+				var downloadStack = new Queue<ChainedBlock>(new[] {next});
+				this.blockPuller.AskBlocks(new[] { next });
+
+				int insertdownloadSize = 0;
+				bool download = true;
+				while (!token.IsCancellationRequested)
 				{
-					var old = next;
-					next = this.chain.GetBlock(old.Height + 1);
+					if (download)
+					{
+						var old = next;
+						next = this.chain.GetBlock(old.Height + 1);
 
-					// stop if at the tip or block is already in store or pending insertion
-					if (next == null) break;
-					if (next.Header.HashPrevBlock != old.HashBlock) break;
-					if (next.Height > this.ChainState.HighestValidatedPoW?.Height) break;
-					if (this.PendingStorage.ContainsKey(next.HashBlock)) break;
-					if (await this.BlockRepository.ExistAsync(next.HashBlock)) break;
+						var stop = false;
+						// stop if at the tip or block is already in store or pending insertion
+						if (next == null) stop = true;
+						else if (next.Header.HashPrevBlock != old.HashBlock) stop = true;
+						else if (next.Height > this.ChainState.HighestValidatedPoW?.Height) stop = true;
+						else if (this.PendingStorage.ContainsKey(next.HashBlock)) stop = true;
+						else if (await this.BlockRepository.ExistAsync(next.HashBlock)) stop = true;
 
-					todownload.Add(next);
-					downloadbest = next;
+						if (stop)
+						{
+							if (!downloadStack.Any())
+								break;
+
+							download = false;
+						}
+						else
+						{
+							this.blockPuller.AskBlocks(new[] {next});
+							downloadStack.Enqueue(next);
+
+							if (downloadStack.Count == batchdownloadsize)
+								download = false;
+						}
+					}
+
+					Block block;
+					if (this.blockPuller.TryGetBlock(downloadStack.Peek(), out block))
+					{
+						var downloadbest = downloadStack.Dequeue();
+						store.Add(new BlockPair {Block = block, ChainedBlock = downloadbest});
+						insertdownloadSize += block.GetSerializedSize();  // TODO: add the size in the result from askblocks
+						
+						// can we push
+						if (insertdownloadSize > insertsizebyte || !downloadStack.Any()) // this might go above the max insert size
+						{
+							await this.BlockRepository.PutAsync(downloadbest.HashBlock, store.Select(t => t.Block).ToList());
+							this.StoredBlock = downloadbest;
+							this.ChainState.HighestPersistedBlock = this.StoredBlock;
+							insertdownloadSize = 0;
+							store.Clear();
+
+							if(!downloadStack.Any())
+								break;
+						}
+					}
 				}
-
-				// download and store missing blocks
-				var blocks = await this.blockPuller.AskBlocks(token, todownload.ToArray());
-				await this.BlockRepository.PutAsync(downloadbest.HashBlock, blocks);
-				this.StoredBlock = downloadbest;
-				this.ChainState.HighestPersistedBlock = this.StoredBlock;
 			}
 		}
 	}

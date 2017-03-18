@@ -172,17 +172,12 @@ namespace Stratis.Bitcoin.BlockPulling
 		private readonly ConcurrentDictionary<uint256, BlockingPullerBehavior> map = new ConcurrentDictionary<uint256, BlockingPullerBehavior>();
 		private readonly ConcurrentBag<uint256> pendingInventoryVectors = new ConcurrentBag<uint256>();
 
-		private int running = 0;
-
 		/// <summary>
 		/// This method is blocking until all asked blocks are downloaded.
 		/// Should be called only once till complete.
 		/// </summary>
-		public async Task<List<Block>> AskBlocks(CancellationToken token, ChainedBlock[] downloadRequests)
+		public void AskBlocks(ChainedBlock[] downloadRequests)
 		{
-			// no one should enter if already running
-			Guard.Assert(Interlocked.Increment(ref running) == 1);
-
 			BlockingPullerBehavior[] nodes = GetNodeBehaviors();
 			var vectors = downloadRequests.Select(r => new InventoryVector(InventoryType.MSG_BLOCK, r.HashBlock)).ToArray();
 
@@ -201,27 +196,11 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			nodes = selectnodes.ToArray();
 			StartDownload(vectors, nodes);
-			await Task.Delay(100, token);
+		}
 
-			while (!token.IsCancellationRequested)
-			{
-				// check if blocks have arrived
-				var pending = downloadRequests.Where(d => !this.downloadedBlocks.ContainsKey(d.HashBlock)).ToList();
-
-				if (!pending.Any())
-					break;
-					
-				var sorted = pending.OrderBy(p => p.Height).FirstOrDefault(); //sort by height
-
-				// call to stalling blocks
-				this.OnStalling(sorted); // use the earliest block for stalling
-				await Task.Delay(100, token);
-			}
-
-			var downloaded = this.downloadedBlocks.Values.ToList();
-			this.downloadedBlocks.Clear();
-			running = 0;
-			return downloaded;
+		public bool TryGetBlock(ChainedBlock chainedBlock, out Block block)
+		{
+			return this.downloadedBlocks.TryGetValue(chainedBlock.HashBlock, out block);
 		}
 
 		private BlockingPullerBehavior[] GetNodeBehaviors()
