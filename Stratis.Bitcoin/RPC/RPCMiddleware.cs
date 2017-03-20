@@ -11,20 +11,28 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.RPC
 {
 	public class RPCMiddleware
 	{
 		RequestDelegate next;
-		RPCAuthorization authorization;
-		public RPCMiddleware(RequestDelegate next, RPCAuthorization authorization)
+		IRPCAuthorization authorization;
+
+		public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization)
 		{
+			Guard.NotNull(next, nameof(next));
+			Guard.NotNull(authorization, nameof(authorization));
+
 			this.next = next;
 			this.authorization = authorization;
 		}
+
 		public async Task Invoke(HttpContext httpContext)
 		{
+			Guard.NotNull(httpContext, nameof(httpContext));
+
 			if(!Authorized(httpContext))
 			{
 				httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
@@ -87,7 +95,7 @@ namespace Stratis.Bitcoin.RPC
 		private static JObject CreateError(RPCErrorCode code, string message)
 		{
 			JObject response = new JObject();
-			response.Add("resut", null);
+			response.Add("result", null);
 			JObject error = new JObject();
 			response.Add("error", error);
 			error.Add("code", (int)code);

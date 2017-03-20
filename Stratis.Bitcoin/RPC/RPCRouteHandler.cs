@@ -12,29 +12,41 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.RPC
 {
-	public class RPCRouteHandler : IRouter
+	public interface IRPCRouteHandler : IRouter
+	{ 
+	}
+
+	public class RPCRouteHandler : IRPCRouteHandler
 	{
 		private Dictionary<string, string> contollerMapping;
 
-		IRouter _Inner;
+		private IRouter inner;
 		private IActionDescriptorCollectionProvider actionDescriptor;
 
 		public RPCRouteHandler(IRouter inner, IActionDescriptorCollectionProvider actionDescriptor)
 		{
-			_Inner = inner;
+			Guard.NotNull(inner, nameof(inner));
+			Guard.NotNull(actionDescriptor, nameof(actionDescriptor));
+
+			this.inner = inner;
 			this.actionDescriptor = actionDescriptor;
 		}
 
 		public VirtualPathData GetVirtualPath(VirtualPathContext context)
 		{
-			return _Inner.GetVirtualPath(context);
+			Guard.NotNull(context, nameof(context));
+
+			return inner.GetVirtualPath(context);
 		}
 
 		public async Task RouteAsync(RouteContext context)
 		{
+			Guard.NotNull(context, nameof(context));
+
 			MemoryStream ms = new MemoryStream();
 			await context.HttpContext.Request.Body.CopyToAsync(ms);
 			context.HttpContext.Request.Body = ms;
@@ -43,16 +55,14 @@ namespace Stratis.Bitcoin.RPC
 			ms.Position = 0;
 			var method = (string) req["method"];
 
-			var controllerName =
-				actionDescriptor.ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
+			var controllerName = actionDescriptor.ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
 					.FirstOrDefault(w => w.ActionName == method)?.ControllerName ?? string.Empty;
-
 
 			context.RouteData.Values.Add("action", method);
 			//TODO: Need to be extensible
 			context.RouteData.Values.Add("controller", controllerName);
 			context.RouteData.Values.Add("req", req);
-			await _Inner.RouteAsync(context);
+			await inner.RouteAsync(context);
 		}
 	}
 }
