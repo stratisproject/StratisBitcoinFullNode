@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
 
 namespace Stratis.BitcoinD
@@ -22,6 +23,7 @@ namespace Stratis.BitcoinD
 
 			var node = (FullNode) new FullNodeBuilder()
 				.UseNodeSettings(nodeSettings)
+				.UseBlockStore()
 				.UseMempool()
 				.Build();
 

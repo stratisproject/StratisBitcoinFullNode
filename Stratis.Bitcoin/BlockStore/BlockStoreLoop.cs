@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public BlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, NodeSettings nodeArgs,
 			BlockStore.ChainBehavior.ChainState chainState,
-			FullNode.CancellationProvider cancellationProvider, StoreBlockPuller blockPuller)
+			StoreBlockPuller blockPuller)
 		{
 			this.chain = chain;
 			this.BlockRepository = blockRepository;
@@ -40,7 +40,6 @@ namespace Stratis.Bitcoin.BlockStore
 			this.ChainState = chainState;
 
 			PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-			this.Initialize(cancellationProvider.Cancellation).Wait(); // bad practice 
 		}
 
 		// downaloading 5mb is not much in case the store need to catchup

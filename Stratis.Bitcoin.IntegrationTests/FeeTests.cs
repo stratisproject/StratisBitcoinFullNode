@@ -8,7 +8,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Fee;
+using Stratis.Bitcoin.MemoryPool.Fee;
 using Stratis.Bitcoin.MemoryPool;
 using Xunit;
 

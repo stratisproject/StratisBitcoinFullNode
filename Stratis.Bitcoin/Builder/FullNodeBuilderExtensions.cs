@@ -35,11 +35,11 @@ namespace Stratis.Bitcoin.Builder
 
 		public static IFullNodeBuilder AddRequired(this IFullNodeBuilder builder)
 		{
-			// TODO: move some of the required services will move to their own feature
+			builder.UseBaseFeature();
 
+			// TODO: move some of the required services will move to their own feature
 			return builder.ConfigureServices(service =>
 			{
-				builder.UseBaseFeature();
 
 
 				var dataFolder = new DataFolder(builder.NodeSettings);
