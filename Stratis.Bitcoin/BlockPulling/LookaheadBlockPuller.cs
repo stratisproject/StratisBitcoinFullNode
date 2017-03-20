@@ -3,7 +3,9 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -11,22 +13,16 @@ namespace Stratis.Bitcoin.BlockPulling
 	{
 		Block TryGetLookahead(int count);
 	}
-	public abstract class LookaheadBlockPuller : BlockPuller, ILookaheadBlockPuller
+	public class LookaheadBlockPuller : BlockPuller, IBlockPuller, ILookaheadBlockPuller
 	{
-		private class DownloadedBlock
-		{
-			public int Length;
-			public Block Block;
-		}
 
 		private const int BLOCK_SIZE = 2000000;
-		public LookaheadBlockPuller()
+		public LookaheadBlockPuller(ConcurrentChain chain, NodesCollection nodesCollection) : base(chain, nodesCollection)
 		{
 			MaxBufferedSize = BLOCK_SIZE * 10;
 			MinimumLookahead = 4;
 			MaximumLookahead = 2000;
 		}
-
 
 		public int MinimumLookahead
 		{
@@ -55,18 +51,12 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public int DownloadedCount
 		{
-			get
-			{
-				return _DownloadedBlocks.Count;
-			}
+			get { return this.DownloadedBlocks.Count; }
 		}
 
 		public ChainedBlock Location
 		{
-			get
-			{
-				return _Location;
-			}
+			get { return _Location; }
 		}
 
 		private int _CurrentDownloading = 0;
@@ -77,7 +67,6 @@ namespace Stratis.Bitcoin.BlockPulling
 			set;
 		}
 
-
 		public bool Stalling
 		{
 			get;
@@ -85,7 +74,6 @@ namespace Stratis.Bitcoin.BlockPulling
 		}
 
 		private long _CurrentSize;
-		private ConcurrentDictionary<uint256, DownloadedBlock> _DownloadedBlocks = new ConcurrentDictionary<uint256, DownloadedBlock>();
 
 		private ChainedBlock _Location;
 		private ChainedBlock _LookaheadLocation;
@@ -97,21 +85,30 @@ namespace Stratis.Bitcoin.BlockPulling
 			}
 		}
 
-		public override void SetLocation(ChainedBlock tip)
+		public void SetLocation(ChainedBlock tip)
 		{
 			Guard.NotNull(tip, nameof(tip));
 			_Location = tip;
 		}
 
-		public ConcurrentChain Chain
+		public void RequestOptions(TransactionOptions transactionOptions)
 		{
-			get;
-			set;
+			if (transactionOptions == TransactionOptions.Witness)
+			{
+				this.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+				foreach (var node in this.Nodes.Select(n => n.Behaviors.Find<BlockPullerBehavior>()))
+				{
+					if (!this.Requirements.Check(node.AttachedNode.PeerVersion))
+					{
+						node.ReleaseAll();
+					}
+				}
+			}
 		}
 
-		public override Block NextBlock(CancellationToken cancellationToken)
+		public Block NextBlock(CancellationToken cancellationToken)
 		{
-			_DownloadedCounts.Add(_DownloadedBlocks.Count);
+			_DownloadedCounts.Add(this.DownloadedBlocks.Count);
 			if(_LookaheadLocation == null)
 			{
 				AskBlocks();
@@ -179,13 +176,11 @@ namespace Stratis.Bitcoin.BlockPulling
 			var chainedBlock = Chain.GetBlock(_Location.Height + 1 + count);
 			if(chainedBlock == null)
 				return null;
-			var block = _DownloadedBlocks.TryGet(chainedBlock.HashBlock);
+			var block = this.DownloadedBlocks.TryGet(chainedBlock.HashBlock);
 			if(block == null)
 				return null;
 			return block.Block;
 		}
-
-		protected abstract void AskBlocks(ChainedBlock[] downloadRequests);
 
 		private AutoResetEvent _Consumed = new AutoResetEvent(false);
 		private AutoResetEvent _Pushed = new AutoResetEvent(false);
@@ -210,18 +205,20 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		// making this method public allows to push blocks directly
 		// to the downloader, used for testing and mining.
-		public void PushBlock(int length, Block block, CancellationToken cancellation)
+		public override void PushBlock(int length, Block block, BlockPullerBehavior behavior)
 		{
+			var token = behavior.CancellationTokenSource.Token;
+
 			var hash = block.Header.GetHash();
 			var header = Chain.GetBlock(hash);
 			while(_CurrentSize + length >= MaxBufferedSize && header.Height != _Location.Height + 1)
 			{
 				IsFull = true;
 				_Consumed.WaitOne(1000);
-				cancellation.ThrowIfCancellationRequested();
+				token.ThrowIfCancellationRequested();
 			}
 			IsFull = false;
-			_DownloadedBlocks.TryAdd(hash, new DownloadedBlock { Block = block, Length = length });
+			this.DownloadedBlocks.TryAdd(hash, new DownloadedBlock { Block = block, Length = length });
 			_CurrentSize += length;
 			_Pushed.Set();
 		}
@@ -266,7 +263,7 @@ namespace Stratis.Bitcoin.BlockPulling
 				cancellationToken.ThrowIfCancellationRequested();
 				var header = Chain.GetBlock(_Location.Height + 1);
 				DownloadedBlock block;
-				if(header != null && _DownloadedBlocks.TryRemove(header.HashBlock, out block))
+				if(header != null && this.DownloadedBlocks.TryRemove(header.HashBlock, out block))
 				{
 					if(header.Previous.HashBlock != _Location.HashBlock)
 					{
@@ -300,16 +297,6 @@ namespace Stratis.Bitcoin.BlockPulling
 				}
 				i = i == waitTime.Length - 1 ? 0 : i + 1;
 			}
-		}
-
-		public virtual bool IsDownloading(uint256 hash)
-		{
-			return false;
-		}
-
-		protected virtual void OnStalling(ChainedBlock chainedBlock)
-		{
-
 		}
 	}
 }

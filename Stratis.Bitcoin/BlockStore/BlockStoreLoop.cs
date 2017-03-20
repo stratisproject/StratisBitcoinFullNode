@@ -24,14 +24,14 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly ConcurrentChain chain;
 		public BlockRepository BlockRepository { get; } // public for testing
 		private readonly NodeSettings nodeArgs;
-		private readonly BlockingPuller blockPuller;
+		private readonly StoreBlockPuller blockPuller;
 		public BlockStore.ChainBehavior.ChainState ChainState { get; }
 
 		public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
 		public BlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, NodeSettings nodeArgs,
 			BlockStore.ChainBehavior.ChainState chainState,
-			FullNode.CancellationProvider cancellationProvider, BlockingPuller blockPuller)
+			FullNode.CancellationProvider cancellationProvider, StoreBlockPuller blockPuller)
 		{
 			this.chain = chain;
 			this.BlockRepository = blockRepository;
@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.BlockStore
 				// downloaded blocks and persisting them as a batch.
 				var store = new List<BlockPair>();
 				var downloadStack = new Queue<ChainedBlock>(new[] {next});
-				this.blockPuller.AskBlocks(new[] { next });
+				this.blockPuller.AskBlock(next);
 
 				int insertdownloadSize = 0;
 				bool download = true;
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.BlockStore
 						}
 						else
 						{
-							this.blockPuller.AskBlocks(new[] {next});
+							this.blockPuller.AskBlock(next);
 							downloadStack.Enqueue(next);
 
 							if (downloadStack.Count == batchdownloadsize)
@@ -284,12 +284,12 @@ namespace Stratis.Bitcoin.BlockStore
 						}
 					}
 
-					Block block;
+					BlockPuller.DownloadedBlock block;
 					if (this.blockPuller.TryGetBlock(downloadStack.Peek(), out block))
 					{
 						var downloadbest = downloadStack.Dequeue();
-						store.Add(new BlockPair {Block = block, ChainedBlock = downloadbest});
-						insertdownloadSize += block.GetSerializedSize();  // TODO: add the size in the result from askblocks
+						store.Add(new BlockPair {Block = block.Block, ChainedBlock = downloadbest});
+						insertdownloadSize += block.Length; 
 						
 						// can we push
 						if (insertdownloadSize > insertsizebyte || !downloadStack.Any()) // this might go above the max insert size
@@ -303,6 +303,11 @@ namespace Stratis.Bitcoin.BlockStore
 							if(!downloadStack.Any())
 								break;
 						}
+					}
+					else
+					{
+						// waiting for blocks so sleep one
+						await Task.Delay(100, token);
 					}
 				}
 			}

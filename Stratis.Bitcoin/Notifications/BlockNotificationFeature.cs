@@ -17,7 +17,8 @@ namespace Stratis.Bitcoin.Notifications
 
         private readonly FullNode.CancellationProvider cancellationProvider;
 
-        public BlockNotificationFeature(BlockNotification blockNotification, BlockNotificationStartHash blockNotificationStartHash, FullNode.CancellationProvider cancellationProvider)
+        public BlockNotificationFeature(BlockNotification blockNotification, BlockNotificationStartHash blockNotificationStartHash, 
+			FullNode.CancellationProvider cancellationProvider)
         {
             this.blockNotification = blockNotification;
             this.startHash = blockNotificationStartHash.StartHash;
