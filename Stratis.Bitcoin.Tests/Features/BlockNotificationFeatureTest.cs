@@ -28,24 +28,29 @@ namespace Stratis.Bitcoin.Tests
 
         #region stubs
 
-        public class BlockPullerStub : BlockPuller
-        {
+        public class BlockPullerStub : ILookaheadBlockPuller
+		{
             public BlockPullerStub()
             {
 
             }
 
-            public override Block NextBlock(CancellationToken cancellationToken)
+            public Block NextBlock(CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
 
-            public override void RequestOptions(TransactionOptions transactionOptions)
+            public void RequestOptions(TransactionOptions transactionOptions)
             {
                 throw new NotImplementedException();
             }
 
-            public override void SetLocation(ChainedBlock location)
+			public Block TryGetLookahead(int count)
+			{
+				throw new NotImplementedException();
+			}
+
+			public void SetLocation(ChainedBlock location)
             {
                 throw new NotImplementedException();
             }

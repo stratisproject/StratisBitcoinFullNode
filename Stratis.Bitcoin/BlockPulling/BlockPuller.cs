@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.BlockPulling
 	// A puller that download blocks from peers
 	// this must be inherited and the implementing class
 	// needs to handle taking blocks off the queue and stalling
-	public abstract class BlockPuller 
+	public abstract class BlockPuller : IBlockPuller
 	{
 		public class DownloadedBlock
 		{
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.BlockPulling
 						{
 							foreach (var tx in block.Object.Transactions)
 								tx.CacheHashes();
-							this.puller.PushBlock((int)message.Length, block.Object, this);
+							this.puller.PushBlock((int)message.Length, block.Object, this.cancellationToken.Token);
 							this.AssignPendingVector();
 						}
 					}
@@ -199,6 +199,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		protected readonly NodesCollection Nodes;
 		protected readonly ConcurrentChain Chain;
+		private readonly NodeRequirement requirements;
 
 		protected BlockPuller(ConcurrentChain chain, NodesCollection nodes)
 		{
@@ -207,13 +208,23 @@ namespace Stratis.Bitcoin.BlockPulling
 			this.DownloadedBlocks = new ConcurrentDictionary<uint256, DownloadedBlock>();
 			this.pendingInventoryVectors = new ConcurrentBag<uint256>();
 			this.map = new ConcurrentDictionary<uint256, BlockPullerBehavior>();
+
+			// set the default requirements
+			this.requirements = new NodeRequirement
+			{
+				MinVersion = ProtocolVersion.SENDHEADERS_VERSION,
+				RequiredServices = NodeServices.Network
+			};
 		}
 
 		private readonly ConcurrentDictionary<uint256, BlockPullerBehavior> map;
 		private readonly ConcurrentBag<uint256> pendingInventoryVectors;
 		protected readonly ConcurrentDictionary<uint256, DownloadedBlock> DownloadedBlocks;
 
-		public virtual void PushBlock(int length, Block block, BlockPullerBehavior behavior)
+		/// <summary>
+		/// Psuh a block using the cancellation token belonging to the behaviour that pushed the block
+		/// </summary>
+		public virtual void PushBlock(int length, Block block, CancellationToken token)
 		{
 			var hash = block.Header.GetHash();
 			this.DownloadedBlocks.TryAdd(hash, new DownloadedBlock { Block = block, Length = length });
@@ -242,8 +253,11 @@ namespace Stratis.Bitcoin.BlockPulling
 			{
 				vectors.Add(new InventoryVector(InventoryType.MSG_BLOCK, result));
 			}
-			var minHeight = vectors.Select(v => this.Chain.GetBlock(v.Hash).Height).Min();
-			DistributeDownload(vectors.ToArray(), innernodes, minHeight);
+			if (vectors.Any())
+			{
+				var minHeight = vectors.Select(v => this.Chain.GetBlock(v.Hash).Height).Min();
+				DistributeDownload(vectors.ToArray(), innernodes, minHeight);
+			}
 		}
 
 		public bool IsDownloading(uint256 hash)
@@ -332,14 +346,6 @@ namespace Stratis.Bitcoin.BlockPulling
 			}
 			return scores.Length - 1;
 		}
-
-		
-
-		private readonly NodeRequirement requirements = new NodeRequirement
-		{
-			MinVersion = ProtocolVersion.SENDHEADERS_VERSION,
-			RequiredServices = NodeServices.Network
-		};
 
 		protected virtual NodeRequirement Requirements => requirements;
 	}

@@ -5,10 +5,10 @@ namespace Stratis.Bitcoin.BlockPulling
 {
 	public interface IBlockPuller
 	{
-		void SetLocation(ChainedBlock location);
+		void AskBlocks(ChainedBlock[] downloadRequests);
 
-		Block NextBlock(CancellationToken cancellationToken);
+		void PushBlock(int length, Block block, CancellationToken token);
 
-		void RequestOptions(TransactionOptions transactionOptions);
+		bool IsDownloading(uint256 hash);
 	}
 }

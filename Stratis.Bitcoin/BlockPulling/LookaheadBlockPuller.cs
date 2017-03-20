@@ -12,8 +12,14 @@ namespace Stratis.Bitcoin.BlockPulling
 	public interface ILookaheadBlockPuller
 	{
 		Block TryGetLookahead(int count);
+
+		void SetLocation(ChainedBlock location);
+
+		Block NextBlock(CancellationToken cancellationToken);
+
+		void RequestOptions(TransactionOptions transactionOptions);
 	}
-	public class LookaheadBlockPuller : BlockPuller, IBlockPuller, ILookaheadBlockPuller
+	public class LookaheadBlockPuller : BlockPuller, ILookaheadBlockPuller
 	{
 
 		private const int BLOCK_SIZE = 2000000;
@@ -205,10 +211,8 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		// making this method public allows to push blocks directly
 		// to the downloader, used for testing and mining.
-		public override void PushBlock(int length, Block block, BlockPullerBehavior behavior)
+		public override void PushBlock(int length, Block block, CancellationToken token)
 		{
-			var token = behavior.CancellationTokenSource.Token;
-
 			var hash = block.Header.GetHash();
 			var header = Chain.GetBlock(hash);
 			while(_CurrentSize + length >= MaxBufferedSize && header.Height != _Location.Height + 1)
