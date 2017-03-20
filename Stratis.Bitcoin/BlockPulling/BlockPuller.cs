@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			public Block Block;
 		}
 
-		public class BlockPullerBehavior : NodeBehavior
+		public class BlockPullerBehavior : NodeBehavior 
 		{
 			private readonly BlockPuller puller;
 			private readonly CancellationTokenSource cancellationToken;
@@ -41,6 +41,8 @@ namespace Stratis.Bitcoin.BlockPulling
 			{
 				get; set;
 			}
+
+			public BlockPuller Puller => this.puller;
 
 			public CancellationTokenSource CancellationTokenSource => this.cancellationToken;
 
@@ -73,6 +75,10 @@ namespace Stratis.Bitcoin.BlockPulling
 								tx.CacheHashes();
 							this.puller.PushBlock((int)message.Length, block.Object, this.cancellationToken.Token);
 							this.AssignPendingVector();
+						}
+						else
+						{
+							throw new InvalidOperationException("This should not happen, please notify the devs");
 						}
 					}
 				});
@@ -239,7 +245,11 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		private BlockPullerBehavior[] GetNodeBehaviors()
 		{
-			return Nodes.Where(n => requirements.Check(n.PeerVersion)).Select(n => n.Behaviors.Find<BlockPullerBehavior>()).ToArray();
+			return Nodes
+				.Where(n => requirements.Check(n.PeerVersion))
+				.SelectMany(n => n.Behaviors.OfType<BlockPullerBehavior>())
+				.Where(b => b.Puller == this)
+				.ToArray();
 		}
 
 		private void AssignPendingVectors()
