@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
@@ -22,6 +23,11 @@ namespace Stratis.Bitcoin.BlockStore
 	{
 		readonly DBreezeSingleThreadSession session;
 		readonly Network network;
+
+		public BlockRepository(Network network, DataFolder dataFolder) 
+			: this(network, dataFolder.BlockPath)
+		{
+		}
 
 		public BlockRepository(Network network, string folder)
 		{

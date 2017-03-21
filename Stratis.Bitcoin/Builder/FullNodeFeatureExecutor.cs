@@ -25,7 +25,8 @@ namespace Stratis.Bitcoin.Builder
 			}
 			catch (Exception ex)
 			{
-				Logging.Logs.FullNode.LogError("An error occured starting the application");
+				Logging.Logs.FullNode.LogError("An error occurred starting the application", ex);
+				throw;
 			}
 		}
 
@@ -37,7 +38,8 @@ namespace Stratis.Bitcoin.Builder
 			}
 			catch (Exception ex)
 			{
-				Logging.Logs.FullNode.LogError("An error occurred stopping the application");
+				Logging.Logs.FullNode.LogError("An error occurred stopping the application", ex);
+				throw;
 			}
 		}
 

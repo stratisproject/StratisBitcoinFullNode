@@ -85,7 +85,6 @@ namespace Stratis.Bitcoin.Builder
 			StartChain();
 		}
 
-
 		private void StartConnectionManager()
 		{
 			var connectionParameters = _connectionManager.Parameters;
@@ -148,11 +147,8 @@ namespace Stratis.Bitcoin.Builder
 			})
 		   .Start(_cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
 
-
 			AddNodeBehavior(new AddressManagerBehavior(addressManager));
 		}
-
-
 
 		public override void Stop()
 		{
@@ -171,7 +167,6 @@ namespace Stratis.Bitcoin.Builder
 			}
 		}
 
-
 		#region Helpers
 		private void AddNodeBehavior(INodeBehavior behavior)
 		{
@@ -184,10 +179,7 @@ namespace Stratis.Bitcoin.Builder
 			return resource;
 		}
 		#endregion
-
 	}
-
-
 
 	internal static class BaseFeatureBuilderExtension
 	{
@@ -195,7 +187,6 @@ namespace Stratis.Bitcoin.Builder
 		{
 			fullNodeBuilder.ConfigureFeature(features =>
 			{
-
 				features
 				.AddFeature<BaseFeature>()
 				.FeatureServices(services =>
@@ -203,12 +194,12 @@ namespace Stratis.Bitcoin.Builder
 					var nodeSettings = fullNodeBuilder.NodeSettings;
 					var network = fullNodeBuilder.Network;
 
-					services.AddSingleton<DataFolder>((serviceProvider) => new DataFolder(nodeSettings));
+					services.AddSingleton<DataFolder>(serviceProvider => new DataFolder(nodeSettings));
 					services.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
 					services.AddSingleton<FullNodeFeatureExecutor>();
 					services.AddSingleton<FullNode>();
 					services.AddSingleton<Signals>();
-					services.AddSingleton<ConcurrentChain>((serviceProvider) => new ConcurrentChain(network));
+					services.AddSingleton<ConcurrentChain>(serviceProvider => new ConcurrentChain(network));
 					services.AddSingleton(DateTimeProvider.Default);
 					services.AddSingleton<BlockStore.ChainBehavior.ChainState>();
 					services.AddSingleton(serviceProvider => new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() });

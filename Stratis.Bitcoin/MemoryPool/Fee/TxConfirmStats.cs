@@ -4,7 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Fee
+namespace Stratis.Bitcoin.MemoryPool.Fee
 {
 	public class TxConfirmStats
 	{

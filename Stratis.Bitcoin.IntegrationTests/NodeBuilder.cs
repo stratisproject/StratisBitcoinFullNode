@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
@@ -65,6 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			var node = (FullNode)new FullNodeBuilder()
 				.UseNodeSettings(args)
+				.UseBlockStore()
 				.UseMempool()
 				.Build();
 

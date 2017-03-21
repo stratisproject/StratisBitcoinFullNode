@@ -61,6 +61,8 @@ namespace Stratis.Bitcoin
 			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
 
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
+			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
+
 			return this;
 		}
 
@@ -155,19 +157,6 @@ namespace Stratis.Bitcoin
 			connectionParameters.Services = (Settings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 			var blockPuller = new LookaheadBlockPuller(Chain, ConnectionManager.ConnectedNodes);
 			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));
-
-			// === BlockStore ===
-			var blockRepository = new BlockRepository(this.Network, DataFolder.BlockPath);
-			var blockStoreCache = new BlockStoreCache(blockRepository);
-			_Resources.Add(blockStoreCache);
-			_Resources.Add(blockRepository);
-			var lightBlockPuller = new StoreBlockPuller(this.Chain, this.ConnectionManager);
-			var blockStoreLoop = new BlockStoreLoop(this.Chain, blockRepository, _Settings, this._ChainBehaviorState, this.GlobalCancellation, lightBlockPuller);
-			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-				blockRepository, this.DateTimeProvider, _Settings, this._ChainBehaviorState, blockStoreLoop);
-			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, blockStoreCache));
-			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(lightBlockPuller));
-			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(blockStoreLoop, this.Chain, this._Settings, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
 
 			// === Consensus ===
 			var consensusValidator = this.Services.ServiceProvider.GetService<ConsensusValidator>();// new ConsensusValidator(Network.Consensus);

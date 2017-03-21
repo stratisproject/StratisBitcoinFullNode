@@ -5,8 +5,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Fee;
 using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
