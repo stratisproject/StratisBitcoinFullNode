@@ -14,7 +14,7 @@
     "Microsoft.Extensions.Logging.Abstractions": "1.1.0",
     "Microsoft.Extensions.Logging.Console": "1.1.0",
     "Microsoft.Extensions.Logging.Filter": "1.1.0",
-    "NBitcoin": "3.0.2.5",
+    "NBitcoin": "3.0.2.10",
     "System.Xml.XmlSerializer": "4.3.0",
     "Microsoft.Extensions.Caching.Memory": "1.1.0",
     "Microsoft.Extensions.DependencyInjection": "1.1.0"

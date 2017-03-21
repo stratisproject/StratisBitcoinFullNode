@@ -1,10 +1,10 @@
-﻿{
+{
   "version": "1.0.0-*",
   "testRunner": "xunit",
   "buildOptions": { "emitEntryPoint": true },
   "dependencies": {
     "Stratis.Bitcoin": "1.0.0-*",
-    "NBitcoin": "3.0.2.5",
+    "NBitcoin": "3.0.2.10",
     "xunit": "2.2.0",
     "dotnet-test-xunit": "1.0.0-rc2-build10025",
     // xunit hack https://github.com/xunit/xunit/issues/1015
