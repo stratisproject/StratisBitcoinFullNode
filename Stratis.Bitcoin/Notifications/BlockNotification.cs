@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Notifications
     {
         private readonly Signals signals;
 
-        public BlockNotification(ConcurrentChain chain, LookaheadBlockPuller puller, Signals signals)
+        public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, Signals signals)
         {
             if (chain == null)
                 throw new ArgumentNullException("chain");
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Notifications
             this.signals = signals;
         }
         
-        public LookaheadBlockPuller Puller { get; }
+        public ILookaheadBlockPuller Puller { get; }
 
         public ConcurrentChain Chain { get; }
 
