@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Authentication;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Moq;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.RPC;
@@ -18,370 +19,134 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
-    public class RPCJsonOutputFormatterTest
-    {
-        private TestRPCJsonOutputFormatter formatter;
-        private JsonSerializerSettings settings;
-        private ArrayPool<char> charpool;
+	public class RPCJsonOutputFormatterTest
+	{
+		private TestRPCJsonOutputFormatter formatter;
+		private JsonSerializerSettings settings;
+		private ArrayPool<char> charpool;
 
-        public RPCJsonOutputFormatterTest()
-        {
-            this.settings = new JsonSerializerSettings();
-            this.charpool = ArrayPool<char>.Create();
+		public RPCJsonOutputFormatterTest()
+		{
+			this.settings = new JsonSerializerSettings();
+			this.charpool = ArrayPool<char>.Create();
 
-            this.formatter = new TestRPCJsonOutputFormatter(this.settings, this.charpool);
-        }
+			this.formatter = new TestRPCJsonOutputFormatter(this.settings, this.charpool);
+		}
 
-        [Fact]
-        public void CreateJsonWriterCreatesNewJsonWriterWithTextWriter()
-        {
-            using (var memoryStream = new MemoryStream())
-            {
-                using (TextWriter writer = new StreamWriter(memoryStream))
-                {
-                    using (StreamReader reader = new StreamReader(memoryStream))
-                    {
-                        var result = this.formatter.CreateJsonWriter(writer);
-                        result.WriteStartObject();
-                        result.WriteEndObject();
+		[Fact]
+		public void CreateJsonWriterCreatesNewJsonWriterWithTextWriter()
+		{
+			using (var memoryStream = new MemoryStream())
+			{
+				using (TextWriter writer = new StreamWriter(memoryStream))
+				{
+					using (StreamReader reader = new StreamReader(memoryStream))
+					{
+						var result = this.formatter.CreateJsonWriter(writer);
+						result.WriteStartObject();
+						result.WriteEndObject();
 
-                        writer.Flush();
-                        memoryStream.Position = 0;
-                        Assert.Equal("{}", reader.ReadToEnd());
-                    }
-                }
-            }
-        }
+						writer.Flush();
+						memoryStream.Position = 0;
+						Assert.Equal("{}", reader.ReadToEnd());
+					}
+				}
+			}
+		}
 
-        [Fact]
-        public void CreateJsonSerializerCreatesSerializerWithProvidedSettings()
-        {
-            this.settings.Culture = new System.Globalization.CultureInfo("en-GB");
-            this.formatter = new TestRPCJsonOutputFormatter(settings, charpool);
+		[Fact]
+		public void CreateJsonSerializerCreatesSerializerWithProvidedSettings()
+		{
+			this.settings.Culture = new System.Globalization.CultureInfo("en-GB");
+			this.formatter = new TestRPCJsonOutputFormatter(settings, charpool);
 
-            var serializer = this.formatter.CreateJsonSerializer();
+			var serializer = this.formatter.CreateJsonSerializer();
 
-            Assert.Equal("en-GB", serializer.Culture.Name);
-        }
+			Assert.Equal("en-GB", serializer.Culture.Name);
+		}
 
-        [Fact]
-        public void WriteObjectWritesObjectToWriter()
-        {
-            using (var memoryStream = new MemoryStream())
-            {
-                using (TextWriter writer = new StreamWriter(memoryStream))
-                {
-                    this.formatter.WriteObject(writer, new RPCAuthorization());
-                    using (StreamReader reader = new StreamReader(memoryStream))
-                    {
-                        writer.Flush();
-                        memoryStream.Position = 0;
-                        Assert.Equal("{\"Authorized\":[],\"AllowIp\":[]}", reader.ReadToEnd());
-                    }
-                }
-            }
-        }
+		[Fact]
+		public void WriteObjectWritesObjectToWriter()
+		{
+			using (var memoryStream = new MemoryStream())
+			{
+				using (TextWriter writer = new StreamWriter(memoryStream))
+				{
+					this.formatter.WriteObject(writer, new RPCAuthorization());
+					using (StreamReader reader = new StreamReader(memoryStream))
+					{
+						writer.Flush();
+						memoryStream.Position = 0;
+						Assert.Equal("{\"Authorized\":[],\"AllowIp\":[]}", reader.ReadToEnd());
+					}
+				}
+			}
+		}
 
-        [Fact]
-        public void WriteResponseBodyAsyncWritesContextToResponseBody()
-        {
-            Stream bodyStream = new MemoryStream();
-            Stream stream = null;            
-            var context = new OutputFormatterWriteContext(new TestHttpContext(bodyStream),
-                (s, e) =>
-                {
-                    if (stream == null)
-                    {
-                        // only capture first stream. bodyStream is already under the test's control.
-                        stream = s;
-                    }
+		[Fact]
+		public void WriteResponseBodyAsyncWritesContextToResponseBody()
+		{
+			Stream bodyStream = new MemoryStream();
+			DefaultHttpContext defaultContext = SetupDefaultContextWithResponseBodyStream(bodyStream);
 
-                    return new StreamWriter(s, e, 256, true);
-                }, typeof(RPCAuthorization),
-                new RPCAuthorization());
+			Stream stream = null;
+			var context = new OutputFormatterWriteContext(defaultContext,
+				(s, e) =>
+				{
+					if (stream == null)
+					{
+						// only capture first stream. bodyStream is already under the test's control.
+						stream = s;
+					}
 
-            var task = this.formatter.WriteResponseBodyAsync(context, Encoding.UTF8);
-            task.Wait();
+					return new StreamWriter(s, e, 256, true);
+				}, typeof(RPCAuthorization),
+				new RPCAuthorization());
 
-            using (StreamReader reader = new StreamReader(stream))
-            {
-                stream.Position = 0;                
-                var result = reader.ReadToEnd();
-                Assert.Equal("{\"Authorized\":[],\"AllowIp\":[]}", result);
-            }
+			var task = this.formatter.WriteResponseBodyAsync(context, Encoding.UTF8);
+			task.Wait();
 
-            using (StreamReader reader = new StreamReader(bodyStream))
-            {
-                bodyStream.Position = 0;
-                var result = reader.ReadToEnd();
-                Assert.Equal("{\"result\":{\"Authorized\":[],\"AllowIp\":[]},\"id\":1,\"error\":null}", result);
-            }
-        }
+			using (StreamReader reader = new StreamReader(stream))
+			{
+				stream.Position = 0;
+				var result = reader.ReadToEnd();
+				Assert.Equal("{\"Authorized\":[],\"AllowIp\":[]}", result);
+			}
 
-        private class TestRPCJsonOutputFormatter : RPCJsonOutputFormatter
-        {
-            public TestRPCJsonOutputFormatter(JsonSerializerSettings serializerSettings, ArrayPool<char> charPool) : base(serializerSettings, charPool)
-            {
-            }
+			using (StreamReader reader = new StreamReader(bodyStream))
+			{
+				bodyStream.Position = 0;
+				var result = reader.ReadToEnd();
+				Assert.Equal("{\"result\":{\"Authorized\":[],\"AllowIp\":[]},\"id\":1,\"error\":null}", result);
+			}
+		}
 
-            public new JsonWriter CreateJsonWriter(TextWriter writer)
-            {
-                return base.CreateJsonWriter(writer);
-            }
+		private static DefaultHttpContext SetupDefaultContextWithResponseBodyStream(Stream bodyStream)
+		{
+			var defaultContext = new DefaultHttpContext();
+			var response = new HttpResponseFeature();
+			response.Body = bodyStream;
+			var featureCollection = new FeatureCollection();
+			featureCollection.Set<IHttpResponseFeature>(response);
+			defaultContext.Initialize(featureCollection);
+			return defaultContext;
+		}
 
-            public new JsonSerializer CreateJsonSerializer()
-            {
-                return base.CreateJsonSerializer();
-            }
-        }
+		private class TestRPCJsonOutputFormatter : RPCJsonOutputFormatter
+		{
+			public TestRPCJsonOutputFormatter(JsonSerializerSettings serializerSettings, ArrayPool<char> charPool) : base(serializerSettings, charPool)
+			{
+			}
 
-        private class TestHttpContext : HttpContext
-        {
-            private Stream bodyStream;
+			public new JsonWriter CreateJsonWriter(TextWriter writer)
+			{
+				return base.CreateJsonWriter(writer);
+			}
 
-            public TestHttpContext(Stream stream)
-            {
-                this.bodyStream = stream;
-            }
-
-            public override AuthenticationManager Authentication
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override ConnectionInfo Connection
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override IFeatureCollection Features
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override IDictionary<object, object> Items
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override HttpRequest Request
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override CancellationToken RequestAborted
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override IServiceProvider RequestServices
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override HttpResponse Response
-            {
-                get
-                {
-                    return new TestHttpResponse(this.bodyStream);
-                }
-            }
-
-            public override ISession Session
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override string TraceIdentifier
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override ClaimsPrincipal User
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override WebSocketManager WebSockets
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override void Abort()
-            {
-                throw new NotImplementedException();
-            }
-        }
-        private class TestHttpResponse : HttpResponse
-        {
-            private Stream bodyStream;
-
-            public TestHttpResponse(Stream bodyStream)
-            {
-                this.bodyStream = bodyStream;
-            }
-
-            public override Stream Body
-            {
-                get
-                {
-                    return this.bodyStream;
-                }
-
-                set
-                {
-                    this.bodyStream = value;
-                }
-            }
-
-            public override long? ContentLength
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override string ContentType
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override IResponseCookies Cookies
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override bool HasStarted
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override IHeaderDictionary Headers
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override HttpContext HttpContext
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override int StatusCode
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-
-                set
-                {
-                    throw new NotImplementedException();
-                }
-            }
-
-            public override void OnCompleted(Func<object, Task> callback, object state)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override void OnStarting(Func<object, Task> callback, object state)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override void Redirect(string location, bool permanent)
-            {
-                throw new NotImplementedException();
-            }
-        }
-    }
+			public new JsonSerializer CreateJsonSerializer()
+			{
+				return base.CreateJsonSerializer();
+			}
+		}
+	}
 }
