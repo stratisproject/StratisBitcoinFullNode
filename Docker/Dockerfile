@@ -1,6 +1,6 @@
 FROM stratisplatform/dotnet-build:1.0.0-preview2-1-003177
 
-MAINTAINER Dan Gershony - CoinVault <dan.gershony@gmail.com>
+MAINTAINER Dan Gershony - Stratis Platform <dan.gershony@gmail.com>
 
 RUN git clone https://github.com/stratisproject/StratisBitcoinFullNode.git \
 	&& cd  StratisBitcoinFullNode \
