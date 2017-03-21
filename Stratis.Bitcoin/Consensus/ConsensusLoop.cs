@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Consensus
 	}
 	public class ConsensusLoop
 	{
-		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, BlockPuller puller)
+		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller)
 		{
 			Guard.NotNull(validator, nameof(validator));
 			Guard.NotNull(chain, nameof(chain));
@@ -38,12 +38,11 @@ namespace Stratis.Bitcoin.Consensus
 			_Chain = chain;
 			_utxoSet = utxoSet;
 			_Puller = puller;
-			_LookaheadBlockPuller = puller as LookaheadBlockPuller;
 			Initialize();
 		}
 
-		private readonly BlockPuller _Puller;
-		public BlockPuller Puller
+		private readonly LookaheadBlockPuller _Puller;
+		public LookaheadBlockPuller Puller
 		{
 			get
 			{
@@ -78,16 +77,6 @@ namespace Stratis.Bitcoin.Consensus
 			get
 			{
 				return _Validator;
-			}
-		}
-
-
-		private readonly LookaheadBlockPuller _LookaheadBlockPuller;
-		public LookaheadBlockPuller LookaheadBlockPuller
-		{
-			get
-			{
-				return _LookaheadBlockPuller;
 			}
 		}
 
@@ -223,9 +212,9 @@ namespace Stratis.Bitcoin.Consensus
 		private Task TryPrefetchAsync(ConsensusFlags flags)
 		{
 			Task prefetching = Task.FromResult<bool>(true);
-			if(UTXOSet is CachedCoinView && LookaheadBlockPuller != null)
+			if(UTXOSet is CachedCoinView)
 			{
-				var nextBlock = LookaheadBlockPuller.TryGetLookahead(0);
+				var nextBlock = this.Puller.TryGetLookahead(0);
 				if(nextBlock != null)
 					prefetching = UTXOSet.FetchCoinsAsync(GetIdsToFetch(nextBlock, flags.EnforceBIP30));
 			}

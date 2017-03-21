@@ -158,7 +158,8 @@ namespace Stratis.Bitcoin.Connection
 					PerformanceSnapshot lastSnapshot = null;
 					if (_Downloads.TryGetValue(node, out lastSnapshot))
 					{
-						var behavior = node.Behaviors.Find<NodesBlockPuller.NodesBlockPullerBehavior>();
+						var behavior = node.Behaviors.OfType<BlockPuller.BlockPullerBehavior>()
+								.FirstOrDefault(b => b.Puller.GetType() == typeof(LookaheadBlockPuller));
 						var diff = newSnapshot - lastSnapshot;
 						diffTotal = new PerformanceSnapshot(diff.TotalReadenBytes + diffTotal.TotalReadenBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken };
 						builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(Logs.ColumnLength * 2) + "R:" + ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diff.WrittenBytesPerSecond));

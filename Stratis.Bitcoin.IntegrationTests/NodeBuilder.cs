@@ -705,7 +705,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				{
 					var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
 					var oldTip = fullNode.Chain.SetTip(newChain);
-					fullNode.ConsensusLoop.LookaheadBlockPuller.PushBlock(block.GetSerializedSize(), block, CancellationToken.None);
+					fullNode.ConsensusLoop.Puller.PushBlock(block.GetSerializedSize(), block, CancellationToken.None);
 
 					//try
 					//{
