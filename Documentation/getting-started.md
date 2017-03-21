@@ -14,7 +14,7 @@ Getting started
      ```
      sudo apt-get install dotnet-dev-1.0.0-preview2-1-003177
      ```
-
+     
 2. Clone the reposiroty 
 ```
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
