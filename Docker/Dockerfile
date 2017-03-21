@@ -12,4 +12,4 @@ WORKDIR /StratisBitcoinFullNode/Stratis.BitcoinD
 
 EXPOSE 8333 8332
 
-CMD ["dotnet run"]
+CMD ["dotnet", "run"]
