@@ -152,6 +152,8 @@ namespace Stratis.Bitcoin
 			}
 
 			// == Connection == 
+			var coinviewdb = this.Services.ServiceProvider.GetService<DBreezeCoinView>(); // DBreezeCoinView will be in the constructor of a feature
+			coinviewdb.Initialize(this.Network.GetGenesis()).GetAwaiter().GetResult();
 			var connectionParameters = ConnectionManager.Parameters; //new NodeConnectionParameters();
 			connectionParameters.IsRelay = _Settings.Mempool.RelayTxes;
 			connectionParameters.Services = (Settings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
@@ -171,7 +173,7 @@ namespace Stratis.Bitcoin
 				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
 			// add disposables (TODO: move this to the consensus feature)
-			this.Resources.Add(this.Services.ServiceProvider.GetService<DBreezeCoinView>());
+			this.Resources.Add(coinviewdb);
 
 
 			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;

@@ -22,10 +22,9 @@ namespace Stratis.Bitcoin.Consensus
 			
 			_Session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
 			_Network = network;
-			Initialize(network.GetGenesis()).GetAwaiter().GetResult(); // hmm...
 		}
 
-		private Task Initialize(Block genesis)
+		public Task Initialize(Block genesis)
 		{
 			var sync = _Session.Do(() =>
 			{
