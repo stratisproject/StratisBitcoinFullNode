@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze.Transactions;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin
@@ -22,9 +23,14 @@ namespace Stratis.Bitcoin
 
 		public ChainRepository(string folder)
 		{
-            Guard.NotEmpty(folder, nameof(folder));
+			Guard.NotEmpty(folder, nameof(folder));
 
 			_Session = new DBreezeSingleThreadSession("DBreeze ChainRepository", folder);
+		}
+
+		public ChainRepository(DataFolder dataFolder)
+			:this(dataFolder.ChainPath)
+		{
 		}
 		
 		BlockLocator _Locator;
