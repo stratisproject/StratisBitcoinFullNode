@@ -21,46 +21,68 @@ namespace Stratis.BitcoinD
 			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
-			var node = (FullNode) new FullNodeBuilder()
-				.UseNodeSettings(nodeSettings)
-				.UseBlockStore()
-				.UseMempool()
-				.Build();
+			try	
+			{
+				// Verify folders are accessible by attempting to create sub directories,
+				// and removing them after the test.
+				var dataFolder = new DataFolder(nodeSettings);
+				foreach(var path in new []{ dataFolder.BlockPath, dataFolder.ChainPath, dataFolder.CoinViewPath }) {
+					try 
+					{
+						var subDir = new System.IO.DirectoryInfo(path).CreateSubdirectory(Guid.NewGuid().ToString());
+						subDir.Delete();
+					}
+					catch(UnauthorizedAccessException)
+					{
+						throw new UnauthorizedAccessException(string.Format("Access to the path '{0}' was denied.", path));
+					}
+				}
+				
+				var node = (FullNode) new FullNodeBuilder()
+					.UseNodeSettings(nodeSettings)
+					.UseBlockStore()
+					.UseMempool()
+					.Build();
 
-			// == shout down thread ==
-			new Thread(() =>
-			{
-				Console.WriteLine("Press one key to stop");
-				Console.ReadLine();
-				node.Dispose();
-			})
-			{
-				IsBackground = true //so the process terminate
-			}.Start();
-
-			// == mining thread ==
-			if (args.Any(a => a.Contains("mine")))
-			{
+				// == shout down thread ==
 				new Thread(() =>
 				{
-					Thread.Sleep(10000); // let the node start
-					while (!node.IsDisposed)
-					{
-						Thread.Sleep(100); // wait 1 sec
-						// generate 1 block
-						var res = node.Miner.GenerateBlocks(new Stratis.Bitcoin.Miner.ReserveScript(){reserveSfullNodecript = new NBitcoin.Key().ScriptPubKey}, 1, int.MaxValue, false);
-						if (res.Any())
-							Console.WriteLine("mined tip at: " + node?.Chain.Tip.Height);
-					}
+					Console.WriteLine("Press one key to stop");
+					Console.ReadLine();
+					node.Dispose();
 				})
 				{
 					IsBackground = true //so the process terminate
 				}.Start();
-			}
 
-			node.Start();
-			node.WaitDisposed();
-			node.Dispose();
+				// == mining thread ==
+				if (args.Any(a => a.Contains("mine")))
+				{
+					new Thread(() =>
+					{
+						Thread.Sleep(10000); // let the node start
+						while (!node.IsDisposed)
+						{
+							Thread.Sleep(100); // wait 1 sec
+							// generate 1 block
+							var res = node.Miner.GenerateBlocks(new Stratis.Bitcoin.Miner.ReserveScript(){reserveSfullNodecript = new NBitcoin.Key().ScriptPubKey}, 1, int.MaxValue, false);
+							if (res.Any())
+								Console.WriteLine("mined tip at: " + node?.Chain.Tip.Height);
+						}
+					})
+					{
+						IsBackground = true //so the process terminate
+					}.Start();
+				}
+
+				node.Start();
+				node.WaitDisposed();
+				node.Dispose();
+			}
+			catch(UnauthorizedAccessException ex) 
+			{
+				Logs.Configuration.LogCritical(ex.Message);
+			}
 		}
 	}
 }
