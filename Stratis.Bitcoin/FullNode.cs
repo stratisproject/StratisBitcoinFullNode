@@ -133,23 +133,8 @@ namespace Stratis.Bitcoin
 				throw new ObjectDisposedException("FullNode");
 			_IsStarted.Reset();
 
-			// start all the features defined 
+			// start all the features defined
 			this.StartFeatures();
-
-			// == RPC ==  // todo: add an RPC feature
-			if (_Settings.RPC != null)
-			{
-				RPCHost = new WebHostBuilder()
-				.UseKestrel()
-				.ForFullNode(this)
-				.UseUrls(_Settings.RPC.GetUrls())
-				.UseIISIntegration()
-				.UseStartup<RPC.Startup>()
-				.Build();
-				RPCHost.Start();
-				_Resources.Add(RPCHost);
-				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Settings.RPC.GetUrls()));
-			}
 
 			// === Consensus ===
 			var blockPuller = new LookaheadBlockPuller(Chain, ConnectionManager.ConnectedNodes);
@@ -419,7 +404,7 @@ namespace Stratis.Bitcoin
 		{
 			AsyncLoop.Run("PeriodicLog", (cancellation) =>
 			{
-				// TODO: move stats to each of its components 
+				// TODO: move stats to each of its components
 
 				StringBuilder benchLogs = new StringBuilder();
 

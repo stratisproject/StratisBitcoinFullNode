@@ -11,6 +11,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.RPC;
+
 
 namespace Stratis.BitcoinD
 {
@@ -25,6 +27,7 @@ namespace Stratis.BitcoinD
 				.UseNodeSettings(nodeSettings)
 				.UseBlockStore()
 				.UseMempool()
+				.UseRPC()
 				.Build();
 
 			// == shout down thread ==
