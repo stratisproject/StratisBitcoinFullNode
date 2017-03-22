@@ -151,16 +151,12 @@ namespace Stratis.Bitcoin
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Settings.RPC.GetUrls()));
 			}
 
-			// == Connection == 
+			// === Consensus ===
 			var coinviewdb = this.Services.ServiceProvider.GetService<DBreezeCoinView>(); // DBreezeCoinView will be in the constructor of a feature
 			coinviewdb.Initialize(this.Network.GetGenesis()).GetAwaiter().GetResult();
-			var connectionParameters = ConnectionManager.Parameters; //new NodeConnectionParameters();
-			connectionParameters.IsRelay = _Settings.Mempool.RelayTxes;
-			connectionParameters.Services = (Settings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
-			var blockPuller = new LookaheadBlockPuller(Chain, ConnectionManager.ConnectedNodes);
-			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));
 
-			// === Consensus ===
+			var blockPuller = new LookaheadBlockPuller(Chain, ConnectionManager.ConnectedNodes);
+			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));
 			var consensusValidator = this.Services.ServiceProvider.GetService<ConsensusValidator>();// new ConsensusValidator(Network.Consensus);
 			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
 			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
@@ -278,9 +274,10 @@ namespace Stratis.Bitcoin
 				var stack = new CoinViewStack(CoinView);
 				var cache = stack.Find<CachedCoinView>();
 				var stats = new ConsensusStats(this, stack);
+				var cancellationToken = this.GlobalCancellation.Cancellation.Token;
 
 				ChainedBlock lastTip = ConsensusLoop.Tip;
-				foreach (var block in ConsensusLoop.Execute(_Cancellation.Token))
+				foreach (var block in ConsensusLoop.Execute(cancellationToken))
 				{
 					bool reorg = false;
 					if (ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
@@ -289,7 +286,7 @@ namespace Stratis.Bitcoin
 						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
 					}
 					lastTip = ConsensusLoop.Tip;
-					_Cancellation.Token.ThrowIfCancellationRequested();
+					cancellationToken.ThrowIfCancellationRequested();
 					if (block.Error != null)
 					{
 						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
@@ -332,7 +329,7 @@ namespace Stratis.Bitcoin
 			{
 				if (ex is OperationCanceledException)
 				{
-					if (_Cancellation.IsCancellationRequested)
+					if (this.GlobalCancellation.Cancellation.IsCancellationRequested)
 						return;
 				}
 				if (!IsDisposed)
@@ -370,11 +367,6 @@ namespace Stratis.Bitcoin
 		}
 
 		public MempoolManager MempoolManager
-		{
-			get; set;
-		}
-
-		public AddressManager AddressManager
 		{
 			get; set;
 		}
@@ -418,7 +410,6 @@ namespace Stratis.Bitcoin
 
 		ManualResetEvent _IsDisposed = new ManualResetEvent(false);
 		ManualResetEvent _IsStarted = new ManualResetEvent(false);
-		CancellationTokenSource _Cancellation = new CancellationTokenSource();
 		public bool IsDisposed
 		{
 			get
@@ -449,7 +440,7 @@ namespace Stratis.Bitcoin
 				Logs.Bench.LogInformation(benchLogs.ToString());
 				return Task.CompletedTask;
 			},
-			_Cancellation.Token,
+			this.GlobalCancellation.Cancellation.Token,
 			repeatEvery: TimeSpans.FiveSeconds,
 			startAfter: TimeSpans.FiveSeconds);
 		}
@@ -481,9 +472,9 @@ namespace Stratis.Bitcoin
 			_IsDisposedValue = true;
 			Logs.FullNode.LogInformation("Closing node pending...");
 			_IsStarted.WaitOne();
-			if (_Cancellation != null)
+			if (this.GlobalCancellation != null)
 			{
-				_Cancellation.Cancel();
+				this.GlobalCancellation.Cancellation.Cancel();
 
 				var cache = CoinView as CachedCoinView;
 				if (cache != null)
