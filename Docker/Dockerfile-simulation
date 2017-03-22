@@ -3,8 +3,8 @@ FROM stratisplatform/dotnet-build:1.0.0-preview2-1-003177
 MAINTAINER Dan Gershony - Stratis Platform <dan.gershony@stratisplatform.com>
 
 RUN git clone https://github.com/stratisproject/StratisBitcoinFullNode.git \
-	&& git checkout simulation/run1 \
 	&& cd StratisBitcoinFullNode \
+	&& git checkout simulation/run1 \
 	&& dotnet restore \
 	&& cd Stratis.BitcoinD \
 	&& dotnet build
