@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.BlockStore
@@ -57,13 +58,16 @@ namespace Stratis.Bitcoin.BlockStore
 	{
 		public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
 		{
-			fullNodeBuilder.ConfigureFeature(features =>
+            var blockRepository = new BlockRepository(fullNodeBuilder.Network, new DataFolder(fullNodeBuilder.NodeSettings));
+            blockRepository.Initialize().GetAwaiter().GetResult();
+
+            fullNodeBuilder.ConfigureFeature(features =>
 			{
 				features
 				.AddFeature<BlockStoreFeature>()
 				.FeatureServices(services =>
 					{
-						services.AddSingleton<BlockRepository>();
+						services.AddSingleton<BlockRepository>(blockRepository);
 						services.AddSingleton<BlockStoreCache>();
 						services.AddSingleton<StoreBlockPuller>();
 						services.AddSingleton<BlockStoreLoop>();

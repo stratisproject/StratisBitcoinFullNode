@@ -8,8 +8,8 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
-	public interface IBlockRepository
-	{
+	public interface IBlockRepository : IDisposable
+    {
 		Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
 
 		Task<Block> GetAsync(uint256 hash);
@@ -17,9 +17,17 @@ namespace Stratis.Bitcoin.BlockStore
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 
 		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
-	}
 
-	public class BlockRepository : IDisposable, IBlockRepository
+        Task<bool> ExistAsync(uint256 hash);
+
+        Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
+
+        Task SetBlockHash(uint256 nextBlockHash);
+
+        Task SetTxIndex(bool txIndex);
+    }
+
+	public class BlockRepository : IBlockRepository
 	{
 		readonly DBreezeSingleThreadSession session;
 		readonly Network network;
@@ -36,12 +44,13 @@ namespace Stratis.Bitcoin.BlockStore
 
 			this.session = new DBreezeSingleThreadSession("DBreeze BlockRepository", folder);
 			this.network = network;
-			Initialize(network.GetGenesis()).GetAwaiter().GetResult(); // hmm...
 		}
 
-		private Task Initialize(Block genesis)
+		public Task Initialize()
 		{
-			var sync = this.session.Do(() =>
+            var genesis = this.network.GetGenesis();
+
+            var sync = this.session.Do(() =>
 			{
 				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Common");
 				this.session.Transaction.ValuesLazyLoadingIsOn = true;

@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin
 			this.Services = serviceProvider;
 
 			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
-			this.DateTimeProvider = this.Services.ServiceProvider.GetService<DateTimeProvider>();
+			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
 			this.Network = this.Services.ServiceProvider.GetService<Network>();
 			this._Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
 			this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
-		public DateTimeProvider DateTimeProvider
+		public IDateTimeProvider DateTimeProvider
 		{
 			get; set;
 		}

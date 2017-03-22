@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,9 +12,9 @@ namespace Stratis.Bitcoin.Notifications
     /// </summary>
     public class BlockNotification
     {
-        private readonly Signals signals;
+        private readonly ISignals signals;
 
-        public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, Signals signals)
+        public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals)
         {
             if (chain == null)
                 throw new ArgumentNullException("chain");
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Notifications
             this.Puller = puller;
             this.signals = signals;
         }
-        
+
         public ILookaheadBlockPuller Puller { get; }
 
         public ConcurrentChain Chain { get; }
@@ -37,9 +38,14 @@ namespace Stratis.Bitcoin.Notifications
         /// <param name="startHash">The hash of the block from which to start notifying</param>
         /// <param name="cancellationToken">A cancellation token</param>
         public virtual void Notify(uint256 startHash, CancellationToken cancellationToken)
-        {            
+        {
+            ChainedBlock startBlock = this.Chain.GetBlock(startHash);
+
+            if (startBlock == null)
+                throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "BlockNotification: Could not find block with id {0}.", startHash.ToString()));
+
             // sets the location of the puller to the latest hash that was broadcasted
-            this.Puller.SetLocation(this.Chain.GetBlock(startHash));
+            this.Puller.SetLocation(startBlock);
 
             AsyncLoop.Run("block notifier", token =>
             {

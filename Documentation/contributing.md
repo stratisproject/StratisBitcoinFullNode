@@ -55,7 +55,7 @@ the PR.
 DOs and DON'Ts
 --------------
 
-* **DO** follow our [coding style](https://github.com/stratisproject/StratisBitcoinFullNode/blob/documentation/Documentation/coding-style.md)
+* **DO** follow our [coding style](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/coding-style.md)
 * **DO** give priority to the current style of the project or file you're changing even if it diverges from the general guidelines.
 * **DO** include tests when adding new features. When fixing bugs, start with
   adding a test that highlights how the current behavior is broken.
@@ -76,7 +76,7 @@ Copyright
 Source License
 --------------
 
-The Stratis licenses can be found under the [HERE](https://github.com/stratisproject/StratisBitcoinFullNode/blob/documentation/LICENSE) project.
+The Stratis licenses can be found under the [HERE](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/LICENSE) project.
 
 Copying Files from Other Projects
 ---------------------------------
@@ -96,6 +96,6 @@ Contributing
 ------------
 
 By contributing to this repository, you agree to license your work under the 
-[Stratis](https://github.com/stratisproject/StratisBitcoinFullNode/blob/documentation/LICENSE) license unless specified otherwise at 
+[Stratis](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/LICENSE) license unless specified otherwise at 
 the top of the file itself. Any work contributed where you are not the original 
 author must contain its license header with the original author(s) and source.
