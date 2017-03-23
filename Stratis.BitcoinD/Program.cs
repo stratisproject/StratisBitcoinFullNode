@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.BitcoinD
 {
@@ -20,11 +21,12 @@ namespace Stratis.BitcoinD
 		{
 			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
-
+            
 			var node = (FullNode) new FullNodeBuilder()
 				.UseNodeSettings(nodeSettings)
-				.UseBlockStore()
-				.UseMempool()
+                .UseConsensus()
+                .UseBlockStore()
+				.UseMempool()                
 				.Build();
 
 			// == shout down thread ==

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.BlockPulling
 	{
 
 		private const int BLOCK_SIZE = 2000000;
-		public LookaheadBlockPuller(ConcurrentChain chain, NodesCollection nodesCollection) : base(chain, nodesCollection)
+		public LookaheadBlockPuller(ConcurrentChain chain, ConnectionManager connectionManager) : base(chain, connectionManager.ConnectedNodes)
 		{
 			MaxBufferedSize = BLOCK_SIZE * 10;
 			MinimumLookahead = 4;

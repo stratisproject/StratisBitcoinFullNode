@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.BlockStore
 {
@@ -48,10 +50,13 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override void Stop()
 		{
-			this.blockStoreCache.Dispose();
-			this.blockRepository.Dispose();
-		}
-	}
+            Logs.BlockStore.LogInformation("Flushing BlockStore...");
+            this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
+
+            this.blockStoreCache.Dispose();
+			this.blockRepository.Dispose();            
+        }
+    }
 
 	public static class MBlockStoreBuilderExtension
 	{

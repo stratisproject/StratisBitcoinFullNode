@@ -62,8 +62,9 @@ namespace Stratis.Bitcoin
 
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
+            this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 
-			return this;
+            return this;
 		}
 
 		protected void StartFeatures()
@@ -150,35 +151,11 @@ namespace Stratis.Bitcoin
 				_Resources.Add(RPCHost);
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Settings.RPC.GetUrls()));
 			}
-
-			// === Consensus ===
-			var coinviewdb = this.Services.ServiceProvider.GetService<DBreezeCoinView>(); // DBreezeCoinView will be in the constructor of a feature
-			coinviewdb.Initialize(this.Network.GetGenesis()).GetAwaiter().GetResult();
-
-			var blockPuller = new LookaheadBlockPuller(Chain, ConnectionManager.ConnectedNodes);
-			ConnectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));
-			var consensusValidator = this.Services.ServiceProvider.GetService<ConsensusValidator>();// new ConsensusValidator(Network.Consensus);
-			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
-			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-
+            
 			// === Miner ===
 			this.Miner = new Mining(this, this.DateTimeProvider);
-
-			var flags = ConsensusLoop.GetFlags();
-			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-
-			// add disposables (TODO: move this to the consensus feature)
-			this.Resources.Add(coinviewdb);
-
-
-			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-			ConnectionManager.Start();
-
-			new Thread(RunLoop)
-			{
-				Name = "Consensus Loop"
-			}.Start();
+        
+            ConnectionManager.Start();            
 			_IsStarted.Set();
 
 			this.StartPeriodicLog();
@@ -188,157 +165,6 @@ namespace Stratis.Bitcoin
 		public BlockStore.ChainBehavior.ChainState ChainBehaviorState
 		{
 			get { return _ChainBehaviorState; }
-		}
-
-		public class ConsensusStats
-		{
-			private readonly FullNode fullNode;
-			private CoinViewStack stack;
-			private CachedCoinView cache;
-			private DBreezeCoinView dbreeze;
-			private CoinView bottom;
-
-			private LookaheadBlockPuller lookaheadPuller;
-			private ConsensusPerformanceSnapshot lastSnapshot;
-			private BackendPerformanceSnapshot lastSnapshot2;
-			private CachePerformanceSnapshot lastSnapshot3;
-
-			public ConsensusStats(FullNode fullNode, CoinViewStack stack)
-			{
-				this.fullNode = fullNode;
-
-				stack = new CoinViewStack(fullNode.CoinView);
-				cache = stack.Find<CachedCoinView>();
-				dbreeze = stack.Find<DBreezeCoinView>();
-				bottom = stack.Bottom;
-
-				lookaheadPuller = fullNode.ConsensusLoop.Puller as LookaheadBlockPuller;
-
-				lastSnapshot = fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-				lastSnapshot2 = dbreeze?.PerformanceCounter.Snapshot();
-				lastSnapshot3 = cache?.PerformanceCounter.Snapshot();
-			}
-
-			public bool CanLog
-			{
-				get
-				{
-					return this.fullNode._ChainBehaviorState.IsInitialBlockDownload &&
-						(DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
-				}
-			}
-
-			public void Log()
-			{
-				StringBuilder benchLogs = new StringBuilder();
-
-				if (lookaheadPuller != null)
-				{
-					benchLogs.AppendLine("======Block Puller======");
-					benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + lookaheadPuller.ActualLookahead + " blocks");
-					benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + lookaheadPuller.MedianDownloadCount + " blocks");
-					benchLogs.AppendLine("==========================");
-				}
-				benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
-				if (cache != null)
-				{
-					benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
-					benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + cache.CacheEntryCount);
-				}
-
-				var snapshot = this.fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-				benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
-				lastSnapshot = snapshot;
-
-				if (dbreeze != null)
-				{
-					var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
-					benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
-					lastSnapshot2 = snapshot2;
-				}
-				if (cache != null)
-				{
-					var snapshot3 = cache.PerformanceCounter.Snapshot();
-					benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
-					lastSnapshot3 = snapshot3;
-				}
-				benchLogs.AppendLine(this.fullNode.ConnectionManager.GetStats());
-				Logs.Bench.LogInformation(benchLogs.ToString());
-			}
-		}
-
-		void RunLoop()
-		{
-			try
-			{
-				var stack = new CoinViewStack(CoinView);
-				var cache = stack.Find<CachedCoinView>();
-				var stats = new ConsensusStats(this, stack);
-				var cancellationToken = this.GlobalCancellation.Cancellation.Token;
-
-				ChainedBlock lastTip = ConsensusLoop.Tip;
-				foreach (var block in ConsensusLoop.Execute(cancellationToken))
-				{
-					bool reorg = false;
-					if (ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
-					{
-						reorg = true;
-						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
-					}
-					lastTip = ConsensusLoop.Tip;
-					cancellationToken.ThrowIfCancellationRequested();
-					if (block.Error != null)
-					{
-						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
-
-						//Pull again
-						ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
-
-						if (block.Error == ConsensusErrors.BadWitnessNonceSize)
-						{
-							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
-							ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-							ConsensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
-							continue;
-						}
-
-						//Set the PoW chain back to ConsensusLoop.Tip
-						Chain.SetTip(ConsensusLoop.Tip);
-						//Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
-						Logs.FullNode.LogError("Marking block as invalid");
-						_ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
-					}
-
-					if (!reorg && block.Error == null)
-					{
-						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						if (Chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
-						{
-							var unused = cache.FlushAsync();
-						}
-
-						this.Signals.Blocks.Broadcast(block.Block);
-					}
-
-					// TODO: replace this with a signalling object
-					if (stats.CanLog)
-						stats.Log();
-				}
-			}
-			catch (Exception ex) //TODO: Barbaric clean exit
-			{
-				if (ex is OperationCanceledException)
-				{
-					if (this.GlobalCancellation.Cancellation.IsCancellationRequested)
-						return;
-				}
-				if (!IsDisposed)
-				{
-					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + ConsensusLoop.Tip?.Height + ")");
-					_UncatchedException = ex;
-					Dispose();
-				}
-			}
 		}
 
 		public Mining Miner
@@ -475,17 +301,7 @@ namespace Stratis.Bitcoin
 			if (this.GlobalCancellation != null)
 			{
 				this.GlobalCancellation.Cancellation.Cancel();
-
-				var cache = CoinView as CachedCoinView;
-				if (cache != null)
-				{
-					Logs.FullNode.LogInformation("Flushing Cache CoinView...");
-					cache.FlushAsync().GetAwaiter().GetResult();
-				}
-
-				Logs.FullNode.LogInformation("Flushing BlockStore...");
-				this.BlockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
-
+                
 				ConnectionManager.Dispose();
 				foreach (var dispo in _Resources)
 					dispo.Dispose();

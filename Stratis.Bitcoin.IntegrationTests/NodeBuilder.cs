@@ -66,8 +66,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			var node = (FullNode)new FullNodeBuilder()
 				.UseNodeSettings(args)
-				.UseBlockStore()
-				.UseMempool()
+                .UseConsensus()
+                .UseBlockStore()
+				.UseMempool()                
 				.Build();
 
 			return node;
