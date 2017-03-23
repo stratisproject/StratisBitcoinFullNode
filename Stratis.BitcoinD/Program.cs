@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.BitcoinD
 {
@@ -23,6 +24,7 @@ namespace Stratis.BitcoinD
 
 			var node = (FullNode) new FullNodeBuilder()
 				.UseNodeSettings(nodeSettings)
+				.UseConsensus()
 				.UseBlockStore()
 				.UseMempool()
 				.Build();
