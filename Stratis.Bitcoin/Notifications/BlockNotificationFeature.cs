@@ -1,54 +1,65 @@
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.Notifications
 {
-    /// <summary>
-    /// Feature enabling the broadcasting of blocks.
-    /// </summary>
-    public class BlockNotificationFeature : FullNodeFeature
-    {
-        private readonly BlockNotification blockNotification;
+	/// <summary>
+	/// Feature enabling the broadcasting of blocks.
+	/// </summary>
+	public class BlockNotificationFeature : FullNodeFeature
+	{
+		private readonly BlockNotification blockNotification;
+		private readonly uint256 startHash;
+		private readonly FullNode.CancellationProvider cancellationProvider;
+		private readonly ConnectionManager connectionManager;
+		private readonly LookaheadBlockPuller blockPuller;
+		private readonly ChainBehavior.ChainState chainState;
+		private readonly ConcurrentChain chain;
 
-        private readonly uint256 startHash;
+		public BlockNotificationFeature(BlockNotification blockNotification, BlockNotificationStartHash blockNotificationStartHash,
+			FullNode.CancellationProvider cancellationProvider, ConnectionManager connectionManager, LookaheadBlockPuller blockPuller, ChainBehavior.ChainState chainState, ConcurrentChain chain)
+		{
+			this.blockNotification = blockNotification;
+			this.startHash = blockNotificationStartHash.StartHash;
+			this.cancellationProvider = cancellationProvider;
+			this.connectionManager = connectionManager;
+			this.blockPuller = blockPuller;
+			this.chainState = chainState;
+			this.chain = chain;
+		}
 
-        private readonly FullNode.CancellationProvider cancellationProvider;
+		public override void Start()
+		{
+			var connectionParameters = this.connectionManager.Parameters;
+			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));
+			this.blockNotification.Notify(this.startHash, this.cancellationProvider.Cancellation.Token);
+			this.chainState.HighestValidatedPoW = this.chain.Genesis;
+		}
+	}
 
-        public BlockNotificationFeature(BlockNotification blockNotification, BlockNotificationStartHash blockNotificationStartHash, 
-			FullNode.CancellationProvider cancellationProvider)
-        {
-            this.blockNotification = blockNotification;
-            this.startHash = blockNotificationStartHash.StartHash;
-            this.cancellationProvider = cancellationProvider;
-        }
-        
-        public override void Start()
-        {           
-            this.blockNotification.Notify(this.startHash, this.cancellationProvider.Cancellation.Token);
-        }
-    }
+	public static class BlockNotificationFeatureExtension
+	{
+		public static IFullNodeBuilder UseBlockNotification(this IFullNodeBuilder fullNodeBuilder, uint256 startHash)
+		{
+			fullNodeBuilder.ConfigureFeature(features =>
+			{
+				features
+				.AddFeature<BlockNotificationFeature>()
+				.FeatureServices(services =>
+				{
+					services.AddSingleton(new BlockNotificationStartHash(startHash));
+					services.AddSingleton<BlockNotification>();
+					services.AddSingleton<Signals>();
+					services.AddSingleton<LookaheadBlockPuller>();
+				});
+			});
 
-    public static class BlockNotificationFeatureExtension
-    {
-        public static IFullNodeBuilder UseBlockNotification(this IFullNodeBuilder fullNodeBuilder, uint256 startHash)
-        {
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                features
-                .AddFeature<BlockNotificationFeature>()
-                .FeatureServices(services =>
-                    {
-                        services.AddSingleton(new BlockNotificationStartHash(startHash));
-                        services.AddSingleton<BlockNotification>();
-                        services.AddSingleton<Signals>();
-                        services.AddSingleton<BlockPuller, LookaheadBlockPuller>();
-                    });
-            });
-
-            return fullNodeBuilder;
-        }
-    }
+			return fullNodeBuilder;
+		}
+	}
 }
