@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Consensus
 		uint256 _InnerBlockHash;
 		CoinView _Inner;
 
-		public CachedCoinView(CoinView inner)
+		public CachedCoinView(DBreezeCoinView inner)
 		{
 			Guard.NotNull(inner, nameof(inner));
 

@@ -11,77 +11,75 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Notifications
 {
-    public class BlockNotificationTest
-    {
-        private CancellationTokenSource source;
+	public class BlockNotificationTest
+	{
+		private CancellationTokenSource source;
 
-        public BlockNotificationTest()
-        {
-            this.source = new CancellationTokenSource();
-        }
+		public BlockNotificationTest()
+		{
+			this.source = new CancellationTokenSource();
+		}
 
-        [Fact]
-        public void NotifyStartHashNotOnChainThrowsException()
-        {
-            Assert.Throws(typeof(InvalidOperationException), () =>
-            {
-                var startBlockId = new uint256(156);
-                var chain = new Mock<ConcurrentChain>();
-                chain.Setup(c => c.GetBlock(startBlockId))
-                    .Returns((ChainedBlock)null);
-                CancellationTokenSource source = new CancellationTokenSource();
+		[Fact]
+		public void NotifyStartHashNotOnChainCompletes()
+		{
 
-                var notification = new BlockNotification(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals());
+			var startBlockId = new uint256(156);
+			var chain = new Mock<ConcurrentChain>();
+			chain.Setup(c => c.GetBlock(startBlockId))
+				.Returns((ChainedBlock)null);
+			CancellationTokenSource source = new CancellationTokenSource();
 
-                notification.Notify(startBlockId, source.Token);
-            });
-        }
+			var notification = new BlockNotification(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals());
 
-        [Fact]
-        public void NotifySetsPullerLocationToBlockMatchingStartHash()
-        {
-            var startBlockId = new uint256(156);
-            var chain = new Mock<ConcurrentChain>();
-            var header = new BlockHeader();
-            chain.Setup(c => c.GetBlock(startBlockId))
-                .Returns(new ChainedBlock(header, 0));
+			notification.Notify(startBlockId, source.Token);
+		}
 
-            var stub = new Mock<ILookaheadBlockPuller>();
-            stub.Setup(s => s.NextBlock(this.source.Token))
-                .Returns((Block)null);
+		[Fact]
+		public void NotifySetsPullerLocationToBlockMatchingStartHash()
+		{
+			var startBlockId = new uint256(156);
+			var chain = new Mock<ConcurrentChain>();
+			var header = new BlockHeader();
+			chain.Setup(c => c.GetBlock(startBlockId))
+				.Returns(new ChainedBlock(header, 0));
 
-            var notification = new BlockNotification(chain.Object, stub.Object, new Signals());
+			var stub = new Mock<ILookaheadBlockPuller>();
+			stub.Setup(s => s.NextBlock(this.source.Token))
+				.Returns((Block)null);
 
-            notification.Notify(startBlockId, this.source.Token);
-            stub.Verify(s => s.SetLocation(It.Is<ChainedBlock>(c => c.Height == 0 && c.Header.GetHash() == header.GetHash())));
-        }
+			var notification = new BlockNotification(chain.Object, stub.Object, new Signals());
 
-        [Fact]
-        public void NotifyBroadcastsOnNextBlock()
-        {
-            var startBlockId = new uint256(156);
-            var chain = new Mock<ConcurrentChain>();
-            var header = new BlockHeader();
-            chain.Setup(c => c.GetBlock(startBlockId))
-                .Returns(new ChainedBlock(header, 0));
+			notification.Notify(startBlockId, this.source.Token);
+			stub.Verify(s => s.SetLocation(It.Is<ChainedBlock>(c => c.Height == 0 && c.Header.GetHash() == header.GetHash())));
+		}
 
-            var stub = new Mock<ILookaheadBlockPuller>();
-            stub.SetupSequence(s => s.NextBlock(this.source.Token))
-                .Returns(new Block())
-                .Returns(new Block())
-                .Returns((Block)null);
+		[Fact]
+		public void NotifyBroadcastsOnNextBlock()
+		{
+			var startBlockId = new uint256(156);
+			var chain = new Mock<ConcurrentChain>();
+			var header = new BlockHeader();
+			chain.Setup(c => c.GetBlock(startBlockId))
+				.Returns(new ChainedBlock(header, 0));
 
-            var signals = new Mock<ISignals>();
-            var signalerMock = new Mock<ISignaler<Block>>();
-            signals.Setup(s => s.Blocks)
-                .Returns(signalerMock.Object);
+			var stub = new Mock<ILookaheadBlockPuller>();
+			stub.SetupSequence(s => s.NextBlock(this.source.Token))
+				.Returns(new Block())
+				.Returns(new Block())
+				.Returns((Block)null);
 
-            var notification = new BlockNotification(chain.Object, stub.Object, signals.Object);
+			var signals = new Mock<ISignals>();
+			var signalerMock = new Mock<ISignaler<Block>>();
+			signals.Setup(s => s.Blocks)
+				.Returns(signalerMock.Object);
 
-            notification.Notify(startBlockId, this.source.Token);
+			var notification = new BlockNotification(chain.Object, stub.Object, signals.Object);
 
-            Thread.Sleep(100);
-            signalerMock.Verify(s => s.Broadcast(It.IsAny<Block>()), Times.Exactly(2));
-        }
-    }
+			notification.Notify(startBlockId, this.source.Token);
+
+			Thread.Sleep(100);
+			signalerMock.Verify(s => s.Broadcast(It.IsAny<Block>()), Times.Exactly(2));
+		}
+	}
 }

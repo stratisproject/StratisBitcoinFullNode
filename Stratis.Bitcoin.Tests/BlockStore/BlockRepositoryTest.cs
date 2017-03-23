@@ -13,8 +13,6 @@
 
     public class BlockRepositoryTest : TestBase
     {
-        private BlockHeader blockHeader;
-
         [Fact]
         public void InitializesGenBlockAndTxIndexOnFirstLoad()
         {

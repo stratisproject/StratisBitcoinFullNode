@@ -38,7 +38,6 @@ namespace Stratis.Bitcoin.Consensus
 			_Chain = chain;
 			_utxoSet = utxoSet;
 			_Puller = puller;
-			Initialize();
 		}
 
 		private readonly LookaheadBlockPuller _Puller;
@@ -101,7 +100,7 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
-		private void Initialize()
+		public void Initialize()
 		{
 			var utxoHash = _utxoSet.GetBlockHashAsync().GetAwaiter().GetResult();
 			while(true)

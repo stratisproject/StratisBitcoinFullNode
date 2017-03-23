@@ -78,10 +78,8 @@ namespace Stratis.Bitcoin.Builder
 
 			var connectionParameters = connectionManager.Parameters;
 			connectionParameters.IsRelay = nodeSettings.Mempool.RelayTxes;
-			connectionParameters.Services = (nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
-
-			this.connectionManager.Parameters.TemplateBehaviors.Add(new ChainBehavior(this.chain, this.chainState));
-			this.connectionManager.Parameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
+			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(this.chain, this.chainState));
+			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
 
 			this.disposableResources.Add(this.chainRepository);
 			this.disposableResources.Add(this.connectionManager);

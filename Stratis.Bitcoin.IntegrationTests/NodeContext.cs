@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			_Network = network;
 			_TestDirectory = TestDirectory.Create(name, clean);
 			_PersistentCoinView = new DBreezeCoinView(network, _TestDirectory.FolderName);
-			_PersistentCoinView.Initialize(network.GetGenesis()).GetAwaiter().GetResult();
+			_PersistentCoinView.Initialize().GetAwaiter().GetResult();
 			_CleanList.Add(_PersistentCoinView);
 		}
 
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			_PersistentCoinView.Dispose();
 			_CleanList.Remove(_PersistentCoinView);
 			_PersistentCoinView = new DBreezeCoinView(_Network, _TestDirectory.FolderName);
-			_PersistentCoinView.Initialize(_Network.GetGenesis()).GetAwaiter().GetResult();
+			_PersistentCoinView.Initialize().GetAwaiter().GetResult();
 			_CleanList.Add(_PersistentCoinView);
 		}		
 	}
