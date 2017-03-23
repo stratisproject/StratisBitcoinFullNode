@@ -22,7 +22,14 @@ Adding Features
 Before Adding new features please discuss that on public channels first (issue/slack).  
 Don't start coding before we have a clear design and direction.
 It's preferred to make small incremental commits (unless its impossible) and not a massive all in commit. 
-Unit tests are a MUST!
+Unit tests are a MUST! If the method you modify does not have any tests yet try to add them! We haven't written tests for all code due to delivery pressure but the goal is to have everything covered by tests.
+
+Adding Unit Tests
+-----------------
+Test contributions are more than welcome!
+Pick a class that does not have any tests and start testing it.
+Have a look at our [testing guidelines](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/testing-guidelines.md)
+Use other tests for reference.
 
 Typos and small changes
 -----------------------
@@ -55,7 +62,7 @@ the PR.
 DOs and DON'Ts
 --------------
 
-* **DO** follow our [coding style](https://github.com/stratisproject/StratisBitcoinFullNode/blob/documentation/Documentation/coding-style.md)
+* **DO** follow our [coding style](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/coding-style.md)
 * **DO** give priority to the current style of the project or file you're changing even if it diverges from the general guidelines.
 * **DO** include tests when adding new features. When fixing bugs, start with
   adding a test that highlights how the current behavior is broken.
@@ -76,7 +83,7 @@ Copyright
 Source License
 --------------
 
-The Stratis licenses can be found under the [HERE](https://github.com/stratisproject/StratisBitcoinFullNode/blob/documentation/LICENSE) project.
+The Stratis licenses can be found under the [HERE](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/LICENSE) project.
 
 Copying Files from Other Projects
 ---------------------------------
@@ -96,6 +103,6 @@ Contributing
 ------------
 
 By contributing to this repository, you agree to license your work under the 
-[Stratis](https://github.com/stratisproject/StratisBitcoinFullNode/blob/documentation/LICENSE) license unless specified otherwise at 
+[Stratis](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/LICENSE) license unless specified otherwise at 
 the top of the file itself. Any work contributed where you are not the original 
 author must contain its license header with the original author(s) and source.
