@@ -62,9 +62,9 @@ namespace Stratis.Bitcoin
 
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
-            this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
+			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 
-            return this;
+			return this;
 		}
 
 		protected void StartFeatures()
@@ -154,8 +154,8 @@ namespace Stratis.Bitcoin
             
 			// === Miner ===
 			this.Miner = new Mining(this, this.DateTimeProvider);
-        
-            ConnectionManager.Start();            
+
+			ConnectionManager.Start();
 			_IsStarted.Set();
 
 			this.StartPeriodicLog();

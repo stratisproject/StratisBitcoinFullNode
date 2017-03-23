@@ -50,12 +50,12 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override void Stop()
 		{
-            Logs.BlockStore.LogInformation("Flushing BlockStore...");
-            this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
+			Logs.BlockStore.LogInformation("Flushing BlockStore...");
+			this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
 
-            this.blockStoreCache.Dispose();
-			this.blockRepository.Dispose();            
-        }
+			this.blockStoreCache.Dispose();
+			this.blockRepository.Dispose();
+		}
     }
 
 	public static class MBlockStoreBuilderExtension

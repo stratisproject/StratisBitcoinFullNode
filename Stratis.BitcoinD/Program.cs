@@ -21,12 +21,12 @@ namespace Stratis.BitcoinD
 		{
 			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
-            
+
 			var node = (FullNode) new FullNodeBuilder()
 				.UseNodeSettings(nodeSettings)
-                .UseConsensus()
-                .UseBlockStore()
-				.UseMempool()                
+				.UseConsensus()
+				.UseBlockStore()
+				.UseMempool()
 				.Build();
 
 			// == shout down thread ==
