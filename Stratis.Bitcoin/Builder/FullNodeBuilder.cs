@@ -70,7 +70,9 @@ namespace Stratis.Bitcoin.Builder
 			{
 				service.AddSingleton(this.NodeSettings);
 				service.AddSingleton(this.Network);
-			});		
+			});
+
+			this.UseBaseFeature();
 		}
 
 		public FeatureCollection Features { get; }

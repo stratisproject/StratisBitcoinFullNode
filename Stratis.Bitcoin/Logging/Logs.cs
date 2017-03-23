@@ -59,11 +59,11 @@ namespace Stratis.Bitcoin.Logging
 			get; set;
 		}
 
-        public static ILogger Consensus
-        {
-            get; set;
-        }
+		public static ILogger Consensus
+		{
+			get; set;
+		}
 
-        public const int ColumnLength = 16;
+		public const int ColumnLength = 16;
 	}
 }
