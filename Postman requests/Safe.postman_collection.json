@@ -1,0 +1,91 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Safe",
+		"_postman_id": "11f915f1-7aac-bfeb-000c-b66348f4636f",
+		"description": "Requests relating to operations on the safe",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create safe - success",
+			"request": {
+				"url": "http://localhost:5000/api/safe/",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWallet\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Create safe - validation errors",
+			"request": {
+				"url": "http://localhost:5000/api/safe/",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "\n{\n\t\"network\": \"Main\",\n\t\"localFilePath\": \"Wallets/TestWallet2.json\"\n}"
+				},
+				"description": "with errors"
+			},
+			"response": []
+		},
+		{
+			"name": "Load safe",
+			"request": {
+				"url": "http://localhost:5000/api/safe/?password=123456&folderPath=MyWallets&name=myFirstWallet",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWadllet\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Recover safe",
+			"request": {
+				"url": "http://localhost:5000/api/safe/recover",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWalletRecovered\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\"\n\t\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
