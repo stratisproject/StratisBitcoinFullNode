@@ -18,12 +18,12 @@ namespace Stratis.Bitcoin.MemoryPool
 		public MempoolOrphans Orphans { get; } // public for testing
 		private readonly TxMempool memPool;
 
-		public DateTimeProvider DateTimeProvider { get; }
+		public IDateTimeProvider DateTimeProvider { get; }
 		public NodeSettings NodeArgs { get; set; }
 
 
 		public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool, 
-			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
+			MempoolValidator validator, MempoolOrphans orphans, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;

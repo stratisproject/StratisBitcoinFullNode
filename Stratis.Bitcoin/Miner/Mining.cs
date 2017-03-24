@@ -18,9 +18,9 @@ namespace Stratis.Bitcoin.Miner
 	public class Mining
     {
 	    private readonly FullNode fullNode;
-	    private readonly DateTimeProvider dateTimeProvider;
+	    private readonly IDateTimeProvider dateTimeProvider;
 
-	    public Mining(FullNode fullNode, DateTimeProvider dateTimeProvider)
+	    public Mining(FullNode fullNode, IDateTimeProvider dateTimeProvider)
 	    {
 		    this.fullNode = fullNode;
 		    this.dateTimeProvider = dateTimeProvider;

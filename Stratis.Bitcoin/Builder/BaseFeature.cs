@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Builder
 					services.AddSingleton<FullNode>();
 					services.AddSingleton<Signals>();
 					services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network));
-					services.AddSingleton(DateTimeProvider.Default);
+					services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
 					services.AddSingleton<BlockStore.ChainBehavior.ChainState>();
 					services.AddSingleton<ChainRepository>();
 					services.AddSingleton(serviceProvider => new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() });

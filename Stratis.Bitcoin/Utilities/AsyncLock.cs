@@ -9,74 +9,14 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
 {
-    /// <summary>
-    /// An attempt at making an async dictionary
-    /// </summary>
-    public class AsyncDictionary<TKey, TValue>
+    public interface IAsyncLock
     {
-        private readonly Dictionary<TKey, TValue> dictionary;
-        private readonly AsyncLock asyncLock;
+        CancellationTokenSource Cancellation { get; }
 
-        public AsyncDictionary()
-        {
-            this.asyncLock = new AsyncLock();
-            this.dictionary = new Dictionary<TKey, TValue>();
-        }
-
-        public Task Add(TKey key, TValue value)
-        {
-           return this.asyncLock.WriteAsync(() => this.dictionary.Add(key, value));
-        }
-
-        public Task Clear()
-        {
-            return this.asyncLock.WriteAsync(() => this.dictionary.Clear());
-        }
-
-        public Task<int> Count
-        {
-            get
-            {
-                return this.asyncLock.ReadAsync(() => this.dictionary.Count);
-            }
-        }
-
-        public Task<bool> ContainsKey(TKey key)
-        {
-            return this.asyncLock.ReadAsync(() => this.dictionary.ContainsKey(key));
-        }
-
-        public Task<bool> Remove(TKey key)
-        {
-            return this.asyncLock.WriteAsync(() => this.dictionary.Remove(key));
-        }
-
-        public Task<TValue> TryGetValue(TKey key)
-        {
-            return this.asyncLock.ReadAsync(() =>
-            {
-                TValue outval;
-                this.dictionary.TryGetValue(key, out outval);
-                return outval;
-            });
-        }
-
-        public Task<Collection<TKey>> Keys
-        {
-            get
-            {
-                return this.asyncLock.ReadAsync(() => new Collection<TKey>(this.dictionary.Keys.ToList()));
-            }
-        }
-
-        public Task<Collection<TValue>> Values
-        {
-            get
-            {
-                return this.asyncLock.ReadAsync(() => new Collection<TValue>(this.dictionary.Values.ToList()));
-            }
-        }
-
+        Task ReadAsync(Action func);
+        Task<T> ReadAsync<T>(Func<T> func);
+        Task WriteAsync(Action func);
+        Task<T> WriteAsync<T>(Func<T> func);
     }
 
     /// <summary>
@@ -90,8 +30,8 @@ namespace Stratis.Bitcoin.Utilities
     /// unless creation and scheduling must be separated, StartNew is the recommended
     /// approach for both simplicity and performance.
     /// </remarks>
-    public class AsyncLock
-	{
+    public class AsyncLock : IAsyncLock
+    {
 		public CancellationTokenSource Cancellation { get; private set; }
 		private readonly ConcurrentExclusiveSchedulerPair schedulerPair; // reference kept for perf counter
 

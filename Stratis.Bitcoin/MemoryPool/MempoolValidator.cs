@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		const int MAX_FEE_ESTIMATION_TIP_AGE = 3 * 60 * 60;
 
 		private readonly MempoolScheduler mempoolScheduler;
-		private readonly DateTimeProvider dateTimeProvider;
+		private readonly IDateTimeProvider dateTimeProvider;
 		private readonly NodeSettings nodeArgs;
 		private readonly ConcurrentChain chain;
 		private readonly CoinView coinView;
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 
 		public MempoolValidator(TxMempool memPool, MempoolScheduler mempoolScheduler,
-			ConsensusValidator consensusValidator, DateTimeProvider dateTimeProvider, NodeSettings nodeArgs,
+			ConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs,
 			ConcurrentChain chain, CoinView coinView)
 		{
 			this.memPool = memPool;

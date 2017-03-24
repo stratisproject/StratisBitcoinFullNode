@@ -49,8 +49,9 @@ namespace Stratis.Bitcoin.BlockStore
 			this.connectionManager.Parameters.Services = (nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 			this.signals.Blocks.Subscribe(this.blockStoreSignaled);
 
+			this.blockRepository.Initialize().GetAwaiter().GetResult();
 			this.blockStoreSignaled.RelayWorker(this.cancellationProvider.Cancellation.Token);
-			this.blockStoreLoop.Initialize(this.cancellationProvider.Cancellation).GetAwaiter().GetResult();
+			this.blockStoreLoop.Initialize(this.cancellationProvider.Cancellation).GetAwaiter().GetResult();			
 		}
 
 		public override void Stop()
@@ -66,8 +67,8 @@ namespace Stratis.Bitcoin.BlockStore
 	public static class MBlockStoreBuilderExtension
 	{
 		public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
-		{
-			fullNodeBuilder.ConfigureFeature(features =>
+		{          
+            fullNodeBuilder.ConfigureFeature(features =>
 			{
 				features
 				.AddFeature<BlockStoreFeature>()

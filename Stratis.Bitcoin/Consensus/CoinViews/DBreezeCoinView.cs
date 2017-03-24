@@ -7,6 +7,7 @@ using NBitcoin;
 using NBitcoin.BitcoinCore;
 using DBreeze;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -15,6 +16,12 @@ namespace Stratis.Bitcoin.Consensus
 
 		DBreezeSingleThreadSession _Session;
 		Network _Network;
+
+		public DBreezeCoinView(Network network, DataFolder dataFolder) 
+			: this(network, dataFolder.CoinViewPath)
+		{
+		}
+
 		public DBreezeCoinView(Network network, string folder)
 		{
 			Guard.NotNull(network, nameof(network));
@@ -24,8 +31,10 @@ namespace Stratis.Bitcoin.Consensus
 			_Network = network;
 		}
 
-		public Task Initialize(Block genesis)
+		public Task Initialize()
 		{
+			var genesis = this._Network.GetGenesis();
+
 			var sync = _Session.Do(() =>
 			{
 				_Session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind");

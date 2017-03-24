@@ -120,7 +120,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 			{
 				using (var blockRepo = new BlockStore.BlockRepository(Network.Main, dir.FolderName))
 				{
-					Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
+                    blockRepo.Initialize().GetAwaiter().GetResult();
+
+                    Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
 					var hash = new Block().GetHash();
 					blockRepo.SetBlockHash(hash).GetAwaiter().GetResult();
 					Assert.Equal(hash, blockRepo.BlockHash);

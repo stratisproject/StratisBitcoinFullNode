@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly CancellationProvider globalCancellation;
 		private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
+		private readonly NodeSettings nodeSettings;
 
 		public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
@@ -40,7 +41,8 @@ namespace Stratis.Bitcoin.Consensus
 			ConnectionManager connectionManager,
 			CancellationProvider globalCancellation,
 			Signals signals,
-			ConsensusLoop consensusLoop)
+			ConsensusLoop consensusLoop,
+			NodeSettings nodeSettings)
 		{
 			this.dBreezeCoinView = dBreezeCoinView;
 			this.consensusValidator = consensusValidator;
@@ -53,11 +55,17 @@ namespace Stratis.Bitcoin.Consensus
 			this.signals = signals;
 			this.network = network;
 			this.consensusLoop = consensusLoop;
+			this.nodeSettings = nodeSettings;
 		}
 
 		public override void Start()
-		{
-			this.dBreezeCoinView.Initialize(network.GetGenesis()).GetAwaiter().GetResult();
+		{			
+			this.dBreezeCoinView.Initialize().GetAwaiter().GetResult();
+			var cache = this.coinView as CachedCoinView;
+			if (cache != null)
+			{
+				cache.MaxItems = this.nodeSettings.Cache.MaxItems;
+			}
 			this.consensusLoop.Initialize();
 
 			this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
@@ -170,12 +178,9 @@ namespace Stratis.Bitcoin.Consensus
 				.AddFeature<ConsensusFeature>()
 				.FeatureServices(services =>
 				{
-					var dataFolder = new DataFolder(fullNodeBuilder.NodeSettings);
-					var coinviewdb = new DBreezeCoinView(fullNodeBuilder.Network, dataFolder.CoinViewPath);
-
 					services.AddSingleton(new ConsensusValidator(fullNodeBuilder.Network.Consensus));
-					services.AddSingleton(coinviewdb);
-					services.AddSingleton<CoinView>(new CachedCoinView(coinviewdb) { MaxItems = fullNodeBuilder.NodeSettings.Cache.MaxItems });
+					services.AddSingleton<DBreezeCoinView>();
+					services.AddSingleton<CoinView, CachedCoinView>();
 					services.AddSingleton<LookaheadBlockPuller>();
 					services.AddSingleton<ConsensusLoop>();
 				});

@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Tests
                 await DoTask(token);
             });
             
-            asyncLoop.Run(new CancellationTokenSource(80).Token, TimeSpan.FromMilliseconds(33)).Wait();
+            asyncLoop.Run(new CancellationTokenSource(90).Token, TimeSpan.FromMilliseconds(33)).Wait();
 
             Assert.Equal(3, iterationCount);
         }

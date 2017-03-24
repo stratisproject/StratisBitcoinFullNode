@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,9 +12,9 @@ namespace Stratis.Bitcoin.Notifications
 	/// </summary>
 	public class BlockNotification
 	{
-		private readonly Signals signals;
+		private readonly ISignals signals;
 
-		public BlockNotification(ConcurrentChain chain, LookaheadBlockPuller puller, Signals signals)
+		public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals)
 		{
 			if (chain == null)
 				throw new ArgumentNullException("chain");
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Notifications
 			this.signals = signals;
 		}
 
-		public LookaheadBlockPuller Puller { get; }
+		public ILookaheadBlockPuller Puller { get; }
 
 		public ConcurrentChain Chain { get; }
 

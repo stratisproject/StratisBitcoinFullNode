@@ -3,7 +3,14 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin
 {
-	public class DateTimeProvider
+    public interface IDateTimeProvider
+    {
+        long GetTime();
+        DateTimeOffset GetTimeOffset();
+        DateTime GetUtcNow();
+    }
+
+    public class DateTimeProvider : IDateTimeProvider
 	{
 		public virtual long GetTime()
 		{
@@ -20,6 +27,6 @@ namespace Stratis.Bitcoin
 			return DateTimeOffset.UtcNow;
 		}
 
-		public static DateTimeProvider Default => new DateTimeProvider();
+		public static IDateTimeProvider Default => new DateTimeProvider();
 	}
 }
