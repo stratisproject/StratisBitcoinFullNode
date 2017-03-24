@@ -63,6 +63,7 @@ namespace Stratis.Bitcoin
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
+			this.Miner = this.Services.ServiceProvider.GetService<Mining>();
 
 			return this;
 		}
@@ -152,9 +153,6 @@ namespace Stratis.Bitcoin
 				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Settings.RPC.GetUrls()));
 			}
             
-			// === Miner ===
-			this.Miner = new Mining(this, this.DateTimeProvider);
-
 			ConnectionManager.Start();
 			_IsStarted.Set();
 
