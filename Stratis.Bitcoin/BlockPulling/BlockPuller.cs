@@ -263,10 +263,21 @@ namespace Stratis.Bitcoin.BlockPulling
 			{
 				vectors.Add(new InventoryVector(InventoryType.MSG_BLOCK, result));
 			}
+
+			var minheight = int.MaxValue;
+			foreach (var vector in vectors)
+			{
+				var chainedBlock = this.Chain.GetBlock(vector.Hash);
+				if (chainedBlock == null) // reorg might have happened.
+				{
+					vectors.Remove(vector);
+					continue;
+				}
+				minheight = Math.Min(chainedBlock.Height, minheight);
+			}
 			if (vectors.Any())
 			{
-				var minHeight = vectors.Select(v => this.Chain.GetBlock(v.Hash).Height).Min();
-				DistributeDownload(vectors.ToArray(), innernodes, minHeight);
+				DistributeDownload(vectors.ToArray(), innernodes, minheight);
 			}
 		}
 
