@@ -1,5 +1,7 @@
 {
   "version": "1.0.0-*",
+  "title": "Stratis.Bitcoin",
+  "description": "Stratis Bitcoin FullNode",
 
   "dependencies": {
     "System.Reactive": "3.1.1",
@@ -22,10 +24,10 @@
 
   "frameworks": {
     "netstandard1.6": {
-        "dependencies": {
-        },
-        "buildOptions": { "define": [ "NETCORE" ] },
-        "imports": [ "netcore50" ]
+      "dependencies": {
+      },
+      "buildOptions": { "define": [ "NETCORE" ] },
+      "imports": [ "netcore50" ]
     }
   }
 }
