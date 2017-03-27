@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.Miner;
 
 namespace Stratis.BitcoinD
@@ -29,6 +30,7 @@ namespace Stratis.BitcoinD
 				.UseBlockStore()
 				.UseMempool()
 				.AddMining(args.Any(a => a.Contains("mine")))
+				.AddRPC()
 				.Build();
 
 			// == shut down thread ==
