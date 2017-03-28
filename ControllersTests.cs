@@ -13,15 +13,15 @@ namespace Breeze.Api.Tests
     public class ControllersTests
     {
         [Fact]
-        public void CreateSafeSuccessfullyReturnsMnemonic()
+        public void CreateWalletSuccessfullyReturnsMnemonic()
         {
-            var mockSafeCreate = new Mock<ISafeWrapper>();
-            mockSafeCreate.Setup(safe => safe.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns("mnemonic");
+            var mockWalletCreate = new Mock<IWalletWrapper>();
+            mockWalletCreate.Setup(wallet => wallet.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns("mnemonic");
 
-            var controller = new SafeController(mockSafeCreate.Object);
+            var controller = new WalletController(mockWalletCreate.Object);
 
             // Act
-            var result = controller.Create(new SafeCreationModel
+            var result = controller.Create(new WalletCreationModel
             {
                 Name = "myName",
                 FolderPath = "",
@@ -30,29 +30,29 @@ namespace Breeze.Api.Tests
             });
 
             // Assert
-            mockSafeCreate.VerifyAll();
+            mockWalletCreate.VerifyAll();
             var viewResult = Assert.IsType<JsonResult>(result);
             Assert.Equal("mnemonic", viewResult.Value);
             Assert.NotNull(result);
         }
 
         [Fact]
-        public void LoadSafeSuccessfullyReturnsSafeModel()
+        public void LoadWalletSuccessfullyReturnsWalletModel()
         {
-            SafeModel safeModel = new SafeModel
+            WalletModel walletModel = new WalletModel
             {
                 FileName = "myWallet",
                 Network = "MainNet",
                 Addresses = new List<string> { "address1", "address2", "address3", "address4", "address5" }
 
             };
-            var mockSafeWrapper = new Mock<ISafeWrapper>();
-            mockSafeWrapper.Setup(safe => safe.Recover(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(safeModel);
+            var mockWalletWrapper = new Mock<IWalletWrapper>();
+            mockWalletWrapper.Setup(wallet => wallet.Recover(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(walletModel);
 
-            var controller = new SafeController(mockSafeWrapper.Object);
+            var controller = new WalletController(mockWalletWrapper.Object);
 
             // Act
-            var result = controller.Recover(new SafeRecoveryModel
+            var result = controller.Recover(new WalletRecoveryModel
             {
                 Name = "myName",
                 FolderPath = "",
@@ -62,32 +62,32 @@ namespace Breeze.Api.Tests
             });
 
             // Assert
-            mockSafeWrapper.VerifyAll();
+            mockWalletWrapper.VerifyAll();
             var viewResult = Assert.IsType<JsonResult>(result);
             Assert.NotNull(viewResult.Value);
-            Assert.IsType<SafeModel>(viewResult.Value);
+            Assert.IsType<WalletModel>(viewResult.Value);
 
-            var model = viewResult.Value as SafeModel;
+            var model = viewResult.Value as WalletModel;
             Assert.Equal("myWallet", model.FileName);
         }
 
         [Fact]
-        public void RecoverSafeSuccessfullyReturnsSafeModel()
+        public void RecoverWalletSuccessfullyReturnsWalletModel()
         {
-            SafeModel safeModel = new SafeModel
+            WalletModel walletModel = new WalletModel
             {
                 FileName = "myWallet",
                 Network = "MainNet",
                 Addresses = new List<string> { "address1", "address2", "address3", "address4", "address5" }
 
             };
-            var mockSafeWrapper = new Mock<ISafeWrapper>();
-            mockSafeWrapper.Setup(safe => safe.Load(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(safeModel);
+            var mockWalletWrapper = new Mock<IWalletWrapper>();
+            mockWalletWrapper.Setup(wallet => wallet.Load(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(walletModel);
 
-            var controller = new SafeController(mockSafeWrapper.Object);
+            var controller = new WalletController(mockWalletWrapper.Object);
 
             // Act
-            var result = controller.Load(new SafeLoadModel
+            var result = controller.Load(new WalletLoadModel
             {
                 Name = "myName",
                 FolderPath = "",
@@ -95,25 +95,25 @@ namespace Breeze.Api.Tests
             });
 
             // Assert
-            mockSafeWrapper.VerifyAll();
+            mockWalletWrapper.VerifyAll();
             var viewResult = Assert.IsType<JsonResult>(result);
             Assert.NotNull(viewResult.Value);
-            Assert.IsType<SafeModel>(viewResult.Value);
+            Assert.IsType<WalletModel>(viewResult.Value);
 
-            var model = viewResult.Value as SafeModel;
+            var model = viewResult.Value as WalletModel;
             Assert.Equal("myWallet", model.FileName);
         }
 
         [Fact]
         public void FileNotFoundExceptionandReturns404()
         {
-            var mockSafeWrapper = new Mock<ISafeWrapper>();
-            mockSafeWrapper.Setup(safe => safe.Load(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
+            var mockWalletWrapper = new Mock<IWalletWrapper>();
+            mockWalletWrapper.Setup(wallet => wallet.Load(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
             
-            var controller = new SafeController(mockSafeWrapper.Object);
+            var controller = new WalletController(mockWalletWrapper.Object);
 
             // Act
-            var result = controller.Load(new SafeLoadModel
+            var result = controller.Load(new WalletLoadModel
             {
                 Name = "myName",
                 FolderPath = "",
@@ -121,7 +121,7 @@ namespace Breeze.Api.Tests
             });
 
             // Assert
-            mockSafeWrapper.VerifyAll();
+            mockWalletWrapper.VerifyAll();
             var viewResult = Assert.IsType<ObjectResult>(result);
             Assert.NotNull(viewResult);		
             Assert.Equal(404, viewResult.StatusCode);

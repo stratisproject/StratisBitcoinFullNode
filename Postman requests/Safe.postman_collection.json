@@ -1,16 +1,16 @@
 {
 	"variables": [],
 	"info": {
-		"name": "Safe",
+		"name": "Wallet",
 		"_postman_id": "11f915f1-7aac-bfeb-000c-b66348f4636f",
-		"description": "Requests relating to operations on the safe",
+		"description": "Requests relating to operations on the wallet",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Create safe - success",
+			"name": "Create wallet - success",
 			"request": {
-				"url": "http://localhost:5000/api/safe/",
+				"url": "http://localhost:5000/api/wallet/",
 				"method": "POST",
 				"header": [
 					{
@@ -28,9 +28,9 @@
 			"response": []
 		},
 		{
-			"name": "Create safe - validation errors",
+			"name": "Create wallet - validation errors",
 			"request": {
-				"url": "http://localhost:5000/api/safe/",
+				"url": "http://localhost:5000/api/wallet/",
 				"method": "POST",
 				"header": [
 					{
@@ -48,9 +48,9 @@
 			"response": []
 		},
 		{
-			"name": "Load safe",
+			"name": "Load wallet",
 			"request": {
-				"url": "http://localhost:5000/api/safe/?password=123456&folderPath=MyWallets&name=myFirstWallet",
+				"url": "http://localhost:5000/api/wallet/?password=123456&folderPath=MyWallets&name=myFirstWallet",
 				"method": "GET",
 				"header": [
 					{
@@ -68,9 +68,9 @@
 			"response": []
 		},
 		{
-			"name": "Recover safe",
+			"name": "Recover wallet",
 			"request": {
-				"url": "http://localhost:5000/api/safe/recover",
+				"url": "http://localhost:5000/api/wallet/recover",
 				"method": "POST",
 				"header": [
 					{
