@@ -3,10 +3,10 @@ using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Moq;
-using Breeze.Api.Controllers;
-using Breeze.Api.Models;
 using Breeze.Wallet.Wrappers;
 using Breeze.Wallet;
+using Breeze.Wallet.Controllers;
+using Breeze.Wallet.Models;
 
 namespace Breeze.Api.Tests
 {
