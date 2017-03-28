@@ -10,7 +10,7 @@
 		{
 			"name": "Create wallet - success",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/",
+				"url": "http://localhost:5000/api/v1/wallet/",
 				"method": "POST",
 				"header": [
 					{
@@ -30,7 +30,7 @@
 		{
 			"name": "Create wallet - validation errors",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/",
+				"url": "http://localhost:5000/api/v1/wallet/",
 				"method": "POST",
 				"header": [
 					{
@@ -50,7 +50,7 @@
 		{
 			"name": "Load wallet",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/?password=123456&folderPath=MyWallets&name=myFirstWallet",
+				"url": "http://localhost:5000/api/v1/wallet/?password=123456&folderPath=MyWallets&name=myFirstWallet",
 				"method": "GET",
 				"header": [
 					{
@@ -70,7 +70,7 @@
 		{
 			"name": "Recover wallet",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/recover",
+				"url": "http://localhost:5000/api/v1/wallet/recover",
 				"method": "POST",
 				"header": [
 					{
