@@ -1,11 +1,13 @@
 using System;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Logging;
 
 namespace Stratis.BitcoinD
 {
 	public class Checks
 	{
-		public static void VerifyAccess(NodeSettings nodeSettings) 
+		public static bool VerifyAccess(NodeSettings nodeSettings) 
 		{
 			// Verify folders are accessible by attempting to create sub directories,
 			// and removing them after the test.  Need to test write access.
@@ -17,11 +19,15 @@ namespace Stratis.BitcoinD
 				    var subDir = new System.IO.DirectoryInfo(path).CreateSubdirectory(Guid.NewGuid().ToString());
 				    subDir.Delete();
 				}
-				catch(UnauthorizedAccessException)
+				catch(UnauthorizedAccessException ex)
 				{
-				    throw new UnauthorizedAccessException(string.Format("Access to the path '{0}' was denied.", path));
+					Logs.Configuration.LogCritical(ex.Message);
+					Console.ReadLine();
+					return false;
 				}
 			}
+
+			return true;
 		}
 	}
 }
