@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.BlockStore
 		}
     }
 
-	public static class MBlockStoreBuilderExtension
+	public static class BlockStoreBuilderExtension
 	{
 		public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
 		{          

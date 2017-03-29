@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Builder
 
 		IFullNode Build();
 
-		IFullNodeBuilder ConfigureFeature(Action<FeatureCollection> configureFeatures);
+		IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures);
 
 		IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices);
 

@@ -1,24 +1,43 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Stratis.Bitcoin.Utilities;
+using System.Globalization;
 
 namespace Stratis.Bitcoin.Builder.Feature
 {
-	public class FeatureCollection
+	public interface IFeatureCollection
 	{
-		public readonly List<FeatureRegistration> FeatureRegistrations;
+		List<IFeatureRegistration> FeatureRegistrations { get; }
+
+		IFeatureRegistration AddFeature<TImplementation>() where TImplementation : class, IFullNodeFeature;
+	}
+
+	public class FeatureCollection : IFeatureCollection
+	{
+		private readonly List<IFeatureRegistration> featureRegistrations;
 
 		public FeatureCollection()
 		{
-			FeatureRegistrations = new List<FeatureRegistration>();
+			this.featureRegistrations = new List<IFeatureRegistration>();
 		}
 
-		public FeatureRegistration AddFeature<TImplementation>() where TImplementation : class, IFullNodeFeature
+		public List<IFeatureRegistration> FeatureRegistrations
 		{
-			Guard.Assert(FeatureRegistrations.All(f => f.FeatureType != typeof(TImplementation)));
-			var featureRegistration = new FeatureRegistration(typeof(TImplementation));
+			get
+			{
+				return this.featureRegistrations;
+			}			
+		}
 
-			FeatureRegistrations.Add(featureRegistration);
+		public IFeatureRegistration AddFeature<TImplementation>() where TImplementation : class, IFullNodeFeature
+		{
+			if (featureRegistrations.Any(f => f.FeatureType == typeof(TImplementation)))
+				throw new ArgumentException(String.Format(CultureInfo.CurrentCulture, "Feature of type {0} has already been registered.", typeof(TImplementation).FullName));			
+
+			var featureRegistration = new FeatureRegistration<TImplementation>();
+			this.featureRegistrations.Add(featureRegistration);
+
 			return featureRegistration;
 		}
 	}
