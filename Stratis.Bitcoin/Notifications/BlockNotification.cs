@@ -1,9 +1,8 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
-using System;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Notifications
 {
@@ -16,33 +15,50 @@ namespace Stratis.Bitcoin.Notifications
 
 		public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals)
 		{
-			if (chain == null)
-				throw new ArgumentNullException("chain");
-			if (puller == null)
-				throw new ArgumentNullException("puller");
-			if (signals == null)
-				throw new ArgumentNullException("signals");
+			Guard.NotNull(chain, nameof(chain));
+			Guard.NotNull(puller, nameof(puller));
+			Guard.NotNull(signals, nameof(signals));
 
-			this.Chain = chain;			
+			this.Chain = chain;
 			this.Puller = puller;
 			this.signals = signals;
+			
 		}
 
 		public ILookaheadBlockPuller Puller { get; }
 
 		public ConcurrentChain Chain { get; }
 
+		public uint256 StartHash { get; private set; }
+
+		private bool reSync;
+
+		public void SyncFrom(uint256 startHash)
+		{
+			if (this.StartHash != null)
+			{
+				this.reSync = true;
+			}
+
+			this.StartHash = startHash;
+		}
+		
 		/// <summary>
 		/// Notifies about blocks, starting from block with hash passed as parameter.
 		/// </summary>
-		/// <param name="startHash">The hash of the block from which to start notifying</param>
 		/// <param name="cancellationToken">A cancellation token</param>
-		public virtual void Notify(uint256 startHash, CancellationToken cancellationToken)
-		{			
+		public virtual void Notify(CancellationToken cancellationToken)
+		{
 			AsyncLoop.Run("block notifier", token =>
 			{
+				// if the StartHash hasn't been set yet
+				if (this.StartHash == null)
+				{
+					return Task.CompletedTask;
+				}
+
 				// make sure the chain has been downloaded
-				ChainedBlock startBlock = this.Chain.GetBlock(startHash);
+				ChainedBlock startBlock = this.Chain.GetBlock(this.StartHash);
 				if (startBlock == null)
 				{
 					return Task.CompletedTask;
@@ -52,12 +68,13 @@ namespace Stratis.Bitcoin.Notifications
 				this.Puller.SetLocation(startBlock);
 
 				// send notifications for all the following blocks
-				while (true)
-				{
+				while (!this.reSync)
+				{					
 					var block = this.Puller.NextBlock(token);
 
 					if (block != null)
 					{
+						// broadcast the block to the registered observers
 						this.signals.Blocks.Broadcast(block);
 					}
 					else
@@ -65,9 +82,11 @@ namespace Stratis.Bitcoin.Notifications
 						break;
 					}
 				}
+				
+				this.reSync = false;
 
 				return Task.CompletedTask;
 			}, cancellationToken);
-		}
+		}		
 	}
 }
