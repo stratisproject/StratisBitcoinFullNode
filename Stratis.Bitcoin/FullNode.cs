@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
@@ -12,9 +10,6 @@ using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -23,7 +18,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
-using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
@@ -232,17 +226,28 @@ namespace Stratis.Bitcoin
 			AsyncLoop.Run("PeriodicLog", (cancellation) =>
 			{
 				// TODO: move stats to each of its components
-
 				StringBuilder benchLogs = new StringBuilder();
 
-				benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture));
+				if (this.ConsensusLoop != null)
+				{
+					benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture));
+					benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
+				}
+
 				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
-				benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
-				benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
+
+				if (this._ChainBehaviorState.HighestPersistedBlock != null)
+				{
+					benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
+				}
+				
 				benchLogs.AppendLine();
 
-				benchLogs.AppendLine("======Mempool======");
-				benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+				if (this.MempoolManager != null)
+				{
+					benchLogs.AppendLine("======Mempool======");
+					benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+				}
 
 				benchLogs.AppendLine("======Connection======");
 				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());

@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.Notifications
 		public override void Start()
 		{
 			var connectionParameters = this.connectionManager.Parameters;
-			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));
-			this.blockNotification.Notify(this.startHash, this.cancellationProvider.Cancellation.Token);
+			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));			
+			this.blockNotification.Notify(this.cancellationProvider.Cancellation.Token);
 			this.chainState.HighestValidatedPoW = this.chain.Genesis;
 		}
 	}
@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.Notifications
 				{
 					services.AddSingleton(new BlockNotificationStartHash(startHash));
 					services.AddSingleton<BlockNotification>();
-					services.AddSingleton<Signals>();
-					services.AddSingleton<LookaheadBlockPuller>();
+					services.AddSingleton<Signals>().AddSingleton<ISignals, Signals>(provider => provider.GetService<Signals>());
+					services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
 				});
 			});
 

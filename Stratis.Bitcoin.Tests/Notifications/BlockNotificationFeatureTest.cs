@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Tests
 			var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, new BlockNotificationStartHash(0), cancellationProvider, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
 			blockNotificationFeature.Start();
 
-			blockNotification.Verify(notif => notif.Notify(0, cancellationProvider.Cancellation.Token), Times.Once);
+			blockNotification.Verify(notif => notif.Notify(cancellationProvider.Cancellation.Token), Times.Once);
 		}
 	}
 }

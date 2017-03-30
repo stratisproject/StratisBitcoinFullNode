@@ -28,11 +28,10 @@ namespace Stratis.Bitcoin.Tests.Notifications
 			var chain = new Mock<ConcurrentChain>();
 			chain.Setup(c => c.GetBlock(startBlockId))
 				.Returns((ChainedBlock)null);
-			CancellationTokenSource source = new CancellationTokenSource();
-
+			
 			var notification = new BlockNotification(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals());
 
-			notification.Notify(startBlockId, source.Token);
+			notification.Notify(this.source.Token);			
 		}
 
 		[Fact]
@@ -50,7 +49,8 @@ namespace Stratis.Bitcoin.Tests.Notifications
 
 			var notification = new BlockNotification(chain.Object, stub.Object, new Signals());
 
-			notification.Notify(startBlockId, this.source.Token);
+			notification.Notify(this.source.Token);
+			notification.SyncFrom(startBlockId);
 			stub.Verify(s => s.SetLocation(It.Is<ChainedBlock>(c => c.Height == 0 && c.Header.GetHash() == header.GetHash())));
 		}
 
@@ -76,7 +76,8 @@ namespace Stratis.Bitcoin.Tests.Notifications
 
 			var notification = new BlockNotification(chain.Object, stub.Object, signals.Object);
 
-			notification.Notify(startBlockId, this.source.Token);
+			notification.Notify(this.source.Token);
+			notification.SyncFrom(startBlockId);
 
 			Thread.Sleep(100);
 			signalerMock.Verify(s => s.Broadcast(It.IsAny<Block>()), Times.Exactly(2));
