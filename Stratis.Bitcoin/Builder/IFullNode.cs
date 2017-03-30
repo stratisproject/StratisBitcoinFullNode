@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Builder
 {
-	public interface IFullNode 
+	public interface IFullNode : IDisposable
 	{
 		FullNodeServiceProvider Services { get; }
 

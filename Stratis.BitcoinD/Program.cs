@@ -1,14 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Consensus;
@@ -23,39 +18,24 @@ namespace Stratis.BitcoinD
 		{
 			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
-			
-			try 
-			{
-				Checks.VerifyAccess(nodeSettings);
 
-				var node = (FullNode)new FullNodeBuilder()
-					.UseNodeSettings(nodeSettings)
-					.UseConsensus()
-					.UseBlockStore()
-					.UseMempool()
-					.AddMining(args.Any(a => a.Contains("mine")))
-					.AddRPC()
-					.Build();
+			if (!Checks.VerifyAccess(nodeSettings))
+				return;
 
-				// == shut down thread ==
-				new Thread(() =>
-				{
-					Console.WriteLine("Press one key to stop");
-					Console.ReadLine();
-					node.Dispose();
-				})
-				{
-					IsBackground = true //so the process terminates
-				}.Start();
+			var node = new FullNodeBuilder()
+				.UseNodeSettings(nodeSettings)
+				.UseConsensus()
+				.UseBlockStore()
+				.UseMempool()
+				.AddMining(args.Any(a => a.Contains("mine")))
+				.AddRPC()
+				.Build();
 
-				node.Start();
-				node.WaitDisposed();
-				node.Dispose();
-			}
-			catch(UnauthorizedAccessException ex) 
-			{
-				Logs.Configuration.LogCritical(ex.Message);
-			}
+			// TODO: bring the logic out of IWebHost.Run()
+			node.Start();
+			Console.WriteLine("Press any key to stop");
+			Console.ReadLine();
+			node.Dispose();
 		}
 	}
 }
