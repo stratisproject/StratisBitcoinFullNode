@@ -9,7 +9,9 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.BlockStore
 {
 	public interface IBlockRepository : IDisposable
-    {
+	{
+		Task Initialize();
+
 		Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
 
 		Task<Block> GetAsync(uint256 hash);
@@ -18,21 +20,21 @@ namespace Stratis.Bitcoin.BlockStore
 
 		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
 
-        Task<bool> ExistAsync(uint256 hash);
+		Task<bool> ExistAsync(uint256 hash);
 
-        Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
+		Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
 
-        Task SetBlockHash(uint256 nextBlockHash);
+		Task SetBlockHash(uint256 nextBlockHash);
 
-        Task SetTxIndex(bool txIndex);
-    }
+		Task SetTxIndex(bool txIndex);
+	}
 
 	public class BlockRepository : IBlockRepository
 	{
 		readonly DBreezeSingleThreadSession session;
 		readonly Network network;
 
-		public BlockRepository(Network network, DataFolder dataFolder) 
+		public BlockRepository(Network network, DataFolder dataFolder)
 			: this(network, dataFolder.BlockPath)
 		{
 		}
@@ -48,9 +50,9 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task Initialize()
 		{
-            var genesis = this.network.GetGenesis();
+			var genesis = this.network.GetGenesis();
 
-            var sync = this.session.Do(() =>
+			var sync = this.session.Do(() =>
 			{
 				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Common");
 				this.session.Transaction.ValuesLazyLoadingIsOn = true;
@@ -70,7 +72,7 @@ namespace Stratis.Bitcoin.BlockStore
 				}
 			});
 
-			return Task.WhenAll(new[] {sync, hash});
+			return Task.WhenAll(new[] { sync, hash });
 		}
 
 		public bool LazyLoadingOn
@@ -81,6 +83,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task<Transaction> GetTrxAsync(uint256 trxid)
 		{
+			Guard.NotNull(trxid, nameof(trxid));
+
 			if (!this.TxIndex)
 				return Task.FromResult(default(Transaction));
 
@@ -96,6 +100,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
 		{
+			Guard.NotNull(trxid, nameof(trxid));
+
 			if (!this.TxIndex)
 				return Task.FromResult(default(uint256));
 
@@ -114,6 +120,9 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
 		{
+			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
+			Guard.NotNull(blocks, nameof(blocks));
+
 			// dbreeze is faster if sort ascending by key in memory before insert
 			// however we need to find how byte arrays are sorted in dbreeze this link can help 
 			// https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
@@ -123,7 +132,7 @@ namespace Stratis.Bitcoin.BlockStore
 				foreach (var block in blocks)
 				{
 					var blockId = block.GetHash();
-					
+
 					// if the block is already in store don't write it again
 					var item = this.session.Transaction.Select<byte[], Block>("Block", blockId.ToBytes());
 					if (!item.Exists)
@@ -178,6 +187,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task SetBlockHash(uint256 nextBlockHash)
 		{
+			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
+
 			return this.session.Do(() =>
 			{
 				this.SaveBlockHash(nextBlockHash);
@@ -193,6 +204,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task<Block> GetAsync(uint256 hash)
 		{
+			Guard.NotNull(hash, nameof(hash));
+
 			return this.session.Do(() =>
 			{
 				var key = hash.ToBytes();
@@ -203,6 +216,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task<bool> ExistAsync(uint256 hash)
 		{
+			Guard.NotNull(hash, nameof(hash));
+
 			return this.session.Do(() =>
 			{
 				var key = hash.ToBytes();
@@ -213,6 +228,9 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
 		{
+			Guard.NotNull(newlockHash, nameof(newlockHash));
+			Guard.NotNull(hashes, nameof(hashes));
+
 			return this.session.Do(() =>
 			{
 				foreach (var hash in hashes)

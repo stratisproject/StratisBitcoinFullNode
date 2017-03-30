@@ -15,15 +15,23 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
+	public interface IBlockStoreBehavior : INodeBehavior
+	{
+		bool CanRespondeToGetDataPayload { get; set; }
+		bool CanRespondToGetBlocksPayload { get; set; }
+
+		Task AnnounceBlocks(List<uint256> blockHashesToAnnounce);
+	}
+
 	public class BlockStoreBehavior : NodeBehavior
 	{
 		// Maximum number of headers to announce when relaying blocks with headers message.
 		const int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
 		private readonly ConcurrentChain chain;
-		private readonly BlockRepository blockRepository;
-		private readonly BlockStoreCache blockStoreCache;
-		
+		private readonly IBlockRepository blockRepository;
+		private readonly IBlockStoreCache blockStoreCache;
+
 		public bool CanRespondToGetBlocksPayload { get; set; }
 
 		public bool CanRespondeToGetDataPayload { get; set; }
@@ -33,7 +41,16 @@ namespace Stratis.Bitcoin.BlockStore
 		private bool preferHeaderAndIDs;
 
 		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository, BlockStoreCache blockStoreCache)
+			: this(chain, blockRepository as IBlockRepository, blockStoreCache as IBlockStoreCache)
 		{
+		}
+
+		public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache)
+		{
+			Guard.NotNull(chain, nameof(chain));
+			Guard.NotNull(blockRepository, nameof(blockRepository));
+			Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
+
 			this.chain = chain;
 			this.blockRepository = blockRepository;
 			this.blockStoreCache = blockStoreCache;
@@ -46,7 +63,7 @@ namespace Stratis.Bitcoin.BlockStore
 		}
 
 		protected override void AttachCore()
-		{	
+		{
 			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
 		}
 
@@ -109,7 +126,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
 		{
-			Guard.Assert(node != null); 
+			Guard.Assert(node != null);
 
 			// TODO: bring logic from core 
 			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
@@ -161,13 +178,17 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public Task AnnounceBlocks(List<uint256> blockHashesToAnnounce)
 		{
+			Guard.NotNull(blockHashesToAnnounce, nameof(blockHashesToAnnounce));
+
 			if (!blockHashesToAnnounce.Any())
 				return Task.CompletedTask;
 
 			var node = this.AttachedNode;
+			if (node == null)
+				return Task.CompletedTask;
 
 			bool revertToInv = ((!this.PreferHeaders &&
-			                     (!this.preferHeaderAndIDs || blockHashesToAnnounce.Count > 1)) ||
+								 (!this.preferHeaderAndIDs || blockHashesToAnnounce.Count > 1)) ||
 								blockHashesToAnnounce.Count > MAX_BLOCKS_TO_ANNOUNCE);
 
 			var headers = new List<BlockHeader>();
@@ -231,7 +252,7 @@ namespace Stratis.Bitcoin.BlockStore
 						Logging.Logs.BlockStore.LogInformation(
 							$"sending header ({headers.First()}), to peer={node.RemoteSocketEndpoint}");
 					}
-					
+
 					chainBehavior.SetPendingTip(bestIndex);
 					return node.SendMessageAsync(new HeadersPayload(headers.ToArray()));
 				}
@@ -261,7 +282,7 @@ namespace Stratis.Bitcoin.BlockStore
 					}
 				}
 			}
-			
+
 
 			if (inventoryBlockToSend.Any())
 			{

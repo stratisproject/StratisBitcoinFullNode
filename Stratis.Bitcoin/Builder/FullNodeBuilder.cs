@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Builder
 	{
 		private readonly List<Action<IServiceProvider>> configureDelegates;
 		private readonly List<Action<IServiceCollection>> configureServicesDelegates;
-		private readonly List<Action<FeatureCollection>> featuresRegistrationDelegates;
+		private readonly List<Action<IFeatureCollection>> featuresRegistrationDelegates;
 
 		private bool fullNodeBuilt;
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Builder
 		{
 			configureServicesDelegates = new List<Action<IServiceCollection>>();
 			configureDelegates = new List<Action<IServiceProvider>>();
-			featuresRegistrationDelegates = new List<Action<FeatureCollection>>();
+			featuresRegistrationDelegates = new List<Action<IFeatureCollection>>();
 			Features = new FeatureCollection();
 		}
 
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Builder
 			this.UseBaseFeature();
 		}
 
-		public FeatureCollection Features { get; }
+		public IFeatureCollection Features { get; }
 
 		public NodeSettings NodeSettings { get; set; }
 		public Network Network { get; set; }
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Builder
 		/// </summary>
 		/// <param name="configureFeatures">A method that adds features to the collection</param>
 		/// <returns>An IFullNodebuilder</returns>
-		public IFullNodeBuilder ConfigureFeature(Action<FeatureCollection> configureFeatures)
+		public IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures)
 		{
 			Guard.NotNull(configureFeatures, nameof(configureFeatures));
 

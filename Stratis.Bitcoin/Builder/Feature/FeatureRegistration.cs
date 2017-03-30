@@ -7,30 +7,40 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Builder.Feature
 {
-	public class FeatureRegistration
+	public interface IFeatureRegistration
+	{
+		Type FeatureStartupType { get; }
+		Type FeatureType { get; }
+
+		void BuildFeature(IServiceCollection serviceCollection);
+		IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices);
+		IFeatureRegistration UseStartup<TStartup>();
+	}
+
+	public class FeatureRegistration<TImplementation> : IFeatureRegistration where TImplementation : class, IFullNodeFeature
 	{
 		public readonly List<Action<IServiceCollection>> ConfigureServicesDelegates;
 
-		public FeatureRegistration(Type featureType)
-		{
-			ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
-			FeatureType = featureType;
-		}
+		public FeatureRegistration()
+		{		
+			this.ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
+			this.FeatureType = typeof(TImplementation);
+		}	
 
-		public Type FeatureType { get; }
+		public Type FeatureType { get; private set; }
 
 		public Type FeatureStartupType { get; private set; }
 
-		public FeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
+		public IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
 		{
 			Guard.NotNull(configureServices, nameof(configureServices));
-			
-			ConfigureServicesDelegates.Add(configureServices);
+
+			this.ConfigureServicesDelegates.Add(configureServices);
 
 			return this;
 		}
 
-		public FeatureRegistration UseStartup<TStartup>()
+		public IFeatureRegistration UseStartup<TStartup>()
 		{
 			FeatureStartupType = typeof(TStartup);
 			return this;
@@ -38,12 +48,14 @@ namespace Stratis.Bitcoin.Builder.Feature
 
 		public void BuildFeature(IServiceCollection serviceCollection)
 		{
+			Guard.NotNull(serviceCollection, nameof(serviceCollection));
+
 			// features can only be singletons
 			serviceCollection
 				.AddSingleton(FeatureType)
 				.AddSingleton(typeof(IFullNodeFeature), provider => provider.GetService(FeatureType));
 
-			foreach (var configureServicesDelegate in ConfigureServicesDelegates)
+			foreach (var configureServicesDelegate in this.ConfigureServicesDelegates)
 				configureServicesDelegate(serviceCollection);
 
 			if (FeatureStartupType != null)
@@ -59,8 +71,8 @@ namespace Stratis.Bitcoin.Builder.Feature
 		{
 			var method = startupType.GetMethod("ConfigureServices");
 			var parameters = method?.GetParameters();
-			if ((parameters?.Length == 1) && (parameters.First().ParameterType == typeof(IServiceCollection)))
-				method.Invoke(null, new object[] {serviceCollection});
+			if (method != null && method.IsStatic && (parameters?.Length == 1) && (parameters.First().ParameterType == typeof(IServiceCollection)))
+				method.Invoke(null, new object[] { serviceCollection });
 		}
 	}
 }
