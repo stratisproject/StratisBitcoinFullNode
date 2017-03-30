@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Tests
 			var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object);
 			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Signals());
 
-			var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, new BlockNotificationStartHash(0), cancellationProvider, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
+			var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, cancellationProvider, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
 			blockNotificationFeature.Start();
 
 			blockNotification.Verify(notif => notif.Notify(cancellationProvider.Cancellation.Token), Times.Once);
