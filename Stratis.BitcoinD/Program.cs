@@ -33,7 +33,7 @@ namespace Stratis.BitcoinD
 
 			// TODO: bring the logic out of IWebHost.Run()
 			node.Start();
-			Console.WriteLine("Press one key to stop");
+			Console.WriteLine("Press any key to stop");
 			Console.ReadLine();
 			node.Dispose();
 		}
