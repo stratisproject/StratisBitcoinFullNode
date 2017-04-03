@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin
 		private ApplicationLifetime applicationLifetime; // this will replace the cancellation token on the full node
 		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
-		public FullNodeServiceProvider Services { get; set; }
+		public IFullNodeServiceProvider Services { get; set; }
 
 		NodeSettings _Settings;
 
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin
 			get { return _Settings; }
 		}
 
-		public FullNode Initialize(FullNodeServiceProvider serviceProvider)
+		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 

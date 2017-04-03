@@ -2,19 +2,32 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Builder
 {
+	public interface IFullNodeFeatureExecutor
+	{
+		void Start();
+		void Stop();
+	}
+
 	/// <summary>
 	/// Borrowed from asp.net
 	/// </summary>
-	public class FullNodeFeatureExecutor
+	public class FullNodeFeatureExecutor : IFullNodeFeatureExecutor
 	{
-		private readonly FullNode node;
+		private readonly IFullNode node;
 
-		public FullNodeFeatureExecutor(FullNode node)
+		public FullNodeFeatureExecutor(FullNode fullNode) : this(fullNode as IFullNode)
+		{ 
+		}
+
+		public FullNodeFeatureExecutor(IFullNode fullNode)
 		{
-			this.node = node;
+			Guard.NotNull(fullNode, nameof(fullNode));
+
+			this.node = fullNode;
 		}
 
 		public void Start()
@@ -47,27 +60,30 @@ namespace Stratis.Bitcoin.Builder
 		{
 			List<Exception> exceptions = null;
 
-			foreach (var service in this.node.Services.Features)
+			if (this.node.Services != null)
 			{
-				try
+				foreach (var service in this.node.Services.Features)
 				{
-					callback(service);
-				}
-				catch (Exception ex)
-				{
-					if (exceptions == null)
+					try
 					{
-						exceptions = new List<Exception>();
+						callback(service);
 					}
+					catch (Exception ex)
+					{
+						if (exceptions == null)
+						{
+							exceptions = new List<Exception>();
+						}
 
-					exceptions.Add(ex);
+						exceptions.Add(ex);
+					}
 				}
-			}
 
-			// Throw an aggregate exception if there were any exceptions
-			if (exceptions != null)
-			{
-				throw new AggregateException(exceptions);
+				// Throw an aggregate exception if there were any exceptions
+				if (exceptions != null)
+				{
+					throw new AggregateException(exceptions);
+				}
 			}
 		}
 	}
