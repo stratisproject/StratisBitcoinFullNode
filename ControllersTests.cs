@@ -21,7 +21,7 @@ namespace Breeze.Api.Tests
             var controller = new WalletController(mockWalletCreate.Object);
 
             // Act
-            var result = controller.Create(new WalletCreationModel
+            var result = controller.Create(new WalletCreationRequest
             {
                 Name = "myName",
                 FolderPath = "",
@@ -52,7 +52,7 @@ namespace Breeze.Api.Tests
             var controller = new WalletController(mockWalletWrapper.Object);
 
             // Act
-            var result = controller.Recover(new WalletRecoveryModel
+            var result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myName",
                 FolderPath = "",
@@ -87,7 +87,7 @@ namespace Breeze.Api.Tests
             var controller = new WalletController(mockWalletWrapper.Object);
 
             // Act
-            var result = controller.Load(new WalletLoadModel
+            var result = controller.Load(new WalletLoadRequest
             {
                 Name = "myName",
                 FolderPath = "",
@@ -113,7 +113,7 @@ namespace Breeze.Api.Tests
             var controller = new WalletController(mockWalletWrapper.Object);
 
             // Act
-            var result = controller.Load(new WalletLoadModel
+            var result = controller.Load(new WalletLoadRequest
             {
                 Name = "myName",
                 FolderPath = "",
