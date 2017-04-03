@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.Builder
 {
 	public interface IFullNode : IDisposable
 	{
-		FullNodeServiceProvider Services { get; }
+		IFullNodeServiceProvider Services { get; }
 
 		void Start();
 	}
