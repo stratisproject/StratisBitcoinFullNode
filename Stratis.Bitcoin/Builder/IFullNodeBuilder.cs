@@ -20,6 +20,6 @@ namespace Stratis.Bitcoin.Builder
 
 		IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices);
 
-		IFullNodeBuilder Configure(Action<IServiceProvider> configure);
+		IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure);
 	}
 }

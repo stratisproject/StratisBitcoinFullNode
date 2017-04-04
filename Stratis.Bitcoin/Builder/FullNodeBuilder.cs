@@ -16,31 +16,6 @@ namespace Stratis.Bitcoin.Builder
 		}
 	}
 
-	public class FullNodeServiceProvider
-	{
-		private readonly List<Type> featureTypes;
-
-		public FullNodeServiceProvider(IServiceProvider serviceProvider, List<Type> featureTypes)
-		{
-			ServiceProvider = serviceProvider;
-			this.featureTypes = featureTypes;
-		}
-
-		public IServiceProvider ServiceProvider { get; }
-
-		public IEnumerable<IFullNodeFeature> Features
-		{
-			get
-			{
-				// features are enumerated in the same order 
-				// they where registered with the builder
-
-				foreach (var featureDescriptor in featureTypes)
-					yield return ServiceProvider.GetService(featureDescriptor) as IFullNodeFeature;
-			}
-		}
-	}
-
 	public class FullNodeBuilder : IFullNodeBuilder
 	{
 		private readonly List<Action<IServiceProvider>> configureDelegates;
@@ -49,24 +24,35 @@ namespace Stratis.Bitcoin.Builder
 
 		private bool fullNodeBuilt;
 
-		public FullNodeBuilder()
+		public FullNodeBuilder() :
+			this(new List<Action<IServiceCollection>>(),
+				new List<Action<IServiceProvider>>(),
+				new List<Action<IFeatureCollection>>(),
+				new FeatureCollection())
 		{
-			configureServicesDelegates = new List<Action<IServiceCollection>>();
-			configureDelegates = new List<Action<IServiceProvider>>();
-			featuresRegistrationDelegates = new List<Action<IFeatureCollection>>();
-			Features = new FeatureCollection();
 		}
 
 		/// <summary>
-		/// accepts a NodeSettings instance and register required services
+		/// Accepts a NodeSettings instance and register required services
 		/// </summary>
-		/// <param name="nodeSettings"></param>
-		public FullNodeBuilder(NodeSettings nodeSettings) : base()
+		/// <param name="nodeSettings">The node settings.</param>
+		public FullNodeBuilder(NodeSettings nodeSettings)
+			: this(nodeSettings, new List<Action<IServiceCollection>>(),
+				new List<Action<IServiceProvider>>(),
+				new List<Action<IFeatureCollection>>(),
+				new FeatureCollection())
+		{
+
+		}
+
+		internal FullNodeBuilder(NodeSettings nodeSettings, List<Action<IServiceCollection>> configureServicesDelegates, List<Action<IServiceProvider>> configureDelegates,
+			List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
+			: this(configureServicesDelegates, configureDelegates, featuresRegistrationDelegates, features)
 		{
 			this.NodeSettings = nodeSettings ?? NodeSettings.Default();
 			this.Network = nodeSettings.GetNetwork();
 
-			ConfigureServices(service =>
+			this.ConfigureServices(service =>
 			{
 				service.AddSingleton(this.NodeSettings);
 				service.AddSingleton(this.Network);
@@ -75,10 +61,27 @@ namespace Stratis.Bitcoin.Builder
 			this.UseBaseFeature();
 		}
 
+		internal FullNodeBuilder(List<Action<IServiceCollection>> configureServicesDelegates, List<Action<IServiceProvider>> configureDelegates, 
+			List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
+		{
+			Guard.NotNull(configureServicesDelegates, nameof(configureServicesDelegates));
+			Guard.NotNull(configureDelegates, nameof(configureDelegates));
+			Guard.NotNull(featuresRegistrationDelegates, nameof(featuresRegistrationDelegates));
+			Guard.NotNull(features, nameof(features));
+
+			this.configureServicesDelegates = configureServicesDelegates;
+			this.configureDelegates = configureDelegates;
+			this.featuresRegistrationDelegates = featuresRegistrationDelegates;
+			this.Features = features;
+		}				
+
 		public IFeatureCollection Features { get; }
 
 		public NodeSettings NodeSettings { get; set; }
+
 		public Network Network { get; set; }
+
+		public IServiceCollection Services { get; private set; }
 
 		/// <summary>
 		/// Adds services to the builder. 
@@ -89,7 +92,7 @@ namespace Stratis.Bitcoin.Builder
 		{
 			Guard.NotNull(configureServices, nameof(configureServices));
 
-			configureServicesDelegates.Add(configureServices);
+			this.configureServicesDelegates.Add(configureServices);
 			return this;
 		}
 
@@ -102,31 +105,33 @@ namespace Stratis.Bitcoin.Builder
 		{
 			Guard.NotNull(configureFeatures, nameof(configureFeatures));
 
-			featuresRegistrationDelegates.Add(configureFeatures);
+			this.featuresRegistrationDelegates.Add(configureFeatures);
 			return this;
 		}
 
-		public IFullNodeBuilder Configure(Action<IServiceProvider> configure)
+		/// <summary>
+		/// Add configurations for the service provider.
+		/// </summary>
+		/// <param name="configure">A method that configures the service provider.</param>
+		/// <returns>An IFullNodebuilder</returns>
+		public IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure)
 		{
-			if (configure == null)
-				throw new ArgumentNullException(nameof(configure));
+			Guard.NotNull(configure, nameof(configure));
 
-			configureDelegates.Add(configure);
+			this.configureDelegates.Add(configure);
 			return this;
 		}
-
-		public IServiceCollection Services { get; private set; }
 
 		public IFullNode Build()
 		{
-			if (fullNodeBuilt)
+			if (this.fullNodeBuilt)
 				throw new InvalidOperationException("full node already built");
-			fullNodeBuilt = true;
+			this.fullNodeBuilt = true;
 
-			Services = BuildServices();
+			this.Services = this.BuildServices();
 
-			var fullNodeServiceProvider = Services.BuildServiceProvider();
-			ConfigureServices(fullNodeServiceProvider);
+			var fullNodeServiceProvider = this.Services.BuildServiceProvider();
+			this.ConfigureServices(fullNodeServiceProvider);
 
 			//obtain the nodeSettings from the service (it's set used FullNodeBuilder.UseNodeSettings)
 			var nodeSettings = fullNodeServiceProvider.GetService<NodeSettings>();
@@ -134,31 +139,32 @@ namespace Stratis.Bitcoin.Builder
 				throw new NodeBuilderException("NodeSettings not specified");
 
 			var fullNode = fullNodeServiceProvider.GetService<FullNode>();
-
+			if (fullNode == null)
+				throw new InvalidOperationException("Fullnode not registered with provider");
 
 			fullNode.Initialize(new FullNodeServiceProvider(
 				fullNodeServiceProvider,
-				Features.FeatureRegistrations.Select(s => s.FeatureType).ToList()));
+				this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList()));
 
 			return fullNode;
 		}
 
 		private IServiceCollection BuildServices()
 		{
-			Services = new ServiceCollection();
+			this.Services = new ServiceCollection();
 
 			// register services before features 
 			// as some of the features may depend on independent services
-			foreach (var configureServices in configureServicesDelegates)
-				configureServices(Services);
+			foreach (var configureServices in this.configureServicesDelegates)
+				configureServices(this.Services);
 
 			// configure features
-			foreach (var configureFeature in featuresRegistrationDelegates)
-				configureFeature(Features);
+			foreach (var configureFeature in this.featuresRegistrationDelegates)
+				configureFeature(this.Features);
 
 			// configure features startup
-			foreach (var featureRegistration in Features.FeatureRegistrations)
-				featureRegistration.BuildFeature(Services);
+			foreach (var featureRegistration in this.Features.FeatureRegistrations)
+				featureRegistration.BuildFeature(this.Services);
 
 			return Services;
 		}
@@ -166,7 +172,7 @@ namespace Stratis.Bitcoin.Builder
 		private void ConfigureServices(IServiceProvider serviceProvider)
 		{
 			// configure registered services
-			foreach (var configure in configureDelegates)
+			foreach (var configure in this.configureDelegates)
 				configure(serviceProvider);
 		}
 	}
