@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Controllers
+namespace Stratis.Bitcoin.RPC.Controllers
 {
 	//TODO: Need to be extensible, should be FullNodeController
 	public partial class ConsensusController : Controller

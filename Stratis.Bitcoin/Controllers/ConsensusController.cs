@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Controllers
+namespace Stratis.Bitcoin.RPC.Controllers
 {
     public partial class ConsensusController : Controller
 	{
