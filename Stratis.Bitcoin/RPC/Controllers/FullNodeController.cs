@@ -8,46 +8,44 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.RPC.Controllers
 {
-	//TODO: Need to be extensible, should be FullNodeController
-	public partial class ConsensusController : Controller
-	{
-		[ActionName("stop")]
-		public Task Stop()
-		{
-			_FullNode.Dispose();
-			return Task.CompletedTask;
-		}
+    //TODO: Need to be extensible, should be FullNodeController
+    public partial class ConsensusController : Controller
+    {
+        [ActionName("stop")]
+        public Task Stop()
+        {
+            _FullNode.Dispose();
+            return Task.CompletedTask;
+        }
 
-		[ActionName("getrawtransaction")]
-		public async Task<TransactionModel> GetRawTransaction(string txid, int verbose = 0)
-		{
-			uint256 trxid;
-			if (!NBitcoin.uint256.TryParse(txid, out trxid))
-				throw new ArgumentException(nameof(txid));
+        [ActionName("getrawtransaction")]
+        public async Task<TransactionModel> GetRawTransaction(string txid, int verbose = 0)
+        {
+            uint256 trxid;
+            if (!NBitcoin.uint256.TryParse(txid, out trxid))
+                throw new ArgumentException(nameof(txid));
 
-			ChainedBlock block = null;
-			Transaction trx = (await _FullNode.MempoolManager.InfoAsync(trxid))?.Trx;
-			if (trx == null)
-			{
-				var blockid = await _FullNode.BlockStoreManager.BlockRepository.GetTrxBlockIdAsync(trxid);
-				if (blockid != null)
-				{
-					block = _FullNode.Chain.GetBlock(blockid);
-					trx = await _FullNode.BlockStoreManager.BlockRepository.GetTrxAsync(trxid);
-				}
-			}
+            Transaction trx = (await _FullNode.MempoolManager?.InfoAsync(trxid))?.Trx;
 
-			if (trx == null)
-			{
-				return null;
-			}
+            var blockRepo = _FullNode.BlockStoreManager?.BlockRepository;
+            if (trx == null)
+                trx = await blockRepo?.GetTrxAsync(trxid);
 
-			if (verbose != 0)
-				return new TransactionVerboseModel(trx, _FullNode.Network, block, _FullNode.ConsensusLoop.Tip);
-			else
-				return new TransactionBriefModel(trx);
+            if (trx == null)
+                return null;
 
-		}
+            if (verbose != 0)
+            {
+                ChainedBlock block = null;
+                var blockid = await blockRepo?.GetTrxBlockIdAsync(trxid);
+                if (blockid != null)
+                    block = _FullNode.Chain?.GetBlock(blockid);
 
-	}
+                return new TransactionVerboseModel(trx, _FullNode.Network, block, _FullNode.ChainBehaviorState?.HighestValidatedPoW);
+            }
+            else
+                return new TransactionBriefModel(trx);
+        }
+
+    }
 }
