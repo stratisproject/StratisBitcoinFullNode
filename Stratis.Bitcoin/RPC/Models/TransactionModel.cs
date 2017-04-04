@@ -181,6 +181,7 @@ namespace Stratis.Bitcoin.RPC.Models
         public ScriptPubKey(NBitcoin.Script script, Network network) : base(script)
         {
             var destinations = new List<TxDestination>() { script.GetDestination() };
+            this.type = GetScriptType(script.FindTemplate());
             if (destinations[0] == null)
             {
                 destinations = script.GetDestinationPublicKeys()
@@ -189,7 +190,6 @@ namespace Stratis.Bitcoin.RPC.Models
             }
             else
             {
-                this.type = GetScriptType(script.FindTemplate());
                 if (destinations.Count == 1)
                 {
                     this.reqSigs = 1;
