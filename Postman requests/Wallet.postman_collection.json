@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "Wallet",
-		"_postman_id": "11f915f1-7aac-bfeb-000c-b66348f4636f",
+		"_postman_id": "c9001498-0a8d-e095-7b3e-ba9f2b0df7e7",
 		"description": "Requests relating to operations on the wallet",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -50,8 +50,8 @@
 		{
 			"name": "Load wallet",
 			"request": {
-				"url": "http://localhost:5000/api/v1/wallet/?password=123456&folderPath=MyWallets&name=myFirstWallet",
-				"method": "GET",
+				"url": "http://localhost:5000/api/v1/wallet/load",
+				"method": "POST",
 				"header": [
 					{
 						"key": "Content-Type",
@@ -61,7 +61,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWadllet\"\n}"
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWadllet\"\n}"
 				},
 				"description": ""
 			},
@@ -82,6 +82,97 @@
 				"body": {
 					"mode": "raw",
 					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWalletRecovered\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\"\n\t\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get wallet Info",
+			"request": {
+				"url": "http://localhost:5000/api/v1/wallet/info?name=mywallet",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get Wallet History",
+			"request": {
+				"url": "http://localhost:5000/api/v1/wallet/history?name=mywallet",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Get wallet balance",
+			"request": {
+				"url": "http://localhost:5000/api/v1/wallet/balance?name=mywallet",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Build transaction",
+			"request": {
+				"url": "http://localhost:5000/api/v1/wallet/build-transaction",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"password\": \"password\",\r\n  \"address\": \"1FYp9uguYCz7DgSF9jTWDeZF8kdRKQTXPg\",\r\n  \"amount\": \"0.12\",\r\n  \"feeType\": \"low\",\r\n  \"allowUnconfirmed\": \"true\"\r\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Send transaction",
+			"request": {
+				"url": "http://localhost:5000/api/v1/wallet/send-transaction",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"hex\": \"01000000061b1ca819e76f9131b23335ec905ffc5fc27e36a7843a5b7c6d1b455b904359f7000000006b483045022100c11f78ce7f02b2312b6675d3ad99cec6ede879d446c2b14628ef4f8ce9b3fdc5022073649a14971568a1cd2aa84b5dd404645f29e49882f60a9642850539443872fe012102a41e4348bb233e40cf3a3402e2dc92a31b69ef56090fff242aa7e4bff828929fffffffff1d3c389af5fdd047e307e5d5f87656bb2ef0c40b6ee879d342a59192090d3fbc000000006b483045022100dc7e0445fe98f3e76d68906c640ecca597598a03b48e6b85d72918347b9da7330220340ce9e9533ea84375a1f2122b7868b8ab556da53f1e1af14d1a71b0b123aade012102a41e4348bb233e40cf3a3402e2dc92a31b69ef56090fff242aa7e4bff828929fffffffff1ed624bad3df9d3a7be56dcd5d97c996fccc78164f16f59658b33f8da8859deb000000006b483045022100ba2a55f55a37b6712dd25dbef411aed869190ef60a208b39d4bd8e0ce8635b4d02201976d63489e23205aab651a9def43d6b3a740ba06de2ecabc43504241a71f229012102a41e4348bb233e40cf3a3402e2dc92a31b69ef56090fff242aa7e4bff828929fffffffff24e5cb4893beb0bb60193dbe11a9778d07e127c1cbc939c0a0388b1013ef75d9000000006a47304402203c27eea34db0ba070bee38d625d2cfcec1a0f5d8a9124023c84e9963d37f6145022015f7657cc57be515e6aa43c93c73457f5583b7c90c0af4e8a2f913257df27b0b012102a41e4348bb233e40cf3a3402e2dc92a31b69ef56090fff242aa7e4bff828929fffffffff997e6738c45eaf7af8bed7dc09e258139bffb0d2be8b4167473b6943adc0b28b000000006a47304402202d4c6df39b725d571d67bef14f0c6baa0cf4b93aa54aac2d2a15d3d940510d0602203643162545d5b63c007986627a317ed962f4d5023e4c15e9636a4eede86930c7012102a41e4348bb233e40cf3a3402e2dc92a31b69ef56090fff242aa7e4bff828929fffffffffcff2021b6b0bcd2a8b38583539dc140b98da4f41ae1e4adb089dc2cf3b66d6c6000000006a473044022019d5264c99145c7203e690fb2f57b0e218af2761e024f9ec1b774c703939b96e02204c2430fc4ae0fa43afb19a722f7b5d706bf5f2d5ee85229cbdc7a7b26433f5fd012102a41e4348bb233e40cf3a3402e2dc92a31b69ef56090fff242aa7e4bff828929fffffffff018f73e606000000001976a914ec093b0943ec524769553e1b7261b67ecab47e8688ac00000000\"\n}"
 				},
 				"description": ""
 			},
