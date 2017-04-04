@@ -35,7 +35,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly Dictionary<uint256, uint256> inventoryTxToSend;
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
-		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
+		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, 
+			ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
 		{
 			this.validator = validator;
 			this.manager = manager;
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private async Task ProcessInvAsync(Node node, InvPayload invPayload)
 		{
-			Check.Assert(node == this.AttachedNode); // just in case
+			Guard.Assert(node == this.AttachedNode); // just in case
 
 			if (invPayload.Inventory.Count > ConnectionManager.MAX_INV_SZ)
 			{
@@ -144,7 +145,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 
 			// add to known inventory
-			await this.manager.MempoolScheduler.DoExclusive(() =>
+			await this.manager.MempoolScheduler.WriteAsync(() =>
 			{
 				foreach (var inventoryVector in send.Inventory)
 					this.filterInventoryKnown.TryAdd(inventoryVector.Hash, inventoryVector.Hash);
@@ -156,7 +157,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
 		{
-			Check.Assert(node == this.AttachedNode); // just in case
+			Guard.Assert(node == this.AttachedNode); // just in case
 
 			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
 			{
@@ -177,9 +178,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			var trxHash = trx.GetHash();
 
 			// add to local filter
-			await this.manager.MempoolScheduler.DoExclusive(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
+			await this.manager.MempoolScheduler.WriteAsync(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
 
-			var state = new MemepoolValidationState(true);
+			var state = new MempoolValidationState(true);
 			if (!await this.orphans.AlreadyHave(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
 			{
 				await this.validator.SanityCheck();
@@ -222,7 +223,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// find all behaviours then start an exclusive task 
 			// to add the hash to each local collection
 			var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
-			return this.manager.MempoolScheduler.DoExclusive(() =>
+			return this.manager.MempoolScheduler.WriteAsync(() =>
 			{
 				foreach (var mempoolBehavior in behaviours)
 				{
@@ -238,7 +239,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		/// </summary>
 		public async Task SendMempoolPayload(Node node, MempoolPayload message)
 		{
-			Check.Assert(node == this.AttachedNode); // just in case
+			Guard.Assert(node == this.AttachedNode); // just in case
 
 			if (!this.CanSend)
 				return;
@@ -266,7 +267,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			//	filterrate = pto->minFeeFilter;
 			//}
 
-			var sends = await this.manager.MempoolScheduler.DoExclusive(() =>
+			var sends = await this.manager.MempoolScheduler.WriteAsync(() =>
 			{
 				var ret = new List<TxMempoolInfo>();
 				foreach (var txinfo in vtxinfo)
@@ -325,10 +326,10 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// before locking an exclusive task 
 			// check if there is anything to processes
-			if(!await this.manager.MempoolScheduler.DoConcurrent(() => this.inventoryTxToSend.Keys.Any()))
+			if(!await this.manager.MempoolScheduler.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
 				return;
 
-			var sends = await this.manager.MempoolScheduler.DoExclusive(() =>
+			var sends = await this.manager.MempoolScheduler.WriteAsync(() =>
 			{
 				// Determine transactions to relay
 				// Produce a vector with all candidates for sending

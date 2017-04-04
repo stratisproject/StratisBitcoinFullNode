@@ -25,10 +25,10 @@ namespace Stratis.Bitcoin.Consensus
 		uint256 _InnerBlockHash;
 		CoinView _Inner;
 
-		public CachedCoinView(CoinView inner)
+		public CachedCoinView(DBreezeCoinView inner)
 		{
-			if(inner == null)
-				throw new ArgumentNullException("inner");
+			Guard.NotNull(inner, nameof(inner));
+
 			_Inner = inner;
 			MaxItems = 100000;
 		}
@@ -43,9 +43,8 @@ namespace Stratis.Bitcoin.Consensus
 
 		public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
-			if(txIds == null)
-				throw new ArgumentNullException("txIds");
-
+			Guard.NotNull(txIds, nameof(txIds));
+			
 			FetchCoinsResponse result = null;
 			uint256 innerBlockHash = null;
 			UnspentOutputs[] outputs = new UnspentOutputs[txIds.Length];
@@ -183,13 +182,10 @@ namespace Stratis.Bitcoin.Consensus
 		static uint256[] DuplicateTransactions = new[] { new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"), new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599") };
 		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
-			if(oldBlockHash == null)
-				throw new ArgumentNullException("oldBlockHash");
-			if(nextBlockHash == null)
-				throw new ArgumentNullException("nextBlockHash");
-			if(unspentOutputs == null)
-				throw new ArgumentNullException("unspentOutputs");
-
+			Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
+			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
+			Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
+			
 			using(_Lock.LockWrite())
 			{
 				WaitOngoingTasks();

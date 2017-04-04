@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.MemoryPool
 		/** Maximum age of our tip in seconds for us to be considered current for fee estimation */
 		const int MAX_FEE_ESTIMATION_TIP_AGE = 3 * 60 * 60;
 
-		private readonly SchedulerPairSession mempoolScheduler;
-		private readonly DateTimeProvider dateTimeProvider;
-		private readonly NodeArgs nodeArgs;
+		private readonly MempoolScheduler mempoolScheduler;
+		private readonly IDateTimeProvider dateTimeProvider;
+		private readonly NodeSettings nodeArgs;
 		private readonly ConcurrentChain chain;
 		private readonly CoinView coinView;
 		private readonly TxMempool memPool;
@@ -47,8 +47,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			public long LastTime;
 		}
 
-		public MempoolValidator(TxMempool memPool, SchedulerPairSession mempoolScheduler,
-			ConsensusValidator consensusValidator, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs,
+		public MempoolValidator(TxMempool memPool, MempoolScheduler mempoolScheduler,
+			ConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs,
 			ConcurrentChain chain, CoinView coinView)
 		{
 			this.memPool = memPool;
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.PerformanceCounter = new MempoolPerformanceCounter();
 		}
 
-		public async Task<bool> AcceptToMemoryPoolWithTime(MemepoolValidationState state, Transaction tx)
+		public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
 		{
 			try
 			{
@@ -90,13 +90,13 @@ namespace Stratis.Bitcoin.MemoryPool
 			//FlushStateToDisk(stateDummy, FLUSH_STATE_PERIODIC);
 		}
 
-		public Task<bool> AcceptToMemoryPool(MemepoolValidationState state, Transaction tx)
+		public Task<bool> AcceptToMemoryPool(MempoolValidationState state, Transaction tx)
 		{
 			state.AcceptTime = dateTimeProvider.GetTime();
 			return AcceptToMemoryPoolWithTime(state, tx);
 		}
 
-		private async Task AcceptToMemoryPoolWorker(MemepoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
+		private async Task AcceptToMemoryPoolWorker(MempoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
 		{
 			var context = new MempoolValidationContext(tx, state);
 
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// adding to the mem pool can only be done sequentially
 			 // use the sequential scheduler for that.
-			await this.mempoolScheduler.DoExclusive(() =>
+			await this.mempoolScheduler.WriteAsync(() =>
 			{
 				// is it already in the memory pool?
 				if (this.memPool.Exists(context.TransactionHash))
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private void CheckMempoolCoinView(MempoolValidationContext context)
 		{
-			Check.Assert(context.View != null);
+			Guard.Assert(context.View != null);
 
 			context.LockPoints = new LockPoints();
 
@@ -775,7 +775,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			SequenceLock lockPair;
 			if (useExistingLockPoints)
 			{
-				Check.Assert(lp != null);
+				Guard.Assert(lp != null);
 				lockPair = new SequenceLock(lp.Height, lp.Time);
 			}
 			else
@@ -896,7 +896,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public Task SanityCheck()
 		{
-			return this.mempoolScheduler.DoConcurrent(() => this.memPool.Check(this.coinView));
+			return this.mempoolScheduler.ReadAsync(() => this.memPool.Check(this.coinView));
 		}
 	}
 }

@@ -1,52 +1,97 @@
-﻿using Stratis.Bitcoin.Configuration;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using System.IO;
-using Stratis.Bitcoin.RPC;
-using NBitcoin;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Logging;
-using Stratis.Bitcoin.Consensus;
-using NBitcoin.Protocol;
 using Microsoft.AspNetCore.Hosting.Internal;
-using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.BlockPulling;
-using System.Text;
-using System.Runtime.ExceptionServices;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.BlockStore;
-using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
 {
-	public class FullNode : IDisposable
-	{
-		NodeArgs _Args;
-		ILogger _logger;
 
-		public NodeArgs Args
+	public class FullNode : IFullNode, IDisposable
+	{
+		private ApplicationLifetime applicationLifetime; // this will replace the cancellation token on the full node
+		ILogger _logger;
+		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
+
+		public FullNodeServiceProvider Services { get; set; }
+
+		NodeSettings _Settings;
+
+		public NodeSettings Settings
 		{
-			get
-			{
-				return _Args;
-			}
+			get { return _Settings; }
 		}
 
-		public FullNode(NodeArgs args)
+        public FullNode()
+        {
+            _logger = Logs.LoggerFactory.CreateLogger<FullNode>();
+        }
+
+        public FullNode Initialize(FullNodeServiceProvider serviceProvider)
 		{
-			if(args == null)
-				throw new ArgumentNullException("args");
-			_Args = args;
-			Network = _Args.GetNetwork();
-			_logger = Logs.LoggerFactory.CreateLogger<FullNode>();
-			_logger.LogDebug("Full node created on {0}", Network.Name);
+			Guard.NotNull(serviceProvider, nameof(serviceProvider));
+
+			this.Services = serviceProvider;
+
+			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
+			this.Network = this.Services.ServiceProvider.GetService<Network>();
+			this._Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
+			this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
+			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
+			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
+			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
+			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
+			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
+
+			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
+			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
+			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
+			this.Miner = this.Services.ServiceProvider.GetService<Mining>();
+
+            _logger.LogDebug("Full node initialized on {0}", Network.Name);
+
+            return this;
+		}
+
+		protected void StartFeatures()
+		{
+			this.applicationLifetime = this.Services?.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
+			this.fullNodeFeatureExecutor = this.Services?.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
+
+			// Fire IApplicationLifetime.Started
+			this.applicationLifetime?.NotifyStarted();
+
+			//start all registered features
+			this.fullNodeFeatureExecutor?.Start();
+		}
+
+		protected void DisposeFeatures()
+		{
+			// Fire IApplicationLifetime.Stopping
+			this.applicationLifetime?.StopApplication();
+			// Fire the IHostedService.Stop
+			this.fullNodeFeatureExecutor?.Stop();
+			(this.Services.ServiceProvider as IDisposable)?.Dispose();
+			//(this.Services.ServiceProvider as IDisposable)?.Dispose();
+			// Fire IApplicationLifetime.Stopped
+			this.applicationLifetime?.NotifyStopped();
 		}
 
 		public Network Network
@@ -65,7 +110,7 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
-		public DateTimeProvider DateTimeProvider
+		public IDateTimeProvider DateTimeProvider
 		{
 			get; set;
 		}
@@ -76,109 +121,26 @@ namespace Stratis.Bitcoin
 			//	return true;
 			if (this.ConsensusLoop.Tip == null)
 				return true;
-			if (this.ConsensusLoop.Tip.ChainWork < MinimumChainWork(this.Args))
+			if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
 				return true;
-			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Args.MaxTipAge))
+			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
 				return true;
 			return false;
 		}
 
-		private static uint256 MinimumChainWork(NodeArgs args)
-		{
-			// TODO: move this to Network.Consensus
-			if (args.RegTest)
-				return uint256.Zero;
-			if (args.Testnet)
-				return uint256.Parse("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6");
-			return uint256.Parse("0x0000000000000000000000000000000000000000002cb971dd56d1c583c20f90");
-		}
-
 		List<IDisposable> _Resources = new List<IDisposable>();
+		public List<IDisposable> Resources => _Resources;
+
 		public void Start()
 		{
-			if(IsDisposed)
+			if (IsDisposed)
 				throw new ObjectDisposedException("FullNode");
 			_IsStarted.Reset();
-			DataFolder = new DataFolder(_Args.DataDir);
-			var coinviewDB = new DBreezeCoinView(Network, DataFolder.CoinViewPath);
-			_Resources.Add(coinviewDB);
-			CoinView = new CachedCoinView(coinviewDB) { MaxItems = _Args.Cache.MaxItems };
 
-
-			_Cancellation = new CancellationTokenSource();
-			StartFlushAddrManThread();
-			StartFlushChainThread();
-
-			if(_Args.RPC != null)
-			{
-				// TODO: The web host wants to create IServiceProvider, so build (but not start) 
-				// earlier, if you want to use dependency injection elsewhere
-				RPCHost = new WebHostBuilder()
-					.UseLoggerFactory(Logs.LoggerFactory)
-					.UseKestrel()
-					.ForFullNode(this)
-					.UseUrls(_Args.RPC.GetUrls())
-					.UseIISIntegration()
-					.UseStartup<RPC.Startup>()
-					.Build();
-				// TODO: use .ConfigureServices() to configure non-ASP.NET services
-				// TODO: grab RPCHost.Services to use as IServiceProvider elsewhere
-
-				RPCHost.Start();
-				_Resources.Add(RPCHost);
-				Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, _Args.RPC.GetUrls()));
-			}
-
-			this.Signals = new Signals();
-			this.DateTimeProvider = DateTimeProvider.Default;
-
-			this._ChainBehaviorState = new BlockStore.ChainBehavior.ChainState(this);
-
-			if(AddressManager.Count == 0)
-				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
-
-			var connectionParameters = new NodeConnectionParameters();
-			connectionParameters.IsRelay = _Args.Mempool.RelayTxes;
-			connectionParameters.Services = (Args.Prune ? NodeServices.Nothing :  NodeServices.Network) | NodeServices.NODE_WITNESS;
-			connectionParameters.TemplateBehaviors.Add(new BlockStore.ChainBehavior(Chain, this.ChainBehaviorState));
-			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(AddressManager));
-			ConnectionManager = new ConnectionManager(Network, connectionParameters, _Args.ConnectionManager);
-			var blockPuller = new NodesBlockPuller(Chain, ConnectionManager.ConnectedNodes);
-			connectionParameters.TemplateBehaviors.Add(new NodesBlockPuller.NodesBlockPullerBehavior(blockPuller));
-
-			// TODO: later use the prune size to limit storage size
-			this.BlockStoreManager = new BlockStoreManager(this.Chain, this.ConnectionManager,
-				new BlockRepository(DataFolder.BlockPath), this.DateTimeProvider, _Args, this._ChainBehaviorState);
-			_Resources.Add(this.BlockStoreManager.BlockRepository);
-			connectionParameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.Chain, this.BlockStoreManager.BlockRepository, this.BlockStoreManager));
-			this.Signals.Blocks.Subscribe(new BlockStoreSignaled(this.BlockStoreManager, this.Chain, this._Args, this.ChainBehaviorState, this.ConnectionManager, this._Cancellation));
-
-			var consensusValidator = new ConsensusValidator(Network.Consensus);
-			ConsensusLoop = new ConsensusLoop(consensusValidator, Chain, CoinView, blockPuller);
-			this._ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-
-			// create the memory pool
-			var mempool = new TxMempool(MempoolValidator.MinRelayTxFee, _Args);
-			var mempoolScheduler = new SchedulerPairSession();
-			var mempoolValidator = new MempoolValidator(mempool, mempoolScheduler, consensusValidator, this.DateTimeProvider, _Args, this.Chain, this.CoinView);
-			var mempoollOrphans = new MempoolOrphans(mempoolScheduler, mempool, this.Chain, mempoolValidator, this.CoinView, this.DateTimeProvider, _Args);
-			this.MempoolManager = new MempoolManager(mempoolScheduler, mempool, this.Chain, mempoolValidator, mempoollOrphans, this.DateTimeProvider, _Args);
-			connectionParameters.TemplateBehaviors.Add(new MempoolBehavior(mempoolValidator, this.MempoolManager, mempoollOrphans, this.ConnectionManager, this.ChainBehaviorState));
-			this.Signals.Blocks.Subscribe(new MempoolSignaled(this.MempoolManager, this.Chain, this.ConnectionManager, this._Cancellation));
-
-			this.Miner = new Mining(this, this.DateTimeProvider);
-
-			var flags = ConsensusLoop.GetFlags();
-			if(flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-				ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-
-			_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
+			// start all the features defined
+			this.StartFeatures();
+			
 			ConnectionManager.Start();
-
-			new Thread(RunLoop)
-			{
-				Name = "Consensus Loop"
-			}.Start();
 			_IsStarted.Set();
 
 			this.StartPeriodicLog();
@@ -187,157 +149,7 @@ namespace Stratis.Bitcoin
 		private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
 		public BlockStore.ChainBehavior.ChainState ChainBehaviorState
 		{
-			get { return _ChainBehaviorState; } 
-		}
-
-		public class ConsensusStats
-		{
-			private readonly FullNode fullNode;
-			private CoinViewStack stack;
-			private CachedCoinView cache;
-			private DBreezeCoinView dbreeze;
-			private CoinView bottom;
-
-			private LookaheadBlockPuller lookaheadPuller;
-			private ConsensusPerformanceSnapshot lastSnapshot;
-			private BackendPerformanceSnapshot lastSnapshot2;
-			private CachePerformanceSnapshot lastSnapshot3;
-
-			public ConsensusStats(FullNode fullNode, CoinViewStack stack)
-			{
-				this.fullNode = fullNode;
-
-				stack = new CoinViewStack(fullNode.CoinView);
-				cache = stack.Find<CachedCoinView>();
-				dbreeze = stack.Find<DBreezeCoinView>();
-				bottom = stack.Bottom;
-
-				lookaheadPuller = fullNode.ConsensusLoop.Puller as LookaheadBlockPuller;
-
-				lastSnapshot = fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-				lastSnapshot2 = dbreeze?.PerformanceCounter.Snapshot();
-				lastSnapshot3 = cache?.PerformanceCounter.Snapshot();
-			}
-
-			public bool CanLog
-			{
-				get
-				{
-					return this.fullNode._ChainBehaviorState.IsInitialBlockDownload && 
-						(DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
-				}
-			}
-
-			public void Log()
-			{
-				StringBuilder benchLogs = new StringBuilder();
-
-				if (lookaheadPuller != null)
-				{
-					benchLogs.AppendLine("======Block Puller======");
-					benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + lookaheadPuller.ActualLookahead + " blocks");
-					benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + lookaheadPuller.MedianDownloadCount + " blocks");
-					benchLogs.AppendLine("==========================");
-				}
-				benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
-				if (cache != null)
-				{
-					benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + this.fullNode.Chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
-					benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + cache.CacheEntryCount);
-				}
-
-				var snapshot = this.fullNode.ConsensusLoop.Validator.PerformanceCounter.Snapshot();
-				benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
-				lastSnapshot = snapshot;
-
-				if (dbreeze != null)
-				{
-					var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
-					benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
-					lastSnapshot2 = snapshot2;
-				}
-				if (cache != null)
-				{
-					var snapshot3 = cache.PerformanceCounter.Snapshot();
-					benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
-					lastSnapshot3 = snapshot3;
-				}
-				benchLogs.AppendLine(this.fullNode.ConnectionManager.GetStats());
-				Logs.Bench.LogInformation(benchLogs.ToString());
-			}
-		}
-
-		void RunLoop()
-		{
-			try
-			{
-				var stack = new CoinViewStack(CoinView);
-				var cache = stack.Find<CachedCoinView>();
-				var stats = new ConsensusStats(this, stack);
-				
-				ChainedBlock lastTip = ConsensusLoop.Tip;
-				foreach(var block in ConsensusLoop.Execute(_Cancellation.Token))
-				{
-					bool reorg = false;
-					if(ConsensusLoop.Tip.FindFork(lastTip) != lastTip)
-					{
-						reorg = true;
-						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + ConsensusLoop.Tip.Height + " (" + ConsensusLoop.Tip.HashBlock + ")");
-					}
-					lastTip = ConsensusLoop.Tip;
-					_Cancellation.Token.ThrowIfCancellationRequested();
-					if(block.Error != null)
-					{
-						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
-
-						//Pull again
-						ConsensusLoop.Puller.SetLocation(ConsensusLoop.Tip);
-
-						if(block.Error == ConsensusErrors.BadWitnessNonceSize)
-						{
-							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
-							ConnectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-							ConsensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
-							continue;
-						}
-
-						//Set the PoW chain back to ConsensusLoop.Tip
-						Chain.SetTip(ConsensusLoop.Tip);
-						//Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
-						Logs.FullNode.LogError("Marking block as invalid");
-						_ChainBehaviorState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
-					}
-
-					if(block.Error == null)
-					{
-						_ChainBehaviorState.HighestValidatedPoW = ConsensusLoop.Tip;
-						if(Chain.Tip.HashBlock == block.ChainedBlock.HashBlock)
-						{
-							var unused = cache.FlushAsync();
-						}
-
-						this.Signals.Blocks.Broadcast(block.Block);
-					}
-
-					// TODO: replace this with a signalling object
-					if (stats.CanLog)
-						stats.Log();
-				}
-			}
-			catch(Exception ex) //TODO: Barbaric clean exit
-			{
-				if(ex is OperationCanceledException)
-				{
-					if(_Cancellation.IsCancellationRequested)
-						return;
-				}
-				if(!IsDisposed)
-				{
-					Logs.FullNode.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + ConsensusLoop.Tip?.Height + ")");
-					_UncatchedException = ex;
-					Dispose();
-				}
-			}
+			get { return _ChainBehaviorState; }
 		}
 
 		public Mining Miner
@@ -360,37 +172,12 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
-		private void StartFlushChainThread()
-		{
-			if(!Directory.Exists(DataFolder.ChainPath))
-			{
-				Logs.FullNode.LogInformation("Creating " + DataFolder.ChainPath);
-				Directory.CreateDirectory(DataFolder.ChainPath);
-			}
-			ChainRepository = new ChainRepository(DataFolder.ChainPath);
-			_Resources.Add(ChainRepository);
-			Logs.FullNode.LogInformation("Loading chain");
-			Chain = ChainRepository.GetChain().GetAwaiter().GetResult();
-			Chain = Chain ?? new ConcurrentChain(Network);
-			Check.Assert(Chain.Genesis.HashBlock == Network.GenesisHash); // can't swap networks
-			Logs.FullNode.LogInformation("Chain loaded at height " + Chain.Height);
-			FlushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
-			{
-				ChainRepository.Save(Chain);
-			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
-		}
-
 		public ConnectionManager ConnectionManager
 		{
 			get; set;
 		}
 
 		public MempoolManager MempoolManager
-		{
-			get; set;
-		}
-
-		public AddressManager AddressManager
 		{
 			get; set;
 		}
@@ -423,9 +210,17 @@ namespace Stratis.Bitcoin
 			get; set;
 		}
 
+		public CancellationProvider GlobalCancellation
+		{
+			get; set;
+		}
+		public class CancellationProvider
+		{
+			public CancellationTokenSource Cancellation { get; set; }
+		}
+
 		ManualResetEvent _IsDisposed = new ManualResetEvent(false);
 		ManualResetEvent _IsStarted = new ManualResetEvent(false);
-		CancellationTokenSource _Cancellation = new CancellationTokenSource();
 		public bool IsDisposed
 		{
 			get
@@ -434,48 +229,42 @@ namespace Stratis.Bitcoin
 			}
 		}
 
-		private void StartFlushAddrManThread()
-		{
-			if(!File.Exists(DataFolder.AddrManFile))
-			{
-				Logs.FullNode.LogInformation("Creating " + DataFolder.AddrManFile);
-				AddressManager = new AddressManager();
-				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-			}
-			else
-			{
-				Logs.FullNode.LogInformation("Loading addrman");
-				AddressManager = AddressManager.LoadPeerFile(DataFolder.AddrManFile);
-				Logs.FullNode.LogInformation("Loaded");
-			}
-			FlushAddrmanTask = new PeriodicTask("FlushAddrMan", (cancellation) =>
-			{
-				AddressManager.SavePeerFile(DataFolder.AddrManFile, Network);
-			}).Start(_Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
-		}
-
 		private void StartPeriodicLog()
 		{
-			new PeriodicAsyncTask("PeriodicLog", (cancellation) =>
+			AsyncLoop.Run("PeriodicLog", (cancellation) =>
 			{
-				// TODO: move stats to each of its components 
-
+				// TODO: move stats to each of its components
 				StringBuilder benchLogs = new StringBuilder();
+
+				if (this.ConsensusLoop != null)
+				{
+					benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture));
+					benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
+				}
+
+				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+
+				if (this._ChainBehaviorState.HighestPersistedBlock != null)
+				{
+					benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
+				}
 				
-				benchLogs.AppendLine("======Consensus====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)); 
-				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength) + this.Chain.Tip.HashBlock);
-				benchLogs.AppendLine("Blocks.Height: ".PadRight(Logs.ColumnLength) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Blocks.Hash: ".PadRight(Logs.ColumnLength) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
 				benchLogs.AppendLine();
 
-				benchLogs.AppendLine("======Mempool======");
-				benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+				if (this.MempoolManager != null)
+				{
+					benchLogs.AppendLine("======Mempool======");
+					benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+				}
 
 				benchLogs.AppendLine("======Connection======");
 				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
 				Logs.Bench.LogInformation(benchLogs.ToString());
 				return Task.CompletedTask;
-
-			}).StartAsync(_Cancellation.Token, TimeSpan.FromSeconds(5.0));
+			},
+			this.GlobalCancellation.Cancellation.Token,
+			repeatEvery: TimeSpans.FiveSeconds,
+			startAfter: TimeSpans.FiveSeconds);
 		}
 
 		public void WaitDisposed()
@@ -500,28 +289,20 @@ namespace Stratis.Bitcoin
 
 		public void Dispose()
 		{
-			if(IsDisposed)
+			if (IsDisposed)
 				return;
 			_IsDisposedValue = true;
 			Logs.FullNode.LogInformation("Closing node pending...");
 			_IsStarted.WaitOne();
-			if(_Cancellation != null)
+			if (this.GlobalCancellation != null)
 			{
-				_Cancellation.Cancel();
-				FlushAddrmanTask.RunOnce();
-				Logs.FullNode.LogInformation("FlushAddrMan stopped");
-				FlushChainTask.RunOnce();
-				Logs.FullNode.LogInformation("FlushChain stopped");
+				this.GlobalCancellation.Cancellation.Cancel();
 
-				var cache = CoinView as CachedCoinView;
-				if(cache != null)
-				{
-					Logs.FullNode.LogInformation("Flushing Cache CoinView...");
-					cache.FlushAsync().GetAwaiter().GetResult();
-				}
 				ConnectionManager.Dispose();
-				foreach(var dispo in _Resources)
+				foreach (var dispo in _Resources)
 					dispo.Dispose();
+
+				DisposeFeatures();
 			}
 			_IsDisposed.Set();
 			_HasExited = true;
@@ -529,11 +310,11 @@ namespace Stratis.Bitcoin
 
 		public void ThrowIfUncatchedException()
 		{
-			if(_UncatchedException != null)
+			if (_UncatchedException != null)
 			{
 				var ex = _UncatchedException;
 				var aex = _UncatchedException as AggregateException;
-				if(aex != null)
+				if (aex != null)
 					ex = aex.InnerException;
 				ExceptionDispatchInfo.Capture(ex).Throw();
 			}

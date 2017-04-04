@@ -8,24 +8,25 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
+	public class MempoolScheduler : AsyncLock
+	{ }
+
 	public class MempoolManager
 	{
-		public SchedulerPairSession MempoolScheduler { get; }
+		public MempoolScheduler MempoolScheduler { get; }
 		public MempoolValidator Validator { get; } // public for testing
 		public MempoolOrphans Orphans { get; } // public for testing
 		private readonly TxMempool memPool;
 
-		private readonly ConcurrentChain chain;
-		public DateTimeProvider DateTimeProvider { get; }
-		public NodeArgs NodeArgs { get; set; }
+		public IDateTimeProvider DateTimeProvider { get; }
+		public NodeSettings NodeArgs { get; set; }
 
 
-		public MempoolManager(SchedulerPairSession mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
-			MempoolValidator validator, MempoolOrphans orphans, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
+		public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool, 
+			MempoolValidator validator, MempoolOrphans orphans, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
-			this.chain = chain;
 			this.DateTimeProvider = dateTimeProvider;
 			this.NodeArgs = nodeArgs;
 			this.Orphans = orphans;
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public Task<List<uint256>> GetMempoolAsync()
 		{
-			return this.MempoolScheduler.DoConcurrent(() => this.memPool.MapTx.Keys.ToList());
+			return this.MempoolScheduler.ReadAsync(() => this.memPool.MapTx.Keys.ToList());
 		}
 
 		public List<TxMempoolInfo> InfoAll()
@@ -66,27 +67,27 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public Task<List<TxMempoolInfo>> InfoAllAsync()
 		{
-			return this.MempoolScheduler.DoConcurrent(this.InfoAll);
+			return this.MempoolScheduler.ReadAsync(this.InfoAll);
 
 		}
 		public Task<TxMempoolInfo> InfoAsync(uint256 hash)
 		{
-			return this.MempoolScheduler.DoConcurrent(() => this.Info(hash));
+			return this.MempoolScheduler.ReadAsync(() => this.Info(hash));
 		}
 
 		public Task<long> MempoolSize()
 		{
-			return this.MempoolScheduler.DoConcurrent(() => this.memPool.Size);
+			return this.MempoolScheduler.ReadAsync(() => this.memPool.Size);
 		}
 
 		public Task Clear()
 		{
-			return this.MempoolScheduler.DoConcurrent(() => this.memPool.Clear());
+			return this.MempoolScheduler.ReadAsync(() => this.memPool.Clear());
 		}
 
 		public Task<long> MempoolDynamicMemoryUsage()
 		{
-			return this.MempoolScheduler.DoConcurrent(() => this.memPool.DynamicMemoryUsage());
+			return this.MempoolScheduler.ReadAsync(() => this.memPool.DynamicMemoryUsage());
 		}
 
 		public Task RemoveForBlock(Block block, int blockHeight)
@@ -94,7 +95,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			//if (this.IsInitialBlockDownload)
 			//	return Task.CompletedTask;
 
-			return this.MempoolScheduler.DoExclusive(() => this.memPool.RemoveForBlock(block.Transactions, blockHeight));
+			return this.MempoolScheduler.WriteAsync(() => this.memPool.RemoveForBlock(block.Transactions, blockHeight));
 		}
 	}
 }

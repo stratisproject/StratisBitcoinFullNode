@@ -6,42 +6,65 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze.Transactions;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin
 {
-	public class ChainRepository : IDisposable
-	{		
+    public interface IChainRepository : IDisposable
+    {
+	    Task Load(ConcurrentChain chain);
+		Task Save(ConcurrentChain chain);
+    }
+
+    public class ChainRepository : IChainRepository
+    {		
 		DBreezeSingleThreadSession _Session;
 
 		public ChainRepository(string folder)
 		{
+			Guard.NotEmpty(folder, nameof(folder));
+
 			_Session = new DBreezeSingleThreadSession("DBreeze ChainRepository", folder);
+		}
+
+		public ChainRepository(DataFolder dataFolder)
+			:this(dataFolder.ChainPath)
+		{
 		}
 		
 		BlockLocator _Locator;
-		public Task<ConcurrentChain> GetChain()
+		public Task Load(ConcurrentChain chain)
 		{
+			Guard.Assert(chain.Tip == chain.Genesis);
+
 			return _Session.Do(() =>
 			{
 				ChainedBlock tip = null;
+				bool first = true;
 				foreach(var row in _Session.Transaction.SelectForward<int, BlockHeader>("Chain"))
 				{
-					if(tip != null && row.Value.HashPrevBlock != tip.HashBlock)
+					if (tip != null && row.Value.HashPrevBlock != tip.HashBlock)
 						break;
 					tip = new ChainedBlock(row.Value, null, tip);
+					
+					if (first)
+					{
+						first = false;
+						Guard.Assert(tip.HashBlock == chain.Genesis.HashBlock); // can't swap networks
+					}
 				}
 				if(tip == null)
-					return null;
+					return;
 				_Locator = tip.GetLocator();
-				var chain = new ConcurrentChain();
 				chain.SetTip(tip);
-				return chain;
 			});
 		}
 
 		public Task Save(ConcurrentChain chain)
 		{
+            Guard.NotNull(chain, nameof(chain));
+
 			return _Session.Do(() =>
 			{
 				var fork = _Locator == null ? null : chain.FindFork(_Locator);

@@ -20,13 +20,13 @@ namespace Stratis.Bitcoin.MemoryPool
 		// Minimum time between orphan transactions expire time checks in seconds 
 		public const int ORPHAN_TX_EXPIRE_INTERVAL = 5 * 60;
 
-		public SchedulerPairSession MempoolScheduler { get; }
+		public MempoolScheduler MempoolScheduler { get; }
 		public MempoolValidator Validator { get; } // public for testing
 		private readonly TxMempool memPool;
 		private readonly ConcurrentChain chain;
 		private readonly CoinView coinView;
-	    private readonly DateTimeProvider dateTimeProvider;
-	    private readonly NodeArgs nodeArgs;
+	    private readonly IDateTimeProvider dateTimeProvider;
+	    private readonly NodeSettings nodeArgs;
 
 		private readonly Dictionary<uint256, OrphanTx> mapOrphanTransactions;
 		private readonly Dictionary<OutPoint, List<OrphanTx>> mapOrphanTransactionsByPrev;
@@ -35,8 +35,8 @@ namespace Stratis.Bitcoin.MemoryPool
 	    private readonly Random random = new Random();
 		private uint256 hashRecentRejectsChainTip;
 
-		public MempoolOrphans(SchedulerPairSession mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
-			MempoolValidator validator, CoinView coinView, DateTimeProvider dateTimeProvider, NodeArgs nodeArgs)
+		public MempoolOrphans(MempoolScheduler mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
+			MempoolValidator validator, CoinView coinView, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			if (this.chain.Tip.HashBlock != hashRecentRejectsChainTip)
 			{
-				await this.MempoolScheduler.DoExclusive(() =>
+				await this.MempoolScheduler.WriteAsync(() =>
 				{
 					// If the chain tip has changed previously rejected transactions
 					// might be now valid, e.g. due to a nLockTime'd tx becoming valid,
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			// Use pcoinsTip->HaveCoinsInCache as a quick approximation to exclude
 			// requesting or processing some txs which have already been included in a block
-			return await this.MempoolScheduler.DoConcurrent(() => 
+			return await this.MempoolScheduler.ReadAsync(() => 
 								recentRejects.ContainsKey(trxid) ||
 								this.memPool.Exists(trxid) ||
 								this.mapOrphanTransactions.ContainsKey(trxid));
@@ -101,7 +101,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			List<ulong> setMisbehaving = new List<ulong>();
 			while (vWorkQueue.Any())
 			{
-				var itByPrev = await this.MempoolScheduler.DoConcurrent(() => this.mapOrphanTransactionsByPrev.TryGet(vWorkQueue.Dequeue()));
+				// mapOrphanTransactionsByPrev.TryGet() does a .ToList() to take a new collection 
+				// of orphans as this collection may be modifed later by anotehr thread
+				var itByPrev = await this.MempoolScheduler.ReadAsync(() => this.mapOrphanTransactionsByPrev.TryGet(vWorkQueue.Dequeue())?.ToList());
 				if (itByPrev == null)
 					continue;
 
@@ -117,7 +119,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					// Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan
 					// resolution (that is, feeding people an invalid transaction based on LegitTxX in order to get
 					// anyone relaying LegitTxX banned)
-					MemepoolValidationState stateDummy = new MemepoolValidationState(true);
+					MempoolValidationState stateDummy = new MempoolValidationState(true);
 					if (await this.Validator.AcceptToMemoryPool(stateDummy, orphanTx))
 					{
 						Logging.Logs.Mempool.LogInformation($"accepted orphan tx {orphanHash}");
@@ -145,7 +147,7 @@ namespace Stratis.Bitcoin.MemoryPool
 							// Do not use rejection cache for witness transactions or
 							// witness-stripped transactions, as they can have been malleated.
 							// See https://github.com/bitcoin/bitcoin/issues/8279 for details.
-							await this.MempoolScheduler.DoExclusive(() => this.recentRejects.TryAdd(orphanHash, orphanHash));
+							await this.MempoolScheduler.WriteAsync(() => this.recentRejects.TryAdd(orphanHash, orphanHash));
 						}
 					}
 					this.memPool.Check(new MempoolCoinView(this.coinView, this.memPool, this.MempoolScheduler));
@@ -159,7 +161,7 @@ namespace Stratis.Bitcoin.MemoryPool
 	    public async Task<bool> ProcessesOrphansMissingInputs(Node from, Transaction tx)
 	    {
 		    // It may be the case that the orphans parents have all been rejected
-		    var rejectedParents = await this.MempoolScheduler.DoConcurrent(() =>
+		    var rejectedParents = await this.MempoolScheduler.ReadAsync(() =>
 		    {
 			    return tx.Inputs.Any(txin => this.recentRejects.ContainsKey(txin.PrevOut.Hash));
 		    });
@@ -200,7 +202,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				int nErased = 0;
 				var nMinExpTime = nNow + ORPHAN_TX_EXPIRE_TIME - ORPHAN_TX_EXPIRE_INTERVAL;
 
-				var orphansValues = await this.MempoolScheduler.DoConcurrent(() => this.mapOrphanTransactions.Values.ToList());
+				var orphansValues = await this.MempoolScheduler.ReadAsync(() => this.mapOrphanTransactions.Values.ToList());
 				foreach (var maybeErase in orphansValues) // create a new list as this will be removing items from the dictionary
 				{
 					if (maybeErase.TimeExpire <= nNow)
@@ -217,7 +219,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				if (nErased > 0)
 					Logging.Logs.Mempool.LogInformation($"Erased {nErased} orphan tx due to expiration");
 			}
-		    await await this.MempoolScheduler.DoConcurrent(async () => 
+		    await await this.MempoolScheduler.ReadAsync(async () => 
 		    {
 				while (this.mapOrphanTransactions.Count > maxOrphanTx)
 				{
@@ -234,7 +236,7 @@ namespace Stratis.Bitcoin.MemoryPool
 	  
 		public Task<bool> AddOrphanTx(ulong nodeId, Transaction tx)
 		{
-			return this.MempoolScheduler.DoExclusive(() =>
+			return this.MempoolScheduler.WriteAsync(() =>
 			{
 				var hash = tx.GetHash();
 				if (this.mapOrphanTransactions.ContainsKey(hash))
@@ -285,7 +287,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private Task<bool> EraseOrphanTx(uint256 hash)
 		{
-			return this.MempoolScheduler.DoExclusive(() =>
+			return this.MempoolScheduler.WriteAsync(() =>
 			{
 				var it = this.mapOrphanTransactions.TryGet(hash);
 				if (it == null)
@@ -307,7 +309,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public Task EraseOrphansFor(ulong peer)
 		{
-			return this.MempoolScheduler.DoConcurrent(async () =>
+			return this.MempoolScheduler.ReadAsync(async () =>
 			{
 				int erased = 0;
 				foreach (var erase in this.mapOrphanTransactions.Values.Where(w => w.NodeId == peer).ToList())

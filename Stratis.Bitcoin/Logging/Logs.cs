@@ -20,19 +20,17 @@ namespace Stratis.Bitcoin.Logging
 			Bench = factory.CreateLogger("Stratis.Bitcoin.FullNode.ConsensusStats");
 			Mempool = factory.CreateLogger("Stratis.Bitcoin.MemoryPool");
 			BlockStore = factory.CreateLogger("Stratis.Bitcoin.BlockStore");
+			Consensus = factory.CreateLogger("Stratis.Bitcoin.Consensus");
 			EstimateFee = factory.CreateLogger("Stratis.Bitcoin.Fee");
+			Mining = factory.CreateLogger("Stratis.Bitcoin.Mining");
 		}
 
 		public static ILoggerFactory GetLoggerFactory(string[] args)
 		{
 			// TODO: preload enough args for -conf= or -datadir= to get debug args from there
-
-			//Configuration = factory.CreateLogger("Configuration");
-			//FullNode = factory.CreateLogger("FullNode");
-			//ConnectionManager = factory.CreateLogger("ConnectionManager");
-			//EstimateFee = factory.CreateLogger("EstimateFee");
-
+            // TODO: currently only takes -debug arg
 			var debugArgs = args.Where(a => a.StartsWith("-debug=")).Select(a => a.Substring("-debug=".Length).Replace("\"", "")).FirstOrDefault();
+
 			var keyToCategory = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 				{
 					//{ "addrman", "" },
@@ -59,6 +57,8 @@ namespace Stratis.Bitcoin.Logging
 					{ "estimatefee", "Stratis.Bitcoin.Fee" },
 					{ "configuration", "Stratis.Bitcoin.Configuration" },
 					{ "fullnode", "Stratis.Bitcoin.FullNode" },
+					{ "consensus", "Stratis.Bitcoin.FullNode" },
+					{ "mining", "Stratis.Bitcoin.FullNode" },
 				};
 			var filterSettings = new FilterLoggerSettings();
 			// Default level is Information
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Logging
 			// TODO: Probably should have a way to configure these as well
 			filterSettings.Add("System", LogLevel.Warning);
 			filterSettings.Add("Microsoft", LogLevel.Warning);
-			//Disable aspnet core logs
+			// Disable aspnet core logs (retained from ASP.NET config)
 			filterSettings.Add("Microsoft.AspNetCore", LogLevel.Error);
 
 			if (!string.IsNullOrWhiteSpace(debugArgs))
@@ -104,6 +104,9 @@ namespace Stratis.Bitcoin.Logging
 				.WithFilter(filterSettings);
 			loggerFactory.AddDebug(LogLevel.Trace);
 			loggerFactory.AddConsole(LogLevel.Trace);
+
+            // TODO: To add file logging, need to get -datadir / -config from args
+
 			return loggerFactory;
 		}
 
@@ -149,6 +152,16 @@ namespace Stratis.Bitcoin.Logging
 		public static ILoggerFactory LoggerFactory
 		{
 			get; private set;
+		}
+
+		public static ILogger Consensus
+		{
+			get; set;
+		}
+
+		public static ILogger Mining
+		{
+			get; set;
 		}
 
 		public const int ColumnLength = 16;

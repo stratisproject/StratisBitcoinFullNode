@@ -8,125 +8,78 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin
 {
-	public class PeriodicAsyncTask
-	{
-		public PeriodicAsyncTask(string name, Func<CancellationToken, Task> loop)
-		{
-			_Name = name;
-			this.loopAsync = loop;
-		}
+    public interface IPeriodicTask
+    {
+        string Name { get; }
 
-		readonly Func<CancellationToken, Task> loopAsync;
+        void RunOnce();
+        PeriodicTask Start(CancellationToken cancellation, TimeSpan refreshRate, bool delayStart = false);
+    }
 
-		private readonly string _Name;
-		public string Name
-		{
-			get
-			{
-				return _Name;
-			}
-		}
+    public class PeriodicTask : IPeriodicTask
+    {
+        public PeriodicTask(string name, Action<CancellationToken> loop)
+        {
+            _Name = name;
+            this._Loop = loop;
+        }
 
-		public PeriodicAsyncTask StartAsync(CancellationToken cancellation, TimeSpan refreshRate, bool delayStart = false)
-		{
-			Task.Run(async () =>
-			{
-				Exception uncatchException = null;
-				Logs.FullNode.LogInformation(_Name + " starting");
-				try
-				{
-					if (delayStart)
-						await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
+        Action<CancellationToken> _Loop;
 
-					while (!cancellation.IsCancellationRequested)
-					{
-						await loopAsync(cancellation).ConfigureAwait(false);
-						await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
-					}
-				}
-				catch (OperationCanceledException ex)
-				{
-					if (!cancellation.IsCancellationRequested)
-						uncatchException = ex;
-				}
-				catch (Exception ex)
-				{
-					uncatchException = ex;
-				}
-				if (uncatchException != null)
-				{
-					Logs.FullNode.LogCritical(new EventId(0), uncatchException, _Name + " threw an unhandled exception");
-				}
-			}, cancellation);
+        private readonly string _Name;
+        public string Name
+        {
+            get
+            {
+                return _Name;
+            }
+        }
 
-			return this;
-		}
+        public PeriodicTask Start(CancellationToken cancellation, TimeSpan refreshRate, bool delayStart = false)
+        {
+            var t = new Thread(() =>
+            {
+                Exception uncatchException = null;
+                Logs.FullNode.LogInformation(_Name + " starting");
+                try
+                {
+                    if (delayStart)
+                        cancellation.WaitHandle.WaitOne(refreshRate);
 
-		public Task RunOnce()
-		{
-			return loopAsync(CancellationToken.None);
-		}
-	}
+                    while (!cancellation.IsCancellationRequested)
+                    {
+                        _Loop(cancellation);
+                        cancellation.WaitHandle.WaitOne(refreshRate);
+                    }
+                }
+                catch (OperationCanceledException ex)
+                {
+                    if (!cancellation.IsCancellationRequested)
+                        uncatchException = ex;
+                }
+                catch (Exception ex)
+                {
+                    uncatchException = ex;
+                }
+                finally
+                {
+                    Logs.FullNode.LogInformation(Name + " stopping");
+                }
 
-	public class PeriodicTask
-	{
-		public PeriodicTask(string name, Action<CancellationToken> loop)
-		{
-			_Name = name;
-			this._Loop = loop;
-		}
+                if (uncatchException != null)
+                {
+                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, _Name + " threw an unhandled exception");
+                }
+            });
+            t.IsBackground = true;
+            t.Name = _Name;
+            t.Start();            
+            return this;
+        }
 
-		Action<CancellationToken> _Loop;
-
-		private readonly string _Name;
-		public string Name
-		{
-			get
-			{
-				return _Name;
-			}
-		}
-
-		public PeriodicTask Start(CancellationToken cancellation, TimeSpan refreshRate, bool delayStart = false)
-		{
-			var t = new Thread(() =>
-			{
-				Exception uncatchException = null;
-				Logs.FullNode.LogInformation(_Name + " starting");
-				try
-				{
-					if (delayStart)
-						cancellation.WaitHandle.WaitOne(refreshRate);//TimeSpan.FromMinutes(5.0));
-
-					while (!cancellation.IsCancellationRequested)
-					{
-						_Loop(cancellation);
-						cancellation.WaitHandle.WaitOne(refreshRate);//TimeSpan.FromMinutes(5.0));
-					}
-				}
-				catch(OperationCanceledException ex)
-				{
-					if(!cancellation.IsCancellationRequested)
-						uncatchException = ex;
-				}
-				catch(Exception ex)
-				{
-					uncatchException = ex;
-				}
-				if(uncatchException != null)
-				{
-					Logs.FullNode.LogCritical(new EventId(0), uncatchException, _Name + " threw an unhandled exception");
-				}
-			});
-			t.IsBackground = true;
-			t.Name = _Name;
-			t.Start();
-			return this;
-		}
-
-		public void RunOnce()
-		{
-			_Loop(CancellationToken.None);
-		}
-	}
+        public void RunOnce()
+        {
+            _Loop(CancellationToken.None);
+        }
+    }
 }

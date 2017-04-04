@@ -7,6 +7,7 @@ using NBitcoin;
 using NBitcoin.BitcoinCore;
 using DBreeze;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -15,27 +16,32 @@ namespace Stratis.Bitcoin.Consensus
 
 		DBreezeSingleThreadSession _Session;
 		Network _Network;
-		public DBreezeCoinView(Network network, string folder)
-		{
-			if(folder == null)
-				throw new ArgumentNullException("folder");
-			if(network == null)
-				throw new ArgumentNullException("network");
 
-			_Session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
-			_Network = network;
-			Initialize(network.GetGenesis());
+		public DBreezeCoinView(Network network, DataFolder dataFolder) 
+			: this(network, dataFolder.CoinViewPath)
+		{
 		}
 
-		private void Initialize(Block genesis)
+		public DBreezeCoinView(Network network, string folder)
 		{
-			_Session.Do(() =>
+			Guard.NotNull(network, nameof(network));
+			Guard.NotEmpty(folder, nameof(folder));
+			
+			_Session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
+			_Network = network;
+		}
+
+		public Task Initialize()
+		{
+			var genesis = this._Network.GetGenesis();
+
+			var sync = _Session.Do(() =>
 			{
 				_Session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind");
 				_Session.Transaction.ValuesLazyLoadingIsOn = false;
 			});
 
-			_Session.Do(() =>
+			var hash = _Session.Do(() =>
 			{
 				if(GetCurrentHash() == null)
 				{
@@ -44,6 +50,8 @@ namespace Stratis.Bitcoin.Consensus
 					_Session.Transaction.Commit();
 				}
 			});
+
+			return Task.WhenAll(new[] { sync, hash });
 		}
 
 		static byte[] BlockHashKey = new byte[0];

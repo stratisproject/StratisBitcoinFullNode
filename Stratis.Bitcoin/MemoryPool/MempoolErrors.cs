@@ -6,15 +6,14 @@ using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
-
 	public class MempoolErrorException : Exception
 	{
-		public MempoolErrorException(MemepoolValidationState state) : base(state.ErrorMessage)
+		public MempoolErrorException(MempoolValidationState state) : base(state.ErrorMessage)
 		{
 			ValidationState = state;
 		}
 
-		public MemepoolValidationState ValidationState
+		public MempoolValidationState ValidationState
 		{
 			get;
 			private set;
@@ -44,7 +43,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public ConsensusError ConsensusError { get; set; }
 	}
 
-	public class MempoolErrors
+	public static class MempoolErrors
 	{
 		//  "reject" message codes 
 		public const int RejectMalformed = 0x01;

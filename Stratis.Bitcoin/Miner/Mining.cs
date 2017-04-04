@@ -18,9 +18,9 @@ namespace Stratis.Bitcoin.Miner
 	public class Mining
     {
 	    private readonly FullNode fullNode;
-	    private readonly DateTimeProvider dateTimeProvider;
+	    private readonly IDateTimeProvider dateTimeProvider;
 
-	    public Mining(FullNode fullNode, DateTimeProvider dateTimeProvider)
+	    public Mining(FullNode fullNode, IDateTimeProvider dateTimeProvider)
 	    {
 		    this.fullNode = fullNode;
 		    this.dateTimeProvider = dateTimeProvider;
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Miner
 				Block block = new Block();
 				block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
 				//block.Header.Bits = GetWorkRequired(fullNode.Network.Consensus,new ChainedBlock(block.Header, (uint256) null, fullNode.Chain.Tip));
-				block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
+				block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
 				block.Header.UpdateTime(dateTimeProvider.GetTimeOffset(), fullNode.Network, fullNode.Chain.Tip);
 				var coinbase = new Transaction();
 				coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
@@ -60,13 +60,20 @@ namespace Stratis.Bitcoin.Miner
 					block.Header.Nonce = ++nonce;
 				if (fullNode.IsDisposed || retry >= maxTries)
 					return blocks.Select(b => b.GetHash()).ToList();
+				if (block.Header.HashPrevBlock != fullNode.Chain.Tip.HashBlock)
+				{
+					i--;
+					continue; // a new block was found continue to look
+				}
 				blocks.Add(block);
-
 				var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
 				fullNode.Chain.SetTip(newChain);
 
 				var blockResult = new BlockResult {Block = block};
 				fullNode.ConsensusLoop.AcceptBlock(blockResult);
+
+				if(blockResult.ChainedBlock == null)
+					break; //reorg
 
 				// similar logic to what's in the full node code
 				if (blockResult.Error == null)
@@ -127,7 +134,7 @@ namespace Stratis.Bitcoin.Miner
 			// Go back by what we want to be 14 days worth of blocks
 			var pastHeight = pindexLast.Height - (consensus.DifficultyAdjustmentInterval - 1);
 			ChainedBlock pindexFirst = chainedBlock.EnumerateToGenesis().FirstOrDefault(o => o.Height == pastHeight);
-			Check.Assert(pindexFirst != null);
+			Guard.Assert(pindexFirst != null);
 
 			if (consensus.PowNoRetargeting)
 				return pindexLast.Header.Bits;

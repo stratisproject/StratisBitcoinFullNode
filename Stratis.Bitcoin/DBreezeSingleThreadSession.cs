@@ -12,11 +12,22 @@ using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin
 {
-	public class DBreezeSingleThreadSession : IDisposable
-	{
+    public interface IDBreezeSingleThreadSession : IDisposable
+    {
+        DBreeze.Transactions.Transaction Transaction { get; }
+
+        Task Do(Action act);
+        Task<T> Do<T>(Func<T> act);
+    }
+
+    public class DBreezeSingleThreadSession : IDBreezeSingleThreadSession
+    {
 		public DBreezeSingleThreadSession(string threadName, string folder)
 		{
-			_SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
+            Guard.NotEmpty(threadName, nameof(threadName));
+            Guard.NotEmpty(folder, nameof(folder));
+
+            _SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
 			new Task(() =>
 			{
 				DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
@@ -25,8 +36,6 @@ namespace Stratis.Bitcoin
 				_Transaction = _Engine.GetTransaction();
 			}).Start(_SingleThread);
 		}
-
-
 
 		internal static byte[] NBitcoinSerialize(object obj)
 		{
@@ -38,6 +47,7 @@ namespace Stratis.Bitcoin
 				return u.ToBytes();
 			throw new NotSupportedException();
 		}
+
 		internal static object NBitcoinDeserialize(byte[] bytes, Type type)
 		{
 			if(type == typeof(Coins))
@@ -94,8 +104,6 @@ namespace Stratis.Bitcoin
 			cleaned.Wait();
 		}
 
-
-
 		private DBreeze.Transactions.Transaction _Transaction;
 		private DBreezeEngine _Engine;
 		private CustomThreadPoolTaskScheduler _SingleThread;
@@ -110,6 +118,8 @@ namespace Stratis.Bitcoin
 
 		public Task Do(Action act)
 		{
+            Guard.NotNull(act, nameof(act));
+
 			AssertNotDisposed();
 			var task = new Task(() =>
 			{
@@ -128,7 +138,9 @@ namespace Stratis.Bitcoin
 
 		public Task<T> Do<T>(Func<T> act)
 		{
-			AssertNotDisposed();
+            Guard.NotNull(act, nameof(act));
+
+            AssertNotDisposed();
 			var task = new Task<T>(() =>
 			{
 				AssertNotDisposed();

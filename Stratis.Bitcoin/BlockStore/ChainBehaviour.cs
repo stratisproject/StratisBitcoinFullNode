@@ -7,6 +7,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
@@ -19,8 +20,8 @@ namespace Stratis.Bitcoin.BlockStore
 		ChainState _State;
 		public ChainBehavior(ConcurrentChain chain, ChainState chainState)
 		{
-			if (chain == null)
-				throw new ArgumentNullException("chain");
+			Guard.NotNull(chain, nameof(chain));
+
 			_State = chainState;
 			_Chain = chain;
 			AutoSync = true;
@@ -120,7 +121,7 @@ namespace Stratis.Bitcoin.BlockStore
 			// Ignoring getheaders from peers because node is in initial block download
 			var getheaders = message.Message.Payload as GetHeadersPayload;
 			if (getheaders != null && CanRespondToGetHeaders &&
-			    (!this.SharedState.IsInitialBlockDownload || 
+				(!this.SharedState.IsInitialBlockDownload || 
 				this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted)) // if not in IBD whitelisted won't be checked
 			{
 				HeadersPayload headers = new HeadersPayload();
@@ -130,7 +131,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 				if (fork != null)
 				{
-					if (fork.Height > highestPow.Height)
+					if (highestPow == null || fork.Height > highestPow.Height)
 					{
 						fork = null; //fork not yet validated
 					}
@@ -379,6 +380,15 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				get; set;
 			}
+
+			/// <summary>
+			/// Represents the last block stored to disk
+			/// </summary>
+			public ChainedBlock HighestPersistedBlock
+			{
+				get; set;
+			}
+
 		}
 
 		#region ICloneable Members
