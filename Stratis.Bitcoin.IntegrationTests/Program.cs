@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-	class Program
+	public static class Program
 	{
 		public static void Main(string[] args)
 		{
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			new Class1().CanRewind();
 		}
 
-		private void WaitReachBlock(FullNode fullNode, int height)
+		private static void WaitReachBlock(FullNode fullNode, int height)
 		{
 			while (true)
 			{
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		public void ValidSomeBlocksOnMainnet()
+		public static void ValidSomeBlocksOnMainnet()
 		{
 			using (NodeContext ctx = NodeContext.Create(network: Network.Main))
 			{
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		private FullNode Restart(FullNode fullNode)
+		private static FullNode Restart(FullNode fullNode)
 		{
 			fullNode.Dispose();
 			fullNode.ThrowIfUncatchedException();

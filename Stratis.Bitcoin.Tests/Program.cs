@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests
 {
-    class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {         

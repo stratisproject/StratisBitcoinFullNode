@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin
 		ILogger _logger;
 		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
-		public FullNodeServiceProvider Services { get; set; }
+		public IFullNodeServiceProvider Services { get; set; }
 
 		NodeSettings _Settings;
 
@@ -38,12 +38,12 @@ namespace Stratis.Bitcoin
 			get { return _Settings; }
 		}
 
-        public FullNode()
-        {
-            _logger = Logs.LoggerFactory.CreateLogger<FullNode>();
-        }
+		public FullNode()
+		{
+			_logger = Logs.LoggerFactory.CreateLogger<FullNode>();
+		}
 
-        public FullNode Initialize(FullNodeServiceProvider serviceProvider)
+public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 

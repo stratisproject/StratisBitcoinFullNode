@@ -61,8 +61,8 @@ namespace Stratis.Bitcoin.Builder
 			ConnectionManager connectionManager,
 			ChainRepository chainRepository)
 		{
-			this.chainState = chainState;
-			this.chainRepository = chainRepository;
+			this.chainState = Guard.NotNull(chainState, nameof(chainState));
+			this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
 			this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
 			this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
 			this.network = Guard.NotNull(network, nameof(network));
