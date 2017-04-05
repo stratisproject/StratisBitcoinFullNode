@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 
@@ -63,14 +64,30 @@ namespace Stratis.Bitcoin.Configuration
 			set;
 		}
 
-		public static NodeSettings Default()
+		public ProtocolVersion ProtocolVersion
 		{
-			return NodeSettings.FromArguments(new string[0]);
+			get;
+			set;
 		}
 
-		public static NodeSettings FromArguments(string[] args)
+		public Network Network { get; private set; }
+
+		public static NodeSettings Default(Network network = null, 
+			ProtocolVersion protocolVersion = ProtocolVersion.SENDHEADERS_VERSION)
+		{
+			return NodeSettings.FromArguments(new string[0], network);
+		}
+
+		public static NodeSettings FromArguments(string[] args, 
+			Network innernetwork = null, 
+			ProtocolVersion protocolVersion = ProtocolVersion.SENDHEADERS_VERSION)
 		{
 			NodeSettings nodeSettings = new NodeSettings();
+			if (innernetwork != null)
+				nodeSettings.Network = innernetwork;
+
+			nodeSettings.ProtocolVersion = protocolVersion;
+
 			nodeSettings.ConfigurationFile = args.Where(a => a.StartsWith("-conf=")).Select(a => a.Substring("-conf=".Length).Replace("\"", "")).FirstOrDefault();
 			nodeSettings.DataDir = args.Where(a => a.StartsWith("-datadir=")).Select(a => a.Substring("-datadir=".Length).Replace("\"", "")).FirstOrDefault();
 			if (nodeSettings.DataDir != null && nodeSettings.ConfigurationFile != null)
@@ -299,6 +316,9 @@ namespace Stratis.Bitcoin.Configuration
 
 		public Network GetNetwork()
 		{
+			if (this.Network != null)
+				return this.Network;
+
 			return Testnet ? Network.TestNet :
 				RegTest ? Network.RegTest :
 				Network.Main;

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.StratisD": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=C:\\BitcoinData\\stratis"
+    }
+  }
+}

@@ -24,7 +24,8 @@ namespace Stratis.Bitcoin.BlockPulling
 	{
 
 		private const int BLOCK_SIZE = 2000000;
-		public LookaheadBlockPuller(ConcurrentChain chain, ConnectionManager connectionManager) : base(chain, connectionManager.ConnectedNodes)
+		public LookaheadBlockPuller(ConcurrentChain chain, ConnectionManager connectionManager) 
+			: base(chain, connectionManager.ConnectedNodes, connectionManager.NodeSettings.ProtocolVersion)
 		{
 			MaxBufferedSize = BLOCK_SIZE * 10;
 			MinimumLookahead = 4;
