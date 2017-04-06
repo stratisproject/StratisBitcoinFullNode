@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Controllers
+namespace Stratis.Bitcoin.RPC.Controllers
 {
 	public  class MempoolController : Controller
 	{

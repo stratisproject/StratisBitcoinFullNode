@@ -1,4 +1,4 @@
 {
-  "projects": [ "Stratis.Bitcoin", "Stratis.Bitcoin.IntegrationTests", "Stratis.Bitcoin.Tests", "Stratis.BitcoinD" ],
+  "projects": [ "Stratis.Bitcoin", "Stratis.Bitcoin.IntegrationTests", "Stratis.Bitcoin.Tests", "Stratis.BitcoinD", "Stratis.StratisD" ],
   "sdk": { "version": "1.0.0-preview2-1-003177" }
 }

@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.BlockPulling
 		protected readonly ConcurrentChain Chain;
 		private readonly NodeRequirement requirements;
 
-		protected BlockPuller(ConcurrentChain chain, NodesCollection nodes)
+		protected BlockPuller(ConcurrentChain chain, NodesCollection nodes, ProtocolVersion protocolVersion)
 		{
 			this.Chain = chain;
 			this.Nodes = nodes;
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			// set the default requirements
 			this.requirements = new NodeRequirement
 			{
-				MinVersion = ProtocolVersion.SENDHEADERS_VERSION,
+				MinVersion = protocolVersion,
 				RequiredServices = NodeServices.Network
 			};
 		}

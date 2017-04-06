@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Microsoft.Extensions.Logging;
 
-namespace Stratis.Bitcoin.Controllers
+namespace Stratis.Bitcoin.RPC.Controllers
 {
     public partial class ConsensusController : Controller
 	{
