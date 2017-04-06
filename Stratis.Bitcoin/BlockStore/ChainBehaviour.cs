@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.BlockStore
 			if (AttachedNode.State == NodeState.Connected)
 			{
 				var highPoW = SharedState.HighestValidatedPoW;
-				AttachedNode.MyVersion.StartHeight = highPoW.Height;
+				AttachedNode.MyVersion.StartHeight = highPoW?.Height ?? 0;
 			}
 			AttachedNode.StateChanged += AttachedNode_StateChanged;
 			RegisterDisposable(AttachedNode.Filters.Add(Intercept));
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private ChainedBlock GetPendingTipOrChainTip()
 		{
-			_PendingTip = _PendingTip ?? this.SharedState.HighestValidatedPoW;// Chain.Tip;
+			_PendingTip = _PendingTip ?? this.SharedState.HighestValidatedPoW ?? Chain.Tip;
 			return _PendingTip;
 		}
 
