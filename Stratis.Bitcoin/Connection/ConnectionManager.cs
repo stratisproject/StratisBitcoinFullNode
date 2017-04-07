@@ -78,6 +78,7 @@ namespace Stratis.Bitcoin.Connection
 				DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, _DiscoveredNodeRequiredService);
 				DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
 				DiscoveredNodeGroup.Connect();
+				DiscoveredNodeGroup.MaximumNodeConnection = 16; //allow maximum 16 connections (outbound/inbound)
 			}
 			else
 			{
