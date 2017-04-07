@@ -28,7 +28,7 @@ The general rules:
 14. Fields should be specified at the top within type declarations.
 15. When including non-ASCII characters in the source code use Unicode escape sequences (\uXXXX) instead of literal characters. Literal non-ASCII characters occasionally get garbled by a tool or editor.
 
-We have provided a Visual Studio 2013 vssettings file (`stratis.fullnode.vssettings`) at the root of the full node repository, enabling C# auto-formatting conforming to the above guidelines.
+We have provided a Visual Studio 2017 EditorConfig file (`.editorconfig`) at the root of the full node repository, enabling C# auto-formatting and warnings conforming to some of the above guidelines.
 
 ### Example File:
 

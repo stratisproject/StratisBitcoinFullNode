@@ -8,15 +8,17 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
+#pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
 namespace Stratis.Bitcoin.RPC.Models
 {
+
     public abstract class TransactionModel
     {
         public TransactionModel(Network network = null) { }
 
         public TransactionModel(NBitcoin.Transaction trx)
         {
-            hex = trx?.ToHex();
+            this.hex = trx?.ToHex();
         }
 
         [JsonProperty(Order = 0)]
@@ -24,7 +26,7 @@ namespace Stratis.Bitcoin.RPC.Models
 
         public override string ToString()
         {
-            return hex;
+            return this.hex;
         }
     }
 
@@ -56,10 +58,10 @@ namespace Stratis.Bitcoin.RPC.Models
 
                 if (block != null)
                 {
-                    blockhash = block.HashBlock.ToString();
-                    time = blocktime = Utils.DateTimeToUnixTime(block.Header.BlockTime);
+                    this.blockhash = block.HashBlock.ToString();
+                    this.time = this.blocktime = Utils.DateTimeToUnixTime(block.Header.BlockTime);
                     if (tip != null)
-                        confirmations = tip.Height - block.Height + 1;
+                        this.confirmations = tip.Height - block.Height + 1;
                 }
             }
 
@@ -105,7 +107,7 @@ namespace Stratis.Bitcoin.RPC.Models
 
             if (prevOut.Hash == uint256.Zero)
             {
-                coinbase = Encoders.Hex.EncodeData(scriptSig.ToBytes());
+                this.coinbase = Encoders.Hex.EncodeData(scriptSig.ToBytes());
             }
             else
             {
@@ -117,7 +119,7 @@ namespace Stratis.Bitcoin.RPC.Models
 
         }
 
-        [JsonProperty(Order =0, DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonProperty(Order = 0, DefaultValueHandling = DefaultValueHandling.Ignore)]
         public string coinbase { get; set; }
 
         [JsonProperty(Order = 1, DefaultValueHandling = DefaultValueHandling.Ignore)]
@@ -161,8 +163,8 @@ namespace Stratis.Bitcoin.RPC.Models
 
         public Script(NBitcoin.Script script)
         {
-            asm = script.ToString();
-            hex = Encoders.Hex.EncodeData(script.ToBytes());
+            this.asm = script.ToString();
+            this.hex = Encoders.Hex.EncodeData(script.ToBytes());
         }
 
 
@@ -193,13 +195,13 @@ namespace Stratis.Bitcoin.RPC.Models
                 if (destinations.Count == 1)
                 {
                     this.reqSigs = 1;
-                    addresses = new List<string> { destinations[0].GetAddress(network).ToString() };
+                    this.addresses = new List<string> { destinations[0].GetAddress(network).ToString() };
                 }
                 else
                 {
-                    var multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(script);
+                    PayToMultiSigTemplateParameters multi = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(script);
                     this.reqSigs = multi.SignatureCount;
-                    addresses = multi.PubKeys.Select(m => m.GetAddress(network).ToString()).ToList();
+                    this.addresses = multi.PubKeys.Select(m => m.GetAddress(network).ToString()).ToList();
                 }
             }
         }
@@ -234,3 +236,4 @@ namespace Stratis.Bitcoin.RPC.Models
         }
     }
 }
+#pragma warning restore IDE1006 // Naming Styles
