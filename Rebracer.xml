@@ -83,7 +83,7 @@
         <PropertyValue name="Space_WithinSquares">0</PropertyValue>
         <PropertyValue name="Style_PreferIntrinsicPredefinedTypeKeywordInDeclaration">1</PropertyValue>
         <PropertyValue name="Style_PreferIntrinsicPredefinedTypeKeywordInMemberAccess">1</PropertyValue>
-        <PropertyValue name="Style_QualifyMemberAccessWithThisOrMe">0</PropertyValue>
+        <PropertyValue name="Style_QualifyMemberAccessWithThisOrMe">1</PropertyValue>
         <PropertyValue name="Style_UseVarWhenDeclaringLocals">1</PropertyValue>
         <PropertyValue name="WarnOnBuildErrors">0</PropertyValue>
         <PropertyValue name="Wrapping_IgnoreSpacesAroundBinaryOperators">0</PropertyValue>
