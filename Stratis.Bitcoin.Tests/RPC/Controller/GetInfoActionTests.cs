@@ -1,22 +1,13 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Moq;
-using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.RPC.Controllers;
 using Stratis.Bitcoin.RPC.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
-using static Stratis.Bitcoin.BlockStore.ChainBehavior;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
 {

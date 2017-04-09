@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.PlatformAbstractions;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.RPC.Models;
 using System;
@@ -19,9 +19,9 @@ namespace Stratis.Bitcoin.RPC.Controllers
     {
         private IFullNode _FullNode;
         private NodeSettings _Settings;
-        private NBitcoin.Network _Network;
+        private Network _Network;
         private ConsensusValidator _ConsensusValidator;
-        private NBitcoin.ChainBase _Chain;
+        private ChainBase _Chain;
         private ChainBehavior.ChainState _ChainState;
         private BlockStoreManager _BlockManager;
         private MempoolManager _MempoolManager;
@@ -30,9 +30,9 @@ namespace Stratis.Bitcoin.RPC.Controllers
         public FullNodeController(
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
-            NBitcoin.Network network = null,
-            Consensus.ConsensusValidator consensusValidator = null,
-            NBitcoin.ConcurrentChain chain = null,
+            Network network = null,
+            ConsensusValidator consensusValidator = null,
+            ConcurrentChain chain = null,
             ChainBehavior.ChainState chainState = null,
             BlockStoreManager blockManager = null,
             MempoolManager mempoolManager = null,
@@ -63,11 +63,11 @@ namespace Stratis.Bitcoin.RPC.Controllers
         [ActionName("getrawtransaction")]
         public async Task<TransactionModel> GetRawTransaction(string txid, int verbose = 0)
         {
-            NBitcoin.uint256 trxid;
-            if (!NBitcoin.uint256.TryParse(txid, out trxid))
+            uint256 trxid;
+            if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            NBitcoin.Transaction trx = (await this._MempoolManager?.InfoAsync(trxid))?.Trx;
+            Transaction trx = (await this._MempoolManager?.InfoAsync(trxid))?.Trx;
 
             if (trx == null)
                 trx = await this._BlockManager?.BlockRepository?.GetTrxAsync(trxid);
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
 
             if (verbose != 0)
             {
-                NBitcoin.ChainedBlock block = await GetTransactionBlock(trxid);
+                ChainedBlock block = await GetTransactionBlock(trxid);
                 return new TransactionVerboseModel(trx, this._Network, block, this._ChainState?.HighestValidatedPoW);
             }
             else
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
                 proxy = string.Empty,
                 difficulty = GetNetworkDifficulty()?.Difficulty ?? 0,
                 testnet = this._Network == NBitcoin.Network.TestNet,
-                relayfee = MempoolValidator.MinRelayTxFee.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC),
+                relayfee = MempoolValidator.MinRelayTxFee.FeePerK.ToUnit(MoneyUnit.BTC),
                 errors = string.Empty,
 
                 //TODO: Wallet related infos: walletversion, balance, keypoololdest, keypoolsize, unlocked_until, paytxfee
@@ -113,16 +113,16 @@ namespace Stratis.Bitcoin.RPC.Controllers
             return model;
         }
 
-        private async Task<NBitcoin.ChainedBlock> GetTransactionBlock(NBitcoin.uint256 trxid)
+        private async Task<ChainedBlock> GetTransactionBlock(uint256 trxid)
         {
-            NBitcoin.ChainedBlock block = null;
-            NBitcoin.uint256 blockid = await this._BlockManager?.BlockRepository?.GetTrxBlockIdAsync(trxid);
+            ChainedBlock block = null;
+            uint256 blockid = await this._BlockManager?.BlockRepository?.GetTrxBlockIdAsync(trxid);
             if (blockid != null)
                 block = this._Chain?.GetBlock(blockid);
             return block;
         }
 
-        private NBitcoin.Target GetNetworkDifficulty()
+        private Target GetNetworkDifficulty()
         {
             if (this._ConsensusValidator?.ConsensusParams != null && this._ChainState?.HighestValidatedPoW != null)
                 return Miner.Mining.GetWorkRequired(this._ConsensusValidator.ConsensusParams, this._ChainState?.HighestValidatedPoW);

@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
@@ -14,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
-using static Stratis.Bitcoin.BlockStore.ChainBehavior;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
 {
@@ -43,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
             var settings = serviceProvider.GetService<NodeSettings>();
             var consensus = serviceProvider.GetService<ConsensusValidator>();
             var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
-            var chainState = serviceProvider.GetService<ChainState>();
+            var chainState = serviceProvider.GetService<ChainBehavior.ChainState>();
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
             var connectionManager = serviceProvider.GetService<ConnectionManager>();
