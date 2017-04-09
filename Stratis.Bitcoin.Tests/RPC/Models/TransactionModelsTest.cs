@@ -12,7 +12,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.Tests.RPC.Models
 {
-    public class TransactionModelsTest
+    public class TransactionModelsTest : BaseRPCModelTest
     {
         const string txBlock10Hex = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0136ffffffff0100f2052a01000000434104fcc2888ca91cf0103d8c5797c256bf976e81f280205d002d85b9b622ed1a6f820866c7b5fe12285cfa78c035355d752fc94a398b67597dc4fbb5b386816425ddac00000000";
         const string txBlock10Hash = "d3ad39fa52a89997ac7381c95eeffeaf40b66af7a57e9eba144be0a175a12b11";
@@ -157,22 +157,6 @@ namespace Stratis.Bitcoin.Tests.RPC.Models
             Assert.Equal(0, actualLastNdx);
             Assert.Equal(4294967295, actualLastSequence);
             Assert.Equal(expectedPropertyNameOrder, actualPropertyNameOrder);
-        }
-
-        private static JObject ModelToJObject(object model)
-        {
-            string json = ModelToJson(model);
-            JObject obj = JObject.Parse(json);
-            return obj;
-        }
-
-        private static string ModelToJson(object model)
-        {
-            var formatter = new RPCJsonOutputFormatter(new JsonSerializerSettings(), System.Buffers.ArrayPool<char>.Create());
-            StringWriter sw = new StringWriter();
-            formatter.WriteObject(sw, model);
-            string json = sw.ToString();
-            return json;
         }
     }
 }
