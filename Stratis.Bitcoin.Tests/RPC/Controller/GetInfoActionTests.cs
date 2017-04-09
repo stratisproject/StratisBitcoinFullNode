@@ -70,13 +70,12 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
             GetInfoModel info = controller.GetInfo();
 
             uint expectedProtocolVersion = (uint)NodeSettings.Default().ProtocolVersion;
-            double expectedTimeOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now).TotalHours;
             var expectedRelayFee = MempoolValidator.MinRelayTxFee.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
             Assert.NotNull(info);
             Assert.Equal(0, info.blocks);
             Assert.NotEqual<uint>(0, info.version);
             Assert.Equal(expectedProtocolVersion, info.protocolversion);
-            Assert.Equal(expectedTimeOffset, info.timeoffset);
+            Assert.Equal(0, info.timeoffset); 
             Assert.Equal(0, info.connections);
             Assert.NotNull(info.proxy);
             Assert.Equal(0, info.difficulty);

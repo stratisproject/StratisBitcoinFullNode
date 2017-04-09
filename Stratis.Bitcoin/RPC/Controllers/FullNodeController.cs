@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
                 version = this._FullNode?.Version.ToUint() ?? 0,
                 protocolversion = (uint)(this._Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
                 blocks = this._ChainState?.HighestValidatedPoW?.Height ?? 0,
-                timeoffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.Now).TotalHours,
+                timeoffset = 0, // TODO: Calculate median time offset of connected nodes
                 connections = this._ConnectionManager?.ConnectedNodes?.Count(),
                 proxy = string.Empty,
                 difficulty = GetNetworkDifficulty()?.Difficulty ?? 0,
