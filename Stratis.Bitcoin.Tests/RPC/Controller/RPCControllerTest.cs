@@ -38,6 +38,7 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
             IServiceProvider serviceProvider = fullNode.Services.ServiceProvider;
             var network = serviceProvider.GetService<Network>();
             var settings = serviceProvider.GetService<NodeSettings>();
+            var consensusLoop = serviceProvider.GetService<ConsensusLoop>();
             var consensus = serviceProvider.GetService<ConsensusValidator>();
             var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
             var chainState = serviceProvider.GetService<ChainBehavior.ChainState>();
@@ -49,7 +50,8 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
             Assert.NotNull(fullNode);
             Assert.NotNull(network);
             Assert.NotNull(settings);
-            Assert.NotNull(settings);
+            Assert.NotNull(consensusLoop);
+            Assert.NotNull(consensus);
             Assert.NotNull(chain);
             Assert.NotNull(chainState);
             Assert.NotNull(blockStoreManager);

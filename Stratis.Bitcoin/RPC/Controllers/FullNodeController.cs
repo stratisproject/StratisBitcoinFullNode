@@ -14,19 +14,8 @@ using Stratis.Bitcoin.Builder;
 
 namespace Stratis.Bitcoin.RPC.Controllers
 {
-    //TODO: Need to be extensible, should be FullNodeController
-    public partial class FullNodeController : Controller
+    public class FullNodeController : BaseRPCController
     {
-        private IFullNode _FullNode;
-        private NodeSettings _Settings;
-        private Network _Network;
-        private ConsensusValidator _ConsensusValidator;
-        private ChainBase _Chain;
-        private ChainBehavior.ChainState _ChainState;
-        private BlockStoreManager _BlockManager;
-        private MempoolManager _MempoolManager;
-        private Connection.ConnectionManager _ConnectionManager;
-
         public FullNodeController(
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
@@ -37,17 +26,16 @@ namespace Stratis.Bitcoin.RPC.Controllers
             BlockStoreManager blockManager = null,
             MempoolManager mempoolManager = null,
             Connection.ConnectionManager connectionManager = null)
-        {
-            this._FullNode = fullNode;
-            this._Settings = nodeSettings;
-            this._Network = network;
-            this._ConsensusValidator = consensusValidator;
-            this._Chain = chain;
-            this._ChainState = chainState;
-            this._BlockManager = blockManager;
-            this._MempoolManager = mempoolManager;
-            this._ConnectionManager = connectionManager;
-        }
+            : base(
+                  fullNode: fullNode,
+                  nodeSettings: nodeSettings,
+                  network: network,
+                  consensusValidator: consensusValidator,
+                  chain: chain,
+                  chainState: chainState,
+                  blockManager: blockManager,
+                  mempoolManager: mempoolManager,
+                  connectionManager: connectionManager) { }
 
         [ActionName("stop")]
         public Task Stop()

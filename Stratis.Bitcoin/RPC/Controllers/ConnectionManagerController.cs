@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,28 +10,33 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.RPC.Controllers
 {
-	//TODO: Need to be extensible, should be FullNodeController
-	public partial class ConsensusController : Controller
-	{
-		[ActionName("addnode")]
-		public bool AddNode(string endpointStr, string command)
-		{
-			var endpoint = NodeSettings.ConvertToEndpoint(endpointStr, _FullNode.Network.DefaultPort);
-			switch(command)
-			{
-				case "add":
-					_FullNode.ConnectionManager.AddNode(endpoint);
-					break;
-				case "remove":
-					_FullNode.ConnectionManager.RemoveNode(endpoint);
-					break;
-				case "onetry":
-					_FullNode.ConnectionManager.Connect(endpoint);
-					break;
-				default:
-					throw new ArgumentException("command");
-			}
-			return true;
-		}
-	}
+    public class ConnectionManagerController : BaseRPCController
+    {
+        public ConnectionManagerController(ConnectionManager connectionManager) : base(connectionManager: connectionManager)
+        {
+            Guard.NotNull(this._ConnectionManager, nameof(_ConnectionManager));
+        }
+
+        [ActionName("addnode")]
+        public bool AddNode(string endpointStr, string command)
+        {
+            Guard.NotNull(this._FullNode, nameof(_FullNode));
+            IPEndPoint endpoint = NodeSettings.ConvertToEndpoint(endpointStr, this._FullNode.Network.DefaultPort);
+            switch (command)
+            {
+                case "add":
+                    this._ConnectionManager.AddNode(endpoint);
+                    break;
+                case "remove":
+                    this._ConnectionManager.RemoveNode(endpoint);
+                    break;
+                case "onetry":
+                    this._ConnectionManager.Connect(endpoint);
+                    break;
+                default:
+                    throw new ArgumentException("command");
+            }
+            return true;
+        }
+    }
 }
