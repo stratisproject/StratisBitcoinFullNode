@@ -10,13 +10,14 @@ using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Builder;
 
 namespace Stratis.Bitcoin.RPC.Controllers
 {
     //TODO: Need to be extensible, should be FullNodeController
     public partial class FullNodeController : Controller
     {
-        private Builder.IFullNode _FullNode;
+        private IFullNode _FullNode;
         private NodeSettings _Settings;
         private NBitcoin.Network _Network;
         private ConsensusValidator _ConsensusValidator;
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
         private Connection.ConnectionManager _ConnectionManager;
 
         public FullNodeController(
-            Builder.IFullNode fullNode = null,
+            IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             NBitcoin.Network network = null,
             Consensus.ConsensusValidator consensusValidator = null,

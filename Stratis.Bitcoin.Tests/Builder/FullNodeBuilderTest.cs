@@ -14,8 +14,23 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder
 {
-	public class FullNodeBuilderTest :FullNodeBaseTest
+	public class FullNodeBuilderTest
 	{
+		private FeatureCollection featureCollection;
+		private List<Action<IFeatureCollection>> featureCollectionDelegates;
+		private FullNodeBuilder fullNodeBuilder;
+		private List<Action<IServiceCollection>> serviceCollectionDelegates;
+		private List<Action<IServiceProvider>> serviceProviderDelegates;
+
+		public FullNodeBuilderTest()
+		{
+			this.serviceCollectionDelegates = new List<Action<IServiceCollection>>();
+			this.serviceProviderDelegates = new List<Action<IServiceProvider>>();
+			this.featureCollectionDelegates = new List<Action<IFeatureCollection>>();
+			this.featureCollection = new FeatureCollection();
+
+			this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
+		}
 
 		[Fact]
 		public void ConstructorWithoutNodeSettingsDoesNotSetupBaseServices()
