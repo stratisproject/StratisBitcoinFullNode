@@ -20,8 +20,8 @@ namespace Stratis.Bitcoin.RPC.Controllers
         [ActionName("addnode")]
         public bool AddNode(string endpointStr, string command)
         {
-            Guard.NotNull(this._FullNode, nameof(_FullNode));
-            IPEndPoint endpoint = NodeSettings.ConvertToEndpoint(endpointStr, this._FullNode.Network.DefaultPort);
+            Guard.NotNull(this._ConnectionManager, nameof(_ConnectionManager));
+            IPEndPoint endpoint = NodeSettings.ConvertToEndpoint(endpointStr, this._ConnectionManager.Network.DefaultPort);
             switch (command)
             {
                 case "add":

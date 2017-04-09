@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.RPC
                 s.AddSingleton(fullNode as Builder.IFullNode);
                 s.AddSingleton(fullNode.Network);
                 s.AddSingleton(fullNode.Settings);
+                s.AddSingleton(fullNode.ConsensusLoop);
                 s.AddSingleton(fullNode.ConsensusLoop?.Validator);
                 s.AddSingleton(fullNode.Chain);
                 s.AddSingleton(fullNode.ChainBehaviorState);
