@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
 {
-    public class GetInfoActionTests : TestBase
+    public class GetInfoActionTests : BaseRPCControllerTest
     {
         [Fact]
         public void CallWithoutDependencies()
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
         public void CallWithDependencies()
         {
             string dir = AssureEmptyDir("Stratis.Bitcoin.Tests/TestData/GetInfoActionTests/CallWithDependencies");
-            IFullNode fullNode = RPCControllerTest.BuildServicedNode(dir);
+            IFullNode fullNode = this.BuildServicedNode(dir);
             FullNodeController controller = fullNode.Services.ServiceProvider.GetService<FullNodeController>();
 
             GetInfoModel info = controller.GetInfo();
