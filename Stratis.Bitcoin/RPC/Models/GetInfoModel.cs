@@ -48,22 +48,22 @@ namespace Stratis.Bitcoin.RPC.Models
         #region TODO: Wallet 
 
         [JsonProperty(Order = 2, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public object walletversion { get; set; }
+        public uint? walletversion { get; set; }
 
         [JsonProperty(Order = 3, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public object balance { get; set; }
+        public decimal? balance { get; set; }
 
         [JsonProperty(Order = 10, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public object keypoololdest { get; set; }
+        public long? keypoololdest { get; set; }
 
         [JsonProperty(Order = 11, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public object keypoolsize { get; set; }
+        public int? keypoolsize { get; set; }
 
         [JsonProperty(Order = 12, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public object unlocked_until { get; set; }
+        public uint? unlocked_until { get; set; }
 
         [JsonProperty(Order = 13, DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public object paytxfee { get; set; }
+        public decimal? paytxfee { get; set; }
         
         #endregion
     }
