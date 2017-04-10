@@ -56,6 +56,9 @@ namespace Stratis.Bitcoin.RPC
             fullNodeBuilder.ConfigureServices(service =>
             {
                 service.AddSingleton<FullNodeController>();
+                service.AddSingleton<ConnectionManagerController>();
+                service.AddSingleton<ConsensusController>();
+                service.AddSingleton<MempoolController>();
             });
 
             return fullNodeBuilder;
