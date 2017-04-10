@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public Money InChainInputValue { get; private set; } //!< Sum of all txin values that are already in blockchain
 		public bool SpendsCoinbase { get; private set; } //!< keep track of transactions that spend a coinbase
 		public long SigOpCost { get; private set; } //!< Total sigop cost
-		private long feeDelta; //!< Used for determining the priority of the transaction for mining in a block
+		internal long feeDelta { get; private set; } //!< Used for determining the priority of the transaction for mining in a block
 		public LockPoints LockPoints { get; private set; } //!< Track the height and time at which tx was final
 
 		// Information about descendants of this transaction that are in the

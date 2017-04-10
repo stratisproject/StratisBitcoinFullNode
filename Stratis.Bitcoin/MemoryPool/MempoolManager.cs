@@ -13,7 +13,9 @@ namespace Stratis.Bitcoin.MemoryPool
 
 	public class MempoolManager
 	{
-		public MempoolScheduler MempoolScheduler { get; }
+        private IMempoolPersistence mempoolPersistence;
+
+        public MempoolScheduler MempoolScheduler { get; }
 		public MempoolValidator Validator { get; } // public for testing
 		public MempoolOrphans Orphans { get; } // public for testing
 		private readonly TxMempool memPool;
@@ -22,8 +24,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		public NodeSettings NodeArgs { get; set; }
 
 
-		public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool, 
-			MempoolValidator validator, MempoolOrphans orphans, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
+        public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool,
+			MempoolValidator validator, MempoolOrphans orphans, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, IMempoolPersistence mempoolPersistence)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
@@ -31,7 +33,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.NodeArgs = nodeArgs;
 			this.Orphans = orphans;
 			this.Validator = validator;
-		}
+            this.mempoolPersistence = mempoolPersistence;
+        }
 
 		public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
 
@@ -53,7 +56,14 @@ namespace Stratis.Bitcoin.MemoryPool
 			}).ToList();
 		}
 
-		public TxMempoolInfo Info(uint256 hash)
+        internal async Task<MemPoolSaveResult> SavePool()
+        {
+            if (this.mempoolPersistence == null)
+                return MemPoolSaveResult.NonSuccess;
+            return await this.mempoolPersistence.Save(this.memPool);
+        }
+
+        public TxMempoolInfo Info(uint256 hash)
 		{
 			var item = this.memPool.MapTx.TryGet(hash);
 			return item == null ? null : new TxMempoolInfo
