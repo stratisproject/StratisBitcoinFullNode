@@ -14,7 +14,8 @@ namespace Stratis.Bitcoin.MemoryPool
 {
     public interface IMempoolPersistence
     {
-        MemPoolSaveResult Save(TxMempool memPool);
+        MemPoolSaveResult Save(TxMempool memPool, string fileName=null);
+        IEnumerable<MempoolPersistenceEntry> Load(string fileName = null);
     }
 
     public struct MemPoolSaveResult
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.MemoryPool
         public uint TrxSaved { get; private set; }
     }
 
-    internal class MempoolPersistenceEntry : IBitcoinSerializable
+    public class MempoolPersistenceEntry : IBitcoinSerializable
     {
         byte[] tx;
         uint time;
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.MemoryPool
             }
             else
             {
-                int txLen=0;
+                int txLen = 0;
                 stream.ReadWrite(ref txLen);
                 this.tx = new byte[txLen];
             }
@@ -90,32 +91,38 @@ namespace Stratis.Bitcoin.MemoryPool
     internal class MempoolPersistence : IMempoolPersistence
     {
         public const ulong MEMPOOL_DUMP_VERSION = 0;
+        public const string defaultFilename = "mempool.dat";
 
-        public string DataDir;
+        private readonly string dataDir;
 
         public MempoolPersistence(NodeSettings settings)
         {
-            this.DataDir = settings?.DataDir;
+            this.dataDir = settings?.DataDir;
         }
 
-
-        public MemPoolSaveResult Save(TxMempool memPool)
+        public MemPoolSaveResult Save(TxMempool memPool, string fileName = defaultFilename)
         {
-            Guard.NotEmpty(this.DataDir, nameof(DataDir));
+            IEnumerable<MempoolPersistenceEntry> toSave = memPool.MapTx.Values.ToArray().Select(tx => MempoolPersistenceEntry.FromTxMempoolEntry(tx));
+            return Save(toSave, fileName);
+        }
 
-            if (Directory.Exists(this.DataDir))
+        internal MemPoolSaveResult Save(IEnumerable<MempoolPersistenceEntry> toSave, string fileName = defaultFilename)
+        {
+            Guard.NotEmpty(this.dataDir, nameof(dataDir));
+            Guard.NotEmpty(fileName, nameof(fileName));
+
+            string filePath = Path.Combine(this.dataDir, fileName);
+            string tempFilePath = $"{fileName}.new";
+
+            if (Directory.Exists(this.dataDir))
             {
-
-                IEnumerable<MempoolPersistenceEntry> toSave = memPool.MapTx.Values.ToArray().Select(tx => MempoolPersistenceEntry.FromTxMempoolEntry(tx));
-
                 try
                 {
-                    string filePath = Path.Combine(this.DataDir, "mempool.dat");
-                    string tempFilePath = $"{filePath}.dat";
                     using (var fs = new FileStream(tempFilePath, FileMode.Create))
                     {
                         DumpToStream(toSave, fs);
                     }
+                    File.Delete(filePath);
                     File.Move(tempFilePath, filePath);
                     return MemPoolSaveResult.Success((uint)toSave.LongCount());
                 }
@@ -139,6 +146,26 @@ namespace Stratis.Bitcoin.MemoryPool
             foreach (MempoolPersistenceEntry entry in toSave)
             {
                 bitcoinWriter.ReadWrite(entry);
+            }
+        }
+
+        public IEnumerable<MempoolPersistenceEntry> Load(string fileName = defaultFilename)
+        {
+            Guard.NotEmpty(this.dataDir, nameof(dataDir));
+            Guard.NotEmpty(fileName, nameof(fileName));
+
+            string filePath = Path.Combine(this.dataDir, fileName);
+            if (!File.Exists(filePath))
+                return null;
+            try
+            {
+                using (var fs = new FileStream(filePath, FileMode.Open))
+                    return LoadFromStream(fs);
+            }
+            catch (Exception ex)
+            {
+                Logs.Mempool.LogError(ex.Message);
+                throw;
             }
         }
 
