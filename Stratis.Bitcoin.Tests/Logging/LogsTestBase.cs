@@ -26,10 +26,10 @@ namespace Stratis.Bitcoin.Tests.Logging
 			loggerFactory = new Mock<ILoggerFactory>();
 			loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
 			   .Returns(new Mock<ILogger>().Object);
-			loggerFactory.Setup(l => l.CreateLogger("FullNode"))
+			loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.FullNode"))
 			   .Returns(fullNodeLogger.Object)
 			   .Verifiable();
-			loggerFactory.Setup(l => l.CreateLogger("RPC"))
+			loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC"))
 			   .Returns(rpcLogger.Object)
 			   .Verifiable();
 			Logs.Configure(loggerFactory.Object);

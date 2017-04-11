@@ -4,7 +4,6 @@
   "description": "Stratis Bitcoin FullNode",
 
   "dependencies": {
-    "System.Reactive": "3.1.1",
     "DBreeze": "1.83.0",
     "Microsoft.AspNetCore.Diagnostics": "1.1.0",
     "Microsoft.AspNetCore.Hosting": "1.1.0",
@@ -13,11 +12,13 @@
     "Microsoft.AspNetCore.Mvc.ViewFeatures": "1.1.1",
     "Microsoft.AspNetCore.Server.IISIntegration": "1.1.0",
     "Microsoft.AspNetCore.Server.Kestrel": "1.1.0",
+    "Microsoft.Extensions.Caching.Memory": "1.1.0",
     "Microsoft.Extensions.Logging.Abstractions": "1.1.0",
     "Microsoft.Extensions.Logging.Console": "1.1.0",
+    "Microsoft.Extensions.Logging.Debug": "1.0.0",
     "Microsoft.Extensions.Logging.Filter": "1.1.0",
+    "System.Reactive": "3.1.1",
     "System.Xml.XmlSerializer": "4.3.0",
-    "Microsoft.Extensions.Caching.Memory": "1.1.0",
     "Microsoft.Extensions.DependencyInjection": "1.1.0",
     "NStratis": "3.0.2.13"
   },

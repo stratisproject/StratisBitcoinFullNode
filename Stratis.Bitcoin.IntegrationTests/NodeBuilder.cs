@@ -21,7 +21,9 @@ using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.RPC;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -50,11 +52,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public void Kill()
 		{
-			FullNode.Dispose();
+			if (FullNode != null)
+			{
+				FullNode.Dispose();
+			}
 		}
 
 		public void Start(string dataDir)
 		{
+			Logs.Configure(new LoggerFactory());
+			
 			var args = NodeSettings.FromArguments(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
 
 			var node = BuildFullNode(args);
