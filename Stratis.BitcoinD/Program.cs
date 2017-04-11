@@ -9,6 +9,7 @@ using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.Miner;
+using NBitcoin;
 
 namespace Stratis.BitcoinD
 {
@@ -16,35 +17,31 @@ namespace Stratis.BitcoinD
 	{
 		public static void Main(string[] args)
 		{
-			if (args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help")))
-			{
-				NodeSettings.PrintHelp();
-			}
-			else
-			{
-				var loggerFactory = Logs.GetLoggerFactory(args);
-				Logs.Configure(loggerFactory);
+			ILoggerFactory loggerFactory = Logs.GetLoggerFactory(args);
+			Logs.Configure(loggerFactory);
 
-				NodeSettings nodeSettings = NodeSettings.FromArguments(args);
+			if (NodeSettings.PrintHelp(args, Network.Main))
+				return;
+			
+			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
-				if (!Checks.VerifyAccess(nodeSettings))
-					return;
+			if (!Checks.VerifyAccess(nodeSettings))
+				return;
 
-				var node = new FullNodeBuilder()
-					.UseNodeSettings(nodeSettings)
-					.UseConsensus()
-					.UseBlockStore()
-					.UseMempool()
-					.AddMining(args.Any(a => a.Contains("mine")))
-					.AddRPC()
-					.Build();
+			var node = new FullNodeBuilder()
+				.UseNodeSettings(nodeSettings)
+				.UseConsensus()
+				.UseBlockStore()
+				.UseMempool()
+				.AddMining(args.Any(a => a.Contains("mine")))
+				.AddRPC()
+				.Build();
 
-				// TODO: bring the logic out of IWebHost.Run()
-				node.Start();
-				Console.WriteLine("Press any key to stop");
-				Console.ReadLine();
-				node.Dispose();
-			}
+			// TODO: bring the logic out of IWebHost.Run()
+			node.Start();
+			Console.WriteLine("Press any key to stop");
+			Console.ReadLine();
+			node.Dispose();
 		}
 	}
 }

@@ -16,34 +16,33 @@ using Stratis.Bitcoin.RPC;
 
 namespace Stratis.StratisD
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-			if (args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help")))
-			{
-				NodeSettings.PrintHelp();
-			}
-			else
-			{
-				Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
-				NodeSettings nodeSettings = NodeSettings.FromArguments(args, Network.StratisMain, ProtocolVersion.ALT_PROTOCOL_VERSION);
+	public class Program
+	{
+		public static void Main(string[] args)
+		{
+			ILoggerFactory loggerFactory = new LoggerFactory()
+				.AddConsole(LogLevel.Trace, false);
+			Logs.Configure(loggerFactory);
 
-				// NOTES
-				// - for now only download the stratis chain form peers
-				// - adding consensus requires bigger changes
-				// - running the nodes side by side is not possible yet as the flags for serialization are static
+			if (NodeSettings.PrintHelp(args, Network.StratisMain))
+				return;
 
-				var node = new FullNodeBuilder()
-					.UseNodeSettings(nodeSettings)
-					.Build();
+			NodeSettings nodeSettings = NodeSettings.FromArguments(args, Network.StratisMain, ProtocolVersion.ALT_PROTOCOL_VERSION);
 
-				// TODO: bring the logic out of IWebHost.Run()
-				node.Start();
-				Console.WriteLine("Press any key to stop");
-				Console.ReadLine();
-				node.Dispose();
-			}
+			// NOTES
+			// - for now only download the stratis chain form peers
+			// - adding consensus requires bigger changes
+			// - running the nodes side by side is not possible yet as the flags for serialization are static
+
+			var node = new FullNodeBuilder()
+				.UseNodeSettings(nodeSettings)
+				.Build();
+
+			// TODO: bring the logic out of IWebHost.Run()
+			node.Start();
+			Console.WriteLine("Press any key to stop");
+			Console.ReadLine();
+			node.Dispose();
 		}
-    }
+	}
 }

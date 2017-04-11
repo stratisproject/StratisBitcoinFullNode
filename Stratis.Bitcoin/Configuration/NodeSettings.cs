@@ -8,6 +8,7 @@ using System.Text;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -363,33 +364,43 @@ namespace Stratis.Bitcoin.Configuration
 			return directory;
 		}
 
-		public static void PrintHelp()
-		{
-			var builder = new StringBuilder();
-			builder.AppendLine("Usage:");
-			builder.AppendLine(" dotnet exec <Stratis.StratisD/BitcoinD.dll> [arguments]");
-			builder.AppendLine();
-			builder.AppendLine("Command line arguments:");
-			builder.AppendLine();
-			builder.AppendLine("-help/--help			Show this help.");
-			builder.AppendLine("-conf=<Path>			Path to the configuration file.");
-			builder.AppendLine("-datadir=<Path>			Path to the data directory.");
-			builder.AppendLine("-testnet=<0 or 1>		Use the testnet chain.");
-			builder.AppendLine("-regtest=<0 or 1>		Use the regtestnet chain.");
-			builder.AppendLine("-acceptnonstdtxn=<0 or 1>	Accept non-standard transactions. Default 1.");
-			builder.AppendLine("-maxtipage=<number>		Max tip age. Default " + DEFAULT_MAX_TIP_AGE.ToString());
-			builder.AppendLine("-server=<0 or 1>		Accept command line and JSON-RPC commands. Default 0.");
-			builder.AppendLine("-rpcuser=<string>		Username for JSON-RPC connections");
-			builder.AppendLine("-rpcpassword=<string>		Password for JSON-RPC connections");
-			builder.AppendLine("-rpcport=<0-65535>		Listen for JSON-RPC connections on <port>. Default: 8332 or (reg)testnet: 18332");
-			builder.AppendLine("-rpcbind=<ip:port>		Bind to given address to listen for JSON-RPC connections. This option can be specified multiple times. Default: bind to all interfaces");
-			builder.AppendLine("-rpcallowip=<ip>		Allow JSON-RPC connections from specified source. This option can be specified multiple times.");
-			builder.AppendLine("-connect=<ip:port>		Specified node to connect to. Can be specified multiple times.");
-			builder.AppendLine("-addnode=<ip:port>		Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
-			builder.AppendLine("-whitebind=<ip:port>		Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
-			builder.AppendLine("-externalip=<ip>		Specify your own public address.");
+		public static bool PrintHelp(string[] args, Network mainNet)
+		{			
+			Guard.NotNull(mainNet, nameof(mainNet));	
 
-			Console.Write(builder.ToString());
+			if (args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help")))
+			{				
+				var defaults = NodeSettings.Default();
+
+				var builder = new StringBuilder();
+				builder.AppendLine("Usage:");
+				builder.AppendLine(" dotnet exec <Stratis.StratisD/BitcoinD.dll> [arguments]");
+				builder.AppendLine();
+				builder.AppendLine("Command line arguments:");
+				builder.AppendLine();
+				builder.AppendLine("-help/--help		Show this help.");
+				builder.AppendLine($"-conf=<Path>		Path to the configuration file. Default {defaults.ConfigurationFile}.");
+				builder.AppendLine($"-datadir=<Path>		Path to the data directory. Default {defaults.DataDir}.");
+				builder.AppendLine($"-testnet=<0 or 1>		Use the testnet chain. Default {defaults.Testnet}.");
+				builder.AppendLine($"-regtest=<0 or 1>		Use the regtestnet chain. Default {defaults.RegTest}.");
+				builder.AppendLine($"-acceptnonstdtxn=<0 or 1>	Accept non-standard transactions. Default {defaults.RequireStandard}.");
+				builder.AppendLine($"-maxtipage=<number>	Max tip age. Default {DEFAULT_MAX_TIP_AGE}.");
+				builder.AppendLine($"-server=<0 or 1>		Accept command line and JSON-RPC commands. Default {defaults.RPC != null}.");
+				builder.AppendLine("-rpcuser=<string>		Username for JSON-RPC connections");
+				builder.AppendLine("-rpcpassword=<string>	Password for JSON-RPC connections");
+				builder.AppendLine($"-rpcport=<0-65535>	Listen for JSON-RPC connections on <port>. Default: {mainNet.RPCPort} or (reg)testnet: {Network.TestNet.RPCPort}");
+				builder.AppendLine("-rpcbind=<ip:port>	Bind to given address to listen for JSON-RPC connections. This option can be specified multiple times. Default: bind to all interfaces");
+				builder.AppendLine("-rpcallowip=<ip>		Allow JSON-RPC connections from specified source. This option can be specified multiple times.");
+				builder.AppendLine("-connect=<ip:port>	Specified node to connect to. Can be specified multiple times.");
+				builder.AppendLine("-addnode=<ip:port>	Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
+				builder.AppendLine("-whitebind=<ip:port>	Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
+				builder.AppendLine("-externalip=<ip>		Specify your own public address.");
+
+				Logs.Configuration.LogInformation(builder.ToString());				
+				return true;
+			}
+
+			return false;
 		}
 	}
 }
