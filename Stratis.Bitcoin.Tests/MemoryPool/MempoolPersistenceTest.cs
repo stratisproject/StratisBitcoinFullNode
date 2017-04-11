@@ -24,33 +24,42 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
         }
 
         [Fact]
-        public void SaveToStreamTest()
+        public void SaveLoadStreamTest()
         {
-            int numTx = 22;
+            int numTx = 1;
             int expectedLinesPerTransaction = 3;
             int expectedHeaderLines = 2;
             int expectedLines = numTx * expectedLinesPerTransaction + expectedHeaderLines;
             MempoolPersistence persistence = new MempoolPersistence(this.settings);
             IEnumerable<MempoolPersistenceEntry> toSave = CreateTestEntries(numTx);
+            List<MempoolPersistenceEntry> loaded;
 
             long actualStreamLength = 0;
             ulong actualVersion = 0;
-            int actualCount = -1;
+            long actualCount = -1;
             using (MemoryStream ms = new MemoryStream())
             {
-                var bitcoinWriter = new BitcoinStream(ms, true);
-                persistence.DumpToStream(toSave, bitcoinWriter);
+                persistence.DumpToStream(toSave, ms);
                 actualStreamLength = ms.Length;
                 ms.Seek(0, SeekOrigin.Begin);
                 var bitcoinReader = new BitcoinStream(ms, false);
 
                 bitcoinReader.ReadWrite(ref actualVersion);
                 bitcoinReader.ReadWrite(ref actualCount);
+
+                loaded = new List<MempoolPersistenceEntry>();
+                for (int i = 0; i < actualCount; i++)
+                {
+                    MempoolPersistenceEntry entry = default(MempoolPersistenceEntry);
+                    bitcoinReader.ReadWrite(ref entry);
+                    loaded.Add(entry);
+                }
             }
 
             Assert.True(actualStreamLength > 0);
             Assert.Equal(MempoolPersistence.MEMPOOL_DUMP_VERSION, actualVersion);
             Assert.Equal(numTx, actualCount);
+            Assert.Equal(loaded, toSave.ToArray());
         }
 
         private IEnumerable<MempoolPersistenceEntry> CreateTestEntries(int numTx)
@@ -60,7 +69,9 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             {
                 var amountSat = 10 * i;
                 Transaction tx = MakeRandomTx(amountSat);
-                entries.Add(new TxMempoolEntry(tx, Money.FromUnit(0.1m, MoneyUnit.MilliBTC), DateTimeOffset.Now.ToUnixTimeSeconds(), i * 100, i, amountSat, i == 0, 10, null));
+                var entry = new TxMempoolEntry(tx, Money.FromUnit(0.1m, MoneyUnit.MilliBTC), DateTimeOffset.Now.ToUnixTimeSeconds(), i * 100, i, amountSat, i == 0, 10, null);
+                entry.UpdateFeeDelta(numTx - i);
+                entries.Add(entry);
             }
             return entries.Select(entry => MempoolPersistenceEntry.FromTxMempoolEntry(entry));
         }

@@ -26,11 +26,15 @@ namespace Stratis.Bitcoin.MemoryPool
         public uint TrxSaved { get; private set; }
     }
 
-    internal class MempoolPersistenceEntry: IBitcoinSerializable
+    internal class MempoolPersistenceEntry : IBitcoinSerializable
     {
-        public uint256 Tx { get; set; }
-        public long Time { get; set; }
-        public long Feedelta { get; set; }
+        uint256 tx;
+        uint time;
+        uint feeDelta;
+
+        public uint256 Tx { get { return this.tx; } set { this.tx = value; } }
+        public long Time { get { return (long)this.time; } set { this.time = (uint)value; } }
+        public long FeeDelta { get { return (long)this.feeDelta; } set { this.feeDelta = (uint)value; } }
 
         public static MempoolPersistenceEntry FromTxMempoolEntry(TxMempoolEntry tx)
         {
@@ -38,16 +42,26 @@ namespace Stratis.Bitcoin.MemoryPool
             {
                 Tx = tx.TransactionHash,
                 Time = tx.Time,
-                Feedelta = tx.feeDelta
+                FeeDelta = tx.feeDelta
             };
         }
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(this.Tx);
-            stream.ReadWrite(this.Time);
-            stream.ReadWrite(this.Feedelta);
+            stream.ReadWrite(ref this.tx);
+            stream.ReadWriteAsCompactVarInt(ref this.time);
+            stream.ReadWriteAsCompactVarInt(ref this.feeDelta);
         }
+
+        public override bool Equals(object obj)
+        {
+            var toCompare = obj as MempoolPersistenceEntry;
+            if (toCompare == null) return false;
+            return this.tx.Equals(toCompare.tx) 
+                && this.time.Equals(toCompare.time)
+                && this.feeDelta.Equals(toCompare.feeDelta);
+        }
+
     }
 
     internal class MempoolPersistence : IMempoolPersistence
@@ -77,8 +91,7 @@ namespace Stratis.Bitcoin.MemoryPool
                     string tempFilePath = $"{filePath}.dat";
                     using (var fs = new FileStream(tempFilePath, FileMode.Create))
                     {
-                        var bs = new BitcoinStream(fs, true);
-                        DumpToStream(toSave, bs);
+                        DumpToStream(toSave, fs);
                     }
                     File.Move(tempFilePath, filePath);
                     return MemPoolSaveResult.Success((uint)toSave.LongCount());
@@ -93,15 +106,63 @@ namespace Stratis.Bitcoin.MemoryPool
             return MemPoolSaveResult.NonSuccess;
         }
 
-        internal void DumpToStream(IEnumerable<MempoolPersistenceEntry> toSave, BitcoinStream stream)
+        internal void DumpToStream(IEnumerable<MempoolPersistenceEntry> toSave, Stream stream)
         {
-            stream.ReadWrite(MEMPOOL_DUMP_VERSION);
-            stream.ReadWrite(toSave.LongCount());
+            var bitcoinWriter = new BitcoinStream(stream, true);
+
+            bitcoinWriter.ReadWrite(MEMPOOL_DUMP_VERSION);
+            bitcoinWriter.ReadWrite(toSave.LongCount());
 
             foreach (MempoolPersistenceEntry entry in toSave)
             {
-                stream.ReadWrite(entry);
+                bitcoinWriter.ReadWrite(entry);
             }
+        }
+
+        internal IEnumerable<MempoolPersistenceEntry> LoadFromStream(Stream stream)
+        {
+            var toReturn = new List<MempoolPersistenceEntry>();
+
+
+            ulong version = 0;
+            long numEntries = -1;
+            var bitcoinReader = new BitcoinStream(stream, false);
+
+            bool exitWithError = false;
+            try
+            {
+                bitcoinReader.ReadWrite(ref version);
+                if (version != MEMPOOL_DUMP_VERSION)
+                {
+                    Logs.Mempool.LogWarning($"Memorypool data is wrong version ({version}) aborting...");
+                    return null;
+                }
+                bitcoinReader.ReadWrite(ref numEntries);
+            }
+            catch
+            {
+                Logs.Mempool.LogWarning($"Memorypool data is corrupt at header, aborting...");
+                return null;
+            }
+
+            for (int i = 0; i < numEntries && !exitWithError; i++)
+            {
+                MempoolPersistenceEntry entry = default(MempoolPersistenceEntry);
+                try
+                {
+                    bitcoinReader.ReadWrite(ref entry);
+                }
+                catch
+                {
+                    Logs.Mempool.LogWarning($"Memorypool data is corrupt at item {i + 1}, aborting...");
+                    return null;
+                }
+
+                toReturn.Add(entry);
+            }
+
+
+            return toReturn;
         }
 
     }
