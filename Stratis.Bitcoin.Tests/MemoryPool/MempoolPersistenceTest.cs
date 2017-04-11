@@ -1,6 +1,8 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using System;
 using System.Collections.Generic;
@@ -18,6 +20,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
 
         public MempoolPersistenceTest()
         {
+            Logs.Configure(new LoggerFactory());
             string dir = "Stratis.Bitcoin.Tests/TestData/MempoolPersistenceTest/";
             this.settings = NodeSettings.Default();
             this.settings.DataDir = dir;
