@@ -16,7 +16,9 @@ namespace Stratis.BitcoinD
 	{
 		public static void Main(string[] args)
 		{
-			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
+			var loggerFactory = Logs.GetLoggerFactory(args);
+			Logs.Configure(loggerFactory);
+			
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
 			if (!Checks.VerifyAccess(nodeSettings))

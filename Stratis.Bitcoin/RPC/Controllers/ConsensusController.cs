@@ -7,11 +7,14 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.BlockStore;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.RPC.Controllers
 {
     public class ConsensusController : BaseRPCController
     {
+        ILogger _logger;
         public ConsensusController(ChainBehavior.ChainState chainState = null, ConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
             : base(chainState: chainState, consensusLoop: consensusLoop, chain: chain) { }
 
@@ -27,6 +30,8 @@ namespace Stratis.Bitcoin.RPC.Controllers
         {
             Guard.NotNull(this._ConsensusLoop, nameof(_ConsensusLoop));
             Guard.NotNull(this._Chain, nameof(_Chain));
+
+            Logs.RPC.LogDebug("RPC GetBlockHash {0}", height);
 
             uint256 bestBlockHash = this._ConsensusLoop.Tip?.HashBlock;
             ChainedBlock bestBlock = bestBlockHash == null ? null : this._Chain.GetBlock(bestBlockHash);

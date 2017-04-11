@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin
 	public class FullNode : IFullNode, IDisposable
 	{
 		private ApplicationLifetime applicationLifetime; // this will replace the cancellation token on the full node
+		ILogger _logger;
 		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
 		public IFullNodeServiceProvider Services { get; set; }
@@ -57,7 +58,12 @@ namespace Stratis.Bitcoin
 			}
 		}
 
-		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+		public FullNode()
+		{
+			_logger = Logs.LoggerFactory.CreateLogger<FullNode>();
+		}
+
+public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
@@ -78,6 +84,8 @@ namespace Stratis.Bitcoin
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.Miner = this.Services.ServiceProvider.GetService<Mining>();
+
+			_logger.LogDebug("Full node initialized on {0}", Network.Name);
 
 			return this;
 		}

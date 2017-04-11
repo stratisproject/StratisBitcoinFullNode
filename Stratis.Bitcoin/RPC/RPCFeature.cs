@@ -25,13 +25,18 @@ namespace Stratis.Bitcoin.RPC
         {
             if (this.nodeSettings.RPC != null)
             {
+                // TODO: The web host wants to create IServiceProvider, so build (but not start) 
+                // earlier, if you want to use dependency injection elsewhere
                 this.fullNode.RPCHost = new WebHostBuilder()
+                .UseLoggerFactory(Logs.LoggerFactory)
                 .UseKestrel()
                 .ForFullNode(this.fullNode)
                 .UseUrls(this.nodeSettings.RPC.GetUrls())
                 .UseIISIntegration()
                 .UseStartup<RPC.Startup>()
                 .Build();
+                // TODO: use .ConfigureServices() to configure non-ASP.NET services
+                // TODO: grab RPCHost.Services to use as IServiceProvider elsewhere
                 this.fullNode.RPCHost.Start();
                 this.fullNode.Resources.Add(this.fullNode.RPCHost);
                 Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.nodeSettings.RPC.GetUrls()));
@@ -59,7 +64,7 @@ namespace Stratis.Bitcoin.RPC
                 service.AddSingleton<ConnectionManagerController>();
                 service.AddSingleton<ConsensusController>();
                 service.AddSingleton<MempoolController>();
-            });
+           });
 
             return fullNodeBuilder;
         }
