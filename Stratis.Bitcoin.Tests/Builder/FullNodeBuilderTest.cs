@@ -9,7 +9,10 @@ using Stratis.Bitcoin.Connection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder
@@ -28,6 +31,8 @@ namespace Stratis.Bitcoin.Tests.Builder
 			this.serviceProviderDelegates = new List<Action<IServiceProvider>>();
 			this.featureCollectionDelegates = new List<Action<IFeatureCollection>>();
 			this.featureCollection = new FeatureCollection();
+
+			Logs.Configure(new LoggerFactory());
 
 			this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 		}
@@ -128,9 +133,13 @@ namespace Stratis.Bitcoin.Tests.Builder
 		[Fact]
 		public void BuildConfiguresFullNodeUsingConfiguration()
 		{
+			var nodeSettings = new NodeSettings();
+			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+
 			this.fullNodeBuilder.ConfigureServices(e =>
 			{
-				e.AddSingleton<NodeSettings>();
+				e.AddSingleton(nodeSettings);
+				e.AddSingleton(nodeSettings.GetNetwork());
 				e.AddSingleton<FullNode>();
 			});
 
@@ -158,6 +167,7 @@ namespace Stratis.Bitcoin.Tests.Builder
 				this.fullNodeBuilder.ConfigureServices(e =>
 				{
 					e.AddSingleton<NodeSettings>();
+					e.AddSingleton<Network>(NodeSettings.Default().GetNetwork());
 				});
 
 				this.fullNodeBuilder.Build();
@@ -168,11 +178,15 @@ namespace Stratis.Bitcoin.Tests.Builder
 		[Fact]
 		public void BuildTwiceThrowsException()
 		{
+			var nodeSettings = new NodeSettings();
+			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+
 			Assert.Throws<InvalidOperationException>(() =>
 			{
 				this.fullNodeBuilder.ConfigureServices(e =>
 				{
-					e.AddSingleton<NodeSettings>();
+					e.AddSingleton(nodeSettings);
+					e.AddSingleton(nodeSettings.GetNetwork());
 					e.AddSingleton<FullNode>();
 				});
 
