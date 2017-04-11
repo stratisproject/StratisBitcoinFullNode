@@ -71,6 +71,7 @@ namespace Stratis.Bitcoin.Connection
 		public void Start()
 		{
 			_Parameters.UserAgent = "StratisBitcoin:" + GetVersion();
+			_Parameters.Version = NodeSettings.ProtocolVersion;
 			if (_ConnectionManagerSettings.Connect.Count == 0)
 			{
 				var cloneParameters = _Parameters.Clone();
