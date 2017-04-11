@@ -56,11 +56,11 @@ namespace Stratis.Bitcoin.MemoryPool
 			}).ToList();
 		}
 
-        internal async Task<MemPoolSaveResult> SavePool()
+        internal MemPoolSaveResult SavePool()
         {
             if (this.mempoolPersistence == null)
                 return MemPoolSaveResult.NonSuccess;
-            return await this.mempoolPersistence.Save(this.memPool);
+            return this.mempoolPersistence.Save(this.memPool);
         }
 
         public TxMempoolInfo Info(uint256 hash)

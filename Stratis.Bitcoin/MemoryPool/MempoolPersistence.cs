@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.MemoryPool
 {
     public interface IMempoolPersistence
     {
-        Task<MemPoolSaveResult> Save(TxMempool memPool);
+        MemPoolSaveResult Save(TxMempool memPool);
     }
 
     public struct MemPoolSaveResult
@@ -28,11 +28,11 @@ namespace Stratis.Bitcoin.MemoryPool
 
     internal class MempoolPersistenceEntry : IBitcoinSerializable
     {
-        uint256 tx;
+        byte[] tx;
         uint time;
         uint feeDelta;
 
-        public uint256 Tx { get { return this.tx; } set { this.tx = value; } }
+        public byte[] Tx { get { return this.tx; } set { this.tx = value; } }
         public long Time { get { return (long)this.time; } set { this.time = (uint)value; } }
         public long FeeDelta { get { return (long)this.feeDelta; } set { this.feeDelta = (uint)value; } }
 
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.MemoryPool
         {
             return new MempoolPersistenceEntry()
             {
-                Tx = tx.TransactionHash,
+                Tx = tx.Transaction.ToBytes(),
                 Time = tx.Time,
                 FeeDelta = tx.feeDelta
             };
@@ -48,6 +48,16 @@ namespace Stratis.Bitcoin.MemoryPool
 
         public void ReadWrite(BitcoinStream stream)
         {
+            if (stream.Serializing)
+            {
+                stream.ReadWrite(this.tx.Length);
+            }
+            else
+            {
+                int txLen=0;
+                stream.ReadWrite(ref txLen);
+                this.tx = new byte[txLen];
+            }
             stream.ReadWrite(ref this.tx);
             stream.ReadWriteAsCompactVarInt(ref this.time);
             stream.ReadWriteAsCompactVarInt(ref this.feeDelta);
@@ -57,16 +67,29 @@ namespace Stratis.Bitcoin.MemoryPool
         {
             var toCompare = obj as MempoolPersistenceEntry;
             if (toCompare == null) return false;
-            return this.tx.Equals(toCompare.tx) 
-                && this.time.Equals(toCompare.time)
-                && this.feeDelta.Equals(toCompare.feeDelta);
+
+            if (!this.tx.Length.Equals(toCompare.tx.Length)
+                || !this.time.Equals(toCompare.time)
+                || !this.feeDelta.Equals(toCompare.feeDelta))
+                return false;
+
+            for (int i = 0; i < this.tx.Length; i++)
+                if (this.tx[i] != toCompare.tx[i])
+                    return false;
+
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.tx.GetHashCode();
         }
 
     }
 
     internal class MempoolPersistence : IMempoolPersistence
     {
-        public const ulong MEMPOOL_DUMP_VERSION = 1;
+        public const ulong MEMPOOL_DUMP_VERSION = 0;
 
         public string DataDir;
 
@@ -76,7 +99,7 @@ namespace Stratis.Bitcoin.MemoryPool
         }
 
 
-        public async Task<MemPoolSaveResult> Save(TxMempool memPool)
+        public MemPoolSaveResult Save(TxMempool memPool)
         {
             Guard.NotEmpty(this.DataDir, nameof(DataDir));
 
@@ -122,7 +145,6 @@ namespace Stratis.Bitcoin.MemoryPool
         internal IEnumerable<MempoolPersistenceEntry> LoadFromStream(Stream stream)
         {
             var toReturn = new List<MempoolPersistenceEntry>();
-
 
             ulong version = 0;
             long numEntries = -1;

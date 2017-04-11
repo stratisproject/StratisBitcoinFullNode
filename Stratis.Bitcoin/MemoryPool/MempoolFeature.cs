@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.MemoryPool
             {
                 Logs.Mempool.LogInformation("Saving Memory Pool...");
 
-                MemPoolSaveResult result = this.mempoolManager.SavePool().GetAwaiter().GetResult();
+                MemPoolSaveResult result = this.mempoolManager.SavePool();
                 if (result.Succeeded)
                 {
                     Logs.Mempool.LogInformation($"...Memory Pool Saved {result.TrxSaved} transactions");
