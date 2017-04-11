@@ -160,8 +160,7 @@ namespace Stratis.Bitcoin.Builder
 					services.AddSingleton<DataFolder>();
 					services.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
 					services.AddSingleton<FullNodeFeatureExecutor>();
-					services.AddSingleton<FullNode>();
-					services.AddSingleton<IFullNode>((provider) => { return provider.GetService<FullNode>() as IFullNode; });
+					services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
 					services.AddSingleton<Signals>();
 					services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network));
 					services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
