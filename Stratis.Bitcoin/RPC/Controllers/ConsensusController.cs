@@ -4,39 +4,41 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.BlockStore;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.RPC.Controllers
 {
-    public partial class ConsensusController : Controller
-	{
-		ILogger _logger;
+    public class ConsensusController : BaseRPCController
+    {
+        ILogger _logger;
+        public ConsensusController(ChainBehavior.ChainState chainState = null, ConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
+            : base(chainState: chainState, consensusLoop: consensusLoop, chain: chain) { }
 
-		public ConsensusController(ILogger<ConsensusController> logger, FullNode fullNode)
-		{
-			_logger = logger;
-			_FullNode = fullNode;
-		}
+        [ActionName("getbestblockhash")]
+        public uint256 GetBestBlockHash()
+        {
+            Guard.NotNull(this._ChainState, nameof(_ChainState));
+            return this._ChainState?.HighestValidatedPoW?.HashBlock;
+        }
 
-		FullNode _FullNode;
+        [ActionName("getblockhash")]
+        public uint256 GetBlockHash(int height)
+        {
+            Guard.NotNull(this._ConsensusLoop, nameof(_ConsensusLoop));
+            Guard.NotNull(this._Chain, nameof(_Chain));
 
-		[ActionName("getbestblockhash")]
-		public uint256 GetBestBlockHash()
-		{
-			return _FullNode.ConsensusLoop.Tip.HashBlock;
-		}
+            Logs.RPC.LogDebug("RPC GetBlockHash {0}", height);
 
-		[ActionName("getblockhash")]
-		public uint256 GetBlockHash(int height)
-		{
-			_logger.LogDebug("RPC GetBlockHash {0}", height);
-
-			var bestBlockHash = _FullNode.ConsensusLoop.Tip.HashBlock;
-			var bestBlock = _FullNode.Chain.GetBlock(bestBlockHash);
-			if(bestBlock == null)
-				return null;
-			var block = _FullNode.Chain.GetBlock(height);
-			return block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
-		}
-	}
+            uint256 bestBlockHash = this._ConsensusLoop.Tip?.HashBlock;
+            ChainedBlock bestBlock = bestBlockHash == null ? null : this._Chain.GetBlock(bestBlockHash);
+            if (bestBlock == null)
+                return null;
+            ChainedBlock block = this._Chain.GetBlock(height);
+            return block == null || block.Height > bestBlock.Height ? null : block.HashBlock;
+        }
+    }
 }

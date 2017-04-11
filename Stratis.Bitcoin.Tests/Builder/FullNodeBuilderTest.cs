@@ -6,6 +6,9 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.RPC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -203,5 +206,41 @@ namespace Stratis.Bitcoin.Tests.Builder
 				this.fullNodeBuilder.Build();
 			});
 		}
-	}
+
+        [Fact]
+        public void CanHaveAllServicesTest()
+        {
+            var nodeSettings = NodeSettings.Default();
+            nodeSettings.DataDir = "Stratis.Bitcoin.Tests/TestData/FullNodeBuilderTest/CanHaveAllServicesTest";
+            var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
+            IFullNode fullNode = fullNodeBuilder
+                .UseConsensus()
+                .UseBlockStore()
+                .UseMempool()
+                .AddRPC()
+                .Build();
+
+            IServiceProvider serviceProvider = fullNode.Services.ServiceProvider;
+            var network = serviceProvider.GetService<Network>();
+            var settings = serviceProvider.GetService<NodeSettings>();
+            var consensusLoop = serviceProvider.GetService<ConsensusLoop>();
+            var consensus = serviceProvider.GetService<ConsensusValidator>();
+            var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
+            var chainState = serviceProvider.GetService<ChainBehavior.ChainState>();
+            var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
+            var mempoolManager = serviceProvider.GetService<MempoolManager>();
+            var connectionManager = serviceProvider.GetService<ConnectionManager>();
+
+            Assert.NotNull(fullNode);
+            Assert.NotNull(network);
+            Assert.NotNull(settings);
+            Assert.NotNull(consensusLoop);
+            Assert.NotNull(consensus);
+            Assert.NotNull(chain);
+            Assert.NotNull(chainState);
+            Assert.NotNull(blockStoreManager);
+            Assert.NotNull(mempoolManager);
+        }
+
+    }
 }

@@ -9,4 +9,12 @@ namespace Stratis.Bitcoin.Utilities
         public static TimeSpan FiveSeconds => TimeSpan.FromSeconds(5);
         public static TimeSpan TenSeconds => TimeSpan.FromSeconds(10);
     }
+
+    public static class VersionExtensions
+    {
+        public static uint ToUint(this Version version)
+        {
+            return (uint)(version.Major * 1000000u + version.Minor * 10000u + version.Build * 100u + version.Revision);
+        }
+    }
 }

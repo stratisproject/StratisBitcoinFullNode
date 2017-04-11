@@ -267,8 +267,9 @@ namespace Stratis.Bitcoin.Connection
 
 		public void RemoveNode(IPEndPoint endpoint)
 		{
-			var node = ConnectedNodes.FindByEndpoint(endpoint);
-			node.DisconnectAsync("Requested by user");
+			Node node = this.ConnectedNodes.FindByEndpoint(endpoint);
+			if (node != null)
+				node.DisconnectAsync("Requested by user");
 		}
 
 		public Node Connect(IPEndPoint endpoint)

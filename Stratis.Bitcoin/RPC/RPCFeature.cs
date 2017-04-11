@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.RPC.Controllers;
 using Microsoft.Extensions.Logging;
 using System;
 
@@ -26,19 +27,19 @@ namespace Stratis.Bitcoin.RPC
             {
                 // TODO: The web host wants to create IServiceProvider, so build (but not start) 
                 // earlier, if you want to use dependency injection elsewhere
-                fullNode.RPCHost = new WebHostBuilder()
+                this.fullNode.RPCHost = new WebHostBuilder()
                 .UseLoggerFactory(Logs.LoggerFactory)
                 .UseKestrel()
-                .ForFullNode(fullNode)
+                .ForFullNode(this.fullNode)
                 .UseUrls(this.nodeSettings.RPC.GetUrls())
                 .UseIISIntegration()
                 .UseStartup<RPC.Startup>()
                 .Build();
                 // TODO: use .ConfigureServices() to configure non-ASP.NET services
                 // TODO: grab RPCHost.Services to use as IServiceProvider elsewhere
-                fullNode.RPCHost.Start();
-                fullNode.Resources.Add(fullNode.RPCHost);
-                Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + String.Join(Environment.NewLine, this.nodeSettings.RPC.GetUrls()));
+                this.fullNode.RPCHost.Start();
+                this.fullNode.Resources.Add(this.fullNode.RPCHost);
+                Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.nodeSettings.RPC.GetUrls()));
             }
             else
             {
@@ -56,6 +57,14 @@ namespace Stratis.Bitcoin.RPC
                 features
                 .AddFeature<RPCFeature>();
             });
+
+            fullNodeBuilder.ConfigureServices(service =>
+            {
+                service.AddSingleton<FullNodeController>();
+                service.AddSingleton<ConnectionManagerController>();
+                service.AddSingleton<ConsensusController>();
+                service.AddSingleton<MempoolController>();
+           });
 
             return fullNodeBuilder;
         }

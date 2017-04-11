@@ -13,6 +13,8 @@ namespace Stratis.Bitcoin.Configuration
 {
 	public class NodeSettings
 	{
+		public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
+
 		const int DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
 
 		public RpcSettings RPC
@@ -72,15 +74,15 @@ namespace Stratis.Bitcoin.Configuration
 
 		public Network Network { get; private set; }
 
-		public static NodeSettings Default(Network network = null, 
-			ProtocolVersion protocolVersion = ProtocolVersion.SENDHEADERS_VERSION)
+		public static NodeSettings Default(Network network = null,
+			ProtocolVersion protocolVersion = SupportedProtocolVersion)
 		{
 			return NodeSettings.FromArguments(new string[0], network);
 		}
 
-		public static NodeSettings FromArguments(string[] args, 
-			Network innernetwork = null, 
-			ProtocolVersion protocolVersion = ProtocolVersion.SENDHEADERS_VERSION)
+		public static NodeSettings FromArguments(string[] args,
+			Network innernetwork = null,
+			ProtocolVersion protocolVersion = SupportedProtocolVersion)
 		{
 			NodeSettings nodeSettings = new NodeSettings();
 			if (innernetwork != null)
@@ -112,7 +114,7 @@ namespace Stratis.Bitcoin.Configuration
 			if (nodeSettings.Testnet && nodeSettings.RegTest)
 				throw new ConfigurationException("Invalid combination of -regtest and -testnet");
 
-			var network = nodeSettings.GetNetwork();
+			Network network = nodeSettings.GetNetwork();
 			if (nodeSettings.DataDir == null)
 			{
 				nodeSettings.DataDir = GetDefaultDataDir("stratisbitcoin", network);
@@ -295,7 +297,7 @@ namespace Stratis.Bitcoin.Configuration
 
 		private string GetDefaultConfigurationFile()
 		{
-			var config = Path.Combine(DataDir, "bitcoin.conf");
+			var config = Path.Combine(this.DataDir, "bitcoin.conf");
 			Logs.Configuration.LogInformation("Configuration file set to " + config);
 			if (!File.Exists(config))
 			{
@@ -319,8 +321,8 @@ namespace Stratis.Bitcoin.Configuration
 			if (this.Network != null)
 				return this.Network;
 
-			return Testnet ? Network.TestNet :
-				RegTest ? Network.RegTest :
+			return this.Testnet ? Network.TestNet :
+				this.RegTest ? Network.RegTest :
 				Network.Main;
 		}
 
