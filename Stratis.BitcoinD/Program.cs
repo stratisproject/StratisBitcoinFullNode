@@ -16,28 +16,35 @@ namespace Stratis.BitcoinD
 	{
 		public static void Main(string[] args)
 		{
-			var loggerFactory = Logs.GetLoggerFactory(args);
-			Logs.Configure(loggerFactory);
-			
-			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
+			if (args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help")))
+			{
+				NodeSettings.PrintHelp();
+			}
+			else
+			{
+				var loggerFactory = Logs.GetLoggerFactory(args);
+				Logs.Configure(loggerFactory);
 
-			if (!Checks.VerifyAccess(nodeSettings))
-				return;
+				NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
-			var node = new FullNodeBuilder()
-				.UseNodeSettings(nodeSettings)
-				.UseConsensus()
-				.UseBlockStore()
-				.UseMempool()
-				.AddMining(args.Any(a => a.Contains("mine")))
-				.AddRPC()
-				.Build();
+				if (!Checks.VerifyAccess(nodeSettings))
+					return;
 
-			// TODO: bring the logic out of IWebHost.Run()
-			node.Start();
-			Console.WriteLine("Press any key to stop");
-			Console.ReadLine();
-			node.Dispose();
+				var node = new FullNodeBuilder()
+					.UseNodeSettings(nodeSettings)
+					.UseConsensus()
+					.UseBlockStore()
+					.UseMempool()
+					.AddMining(args.Any(a => a.Contains("mine")))
+					.AddRPC()
+					.Build();
+
+				// TODO: bring the logic out of IWebHost.Run()
+				node.Start();
+				Console.WriteLine("Press any key to stop");
+				Console.ReadLine();
+				node.Dispose();
+			}
 		}
 	}
 }

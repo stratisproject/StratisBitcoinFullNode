@@ -20,23 +20,30 @@ namespace Stratis.StratisD
     {
         public static void Main(string[] args)
         {
-			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
-			NodeSettings nodeSettings = NodeSettings.FromArguments(args, Network.StratisMain, ProtocolVersion.ALT_PROTOCOL_VERSION);
-	        
-			// NOTES
-			// - for now only download the stratis chain form peers
-			// - adding consensus requires bigger changes
-			// - running the nodes side by side is not possible yet as the flags for serialization are static
+			if (args != null && args.Length == 1 && (args[0].StartsWith("-help") || args[0].StartsWith("--help")))
+			{
+				NodeSettings.PrintHelp();
+			}
+			else
+			{
+				Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
+				NodeSettings nodeSettings = NodeSettings.FromArguments(args, Network.StratisMain, ProtocolVersion.ALT_PROTOCOL_VERSION);
 
-			var node = new FullNodeBuilder()
-				.UseNodeSettings(nodeSettings)
-				.Build();
+				// NOTES
+				// - for now only download the stratis chain form peers
+				// - adding consensus requires bigger changes
+				// - running the nodes side by side is not possible yet as the flags for serialization are static
 
-			// TODO: bring the logic out of IWebHost.Run()
-			node.Start();
-			Console.WriteLine("Press any key to stop");
-			Console.ReadLine();
-			node.Dispose();
+				var node = new FullNodeBuilder()
+					.UseNodeSettings(nodeSettings)
+					.Build();
+
+				// TODO: bring the logic out of IWebHost.Run()
+				node.Start();
+				Console.WriteLine("Press any key to stop");
+				Console.ReadLine();
+				node.Dispose();
+			}
 		}
     }
 }
