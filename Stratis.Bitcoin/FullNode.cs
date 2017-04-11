@@ -24,312 +24,312 @@ using System.Reflection;
 namespace Stratis.Bitcoin
 {
 
-    public class FullNode : IFullNode, IDisposable
-    {
-        private ApplicationLifetime applicationLifetime; // this will replace the cancellation token on the full node
-        private FullNodeFeatureExecutor fullNodeFeatureExecutor;
+	public class FullNode : IFullNode, IDisposable
+	{
+		private ApplicationLifetime applicationLifetime; // this will replace the cancellation token on the full node
+		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
-        public IFullNodeServiceProvider Services { get; set; }
+		public IFullNodeServiceProvider Services { get; set; }
 
-        NodeSettings _Settings;
+		NodeSettings _Settings;
 
-        public NodeSettings Settings
-        {
-            get { return this._Settings; }
-        }
+		public NodeSettings Settings
+		{
+			get { return this._Settings; }
+		}
 
-        public Version Version
-        {
-            get
-            {
-                string versionString = typeof(FullNode).GetTypeInfo().Assembly.GetCustomAttribute<System.Reflection.AssemblyFileVersionAttribute>()?.Version ??
-                                       Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion;
-                if (!string.IsNullOrEmpty(versionString))
-                {
-                    try
-                    {
-                        return new Version(versionString);
-                    }
-                    catch (ArgumentException) { }
-                    catch (OverflowException) { }
-                }
-                return new Version(0, 0);
-            }
-        }
+		public Version Version
+		{
+			get
+			{
+				string versionString = typeof(FullNode).GetTypeInfo().Assembly.GetCustomAttribute<System.Reflection.AssemblyFileVersionAttribute>()?.Version ??
+									   Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion;
+				if (!string.IsNullOrEmpty(versionString))
+				{
+					try
+					{
+						return new Version(versionString);
+					}
+					catch (ArgumentException) { }
+					catch (OverflowException) { }
+				}
+				return new Version(0, 0);
+			}
+		}
 
-        public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
-        {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider));
+		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+		{
+			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
-            this.Services = serviceProvider;
+			this.Services = serviceProvider;
 
-            this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
-            this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
-            this.Network = this.Services.ServiceProvider.GetService<Network>();
-            this._Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
-            this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
-            this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
-            this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
-            this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
-            this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
-            this.Signals = this.Services.ServiceProvider.GetService<Signals>();
+			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
+			this.Network = this.Services.ServiceProvider.GetService<Network>();
+			this._Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
+			this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
+			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
+			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
+			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
+			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
+			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
 
-            this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
-            this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
-            this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
-            this.Miner = this.Services.ServiceProvider.GetService<Mining>();
+			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
+			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
+			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
+			this.Miner = this.Services.ServiceProvider.GetService<Mining>();
 
-            return this;
-        }
+			return this;
+		}
 
-        protected void StartFeatures()
-        {
-            this.applicationLifetime = this.Services?.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
-            this.fullNodeFeatureExecutor = this.Services?.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
+		protected void StartFeatures()
+		{
+			this.applicationLifetime = this.Services?.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
+			this.fullNodeFeatureExecutor = this.Services?.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
 
-            // Fire IApplicationLifetime.Started
-            this.applicationLifetime?.NotifyStarted();
+			// Fire IApplicationLifetime.Started
+			this.applicationLifetime?.NotifyStarted();
 
-            //start all registered features
-            this.fullNodeFeatureExecutor?.Start();
-        }
+			//start all registered features
+			this.fullNodeFeatureExecutor?.Start();
+		}
 
-        protected void DisposeFeatures()
-        {
-            // Fire IApplicationLifetime.Stopping
-            this.applicationLifetime?.StopApplication();
-            // Fire the IHostedService.Stop
-            this.fullNodeFeatureExecutor?.Stop();
-            (this.Services.ServiceProvider as IDisposable)?.Dispose();
-            //(this.Services.ServiceProvider as IDisposable)?.Dispose();
-            // Fire IApplicationLifetime.Stopped
-            this.applicationLifetime?.NotifyStopped();
-        }
+		protected void DisposeFeatures()
+		{
+			// Fire IApplicationLifetime.Stopping
+			this.applicationLifetime?.StopApplication();
+			// Fire the IHostedService.Stop
+			this.fullNodeFeatureExecutor?.Stop();
+			(this.Services.ServiceProvider as IDisposable)?.Dispose();
+			//(this.Services.ServiceProvider as IDisposable)?.Dispose();
+			// Fire IApplicationLifetime.Stopped
+			this.applicationLifetime?.NotifyStopped();
+		}
 
-        public Network Network
-        {
-            get;
-            internal set;
-        }
+		public Network Network
+		{
+			get;
+			internal set;
+		}
 
-        public CoinView CoinView
-        {
-            get; set;
-        }
+		public CoinView CoinView
+		{
+			get; set;
+		}
 
-        public DataFolder DataFolder
-        {
-            get; set;
-        }
+		public DataFolder DataFolder
+		{
+			get; set;
+		}
 
-        public IDateTimeProvider DateTimeProvider
-        {
-            get; set;
-        }
+		public IDateTimeProvider DateTimeProvider
+		{
+			get; set;
+		}
 
-        public bool IsInitialBlockDownload()
-        {
-            //if (fImporting || fReindex)
-            //	return true;
-            if (this.ConsensusLoop.Tip == null)
-                return true;
-            if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
-                return true;
-            if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
-                return true;
-            return false;
-        }
+		public bool IsInitialBlockDownload()
+		{
+			//if (fImporting || fReindex)
+			//	return true;
+			if (this.ConsensusLoop.Tip == null)
+				return true;
+			if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
+				return true;
+			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
+				return true;
+			return false;
+		}
 
-        List<IDisposable> _Resources = new List<IDisposable>();
-        public List<IDisposable> Resources => _Resources;
+		List<IDisposable> _Resources = new List<IDisposable>();
+		public List<IDisposable> Resources => _Resources;
 
-        public void Start()
-        {
-            if (IsDisposed)
-                throw new ObjectDisposedException("FullNode");
-            _IsStarted.Reset();
+		public void Start()
+		{
+			if (IsDisposed)
+				throw new ObjectDisposedException("FullNode");
+			_IsStarted.Reset();
 
-            // start all the features defined
-            this.StartFeatures();
+			// start all the features defined
+			this.StartFeatures();
 
-            ConnectionManager.Start();
-            _IsStarted.Set();
+			ConnectionManager.Start();
+			_IsStarted.Set();
 
-            this.StartPeriodicLog();
-        }
+			this.StartPeriodicLog();
+		}
 
-        private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
-        public BlockStore.ChainBehavior.ChainState ChainBehaviorState
-        {
-            get { return _ChainBehaviorState; }
-        }
+		private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
+		public BlockStore.ChainBehavior.ChainState ChainBehaviorState
+		{
+			get { return _ChainBehaviorState; }
+		}
 
-        public Mining Miner
-        {
-            get; set;
-        }
+		public Mining Miner
+		{
+			get; set;
+		}
 
-        public Signals Signals
-        {
-            get; set;
-        }
+		public Signals Signals
+		{
+			get; set;
+		}
 
-        public ConsensusLoop ConsensusLoop
-        {
-            get; set;
-        }
+		public ConsensusLoop ConsensusLoop
+		{
+			get; set;
+		}
 
-        public IWebHost RPCHost
-        {
-            get; set;
-        }
+		public IWebHost RPCHost
+		{
+			get; set;
+		}
 
-        public ConnectionManager ConnectionManager
-        {
-            get; set;
-        }
+		public ConnectionManager ConnectionManager
+		{
+			get; set;
+		}
 
-        public MempoolManager MempoolManager
-        {
-            get; set;
-        }
+		public MempoolManager MempoolManager
+		{
+			get; set;
+		}
 
-        public ChainRepository ChainRepository
-        {
-            get; set;
-        }
+		public ChainRepository ChainRepository
+		{
+			get; set;
+		}
 
-        public BlockStoreManager BlockStoreManager
-        {
-            get; set;
-        }
+		public BlockStoreManager BlockStoreManager
+		{
+			get; set;
+		}
 
-        /// <summary>
-        /// The longest PoW chain
-        /// </summary>
-        public ConcurrentChain Chain
-        {
-            get; set;
-        }
+		/// <summary>
+		/// The longest PoW chain
+		/// </summary>
+		public ConcurrentChain Chain
+		{
+			get; set;
+		}
 
-        public PeriodicTask FlushAddrmanTask
-        {
-            get; set;
-        }
+		public PeriodicTask FlushAddrmanTask
+		{
+			get; set;
+		}
 
-        public PeriodicTask FlushChainTask
-        {
-            get; set;
-        }
+		public PeriodicTask FlushChainTask
+		{
+			get; set;
+		}
 
-        public CancellationProvider GlobalCancellation
-        {
-            get; set;
-        }
-        public class CancellationProvider
-        {
-            public CancellationTokenSource Cancellation { get; set; }
-        }
+		public CancellationProvider GlobalCancellation
+		{
+			get; set;
+		}
+		public class CancellationProvider
+		{
+			public CancellationTokenSource Cancellation { get; set; }
+		}
 
-        ManualResetEvent _IsDisposed = new ManualResetEvent(false);
-        ManualResetEvent _IsStarted = new ManualResetEvent(false);
-        public bool IsDisposed
-        {
-            get
-            {
-                return _IsDisposedValue;
-            }
-        }
+		ManualResetEvent _IsDisposed = new ManualResetEvent(false);
+		ManualResetEvent _IsStarted = new ManualResetEvent(false);
+		public bool IsDisposed
+		{
+			get
+			{
+				return _IsDisposedValue;
+			}
+		}
 
-        private void StartPeriodicLog()
-        {
-            AsyncLoop.Run("PeriodicLog", (cancellation) =>
-            {
-                // TODO: move stats to each of its components
-                StringBuilder benchLogs = new StringBuilder();
+		private void StartPeriodicLog()
+		{
+			AsyncLoop.Run("PeriodicLog", (cancellation) =>
+			{
+				// TODO: move stats to each of its components
+				StringBuilder benchLogs = new StringBuilder();
 
-                benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " + this.ConnectionManager.Parameters.UserAgent);
-                benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+				benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " + this.ConnectionManager.Parameters.UserAgent);
+				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
 
-                if (this.ConsensusLoop != null)
-                {
-                    benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
-                }
+				if (this.ConsensusLoop != null)
+				{
+					benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
+				}
 
-                if (this._ChainBehaviorState.HighestPersistedBlock != null)
-                {
-                    benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
-                }
+				if (this._ChainBehaviorState.HighestPersistedBlock != null)
+				{
+					benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
+				}
 
-                benchLogs.AppendLine();
+				benchLogs.AppendLine();
 
-                if (this.MempoolManager != null)
-                {
-                    benchLogs.AppendLine("======Mempool======");
-                    benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
-                }
+				if (this.MempoolManager != null)
+				{
+					benchLogs.AppendLine("======Mempool======");
+					benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+				}
 
-                benchLogs.AppendLine("======Connection======");
-                benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-                Logs.Bench.LogInformation(benchLogs.ToString());
-                return Task.CompletedTask;
-            },
-            this.GlobalCancellation.Cancellation.Token,
-            repeatEvery: TimeSpans.FiveSeconds,
-            startAfter: TimeSpans.FiveSeconds);
-        }
+				benchLogs.AppendLine("======Connection======");
+				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
+				Logs.Bench.LogInformation(benchLogs.ToString());
+				return Task.CompletedTask;
+			},
+			this.GlobalCancellation.Cancellation.Token,
+			repeatEvery: TimeSpans.FiveSeconds,
+			startAfter: TimeSpans.FiveSeconds);
+		}
 
-        public void WaitDisposed()
-        {
-            _IsDisposed.WaitOne();
-            Dispose();
-        }
+		public void WaitDisposed()
+		{
+			_IsDisposed.WaitOne();
+			Dispose();
+		}
 
-        bool _IsDisposedValue;
+		bool _IsDisposedValue;
 
 
-        private bool _HasExited;
-        private Exception _UncatchedException;
+		private bool _HasExited;
+		private Exception _UncatchedException;
 
-        public bool HasExited
-        {
-            get
-            {
-                return _HasExited;
-            }
-        }
+		public bool HasExited
+		{
+			get
+			{
+				return _HasExited;
+			}
+		}
 
-        public void Dispose()
-        {
-            if (IsDisposed)
-                return;
-            _IsDisposedValue = true;
-            Logs.FullNode.LogInformation("Closing node pending...");
-            _IsStarted.WaitOne();
-            if (this.GlobalCancellation != null)
-            {
-                this.GlobalCancellation.Cancellation.Cancel();
+		public void Dispose()
+		{
+			if (IsDisposed)
+				return;
+			_IsDisposedValue = true;
+			Logs.FullNode.LogInformation("Closing node pending...");
+			_IsStarted.WaitOne();
+			if (this.GlobalCancellation != null)
+			{
+				this.GlobalCancellation.Cancellation.Cancel();
 
-                ConnectionManager.Dispose();
-                foreach (var dispo in _Resources)
-                    dispo.Dispose();
+				ConnectionManager.Dispose();
+				foreach (var dispo in _Resources)
+					dispo.Dispose();
 
-                DisposeFeatures();
-            }
-            _IsDisposed.Set();
-            _HasExited = true;
-        }
+				DisposeFeatures();
+			}
+			_IsDisposed.Set();
+			_HasExited = true;
+		}
 
-        public void ThrowIfUncatchedException()
-        {
-            if (_UncatchedException != null)
-            {
-                var ex = _UncatchedException;
-                var aex = _UncatchedException as AggregateException;
-                if (aex != null)
-                    ex = aex.InnerException;
-                ExceptionDispatchInfo.Capture(ex).Throw();
-            }
-        }
-    }
+		public void ThrowIfUncatchedException()
+		{
+			if (_UncatchedException != null)
+			{
+				var ex = _UncatchedException;
+				var aex = _UncatchedException as AggregateException;
+				if (aex != null)
+					ex = aex.InnerException;
+				ExceptionDispatchInfo.Capture(ex).Throw();
+			}
+		}
+	}
 }
