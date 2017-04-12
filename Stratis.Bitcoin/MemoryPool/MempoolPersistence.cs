@@ -119,12 +119,19 @@ namespace Stratis.Bitcoin.MemoryPool
             {
                 try
                 {
-                    using (var fs = new FileStream(tempFilePath, FileMode.Create))
+                    if (!toSave.Any())
                     {
-                        DumpToStream(toSave, fs);
+                        File.Delete(filePath);
                     }
-                    File.Delete(filePath);
-                    File.Move(tempFilePath, filePath);
+                    else
+                    {
+                        using (var fs = new FileStream(tempFilePath, FileMode.Create))
+                        {
+                            DumpToStream(toSave, fs);
+                        }
+                        File.Delete(filePath);
+                        File.Move(tempFilePath, filePath);
+                    }
                     return MemPoolSaveResult.Success((uint)toSave.LongCount());
                 }
                 catch (Exception ex)
