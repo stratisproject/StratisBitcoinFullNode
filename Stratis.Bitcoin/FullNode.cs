@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Utilities;
+using System.Reflection;
 
 namespace Stratis.Bitcoin
 {
@@ -35,7 +36,26 @@ namespace Stratis.Bitcoin
 
 		public NodeSettings Settings
 		{
-			get { return _Settings; }
+			get { return this._Settings; }
+		}
+
+		public Version Version
+		{
+			get
+			{
+				string versionString = typeof(FullNode).GetTypeInfo().Assembly.GetCustomAttribute<System.Reflection.AssemblyFileVersionAttribute>()?.Version ??
+									   Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion;
+				if (!string.IsNullOrEmpty(versionString))
+				{
+					try
+					{
+						return new Version(versionString);
+					}
+					catch (ArgumentException) { }
+					catch (OverflowException) { }
+				}
+				return new Version(0, 0);
+			}
 		}
 
 		public FullNode()
@@ -65,9 +85,9 @@ public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.Miner = this.Services.ServiceProvider.GetService<Mining>();
 
-            _logger.LogDebug("Full node initialized on {0}", Network.Name);
+			_logger.LogDebug("Full node initialized on {0}", Network.Name);
 
-            return this;
+			return this;
 		}
 
 		protected void StartFeatures()
@@ -139,7 +159,7 @@ public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 
 			// start all the features defined
 			this.StartFeatures();
-			
+
 			ConnectionManager.Start();
 			_IsStarted.Set();
 
@@ -248,7 +268,7 @@ public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 				{
 					benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
 				}
-				
+
 				benchLogs.AppendLine();
 
 				if (this.MempoolManager != null)

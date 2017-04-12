@@ -6,10 +6,16 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.RPC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder
@@ -28,6 +34,8 @@ namespace Stratis.Bitcoin.Tests.Builder
 			this.serviceProviderDelegates = new List<Action<IServiceProvider>>();
 			this.featureCollectionDelegates = new List<Action<IFeatureCollection>>();
 			this.featureCollection = new FeatureCollection();
+
+			Logs.Configure(new LoggerFactory());
 
 			this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 		}
@@ -128,9 +136,13 @@ namespace Stratis.Bitcoin.Tests.Builder
 		[Fact]
 		public void BuildConfiguresFullNodeUsingConfiguration()
 		{
+			var nodeSettings = new NodeSettings();
+			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+
 			this.fullNodeBuilder.ConfigureServices(e =>
 			{
-				e.AddSingleton<NodeSettings>();
+				e.AddSingleton(nodeSettings);
+				e.AddSingleton(nodeSettings.GetNetwork());
 				e.AddSingleton<FullNode>();
 			});
 
@@ -158,6 +170,7 @@ namespace Stratis.Bitcoin.Tests.Builder
 				this.fullNodeBuilder.ConfigureServices(e =>
 				{
 					e.AddSingleton<NodeSettings>();
+					e.AddSingleton<Network>(NodeSettings.Default().GetNetwork());
 				});
 
 				this.fullNodeBuilder.Build();
@@ -168,11 +181,15 @@ namespace Stratis.Bitcoin.Tests.Builder
 		[Fact]
 		public void BuildTwiceThrowsException()
 		{
+			var nodeSettings = new NodeSettings();
+			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+
 			Assert.Throws<InvalidOperationException>(() =>
 			{
 				this.fullNodeBuilder.ConfigureServices(e =>
 				{
-					e.AddSingleton<NodeSettings>();
+					e.AddSingleton(nodeSettings);
+					e.AddSingleton(nodeSettings.GetNetwork());
 					e.AddSingleton<FullNode>();
 				});
 
@@ -189,5 +206,41 @@ namespace Stratis.Bitcoin.Tests.Builder
 				this.fullNodeBuilder.Build();
 			});
 		}
-	}
+
+        [Fact]
+        public void CanHaveAllServicesTest()
+        {
+            var nodeSettings = NodeSettings.Default();
+            nodeSettings.DataDir = "Stratis.Bitcoin.Tests/TestData/FullNodeBuilderTest/CanHaveAllServicesTest";
+            var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
+            IFullNode fullNode = fullNodeBuilder
+                .UseConsensus()
+                .UseBlockStore()
+                .UseMempool()
+                .AddRPC()
+                .Build();
+
+            IServiceProvider serviceProvider = fullNode.Services.ServiceProvider;
+            var network = serviceProvider.GetService<Network>();
+            var settings = serviceProvider.GetService<NodeSettings>();
+            var consensusLoop = serviceProvider.GetService<ConsensusLoop>();
+            var consensus = serviceProvider.GetService<ConsensusValidator>();
+            var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
+            var chainState = serviceProvider.GetService<ChainBehavior.ChainState>();
+            var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
+            var mempoolManager = serviceProvider.GetService<MempoolManager>();
+            var connectionManager = serviceProvider.GetService<ConnectionManager>();
+
+            Assert.NotNull(fullNode);
+            Assert.NotNull(network);
+            Assert.NotNull(settings);
+            Assert.NotNull(consensusLoop);
+            Assert.NotNull(consensus);
+            Assert.NotNull(chain);
+            Assert.NotNull(chainState);
+            Assert.NotNull(blockStoreManager);
+            Assert.NotNull(mempoolManager);
+        }
+
+    }
 }

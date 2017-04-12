@@ -18,7 +18,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+<<<<<<< HEAD
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.1" />
+=======
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.0.0" />
+>>>>>>> upstream/master
     <PackageReference Include="NStratis" Version="3.0.2.13" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
     <PackageReference Include="DBreeze" Version="1.83.0" />

@@ -16,13 +16,19 @@ using Stratis.Bitcoin.RPC;
 
 namespace Stratis.StratisD
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
+	public class Program
+	{
+		public static void Main(string[] args)
+		{
+			ILoggerFactory loggerFactory = new LoggerFactory()
+				.AddConsole(LogLevel.Trace, false);
+			Logs.Configure(loggerFactory);
+
+			if (NodeSettings.PrintHelp(args, Network.StratisMain))
+				return;
+
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args, Network.StratisMain, ProtocolVersion.ALT_PROTOCOL_VERSION);
-	        
+
 			// NOTES
 			// - for now only download the stratis chain form peers
 			// - adding consensus requires bigger changes
@@ -38,5 +44,5 @@ namespace Stratis.StratisD
 			Console.ReadLine();
 			node.Dispose();
 		}
-    }
+	}
 }

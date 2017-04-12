@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,17 +9,17 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.RPC.Controllers
 {
-	public  class MempoolController : Controller
-	{
-		public MempoolController(FullNode fullNode)
-		{
-			_FullNode = fullNode;
-		}
-		FullNode _FullNode;
-		[ActionName("getrawmempool")]
-		public Task<List<uint256>> GetRawMempool()
-		{
-			return _FullNode.MempoolManager.GetMempoolAsync();
-		}
-	}
+    public class MempoolController : BaseRPCController
+    {
+        public MempoolController(MempoolManager mempoolManager) : base(mempoolManager: mempoolManager)
+        {
+            Guard.NotNull(this._MempoolManager, nameof(_MempoolManager));
+        }
+
+        [ActionName("getrawmempool")]
+        public Task<List<uint256>> GetRawMempool()
+        {
+            return this._MempoolManager.GetMempoolAsync();
+        }
+    }
 }
