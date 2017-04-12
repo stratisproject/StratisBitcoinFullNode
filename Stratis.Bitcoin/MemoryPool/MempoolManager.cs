@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
@@ -60,6 +61,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
 			{
+				Logging.Logs.Mempool.LogInformation("Loading Memory Pool...");
 				IEnumerable<MempoolPersistenceEntry> entries = this.mempoolPersistence.Load(fileName);
 				if (entries != null)
 				{

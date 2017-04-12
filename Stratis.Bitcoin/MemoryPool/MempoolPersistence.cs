@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.MemoryPool
 {
     public interface IMempoolPersistence
     {
-        MemPoolSaveResult Save(TxMempool memPool, string fileName=null);
+        MemPoolSaveResult Save(TxMempool memPool, string fileName = null);
         IEnumerable<MempoolPersistenceEntry> Load(string fileName = null);
     }
 
@@ -100,13 +100,14 @@ namespace Stratis.Bitcoin.MemoryPool
             this.dataDir = settings?.DataDir;
         }
 
-        public MemPoolSaveResult Save(TxMempool memPool, string fileName = defaultFilename)
+        public MemPoolSaveResult Save(TxMempool memPool, string fileName = null)
         {
+            fileName = fileName ?? defaultFilename;
             IEnumerable<MempoolPersistenceEntry> toSave = memPool.MapTx.Values.ToArray().Select(tx => MempoolPersistenceEntry.FromTxMempoolEntry(tx));
             return Save(toSave, fileName);
         }
 
-        internal MemPoolSaveResult Save(IEnumerable<MempoolPersistenceEntry> toSave, string fileName = defaultFilename)
+        internal MemPoolSaveResult Save(IEnumerable<MempoolPersistenceEntry> toSave, string fileName)
         {
             Guard.NotEmpty(this.dataDir, nameof(dataDir));
             Guard.NotEmpty(fileName, nameof(fileName));
@@ -149,8 +150,9 @@ namespace Stratis.Bitcoin.MemoryPool
             }
         }
 
-        public IEnumerable<MempoolPersistenceEntry> Load(string fileName = defaultFilename)
+        public IEnumerable<MempoolPersistenceEntry> Load(string fileName = null)
         {
+            fileName = fileName ?? defaultFilename;
             Guard.NotEmpty(this.dataDir, nameof(dataDir));
             Guard.NotEmpty(fileName, nameof(fileName));
 
