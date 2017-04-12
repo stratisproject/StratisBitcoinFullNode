@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				{
 					foreach (MempoolPersistenceEntry entry in entries)
 					{
-						var trx = new Transaction(entry.Tx);
+                        Transaction trx = entry.Tx;
 						uint256 trxHash = trx.GetHash();
 						if (!this.memPool.MapTx.ContainsKey(trxHash))
 						{

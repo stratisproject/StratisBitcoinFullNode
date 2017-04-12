@@ -57,7 +57,6 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             Assert.True(result.Succeeded);
             Assert.Equal((uint)numTx, result.TrxSaved);
             Assert.Equal(loaded, toSave.ToArray());
-
         }
 
         [Fact]
@@ -128,7 +127,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             List<MempoolPersistenceEntry> toSave = new List<MempoolPersistenceEntry>
             {
                 new MempoolPersistenceEntry{
-                    Tx = tx1.ToBytes(),
+                    Tx = tx1,
                     Time = 1491948625,
                     FeeDelta = expectedTx1FeeDelta
                 },

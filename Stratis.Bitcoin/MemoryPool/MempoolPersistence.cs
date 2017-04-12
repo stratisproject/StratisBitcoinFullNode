@@ -29,11 +29,11 @@ namespace Stratis.Bitcoin.MemoryPool
 
     public class MempoolPersistenceEntry : IBitcoinSerializable
     {
-        byte[] tx;
+        Transaction tx;
         uint time;
         uint feeDelta;
 
-        public byte[] Tx { get { return this.tx; } set { this.tx = value; } }
+        public Transaction Tx { get { return this.tx; } set { this.tx = value; } }
         public long Time { get { return (long)this.time; } set { this.time = (uint)value; } }
         public long FeeDelta { get { return (long)this.feeDelta; } set { this.feeDelta = (uint)value; } }
 
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.MemoryPool
         {
             return new MempoolPersistenceEntry()
             {
-                Tx = tx.Transaction.ToBytes(),
+                Tx = tx.Transaction,
                 Time = tx.Time,
                 FeeDelta = tx.feeDelta
             };
@@ -49,16 +49,6 @@ namespace Stratis.Bitcoin.MemoryPool
 
         public void ReadWrite(BitcoinStream stream)
         {
-            if (stream.Serializing)
-            {
-                stream.ReadWrite(this.tx.Length);
-            }
-            else
-            {
-                int txLen = 0;
-                stream.ReadWrite(ref txLen);
-                this.tx = new byte[txLen];
-            }
             stream.ReadWrite(ref this.tx);
             stream.ReadWriteAsCompactVarInt(ref this.time);
             stream.ReadWriteAsCompactVarInt(ref this.feeDelta);
@@ -69,16 +59,16 @@ namespace Stratis.Bitcoin.MemoryPool
             var toCompare = obj as MempoolPersistenceEntry;
             if (toCompare == null) return false;
 
-            if (!this.tx.Length.Equals(toCompare.tx.Length)
-                || !this.time.Equals(toCompare.time)
-                || !this.feeDelta.Equals(toCompare.feeDelta))
+            if ((this.tx == null) != (toCompare.tx == null))
                 return false;
 
-            for (int i = 0; i < this.tx.Length; i++)
-                if (this.tx[i] != toCompare.tx[i])
-                    return false;
+            if (!this.time.Equals(toCompare.time) || !this.feeDelta.Equals(toCompare.feeDelta))
+                return false;
 
-            return true;
+            if ((this.tx == null) && (toCompare.tx == null))
+                return true;
+
+            return this.tx.ToHex().Equals(toCompare.tx.ToHex());
         }
 
         public override int GetHashCode()
