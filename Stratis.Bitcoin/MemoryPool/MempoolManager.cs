@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.MemoryPool
 						uint256 trxHash = trx.GetHash();
 						if (!this.memPool.MapTx.ContainsKey(trxHash))
 						{
-							MempoolValidationState state = new MempoolValidationState(false) { AcceptTime = entry.Time };
+							MempoolValidationState state = new MempoolValidationState(false) { AcceptTime = entry.Time, OverrideMempoolLimit = true };
 							if (await this.Validator.AcceptToMemoryPoolWithTime(state, trx) && this.memPool.MapTx.ContainsKey(trxHash))
 							{
 								this.memPool.MapTx[trxHash].UpdateFeeDelta(entry.FeeDelta);

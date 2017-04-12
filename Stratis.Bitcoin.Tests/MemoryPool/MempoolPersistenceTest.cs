@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
         public MempoolPersistenceTest()
         {
             Logs.Configure(new LoggerFactory());
-            this.dir = "Stratis.Bitcoin.Tests/TestData/MempoolPersistenceTest/";
+            this.dir = "TestData/MempoolPersistenceTest/";
 
             if (!Directory.Exists(this.dir))
             {
@@ -44,10 +44,8 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
         public void SaveLoadFileTest()
         {
             int numTx = 22;
-            string fileName = @"mempool.dat";
-            string dir = "Stratis.Bitcoin.Tests/TestData/MempoolPersistenceTest/";
-            var settings = NodeSettings.Default();
-            settings.DataDir = Directory.CreateDirectory(Path.Combine(dir, "SaveLoadFileTest")).FullName;
+            string fileName = "mempool.dat";
+            NodeSettings settings = CreateSettings("SaveLoadFileTest");
             MempoolPersistence persistence = new MempoolPersistence(settings);
             IEnumerable<MempoolPersistenceEntry> toSave = CreateTestEntries(numTx);
             IEnumerable<MempoolPersistenceEntry> loaded;
@@ -63,67 +61,90 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
         }
 
         [Fact]
+        public void LoadBadFileTest()
+        {
+            int numTx = 22;
+            string fileName = "mempool.dat";
+            NodeSettings settings = CreateSettings("LoadBadFileTest");
+            MempoolPersistence persistence = new MempoolPersistence(settings);
+            IEnumerable<MempoolPersistenceEntry> toSave = CreateTestEntries(numTx);
+            IEnumerable<MempoolPersistenceEntry> loaded;
+            string fullFilePath = Path.Combine(settings.DataDir, fileName);
+
+            MemPoolSaveResult result = persistence.Save(toSave, fileName);
+            string fileData = File.ReadAllText(fullFilePath);
+            string badFileData = new string(fileData.Take(fileData.Length / 2).ToArray());
+            File.WriteAllText(fullFilePath, badFileData);
+            loaded = persistence.Load(fileName);
+
+            Assert.True(File.Exists(fullFilePath));
+            Assert.True(result.Succeeded);
+            Assert.Null(loaded);
+        }
+
+        [Fact]
+        public void LoadNoFileTest()
+        {
+            string fileName = "mempool.dat";
+            NodeSettings settings = CreateSettings("LoadBadFileTest");
+            MempoolPersistence persistence = new MempoolPersistence(settings);
+            string fullFilePath = Path.Combine(settings.DataDir, fileName);
+
+            var loaded = persistence.Load(fileName);
+
+            Assert.False(File.Exists(fullFilePath));
+            Assert.Null(loaded);
+        }
+
+        [Fact]
         public void LoadPoolTest_WithBadTransactions()
         {
             int numTx = 5;
-            string fileName = @"LoadPoolTest_WithBadTransactions_mempool.dat";
-            var settings = NodeSettings.Default();
-            settings.DataDir = Directory.CreateDirectory(Path.Combine(this.dir, "LoadPoolTest_WithBadTransactions")).FullName;
-            var fullNodeBuilder = new FullNodeBuilder(settings);
-            IFullNode fullNode = fullNodeBuilder
-                .UseConsensus()
-                .UseMempool()
-                .Build();
-
-            MempoolManager mempoolManager = fullNode.Services.ServiceProvider.GetService<MempoolManager>();
+            string fileName = "mempool.dat";
+            NodeSettings settings = CreateSettings("LoadPoolTest_WithBadTransactions");
             IEnumerable<MempoolPersistenceEntry> toSave = CreateTestEntries(numTx);
+            MempoolManager mempoolManager = CreateTestMempool(settings, out TxMempool unused);
 
             MemPoolSaveResult result = (new MempoolPersistence(settings)).Save(toSave, fileName);
             mempoolManager.LoadPool(fileName).GetAwaiter().GetResult();
             long actualSize = mempoolManager.MempoolSize().GetAwaiter().GetResult();
 
             Assert.Equal(0, actualSize);
-
         }
 
         [Fact]
         public async Task LoadPoolTest_WithGoodTransactions()
         {
-            string fileName = @"LoadPoolTest_WithGoodTransactions_mempool.dat";
-            var settings = NodeSettings.Default();
-            settings.DataDir = Directory.CreateDirectory(Path.Combine(this.dir, "LoadPoolTest_WithGoodTransactions")).FullName;
-            var fullNodeBuilder = new FullNodeBuilder(settings);
-            IFullNode fullNode = fullNodeBuilder
-                .UseConsensus()
-                .UseMempool()
-                .Build();
-
-            MempoolManager mempoolManager = fullNode.Services.ServiceProvider.GetService<MempoolManager>();
-            var tx1_input_orphan = new Transaction("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000");
+            string fileName = "mempool.dat";
+            var tx1_parent = new Transaction("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000");
             var tx1 = new Transaction("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000");
-            await mempoolManager.Orphans.AddOrphanTx(0, tx1_input_orphan);
+            NodeSettings settings = CreateSettings("LoadPoolTest_WithGoodTransactions");
+            TxMempool txMemPool;
+            MempoolManager mempoolManager = CreateTestMempool(settings, out txMemPool);
+            var fee = Money.Satoshis(0.00001m);
+
+            txMemPool.AddUnchecked(tx1_parent.GetHash(), new TxMempoolEntry(tx1_parent, fee, 0, 0.0, 0, tx1_parent.TotalOut + fee, false, 0, null));
+            long expectedTx1FeeDelta = 123;
             List<MempoolPersistenceEntry> toSave = new List<MempoolPersistenceEntry>
             {
                 new MempoolPersistenceEntry{
                     Tx = tx1.ToBytes(),
-                    Time=1491948625,
-                    FeeDelta=10
+                    Time = 1491948625,
+                    FeeDelta = expectedTx1FeeDelta
                 },
-                //new MempoolPersistenceEntry{
-                //    Tx = new Transaction("01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff30039d0a0700040620ed5804e6b8cc2d089d1beb58000405f9172f426974667572792f5345475749542f4249503134382fffffffff02e93a2652000000001976a914ab0fcc2fb04ee80d29a00a80140b16323bed3d6e88ac0000000000000000266a24aa21a9ed6481269d055522a05e0f2b26fde26ffc5635e4a59c4592767a32b125b562fba800000000").ToBytes(),
-                //    Time=1491949656,
-                //    FeeDelta=20
-                //}
             };
-
             MemPoolSaveResult result = (new MempoolPersistence(settings)).Save(toSave, fileName);
+
+            long expectedSize = 2;
             await mempoolManager.LoadPool(fileName);
             long actualSize = await mempoolManager.MempoolSize();
+            TxMempoolEntry actualEntry = txMemPool.MapTx.TryGet(tx1.GetHash());
+            long? actualTx1FeedDelta = actualEntry?.feeDelta;
 
-            Assert.Equal(2, actualSize);
+            Assert.Equal(expectedSize, actualSize);
+            Assert.Equal(expectedTx1FeeDelta, actualTx1FeedDelta);
 
         }
-
 
         [Fact]
         public void SaveStreamTest()
@@ -166,6 +187,13 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             Assert.Equal(loaded, toSave.ToArray());
         }
 
+        private NodeSettings CreateSettings(string subDirName)
+        {
+            var settings = NodeSettings.Default();
+            settings.DataDir = Directory.CreateDirectory(Path.Combine(this.dir, subDirName)).FullName;
+            return settings;
+        }
+
         private IEnumerable<MempoolPersistenceEntry> CreateTestEntries(int numTx)
         {
             var entries = new List<TxMempoolEntry>(numTx);
@@ -200,5 +228,21 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
                             .Concat(Guid.NewGuid().ToByteArray())
                             .Concat(Guid.NewGuid().ToByteArray()));
         }
+
+        private static MempoolManager CreateTestMempool(NodeSettings settings, out TxMempool txMemPool)
+        {
+            IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+            txMemPool = new TxMempool(new FeeRate(1000), settings);
+            var mempoolScheduler = new MempoolScheduler();
+            var coins = new InMemoryCoinView();
+            var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
+            var mempoolPersistence = new MempoolPersistence(settings);
+            var consensusValidator = new ConsensusValidator(NBitcoin.Consensus.Main);
+            var mempoolValidator = new MempoolValidator(txMemPool, mempoolScheduler, consensusValidator, dateTimeProvider, settings, chain, coins);
+            var mempoolOrphans = new MempoolOrphans(mempoolScheduler, txMemPool, chain, mempoolValidator, coins, dateTimeProvider, settings);
+
+            return new MempoolManager(mempoolScheduler, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, settings, mempoolPersistence);
+        }
+
     }
 }
