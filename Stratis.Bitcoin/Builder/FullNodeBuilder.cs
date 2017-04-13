@@ -138,6 +138,10 @@ namespace Stratis.Bitcoin.Builder
 			if (nodeSettings == null)
 				throw new NodeBuilderException("NodeSettings not specified");
 
+			var network = fullNodeServiceProvider.GetService<Network>();
+			if (network == null)
+				throw new NodeBuilderException("Network not specified");
+
 			var fullNode = fullNodeServiceProvider.GetService<FullNode>();
 			if (fullNode == null)
 				throw new InvalidOperationException("Fullnode not registered with provider");

@@ -4,11 +4,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -21,6 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public void MempoolRemoveTest()
 	    {
 			// Test CTxMemPool::remove functionality
+			Logs.Configure(new LoggerFactory());
 
 			TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
 

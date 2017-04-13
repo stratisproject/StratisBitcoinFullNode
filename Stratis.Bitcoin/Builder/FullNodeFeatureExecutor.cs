@@ -19,10 +19,6 @@ namespace Stratis.Bitcoin.Builder
 	{
 		private readonly IFullNode node;
 
-		public FullNodeFeatureExecutor(FullNode fullNode) : this(fullNode as IFullNode)
-		{ 
-		}
-
 		public FullNodeFeatureExecutor(IFullNode fullNode)
 		{
 			Guard.NotNull(fullNode, nameof(fullNode));

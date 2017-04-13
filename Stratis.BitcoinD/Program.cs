@@ -9,6 +9,7 @@ using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.Miner;
+using NBitcoin;
 
 namespace Stratis.BitcoinD
 {
@@ -16,7 +17,12 @@ namespace Stratis.BitcoinD
 	{
 		public static void Main(string[] args)
 		{
-			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
+			ILoggerFactory loggerFactory = Logs.GetLoggerFactory(args);
+			Logs.Configure(loggerFactory);
+
+			if (NodeSettings.PrintHelp(args, Network.Main))
+				return;
+			
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
 			if (!Checks.VerifyAccess(nodeSettings))

@@ -52,11 +52,18 @@ namespace Stratis.Bitcoin.Connection
 			get { return this._Parameters; }
 		}
 
+		private NodeSettings _NodeSettings;
+		public NodeSettings NodeSettings
+		{
+			get { return this._NodeSettings; }
+		}
+
 		NodeConnectionParameters _Parameters;
 		ConnectionManagerSettings _ConnectionManagerSettings;
 		public ConnectionManager(Network network, NodeConnectionParameters parameters, NodeSettings nodeSettings)
 		{
 			_Network = network;
+			this._NodeSettings = nodeSettings;
 			_ConnectionManagerSettings = nodeSettings.ConnectionManager;
 			_Parameters = parameters;
 		}
@@ -64,6 +71,7 @@ namespace Stratis.Bitcoin.Connection
 		public void Start()
 		{
 			_Parameters.UserAgent = "StratisBitcoin:" + GetVersion();
+			_Parameters.Version = NodeSettings.ProtocolVersion;
 			if (_ConnectionManagerSettings.Connect.Count == 0)
 			{
 				var cloneParameters = _Parameters.Clone();
@@ -215,7 +223,7 @@ namespace Stratis.Bitcoin.Connection
 		{
 			return new NodesGroup(Network, cloneParameters, new NodeRequirement()
 			{
-				MinVersion = ProtocolVersion.SENDHEADERS_VERSION,
+				MinVersion = this.NodeSettings.ProtocolVersion,
 				RequiredServices = requiredServices,
 			});
 		}
@@ -259,8 +267,9 @@ namespace Stratis.Bitcoin.Connection
 
 		public void RemoveNode(IPEndPoint endpoint)
 		{
-			var node = ConnectedNodes.FindByEndpoint(endpoint);
-			node.DisconnectAsync("Requested by user");
+			Node node = this.ConnectedNodes.FindByEndpoint(endpoint);
+			if (node != null)
+				node.DisconnectAsync("Requested by user");
 		}
 
 		public Node Connect(IPEndPoint endpoint)

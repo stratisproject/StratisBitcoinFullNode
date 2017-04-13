@@ -44,15 +44,6 @@ namespace Stratis.Bitcoin.RPC
 			ILoggerFactory loggerFactory,
 			IServiceProvider serviceProvider)
 		{
-			var logging = new FilterLoggerSettings();
-
-			//Disable aspnet core logs
-			logging.Add("Microsoft.AspNetCore", LogLevel.Error);
-
-			loggerFactory
-				.WithFilter(logging)
-				.AddConsole();
-
 			if(env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();
@@ -69,7 +60,6 @@ namespace Stratis.Bitcoin.RPC
 				authorizedAccess.Authorized.Add(fullNode.Settings.RPC.RpcUser + ":" + fullNode.Settings.RPC.RpcPassword);
 			}
 			authorizedAccess.AllowIp.AddRange(fullNode.Settings.RPC.AllowIp);
-
 
 			var options = GetMVCOptions(serviceProvider);
 			Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);
