@@ -36,6 +36,7 @@ namespace Stratis.StratisD
 
 			var node = new FullNodeBuilder()
 				.UseNodeSettings(nodeSettings)
+				.UseStratisConsensus()
 				.Build();
 
 			// TODO: bring the logic out of IWebHost.Run()

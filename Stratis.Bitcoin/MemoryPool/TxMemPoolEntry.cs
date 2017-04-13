@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
@@ -58,7 +59,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public TxMempoolEntry(Transaction transaction, Money nFee,
 			long nTime, double entryPriority, int entryHeight,
 			Money inChainInputValue, bool spendsCoinbase,
-			long nSigOpsCost, LockPoints lp)
+			long nSigOpsCost, LockPoints lp, ConsensusOptions consensusOptions)
 		{
 			this.Transaction = transaction;
 			this.TransactionHash = transaction.GetHash();
@@ -71,8 +72,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.SigOpCost = nSigOpsCost;
 			this.LockPoints = lp;
 
-			this.TxWeight = MempoolValidator.GetTransactionWeight(transaction);
-			nModSize = MempoolValidator.CalculateModifiedSize(this.Transaction.GetSerializedSize(), this.Transaction);
+			this.TxWeight = MempoolValidator.GetTransactionWeight(transaction, consensusOptions);
+			nModSize = MempoolValidator.CalculateModifiedSize(this.Transaction.GetSerializedSize(), this.Transaction, consensusOptions);
 
 			nUsageSize = transaction.GetSerializedSize(); // RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(Transaction);
 

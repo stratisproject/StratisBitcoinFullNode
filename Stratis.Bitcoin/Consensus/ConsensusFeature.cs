@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
 		private readonly NodeSettings nodeSettings;
+		private readonly StakeChain stakeChain;
 
 		public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
@@ -42,7 +43,8 @@ namespace Stratis.Bitcoin.Consensus
 			CancellationProvider globalCancellation,
 			Signals signals,
 			ConsensusLoop consensusLoop,
-			NodeSettings nodeSettings)
+			NodeSettings nodeSettings,
+			StakeChain stakeChain = null)
 		{
 			this.dBreezeCoinView = dBreezeCoinView;
 			this.consensusValidator = consensusValidator;
@@ -56,6 +58,7 @@ namespace Stratis.Bitcoin.Consensus
 			this.network = network;
 			this.consensusLoop = consensusLoop;
 			this.nodeSettings = nodeSettings;
+			this.stakeChain = stakeChain;
 		}
 
 		public override void Start()
@@ -75,6 +78,11 @@ namespace Stratis.Bitcoin.Consensus
 			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
 				connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
+			if (stakeChain != null)
+			{
+				// load the stake chain
+			}
+
 			new Thread(RunLoop)
 			{
 				Name = "Consensus Loop"
@@ -83,6 +91,11 @@ namespace Stratis.Bitcoin.Consensus
 
 		public override void Stop()
 		{
+			if (stakeChain != null)
+			{
+				// save the stake chain
+			}
+
 			var cache = this.coinView as CachedCoinView;
 			if (cache != null)
 			{
@@ -171,18 +184,44 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		public static IFullNodeBuilder UseConsensus(this IFullNodeBuilder fullNodeBuilder)
 		{
-
 			fullNodeBuilder.ConfigureFeature(features =>
 			{
 				features
 				.AddFeature<ConsensusFeature>()
 				.FeatureServices(services =>
 				{
-					services.AddSingleton(new ConsensusValidator(fullNodeBuilder.Network.Consensus));
+					services.AddSingleton(new ConsensusValidator(fullNodeBuilder.Network.Consensus, new ConsensusOptions()));
 					services.AddSingleton<DBreezeCoinView>();
 					services.AddSingleton<CoinView, CachedCoinView>();
 					services.AddSingleton<LookaheadBlockPuller>();
 					services.AddSingleton<ConsensusLoop>();
+				});
+			});
+
+			return fullNodeBuilder;
+		}
+
+		public static IFullNodeBuilder UseStratisConsensus(this IFullNodeBuilder fullNodeBuilder)
+		{
+			fullNodeBuilder.ConfigureFeature(features =>
+			{
+				features
+				.AddFeature<ConsensusFeature>()
+				.FeatureServices(services =>
+				{
+					var options = new ConsensusOptions
+					{
+						MAX_MONEY = long.MaxValue, // similar to the c++ version
+						COINBASE_MATURITY = 50,
+
+					};
+
+					services.AddSingleton<ConsensusValidator>(new StratisConsensusValidator(fullNodeBuilder.Network.Consensus, options));
+					services.AddSingleton<DBreezeCoinView>();
+					services.AddSingleton<CoinView, CachedCoinView>();
+					services.AddSingleton<LookaheadBlockPuller>();
+					services.AddSingleton<ConsensusLoop>();
+					services.AddSingleton<StakeChain, MemoryStakeChain>();
 				});
 			});
 

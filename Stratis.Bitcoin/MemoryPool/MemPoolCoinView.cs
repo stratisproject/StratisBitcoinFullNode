@@ -14,15 +14,17 @@ namespace Stratis.Bitcoin.MemoryPool
     {
 	    private readonly TxMempool memPool;
 		private readonly AsyncLock mempoolScheduler;
+	    private readonly MempoolValidator mempoolValidator;
 
-		public UnspentOutputSet Set { get; private set; }
+	    public UnspentOutputSet Set { get; private set; }
 	    public CoinView Inner { get; }
 
-		public MempoolCoinView(CoinView inner, TxMempool memPool, AsyncLock mempoolScheduler)
+		public MempoolCoinView(CoinView inner, TxMempool memPool, AsyncLock mempoolScheduler, MempoolValidator mempoolValidator)
 		{
 			this.Inner = inner;
 			this.memPool = memPool;
 			this.mempoolScheduler = mempoolScheduler;
+			this.mempoolValidator = mempoolValidator;
 			this.Set = new UnspentOutputSet();
 		}
 
@@ -77,7 +79,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 	    private double ComputePriority(Transaction trx, double dPriorityInputs, int nTxSize = 0)
 	    {
-		    nTxSize = MempoolValidator.CalculateModifiedSize(nTxSize, trx);
+		    nTxSize = MempoolValidator.CalculateModifiedSize(nTxSize, trx, this.mempoolValidator.ConsensusOptions);
 		    if (nTxSize == 0) return 0.0;
 
 		    return dPriorityInputs/nTxSize;

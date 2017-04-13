@@ -27,91 +27,43 @@ namespace Stratis.Bitcoin.Consensus
 	}
 	public class ConsensusLoop
 	{
-		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller)
+		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, StakeChain stakeChain = null)
 		{
 			Guard.NotNull(validator, nameof(validator));
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(utxoSet, nameof(utxoSet));
 			Guard.NotNull(puller, nameof(puller));
 			
-			_Validator = validator;
-			_Chain = chain;
-			_utxoSet = utxoSet;
-			_Puller = puller;
+			this.Validator = validator;
+			this.Chain = chain;
+			this.UTXOSet = utxoSet;
+			this.Puller = puller;
+
+			// chain of stake info can be null if POS is not enabled
+			this.StakeChain = stakeChain;
 		}
-
-		private readonly LookaheadBlockPuller _Puller;
-		public LookaheadBlockPuller Puller
-		{
-			get
-			{
-				return _Puller;
-			}
-		}
-
-
-		private readonly ConcurrentChain _Chain;
-		public ConcurrentChain Chain
-		{
-			get
-			{
-				return _Chain;
-			}
-		}
-
-
-		private readonly CoinView _utxoSet;
-		public CoinView UTXOSet
-		{
-			get
-			{
-				return _utxoSet;
-			}
-		}
-
-
-		private readonly ConsensusValidator _Validator;
-		public ConsensusValidator Validator
-		{
-			get
-			{
-				return _Validator;
-			}
-		}
-
 		StopWatch watch = new StopWatch();
 
-		private ChainedBlock _Tip;
-		private ThresholdConditionCache bip9;
-
-		public ChainedBlock Tip
-		{
-			get
-			{
-				return _Tip;
-			}
-		}
-
-		public ThresholdConditionCache BIP9
-		{
-			get
-			{
-				return bip9;
-			}
-		}
+		public StakeChain StakeChain { get; }
+		public LookaheadBlockPuller Puller { get; }
+		public ConcurrentChain Chain { get; }
+		public CoinView UTXOSet { get; }
+		public ConsensusValidator Validator { get; }
+		public ChainedBlock Tip { get; private set; }
+		public ThresholdConditionCache BIP9 { get; private set; }
 
 		public void Initialize()
 		{
-			var utxoHash = _utxoSet.GetBlockHashAsync().GetAwaiter().GetResult();
+			var utxoHash = UTXOSet.GetBlockHashAsync().GetAwaiter().GetResult();
 			while(true)
 			{
-				_Tip = Chain.GetBlock(utxoHash);
-				if(_Tip != null)
+				Tip = Chain.GetBlock(utxoHash);
+				if(Tip != null)
 					break;
-				utxoHash = _utxoSet.Rewind().GetAwaiter().GetResult();
+				utxoHash = UTXOSet.Rewind().GetAwaiter().GetResult();
 			}
 			Puller.SetLocation(Tip);
-			bip9 = new ThresholdConditionCache(_Validator.ConsensusParams);
+			BIP9 = new ThresholdConditionCache(Validator.ConsensusParams);
 		}
 
 		public IEnumerable<BlockResult> Execute(CancellationToken cancellationToken)
@@ -125,9 +77,9 @@ namespace Stratis.Bitcoin.Consensus
 		public ConsensusFlags GetFlags(ChainedBlock block = null)
 		{
 			block = block ?? Tip;
-			lock(bip9)
+			lock(this.BIP9)
 			{
-				var states = bip9.GetStates(block.Previous);
+				var states = this.BIP9.GetStates(block.Previous);
 				var flags = new ConsensusFlags(block, states, Validator.ConsensusParams);
 				return flags;
 			}
@@ -153,7 +105,7 @@ namespace Stratis.Bitcoin.Consensus
 								var rewinded = Chain.GetBlock(hash);
 								if(rewinded == null)
 									continue;
-								_Tip = rewinded;
+								Tip = rewinded;
 								Puller.SetLocation(rewinded);
 								break;
 							}
@@ -172,40 +124,42 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void AcceptBlock(BlockResult result)
 		{
-			ContextInformation context;
-			ConsensusFlags flags;
+			var context = new ContextInformation(result, this.Validator.ConsensusParams, this.Validator.ConsensusOptions);
+
 			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
 			{
-				Validator.CheckBlockHeader(result.Block.Header);
 				if (result.Block.Header.HashPrevBlock != Tip.HashBlock)
 					return; // reorg
 				result.ChainedBlock = new ChainedBlock(result.Block.Header, result.Block.Header.GetHash(), Tip);
+				//Liberate from memory the block created above if possible
 				result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock;
-					//Liberate from memory the block created above if possible
-				context = new ContextInformation(result.ChainedBlock, Validator.ConsensusParams);
-				Validator.ContextualCheckBlockHeader(result.Block.Header, context);
-				flags = GetFlags(result.ChainedBlock);
-				Validator.ContextualCheckBlock(result.Block, flags, context);
-				Validator.CheckBlock(result.Block);
+				context.SetChain(this.StakeChain);
+
+				// validation flow
+				Validator.CheckBlockHeader(context, this.StakeChain);
+				Validator.ContextualCheckBlockHeader(context);
+				context.Flags = GetFlags(result.ChainedBlock);
+				Validator.ContextualCheckBlock(context);
+				Validator.CheckBlock(context);
 			}
 
-			var set = new UnspentOutputSet();
+			context.Set = new UnspentOutputSet();
 			using (watch.Start(o => Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
 			{
-				var ids = GetIdsToFetch(result.Block, flags.EnforceBIP30);
+				var ids = GetIdsToFetch(result.Block, context.Flags.EnforceBIP30);
 				var coins = UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
-				set.SetCoins(coins);
+				context.Set.SetCoins(coins);
 			}
 
-			TryPrefetchAsync(flags);
+			TryPrefetchAsync(context.Flags);
 			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
 			{
-				Validator.ExecuteBlock(result.Block, result.ChainedBlock, flags, set, null);
+				Validator.ExecuteBlock(context, null, this.StakeChain);
 			}
 
-			UTXOSet.SaveChangesAsync(set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);
+			UTXOSet.SaveChangesAsync(context.Set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);
 
-			_Tip = result.ChainedBlock;
+			Tip = result.ChainedBlock;
 		}
 
 		private Task TryPrefetchAsync(ConsensusFlags flags)
