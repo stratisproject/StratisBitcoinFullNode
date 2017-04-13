@@ -11,7 +11,7 @@ using Stratis.Bitcoin.BlockStore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.Tests.Notifications
 {
 	public class BlockNotificationFeatureTest : LogsTestBase
 	{

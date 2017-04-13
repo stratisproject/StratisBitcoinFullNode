@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -160,8 +160,8 @@ namespace Stratis.Bitcoin.Builder
 					services.AddSingleton<DataFolder>();
 					services.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
 					services.AddSingleton<FullNodeFeatureExecutor>();
+				  services.AddSingleton<Signals>().AddSingleton<ISignals, Signals>(provider => provider.GetService<Signals>());          
 					services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
-					services.AddSingleton<Signals>();
 					services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network));
 					services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
 					services.AddSingleton<BlockStore.ChainBehavior.ChainState>();
