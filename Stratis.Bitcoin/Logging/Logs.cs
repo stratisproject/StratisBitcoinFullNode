@@ -25,7 +25,8 @@ namespace Stratis.Bitcoin.Logging
 			Consensus = factory.CreateLogger("Consensus");
 			EstimateFee = factory.CreateLogger("EstimateFee");
 			Mining = factory.CreateLogger("Mining");
-		}
+			Notifications = factory.CreateLogger("Notifications");
+        }
 
 		public static ILogger Configuration
 		{
@@ -70,6 +71,11 @@ namespace Stratis.Bitcoin.Logging
 			get; set;
 		}
 
-		public const int ColumnLength = 16;
+	    public static ILogger Notifications
+	    {
+	        get; set;
+	    }
+
+        public const int ColumnLength = 16;
 	}
 }

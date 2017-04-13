@@ -49,8 +49,7 @@ namespace Stratis.Bitcoin.Notifications
 				.AddFeature<BlockNotificationFeature>()
 				.FeatureServices(services =>
 				{					
-					services.AddSingleton<BlockNotification>();
-					services.AddSingleton<Signals>().AddSingleton<ISignals, Signals>(provider => provider.GetService<Signals>());
+					services.AddSingleton<BlockNotification>();				
 					services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
 				});
 			});

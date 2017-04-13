@@ -1,5 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
@@ -32,23 +35,47 @@ namespace Stratis.Bitcoin.Notifications
         }
 
         private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
-        {
-            Guard.Assert(node == this.AttachedNode); // just in case
+        {            
+            try
+            {
+                Guard.Assert(node == this.AttachedNode); // just in case
+                await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException opx)
+            {
+                if (!opx.CancellationToken.IsCancellationRequested)
+                    if (this.AttachedNode?.IsConnected ?? false)
+                        throw;
 
+                // do nothing
+            }
+            catch (Exception ex)
+            {
+                Logging.Logs.Notifications.LogError(ex.ToString());
+
+                // while in dev catch any unhandled exceptions
+                Debugger.Break();
+                throw;
+            }              
+        }
+
+        private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        {
             // check the type of message received.
             // we're only interested in Inventory and Transaction messages.
             var invPayload = message.Message.Payload as InvPayload;
             if (invPayload != null)
             {
-                await this.ProcessInvAsync(node, invPayload);
-                return;
+                return this.ProcessInvAsync(node, invPayload);                
             }
 
             var txPayload = message.Message.Payload as TxPayload;
             if (txPayload != null)
             {
-                this.ProcessTxPayload(txPayload);                
-            }            
+                this.ProcessTxPayload(txPayload);
+            }
+
+            return Task.CompletedTask;
         }
 
         private void ProcessTxPayload(TxPayload txPayload)

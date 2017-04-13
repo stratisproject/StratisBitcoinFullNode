@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Notifications
 {
@@ -12,12 +14,12 @@ namespace Stratis.Bitcoin.Notifications
     {
         public TransactionNotificationProgress()
         {
-            this.TransactionsReceived = new Dictionary<uint256, uint256>();
+            this.TransactionsReceived = new ConcurrentDictionary<uint256, uint256>();
         }
 
         /// <summary>
         /// Contains hashes of the transactions that have already been received from other nodes.
         /// </summary>
-        public Dictionary<uint256, uint256> TransactionsReceived { get; set; }        
+        public ConcurrentDictionary<uint256, uint256> TransactionsReceived { get; set; }        
     }
 }
