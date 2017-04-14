@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "Wallet",
-		"_postman_id": "88e42ac6-4e01-8ec4-c109-12a07b8722de",
+		"_postman_id": "25ac0bc5-23f5-e00d-932f-a8fde7787e7a",
 		"description": "Requests relating to operations on the wallet",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -90,7 +90,7 @@
 		{
 			"name": "Get wallet Info",
 			"request": {
-				"url": "http://localhost:5000/api/v1/wallet/info?name=mywallet",
+				"url": "http://localhost:5000/api/v1/wallet/general-info?name=mywallet",
 				"method": "GET",
 				"header": [
 					{
@@ -199,7 +199,10 @@
 						"description": ""
 					}
 				],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"description": "Gets all the wallets files stored in the default folder"
 			},
 			"response": []
