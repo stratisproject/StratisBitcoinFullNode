@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Connection
 
 		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters, NodeServices requiredServices)
 		{
-			return new NodesGroup(Network, cloneParameters, new NodeRequirement()
+			return new NodesGroup(this.Network, cloneParameters, new NodeRequirement()
 			{
 				MinVersion = this.NodeSettings.ProtocolVersion,
 				RequiredServices = requiredServices,
@@ -238,18 +238,17 @@ namespace Stratis.Bitcoin.Connection
 
 		public void Dispose()
 		{
-			if (DiscoveredNodeGroup != null)
-				DiscoveredNodeGroup.Dispose();
-			if (ConnectNodeGroup != null)
-				ConnectNodeGroup.Dispose();
-			if (AddNodeNodeGroup != null)
-				AddNodeNodeGroup.Dispose();
-			foreach (var server in _Servers)
+			if (this.DiscoveredNodeGroup != null)
+				this.DiscoveredNodeGroup.Dispose();
+			if (this.ConnectNodeGroup != null)
+				this.ConnectNodeGroup.Dispose();
+			if (this.AddNodeNodeGroup != null)
+				this.AddNodeNodeGroup.Dispose();
+			foreach (NodeServer server in this._Servers)
 				server.Dispose();
-			foreach (var node in ConnectedNodes.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
+			foreach (Node node in this.ConnectedNodes.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
 				node.Disconnect();
 		}
-
 
 		private readonly NodesCollection _ConnectedNodes = new NodesCollection();
 		public IReadOnlyNodesCollection ConnectedNodes { get { return this._ConnectedNodes; } }
@@ -295,12 +294,12 @@ namespace Stratis.Bitcoin.Connection
 
 		public Node Connect(IPEndPoint endpoint)
 		{
-			var cloneParameters = _Parameters.Clone();
+			NodeConnectionParameters cloneParameters = this._Parameters.Clone();
 			cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this)
 			{
 				OneTry = true
 			});
-			var node = Node.Connect(Network, endpoint, cloneParameters);
+			var node = Node.Connect(this.Network, endpoint, cloneParameters);
 			node.VersionHandshake();
 			return node;
 		}

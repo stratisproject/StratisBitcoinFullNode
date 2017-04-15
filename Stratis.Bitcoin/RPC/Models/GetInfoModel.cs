@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.RPC.Models
         public int blocks { get; set; }
 
         [JsonProperty(Order = 5)]
-        public double timeoffset { get; set; }
+        public long timeoffset { get; set; }
 
         [JsonProperty(Order = 6, DefaultValueHandling = DefaultValueHandling.Ignore)]
         public int? connections { get; set; }
