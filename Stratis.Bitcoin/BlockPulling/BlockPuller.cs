@@ -6,6 +6,8 @@ using NBitcoin;
 using System.Collections.Concurrent;
 using NBitcoin.Protocol.Behaviors;
 using System.Threading;
+// TODO: Remove this alias once IReadOnlyNodesCollection is available in NStratis
+using IReadOnlyNodesCollection = System.Collections.Generic.IEnumerable<NBitcoin.Protocol.Node>;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -203,11 +205,11 @@ namespace Stratis.Bitcoin.BlockPulling
 			//}
 		}
 
-		protected readonly NodesCollection Nodes;
+		protected readonly IReadOnlyNodesCollection Nodes;
 		protected readonly ConcurrentChain Chain;
 		private readonly NodeRequirement requirements;
 
-		protected BlockPuller(ConcurrentChain chain, NodesCollection nodes, ProtocolVersion protocolVersion)
+		protected BlockPuller(ConcurrentChain chain, IReadOnlyNodesCollection nodes, ProtocolVersion protocolVersion)
 		{
 			this.Chain = chain;
 			this.Nodes = nodes;

@@ -13,6 +13,8 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+// TODO: Remove this alias once IReadOnlyNodesCollection is available in NStratis
+using IReadOnlyNodesCollection = System.Collections.Generic.IEnumerable<NBitcoin.Protocol.Node>;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -250,24 +252,43 @@ namespace Stratis.Bitcoin.Connection
 
 
 		private readonly NodesCollection _ConnectedNodes = new NodesCollection();
-		public NodesCollection ConnectedNodes
+		public IReadOnlyNodesCollection ConnectedNodes { get { return this._ConnectedNodes; } }
+
+		internal void AddConnectedNode(Node node)
 		{
-			get
-			{
-				return _ConnectedNodes;
-			}
+			this._ConnectedNodes.Add(node);
 		}
 
-		public void AddNode(IPEndPoint endpoint)
+		internal void RemoveConnectedNode(Node node)
 		{
-			var addrman = AddressManagerBehavior.GetAddrman(AddNodeNodeGroup.NodeConnectionParameters);
+			this._ConnectedNodes.Remove(node);
+		}
+
+		public Node FindNodeByEndpoint(IPEndPoint endpoint)
+		{
+			return this._ConnectedNodes.FindByEndpoint(endpoint);
+		}
+
+		public Node FindNodeByIp(IPAddress ip)
+		{
+			return this._ConnectedNodes.FindByIp(ip);
+		}
+
+		public Node FindLocalNode()
+		{
+			return this._ConnectedNodes.FindLocal();
+		}
+
+		public void AddNodeAddress(IPEndPoint endpoint)
+		{
+			AddressManager addrman = AddressManagerBehavior.GetAddrman(this.AddNodeNodeGroup.NodeConnectionParameters);
 			addrman.Add(new NetworkAddress(endpoint));
-			AddNodeNodeGroup.MaximumNodeConnection++;
+			this.AddNodeNodeGroup.MaximumNodeConnection++;
 		}
 
-		public void RemoveNode(IPEndPoint endpoint)
+		public void RemoveNodeAddress(IPEndPoint endpoint)
 		{
-			Node node = this.ConnectedNodes.FindByEndpoint(endpoint);
+			Node node = this._ConnectedNodes.FindByEndpoint(endpoint);
 			if (node != null)
 				node.DisconnectAsync("Requested by user");
 		}

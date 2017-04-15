@@ -908,7 +908,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 5);
 
 				// the full node should be connected to both nodes
-				Assert.Equal(stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes.Count, 2);
+				Assert.Equal(stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes.Count(), 2);
 
 				// reset the trickle timer on the full node that has the transactions in the pool
 				foreach (var node in stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes) node.Behavior<MempoolBehavior>().NextInvSend = 0;
