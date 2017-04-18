@@ -13,8 +13,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
-// TODO: Remove this alias once IReadOnlyNodesCollection is available in NStratis
-using IReadOnlyNodesCollection = System.Collections.Generic.IEnumerable<NBitcoin.Protocol.Node>;
 
 namespace Stratis.Bitcoin.Connection
 {
