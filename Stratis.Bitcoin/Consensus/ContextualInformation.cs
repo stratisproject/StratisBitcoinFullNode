@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		}
 
-		public void SetChain(StakeChain stakeChain)
+		public void SetBestBlock()
 		{
 			BestBlock = new ContextBlockInformation(this.BlockResult.ChainedBlock.Previous, this.Consensus);
 			Time = DateTimeOffset.UtcNow;

@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
-		public ConsensusFlags GetFlags(ChainedBlock block = null)
+		public virtual ConsensusFlags GetFlags(ChainedBlock block = null)
 		{
 			block = block ?? Tip;
 			lock(this.BIP9)
@@ -128,21 +128,38 @@ namespace Stratis.Bitcoin.Consensus
 
 			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
 			{
+				// check that the current block is has not been reorged
+				// catching a reorg at this point will not require a rewind
 				if (result.Block.Header.HashPrevBlock != Tip.HashBlock)
 					return; // reorg
+
+				// build the next block in the chain of headers
+				// the chain header is most likely already created by 
+				// one of the peers so after we create a new chained block (mainly for validation) 
+				// we ask the chain headers for its version (also to prevent mempry leaks) 
 				result.ChainedBlock = new ChainedBlock(result.Block.Header, result.Block.Header.GetHash(), Tip);
 				//Liberate from memory the block created above if possible
 				result.ChainedBlock = Chain.GetBlock(result.ChainedBlock.HashBlock) ?? result.ChainedBlock;
-				context.SetChain(this.StakeChain);
+				context.SetBestBlock();
 
-				// validation flow
-				Validator.CheckBlockHeader(context, this.StakeChain);
+				// == validation flow ==
+				
+				// check the block hedaer is correct
+				Validator.CheckBlockHeader(context);
 				Validator.ContextualCheckBlockHeader(context);
-				context.Flags = GetFlags(result.ChainedBlock);
+
+				// calculate the consensus flags  
+				// and check they are valid
+				context.Flags = this.GetFlags(result.ChainedBlock);
 				Validator.ContextualCheckBlock(context);
+
+				// check the block itself
 				Validator.CheckBlock(context);
 			}
 
+			// load the UTXO set of the current block
+			// UTXO may be loaded form cache or from disk  
+			// the UTXO set are stored in the context
 			context.Set = new UnspentOutputSet();
 			using (watch.Start(o => Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
 			{
@@ -151,15 +168,27 @@ namespace Stratis.Bitcoin.Consensus
 				context.Set.SetCoins(coins);
 			}
 
+			// attempt to load in to cach the 
+			// next set of UTXO to be validated
+			// the task is not awaited so will not  
+			// stall main validation process
 			TryPrefetchAsync(context.Flags);
+
+			// validate the UTXO set are correctly spent
 			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
 			{
-				Validator.ExecuteBlock(context, null, this.StakeChain);
+				Validator.ExecuteBlock(context, null);
 			}
 
+			// persist thechanges to the coinview
+			// this will likely only be sotred in mempry 
+			// unless the coinview trashold is reached
 			UTXOSet.SaveChangesAsync(context.Set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);
 
+			// set the new tip.
 			Tip = result.ChainedBlock;
+
+			// TODO: the context is not needed anymore consider disposing it.
 		}
 
 		private Task TryPrefetchAsync(ConsensusFlags flags)
@@ -173,6 +202,7 @@ namespace Stratis.Bitcoin.Consensus
 			}
 			return prefetching;
 		}
+
 		public static uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
 		{
 			HashSet<uint256> ids = new HashSet<uint256>();

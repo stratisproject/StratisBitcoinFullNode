@@ -1,4 +1,4 @@
-﻿{
+{
   "version": "1.0.0-*",
   "buildOptions": {
     "emitEntryPoint": true,
@@ -13,7 +13,7 @@
     "Stratis.Bitcoin": "1.0.*",
     "Microsoft.Extensions.Logging.Abstractions": "1.1.0",
     "Microsoft.Extensions.Logging.Console": "1.1.0",
-    "NStratis": "3.0.2.13"
+    "NStratis": "3.0.2.16"
   },
 
   "frameworks": {

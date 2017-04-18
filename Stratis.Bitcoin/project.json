@@ -20,7 +20,7 @@
     "System.Reactive": "3.1.1",
     "System.Xml.XmlSerializer": "4.3.0",
     "Microsoft.Extensions.DependencyInjection": "1.1.0",
-    "NStratis": "3.0.2.13"
+    "NStratis": "3.0.2.16"
   },
 
   "frameworks": {

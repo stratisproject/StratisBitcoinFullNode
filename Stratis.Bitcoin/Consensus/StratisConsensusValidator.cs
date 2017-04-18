@@ -1,38 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
-	public class MemoryStakeChain : StakeChain
-	{
-		private readonly Network network;
-		private Dictionary<uint256, BlockStake> items = new Dictionary<uint256, BlockStake>();
-
-		public MemoryStakeChain(Network network)
-		{
-			this.network = network;
-		}
-
-		public override BlockStake Get(uint256 blockid)
-		{
-			return this.items.TryGet(blockid);
-		}
-
-		public sealed override void Set(uint256 blockid, BlockStake blockStake)
-		{
-			// throw if item already exists
-			this.items.Add(blockid, blockStake);
-		}
-	}
-
 	public class StratisConsensusValidator : ConsensusValidator
 	{
-		public StratisConsensusValidator(NBitcoin.Consensus consensusParams, ConsensusOptions consensusOptions) 
-			: base(consensusParams, consensusOptions)
+		private readonly StakeChain stakeChain;
+
+		public StratisConsensusValidator(Network network, ConsensusOptions consensusOptions, StakeChain stakeChain) 
+			: base(network, consensusOptions)
 		{
+			this.stakeChain = stakeChain;
 		}
 
 		public override void CheckBlockReward(Money nFees, ChainedBlock chainedBlock, Block block)
@@ -51,9 +31,9 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
-		public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler, StakeChain stakeChain)
+		public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
 		{
-			base.ExecuteBlock(context, taskScheduler, stakeChain);
+			base.ExecuteBlock(context, taskScheduler);
 
 			var blockstake = context.BlockStake;
 			
@@ -62,26 +42,18 @@ namespace Stratis.Bitcoin.Consensus
 			stakeChain.Set(context.BlockResult.ChainedBlock.HashBlock, blockstake);
 		}
 
-		public override void CheckBlockHeader(ContextInformation context, StakeChain stakeChain)
+		public override void CheckBlockHeader(ContextInformation context)
 		{
 			var blockstake = new BlockStake(context.BlockResult.Block);
 			context.BlockStake = blockstake;
-			var header = context.BlockResult.Block.Header;
 
 			if (blockstake.IsProofOfWork())
 			{
-				if (!header.CheckProofOfWork())
-					ConsensusErrors.HighHash.Throw();
-
-				context.NextWorkRequired = context.BlockResult.ChainedBlock.GetWorkRequired(context.Consensus);
-			}
-			else
-			{
-				context.NextWorkRequired = stakeChain.GetWorkRequired(context.BlockResult.ChainedBlock, blockstake, context.Consensus);
-				if (header.Bits != context.NextWorkRequired)
+				if (!context.BlockResult.Block.Header.CheckProofOfWork())
 					ConsensusErrors.HighHash.Throw();
 			}
 
+			context.NextWorkRequired = stakeChain.GetWorkRequired(context.BlockResult.ChainedBlock, blockstake, context.Consensus);
 		}
 
 		public override void ContextualCheckBlockHeader(ContextInformation context)

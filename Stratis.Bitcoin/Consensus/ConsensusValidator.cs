@@ -50,12 +50,12 @@ namespace Stratis.Bitcoin.Consensus
 		// Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
 		public static LockTimeFlags StandardLocktimeVerifyFlags = LockTimeFlags.VerifySequence | LockTimeFlags.MedianTimePast;
 
-		public ConsensusValidator(NBitcoin.Consensus consensusParams, ConsensusOptions consensusOptions)
+		public ConsensusValidator(Network network, ConsensusOptions consensusOptions)
 		{
-			Guard.NotNull(consensusParams, nameof(consensusParams));
+			Guard.NotNull(network, nameof(network));
 			Guard.NotNull(consensusOptions, nameof(consensusOptions));
 
-			this.consensusParams = consensusParams;
+			this.consensusParams = network.Consensus;
 			this.consensusOptions = consensusOptions;
 			this.performanceCounter = new ConsensusPerformanceCounter();
 		}
@@ -84,12 +84,13 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
-		public virtual void CheckBlockHeader(ContextInformation context, StakeChain stakeChain)
+		public virtual void CheckBlockHeader(ContextInformation context)
 		{
-			if(!context.BlockResult.Block.Header.CheckProofOfWork())
+			if (!context.BlockResult.Block.Header.CheckProofOfWork())
 				ConsensusErrors.HighHash.Throw();
 
 			context.NextWorkRequired = context.BlockResult.ChainedBlock.GetWorkRequired(context.Consensus);
+
 		}
 
 		public virtual void ContextualCheckBlock(ContextInformation context)
@@ -183,7 +184,7 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.BadCoinbaseHeight.Throw();
 		}
 
-		public virtual void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler, StakeChain stakeChain)
+		public virtual void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
 		{
 			Block block = context.BlockResult.Block;
 			ChainedBlock index = context.BlockResult.ChainedBlock;

@@ -190,7 +190,8 @@ namespace Stratis.Bitcoin.Consensus
 				.AddFeature<ConsensusFeature>()
 				.FeatureServices(services =>
 				{
-					services.AddSingleton(new ConsensusValidator(fullNodeBuilder.Network.Consensus, new ConsensusOptions()));
+					services.AddSingleton(new ConsensusOptions());
+					services.AddSingleton<ConsensusValidator>();
 					services.AddSingleton<DBreezeCoinView>();
 					services.AddSingleton<CoinView, CachedCoinView>();
 					services.AddSingleton<LookaheadBlockPuller>();
@@ -216,12 +217,13 @@ namespace Stratis.Bitcoin.Consensus
 
 					};
 
-					services.AddSingleton<ConsensusValidator>(new StratisConsensusValidator(fullNodeBuilder.Network.Consensus, options));
+					services.AddSingleton(options);
+					services.AddSingleton<ConsensusValidator, StratisConsensusValidator>();
 					services.AddSingleton<DBreezeCoinView>();
 					services.AddSingleton<CoinView, CachedCoinView>();
 					services.AddSingleton<LookaheadBlockPuller>();
 					services.AddSingleton<ConsensusLoop>();
-					services.AddSingleton<StakeChain, MemoryStakeChain>();
+					services.AddSingleton<StakeChain, StakeChainStore>();
 				});
 			});
 
