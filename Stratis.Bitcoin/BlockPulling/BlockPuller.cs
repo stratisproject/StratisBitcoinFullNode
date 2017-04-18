@@ -203,11 +203,11 @@ namespace Stratis.Bitcoin.BlockPulling
 			//}
 		}
 
-		protected readonly NodesCollection Nodes;
+		protected readonly IReadOnlyNodesCollection Nodes;
 		protected readonly ConcurrentChain Chain;
 		private readonly NodeRequirement requirements;
 
-		protected BlockPuller(ConcurrentChain chain, NodesCollection nodes, ProtocolVersion protocolVersion)
+		protected BlockPuller(ConcurrentChain chain, IReadOnlyNodesCollection nodes, ProtocolVersion protocolVersion)
 		{
 			this.Chain = chain;
 			this.Nodes = nodes;

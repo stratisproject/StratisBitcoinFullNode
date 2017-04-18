@@ -25,10 +25,10 @@ namespace Stratis.Bitcoin.RPC.Controllers
             switch (command)
             {
                 case "add":
-                    this._ConnectionManager.AddNode(endpoint);
+                    this._ConnectionManager.AddNodeAddress(endpoint);
                     break;
                 case "remove":
-                    this._ConnectionManager.RemoveNode(endpoint);
+                    this._ConnectionManager.RemoveNodeAddress(endpoint);
                     break;
                 case "onetry":
                     this._ConnectionManager.Connect(endpoint);

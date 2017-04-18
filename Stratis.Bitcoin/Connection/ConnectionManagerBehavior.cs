@@ -11,8 +11,8 @@ namespace Stratis.Bitcoin.Connection
 	{
 		public ConnectionManagerBehavior(bool inbound, ConnectionManager connectionManager)
 		{
-			Inbound = inbound;
-			ConnectionManager = connectionManager;
+			this.Inbound = inbound;
+			this.ConnectionManager = connectionManager;
 		}
 
 		public ConnectionManager ConnectionManager
@@ -38,10 +38,10 @@ namespace Stratis.Bitcoin.Connection
 
 		public override object Clone()
 		{
-			return new ConnectionManagerBehavior(Inbound, ConnectionManager)
+			return new ConnectionManagerBehavior(this.Inbound, this.ConnectionManager)
 			{
-				OneTry = OneTry,
-				Whitelisted = Whitelisted,
+				OneTry = this.OneTry,
+				Whitelisted = this.Whitelisted,
 			};
 		}
 
@@ -49,13 +49,13 @@ namespace Stratis.Bitcoin.Connection
 		{
 			this.AttachedNode.StateChanged += AttachedNode_StateChanged;
 			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
-			_ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
+			this._ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
 		}
 
 		BlockStore.ChainBehavior _ChainBehavior;
 		private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
-			if(_ChainBehavior.InvalidHeaderReceived && !Whitelisted)
+			if(this._ChainBehavior.InvalidHeaderReceived && !this.Whitelisted)
 			{
 				node.DisconnectAsync("Invalid block received");
 			}
@@ -65,16 +65,16 @@ namespace Stratis.Bitcoin.Connection
 		{
 			if(node.State == NodeState.HandShaked)
 			{
-				ConnectionManager.ConnectedNodes.Add(node);
-				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketEndpoint + " connected (" + (Inbound ? "inbound" : "outbound") + "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
+				this.ConnectionManager.AddConnectedNode(node);
+				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketEndpoint + " connected (" + (this.Inbound ? "inbound" : "outbound") + "), agent " + node.PeerVersion.UserAgent + ", height " + node.PeerVersion.StartHeight);
 				node.SendMessageAsync(new SendHeadersPayload());
 			}
 			if(node.State == NodeState.Failed || node.State == NodeState.Offline)
 			{
 				Logs.ConnectionManager.LogInformation("Node " + node.RemoteSocketEndpoint + " offline");
-				if(node.DisconnectReason != null && !String.IsNullOrEmpty(node.DisconnectReason.Reason))
+				if(node.DisconnectReason != null && !string.IsNullOrEmpty(node.DisconnectReason.Reason))
 					Logs.ConnectionManager.LogInformation("Reason: " + node.DisconnectReason.Reason);
-				ConnectionManager.ConnectedNodes.Remove(node);
+				this.ConnectionManager.RemoveConnectedNode(node);
 			}
 		}
 
