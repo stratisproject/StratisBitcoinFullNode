@@ -13,7 +13,7 @@
     "Stratis.Bitcoin": "1.0.*",
     "Microsoft.Extensions.Logging.Abstractions": "1.1.0",
     "Microsoft.Extensions.Logging.Console": "1.1.0",
-    "NStratis": "3.0.2.14"
+    "NStratis": "3.0.2.15"
   },
 
   "frameworks": {
