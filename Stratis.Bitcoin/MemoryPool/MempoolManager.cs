@@ -63,22 +63,31 @@ namespace Stratis.Bitcoin.MemoryPool
 			{
 				Logging.Logs.Mempool.LogInformation("Loading Memory Pool...");
 				IEnumerable<MempoolPersistenceEntry> entries = this.mempoolPersistence.Load(fileName);
+				int i = 0;
 				if (entries != null)
 				{
+					Logging.Logs.Mempool.LogInformation($"...loaded {entries.Count()} cached entries.");
 					foreach (MempoolPersistenceEntry entry in entries)
 					{
-                        Transaction trx = entry.Tx;
+						Transaction trx = entry.Tx;
 						uint256 trxHash = trx.GetHash();
 						if (!this.memPool.Exists(trxHash))
 						{
 							MempoolValidationState state = new MempoolValidationState(false) { AcceptTime = entry.Time, OverrideMempoolLimit = true };
 							if (await this.Validator.AcceptToMemoryPoolWithTime(state, trx) && this.memPool.MapTx.ContainsKey(trxHash))
 							{
+								i++;
 								this.memPool.MapTx[trxHash].UpdateFeeDelta(entry.FeeDelta);
 							}
 						}
 					}
+					Logging.Logs.Mempool.LogInformation($"...{i} entries accepted.");
 				}
+				else
+				{
+					Logging.Logs.Mempool.LogInformation($"...Unable to load memory pool cache from {fileName}.");
+				}
+
 			}
 		}
 
@@ -91,7 +100,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public TxMempoolInfo Info(uint256 hash)
 		{
-			var item = this.memPool.MapTx.TryGet(hash);
+			TxMempoolEntry item = this.memPool.MapTx.TryGet(hash);
 			return item == null ? null : new TxMempoolInfo
 			{
 				Trx = item.Transaction,
