@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.MemoryPool
 {
@@ -13,6 +14,8 @@ namespace Stratis.Bitcoin.MemoryPool
 
 	public class MempoolManager
 	{
+		private IMempoolPersistence mempoolPersistence;
+
 		public MempoolScheduler MempoolScheduler { get; }
 		public MempoolValidator Validator { get; } // public for testing
 		public MempoolOrphans Orphans { get; } // public for testing
@@ -22,8 +25,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		public NodeSettings NodeArgs { get; set; }
 
 
-		public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool, 
-			MempoolValidator validator, MempoolOrphans orphans, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
+		public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool,
+			MempoolValidator validator, MempoolOrphans orphans, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, IMempoolPersistence mempoolPersistence)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
@@ -31,6 +34,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.NodeArgs = nodeArgs;
 			this.Orphans = orphans;
 			this.Validator = validator;
+			this.mempoolPersistence = mempoolPersistence;
 		}
 
 		public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
@@ -48,19 +52,60 @@ namespace Stratis.Bitcoin.MemoryPool
 			{
 				Trx = item.Transaction,
 				Time = item.Time,
-				FeeRate = new FeeRate(item.Fee, (int) item.GetTxSize()),
+				FeeRate = new FeeRate(item.Fee, (int)item.GetTxSize()),
 				FeeDelta = item.ModifiedFee - item.Fee
 			}).ToList();
 		}
 
+		internal async Task LoadPool(string fileName = null)
+		{
+			if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
+			{
+				Logging.Logs.Mempool.LogInformation("Loading Memory Pool...");
+				IEnumerable<MempoolPersistenceEntry> entries = this.mempoolPersistence.Load(fileName);
+				int i = 0;
+				if (entries != null)
+				{
+					Logging.Logs.Mempool.LogInformation($"...loaded {entries.Count()} cached entries.");
+					foreach (MempoolPersistenceEntry entry in entries)
+					{
+						Transaction trx = entry.Tx;
+						uint256 trxHash = trx.GetHash();
+						if (!this.memPool.Exists(trxHash))
+						{
+							MempoolValidationState state = new MempoolValidationState(false) { AcceptTime = entry.Time, OverrideMempoolLimit = true };
+							if (await this.Validator.AcceptToMemoryPoolWithTime(state, trx) && this.memPool.MapTx.ContainsKey(trxHash))
+							{
+								i++;
+								this.memPool.MapTx[trxHash].UpdateFeeDelta(entry.FeeDelta);
+							}
+						}
+					}
+					Logging.Logs.Mempool.LogInformation($"...{i} entries accepted.");
+				}
+				else
+				{
+					Logging.Logs.Mempool.LogInformation($"...Unable to load memory pool cache from {fileName}.");
+				}
+
+			}
+		}
+
+		internal MemPoolSaveResult SavePool()
+		{
+			if (this.mempoolPersistence == null)
+				return MemPoolSaveResult.NonSuccess;
+			return this.mempoolPersistence.Save(this.memPool);
+		}
+
 		public TxMempoolInfo Info(uint256 hash)
 		{
-			var item = this.memPool.MapTx.TryGet(hash);
+			TxMempoolEntry item = this.memPool.MapTx.TryGet(hash);
 			return item == null ? null : new TxMempoolInfo
 			{
 				Trx = item.Transaction,
 				Time = item.Time,
-				FeeRate = new FeeRate(item.Fee, (int) item.GetTxSize()),
+				FeeRate = new FeeRate(item.Fee, (int)item.GetTxSize()),
 				FeeDelta = item.ModifiedFee - item.Fee
 			};
 		}
