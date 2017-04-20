@@ -76,6 +76,11 @@ namespace Stratis.Bitcoin
 			{
 				return new Block(bytes);
 			}
+			if (type == typeof(BlockStake))
+			{
+				return new BlockStake(bytes);
+			}
+
 			throw new NotSupportedException();
 		}
 

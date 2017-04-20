@@ -9,7 +9,7 @@
     // xunit hack https://github.com/xunit/xunit/issues/1015
     "Microsoft.DotNet.InternalAbstractions": "1.0.0",
     "Moq": "4.7.1",
-    "NStratis": "3.0.2.15"
+    "NStratis": "3.0.2.16"
   },
   "frameworks": {
     "netcoreapp1.0": {

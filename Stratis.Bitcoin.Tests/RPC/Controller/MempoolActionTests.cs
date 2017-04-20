@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
@@ -15,7 +17,9 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
         [Fact]
         public async Task CanCall()
         {
-            string dir = AssureEmptyDir("Stratis.Bitcoin.Tests/TestData/GetRawMempoolActionTest/CanCall");
+			Logs.Configure(new LoggerFactory());
+
+			string dir = AssureEmptyDir("Stratis.Bitcoin.Tests/TestData/GetRawMempoolActionTest/CanCall");
             IFullNode fullNode = this.BuildServicedNode(dir);
             MempoolController controller = fullNode.Services.ServiceProvider.GetService<MempoolController>();
 

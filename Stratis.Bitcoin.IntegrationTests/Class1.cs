@@ -513,13 +513,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 					Height = 10111
 				},
 				NextWorkRequired = block.Header.Bits,
-				Time = DateTimeOffset.UtcNow
+				Time = DateTimeOffset.UtcNow,
+				BlockResult = new BlockResult { Block = block },
+				Flags = consensusFlags,
 			};
-			var validator = new ConsensusValidator(new NBitcoin.Consensus());
-			validator.CheckBlockHeader(block.Header);
-			validator.ContextualCheckBlockHeader(block.Header, context);
-			validator.ContextualCheckBlock(block, consensusFlags, context);
-			validator.CheckBlock(block);
+			var validator = new PowConsensusValidator(Network.Main, new BitcoinConsensusOptions());
+			//validator.CheckBlockHeader(context);
+			validator.ContextualCheckBlock(context);
+			validator.CheckBlock(context);
 		}
 	}
 }

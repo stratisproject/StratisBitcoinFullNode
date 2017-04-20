@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -49,7 +50,12 @@ namespace Stratis.Bitcoin.Utilities
             return this.asyncLock.WriteAsync(() => this.dictionary.Add(key, value));
         }
 
-        public Task Clear()
+		public Task<bool> TryAdd(TKey key, TValue value)
+		{
+			return this.asyncLock.WriteAsync(() => this.dictionary.TryAdd(key, value));
+		}
+
+		public Task Clear()
         {
             return this.asyncLock.WriteAsync(() => this.dictionary.Clear());
         }
@@ -90,7 +96,12 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        public Task<Collection<TValue>> Values
+	    public Task<List<KeyValuePair<TKey, TValue>>> Query(Func<KeyValuePair<TKey, TValue>, bool> func)
+	    {
+		    return this.asyncLock.ReadAsync(() => this.dictionary.Where(func).ToList());
+	    }
+
+	    public Task<Collection<TValue>> Values
         {
             get
             {
