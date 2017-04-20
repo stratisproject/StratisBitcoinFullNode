@@ -6,6 +6,7 @@ using Moq;
 using Breeze.Wallet.Wrappers;
 using Breeze.Wallet;
 using Breeze.Wallet.Controllers;
+using Breeze.Wallet.Errors;
 using Breeze.Wallet.Models;
 
 namespace Breeze.Api.Tests
@@ -122,7 +123,7 @@ namespace Breeze.Api.Tests
 
             // Assert
             mockWalletWrapper.VerifyAll();
-            var viewResult = Assert.IsType<ObjectResult>(result);
+            var viewResult = Assert.IsType<ErrorResult>(result);
             Assert.NotNull(viewResult);		
             Assert.Equal(404, viewResult.StatusCode);
         }
