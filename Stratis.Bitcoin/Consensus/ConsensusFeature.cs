@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly DBreezeCoinView dBreezeCoinView;
 		private readonly Network network;
 		private readonly ConcurrentChain chain;
-		private readonly ConsensusValidator consensusValidator;
+		private readonly PowConsensusValidator consensusValidator;
 		private readonly LookaheadBlockPuller blockPuller;
 		private readonly CoinView coinView;
 		private readonly ChainBehavior.ChainState chainState;
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Consensus
 		public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
 			Network network,
-			ConsensusValidator consensusValidator,
+			PowConsensusValidator consensusValidator,
 			ConcurrentChain chain,
 			LookaheadBlockPuller blockPuller,
 			CoinView coinView,
@@ -190,8 +190,8 @@ namespace Stratis.Bitcoin.Consensus
 				.AddFeature<ConsensusFeature>()
 				.FeatureServices(services =>
 				{
-					services.AddSingleton(new ConsensusOptions());
-					services.AddSingleton<ConsensusValidator>();
+					services.AddSingleton<ConsensusOptions, BitcoinConsensusOptions>();
+					services.AddSingleton<PowConsensusValidator>();
 					services.AddSingleton<DBreezeCoinView>();
 					services.AddSingleton<CoinView, CachedCoinView>();
 					services.AddSingleton<LookaheadBlockPuller>();
@@ -210,15 +210,10 @@ namespace Stratis.Bitcoin.Consensus
 				.AddFeature<ConsensusFeature>()
 				.FeatureServices(services =>
 				{
-					var options = new ConsensusOptions
-					{
-						MAX_MONEY = long.MaxValue, // similar to the c++ version
-						COINBASE_MATURITY = 50,
+					
 
-					};
-
-					services.AddSingleton(options);
-					services.AddSingleton<ConsensusValidator, StratisConsensusValidator>();
+					services.AddSingleton<ConsensusOptions, StratisConsensusOptions>();
+					services.AddSingleton<PowConsensusValidator, PosConsensusValidator>();
 					services.AddSingleton<DBreezeCoinView>();
 					services.AddSingleton<CoinView, CachedCoinView>();
 					services.AddSingleton<LookaheadBlockPuller>();

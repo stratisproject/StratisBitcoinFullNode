@@ -9,6 +9,11 @@ namespace Stratis.Bitcoin.Consensus
 {
 	public class StakeChainStore : StakeChain
 	{
+		// TODO: to use the coin view persist logic (store to disk after a trashold)
+		// the code to push to DBreezeCoinView can be included in CachedCoinView
+		// then when the CachedCoinView flushes all uncommited entreis the stake entries can also
+		// be commited (before thre coin view save) from the CachedCoinView to the DBreezeCoinView
+
 		private readonly Network network;
 		private readonly ConcurrentChain chain;
 		private readonly DBreezeCoinView dBreezeCoinView;

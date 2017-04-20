@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly ConcurrentChain chain;
 		private readonly CoinView coinView;
 		private readonly TxMempool memPool;
-		private readonly ConsensusValidator consensusValidator;
+		private readonly PowConsensusValidator consensusValidator;
 		public MempoolPerformanceCounter PerformanceCounter { get; }
 		public ConsensusOptions ConsensusOptions => this.consensusValidator.ConsensusOptions;
 		public static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		}
 
 		public MempoolValidator(TxMempool memPool, MempoolScheduler mempoolScheduler,
-			ConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs,
+			PowConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs,
 			ConcurrentChain chain, CoinView coinView)
 		{
 			this.memPool = memPool;
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Only accept nLockTime-using transactions that can be mined in the next
 			// block; we don't want our mempool filled up with transactions that can't
 			// be mined yet.
-			if (!CheckFinalTransaction(context.Transaction, ConsensusValidator.StandardLocktimeVerifyFlags))
+			if (!CheckFinalTransaction(context.Transaction, PowConsensusValidator.StandardLocktimeVerifyFlags))
 				context.State.Fail(MempoolErrors.NonFinal).Throw();
 		}
 
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// be mined yet.
 			// Must keep pool.cs for this unless we change CheckSequenceLocks to take a
 			// CoinsViewCache instead of create its own
-			if (!CheckSequenceLocks(context, ConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
+			if (!CheckSequenceLocks(context, PowConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
 				context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
 
 			// Check for non-standard pay-to-script-hash in inputs
@@ -744,7 +744,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// When the next block is created its previous block will be the current
 			// chain tip, so we use that to calculate the median time passed to
 			// IsFinalTx() if LOCKTIME_MEDIAN_TIME_PAST is set.
-			var blockTime = flags.HasFlag(ConsensusValidator.StandardLocktimeVerifyFlags)
+			var blockTime = flags.HasFlag(PowConsensusValidator.StandardLocktimeVerifyFlags)
 				? this.chain.Tip.Header.BlockTime
 				: DateTimeOffset.FromUnixTimeMilliseconds(this.dateTimeProvider.GetTime());
 

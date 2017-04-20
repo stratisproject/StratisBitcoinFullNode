@@ -119,6 +119,8 @@ namespace Stratis.Bitcoin.Consensus
 		public readonly static ConsensusError BadTransactionMissingInput = new ConsensusError("bad-txns-inputs-missingorspent", "input missing/spent");
 
 		public readonly static ConsensusError BadCoinbaseAmount = new ConsensusError("bad-cb-amount", "coinbase pays too much");
+		public readonly static ConsensusError BadCoinstakeAmount = new ConsensusError("bad-cs-amount", "coinstake pays too much");
+
 		public readonly static ConsensusError BadTransactionPrematureCoinbaseSpending = new ConsensusError("bad-txns-premature-spend-of-coinbase", "tried to spend coinbase before maturity");
 
 		public readonly static ConsensusError BadTransactionInputValueOutOfRange = new ConsensusError("bad-txns-inputvalues-outofrange", "input value out of range");

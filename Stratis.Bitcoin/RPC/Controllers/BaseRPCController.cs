@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
         protected IFullNode _FullNode;
         protected NodeSettings _Settings;
         protected Network _Network;
-        protected ConsensusValidator _ConsensusValidator;
+        protected PowConsensusValidator _ConsensusValidator;
         protected ConsensusLoop _ConsensusLoop;
         protected ChainBase _Chain;
         protected ChainBehavior.ChainState _ChainState;
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
-            ConsensusValidator consensusValidator = null,
+            PowConsensusValidator consensusValidator = null,
             ConsensusLoop consensusLoop = null,
             ConcurrentChain chain = null,
             ChainBehavior.ChainState chainState = null,

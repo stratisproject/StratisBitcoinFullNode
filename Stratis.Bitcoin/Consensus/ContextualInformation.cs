@@ -116,5 +116,11 @@ namespace Stratis.Bitcoin.Consensus
 			get;
 			set;
 		}
+
+		public Money TotalCoinStakeValueIn
+		{
+			get;
+			set;
+		}
 	}
 }

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Consensus
 	}
 	public class ConsensusLoop
 	{
-		public ConsensusLoop(ConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, StakeChain stakeChain = null)
+		public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, StakeChain stakeChain = null)
 		{
 			Guard.NotNull(validator, nameof(validator));
 			Guard.NotNull(chain, nameof(chain));
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Consensus
 		public LookaheadBlockPuller Puller { get; }
 		public ConcurrentChain Chain { get; }
 		public CoinView UTXOSet { get; }
-		public ConsensusValidator Validator { get; }
+		public PowConsensusValidator Validator { get; }
 		public ChainedBlock Tip { get; private set; }
 		public ThresholdConditionCache BIP9 { get; private set; }
 
@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Consensus
 				Validator.ExecuteBlock(context, null);
 			}
 
-			// persist thechanges to the coinview
+			// persist the changes to the coinview
 			// this will likely only be sotred in mempry 
 			// unless the coinview trashold is reached
 			UTXOSet.SaveChangesAsync(context.Set.GetCoins(UTXOSet), null, Tip.HashBlock, result.ChainedBlock.HashBlock);

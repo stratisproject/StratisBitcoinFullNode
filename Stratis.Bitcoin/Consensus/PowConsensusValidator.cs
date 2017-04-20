@@ -14,75 +14,29 @@ using static NBitcoin.Transaction;
 
 namespace Stratis.Bitcoin.Consensus
 {
-	/// <summary>
-	/// A set of options with default values of the Bitcoin network
-	/// This can be easily overridable for alternative networks (i.e Stratis)
-	/// Capital style param nameing is kept to mimic core
-	/// </summary>
-	public class ConsensusOptions
-	{
-		public int MAX_BLOCK_WEIGHT = 4000000;
-		public int WITNESS_SCALE_FACTOR = 4;
-		public int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
-		
-		// Changing the default transaction version requires a two step process: first
-		// adapting relay policy by bumping MAX_STANDARD_VERSION, and then later date
-		// bumping the default CURRENT_VERSION at which point both CURRENT_VERSION and
-		// MAX_STANDARD_VERSION will be equal.
-		public int MAX_STANDARD_VERSION = 2;
-		// The maximum weight for transactions we're willing to relay/mine 
-		public int MAX_STANDARD_TX_WEIGHT = 400000;
-		public int MAX_BLOCK_BASE_SIZE = 1000000;
-		/** The maximum allowed number of signature check operations in a block (network rule) */
-		public int MAX_BLOCK_SIGOPS_COST = 80000;
-		public long MAX_MONEY = 21000000 * Money.COIN;
-		public long COINBASE_MATURITY = 100;
-
-		public bool IsProofOfStake;
-	}
-
-	public class ConsensusValidator
+	public class PowConsensusValidator
 	{
 		private readonly NBitcoin.Consensus consensusParams;
 		private readonly ConsensusOptions consensusOptions;
-		private readonly ConsensusPerformanceCounter performanceCounter;
 
 		// Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
 		public static LockTimeFlags StandardLocktimeVerifyFlags = LockTimeFlags.VerifySequence | LockTimeFlags.MedianTimePast;
 
-		public ConsensusValidator(Network network, ConsensusOptions consensusOptions)
+		public PowConsensusValidator(Network network, ConsensusOptions consensusOptions)
 		{
 			Guard.NotNull(network, nameof(network));
 			Guard.NotNull(consensusOptions, nameof(consensusOptions));
 
 			this.consensusParams = network.Consensus;
 			this.consensusOptions = consensusOptions;
-			this.performanceCounter = new ConsensusPerformanceCounter();
+			this.PerformanceCounter = new ConsensusPerformanceCounter();
 		}
 
-		public NBitcoin.Consensus ConsensusParams
-		{
-			get
-			{
-				return this.consensusParams;
-			}
-		}
+		public NBitcoin.Consensus ConsensusParams => this.consensusParams;
 
-		public ConsensusOptions ConsensusOptions
-		{
-			get
-			{
-				return this.consensusOptions;
-			}
-		}
+		public ConsensusOptions ConsensusOptions => this.consensusOptions;
 
-		public ConsensusPerformanceCounter PerformanceCounter
-		{
-			get
-			{
-				return performanceCounter;
-			}
-		}
+		public ConsensusPerformanceCounter PerformanceCounter { get; }
 
 		public virtual void CheckBlockHeader(ContextInformation context)
 		{
@@ -269,17 +223,21 @@ namespace Stratis.Bitcoin.Consensus
 						checkInputs.Add(checkInput);
 					}
 				}
+
+				if (tx.IsCoinStake)
+					context.TotalCoinStakeValueIn = view.GetValueIn(tx);
+
 				view.Update(tx, index.Height);
 			}
 
-			this.CheckBlockReward(nFees, index, block);
+			this.CheckBlockReward(context, nFees, index, block);
 
 			var passed = checkInputs.All(c => c.GetAwaiter().GetResult());
 			if(!passed)
 				ConsensusErrors.BadTransactionScriptError.Throw();
 		}
 
-		public virtual void CheckBlockReward(Money nFees, ChainedBlock chainedBlock, Block block)
+		public virtual void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
 		{
 			Money blockReward = nFees + GetBlockSubsidy(chainedBlock.Height);
 			if (block.Transactions[0].TotalOut > blockReward)
@@ -310,6 +268,13 @@ namespace Stratis.Bitcoin.Consensus
 						ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
 				}
 
+				// TODO: add coinstake to Coins
+				//if (coins.IsCoinstake) 
+				//{
+				//	if (nSpendHeight - coins.Height < this.consensusOptions.COINBASE_MATURITY)
+				//		ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
+				//}
+
 				// Check for negative or overflow input values
 				nValueIn += coins.TryGetOutput(prevout.N).Value;
 				if(!MoneyRange(coins.TryGetOutput(prevout.N).Value) || !MoneyRange(nValueIn))
@@ -335,7 +300,7 @@ namespace Stratis.Bitcoin.Consensus
 			if(halvings >= 64)
 				return 0;
 
-			Money nSubsidy = Money.Coins(50);
+			Money nSubsidy = this.consensusOptions.ProofOfWorkReward;
 			// Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
 			nSubsidy >>= halvings;
 			return nSubsidy;
