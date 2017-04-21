@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Consensus
 			var prevUtxo = coins.UnspentOutputs[0];
 
 			// Verify signature
-			if (!this.VerifySignature(null, tx, 0, ScriptVerify.None))
+			if (!this.VerifySignature(prevUtxo, tx, 0, ScriptVerify.None))
 				ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
 
 			// Min age requirement
