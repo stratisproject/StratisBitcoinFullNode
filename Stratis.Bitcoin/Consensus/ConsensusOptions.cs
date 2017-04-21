@@ -15,6 +15,13 @@ namespace Stratis.Bitcoin.Consensus
 		public override Money PremineReward => Money.Coins(98000000);
 
 		public override long PremineHeight => 2;
+
+		public override long StakeMinConfirmations => 50;
+
+		public override long StakeMinAge => 60; // 8 hours
+
+		public override long StakeModifierInterval => 10 * 60; // time to elapse before new modifier is computed
+
 	}
 
 	/// <summary>
@@ -77,6 +84,10 @@ namespace Stratis.Bitcoin.Consensus
 		public abstract Money ProofOfStakeReward { get; }
 		public virtual Money PremineReward => 0 ;
 		public virtual long PremineHeight => 0;
+		public virtual long StakeMinConfirmations => 0;
+
+		public virtual long StakeMinAge => 0;
+		public virtual long StakeModifierInterval => 0;
 
 	}
 }

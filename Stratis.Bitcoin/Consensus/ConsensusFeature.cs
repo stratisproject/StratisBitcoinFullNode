@@ -29,7 +29,6 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
 		private readonly NodeSettings nodeSettings;
-		private readonly StakeChain stakeChain;
 
 		public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
@@ -43,8 +42,7 @@ namespace Stratis.Bitcoin.Consensus
 			CancellationProvider globalCancellation,
 			Signals signals,
 			ConsensusLoop consensusLoop,
-			NodeSettings nodeSettings,
-			StakeChain stakeChain = null)
+			NodeSettings nodeSettings)
 		{
 			this.dBreezeCoinView = dBreezeCoinView;
 			this.consensusValidator = consensusValidator;
@@ -58,7 +56,6 @@ namespace Stratis.Bitcoin.Consensus
 			this.network = network;
 			this.consensusLoop = consensusLoop;
 			this.nodeSettings = nodeSettings;
-			this.stakeChain = stakeChain;
 		}
 
 		public override void Start()
@@ -78,11 +75,6 @@ namespace Stratis.Bitcoin.Consensus
 			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
 				connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
-			if (stakeChain != null)
-			{
-				// load the stake chain
-			}
-
 			new Thread(RunLoop)
 			{
 				Name = "Consensus Loop"
@@ -91,11 +83,6 @@ namespace Stratis.Bitcoin.Consensus
 
 		public override void Stop()
 		{
-			if (stakeChain != null)
-			{
-				// save the stake chain
-			}
-
 			var cache = this.coinView as CachedCoinView;
 			if (cache != null)
 			{
@@ -210,8 +197,6 @@ namespace Stratis.Bitcoin.Consensus
 				.AddFeature<ConsensusFeature>()
 				.FeatureServices(services =>
 				{
-					
-
 					services.AddSingleton<ConsensusOptions, StratisConsensusOptions>();
 					services.AddSingleton<PowConsensusValidator, PosConsensusValidator>();
 					services.AddSingleton<DBreezeCoinView>();
@@ -219,6 +204,7 @@ namespace Stratis.Bitcoin.Consensus
 					services.AddSingleton<LookaheadBlockPuller>();
 					services.AddSingleton<ConsensusLoop>();
 					services.AddSingleton<StakeChain, StakeChainStore>();
+					services.AddSingleton<StakeValidator>();
 				});
 			});
 

@@ -104,6 +104,8 @@ namespace Stratis.Bitcoin.Consensus
 		public readonly static ConsensusError BadCoinbaseMissing = new ConsensusError("bad-cb-missing", "first tx is not coinbase");
 		public readonly static ConsensusError BadCoinbaseSize = new ConsensusError("bad-cb-length", "invalid coinbase size");
 		public readonly static ConsensusError BadMultipleCoinbase = new ConsensusError("bad-cb-multiple", "more than one coinbase");
+		public readonly static ConsensusError BadMultipleCoinstake = new ConsensusError("bad-cs-multiple", "more than one coinstake");
+
 		public readonly static ConsensusError BadBlockSigOps = new ConsensusError("bad-blk-sigops", "out-of-bounds SigOpCount");
 
 		public readonly static ConsensusError BadTransactionDuplicate = new ConsensusError("bad-txns-duplicate", "duplicate transaction");
@@ -129,5 +131,26 @@ namespace Stratis.Bitcoin.Consensus
 		public readonly static ConsensusError BadTransactionFeeOutOfRange = new ConsensusError("bad-txns-fee-outofrange", "fee out of range");
 
 		public readonly static ConsensusError BadTransactionScriptError = new ConsensusError("bad-txns-script-failed", "a script failed");
+
+		public readonly static ConsensusError NonCoinstake = new ConsensusError("non-coinstake", "non-coinstake");
+		public readonly static ConsensusError ReadTxPrevFailed = new ConsensusError("read-txPrev-failed", "read txPrev failed");
+		public readonly static ConsensusError InvalidStakeDepth = new ConsensusError("invalid-stake-depth", "tried to stake at depth");
+		public readonly static ConsensusError MinAgeViolation = new ConsensusError("min-age-violation", "min age violation");
+		public readonly static ConsensusError StakeTimeViolation = new ConsensusError("stake-time-violation", "stake time violation");
+		public readonly static ConsensusError BadStakeBlock = new ConsensusError("bad-stake-block", "bad stake block");
+		public readonly static ConsensusError PrevStakeNull = new ConsensusError("prev-stake-null", "previous stake is not found");
+		public readonly static ConsensusError StakeHashInvalidTarget = new ConsensusError("proof-of-stake-hash-invalid-target", "proof-of-stake hash did not meets target protocol");
+
+		public readonly static ConsensusError ModifierNotFound = new ConsensusError("modifier-not-found", "unable to get last modifier");
+		public readonly static ConsensusError FailedSelectBlock = new ConsensusError("failed-select-block", "unable to select block at round");
+
+		public readonly static ConsensusError SetStakeEntropyBitFailed = new ConsensusError("set-stake-entropy-bit-failed", "failed to set stake entropy bit");
+		public readonly static ConsensusError CoinstakeVerifySignatureFailed = new ConsensusError("verify-signature-failed-on-coinstake", "verify signature failed on coinstake");
+		public readonly static ConsensusError BlockTimestampToFar = new ConsensusError("block-timestamp-to-far", "block timestamp too far in the future");
+		public readonly static ConsensusError BadBlockSignature = new ConsensusError("bad-block-signature", "bad block signature");
+		public readonly static ConsensusError BlockTimeBeforeTrx = new ConsensusError("block-time-before-trx", "block timestamp earlier than transaction timestamp");
+		public readonly static ConsensusError ProofOfWorkTooHeigh = new ConsensusError("proof-of-work-too-heigh", "proof of work too heigh");
+
+
 	}
 }

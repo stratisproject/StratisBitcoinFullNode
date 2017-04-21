@@ -24,6 +24,8 @@ namespace Stratis.Bitcoin.Consensus
 			_Height = height;
 			_Version = tx.Version;
 			_IsCoinbase = tx.IsCoinBase;
+			_IsCoinstake = tx.IsCoinStake;
+			_Time = tx.Time;
 		}
 
 		public UnspentOutputs(uint256 txId, Coins coins)
@@ -35,6 +37,8 @@ namespace Stratis.Bitcoin.Consensus
 		private void SetCoins(Coins coins)
 		{
 			_IsCoinbase = coins.Coinbase;
+			_IsCoinstake = coins.CoinStake;
+			_Time = coins.Time;
 			_Height = coins.Height;
 			_Version = coins.Version;
 			_Outputs = new TxOut[coins.Outputs.Count];
@@ -48,6 +52,8 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			_TransactionId = unspent.TransactionId;
 			_IsCoinbase = unspent.IsCoinbase;
+			_IsCoinstake = unspent.IsCoinstake;
+			_Time = unspent.Time;
 			_Height = unspent.Height;
 			_Version = unspent.Version;
 			_Outputs = unspent._Outputs.ToArray();
@@ -81,6 +87,24 @@ namespace Stratis.Bitcoin.Consensus
 			get
 			{
 				return _IsCoinbase;
+			}
+		}
+
+		private bool _IsCoinstake;
+		public bool IsCoinstake
+		{
+			get
+			{
+				return _IsCoinstake;
+			}
+		}
+
+		private uint _Time;
+		public uint Time
+		{
+			get
+			{
+				return _Time;
 			}
 		}
 
@@ -158,6 +182,8 @@ namespace Stratis.Bitcoin.Consensus
 				Coinbase = IsCoinbase,
 				Height = Height,
 				Version = Version,
+				CoinStake = IsCoinstake,
+				Time = Time
 			};
 			foreach(var output in _Outputs)
 			{
