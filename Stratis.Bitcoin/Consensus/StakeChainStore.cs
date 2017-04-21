@@ -30,6 +30,13 @@ namespace Stratis.Bitcoin.Consensus
 
 		public async Task<BlockStake> GetAsync(uint256 blockid)
 		{
+			if (this.network.GenesisHash == blockid)
+				return new BlockStake(this.network.GetGenesis())
+				{
+					HashProof = this.network.GenesisHash,
+					Flags = BlockFlag.BLOCK_STAKE_MODIFIER
+				};
+
 			var block = await this.items.TryGetValue(blockid).ConfigureAwait(false);
 			return block?.Item2 ?? await this.dBreezeCoinView.GetStake(blockid).ConfigureAwait(false);
 		}

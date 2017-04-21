@@ -40,6 +40,34 @@ namespace Stratis.Bitcoin.Consensus
 		}		
 	}
 
+	public class ContextStakeInformation
+	{
+		public BlockStake BlockStake
+		{
+			get;
+			set;
+		}
+
+		public Money TotalCoinStakeValueIn
+		{
+			get;
+			set;
+		}
+
+		public uint256 HashProofOfStake
+		{
+			get;
+			set;
+		}
+
+		public uint256 TargetProofOfStake
+
+		{
+			get;
+			set;
+		}
+	}
+
 	public class ContextInformation
 	{
 		public ContextInformation()
@@ -65,6 +93,14 @@ namespace Stratis.Bitcoin.Consensus
 			Time = DateTimeOffset.UtcNow;
 		}
 
+		public void SetStake()
+		{
+			this.Stake = new ContextStakeInformation()
+			{
+				BlockStake = new BlockStake(this.BlockResult.Block)
+			};
+		}
+
 		public NBitcoin.Consensus Consensus
 		{
 			get;
@@ -82,6 +118,12 @@ namespace Stratis.Bitcoin.Consensus
 		}
 
 		public ContextBlockInformation BestBlock
+		{
+			get;
+			set;
+		}
+
+		public ContextStakeInformation Stake
 		{
 			get;
 			set;
@@ -111,16 +153,5 @@ namespace Stratis.Bitcoin.Consensus
 			set;
 		}
 
-		public BlockStake BlockStake
-		{
-			get;
-			set;
-		}
-
-		public Money TotalCoinStakeValueIn
-		{
-			get;
-			set;
-		}
 	}
 }

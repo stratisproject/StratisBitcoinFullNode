@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Consensus
 				}
 
 				if (tx.IsCoinStake)
-					context.TotalCoinStakeValueIn = view.GetValueIn(tx);
+					context.Stake.TotalCoinStakeValueIn = view.GetValueIn(tx);
 
 				view.Update(tx, index.Height);
 			}

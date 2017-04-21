@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin
 			_logger = Logs.LoggerFactory.CreateLogger<FullNode>();
 		}
 
-public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 

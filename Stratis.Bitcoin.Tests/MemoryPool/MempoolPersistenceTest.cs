@@ -102,7 +102,8 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             string fileName = "mempool.dat";
             NodeSettings settings = CreateSettings("LoadPoolTest_WithBadTransactions");
             IEnumerable<MempoolPersistenceEntry> toSave = CreateTestEntries(numTx);
-            MempoolManager mempoolManager = CreateTestMempool(settings, out TxMempool unused);
+	        TxMempool unused;
+			MempoolManager mempoolManager = CreateTestMempool(settings, out unused);
 
             MemPoolSaveResult result = (new MempoolPersistence(settings)).Save(toSave, fileName);
             mempoolManager.LoadPool(fileName).GetAwaiter().GetResult();
@@ -122,7 +123,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             MempoolManager mempoolManager = CreateTestMempool(settings, out txMemPool);
             var fee = Money.Satoshis(0.00001m);
 
-            txMemPool.AddUnchecked(tx1_parent.GetHash(), new TxMempoolEntry(tx1_parent, fee, 0, 0.0, 0, tx1_parent.TotalOut + fee, false, 0, null));
+            txMemPool.AddUnchecked(tx1_parent.GetHash(), new TxMempoolEntry(tx1_parent, fee, 0, 0.0, 0, tx1_parent.TotalOut + fee, false, 0, null, new BitcoinConsensusOptions()));
             long expectedTx1FeeDelta = 123;
             List<MempoolPersistenceEntry> toSave = new List<MempoolPersistenceEntry>
             {
@@ -200,7 +201,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             {
                 var amountSat = 10 * i;
                 Transaction tx = MakeRandomTx(amountSat);
-                var entry = new TxMempoolEntry(tx, Money.FromUnit(0.1m, MoneyUnit.MilliBTC), DateTimeOffset.Now.ToUnixTimeSeconds(), i * 100, i, amountSat, i == 0, 10, null);
+                var entry = new TxMempoolEntry(tx, Money.FromUnit(0.1m, MoneyUnit.MilliBTC), DateTimeOffset.Now.ToUnixTimeSeconds(), i * 100, i, amountSat, i == 0, 10, null, new BitcoinConsensusOptions());
                 entry.UpdateFeeDelta(numTx - i);
                 entries.Add(entry);
             }
@@ -236,9 +237,9 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             var coins = new InMemoryCoinView();
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
             var mempoolPersistence = new MempoolPersistence(settings);
-            var consensusValidator = new ConsensusValidator(NBitcoin.Consensus.Main);
+            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new BitcoinConsensusOptions());
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolScheduler, consensusValidator, dateTimeProvider, settings, chain, coins);
-            var mempoolOrphans = new MempoolOrphans(mempoolScheduler, txMemPool, chain, mempoolValidator, coins, dateTimeProvider, settings);
+            var mempoolOrphans = new MempoolOrphans(mempoolScheduler, txMemPool, chain, mempoolValidator, consensusValidator, coins, dateTimeProvider, settings);
 
             return new MempoolManager(mempoolScheduler, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, settings, mempoolPersistence);
         }
