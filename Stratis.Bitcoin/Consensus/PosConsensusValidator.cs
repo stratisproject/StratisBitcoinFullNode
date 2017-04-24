@@ -52,6 +52,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
 		{
+			// TODO: the CheckAndComputeStake() method is long consider offseting to a seperate task
 			// compute and store the stake proofs
 			this.CheckAndComputeStake(context, context.BlockResult.ChainedBlock, context.BlockResult.Block);
 
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			// Check timestamp
 			if (block.Header.Time > FutureDriftV2(DateTime.UtcNow.Ticks))
-				ConsensusErrors.BlockTimestampToFar.Throw();
+				ConsensusErrors.BlockTimestampTooFar.Throw();
 
 			if (BlockStake.IsProofOfStake(block))
 			{
@@ -103,7 +104,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			 // TODO: fix this validation code
 
-			//// ppcoin: check proof-of-stake
+			//// check proof-of-stake
 			//// Limited duplicity on stake: prevents block flood attack
 			//// Duplicate stake allowed only when there is orphan child block
 			//if (!fReindex && !fImporting && pblock->IsProofOfStake() && setStakeSeen.count(pblock->GetProofOfStake()) && !mapOrphanBlocksByPrev.count(hash))
@@ -137,11 +138,11 @@ namespace Stratis.Bitcoin.Consensus
 
 			var chainedBlock = context.BlockResult.ChainedBlock;
 
-			//if (!StakeValidator.IsProtocolV3((int)chainedBlock.Header.Time))
-			//{
-			//	if (chainedBlock.Header.Version > CURRENT_VERSION)
-			//		return DoS(100, error("AcceptBlock() : reject unknown block version %d", nVersion));
-			//}
+			if (!StakeValidator.IsProtocolV3((int)chainedBlock.Header.Time))
+			{
+				if (chainedBlock.Header.Version > BlockHeader.CURRENT_VERSION)
+					ConsensusErrors.BadVersion.Throw();
+			}
 
 			if (StakeValidator.IsProtocolV2(chainedBlock.Height) && chainedBlock.Header.Version < 7)
 				ConsensusErrors.BadVersion.Throw(); 
@@ -156,9 +157,15 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.TimeTooNew.Throw();
 
 			// Check coinstake timestamp
-			if (context.Stake.BlockStake.IsProofOfStake() && 
-				!CheckCoinStakeTimestamp(chainedBlock.Height, chainedBlock.Header.Time, context.BlockResult.Block.Transactions[1].Time))
+			if (context.Stake.BlockStake.IsProofOfStake() 
+				&& !PosConsensusValidator.CheckCoinStakeTimestamp(chainedBlock.Height, chainedBlock.Header.Time, context.BlockResult.Block.Transactions[1].Time))
 				ConsensusErrors.StakeTimeViolation.Throw();
+
+			// Check timestamp against prev
+			if (chainedBlock.Header.Time <= PosBlockValidator.GetPastTimeLimit(chainedBlock.Previous) 
+				|| FutureDrift(chainedBlock.Header.Time, chainedBlock.Height) < chainedBlock.Previous.Header.Time)
+				ConsensusErrors.BlockTimestampTooEarly.Throw();
+
 		}
 
 		public const int STAKE_TIMESTAMP_MASK = 15;

@@ -124,6 +124,7 @@ namespace Stratis.Bitcoin.Consensus
 		public readonly static ConsensusError BadCoinstakeAmount = new ConsensusError("bad-cs-amount", "coinstake pays too much");
 
 		public readonly static ConsensusError BadTransactionPrematureCoinbaseSpending = new ConsensusError("bad-txns-premature-spend-of-coinbase", "tried to spend coinbase before maturity");
+		public readonly static ConsensusError BadTransactionPrematureCoinstakeSpending = new ConsensusError("bad-txns-premature-spend-of-coinstake", "tried to spend coinstake before maturity");
 
 		public readonly static ConsensusError BadTransactionInputValueOutOfRange = new ConsensusError("bad-txns-inputvalues-outofrange", "input value out of range");
 		public readonly static ConsensusError BadTransactionInBelowOut = new ConsensusError("bad-txns-in-belowout", "input value below output value");
@@ -146,7 +147,8 @@ namespace Stratis.Bitcoin.Consensus
 
 		public readonly static ConsensusError SetStakeEntropyBitFailed = new ConsensusError("set-stake-entropy-bit-failed", "failed to set stake entropy bit");
 		public readonly static ConsensusError CoinstakeVerifySignatureFailed = new ConsensusError("verify-signature-failed-on-coinstake", "verify signature failed on coinstake");
-		public readonly static ConsensusError BlockTimestampToFar = new ConsensusError("block-timestamp-to-far", "block timestamp too far in the future");
+		public readonly static ConsensusError BlockTimestampTooFar = new ConsensusError("block-timestamp-to-far", "block timestamp too far in the future");
+		public readonly static ConsensusError BlockTimestampTooEarly = new ConsensusError("block-timestamp-to-early", "block timestamp too early");
 		public readonly static ConsensusError BadBlockSignature = new ConsensusError("bad-block-signature", "bad block signature");
 		public readonly static ConsensusError BlockTimeBeforeTrx = new ConsensusError("block-time-before-trx", "block timestamp earlier than transaction timestamp");
 		public readonly static ConsensusError ProofOfWorkTooHeigh = new ConsensusError("proof-of-work-too-heigh", "proof of work too heigh");

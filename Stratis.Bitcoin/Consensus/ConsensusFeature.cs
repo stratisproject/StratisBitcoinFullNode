@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
 		private readonly NodeSettings nodeSettings;
+		private readonly StakeChainStore stakeChain;
 
 		public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
@@ -42,7 +43,8 @@ namespace Stratis.Bitcoin.Consensus
 			CancellationProvider globalCancellation,
 			Signals signals,
 			ConsensusLoop consensusLoop,
-			NodeSettings nodeSettings)
+			NodeSettings nodeSettings,
+			StakeChainStore stakeChain = null)
 		{
 			this.dBreezeCoinView = dBreezeCoinView;
 			this.consensusValidator = consensusValidator;
@@ -56,6 +58,7 @@ namespace Stratis.Bitcoin.Consensus
 			this.network = network;
 			this.consensusLoop = consensusLoop;
 			this.nodeSettings = nodeSettings;
+			this.stakeChain = stakeChain;
 		}
 
 		public override void Start()
@@ -74,6 +77,8 @@ namespace Stratis.Bitcoin.Consensus
 			var flags = this.consensusLoop.GetFlags();
 			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
 				connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+
+			this.stakeChain?.Load().GetAwaiter().GetResult();
 
 			new Thread(RunLoop)
 			{
@@ -203,7 +208,7 @@ namespace Stratis.Bitcoin.Consensus
 					services.AddSingleton<CoinView, CachedCoinView>();
 					services.AddSingleton<LookaheadBlockPuller>();
 					services.AddSingleton<ConsensusLoop>();
-					services.AddSingleton<StakeChain, StakeChainStore>();
+					services.AddSingleton<StakeChainStore>().AddSingleton<StakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
 					services.AddSingleton<StakeValidator>();
 				});
 			});
