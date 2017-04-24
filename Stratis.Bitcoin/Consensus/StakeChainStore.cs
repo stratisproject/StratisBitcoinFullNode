@@ -25,7 +25,23 @@ namespace Stratis.Bitcoin.Consensus
 			this.network = network;
 			this.chain = chain;
 			this.dBreezeCoinView = dBreezeCoinView;
-			this.trashold = 100; // keep this items in memory
+			this.trashold = 5000; // keep this items in memory
+		}
+
+		public async Task Load()
+		{
+			var hash = await this.dBreezeCoinView.GetBlockHashAsync();
+			var next = chain.GetBlock(hash);
+			while (true)
+			{
+				var block = await this.dBreezeCoinView.GetStake(next.HashBlock);
+				await this.items.TryAdd(next.HashBlock, new Tuple<long, BlockStake>(next.Height, block));
+				if (await this.items.Count > this.trashold)
+					break;
+				next = next.Previous;
+				if (next == null)
+					break;
+			}
 		}
 
 		public async Task<BlockStake> GetAsync(uint256 blockid)

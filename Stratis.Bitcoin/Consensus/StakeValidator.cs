@@ -83,7 +83,6 @@ namespace Stratis.Bitcoin.Consensus
 
 		private bool VerifySignature(UnspentOutputs txFrom, Transaction txTo, int txToInN, ScriptVerify flagScriptVerify)
 		{
-			// todo: if we need to verify sig we can probably do it only with the utxo (no need for the entire trx)
 			var input = txTo.Inputs[txToInN];
 
 			if (input.PrevOut.N >= txFrom._Outputs.Length)
@@ -94,13 +93,12 @@ namespace Stratis.Bitcoin.Consensus
 
 			var output = txFrom._Outputs[input.PrevOut.N];
 
-			//var txData = new PrecomputedTransactionData(txFrom);
-			var checker = new TransactionChecker(txTo, txToInN, output.Value);
+			var txData = new PrecomputedTransactionData(txTo);
+			var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);
 			var ctx = new ScriptEvaluationContext { ScriptVerify = flagScriptVerify };
 
 			return ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
 		}
-
 
 		private void CheckStakeKernelHash(ContextInformation context, ChainedBlock pindexPrev, uint nBits, ChainedBlock blockFrom,
 			UnspentOutputs txPrev, BlockStake prevBlockStake, OutPoint prevout, uint nTimeTx)
