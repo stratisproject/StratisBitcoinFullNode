@@ -52,13 +52,12 @@ namespace Stratis.Bitcoin.Consensus
 
 		public override void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
 		{
-			// TODO: the CheckAndComputeStake() method is long consider offseting to a seperate task
 			// compute and store the stake proofs
-			this.CheckAndComputeStake(context, context.BlockResult.ChainedBlock, context.BlockResult.Block);
+			this.CheckAndComputeStake(context);
 
 			base.ExecuteBlock(context, taskScheduler);
-
-			stakeChain.Set(context.BlockResult.ChainedBlock.HashBlock, context.Stake.BlockStake);
+			
+			this.stakeChain.Set(context.BlockResult.ChainedBlock.HashBlock, context.Stake.BlockStake);
 		}
 
 		public override void CheckBlock(ContextInformation context)
@@ -162,7 +161,7 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.StakeTimeViolation.Throw();
 
 			// Check timestamp against prev
-			if (chainedBlock.Header.Time <= PosBlockValidator.GetPastTimeLimit(chainedBlock.Previous) 
+			if (chainedBlock.Header.Time <= StakeValidator.GetPastTimeLimit(chainedBlock.Previous) 
 				|| FutureDrift(chainedBlock.Header.Time, chainedBlock.Height) < chainedBlock.Previous.Header.Time)
 				ConsensusErrors.BlockTimestampTooEarly.Throw();
 
@@ -229,14 +228,14 @@ namespace Stratis.Bitcoin.Consensus
 					ConsensusErrors.HighHash.Throw();
 			}
 
-			context.NextWorkRequired = stakeChain.GetWorkRequired(context.BlockResult.ChainedBlock, context.Stake.BlockStake, context.Consensus);
+			context.NextWorkRequired  = StakeValidator.GetNextTargetRequired(stakeChain, context.BlockResult.ChainedBlock.Previous, context.Consensus,
+				context.Stake.BlockStake.IsProofOfStake());
 		}
 
-		public void CheckAndComputeStake(ContextInformation context, ChainedBlock pindex, Block block)
+		public void CheckAndComputeStake(ContextInformation context)
 		{
-			if (block.GetHash() != pindex.HashBlock)
-				ConsensusErrors.BadStakeBlock.Throw();
-
+			var pindex = context.BlockResult.ChainedBlock;
+			var block = context.BlockResult.Block;
 			var blockStake = context.Stake.BlockStake;
 
 			// Verify hash target and signature of coinstake tx
