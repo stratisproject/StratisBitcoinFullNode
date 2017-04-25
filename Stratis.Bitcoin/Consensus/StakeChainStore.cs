@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,11 +28,7 @@ namespace Stratis.Bitcoin.Consensus
 		
 		private readonly int trashold;
 		private readonly int trasholdWindow;
-
-		// this might need to become a concurrent dictionary
-		// as it stands its not too safe to call outside of consensus (as consensus is single threaded)
-		// if this becomes an issue we'll replace it with a ConcurrentDictionary
-		private readonly Dictionary<uint256, StakeItem> items = new Dictionary<uint256, StakeItem>();
+		private readonly ConcurrentDictionary<uint256, StakeItem> items = new ConcurrentDictionary<uint256, StakeItem>();
 
 		public StakeChainStore(Network network, ConcurrentChain chain , DBreezeCoinView dBreezeCoinView)
 		{
@@ -60,7 +57,7 @@ namespace Stratis.Bitcoin.Consensus
 			// all block stake items should be in store
 			Guard.Assert(load.All(l => l.BlockStake != null));
 			foreach (var stakeItem in load)
-				this.items.Add(stakeItem.BlockId, stakeItem);
+				this.items.TryAdd(stakeItem.BlockId, stakeItem);
 		}
 
 		private BlockStake Genesis => new BlockStake(this.network.GetGenesis())
@@ -116,9 +113,10 @@ namespace Stratis.Bitcoin.Consensus
 
 				// pop some items remove a window of 10% of the trashold.
 				var select = this.items;
-				var oldes = select.OrderBy(o => o.Value.Height).Take(this.trasholdWindow); 
+				var oldes = select.OrderBy(o => o.Value.Height).Take(this.trasholdWindow);
+				StakeItem unused;
 				foreach (var olde in oldes)
-					this.items.Remove(olde.Key);
+					this.items.TryRemove(olde.Key, out unused);
 			}
 		}
 
