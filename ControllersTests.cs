@@ -1,13 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Moq;
-using Breeze.Wallet.Wrappers;
 using Breeze.Wallet;
 using Breeze.Wallet.Controllers;
 using Breeze.Wallet.Errors;
+using Breeze.Wallet.Helpers;
 using Breeze.Wallet.Models;
+using NBitcoin;
 
 namespace Breeze.Api.Tests
 {
@@ -16,8 +18,9 @@ namespace Breeze.Api.Tests
         [Fact]
         public void CreateWalletSuccessfullyReturnsMnemonic()
         {
-            var mockWalletCreate = new Mock<IWalletWrapper>();
-            mockWalletCreate.Setup(wallet => wallet.Create(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns("mnemonic");
+            Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+            var mockWalletCreate = new Mock<IWalletManager>();
+            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null, CoinType.Bitcoin)).Returns(mnemonic);
 
             var controller = new WalletController(mockWalletCreate.Object);
 
@@ -33,32 +36,31 @@ namespace Breeze.Api.Tests
             // Assert
             mockWalletCreate.VerifyAll();
             var viewResult = Assert.IsType<JsonResult>(result);
-            Assert.Equal("mnemonic", viewResult.Value);
+            Assert.Equal(mnemonic.ToString(), viewResult.Value);
             Assert.NotNull(result);
         }
 
         [Fact]
         public void LoadWalletSuccessfullyReturnsWalletModel()
         {
-            WalletModel walletModel = new WalletModel
+            Wallet.Wallet wallet = new Wallet.Wallet
             {
-                FileName = "myWallet",
-                Network = "MainNet",
-                Addresses = new List<string> { "address1", "address2", "address3", "address4", "address5" }
-
+                Name = "myWallet",
+                Network = WalletHelpers.GetNetwork("mainnet")
             };
-            var mockWalletWrapper = new Mock<IWalletWrapper>();
-            mockWalletWrapper.Setup(wallet => wallet.Recover(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(walletModel);
+
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null, CoinType.Bitcoin, null)).Returns(wallet);
 
             var controller = new WalletController(mockWalletWrapper.Object);
 
             // Act
             var result = controller.Recover(new WalletRecoveryRequest
             {
-                Name = "myName",
+                Name = "myWallet",
                 FolderPath = "",
                 Password = "",
-                Network = "",
+                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -69,28 +71,26 @@ namespace Breeze.Api.Tests
             Assert.IsType<WalletModel>(viewResult.Value);
 
             var model = viewResult.Value as WalletModel;
-            Assert.Equal("myWallet", model.FileName);
+            Assert.Equal("Main", model.Network);
         }
 
         [Fact]
         public void RecoverWalletSuccessfullyReturnsWalletModel()
         {
-            WalletModel walletModel = new WalletModel
+            Wallet.Wallet wallet = new Wallet.Wallet
             {
-                FileName = "myWallet",
-                Network = "MainNet",
-                Addresses = new List<string> { "address1", "address2", "address3", "address4", "address5" }
-
+                Name = "myWallet",
+                Network = WalletHelpers.GetNetwork("mainnet")
             };
-            var mockWalletWrapper = new Mock<IWalletWrapper>();
-            mockWalletWrapper.Setup(wallet => wallet.Load(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(walletModel);
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            mockWalletWrapper.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(wallet);
 
             var controller = new WalletController(mockWalletWrapper.Object);
 
             // Act
             var result = controller.Load(new WalletLoadRequest
             {
-                Name = "myName",
+                Name = "myWallet",
                 FolderPath = "",
                 Password = ""
             });
@@ -102,14 +102,14 @@ namespace Breeze.Api.Tests
             Assert.IsType<WalletModel>(viewResult.Value);
 
             var model = viewResult.Value as WalletModel;
-            Assert.Equal("myWallet", model.FileName);
+            Assert.Equal("Main", model.Network);
         }
 
         [Fact]
         public void FileNotFoundExceptionandReturns404()
         {
-            var mockWalletWrapper = new Mock<IWalletWrapper>();
-            mockWalletWrapper.Setup(wallet => wallet.Load(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
             
             var controller = new WalletController(mockWalletWrapper.Object);
 
