@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -42,10 +43,10 @@ namespace Stratis.Bitcoin.Consensus
 		public async Task Load()
 		{
 			var hash = await this.dBreezeCoinView.GetBlockHashAsync();
-			var next = chain.GetBlock(hash);
+			var next = this.chain.GetBlock(hash);
 			var load = new List<StakeItem>();
 
-			while (true)
+			while (next != this.chain.Genesis)
 			{
 				load.Add(new StakeItem {BlockId = next.HashBlock, Height = next.Height});
 				if (load.Count >= this.trashold || next.Previous == null)
@@ -55,7 +56,9 @@ namespace Stratis.Bitcoin.Consensus
 
 			await this.dBreezeCoinView.GetStake(load);
 			// all block stake items should be in store
-			Guard.Assert(load.All(l => l.BlockStake != null));
+			if(load.Any(l => l.BlockStake == null))
+				throw new ConfigurationException("Missing stake information, delete the data folder and re-download the chain");
+
 			foreach (var stakeItem in load)
 				this.items.TryAdd(stakeItem.BlockId, stakeItem);
 		}
