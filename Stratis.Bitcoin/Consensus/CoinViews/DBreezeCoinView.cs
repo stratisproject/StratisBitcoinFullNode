@@ -198,21 +198,37 @@ namespace Stratis.Bitcoin.Consensus
 			});
 		}
 
-		public Task PutStake(uint256 blockid, BlockStake blockStake)
+		public Task PutStake(IEnumerable<StakeItem> stakeEntries)
 		{
 			return session.Do(() =>
 			{
-				session.Transaction.Insert<byte[], BlockStake>("Stake", blockid.ToBytes(false), blockStake);
+				this.PutStakeInternal(stakeEntries);
 				session.Transaction.Commit();
 			});
 		}
 
-		public Task<BlockStake> GetStake(uint256 blockid)
+		private void PutStakeInternal(IEnumerable<StakeItem> stakeEntries)
+		{
+			foreach (var stakeEntry in stakeEntries)
+			{
+				if (!stakeEntry.InStore)
+				{
+					session.Transaction.Insert<byte[], BlockStake>("Stake", stakeEntry.BlockId.ToBytes(false), stakeEntry.BlockStake);
+					stakeEntry.InStore = true;
+				}
+			}
+		}
+
+		public Task GetStake(IEnumerable<StakeItem> blocklist)
 		{
 			return session.Do(() =>
 			{
-				var stake = session.Transaction.Select<byte[], BlockStake>("Stake", blockid.ToBytes(false));
-				return stake?.Value ?? null;
+				foreach (var blockStake in blocklist)
+				{
+					var stake = session.Transaction.Select<byte[], BlockStake>("Stake", blockStake.BlockId.ToBytes(false));
+					blockStake.BlockStake = stake.Value;
+					blockStake.InStore = true;
+				}
 			});
 		}
 

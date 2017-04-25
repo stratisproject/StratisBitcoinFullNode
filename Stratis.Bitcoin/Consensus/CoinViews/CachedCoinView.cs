@@ -19,44 +19,42 @@ namespace Stratis.Bitcoin.Consensus
 			public TxOut[] OriginalOutputs;
 		}
 
-		ReaderWriterLock _Lock = new ReaderWriterLock();
-		Dictionary<uint256, CacheItem> _Unspents = new Dictionary<uint256, CacheItem>();
-		uint256 _BlockHash;
-		uint256 _InnerBlockHash;
-		CoinView _Inner;
+		private readonly ReaderWriterLock lockobj;
+		private readonly Dictionary<uint256, CacheItem> unspents;
+		private uint256 blockHash;
+		private uint256 innerBlockHash;
+		private readonly CoinView inner;
+		private readonly StakeChainStore stakeChainStore;
 
-		public CachedCoinView(DBreezeCoinView inner)
+		public CachedCoinView(DBreezeCoinView inner, StakeChainStore stakeChainStore = null)
 		{
 			Guard.NotNull(inner, nameof(inner));
 
-			_Inner = inner;
-			MaxItems = 100000;
+			this.inner = inner;
+			this.stakeChainStore = stakeChainStore;
+			this.MaxItems = 100000;
+			this.lockobj = new ReaderWriterLock();
+			this.unspents = new Dictionary<uint256, CacheItem>();
+			this.PerformanceCounter =  new CachePerformanceCounter();
 		}
 
-		public CoinView Inner
-		{
-			get
-			{
-				return _Inner;
-			}
-		}
+		public CoinView Inner => inner;
 
 		public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
 			Guard.NotNull(txIds, nameof(txIds));
 			
 			FetchCoinsResponse result = null;
-			uint256 innerBlockHash = null;
 			UnspentOutputs[] outputs = new UnspentOutputs[txIds.Length];
 			List<int> miss = new List<int>();
 			List<uint256> missedTxIds = new List<uint256>();
-			using(_Lock.LockRead())
+			using(this.lockobj.LockRead())
 			{
 				WaitOngoingTasks();
 				for(int i = 0; i < txIds.Length; i++)
 				{
 					CacheItem cache;
-					if(!_Unspents.TryGetValue(txIds[i], out cache))
+					if(!this.unspents.TryGetValue(txIds[i], out cache))
 					{
 						miss.Add(i);
 						missedTxIds.Add(txIds[i]);
@@ -72,15 +70,15 @@ namespace Stratis.Bitcoin.Consensus
 				PerformanceCounter.AddHitCount(txIds.Length - miss.Count);
 			}
 			var fetchedCoins = await Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
-			using(_Lock.LockWrite())
+			using(this.lockobj.LockWrite())
 			{
-				_Flushing.Wait();
-				innerBlockHash = fetchedCoins.BlockHash;
-				if(_BlockHash == null)
+				this.flushing.Wait();
+				var innerblockHash = fetchedCoins.BlockHash;
+				if(blockHash == null)
 				{
-					Debug.Assert(_Unspents.Count == 0);
-					_InnerBlockHash = innerBlockHash;
-					_BlockHash = innerBlockHash;
+					Debug.Assert(this.unspents.Count == 0);
+					this.innerBlockHash = innerblockHash;
+					blockHash = innerBlockHash;
 				}
 				for(int i = 0; i < miss.Count; i++)
 				{
@@ -92,9 +90,9 @@ namespace Stratis.Bitcoin.Consensus
 					cache.IsDirty = false;
 					cache.UnspentOutputs = unspent;
 					cache.OriginalOutputs = unspent?._Outputs.ToArray();
-					_Unspents.TryAdd(txIds[index], cache);
+					this.unspents.TryAdd(txIds[index], cache);
 				}
-				result = new FetchCoinsResponse(outputs, _BlockHash);
+				result = new FetchCoinsResponse(outputs, blockHash);
 			}
 
 			if(CacheEntryCount > MaxItems)
@@ -102,6 +100,7 @@ namespace Stratis.Bitcoin.Consensus
 				Evict();
 				if(CacheEntryCount > MaxItems)
 				{
+
 					await FlushAsync().ConfigureAwait(false);
 					Evict();
 				}
@@ -111,20 +110,25 @@ namespace Stratis.Bitcoin.Consensus
 			return result;
 		}
 
-		Task _Flushing = Task.CompletedTask;
+		Task flushing = Task.CompletedTask;
 		public async Task FlushAsync()
 		{
-			if(_InnerBlockHash == null)
-				_InnerBlockHash = await _Inner.GetBlockHashAsync().ConfigureAwait(false);
+			// before flushing the coinview persist the stake store
+			// the stake store depends on the last block hash
+			// to be stored after the stake store is persisted
+			if (this.stakeChainStore != null)
+				await this.stakeChainStore.Flush(true);
 
-			KeyValuePair<uint256, CacheItem>[] unspent = null;
-			using(_Lock.LockWrite())
+			if (innerBlockHash == null)
+				innerBlockHash = await inner.GetBlockHashAsync().ConfigureAwait(false);
+
+			using(this.lockobj.LockWrite())
 			{
 				WaitOngoingTasks();
-				if(_InnerBlockHash == null)
+				if(innerBlockHash == null)
 					return;
-				unspent =
-				_Unspents.Where(u => u.Value.IsDirty)
+				var unspent =
+				unspents.Where(u => u.Value.IsDirty)
 				.ToArray();
 
 				var originalOutputs = unspent.Select(u => u.Value.OriginalOutputs).ToList();
@@ -134,40 +138,34 @@ namespace Stratis.Bitcoin.Consensus
 					u.Value.ExistInInner = true;
 					u.Value.OriginalOutputs = u.Value.UnspentOutputs?._Outputs.ToArray();
 				}
-				_Flushing = Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, _InnerBlockHash, _BlockHash);
+				this.flushing = Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, innerBlockHash, blockHash);
 
 				//Remove from cache prunable entries as they are being flushed down
 				foreach(var c in unspent.Where(c => c.Value.UnspentOutputs != null && c.Value.UnspentOutputs.IsPrunable))
-					_Unspents.Remove(c.Key);
-				_InnerBlockHash = _BlockHash;
+					unspents.Remove(c.Key);
+				innerBlockHash = blockHash;
 			}
 			//Can't await inside a lock
-			await _Flushing.ConfigureAwait(false);
+			await this.flushing.ConfigureAwait(false);
 		}
 
 		private void Evict()
 		{
-			using(_Lock.LockWrite())
+			using(this.lockobj.LockWrite())
 			{
 				Random rand = new Random();
-				foreach(var entry in _Unspents.ToList())
+				foreach(var entry in this.unspents.ToList())
 				{
 					if(!entry.Value.IsDirty)
 					{
 						if(rand.Next() % 3 == 0)
-							_Unspents.Remove(entry.Key);
+							this.unspents.Remove(entry.Key);
 					}
 				}
 			}
 		}
 
-		public int CacheEntryCount
-		{
-			get
-			{
-				return _Unspents.Count;
-			}
-		}
+		public int CacheEntryCount => this.unspents.Count;
 
 		public int MaxItems
 		{
@@ -177,25 +175,25 @@ namespace Stratis.Bitcoin.Consensus
 		public CachePerformanceCounter PerformanceCounter
 		{
 			get; set;
-		} = new CachePerformanceCounter();
+		}
 
-		static uint256[] DuplicateTransactions = new[] { new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"), new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599") };
+		private static readonly uint256[] DuplicateTransactions = new[] { new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"), new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599") };
 		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
 			Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
 			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
 			Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 			
-			using(_Lock.LockWrite())
+			using(this.lockobj.LockWrite())
 			{
 				WaitOngoingTasks();
-				if(_BlockHash != null && oldBlockHash != _BlockHash)
+				if(blockHash != null && oldBlockHash != blockHash)
 					return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
-				_BlockHash = nextBlockHash;
+				blockHash = nextBlockHash;
 				foreach(var unspent in unspentOutputs)
 				{
 					CacheItem existing;
-					if(_Unspents.TryGetValue(unspent.TransactionId, out existing))
+					if(this.unspents.TryGetValue(unspent.TransactionId, out existing))
 					{
 						if(existing.UnspentOutputs != null)
 							existing.UnspentOutputs.Spend(unspent);
@@ -209,55 +207,54 @@ namespace Stratis.Bitcoin.Consensus
 						existing.ExistInInner |= DuplicateTransactions.Any(t => unspent.TransactionId == t);
 						existing.IsDirty = true;
 						existing.UnspentOutputs = unspent;
-						_Unspents.Add(unspent.TransactionId, existing);
+						this.unspents.Add(unspent.TransactionId, existing);
 					}
 					existing.IsDirty = true;
 					//Inner does not need to know pruned unspent that it never saw.
 					if(existing.UnspentOutputs.IsPrunable && !existing.ExistInInner)
-						_Unspents.Remove(unspent.TransactionId);
+						this.unspents.Remove(unspent.TransactionId);
 				}
 				return Task.FromResult(true);
 			}
 		}
 
-		Task _Rewinding = Task.CompletedTask;
+		Task rewinding = Task.CompletedTask;
 		public override async Task<uint256> Rewind()
 		{
-			if(_InnerBlockHash == null)
-				_InnerBlockHash = await _Inner.GetBlockHashAsync().ConfigureAwait(false);
+			if(innerBlockHash == null)
+				innerBlockHash = await inner.GetBlockHashAsync().ConfigureAwait(false);
 
-			var innerHash = _InnerBlockHash;
-			Task<uint256> rewinding = null;
-			using(_Lock.LockWrite())
+			Task<uint256> rewindinginner = null;
+			using(this.lockobj.LockWrite())
 			{
 				WaitOngoingTasks();
-				if(_BlockHash == _InnerBlockHash)
-					_Unspents.Clear();
-				if(_Unspents.Count != 0)
+				if(blockHash == innerBlockHash)
+					this.unspents.Clear();
+				if(this.unspents.Count != 0)
 				{
 					//More intelligent version can restore without throwing away the cache. (as the rewind data is in the cache)
-					_Unspents.Clear();
-					_BlockHash = _InnerBlockHash;
-					return _BlockHash;
+					this.unspents.Clear();
+					blockHash = innerBlockHash;
+					return blockHash;
 				}
 				else
 				{
-					rewinding = _Inner.Rewind();
-					_Rewinding = rewinding;
+					rewindinginner = inner.Rewind();
+					this.rewinding = rewindinginner;
 				}
 			}
-			var h = await rewinding.ConfigureAwait(false);
-			using(_Lock.LockWrite())
+			var h = await rewindinginner.ConfigureAwait(false);
+			using(lockobj.LockWrite())
 			{
-				_InnerBlockHash = h;
-				_BlockHash = h;
+				innerBlockHash = h;
+				blockHash = h;
 			}
 			return h;
 		}
 
 		private void WaitOngoingTasks()
 		{
-			Task.WaitAll(_Flushing, _Rewinding);
+			Task.WaitAll(this.flushing, this.rewinding);
 		}
 	}
 }

@@ -268,12 +268,11 @@ namespace Stratis.Bitcoin.Consensus
 						ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
 				}
 
-				// TODO: add coinstake to Coins
-				//if (coins.IsCoinstake) 
-				//{
-				//	if (nSpendHeight - coins.Height < this.consensusOptions.COINBASE_MATURITY)
-				//		ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
-				//}
+				if (coins.IsCoinstake)
+				{
+					if (nSpendHeight - coins.Height < this.consensusOptions.COINBASE_MATURITY)
+						ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
+				}
 
 				// Check for negative or overflow input values
 				nValueIn += coins.TryGetOutput(prevout.N).Value;

@@ -29,14 +29,12 @@ namespace Stratis.StratisD
 
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args, Network.StratisMain, ProtocolVersion.ALT_PROTOCOL_VERSION);
 
-			// NOTES
-			// - for now only download the stratis chain form peers
-			// - adding consensus requires bigger changes
-			// - running the nodes side by side is not possible yet as the flags for serialization are static
+			// NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
 
 			var node = new FullNodeBuilder()
 				.UseNodeSettings(nodeSettings)
 				.UseStratisConsensus()
+				.UseBlockStore()
 				.Build();
 
 			// TODO: bring the logic out of IWebHost.Run()
