@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.Configuration
 
 		private string GetDefaultConfigurationFile()
 		{
-			var config = Path.Combine(this.DataDir, "bitcoin.conf");
+			var config = Path.Combine(this.DataDir, this.Network.GetDefaultConfigurationFilename());
 			Logs.Configuration.LogInformation("Configuration file set to " + config);
 			if (!File.Exists(config))
 			{
