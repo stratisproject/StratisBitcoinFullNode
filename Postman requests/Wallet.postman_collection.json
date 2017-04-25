@@ -241,7 +241,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"walletName\": \"myFirstWallet\",\n\t\"accountName\": \"account one\",\n\t\"password\": \"123456\"\n}"
+					"raw": "{\n\t\"walletName\": \"myFirstWallet\",\n\t\"accountName\": \"account one\",\n\t\"password\": \"123456\",\n\t\"coinType\": 105\n}"
 				},
 				"description": ""
 			},
@@ -261,7 +261,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"walletName\": \"myFirstWallet\",\n\t\"accountName\": \"account one\"\n}"
+					"raw": "{\n\t\"walletName\": \"myFirstWallet\",\n\t\"accountName\": \"account one\",\n\t\"coinType\": 0\n}"
 				},
 				"description": ""
 			},
