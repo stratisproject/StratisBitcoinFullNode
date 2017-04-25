@@ -67,10 +67,10 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			var actualDepth = pindexFrom.Height - (int)utxoSet.Height;
 
-			if (actualDepth > maxDepth)
-				return false;
+			if (actualDepth < maxDepth)
+				return true;
 
-			return true;
+			return false;
 		}
 
 		private bool VerifySignature(UnspentOutputs txFrom, Transaction txTo, int txToInN, ScriptVerify flagScriptVerify)
