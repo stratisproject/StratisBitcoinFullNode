@@ -14,6 +14,20 @@ namespace Stratis.Bitcoin.BlockPulling
 	// needs to handle taking blocks off the queue and stalling
 	public abstract class BlockPuller : IBlockPuller
 	{
+		private const int MaxQualityScore = 150;
+		private const int MinQualityScore = 1;
+
+		private readonly ConcurrentDictionary<uint256, BlockPullerBehavior> map = new ConcurrentDictionary<uint256, BlockPullerBehavior>();
+		private readonly ConcurrentBag<uint256> pendingInventoryVectors = new ConcurrentBag<uint256>();
+		protected readonly ConcurrentDictionary<uint256, DownloadedBlock> DownloadedBlocks = new ConcurrentDictionary<uint256, DownloadedBlock>();
+
+		protected readonly IReadOnlyNodesCollection Nodes;
+		protected readonly ConcurrentChain Chain;
+		private Random _Rand = new Random();
+
+		private readonly NodeRequirement requirements;
+		protected virtual NodeRequirement Requirements => this.requirements;
+
 		public class DownloadedBlock
 		{
 			public int Length;
@@ -22,14 +36,21 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public class BlockPullerBehavior : NodeBehavior 
 		{
+
+			private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+			public CancellationTokenSource CancellationTokenSource => this.cancellationToken;
+
+			private readonly ConcurrentDictionary<uint256, uint256> pendingDownloads = new ConcurrentDictionary<uint256, uint256>();
+			public ICollection<uint256> PendingDownloads => this.pendingDownloads.Values;
+
 			private readonly BlockPuller puller;
-			private readonly CancellationTokenSource cancellationToken;
-			private readonly ConcurrentDictionary<uint256, uint256> pendingDownloads;
+			public BlockPuller Puller => this.puller;
+
+			public ChainedBlock BestKnownTip { get; private set; }
+
 			public BlockPullerBehavior(BlockPuller puller)
 			{
 				this.puller = puller;
-				this.cancellationToken = new CancellationTokenSource();
-				this.pendingDownloads = new ConcurrentDictionary<uint256, uint256>();
 				this.QualityScore = 75;
 			}
 			public override object Clone()
@@ -42,21 +63,15 @@ namespace Stratis.Bitcoin.BlockPulling
 				get; set;
 			}
 
-			public BlockPuller Puller => this.puller;
-
-			public CancellationTokenSource CancellationTokenSource => this.cancellationToken;
-
-			public ICollection<uint256> PendingDownloads => pendingDownloads.Values;
-
 			private void Node_MessageReceived(Node node, IncomingMessage message)
 			{
 				// Attempting to find the peers current best chain
 				// to be used by the puller to determine if the peer can server blocks
 				message.Message.IfPayloadIs<HeadersPayload>(header =>
 				{
-					foreach (var blockHeader in header.Headers)
+					foreach (BlockHeader blockHeader in header.Headers)
 					{
-						var cahinedBlock = this.puller.Chain.GetBlock(blockHeader.GetHash());
+						ChainedBlock cahinedBlock = this.puller.Chain.GetBlock(blockHeader.GetHash());
 						this.TrySetBestKnownTip(cahinedBlock);
 					}
 				});
@@ -64,14 +79,14 @@ namespace Stratis.Bitcoin.BlockPulling
 				message.Message.IfPayloadIs<BlockPayload>((block) =>
 				{
 					block.Object.Header.CacheHashes();
-					QualityScore = Math.Min(MaxQualityScore, QualityScore + 1);
+					this.QualityScore = Math.Min(MaxQualityScore, this.QualityScore + 1);
 					uint256 unused;
 					if(this.pendingDownloads.TryRemove(block.Object.Header.GetHash(), out unused))
 					{
 						BlockPullerBehavior unused2;
 						if (this.puller.map.TryRemove(block.Object.Header.GetHash(), out unused2))
 						{
-							foreach (var tx in block.Object.Transactions)
+							foreach (Transaction tx in block.Object.Transactions)
 								tx.CacheHashes();
 							this.puller.PushBlock((int)message.Length, block.Object, this.cancellationToken.Token);
 							this.AssignPendingVector();
@@ -86,7 +101,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			internal void AssignPendingVector()
 			{
-				if(AttachedNode == null || AttachedNode.State != NodeState.HandShaked || !this.puller.requirements.Check(AttachedNode.PeerVersion))
+				if(this.AttachedNode == null || this.AttachedNode.State != NodeState.HandShaked || !this.puller.requirements.Check(this.AttachedNode.PeerVersion))
 					return;
 				uint256 block;
 				if(this.puller.pendingInventoryVectors.TryTake(out block))
@@ -100,32 +115,32 @@ namespace Stratis.Bitcoin.BlockPulling
 				if(this.puller.map.TryAdd(block, this))
 				{
 					this.pendingDownloads.TryAdd(block, block);
-					AttachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(AttachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+					this.AttachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(this.AttachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
 				}
 			}
 
 			//Caller should add to the puller map
 			internal void StartDownload(GetDataPayload getDataPayload)
 			{
-				foreach(var inv in getDataPayload.Inventory)
+				foreach(InventoryVector inv in getDataPayload.Inventory)
 				{
-					inv.Type = AttachedNode.AddSupportedOptions(inv.Type);
+					inv.Type = this.AttachedNode.AddSupportedOptions(inv.Type);
 					this.pendingDownloads.TryAdd(inv.Hash, inv.Hash);
 				}
-				AttachedNode.SendMessageAsync(getDataPayload);
+				this.AttachedNode.SendMessageAsync(getDataPayload);
 			}
 
 			protected override void AttachCore()
 			{
-				AttachedNode.MessageReceived += Node_MessageReceived;
+				this.AttachedNode.MessageReceived += Node_MessageReceived;
 				AssignPendingVector();
 			}
 
 			protected override void DetachCore()
 			{
 				this.cancellationToken.Cancel();
-				AttachedNode.MessageReceived -= Node_MessageReceived;
-				foreach(var download in this.puller.map.ToArray())
+				this.AttachedNode.MessageReceived -= Node_MessageReceived;
+				foreach(KeyValuePair<uint256, BlockPullerBehavior> download in this.puller.map.ToArray())
 				{
 					if(download.Value == this)
 					{
@@ -147,13 +162,11 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			public void ReleaseAll()
 			{
-				foreach(var h in PendingDownloads.ToArray())
+				foreach(uint256 h in this.PendingDownloads.ToArray())
 				{
 					Release(h);
 				}
 			}
-
-			public ChainedBlock BestKnownTip { get; private set; }
 
 			private void TrySetBestKnownTip(ChainedBlock block)
 			{
@@ -203,17 +216,10 @@ namespace Stratis.Bitcoin.BlockPulling
 			//}
 		}
 
-		protected readonly IReadOnlyNodesCollection Nodes;
-		protected readonly ConcurrentChain Chain;
-		private readonly NodeRequirement requirements;
-
 		protected BlockPuller(ConcurrentChain chain, IReadOnlyNodesCollection nodes, ProtocolVersion protocolVersion)
 		{
 			this.Chain = chain;
 			this.Nodes = nodes;
-			this.DownloadedBlocks = new ConcurrentDictionary<uint256, DownloadedBlock>();
-			this.pendingInventoryVectors = new ConcurrentBag<uint256>();
-			this.map = new ConcurrentDictionary<uint256, BlockPullerBehavior>();
 
 			// set the default requirements
 			this.requirements = new NodeRequirement
@@ -223,30 +229,26 @@ namespace Stratis.Bitcoin.BlockPulling
 			};
 		}
 
-		private readonly ConcurrentDictionary<uint256, BlockPullerBehavior> map;
-		private readonly ConcurrentBag<uint256> pendingInventoryVectors;
-		protected readonly ConcurrentDictionary<uint256, DownloadedBlock> DownloadedBlocks;
-
 		/// <summary>
 		/// Psuh a block using the cancellation token belonging to the behaviour that pushed the block
 		/// </summary>
 		public virtual void PushBlock(int length, Block block, CancellationToken token)
 		{
-			var hash = block.Header.GetHash();
+			uint256 hash = block.Header.GetHash();
 			this.DownloadedBlocks.TryAdd(hash, new DownloadedBlock { Block = block, Length = length });
 		}
 
 		public virtual void AskBlocks(ChainedBlock[] downloadRequests)
 		{
 			BlockPullerBehavior[] nodes = GetNodeBehaviors();
-			var vectors = downloadRequests.Select(r => new InventoryVector(InventoryType.MSG_BLOCK, r.HashBlock)).ToArray();
+			InventoryVector[] vectors = downloadRequests.Select(r => new InventoryVector(InventoryType.MSG_BLOCK, r.HashBlock)).ToArray();
 			DistributeDownload(vectors, nodes, downloadRequests.Min(d => d.Height));
 		}
 
 		private BlockPullerBehavior[] GetNodeBehaviors()
 		{
-			return Nodes
-				.Where(n => requirements.Check(n.PeerVersion))
+			return this.Nodes
+				.Where(n => this.requirements.Check(n.PeerVersion))
 				.SelectMany(n => n.Behaviors.OfType<BlockPullerBehavior>())
 				.Where(b => b.Puller == this)
 				.ToArray();
@@ -254,20 +256,20 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		private void AssignPendingVectors()
 		{
-			var innernodes = GetNodeBehaviors();
+			BlockPullerBehavior[] innernodes = GetNodeBehaviors();
 			if(innernodes.Length == 0)
 				return;
 			List<InventoryVector> vectors = new List<InventoryVector>();
 			uint256 result;
-			while(pendingInventoryVectors.TryTake(out result))
+			while(this.pendingInventoryVectors.TryTake(out result))
 			{
 				vectors.Add(new InventoryVector(InventoryType.MSG_BLOCK, result));
 			}
 
 			var minheight = int.MaxValue;
-			foreach (var vector in vectors)
+			foreach (InventoryVector vector in vectors)
 			{
-				var chainedBlock = this.Chain.GetBlock(vector.Hash);
+				ChainedBlock chainedBlock = this.Chain.GetBlock(vector.Hash);
 				if (chainedBlock == null) // reorg might have happened.
 				{
 					vectors.Remove(vector);
@@ -283,13 +285,13 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public bool IsDownloading(uint256 hash)
 		{
-			return map.ContainsKey(hash) || pendingInventoryVectors.Contains(hash);
+			return this.map.ContainsKey(hash) || this.pendingInventoryVectors.Contains(hash);
 		}
 
 		protected void OnStalling(ChainedBlock chainedBlock)
 		{
 			BlockPullerBehavior behavior = null;
-			if(map.TryGetValue(chainedBlock.HashBlock, out behavior))
+			if(this.map.TryGetValue(chainedBlock.HashBlock, out behavior))
 			{
 				behavior.QualityScore = Math.Max(MinQualityScore, behavior.QualityScore - 1);
 				if(behavior.QualityScore == MinQualityScore)
@@ -315,7 +317,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			// Be careful to not ask block to a node that do not have it 
 			// (we can check the ChainBehavior.PendingTip to know where the node is standing)
 			var selectnodes = new List<BlockPullerBehavior>();
-			foreach (var behavior in innernodes)
+			foreach (BlockPullerBehavior behavior in innernodes)
 			{
 				// filter nodes that are still behind
 				if(behavior.BestKnownTip?.Height >= minHight)
@@ -325,20 +327,20 @@ namespace Stratis.Bitcoin.BlockPulling
 
 			if (innernodes.Length == 0)
 			{
-				foreach(var v in vectors)
-					pendingInventoryVectors.Add(v.Hash);
+				foreach(InventoryVector v in vectors)
+					this.pendingInventoryVectors.Add(v.Hash);
 				return;
 			}
 
-			var scores = innernodes.Select(n => n.QualityScore == MaxQualityScore ? MaxQualityScore * 2 : n.QualityScore).ToArray();
+			int[] scores = innernodes.Select(n => n.QualityScore == MaxQualityScore ? MaxQualityScore * 2 : n.QualityScore).ToArray();
 			var totalScore = scores.Sum();
-			GetDataPayload[] getDatas = Nodes.Select(n => new GetDataPayload()).ToArray();
-			foreach(var inv in vectors)
+			GetDataPayload[] getDatas = this.Nodes.Select(n => new GetDataPayload()).ToArray();
+			foreach(InventoryVector inv in vectors)
 			{
-				var index = GetNodeIndex(scores, totalScore);
-				var node = innernodes[index];
-				var getData = getDatas[index];
-				if(map.TryAdd(inv.Hash, node))
+				int index = GetNodeIndex(scores, totalScore);
+				BlockPullerBehavior node = innernodes[index];
+				GetDataPayload getData = getDatas[index];
+				if(this.map.TryAdd(inv.Hash, node))
 					getData.Inventory.Add(inv);
 			}
 			for(int i = 0; i < innernodes.Length; i++)
@@ -349,13 +351,10 @@ namespace Stratis.Bitcoin.BlockPulling
 			}
 		}
 
-		private const int MaxQualityScore = 150;
-		private const int MinQualityScore = 1;
-		private Random _Rand = new Random();
 		//Chose random index proportional to the score
 		private int GetNodeIndex(int[] scores, int totalScore)
 		{
-			var v = _Rand.Next(totalScore);
+			var v = this._Rand.Next(totalScore);
 			var current = 0;
 			int i = 0;
 			foreach(var score in scores)
@@ -367,7 +366,5 @@ namespace Stratis.Bitcoin.BlockPulling
 			}
 			return scores.Length - 1;
 		}
-
-		protected virtual NodeRequirement Requirements => requirements;
 	}
 }
