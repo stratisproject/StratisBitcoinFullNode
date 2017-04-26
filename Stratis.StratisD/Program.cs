@@ -35,6 +35,7 @@ namespace Stratis.StratisD
 				.UseNodeSettings(nodeSettings)
 				.UseStratisConsensus()
 				.UseBlockStore()
+				.UseMempool()
 				.Build();
 
 			// TODO: bring the logic out of IWebHost.Run()

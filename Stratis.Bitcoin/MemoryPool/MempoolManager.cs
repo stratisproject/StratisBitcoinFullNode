@@ -140,7 +140,13 @@ namespace Stratis.Bitcoin.MemoryPool
 			//if (this.IsInitialBlockDownload)
 			//	return Task.CompletedTask;
 
-			return this.MempoolScheduler.WriteAsync(() => this.memPool.RemoveForBlock(block.Transactions, blockHeight));
+			return this.MempoolScheduler.WriteAsync(() =>
+			{
+				this.memPool.RemoveForBlock(block.Transactions, blockHeight);
+
+				this.Validator.PerformanceCounter.SetMempoolSize(this.memPool.Size);
+				this.Validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
+			});
 		}
 	}
 }
