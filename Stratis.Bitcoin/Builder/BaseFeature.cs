@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Builder
 			}
 			else
 			{
-				Logs.FullNode.LogInformation("Loading  {dataFolder.AddrManFile}");
+				Logs.FullNode.LogInformation($"Loading  {dataFolder.AddrManFile}");
 				addressManager = AddressManager.LoadPeerFile(dataFolder.AddrManFile);
 				Logs.FullNode.LogInformation("Loaded");
 			}

@@ -2,6 +2,7 @@
   "profiles": {
     "Stratis.StratisD": {
       "commandName": "Project"
+
     }
   }
 }

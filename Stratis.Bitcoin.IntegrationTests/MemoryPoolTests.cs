@@ -10,6 +10,7 @@ using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
@@ -550,7 +551,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			var options = new ParallelOptions {MaxDegreeOfParallelism = 10};
 			Parallel.ForEach(txs, options, transaction =>
 			{
-				var entry = new TxMempoolEntry(transaction, new Money(rand.Next(100)), 0, 0.0, 1, transaction.TotalOut, false, 4, new LockPoints());
+				var entry = new TxMempoolEntry(transaction, new Money(rand.Next(100)), 0, 0.0, 1, transaction.TotalOut, false, 4, new LockPoints(), new BitcoinConsensusOptions());
 				tasks.Add(scheduler.WriteAsync(() => pool.AddUnchecked(transaction.GetHash(), entry)));
 			});
 
@@ -908,7 +909,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 5);
 
 				// the full node should be connected to both nodes
-				Assert.Equal(stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes.Count, 2);
+				Assert.Equal(stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes.Count(), 2);
 
 				// reset the trickle timer on the full node that has the transactions in the pool
 				foreach (var node in stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes) node.Behavior<MempoolBehavior>().NextInvSend = 0;
@@ -946,8 +947,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			Money inChainValue = (pool != null && pool.HasNoInputsOf(tx)) ? tx.TotalOut : 0;
 
 			return new TxMempoolEntry(tx, nFee, nTime, dPriority, nHeight,
-				inChainValue, spendsCoinbase, sigOpCost, lp);
-
+				inChainValue, spendsCoinbase, sigOpCost, lp, new BitcoinConsensusOptions());
 		}
 
 		// Change the default value

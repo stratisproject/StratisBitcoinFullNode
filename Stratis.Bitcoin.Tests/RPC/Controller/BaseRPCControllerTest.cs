@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.RPC.Controllers;
@@ -17,6 +19,11 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
 {
     public abstract class BaseRPCControllerTest : TestBase
     {
+        public BaseRPCControllerTest()
+        {
+            Logs.Configure(new LoggerFactory());
+        }
+
         public IFullNode BuildServicedNode(string dir)
         {
             var nodeSettings = NodeSettings.Default();

@@ -40,6 +40,34 @@ namespace Stratis.Bitcoin.Consensus
 		}		
 	}
 
+	public class ContextStakeInformation
+	{
+		public BlockStake BlockStake
+		{
+			get;
+			set;
+		}
+
+		public Money TotalCoinStakeValueIn
+		{
+			get;
+			set;
+		}
+
+		public uint256 HashProofOfStake
+		{
+			get;
+			set;
+		}
+
+		public uint256 TargetProofOfStake
+
+		{
+			get;
+			set;
+		}
+	}
+
 	public class ContextInformation
 	{
 		public ContextInformation()
@@ -47,15 +75,42 @@ namespace Stratis.Bitcoin.Consensus
 			
 		}
 
-		public ContextInformation(ChainedBlock nextBlock, NBitcoin.Consensus consensus)
+		public ContextInformation(BlockResult blockResult, NBitcoin.Consensus consensus, ConsensusOptions options)
 		{
-			Guard.NotNull(nextBlock, nameof(nextBlock));
+			Guard.NotNull(blockResult, nameof(blockResult));
+			Guard.NotNull(consensus, nameof(consensus));
+			Guard.NotNull(options, nameof(options));
 
-			BestBlock = new ContextBlockInformation(nextBlock.Previous, consensus);
-			Time = DateTimeOffset.UtcNow;
-			NextWorkRequired = nextBlock.GetWorkRequired(consensus);
+			this.BlockResult = blockResult;
+			this.Consensus = consensus;
+			this.ConsensusOptions = options;
+
 		}
 
+		public void SetBestBlock()
+		{
+			BestBlock = new ContextBlockInformation(this.BlockResult.ChainedBlock.Previous, this.Consensus);
+			Time = DateTimeOffset.UtcNow;
+		}
+
+		public void SetStake()
+		{
+			this.Stake = new ContextStakeInformation()
+			{
+				BlockStake = new BlockStake(this.BlockResult.Block)
+			};
+		}
+
+		public NBitcoin.Consensus Consensus
+		{
+			get;
+			set;
+		}
+		public ConsensusOptions ConsensusOptions
+		{
+			get;
+			set;
+		}
 		public DateTimeOffset Time
 		{
 			get;
@@ -68,10 +123,35 @@ namespace Stratis.Bitcoin.Consensus
 			set;
 		}
 
+		public ContextStakeInformation Stake
+		{
+			get;
+			set;
+		}
+
 		public Target NextWorkRequired
 		{
 			get;
 			set;
 		}
+
+		public BlockResult BlockResult
+		{
+			get;
+			set;
+		}
+
+		public ConsensusFlags Flags
+		{
+			get;
+			set;
+		}
+
+		public UnspentOutputSet Set
+		{
+			get;
+			set;
+		}
+
 	}
 }

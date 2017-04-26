@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public Money InChainInputValue { get; private set; } //!< Sum of all txin values that are already in blockchain
 		public bool SpendsCoinbase { get; private set; } //!< keep track of transactions that spend a coinbase
 		public long SigOpCost { get; private set; } //!< Total sigop cost
-		private long feeDelta; //!< Used for determining the priority of the transaction for mining in a block
+		internal long feeDelta { get; private set; } //!< Used for determining the priority of the transaction for mining in a block
 		public LockPoints LockPoints { get; private set; } //!< Track the height and time at which tx was final
 
 		// Information about descendants of this transaction that are in the
@@ -58,7 +59,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public TxMempoolEntry(Transaction transaction, Money nFee,
 			long nTime, double entryPriority, int entryHeight,
 			Money inChainInputValue, bool spendsCoinbase,
-			long nSigOpsCost, LockPoints lp)
+			long nSigOpsCost, LockPoints lp, ConsensusOptions consensusOptions)
 		{
 			this.Transaction = transaction;
 			this.TransactionHash = transaction.GetHash();
@@ -71,8 +72,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.SigOpCost = nSigOpsCost;
 			this.LockPoints = lp;
 
-			this.TxWeight = MempoolValidator.GetTransactionWeight(transaction);
-			nModSize = MempoolValidator.CalculateModifiedSize(this.Transaction.GetSerializedSize(), this.Transaction);
+			this.TxWeight = MempoolValidator.GetTransactionWeight(transaction, consensusOptions);
+			nModSize = MempoolValidator.CalculateModifiedSize(this.Transaction.GetSerializedSize(), this.Transaction, consensusOptions);
 
 			nUsageSize = transaction.GetSerializedSize(); // RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(Transaction);
 

@@ -11,6 +11,7 @@ using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Builder;
+using NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.RPC.Controllers
 {
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
-            ConsensusValidator consensusValidator = null,
+            PowConsensusValidator consensusValidator = null,
             ConcurrentChain chain = null,
             ChainBehavior.ChainState chainState = null,
             BlockStoreManager blockManager = null,
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
                 version = this._FullNode?.Version.ToUint() ?? 0,
                 protocolversion = (uint)(this._Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
                 blocks = this._ChainState?.HighestValidatedPoW?.Height ?? 0,
-                timeoffset = 0, // TODO: Calculate median time offset of connected nodes
+                timeoffset = this._ConnectionManager?.ConnectedNodes?.GetMedianTimeOffset() ?? 0,
                 connections = this._ConnectionManager?.ConnectedNodes?.Count(),
                 proxy = string.Empty,
                 difficulty = GetNetworkDifficulty()?.Difficulty ?? 0,

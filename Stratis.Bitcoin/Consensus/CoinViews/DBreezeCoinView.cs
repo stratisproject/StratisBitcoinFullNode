@@ -13,9 +13,10 @@ namespace Stratis.Bitcoin.Consensus
 {
 	public class DBreezeCoinView : CoinView, IDisposable
 	{
-
-		DBreezeSingleThreadSession _Session;
-		Network _Network;
+		private readonly DBreezeSingleThreadSession session;
+		private readonly Network network;
+		private uint256 blockHash;
+		private readonly BackendPerformanceCounter performanceCounter;
 
 		public DBreezeCoinView(Network network, DataFolder dataFolder) 
 			: this(network, dataFolder.CoinViewPath)
@@ -27,38 +28,48 @@ namespace Stratis.Bitcoin.Consensus
 			Guard.NotNull(network, nameof(network));
 			Guard.NotEmpty(folder, nameof(folder));
 			
-			_Session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
-			_Network = network;
+			session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
+			this.network = network;
+			this.performanceCounter = new BackendPerformanceCounter();
+		}
+
+		static readonly byte[] BlockHashKey = new byte[0];
+		static readonly UnspentOutputs[] NoOutputs = new UnspentOutputs[0];
+
+		public BackendPerformanceCounter PerformanceCounter
+		{
+			get
+			{
+				return performanceCounter;
+			}
 		}
 
 		public Task Initialize()
 		{
-			var genesis = this._Network.GetGenesis();
+			var genesis = this.network.GetGenesis();
 
-			var sync = _Session.Do(() =>
+			var sync = session.Do(() =>
 			{
-				_Session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind");
-				_Session.Transaction.ValuesLazyLoadingIsOn = false;
+				session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind", "Stake");
+				session.Transaction.ValuesLazyLoadingIsOn = false;
 			});
 
-			var hash = _Session.Do(() =>
+			var hash = session.Do(() =>
 			{
 				if(GetCurrentHash() == null)
 				{
 					SetBlockHash(genesis.GetHash());
 					//Genesis coin is unspendable so do not add the coins
-					_Session.Transaction.Commit();
+					session.Transaction.Commit();
 				}
 			});
 
 			return Task.WhenAll(new[] { sync, hash });
 		}
 
-		static byte[] BlockHashKey = new byte[0];
-		static readonly UnspentOutputs[] NoOutputs = new UnspentOutputs[0];
 		public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
-			return _Session.Do(() =>
+			return session.Do(() =>
 			{
 				using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
 				{
@@ -68,7 +79,7 @@ namespace Stratis.Bitcoin.Consensus
 					PerformanceCounter.AddQueriedEntities(txIds.Length);
 					foreach(var input in txIds)
 					{
-						var coin = _Session.Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
+						var coin = session.Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
 						result[i++] = coin == null ? null : new UnspentOutputs(input, coin);
 					}
 					return new FetchCoinsResponse(result, blockHash);
@@ -76,23 +87,21 @@ namespace Stratis.Bitcoin.Consensus
 			});
 		}
 
-
-		uint256 _BlockHash;
 		private uint256 GetCurrentHash()
 		{
-			_BlockHash = _BlockHash ?? _Session.Transaction.Select<byte[], uint256>("BlockHash", BlockHashKey)?.Value;
-			return _BlockHash;
+			blockHash = blockHash ?? session.Transaction.Select<byte[], uint256>("BlockHash", BlockHashKey)?.Value;
+			return blockHash;
 		}
 
 		private void SetBlockHash(uint256 nextBlockHash)
 		{
-			_BlockHash = nextBlockHash;
-			_Session.Transaction.Insert<byte[], uint256>("BlockHash", BlockHashKey, nextBlockHash);
+			blockHash = nextBlockHash;
+			session.Transaction.Insert<byte[], uint256>("BlockHash", BlockHashKey, nextBlockHash);
 		}
 
 		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
-			return _Session.Do(() =>
+			return session.Do(() =>
 			{
 				RewindData rewindData = originalOutputs == null ? null : new RewindData(oldBlockHash);
 				int insertedEntities = 0;
@@ -117,9 +126,9 @@ namespace Stratis.Bitcoin.Consensus
 					foreach(var coin in all)
 					{
 						if(coin.IsPrunable)
-							_Session.Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
+							session.Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
 						else
-							_Session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+							session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 						if(originalOutputs != null)
 						{
 							TxOut[] original = null;
@@ -142,10 +151,10 @@ namespace Stratis.Bitcoin.Consensus
 					if(rewindData != null)
 					{
 						int nextRewindIndex = GetRewindIndex() + 1;
-						_Session.Transaction.Insert<int, RewindData>("Rewind", nextRewindIndex, rewindData);
+						session.Transaction.Insert<int, RewindData>("Rewind", nextRewindIndex, rewindData);
 					}
 					insertedEntities += all.Count;
-					_Session.Transaction.Commit();
+					session.Transaction.Commit();
 				}
 				PerformanceCounter.AddInsertedEntities(insertedEntities);
 			});
@@ -153,53 +162,85 @@ namespace Stratis.Bitcoin.Consensus
 
 		private int GetRewindIndex()
 		{
-			_Session.Transaction.ValuesLazyLoadingIsOn = true;
-			var first = _Session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
-			_Session.Transaction.ValuesLazyLoadingIsOn = false;
+			session.Transaction.ValuesLazyLoadingIsOn = true;
+			var first = session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
+			session.Transaction.ValuesLazyLoadingIsOn = false;
 			return first == null ? -1 : first.Key;
 		}
 
 		public override Task<uint256> Rewind()
 		{
-			return _Session.Do(() =>
+			return session.Do(() =>
 			{
 				if(GetRewindIndex() == -1)
 				{
-					_Session.Transaction.RemoveAllKeys("Coins", true);
-					SetBlockHash(_Network.GenesisHash);
-					_Session.Transaction.Commit();
-					return _Network.GenesisHash;
+					session.Transaction.RemoveAllKeys("Coins", true);
+					SetBlockHash(network.GenesisHash);
+					session.Transaction.Commit();
+					return network.GenesisHash;
 				}
 				else
 				{
-					var first = _Session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
-					_Session.Transaction.RemoveKey("Rewind", first.Key);
+					var first = session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
+					session.Transaction.RemoveKey("Rewind", first.Key);
 					SetBlockHash(first.Value.PreviousBlockHash);
 					foreach(var txId in first.Value.TransactionsToRemove)
 					{
-						_Session.Transaction.RemoveKey("Coins", txId.ToBytes(false));
+						session.Transaction.RemoveKey("Coins", txId.ToBytes(false));
 					}
 					foreach(var coin in first.Value.OutputsToRestore)
 					{
-						_Session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+						session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 					}
-					_Session.Transaction.Commit();
+					session.Transaction.Commit();
 					return first.Value.PreviousBlockHash;
 				}
 			});
 		}
-		private readonly BackendPerformanceCounter _PerformanceCounter = new BackendPerformanceCounter();
-		public BackendPerformanceCounter PerformanceCounter
+
+		public Task PutStake(IEnumerable<StakeItem> stakeEntries)
 		{
-			get
+			return session.Do(() =>
 			{
-				return _PerformanceCounter;
+				this.PutStakeInternal(stakeEntries);
+				session.Transaction.Commit();
+			});
+		}
+
+		private void PutStakeInternal(IEnumerable<StakeItem> stakeEntries)
+		{
+			foreach (var stakeEntry in stakeEntries)
+			{
+				if (!stakeEntry.InStore)
+				{
+					session.Transaction.Insert<byte[], BlockStake>("Stake", stakeEntry.BlockId.ToBytes(false), stakeEntry.BlockStake);
+					stakeEntry.InStore = true;
+				}
 			}
+		}
+
+		public Task GetStake(IEnumerable<StakeItem> blocklist)
+		{
+			return session.Do(() =>
+			{
+				foreach (var blockStake in blocklist)
+				{
+					var stake = session.Transaction.Select<byte[], BlockStake>("Stake", blockStake.BlockId.ToBytes(false));
+					blockStake.BlockStake = stake.Value;
+					blockStake.InStore = true;
+				}
+			});
+		}
+
+		public Task DeleteStake(uint256 blockid, BlockStake blockStake)
+		{
+			// TODO: implement delete stake on rewind
+			throw new NotImplementedException();
 		}
 
 		public void Dispose()
 		{
-			_Session.Dispose();
+			session.Dispose();
 		}
 	}
 }

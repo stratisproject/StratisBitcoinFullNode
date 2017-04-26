@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly DBreezeCoinView dBreezeCoinView;
 		private readonly Network network;
 		private readonly ConcurrentChain chain;
-		private readonly ConsensusValidator consensusValidator;
+		private readonly PowConsensusValidator consensusValidator;
 		private readonly LookaheadBlockPuller blockPuller;
 		private readonly CoinView coinView;
 		private readonly ChainBehavior.ChainState chainState;
@@ -29,11 +29,12 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
 		private readonly NodeSettings nodeSettings;
+		private readonly StakeChainStore stakeChain;
 
 		public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
 			Network network,
-			ConsensusValidator consensusValidator,
+			PowConsensusValidator consensusValidator,
 			ConcurrentChain chain,
 			LookaheadBlockPuller blockPuller,
 			CoinView coinView,
@@ -42,7 +43,8 @@ namespace Stratis.Bitcoin.Consensus
 			CancellationProvider globalCancellation,
 			Signals signals,
 			ConsensusLoop consensusLoop,
-			NodeSettings nodeSettings)
+			NodeSettings nodeSettings,
+			StakeChainStore stakeChain = null)
 		{
 			this.dBreezeCoinView = dBreezeCoinView;
 			this.consensusValidator = consensusValidator;
@@ -56,6 +58,7 @@ namespace Stratis.Bitcoin.Consensus
 			this.network = network;
 			this.consensusLoop = consensusLoop;
 			this.nodeSettings = nodeSettings;
+			this.stakeChain = stakeChain;
 		}
 
 		public override void Start()
@@ -74,6 +77,8 @@ namespace Stratis.Bitcoin.Consensus
 			var flags = this.consensusLoop.GetFlags();
 			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
 				connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+
+			this.stakeChain?.Load().GetAwaiter().GetResult();
 
 			new Thread(RunLoop)
 			{
@@ -171,18 +176,40 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		public static IFullNodeBuilder UseConsensus(this IFullNodeBuilder fullNodeBuilder)
 		{
-
 			fullNodeBuilder.ConfigureFeature(features =>
 			{
 				features
 				.AddFeature<ConsensusFeature>()
 				.FeatureServices(services =>
 				{
-					services.AddSingleton(new ConsensusValidator(fullNodeBuilder.Network.Consensus));
+					services.AddSingleton<ConsensusOptions, BitcoinConsensusOptions>();
+					services.AddSingleton<PowConsensusValidator>();
 					services.AddSingleton<DBreezeCoinView>();
 					services.AddSingleton<CoinView, CachedCoinView>();
 					services.AddSingleton<LookaheadBlockPuller>();
 					services.AddSingleton<ConsensusLoop>();
+				});
+			});
+
+			return fullNodeBuilder;
+		}
+
+		public static IFullNodeBuilder UseStratisConsensus(this IFullNodeBuilder fullNodeBuilder)
+		{
+			fullNodeBuilder.ConfigureFeature(features =>
+			{
+				features
+				.AddFeature<ConsensusFeature>()
+				.FeatureServices(services =>
+				{
+					services.AddSingleton<ConsensusOptions, StratisConsensusOptions>();
+					services.AddSingleton<PowConsensusValidator, PosConsensusValidator>();
+					services.AddSingleton<DBreezeCoinView>();
+					services.AddSingleton<CoinView, CachedCoinView>();
+					services.AddSingleton<LookaheadBlockPuller>();
+					services.AddSingleton<ConsensusLoop>();
+					services.AddSingleton<StakeChainStore>().AddSingleton<StakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
+					services.AddSingleton<StakeValidator>();
 				});
 			});
 

@@ -175,13 +175,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 				var node1 = builder.CreateStratisNode();
 				var node2 = builder.CreateStratisNode();
 				builder.StartAll();
-				Assert.Equal(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count);
-				Assert.Equal(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count);
+				Assert.Equal(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
+				Assert.Equal(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
 				var rpc1 = node1.CreateRPCClient();
 				var rpc2 = node2.CreateRPCClient();
 				rpc1.AddNode(node2.Endpoint, true);
-				Assert.Equal(1, node1.FullNode.ConnectionManager.ConnectedNodes.Count);
-				Assert.Equal(1, node2.FullNode.ConnectionManager.ConnectedNodes.Count);
+				Assert.Equal(1, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
+				Assert.Equal(1, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
 
 				var behavior = node1.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
 				Assert.False(behavior.Inbound);
@@ -513,13 +513,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 					Height = 10111
 				},
 				NextWorkRequired = block.Header.Bits,
-				Time = DateTimeOffset.UtcNow
+				Time = DateTimeOffset.UtcNow,
+				BlockResult = new BlockResult { Block = block },
+				Flags = consensusFlags,
 			};
-			var validator = new ConsensusValidator(new NBitcoin.Consensus());
-			validator.CheckBlockHeader(block.Header);
-			validator.ContextualCheckBlockHeader(block.Header, context);
-			validator.ContextualCheckBlock(block, consensusFlags, context);
-			validator.CheckBlock(block);
+			var validator = new PowConsensusValidator(Network.Main, new BitcoinConsensusOptions());
+			//validator.CheckBlockHeader(context);
+			validator.ContextualCheckBlock(context);
+			validator.CheckBlock(context);
 		}
 	}
 }

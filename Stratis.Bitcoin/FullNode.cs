@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin
 			_logger = Logs.LoggerFactory.CreateLogger<FullNode>();
 		}
 
-public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
@@ -141,7 +141,7 @@ public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 			//	return true;
 			if (this.ConsensusLoop.Tip == null)
 				return true;
-			if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
+			if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))
 				return true;
 			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
 				return true;

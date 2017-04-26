@@ -24,7 +24,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		public MempoolValidator Validator { get; } // public for testing
 		private readonly TxMempool memPool;
 		private readonly ConcurrentChain chain;
-		private readonly CoinView coinView;
+	    private readonly PowConsensusValidator consensusValidator;
+	    private readonly CoinView coinView;
 	    private readonly IDateTimeProvider dateTimeProvider;
 	    private readonly NodeSettings nodeArgs;
 
@@ -36,11 +37,12 @@ namespace Stratis.Bitcoin.MemoryPool
 		private uint256 hashRecentRejectsChainTip;
 
 		public MempoolOrphans(MempoolScheduler mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
-			MempoolValidator validator, CoinView coinView, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
+			MempoolValidator validator, PowConsensusValidator consensusValidator, CoinView coinView, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
 			this.chain = chain;
+			this.consensusValidator = consensusValidator;
 			this.coinView = coinView;
 			this.dateTimeProvider = dateTimeProvider;
 			this.nodeArgs = nodeArgs;
@@ -150,7 +152,7 @@ namespace Stratis.Bitcoin.MemoryPool
 							await this.MempoolScheduler.WriteAsync(() => this.recentRejects.TryAdd(orphanHash, orphanHash));
 						}
 					}
-					this.memPool.Check(new MempoolCoinView(this.coinView, this.memPool, this.MempoolScheduler));
+					this.memPool.Check(new MempoolCoinView(this.coinView, this.memPool, this.MempoolScheduler, this.Validator));
 				}
 			}
 
@@ -249,8 +251,8 @@ namespace Stratis.Bitcoin.MemoryPool
 				// have been mined or received.
 				// 100 orphans, each of which is at most 99,999 bytes big is
 				// at most 10 megabytes of orphans and somewhat more byprev index (in the worst case):
-				var sz = MempoolValidator.GetTransactionWeight(tx);
-				if (sz >= ConsensusValidator.MAX_STANDARD_TX_WEIGHT)
+				var sz = MempoolValidator.GetTransactionWeight(tx, this.Validator.ConsensusOptions);
+				if (sz >= this.consensusValidator.ConsensusOptions.MAX_STANDARD_TX_WEIGHT)
 				{
 					Logging.Logs.Mempool.LogInformation($"ignoring large orphan tx (size: {sz}, hash: {hash})");
 					return false;
@@ -305,7 +307,6 @@ namespace Stratis.Bitcoin.MemoryPool
 				return true;
 			});
 		}
-
 
 		public Task EraseOrphansFor(ulong peer)
 		{
