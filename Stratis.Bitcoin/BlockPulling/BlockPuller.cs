@@ -17,9 +17,9 @@ namespace Stratis.Bitcoin.BlockPulling
         private const int MaxQualityScore = 150;
         private const int MinQualityScore = 1;
 
-        private readonly ConcurrentDictionary<uint256, BlockPullerBehavior> map = new ConcurrentDictionary<uint256, BlockPullerBehavior>();
-        private readonly ConcurrentBag<uint256> pendingInventoryVectors = new ConcurrentBag<uint256>();
-        protected readonly ConcurrentDictionary<uint256, DownloadedBlock> DownloadedBlocks = new ConcurrentDictionary<uint256, DownloadedBlock>();
+        private readonly ConcurrentDictionary<uint256, BlockPullerBehavior> map;
+        private readonly ConcurrentBag<uint256> pendingInventoryVectors;
+        protected readonly ConcurrentDictionary<uint256, DownloadedBlock> DownloadedBlocks;
 
         protected readonly IReadOnlyNodesCollection Nodes;
         protected readonly ConcurrentChain Chain;
@@ -220,6 +220,9 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.Chain = chain;
             this.Nodes = nodes;
+            this.DownloadedBlocks = new ConcurrentDictionary<uint256, DownloadedBlock>();
+            this.pendingInventoryVectors = new ConcurrentBag<uint256>();
+            this.map = new ConcurrentDictionary<uint256, BlockPullerBehavior>();
 
             // set the default requirements
             this.requirements = new NodeRequirement
