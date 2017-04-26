@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.BlockPulling
 			}
 
 			var minheight = int.MaxValue;
-			foreach (InventoryVector vector in vectors)
+			foreach (InventoryVector vector in vectors.ToArray())
 			{
 				ChainedBlock chainedBlock = this.Chain.GetBlock(vector.Hash);
 				if (chainedBlock == null) // reorg might have happened.
