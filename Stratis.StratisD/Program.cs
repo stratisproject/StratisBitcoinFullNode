@@ -27,7 +27,7 @@ namespace Stratis.StratisD
 			if (NodeSettings.PrintHelp(args, Network.StratisMain))
 				return;
 
-			NodeSettings nodeSettings = NodeSettings.FromArguments(args, Network.StratisMain, ProtocolVersion.ALT_PROTOCOL_VERSION);
+			NodeSettings nodeSettings = NodeSettings.FromArguments(args, "stratis", Network.StratisMain, ProtocolVersion.ALT_PROTOCOL_VERSION);
 
 			// NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
 

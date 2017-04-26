@@ -13,12 +13,5 @@ namespace NBitcoin.Protocol
                 .Select(node => (long)node.TimeOffset.Value.TotalSeconds)
                 .Median();
         }
-
-        public static string GetDefaultConfigurationFilename(this Network network)
-        {
-            if (network.Equals(Network.StratisMain))
-                return "stratis.conf";
-            return "bitcoin.conf";
-        }
     }
 }
