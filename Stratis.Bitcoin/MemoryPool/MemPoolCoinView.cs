@@ -40,7 +40,13 @@ namespace Stratis.Bitcoin.MemoryPool
 			});
 			var memOutputs = mempoolcoins.Select(s => new UnspentOutputs(TxMempool.MempoolHeight, s));
 			coins.UnspentOutputs = coins.UnspentOutputs.Concat(memOutputs).ToArray();
-		    this.Set.SetCoins(coins);
+
+			// the UTXO set might have been updated with a recently received block 
+			// but the block has not yet arrived to the mempool and remove the pending trx
+			// from the pool (a race condition), block validation doesn't lock the mempool.
+			// its safe to ignore duplicats on the UTXO set as duplicates mean a trx is in 
+			// a block and the block will soon remove the trx from the pool.
+			this.Set.TrySetCoins(coins);
 	    }
 
 		public UnspentOutputs GetCoins(uint256 txid)

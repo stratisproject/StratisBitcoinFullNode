@@ -53,6 +53,16 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
+		public void TrySetCoins(FetchCoinsResponse coins)
+		{
+			_Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
+			foreach (var coin in coins.UnspentOutputs)
+			{
+				if (coin != null)
+					_Unspents.TryAdd(coin.TransactionId, coin);
+			}
+		}
+
 		public IEnumerable<UnspentOutputs> GetCoins(CoinView utxo)
 		{
 			return _Unspents.Select(u => u.Value).ToList();
