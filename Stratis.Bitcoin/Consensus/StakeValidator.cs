@@ -280,33 +280,31 @@ namespace Stratis.Bitcoin.Consensus
 				return;
 
 			// Sort candidate blocks by timestamp
-			var sortedByTimestamp = new SortedDictionary<uint, uint256>();
+			var sortedByTimestamp = new SortedDictionary<uint, ChainedBlock>();
 			long nSelectionInterval = GetStakeModifierSelectionInterval();
 			long nSelectionIntervalStart = (pindexPrev.Header.Time / this.consensusOptions.StakeModifierInterval) * this.consensusOptions.StakeModifierInterval - nSelectionInterval;
 			var pindex = pindexPrev;
 			while (pindex != null && pindex.Header.Time >= nSelectionIntervalStart)
 			{
-				sortedByTimestamp.Add(pindex.Header.Time, pindex.HashBlock);
+				sortedByTimestamp.Add(pindex.Header.Time, pindex);
 				pindex = pindex.Previous;
 			}
-			int nHeightFirstCandidate = pindex?.Height + 1 ?? 0;
+			//int nHeightFirstCandidate = pindex?.Height + 1 ?? 0;
 
 			// Select 64 blocks from candidate blocks to generate stake modifier
 			ulong nStakeModifierNew = 0;
 			long nSelectionIntervalStop = nSelectionIntervalStart;
 			var mapSelectedBlocks = new Dictionary<uint256, ChainedBlock>();
 			var counter = sortedByTimestamp.Count;
+			var sorted = sortedByTimestamp.Values.ToArray();
 			for (int nRound = 0; nRound < Math.Min(64, counter); nRound++)
 			{
-				var nw = new System.Diagnostics.Stopwatch();
-				nw.Start();
-
 				// add an interval section to the current selection round
 				nSelectionIntervalStop += GetStakeModifierSelectionIntervalSection(nRound);
 
 				// select a block from the candidates of current round
 				BlockStake blockStake;
-				if (!this.SelectBlockFromCandidates(pindexPrev, sortedByTimestamp, mapSelectedBlocks, nSelectionIntervalStop, stakeModifier.StakeModifier, out pindex, out blockStake))
+				if (!this.SelectBlockFromCandidates(sorted, mapSelectedBlocks, nSelectionIntervalStop, stakeModifier.StakeModifier, out pindex, out blockStake))
 					ConsensusErrors.FailedSelectBlock.Throw();
 
 				// write the entropy bit of the selected block
@@ -419,7 +417,7 @@ namespace Stratis.Bitcoin.Consensus
 		// select a block from the candidate blocks in vSortedByTimestamp, excluding
 		// already selected blocks in vSelectedBlocks, and with timestamp up to
 		// nSelectionIntervalStop.
-		private bool SelectBlockFromCandidates(ChainedBlock chainIndex, SortedDictionary<uint, uint256> sortedByTimestamp,
+		private bool SelectBlockFromCandidates(ChainedBlock[] sortedByTimestamp,
 			Dictionary<uint256, ChainedBlock> mapSelectedBlocks,
 			long nSelectionIntervalStop, ulong nStakeModifierPrev, out ChainedBlock pindexSelected, out BlockStake blockStakeSelected)
 		{
@@ -429,11 +427,9 @@ namespace Stratis.Bitcoin.Consensus
 			pindexSelected = null;
 			blockStakeSelected = null;
 
-			foreach (var item in sortedByTimestamp)
+			for (int i = 0; i < sortedByTimestamp.Length; i++)
 			{
-				var pindex = chainIndex.FindAncestorOrSelf(item.Value);
-				if (pindex == null)
-					return false; // error("SelectBlockFromCandidates: failed to find block index for candidate block %s", item.second.ToString());
+				var pindex = sortedByTimestamp[i];
 
 				if (fSelected && pindex.Header.Time > nSelectionIntervalStop)
 					break;
