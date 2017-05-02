@@ -110,7 +110,7 @@
 		{
 			"name": "Get Wallet History",
 			"request": {
-				"url": "http://localhost:5000/api/v1/wallet/history?name=mywallet",
+				"url": "http://localhost:5000/api/v1/wallet/history?walletname=wallet1&cointype=0",
 				"method": "GET",
 				"header": [
 					{
@@ -130,7 +130,7 @@
 		{
 			"name": "Get wallet balance",
 			"request": {
-				"url": "http://localhost:5000/api/v1/wallet/balance?name=mywallet",
+				"url": "http://localhost:5000/api/v1/wallet/balance?walletname=wallet1&cointype=0",
 				"method": "GET",
 				"header": [
 					{
