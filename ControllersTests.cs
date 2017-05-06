@@ -22,7 +22,7 @@ namespace Breeze.Api.Tests
             var mockWalletCreate = new Mock<IWalletManager>();
             mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null)).Returns(mnemonic);
 
-            var controller = new WalletController(mockWalletCreate.Object);
+            var controller = new WalletController(mockWalletCreate.Object, new Mock<ITracker>().Object);
 
             // Act
             var result = controller.Create(new WalletCreationRequest
@@ -50,9 +50,9 @@ namespace Breeze.Api.Tests
             };
 
             var mockWalletWrapper = new Mock<IWalletManager>();
-            mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null, null)).Returns(wallet);
+            mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<DateTime>())).Returns(wallet);
 
-            var controller = new WalletController(mockWalletWrapper.Object);
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object);
 
             // Act
             var result = controller.Recover(new WalletRecoveryRequest
@@ -85,7 +85,7 @@ namespace Breeze.Api.Tests
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(wallet);
 
-            var controller = new WalletController(mockWalletWrapper.Object);
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object);
 
             // Act
             var result = controller.Load(new WalletLoadRequest
@@ -111,7 +111,7 @@ namespace Breeze.Api.Tests
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
             
-            var controller = new WalletController(mockWalletWrapper.Object);
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object);
 
             // Act
             var result = controller.Load(new WalletLoadRequest
