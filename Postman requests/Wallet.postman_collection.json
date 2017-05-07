@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "Wallet",
-		"_postman_id": "5eec0912-fcf0-50f5-05a2-0835fa13c670",
+		"_postman_id": "57013f2c-02dc-df32-41e9-6e4aaa14ad5e",
 		"description": "Requests relating to operations on the wallet",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -81,7 +81,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWalletRecovered\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\"\n\t\n}"
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myRecoveredWallet\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\",\n\t\"creationDate\": \"2016-02-25 16:20:33\"\n}"
 				},
 				"description": ""
 			},
@@ -248,10 +248,10 @@
 			"response": []
 		},
 		{
-			"name": "Create new address for wallet",
+			"name": "Get unused address in wallet",
 			"request": {
-				"url": "http://localhost:5000/api/v1/wallet/address",
-				"method": "POST",
+				"url": "http://localhost:5000/api/v1/wallet/address?walletName=wallet1&accountName=account one&coinType=0",
+				"method": "GET",
 				"header": [
 					{
 						"key": "Content-Type",
@@ -261,7 +261,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"walletName\": \"myFirstWallet\",\n\t\"accountName\": \"account one\",\n\t\"coinType\": 0\n}"
+					"raw": ""
 				},
 				"description": ""
 			},
