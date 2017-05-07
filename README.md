@@ -34,7 +34,7 @@ POS/DPOS, Sidechains, Private/Permissioned blockchain, Compiled Smart Contracts,
 **A Modular Approach**
 
 A Blockchain is made of many components, from a FullNode that validates blocks to a Simple Wallet that track addresses.
-The end goal is to develop a set of [Nuget](https://en.wikipedia.org/wiki/NuGet) packages from which an implementer can cheery pick what he needs.
+The end goal is to develop a set of [Nuget](https://en.wikipedia.org/wiki/NuGet) packages from which an implementer can cherry pick what he needs.
 
 * **NBitcoin**
 * **Stratis.Bitcoin.Core**  - The bare minimum to run a pruned node.
