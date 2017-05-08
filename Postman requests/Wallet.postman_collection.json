@@ -206,9 +206,9 @@
 				"description": "Gets all the wallets files stored in the default folder"
 			},
 			"response": []
-		},
+		},		
 		{
-			"name": "New account for non-existant wallet fails",
+			"name": "Get unused account in wallet",
 			"request": {
 				"url": "http://localhost:5000/api/v1/wallet/account",
 				"method": "POST",
@@ -221,27 +221,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"walletName\": \"myFirstWallet\",\n\t\"accountName\": \"account one\"\n}"
-				},
-				"description": ""
-			},
-			"response": []
-		},
-		{
-			"name": "Create new account for wallet",
-			"request": {
-				"url": "http://localhost:5000/api/v1/wallet/account",
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n\t\"walletName\": \"myFirstWallet\",\n\t\"accountName\": \"account one\",\n\t\"password\": \"123456\",\n\t\"coinType\": 105\n}"
+					"raw": "{\n\t\"walletName\": \"myFirstWallet\",\n\t\"password\": \"123456\",\n\t\"coinType\": 0\n}"
 				},
 				"description": ""
 			},
@@ -250,7 +230,7 @@
 		{
 			"name": "Get unused address in wallet",
 			"request": {
-				"url": "http://localhost:5000/api/v1/wallet/address?walletName=wallet1&accountName=account one&coinType=0",
+				"url": "http://localhost:5000/api/v1/wallet/address?walletName=wallet1&accountName=account 0&coinType=0",
 				"method": "GET",
 				"header": [
 					{
