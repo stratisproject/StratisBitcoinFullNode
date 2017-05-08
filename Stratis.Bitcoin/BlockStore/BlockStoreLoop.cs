@@ -307,12 +307,12 @@ namespace Stratis.Bitcoin.BlockStore
 					}
 					else
 					{
-						// if a block is stalled or lost from to the downloader 
-						// this will make sure the loop start again after a trashold
+						// if a block is stalled or lost to the downloader 
+						// this will make sure the loop start again after a threshold
 						if(stallCount > 10000)
 							break;
 
-						// waiting for blocks so sleep one
+						// waiting for blocks so sleep 100 ms
 						await Task.Delay(100, token);
 						stallCount++;
 					}
