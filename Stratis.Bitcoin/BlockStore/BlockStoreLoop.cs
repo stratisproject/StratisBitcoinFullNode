@@ -249,7 +249,8 @@ namespace Stratis.Bitcoin.BlockStore
 				var downloadStack = new Queue<ChainedBlock>(new[] {next});
 				this.blockPuller.AskBlock(next);
 
-				int insertdownloadSize = 0;
+				int insertDownloadSize = 0;
+				int stallCount = 0;
 				bool download = true;
 				while (!token.IsCancellationRequested)
 				{
@@ -288,15 +289,16 @@ namespace Stratis.Bitcoin.BlockStore
 					{
 						var downloadbest = downloadStack.Dequeue();
 						store.Add(new BlockPair {Block = block.Block, ChainedBlock = downloadbest});
-						insertdownloadSize += block.Length; 
-						
+						insertDownloadSize += block.Length;
+						stallCount = 0;
+
 						// can we push
-						if (insertdownloadSize > insertsizebyte || !downloadStack.Any()) // this might go above the max insert size
+						if (insertDownloadSize > insertsizebyte || !downloadStack.Any()) // this might go above the max insert size
 						{
 							await this.BlockRepository.PutAsync(downloadbest.HashBlock, store.Select(t => t.Block).ToList());
 							this.StoredBlock = downloadbest;
 							this.ChainState.HighestPersistedBlock = this.StoredBlock;
-							insertdownloadSize = 0;
+							insertDownloadSize = 0;
 							store.Clear();
 
 							if(!downloadStack.Any())
@@ -305,8 +307,14 @@ namespace Stratis.Bitcoin.BlockStore
 					}
 					else
 					{
-						// waiting for blocks so sleep one
+						// if a block is stalled or lost to the downloader 
+						// this will make sure the loop start again after a threshold
+						if(stallCount > 10000)
+							break;
+
+						// waiting for blocks so sleep 100 ms
 						await Task.Delay(100, token);
+						stallCount++;
 					}
 				}
 			}
