@@ -11,15 +11,15 @@ namespace Stratis.Bitcoin.Consensus
 	public class ThresholdConditionCache
 	{
 		/** What block version to use for new blocks (pre versionbits) */
-		static int VERSIONBITS_LAST_OLD_BLOCK_VERSION = 4;
+		public static int VERSIONBITS_LAST_OLD_BLOCK_VERSION = 4;
 		/** What bits to set in version for versionbits blocks */
-		static uint VERSIONBITS_TOP_BITS = 0x20000000;
+		public static uint VERSIONBITS_TOP_BITS = 0x20000000;
 		/** What bitmask determines whether versionbits is in use */
-		static uint VERSIONBITS_TOP_MASK = 0xE0000000;
+		public static uint VERSIONBITS_TOP_MASK = 0xE0000000;
 		/** Total bits available for versionbits */
-		static int VERSIONBITS_NUM_BITS = 29;
+		public static int VERSIONBITS_NUM_BITS = 29;
 
-		readonly static int ArraySize;
+		public static readonly int ArraySize;
 		static ThresholdConditionCache()
 		{
 			ArraySize = Enum.GetValues(typeof(BIP9Deployments)).Length;
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Consensus
 			return (((pindex.Header.Version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) && (pindex.Header.Version & Mask(deployment)) != 0);
 		}
 
-		private uint Mask(BIP9Deployments deployment)
+		public uint Mask(BIP9Deployments deployment)
 		{
 			return ((uint)1) << _Consensus.BIP9Deployments[deployment].Bit;
 		}

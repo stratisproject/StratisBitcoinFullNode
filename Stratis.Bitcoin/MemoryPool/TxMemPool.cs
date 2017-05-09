@@ -281,9 +281,13 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 		}
 
-		private class CompareIteratorByHash : IComparer<TxMempoolEntry>
+		public class CompareIteratorByHash : IComparer<TxMempoolEntry>
 		{
 			public int Compare(TxMempoolEntry a, TxMempoolEntry b)
+			{
+				return InnerCompare(a, b);
+			}
+			public static int InnerCompare(TxMempoolEntry a, TxMempoolEntry b)
 			{
 				if (a.TransactionHash == b.TransactionHash) return 0;
 				if (a.TransactionHash < b.TransactionHash) return -1;
