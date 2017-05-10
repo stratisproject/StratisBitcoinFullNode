@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		private void SetCoins(Coins coins)
 		{
-			_IsCoinbase = coins.Coinbase;
+			_IsCoinbase = coins.CoinBase;
 			_IsCoinstake = coins.CoinStake;
 			_Time = coins.Time;
 			_Height = coins.Height;
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			var coins = new Coins()
 			{
-				Coinbase = IsCoinbase,
+				CoinBase = IsCoinbase,
 				Height = Height,
 				Version = Version,
 				CoinStake = IsCoinstake,

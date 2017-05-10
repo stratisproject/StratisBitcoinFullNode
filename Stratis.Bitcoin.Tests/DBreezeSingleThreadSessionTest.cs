@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Tests
 
             var result = (Coins)DBreezeSingleThreadSession.NBitcoinDeserialize(coins.ToBytes(), typeof(Coins));
 
-            Assert.Equal(coins.Coinbase, result.Coinbase);
+            Assert.Equal(coins.CoinBase, result.CoinBase);
             Assert.Equal(coins.Height, result.Height);
             Assert.Equal(coins.IsEmpty, result.IsEmpty);
             Assert.Equal(coins.IsPruned, result.IsPruned);
