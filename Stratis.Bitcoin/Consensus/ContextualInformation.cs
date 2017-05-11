@@ -75,16 +75,13 @@ namespace Stratis.Bitcoin.Consensus
 			
 		}
 
-		public ContextInformation(BlockResult blockResult, NBitcoin.Consensus consensus, ConsensusOptions options)
+		public ContextInformation(BlockResult blockResult, NBitcoin.Consensus consensus)
 		{
 			Guard.NotNull(blockResult, nameof(blockResult));
 			Guard.NotNull(consensus, nameof(consensus));
-			Guard.NotNull(options, nameof(options));
 
 			this.BlockResult = blockResult;
 			this.Consensus = consensus;
-			this.ConsensusOptions = options;
-
 		}
 
 		public void SetBestBlock()
@@ -102,11 +99,6 @@ namespace Stratis.Bitcoin.Consensus
 		}
 
 		public NBitcoin.Consensus Consensus
-		{
-			get;
-			set;
-		}
-		public ConsensusOptions ConsensusOptions
 		{
 			get;
 			set;

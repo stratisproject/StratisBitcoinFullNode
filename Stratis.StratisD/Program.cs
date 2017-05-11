@@ -87,7 +87,11 @@ namespace Stratis.StratisD
 				.SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] {0x01, 0x42})
 				.SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] {0x01, 0x43})
 				.SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] {(0x04), (0x88), (0xB2), (0x1E)})
-				.SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] {(0x04), (0x88), (0xAD), (0xE4)});
+				.SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] {(0x04), (0x88), (0xAD), (0xE4)})
+				.AddDNSSeeds(new[]
+				{
+					new DNSSeedData("stratisplatform.com", "testnode1.stratisplatform.com"), 
+				});
 
 			return builder.BuildAndRegister();
 		}

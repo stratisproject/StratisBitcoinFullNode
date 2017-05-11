@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void AcceptBlock(BlockResult result)
 		{
-			var context = new ContextInformation(result, this.Validator.ConsensusParams, this.Validator.ConsensusOptions);
+			var context = new ContextInformation(result, this.Validator.ConsensusParams);
 
 			using (watch.Start(o => Validator.PerformanceCounter.AddBlockProcessingTime(o)))
 			{
