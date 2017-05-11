@@ -20,7 +20,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="1.1.1" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.0.1.5-alpha" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.0.1.6-alpha" />
   </ItemGroup>
 
 </Project>
