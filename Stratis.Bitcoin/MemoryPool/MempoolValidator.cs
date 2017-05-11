@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly TxMempool memPool;
 		private readonly PowConsensusValidator consensusValidator;
 		public MempoolPerformanceCounter PerformanceCounter { get; }
-		public ConsensusOptions ConsensusOptions => this.consensusValidator.ConsensusOptions;
+		public PowConsensusOptions ConsensusOptions => this.consensusValidator.ConsensusOptions;
 		public static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
 		private readonly FreeLimiterSection freeLimiter;
 
@@ -865,7 +865,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			return true;
 		}
 
-		public static int GetTransactionWeight(Transaction tx, ConsensusOptions consensusOptions)
+		public static int GetTransactionWeight(Transaction tx, PowConsensusOptions consensusOptions)
 		{
 			return tx.GetSerializedSize(
 				       (ProtocolVersion)
@@ -874,7 +874,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			       tx.GetSerializedSize(ProtocolVersion.PROTOCOL_VERSION, SerializationType.Network);
 		}
 
-		public static int CalculateModifiedSize(int nTxSize, Transaction trx, ConsensusOptions consensusOptions)
+		public static int CalculateModifiedSize(int nTxSize, Transaction trx, PowConsensusOptions consensusOptions)
 		{
 			// In order to avoid disincentivizing cleaning up the UTXO set we don't count
 			// the constant overhead for each txin and up to 110 bytes of scriptSig (which

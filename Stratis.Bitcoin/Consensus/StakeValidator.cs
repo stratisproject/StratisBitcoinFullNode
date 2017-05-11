@@ -15,16 +15,16 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly StakeChain stakeChain;
 		private readonly ConcurrentChain chain;
 		private readonly CoinView coinView;
-		private readonly ConsensusOptions consensusOptions;
+		private readonly PosConsensusOptions consensusOptions;
 
-		public StakeValidator(Network network, ConsensusOptions consensusOptions,
+		public StakeValidator(Network network,
 			StakeChain stakeChain, ConcurrentChain chain, CoinView coinView)
 		{
 			this.network = network;
 			this.stakeChain = stakeChain;
 			this.chain = chain;
 			this.coinView = coinView;
-			this.consensusOptions = consensusOptions;
+			this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
 		}
 	
 		public void CheckProofOfStake(ContextInformation context, ChainedBlock pindexPrev, BlockStake prevBlockStake, Transaction tx, uint nBits)

@@ -17,24 +17,24 @@ namespace Stratis.Bitcoin.Consensus
 	public class PowConsensusValidator
 	{
 		private readonly NBitcoin.Consensus consensusParams;
-		private readonly ConsensusOptions consensusOptions;
+		private readonly PowConsensusOptions consensusOptions;
 
 		// Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
 		public static LockTimeFlags StandardLocktimeVerifyFlags = LockTimeFlags.VerifySequence | LockTimeFlags.MedianTimePast;
 
-		public PowConsensusValidator(Network network, ConsensusOptions consensusOptions)
+		public PowConsensusValidator(Network network)
 		{
 			Guard.NotNull(network, nameof(network));
-			Guard.NotNull(consensusOptions, nameof(consensusOptions));
+			Guard.NotNull(network.Consensus.Option<PowConsensusOptions>(), nameof(network.Consensus.Options));
 
 			this.consensusParams = network.Consensus;
-			this.consensusOptions = consensusOptions;
+			this.consensusOptions = network.Consensus.Option<PowConsensusOptions>();
 			this.PerformanceCounter = new ConsensusPerformanceCounter();
 		}
 
 		public NBitcoin.Consensus ConsensusParams => this.consensusParams;
 
-		public ConsensusOptions ConsensusOptions => this.consensusOptions;
+		public PowConsensusOptions ConsensusOptions => this.consensusOptions;
 
 		public ConsensusPerformanceCounter PerformanceCounter { get; }
 
