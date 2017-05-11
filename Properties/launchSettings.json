@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Breeze.Daemon Main": {
+      "commandName": "Project"
+    },
+    "Breeze.Daemon TestNet": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet"
+    }
+  }
+}
