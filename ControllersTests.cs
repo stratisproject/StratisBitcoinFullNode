@@ -66,12 +66,8 @@ namespace Breeze.Api.Tests
 
             // Assert
             mockWalletWrapper.VerifyAll();
-            var viewResult = Assert.IsType<JsonResult>(result);
-            Assert.NotNull(viewResult.Value);
-            Assert.IsType<WalletModel>(viewResult.Value);
-
-            var model = viewResult.Value as WalletModel;
-            Assert.Equal("Main", model.Network);
+            var viewResult = Assert.IsType<OkResult>(result);            
+            Assert.Equal(200, viewResult.StatusCode);
         }
 
         [Fact]
@@ -97,12 +93,8 @@ namespace Breeze.Api.Tests
 
             // Assert
             mockWalletWrapper.VerifyAll();
-            var viewResult = Assert.IsType<JsonResult>(result);
-            Assert.NotNull(viewResult.Value);
-            Assert.IsType<WalletModel>(viewResult.Value);
-
-            var model = viewResult.Value as WalletModel;
-            Assert.Equal("Main", model.Network);
+            var viewResult = Assert.IsType<OkResult>(result);
+            Assert.Equal(200, viewResult.StatusCode);
         }
 
         [Fact]
