@@ -2,7 +2,7 @@
 	"variables": [],
 	"info": {
 		"name": "Wallet",
-		"_postman_id": "57013f2c-02dc-df32-41e9-6e4aaa14ad5e",
+		"_postman_id": "b5720ab4-24a5-6957-0ea6-766a9cbaf488",
 		"description": "Requests relating to operations on the wallet",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
@@ -21,7 +21,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWallet\"\n}"
+					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"testnet\",\n\t\"name\": \"testwallet\"\n}"
 				},
 				"description": ""
 			},
@@ -161,7 +161,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"password\": \"password\",\r\n  \"address\": \"1FYp9uguYCz7DgSF9jTWDeZF8kdRKQTXPg\",\r\n  \"amount\": \"0.12\",\r\n  \"feeType\": \"low\",\r\n  \"allowUnconfirmed\": \"true\"\r\n}"
+					"raw": "{\r\n\t\"walletName\": \"testwallet\",\r\n\t\"accountName\": \"account 0\",\r\n\t\"coinType\": 1,\r\n  \"password\": \"password\",\r\n  \"destinationAddress\": \"1FYp9uguYCz7DgSF9jTWDeZF8kdRKQTXPg\",\r\n  \"amount\": \"0.12\",\r\n  \"feeType\": \"low\",\r\n  \"allowUnconfirmed\": \"true\"\r\n}"
 				},
 				"description": ""
 			},
@@ -206,7 +206,7 @@
 				"description": "Gets all the wallets files stored in the default folder"
 			},
 			"response": []
-		},		
+		},
 		{
 			"name": "Get unused account in wallet",
 			"request": {
