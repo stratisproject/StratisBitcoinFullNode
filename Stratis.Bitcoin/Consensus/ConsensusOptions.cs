@@ -37,6 +37,10 @@ namespace Stratis.Bitcoin.Consensus
 	/// </summary>
 	public class PowConsensusOptions : NBitcoin.Consensus.ConsensusOptions
 	{
+		// The maximum allowed size for a serialized block, in bytes (only for buffer size limits) 
+		public int MAX_BLOCK_SERIALIZED_SIZE = 4000000;
+
+		// The maximum allowed weight for a block, see BIP 141 (network rule) 
 		public int MAX_BLOCK_WEIGHT { get; set; } = 4000000;
 
 		public  int WITNESS_SCALE_FACTOR { get; set; } = 4;

@@ -234,10 +234,11 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
             txMemPool = new TxMempool(new FeeRate(1000), settings);
             var mempoolScheduler = new MempoolScheduler();
-            var coins = new InMemoryCoinView();
+            var coins = new InMemoryCoinView(settings.Network.GenesisHash);
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
             var mempoolPersistence = new MempoolPersistence(settings);
-            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main);
+			NBitcoin.Network.Main.Consensus.Options = new PosConsensusOptions();
+			var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main);
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolScheduler, consensusValidator, dateTimeProvider, settings, chain, coins);
             var mempoolOrphans = new MempoolOrphans(mempoolScheduler, txMemPool, chain, mempoolValidator, consensusValidator, coins, dateTimeProvider, settings);
 

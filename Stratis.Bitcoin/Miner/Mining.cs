@@ -17,7 +17,14 @@ namespace Stratis.Bitcoin.Miner
 
 	public class Mining
     {
-	    private readonly FullNode fullNode;
+		// Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
+		public const int DefaultBlockMinTxFee = 1000;
+		// Default for -blockmaxsize, which controls the maximum size of block the mining code will create 
+		public const int DefaultBlockMaxSize = 750000;
+		// Default for -blockmaxweight, which controls the range of block weights the mining code will create 
+		public const int DefaultBlockMaxWeight = 3000000;
+
+		private readonly FullNode fullNode;
 	    private readonly IDateTimeProvider dateTimeProvider;
 
 	    public Mining(FullNode fullNode, IDateTimeProvider dateTimeProvider)
@@ -70,7 +77,7 @@ namespace Stratis.Bitcoin.Miner
 				fullNode.Chain.SetTip(newChain);
 
 				var blockResult = new BlockResult {Block = block};
-				fullNode.ConsensusLoop.AcceptBlock(blockResult);
+				fullNode.ConsensusLoop.AcceptBlock(new ContextInformation(blockResult, fullNode.Network.Consensus));
 
 				if(blockResult.ChainedBlock == null)
 					break; //reorg

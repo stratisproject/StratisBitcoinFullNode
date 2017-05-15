@@ -86,10 +86,10 @@ namespace Stratis.Bitcoin.Configuration
 			if (nodeSettings.Testnet && nodeSettings.RegTest)
 				throw new ConfigurationException("Invalid combination of -regtest and -testnet");
 
-			Network network = nodeSettings.GetNetwork();
+			nodeSettings.Network = nodeSettings.GetNetwork();
 			if (nodeSettings.DataDir == null)
 			{
-				nodeSettings.DataDir = GetDefaultDataDir($"stratis{nodeSettings.Name}", network);
+				nodeSettings.DataDir = GetDefaultDataDir($"stratis{nodeSettings.Name}", nodeSettings.Network);
 			}
 
 			if (nodeSettings.ConfigurationFile == null)
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Configuration
 				if (nodeSettings.RPC.RpcUser == null && nodeSettings.RPC.RpcPassword != null)
 					throw new ConfigurationException("rpcuser should be provided");
 
-				var defaultPort = config.GetOrDefault<int>("rpcport", network.RPCPort);
+				var defaultPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
 				nodeSettings.RPC.RPCPort = defaultPort;
 				try
 				{
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Configuration
 			try
 			{
 				nodeSettings.ConnectionManager.Connect.AddRange(config.GetAll("connect")
-					.Select(c => ConvertToEndpoint(c, network.DefaultPort)));
+					.Select(c => ConvertToEndpoint(c, nodeSettings.Network.DefaultPort)));
 			}
 			catch (FormatException)
 			{
@@ -176,14 +176,14 @@ namespace Stratis.Bitcoin.Configuration
 			try
 			{
 				nodeSettings.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
-						.Select(c => ConvertToEndpoint(c, network.DefaultPort)));
+						.Select(c => ConvertToEndpoint(c, nodeSettings.Network.DefaultPort)));
 			}
 			catch (FormatException)
 			{
 				throw new ConfigurationException("Invalid addnode parameter");
 			}
 
-			var port = config.GetOrDefault<int>("port", network.DefaultPort);
+			var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
 			try
 			{
 				nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("listen")
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Configuration
 
 			if (nodeSettings.ConnectionManager.ExternalEndpoint == null)
 			{
-				nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, network.DefaultPort);
+				nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
 			}
 
 			nodeSettings.Mempool.Load(config);
