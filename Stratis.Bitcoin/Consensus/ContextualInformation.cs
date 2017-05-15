@@ -82,6 +82,14 @@ namespace Stratis.Bitcoin.Consensus
 
 			this.BlockResult = blockResult;
 			this.Consensus = consensus;
+
+			// TODO: adding flags to determine the flow of logic is not ideal
+			// a refator is in depbate on moving to a consensus rules engine
+			// this will remove hte need for flags as a validation will 
+			// only use the required rules (i.e if the check pow rule will be ommited form the flow)
+			this.CheckPow = true;
+			this.CheckMerkleRoot = true;
+			this.OnlyCheck = false;
 		}
 
 		public void SetBestBlock()
@@ -145,5 +153,8 @@ namespace Stratis.Bitcoin.Consensus
 			set;
 		}
 
+		public bool CheckMerkleRoot { get; set; }
+		public bool CheckPow { get; set; }
+		public bool OnlyCheck { get; set; }
 	}
 }

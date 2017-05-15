@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public virtual void CheckBlockHeader(ContextInformation context)
 		{
-			if (!context.BlockResult.Block.Header.CheckProofOfWork())
+			if (context.CheckPow && !context.BlockResult.Block.Header.CheckProofOfWork())
 				ConsensusErrors.HighHash.Throw();
 
 			context.NextWorkRequired = context.BlockResult.ChainedBlock.GetWorkRequired(context.Consensus);
@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			bool mutated = false;
 			uint256 hashMerkleRoot2 = BlockMerkleRoot(block, ref mutated);
-			if(block.Header.HashMerkleRoot != hashMerkleRoot2)
+			if(context.CheckMerkleRoot && block.Header.HashMerkleRoot != hashMerkleRoot2)
 				ConsensusErrors.BadMerkleRoot.Throw();
 
 			// Check for merkle tree malleability (CVE-2012-2459): repeating sequences

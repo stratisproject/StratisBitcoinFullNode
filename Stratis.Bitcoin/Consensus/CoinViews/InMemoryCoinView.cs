@@ -12,28 +12,29 @@ namespace Stratis.Bitcoin.Consensus
 {
 	public class InMemoryCoinView : CoinView
 	{
-		ReaderWriterLock _Lock = new ReaderWriterLock();
-		Dictionary<uint256, UnspentOutputs> _Unspents = new Dictionary<uint256, UnspentOutputs>();
-		uint256 _BlockHash;
+		private readonly ReaderWriterLock lockobj = new ReaderWriterLock();
+		readonly Dictionary<uint256, UnspentOutputs> unspents = new Dictionary<uint256, UnspentOutputs>();
+		private uint256 blockHash;
 
-		public InMemoryCoinView()
+		public InMemoryCoinView(uint256 blockHash)
 		{
+			this.blockHash = blockHash;
 		}
 		
 		public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
 			Guard.NotNull(txIds, nameof(txIds));
 
-			using (_Lock.LockRead())
+			using (lockobj.LockRead())
 			{
 				UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
 				for(int i = 0; i < txIds.Length; i++)
 				{
-					result[i] = _Unspents.TryGet(txIds[i]);
+					result[i] = unspents.TryGet(txIds[i]);
 					if(result[i] != null)
 						result[i] = result[i].Clone();
 				}
-				return Task.FromResult(new FetchCoinsResponse(result, _BlockHash));
+				return Task.FromResult(new FetchCoinsResponse(result, blockHash));
 			}
 		}
 
@@ -43,25 +44,25 @@ namespace Stratis.Bitcoin.Consensus
 			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
 			Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
-			using(_Lock.LockWrite())
+			using(lockobj.LockWrite())
 			{
-				if(_BlockHash != null && oldBlockHash != _BlockHash)
+				if(blockHash != null && oldBlockHash != blockHash)
 					return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
-				_BlockHash = nextBlockHash;
+				blockHash = nextBlockHash;
 				foreach(var unspent in unspentOutputs)
 				{
 					UnspentOutputs existing;
-					if(_Unspents.TryGetValue(unspent.TransactionId, out existing))
+					if(unspents.TryGetValue(unspent.TransactionId, out existing))
 					{
 						existing.Spend(unspent);
 					}
 					else
 					{
 						existing = unspent.Clone();
-						_Unspents.Add(unspent.TransactionId, existing);
+						unspents.Add(unspent.TransactionId, existing);
 					}
 					if(existing.IsPrunable)
-						_Unspents.Remove(unspent.TransactionId);
+						unspents.Remove(unspent.TransactionId);
 				}
 			}
 			return Task.FromResult(true);

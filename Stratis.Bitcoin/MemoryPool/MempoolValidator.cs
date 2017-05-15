@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Only accept nLockTime-using transactions that can be mined in the next
 			// block; we don't want our mempool filled up with transactions that can't
 			// be mined yet.
-			if (!CheckFinalTransaction(context.Transaction, PowConsensusValidator.StandardLocktimeVerifyFlags))
+			if (!CheckFinalTransaction(this.chain, this.dateTimeProvider, context.Transaction, PowConsensusValidator.StandardLocktimeVerifyFlags))
 				context.State.Fail(MempoolErrors.NonFinal).Throw();
 		}
 
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// be mined yet.
 			// Must keep pool.cs for this unless we change CheckSequenceLocks to take a
 			// CoinsViewCache instead of create its own
-			if (!CheckSequenceLocks(context, PowConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
+			if (!CheckSequenceLocks(this.chain.Tip, context, PowConsensusValidator.StandardLocktimeVerifyFlags, context.LockPoints))
 				context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
 
 			// Check for non-standard pay-to-script-hash in inputs
@@ -721,7 +721,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			return true;
 		}
 
-		private bool CheckFinalTransaction(Transaction tx, Transaction.LockTimeFlags flags)
+		public static bool CheckFinalTransaction(ConcurrentChain chian, IDateTimeProvider dateTimeProvider, Transaction tx, Transaction.LockTimeFlags flags)
 		{
 			// By convention a negative value for flags indicates that the
 			// current network-enforced consensus rules should be used. In
@@ -737,7 +737,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// evaluated is what is used. Thus if we want to know if a
 			// transaction can be part of the *next* block, we need to call
 			// IsFinalTx() with one more than chainActive.Height().
-			int blockHeight = this.chain.Height + 1;
+			int blockHeight = chian.Height + 1;
 
 			// BIP113 will require that time-locked transactions have nLockTime set to
 			// less than the median time of the previous block they're contained in.
@@ -745,8 +745,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			// chain tip, so we use that to calculate the median time passed to
 			// IsFinalTx() if LOCKTIME_MEDIAN_TIME_PAST is set.
 			var blockTime = flags.HasFlag(PowConsensusValidator.StandardLocktimeVerifyFlags)
-				? this.chain.Tip.Header.BlockTime
-				: DateTimeOffset.FromUnixTimeMilliseconds(this.dateTimeProvider.GetTime());
+				? chian.Tip.Header.BlockTime
+				: DateTimeOffset.FromUnixTimeMilliseconds(dateTimeProvider.GetTime());
 
 			return tx.IsFinal(blockTime, blockHeight);
 		}
@@ -758,10 +758,9 @@ namespace Stratis.Bitcoin.MemoryPool
 		// passed in for evaluation.
 		// The LockPoints should not be considered valid if CheckSequenceLocks returns false.
 		// See consensus/consensus.h for flag definitions.
-		private bool CheckSequenceLocks(MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null,
+		public static bool CheckSequenceLocks(ChainedBlock tip, MempoolValidationContext context, Transaction.LockTimeFlags flags, LockPoints lp = null,
 			bool useExistingLockPoints = false)
 		{
-			var tip = this.chain.Tip;
 			var dummyBlock = new Block {Header = {HashPrevBlock = tip.HashBlock}};
 			ChainedBlock index = new ChainedBlock(dummyBlock.Header, dummyBlock.GetHash(), tip);
 
