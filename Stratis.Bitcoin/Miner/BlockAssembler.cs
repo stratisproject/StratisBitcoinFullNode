@@ -561,5 +561,24 @@ namespace Stratis.Bitcoin.Miner
 			}
 		    return descendantsUpdated;
 	    }
-    }
+
+		static uint256 hashPrevBlock;
+
+		public static void IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
+		{
+			// Update nExtraNonce
+			if (hashPrevBlock != pblock.Header.HashPrevBlock)
+			{
+				nExtraNonce = 0;
+				hashPrevBlock = pblock.Header.HashPrevBlock;
+			}
+			++nExtraNonce;
+			int nHeight = pindexPrev.Height + 1; // Height first in coinbase required for block.version=2
+			var txCoinbase = pblock.Transactions[0];
+			txCoinbase.Inputs[0] = TxIn.CreateCoinbase(nHeight);
+
+			Guard.Assert(txCoinbase.Inputs[0].ScriptSig.Length <= 100);
+			pblock.UpdateMerkleRoot();
+		}
+	}
 }

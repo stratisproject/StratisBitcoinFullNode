@@ -25,46 +25,59 @@ namespace Stratis.Bitcoin.Miner
 		public const int DefaultBlockMaxWeight = 3000000;
 
 		private readonly FullNode fullNode;
+	    private readonly ConcurrentChain chain;
+	    private readonly Network network;
 	    private readonly IDateTimeProvider dateTimeProvider;
+	    private readonly BlockAssemblerFactory blockAssemblerFactory;
 
-	    public Mining(FullNode fullNode, IDateTimeProvider dateTimeProvider)
+	    public Mining(ConcurrentChain chain, Network network, IDateTimeProvider dateTimeProvider, BlockAssemblerFactory blockAssemblerFactory)
 	    {
-		    this.fullNode = fullNode;
+		    this.chain = chain;
+		    this.network = network;
 		    this.dateTimeProvider = dateTimeProvider;
+		    this.blockAssemblerFactory = blockAssemblerFactory;
 	    }
+
+		const int nInnerLoopCount = 0x10000;
 
 		public List<uint256> GenerateBlocks(ReserveScript reserveScript, int generate, int maxTries, bool keepScript)
 	    {
-			// temporary code to mine blocks while doing some simulations
-			// this will be refactored to have the same logic as core with regards to 
-			// selecting and sorting transactions from the mempool. 
+			int nHeightStart = 0;
+			int nHeightEnd = 0;
+			int nHeight = 0;
 
-		    if (fullNode.Chain.Tip != fullNode.ConsensusLoop.Tip)
+			nHeightStart = this.chain.Height;
+			nHeight = nHeightStart;
+			nHeightEnd = nHeightStart + generate;
+			int nExtraNonce = 0;
+
+			if (fullNode.Chain.Tip != fullNode.ConsensusLoop.Tip)
 			    return Enumerable.Empty<uint256>().ToList();
 
 			List<Block> blocks = new List<Block>();
 
-			for (int i = 0; i < generate; i++)
+			while (nHeight < nHeightEnd)
 			{
-				uint nonce = 0;
-				Block block = new Block();
-				block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
-				//block.Header.Bits = GetWorkRequired(fullNode.Network.Consensus,new ChainedBlock(block.Header, (uint256) null, fullNode.Chain.Tip));
-				block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
-				block.Header.UpdateTime(dateTimeProvider.GetTimeOffset(), fullNode.Network, fullNode.Chain.Tip);
-				var coinbase = new Transaction();
-				coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
-				coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), reserveScript.reserveSfullNodecript));
-				block.AddTransaction(coinbase);
-				//if (passedTransactions?.Any() ?? false)
-				//{
-				//	passedTransactions = Reorder(passedTransactions);
-				//	block.Transactions.AddRange(passedTransactions);
-				//}
-				block.UpdateMerkleRoot();
-				var retry = 0;
-				while (!block.CheckProofOfWork() && !fullNode.IsDisposed && ++retry < maxTries)
-					block.Header.Nonce = ++nonce;
+				var pblocktemplate = this.blockAssemblerFactory.Create().CreateNewBlock(reserveScript.reserveSfullNodecript);
+				BlockAssembler.IncrementExtraNonce(pblocktemplate.Block, this.chain.Tip, nExtraNonce);
+				var pblock = pblocktemplate.Block;
+
+				while (maxTries > 0 && pblock.Header.Nonce < nInnerLoopCount && !pblock.CheckProofOfWork())
+				{
+					++pblock.Header.Nonce;
+					--maxTries;
+				}
+
+				if (maxTries == 0)
+				{
+					break;
+				}
+
+				if (pblock.Header.Nonce == nInnerLoopCount)
+				{
+					continue;
+				}
+
 				if (fullNode.IsDisposed || retry >= maxTries)
 					return blocks.Select(b => b.GetHash()).ToList();
 				if (block.Header.HashPrevBlock != fullNode.Chain.Tip.HashBlock)
