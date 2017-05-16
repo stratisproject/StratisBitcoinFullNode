@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Consensus
 				Validator.CheckBlock(context);
 			}
 
-			if(context.OnlyCheck)
+			if (context.OnlyCheck)
 				return;
 
 			// load the UTXO set of the current block
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Consensus
 			using (watch.Start(o => Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
 			{
 				var ids = GetIdsToFetch(context.BlockResult.Block, context.Flags.EnforceBIP30);
-				var coins = UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
+				var coins = this.UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
 				context.Set.SetCoins(coins);
 			}
 
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Consensus
 			// persist the changes to the coinview
 			// this will likely only be sotred in mempry 
 			// unless the coinview trashold is reached
-			UTXOSet.SaveChangesAsync(context.Set.GetCoins(UTXOSet), null, Tip.HashBlock, context.BlockResult.ChainedBlock.HashBlock);
+			this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, Tip.HashBlock, context.BlockResult.ChainedBlock.HashBlock);
 
 			// set the new tip.
 			Tip = context.BlockResult.ChainedBlock;
