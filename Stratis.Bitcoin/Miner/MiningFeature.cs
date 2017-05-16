@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Miner
 	{		
 		private readonly FullNode node;
 
-		public MiningFeature(FullNode node)
+		public MiningFeature(FullNode node, BlockAssemblerFactory blockAssemblerFactory)
 		{			
 			this.node = node;
 		}
@@ -64,6 +64,7 @@ namespace Stratis.Bitcoin.Miner
 					.FeatureServices(services =>
 					{
 						services.AddSingleton<Mining>();
+						services.AddSingleton<BlockAssemblerFactory>();
 					});
 				});
 			}

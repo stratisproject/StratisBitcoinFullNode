@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
 		}
 
-		private Money GetBlockSubsidy(int nHeight)
+		public Money GetBlockSubsidy(int nHeight)
 		{
 			int halvings = nHeight / consensusParams.SubsidyHalvingInterval;
 			// Force block reward to zero when right shift is undefined.
@@ -495,7 +495,7 @@ namespace Stratis.Bitcoin.Consensus
 		}
 
 
-		private long GetBlockWeight(Block block)
+		public long GetBlockWeight(Block block)
 		{
 			// This implements the weight = (stripped_size * 4) + witness_size formula,
 			// using only serialization with and without witness data. As witness_size
