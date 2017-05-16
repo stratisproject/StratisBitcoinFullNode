@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -20,7 +21,7 @@ namespace Stratis.StratisD
 {
 	public class Program
 	{
-		public static void Main(string[] args)
+        public static void Main(string[] args)
 		{
 			ILoggerFactory loggerFactory = new LoggerFactory()
 				.AddConsole(LogLevel.Trace, false);
@@ -41,11 +42,7 @@ namespace Stratis.StratisD
 				.UseMempool()
 				.Build();
 
-			// TODO: bring the logic out of IWebHost.Run()
-			node.Start();
-			Console.WriteLine("Press any key to stop");
-			Console.ReadLine();
-			node.Dispose();
+		    node.Run();
 		}
 
 		private static Network InitStratisTest()
