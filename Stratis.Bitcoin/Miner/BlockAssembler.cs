@@ -191,8 +191,8 @@ namespace Stratis.Bitcoin.Miner
 			coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetBlockSubsidy(this.height);
 
 			var nSerializeSize = pblock.GetSerializedSize();
-			Logs.Mining.LogInformation("CreateNewBlock()");
-			//LogPrintf("CreateNewBlock(): total size: %u block weight: %u txs: %u fees: %ld sigops %d\n", nSerializeSize, GetBlockWeight(*pblock), blockTx, fees, blockSigOpsCost);
+			Logs.Mining.LogInformation(
+				$"CreateNewBlock: total size: {nSerializeSize} block weight: {consensusLoop.Validator.GetBlockWeight(pblock)} txs: {blockTx} fees: {fees} sigops {blockSigOpsCost}");
 
 			// Fill in header
 			pblock.Header.HashPrevBlock = pindexPrev.HashBlock;
