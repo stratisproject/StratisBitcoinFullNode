@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
         private Target GetNetworkDifficulty()
         {
             if (this._ConsensusValidator?.ConsensusParams != null && this._ChainState?.HighestValidatedPoW != null)
-                return Miner.Mining.GetWorkRequired(this._ConsensusValidator.ConsensusParams, this._ChainState?.HighestValidatedPoW);
+                return Miner.PowMining.GetWorkRequired(this._ConsensusValidator.ConsensusParams, this._ChainState?.HighestValidatedPoW);
             else
                 return null;
         }

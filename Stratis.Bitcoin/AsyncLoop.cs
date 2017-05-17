@@ -69,11 +69,21 @@ namespace Stratis.Bitcoin
                     if (delayStart != null)
                         await Task.Delay(delayStart.Value, cancellation).ConfigureAwait(false);
 
-                    while (!cancellation.IsCancellationRequested)
-                    {
-                        await loopAsync(cancellation).ConfigureAwait(false);
-                        await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
-                    }
+	                if (refreshRate == TimeSpans.RunOnce)
+					{
+						if(cancellation.IsCancellationRequested)
+							return;
+
+						await loopAsync(cancellation).ConfigureAwait(false);
+
+						return;
+	                }
+
+	                while (!cancellation.IsCancellationRequested)
+	                {
+		                await loopAsync(cancellation).ConfigureAwait(false);
+		                await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
+	                }
                 }
                 catch (OperationCanceledException ex)
                 {

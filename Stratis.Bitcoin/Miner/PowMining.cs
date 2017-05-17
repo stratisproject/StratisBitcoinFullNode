@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Miner
@@ -15,7 +18,7 @@ namespace Stratis.Bitcoin.Miner
 		public Script reserveSfullNodecript { get; set; }
 	}
 
-	public class Mining
+	public class PowMining
     {
 		// Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
 		public const int DefaultBlockMinTxFee = 1000;
@@ -24,32 +27,60 @@ namespace Stratis.Bitcoin.Miner
 		// Default for -blockmaxweight, which controls the range of block weights the mining code will create 
 		public const int DefaultBlockMaxWeight = 3000000;
 
-		private readonly FullNode fullNode;
+		const int InnerLoopCount = 0x10000;
+
 	    private readonly ConsensusLoop consensusLoop;
 	    private readonly ConcurrentChain chain;
 	    private readonly Network network;
 	    private readonly IDateTimeProvider dateTimeProvider;
 	    private readonly BlockAssemblerFactory blockAssemblerFactory;
+	    private readonly BlockRepository blockRepository;
+	    private readonly ChainBehavior.ChainState chainState;
+	    private readonly Signals signals;
+	    private readonly FullNode.CancellationProvider cancellationProvider;
+	    private uint256 hashPrevBlock;
+		private Task mining;
 
-	    public Mining(FullNode fullNode, ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, IDateTimeProvider dateTimeProvider, BlockAssemblerFactory blockAssemblerFactory)
+		public PowMining(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, 
+			IDateTimeProvider dateTimeProvider, BlockAssemblerFactory blockAssemblerFactory, BlockRepository blockRepository, 
+			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider)
 	    {
-		    this.fullNode = fullNode;
 		    this.consensusLoop = consensusLoop;
 		    this.chain = chain;
 		    this.network = network;
 		    this.dateTimeProvider = dateTimeProvider;
 		    this.blockAssemblerFactory = blockAssemblerFactory;
+		    this.blockRepository = blockRepository;
+		    this.chainState = chainState;
+		    this.signals = signals;
+		    this.cancellationProvider = cancellationProvider;
 	    }
 
-		const int nInnerLoopCount = 0x10000;
+		public Task Mine(Script reserveScript)
+		{
+			if (this.mining != null)
+				return this.mining; // already mining
 
-		public List<uint256> GenerateBlocks(ReserveScript reserveScript, int generate, int maxTries, bool keepScript)
+			this.mining = AsyncLoop.Run("PowMining.Mine", token =>
+			{
+				this.GenerateBlocks(new ReserveScript { reserveSfullNodecript = reserveScript }, int.MaxValue, int.MaxValue);
+				this.mining = null;
+				return Task.CompletedTask;
+			},
+			cancellationProvider.Cancellation.Token,
+			repeatEvery: TimeSpans.RunOnce,
+			startAfter: TimeSpans.TenSeconds);
+
+			return this.mining;
+		}
+
+		public List<uint256> GenerateBlocks(ReserveScript reserveScript, uint generate, uint maxTries)
 	    {
-			int nHeightStart = 0;
-			int nHeightEnd = 0;
-			int nHeight = 0;
+			uint nHeightStart = 0;
+			uint nHeightEnd = 0;
+			uint nHeight = 0;
 
-			nHeightStart = this.chain.Height;
+			nHeightStart = (uint)this.chain.Height;
 			nHeight = nHeightStart;
 			nHeightEnd = nHeightStart + generate;
 			int nExtraNonce = 0;
@@ -58,13 +89,17 @@ namespace Stratis.Bitcoin.Miner
 		    if (this.chain.Tip != this.consensusLoop.Tip)
 			    return blocks;
 
+		    BlockTemplate pblocktemplate = null;
+
 			while (nHeight < nHeightEnd)
 			{
-				var pblocktemplate = this.blockAssemblerFactory.Create().CreateNewBlock(reserveScript.reserveSfullNodecript);
-				BlockAssembler.IncrementExtraNonce(pblocktemplate.Block, this.chain.Tip, nExtraNonce);
+				if (pblocktemplate == null)
+					pblocktemplate = this.blockAssemblerFactory.Create().CreateNewBlock(reserveScript.reserveSfullNodecript);
+
+				this.IncrementExtraNonce(pblocktemplate.Block, this.chain.Tip, nExtraNonce);
 				var pblock = pblocktemplate.Block;
 
-				while (maxTries > 0 && pblock.Header.Nonce < nInnerLoopCount && !pblock.CheckProofOfWork())
+				while (maxTries > 0 && pblock.Header.Nonce < InnerLoopCount && !pblock.CheckProofOfWork())
 				{
 					++pblock.Header.Nonce;
 					--maxTries;
@@ -73,14 +108,14 @@ namespace Stratis.Bitcoin.Miner
 				if (maxTries == 0)
 					break;
 
-				if (pblock.Header.Nonce == nInnerLoopCount)
+				if (pblock.Header.Nonce == InnerLoopCount)
 					continue;
 
-				var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), fullNode.Chain.Tip);
+				var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), this.chain.Tip);
 				this.chain.SetTip(newChain);
 
 				var blockResult = new BlockResult {Block = pblock };
-				fullNode.ConsensusLoop.AcceptBlock(new ContextInformation(blockResult, fullNode.Network.Consensus));
+				this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
 
 				if (blockResult.ChainedBlock == null)
 					break; //reorg
@@ -89,21 +124,39 @@ namespace Stratis.Bitcoin.Miner
 					return blocks;
 				
 				// similar logic to what's in the full node code
-				fullNode.ChainBehaviorState.HighestValidatedPoW = fullNode.ConsensusLoop.Tip;
-				fullNode.Signals.Blocks.Broadcast(pblock);
+				this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
+				this.signals.Blocks.Broadcast(pblock);
 
 				++nHeight;
 				blocks.Add(pblock.GetHash());
 
 				// ensure the block is written to disk
 				var retry = 0;
-				while (++retry < maxTries &&
-				       !this.fullNode.BlockStoreManager.BlockRepository.ExistAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
+				while (++retry < maxTries && !this.blockRepository.ExistAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
 					Thread.Sleep(100);
+
+				pblocktemplate = null;
 			}
 
-		    return blocks;
+			return blocks;
 	    }
+
+		public void IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
+		{
+			// Update nExtraNonce
+			if (hashPrevBlock != pblock.Header.HashPrevBlock)
+			{
+				nExtraNonce = 0;
+				hashPrevBlock = pblock.Header.HashPrevBlock;
+			}
+			++nExtraNonce;
+			int nHeight = pindexPrev.Height + 1; // Height first in coinbase required for block.version=2
+			var txCoinbase = pblock.Transactions[0];
+			txCoinbase.Inputs[0] = TxIn.CreateCoinbase(nHeight);
+
+			Guard.Assert(txCoinbase.Inputs[0].ScriptSig.Length <= 100);
+			pblock.UpdateMerkleRoot();
+		}
 
 		public static Target GetWorkRequired(NBitcoin.Consensus consensus, ChainedBlock chainedBlock)
 		{

@@ -83,7 +83,6 @@ namespace Stratis.Bitcoin
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
-			this.Miner = this.Services.ServiceProvider.GetService<Mining>();
 
 			_logger.LogDebug("Full node initialized on {0}", Network.Name);
 
@@ -170,11 +169,6 @@ namespace Stratis.Bitcoin
 		public BlockStore.ChainBehavior.ChainState ChainBehaviorState
 		{
 			get { return _ChainBehaviorState; }
-		}
-
-		public Mining Miner
-		{
-			get; set;
 		}
 
 		public Signals Signals

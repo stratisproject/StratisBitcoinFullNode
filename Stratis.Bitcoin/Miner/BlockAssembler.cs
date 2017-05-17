@@ -70,9 +70,9 @@ namespace Stratis.Bitcoin.Miner
 
 		public class Options
 		{
-			public long BlockMaxWeight = Mining.DefaultBlockMaxWeight;
-			public long BlockMaxSize = Mining.DefaultBlockMaxSize;
-			public FeeRate BlockMinFeeRate = new FeeRate(Mining.DefaultBlockMinTxFee);
+			public long BlockMaxWeight = PowMining.DefaultBlockMaxWeight;
+			public long BlockMaxSize = PowMining.DefaultBlockMaxSize;
+			public FeeRate BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 		};
 
 		public BlockAssembler(ConsensusLoop consensusLoop, Network network, ConcurrentChain chain,
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Miner
 			options = options ?? new Options();
 			this.blockMinFeeRate = options.BlockMinFeeRate;
 			// Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity:
-			this.blockMaxWeight = (uint)Math.Max(4000, Math.Min(Mining.DefaultBlockMaxWeight - 4000, options.BlockMaxWeight));
+			this.blockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, options.BlockMaxWeight));
 			// Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity:
 			this.blockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE - 1000, options.BlockMaxSize));
 			// Whether we need to account for byte usage (in addition to weight usage)
@@ -562,23 +562,5 @@ namespace Stratis.Bitcoin.Miner
 		    return descendantsUpdated;
 	    }
 
-		static uint256 hashPrevBlock;
-
-		public static void IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
-		{
-			// Update nExtraNonce
-			if (hashPrevBlock != pblock.Header.HashPrevBlock)
-			{
-				nExtraNonce = 0;
-				hashPrevBlock = pblock.Header.HashPrevBlock;
-			}
-			++nExtraNonce;
-			int nHeight = pindexPrev.Height + 1; // Height first in coinbase required for block.version=2
-			var txCoinbase = pblock.Transactions[0];
-			txCoinbase.Inputs[0] = TxIn.CreateCoinbase(nHeight);
-
-			Guard.Assert(txCoinbase.Inputs[0].ScriptSig.Length <= 100);
-			pblock.UpdateMerkleRoot();
-		}
 	}
 }
