@@ -1,19 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Stratis.Bitcoin.Builder
 {
     public interface IFullNode : IDisposable
     {
+        IApplicationLifetime ApplicationLifetime { get; }
         IFullNodeServiceProvider Services { get; }
         NBitcoin.Network Network { get; }
-        System.Version Version { get; }
-
+        Version Version { get; }
+        FullNode.CancellationProvider GlobalCancellation { get; }
         void Start();
-        Task RunAsync();
-        Task RunAsync(CancellationToken cancellationToken, string shutdownMessage);
-        void Run();
+        void Stop();
     }
 }
