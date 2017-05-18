@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public virtual void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
 		{
-			Money blockReward = nFees + GetBlockSubsidy(chainedBlock.Height);
+			Money blockReward = nFees + GetProofOfWorkReward(chainedBlock.Height);
 			if (block.Transactions[0].TotalOut > blockReward)
 				ConsensusErrors.BadCoinbaseAmount.Throw();
 		}
@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
 		}
 
-		public Money GetBlockSubsidy(int nHeight)
+		public virtual Money GetProofOfWorkReward(int nHeight)
 		{
 			int halvings = nHeight / consensusParams.SubsidyHalvingInterval;
 			// Force block reward to zero when right shift is undefined.

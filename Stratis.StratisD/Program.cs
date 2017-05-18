@@ -48,6 +48,21 @@ namespace Stratis.StratisD
 			node.Dispose();
 		}
 
+		private static void TryStartMiner(string[] args, IFullNode node)
+		{
+			// mining can be called from either RPC or on start
+			// to manage the on strat we need to get an address to the mining code
+			var mine = args.FirstOrDefault(a => a.Contains("mine="));
+			if (mine != null)
+			{
+				var stakes = new List<PosMinting.StakeTx>()
+				{
+					new PosMinting.StakeTx { TransactionHash = uint256.Parse(""), PrvKey = Key.Parse("")}
+				};
+
+				node.Services.ServiceProvider.Service<PosMinting>().Mine(stakes);
+			}
+		}
 		private static Network InitStratisTest()
 		{
 			Block.BlockSignature = true;

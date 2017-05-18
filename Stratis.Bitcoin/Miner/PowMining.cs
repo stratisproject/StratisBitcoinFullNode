@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Miner
 
 			this.mining = AsyncLoop.Run("PowMining.Mine", token =>
 			{
-				this.GenerateBlocks(new ReserveScript { reserveSfullNodecript = reserveScript }, int.MaxValue, int.MaxValue);
+				this.GenerateBlocks(new ReserveScript { reserveSfullNodecript = reserveScript }, ulong.MaxValue, ulong.MaxValue);
 				this.mining = null;
 				return Task.CompletedTask;
 			},
@@ -74,13 +74,13 @@ namespace Stratis.Bitcoin.Miner
 			return this.mining;
 		}
 
-		public List<uint256> GenerateBlocks(ReserveScript reserveScript, uint generate, uint maxTries)
+		public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong generate, ulong maxTries)
 	    {
-			uint nHeightStart = 0;
-			uint nHeightEnd = 0;
-			uint nHeight = 0;
+			ulong nHeightStart = 0;
+			ulong nHeightEnd = 0;
+			ulong nHeight = 0;
 
-			nHeightStart = (uint)this.chain.Height;
+			nHeightStart = (ulong)this.chain.Height;
 			nHeight = nHeightStart;
 			nHeightEnd = nHeightStart + generate;
 			int nExtraNonce = 0;
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Miner
 			while (nHeight < nHeightEnd)
 			{
 				if (pblocktemplate == null)
-					pblocktemplate = this.blockAssemblerFactory.Create().CreateNewBlock(reserveScript.reserveSfullNodecript);
+					pblocktemplate = this.blockAssemblerFactory.CreatePow().CreateNewBlock(reserveScript.reserveSfullNodecript);
 
 				this.IncrementExtraNonce(pblocktemplate.Block, this.chain.Tip, nExtraNonce);
 				var pblock = pblocktemplate.Block;
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Miner
 				blocks.Add(pblock.GetHash());
 
 				// ensure the block is written to disk
-				var retry = 0;
+				ulong retry = 0;
 				while (++retry < maxTries && !this.blockRepository.ExistAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
 					Thread.Sleep(100);
 

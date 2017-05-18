@@ -24,9 +24,10 @@ namespace Stratis.Bitcoin.Miner
 		public List<Money> VTxFees;
 		public List<long> TxSigOpsCost;
 		public string CoinbaseCommitment;
+		public Money TotalFee;
 	};
 
-	public class BlockAssembler
+	public class PowBlockAssembler
 	{
 		// Unconfirmed transactions in the memory pool often depend on other
 		// transactions in the memory pool. When we select transactions from the
@@ -37,16 +38,16 @@ namespace Stratis.Bitcoin.Miner
 		static long LastBlockSize = 0;
 		static long LastBlockWeight = 0;
 
-		private readonly ConsensusLoop consensusLoop;
-		private readonly ConcurrentChain chain;
-		private readonly MempoolScheduler mempoolScheduler;
-		private readonly TxMempool mempool;
-		private readonly IDateTimeProvider dateTimeProvider;
-		private readonly Options options;
+		protected readonly ConsensusLoop consensusLoop;
+		protected readonly ConcurrentChain chain;
+		protected readonly MempoolScheduler mempoolScheduler;
+		protected readonly TxMempool mempool;
+		protected readonly IDateTimeProvider dateTimeProvider;
+		protected readonly Options options;
 		// The constructed block template
-		private readonly BlockTemplate pblocktemplate;
+		protected readonly BlockTemplate pblocktemplate;
 		// A convenience pointer that always refers to the CBlock in pblocktemplate
-		private Block pblock;
+		protected Block pblock;
 
 		// Configuration parameters for the block size
 		private bool fIncludeWitness;
@@ -59,13 +60,14 @@ namespace Stratis.Bitcoin.Miner
 		private long blockSize;
 		private long blockTx;
 		private long blockSigOpsCost;
-		private Money fees;
+		public Money fees;
 		private TxMempool.SetEntries inBlock;
+		protected Transaction coinbase;
 
 		// Chain context for the block
-		private int height;
+		protected int height;
 		private long lockTimeCutoff;
-		private Network network;
+		protected Network network;
 
 
 		public class Options
@@ -75,7 +77,7 @@ namespace Stratis.Bitcoin.Miner
 			public FeeRate BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 		};
 
-		public BlockAssembler(ConsensusLoop consensusLoop, Network network, ConcurrentChain chain,
+		public PowBlockAssembler(ConsensusLoop consensusLoop, Network network, ConcurrentChain chain,
 			MempoolScheduler mempoolScheduler, TxMempool mempool,
 			IDateTimeProvider dateTimeProvider, Options options = null)
 		{
@@ -135,7 +137,7 @@ namespace Stratis.Bitcoin.Miner
 		const long TicksPerMicrosecond = 10;
 		/** Construct a new block template with coinbase to scriptPubKeyIn */
 
-		public BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
+		public virtual BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
 		{
 			long nTimeStart = DateTime.UtcNow.Ticks/TicksPerMicrosecond;
 			pblock = pblocktemplate.Block; // pointer for convenience
@@ -143,7 +145,7 @@ namespace Stratis.Bitcoin.Miner
 			// Create coinbase transaction.
 			// set the coin base with zero money 
 			// once we have the fee we can update the amount
-			var coinbase = new Transaction();
+			this.coinbase = new Transaction();
 			coinbase.AddInput(TxIn.CreateCoinbase(this.chain.Height + 1));
 			coinbase.AddOutput(new TxOut(Money.Zero, scriptPubKeyIn));
 			pblock.AddTransaction(coinbase);
@@ -188,7 +190,8 @@ namespace Stratis.Bitcoin.Miner
 			// TODO: Implement Witness Code
 			// pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
 			pblocktemplate.VTxFees[0] = -fees;
-			coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetBlockSubsidy(this.height);
+			coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
+			pblocktemplate.TotalFee = this.fees;
 
 			var nSerializeSize = pblock.GetSerializedSize();
 			Logs.Mining.LogInformation(

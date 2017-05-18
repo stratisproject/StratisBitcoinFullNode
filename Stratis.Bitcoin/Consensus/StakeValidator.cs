@@ -581,9 +581,8 @@ namespace Stratis.Bitcoin.Consensus
 			if (prevBlockStake == null)
 				ConsensusErrors.BadStakeBlock.Throw();
 
-			// todo: check this unclear logic
 			//if (pBlockTime)
-			//	pBlockTime = block.Header.Time;
+				pBlockTime = prevBlock.Header.Time;
 
 			this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, prevout, (uint)nTime);
 		}

@@ -21,15 +21,15 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
 		static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
-	    public static BlockAssembler AssemblerForTest(TestContext testContext)
+	    public static PowBlockAssembler AssemblerForTest(TestContext testContext)
 	    {
-		    BlockAssembler.Options options = new BlockAssembler.Options();
+		    PowBlockAssembler.Options options = new PowBlockAssembler.Options();
 
 		    options.BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_WEIGHT;
 		    options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
 		    options.BlockMinFeeRate = blockMinFeeRate;
 
-		    return new BlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.scheduler, testContext.mempool, testContext.date, options);
+		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.scheduler, testContext.mempool, testContext.date, options);
 	    }
 		public class Blockinfo
 		{
