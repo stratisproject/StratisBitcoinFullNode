@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Miner
 	    private readonly Network network;
 		private readonly ConnectionManager connection;
 		private readonly IDateTimeProvider dateTimeProvider;
-	    private readonly BlockAssemblerFactory blockAssemblerFactory;
+	    private readonly AssemblerFactory blockAssemblerFactory;
 	    private readonly BlockRepository blockRepository;
 	    private readonly ChainBehavior.ChainState chainState;
 	    private readonly Signals signals;
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Miner
 		public long LastCoinStakeSearchTime;
 
 		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, ConnectionManager connection, 
-			IDateTimeProvider dateTimeProvider, BlockAssemblerFactory blockAssemblerFactory, BlockRepository blockRepository, 
+			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository, 
 			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider, 
 			NodeSettings settings, CachedCoinView cachedCoinView, BlockStoreCache blockStore, StakeChain stakeChain)
 	    {
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Miner
 			    }
 
 			    if (pblocktemplate == null)
-				    pblocktemplate = this.blockAssemblerFactory.CreatePos().CreateNewBlock(new Script());
+				    pblocktemplate = this.blockAssemblerFactory.Create().CreateNewBlock(new Script());
 
 			    var pblock = pblocktemplate.Block;
 			    var pindexPrev = this.chain.Tip;

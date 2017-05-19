@@ -39,7 +39,10 @@ namespace Stratis.StratisD
 				.UseStratisConsensus()
 				.UseBlockStore()
 				.UseMempool()
+				.AddPowPosMining()
 				.Build();
+
+			TryStartPowMiner(args, node);
 
 			// TODO: bring the logic out of IWebHost.Run()
 			node.Start();
@@ -48,7 +51,21 @@ namespace Stratis.StratisD
 			node.Dispose();
 		}
 
-		private static void TryStartMiner(string[] args, IFullNode node)
+		private static void TryStartPowMiner(string[] args, IFullNode node)
+		{
+			// mining can be called from either RPC or on start
+			// to manage the on strat we need to get an address to the mining code
+			var mine = args.FirstOrDefault(a => a.Contains("mine="));
+			if (mine != null)
+			{
+				// get the address to mine to
+				var addres = mine.Replace("mine=", string.Empty);
+				var pubkey = BitcoinAddress.Create(addres, node.Network);
+				node.Services.ServiceProvider.Service<PowMining>().Mine(pubkey.ScriptPubKey);
+			}
+		}
+
+		private static void TryStartPosMiner(string[] args, IFullNode node)
 		{
 			// mining can be called from either RPC or on start
 			// to manage the on strat we need to get an address to the mining code

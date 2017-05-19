@@ -38,7 +38,24 @@ namespace Stratis.Bitcoin.Miner
 					.FeatureServices(services =>
 					{
 						services.AddSingleton<PowMining>();
-						services.AddSingleton<BlockAssemblerFactory>();
+						services.AddSingleton<AssemblerFactory, PowAssemblerFactory>();
+					});
+			});
+
+			return fullNodeBuilder;
+		}
+
+		public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder)
+		{
+			fullNodeBuilder.ConfigureFeature(features =>
+			{
+				features
+					.AddFeature<MiningFeature>()
+					.FeatureServices(services =>
+					{
+						services.AddSingleton<PowMining>();
+						services.AddSingleton<PosMinting>();
+						services.AddSingleton<AssemblerFactory, PosAssemblerFactory>();
 					});
 			});
 

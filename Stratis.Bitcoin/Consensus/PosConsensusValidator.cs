@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			if (context.Stake.BlockStake.IsProofOfWork())
 			{
-				if (!context.BlockResult.Block.Header.CheckProofOfWork())
+				if (context.CheckPow && !context.BlockResult.Block.Header.CheckProofOfWork())
 					ConsensusErrors.HighHash.Throw();
 			}
 

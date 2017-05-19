@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Miner
 
 		public PosBlockAssembler(ConsensusLoop consensusLoop, Network network, ConcurrentChain chain,
 			MempoolScheduler mempoolScheduler, TxMempool mempool,
-			IDateTimeProvider dateTimeProvider, StakeChain stakeChain, Options options = null)
+			IDateTimeProvider dateTimeProvider, StakeChain stakeChain, AssemblerOptions options = null)
 			: base(consensusLoop, network, chain, mempoolScheduler, mempool, dateTimeProvider, options)
 		{
 			this.stakeChain = stakeChain;
@@ -34,15 +34,20 @@ namespace Stratis.Bitcoin.Miner
 			var posvalidator = this.consensusLoop.Validator as PosConsensusValidator;
 			Guard.NotNull(posvalidator, "posvalidator");
 
-			var stake = new BlockStake(this.pblock);
-			this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(stakeChain, this.chain.Tip, this.network.Consensus, stake.IsProofOfStake());
-
 			// TODO: add this code
 			// Timestamp limit
 			// if (tx.nTime > GetAdjustedTime() || (fProofOfStake && tx.nTime > pblock->vtx[0].nTime))
 				//continue;
 
 			return this.pblocktemplate;
+		}
+
+		protected override void UpdateHeaders()
+		{
+			base.UpdateHeaders();
+
+			var stake = new BlockStake(this.pblock);
+			this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(stakeChain, this.chain.Tip, this.network.Consensus, stake.IsProofOfStake());
 		}
 	}
 }

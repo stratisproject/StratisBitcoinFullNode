@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Consensus
 						this.chain.SetTip(this.consensusLoop.Tip);
 						//Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
 						Logs.FullNode.LogError("Marking block as invalid");
-						this.chainState.MarkBlockInvalid(block.ChainedBlock.HashBlock);
+						this.chainState.MarkBlockInvalid(block.Block.GetHash());
 					}
 
 					if (!reorg && block.Error == null)

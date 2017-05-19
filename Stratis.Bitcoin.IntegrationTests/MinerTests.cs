@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 	    public static PowBlockAssembler AssemblerForTest(TestContext testContext)
 	    {
-		    PowBlockAssembler.Options options = new PowBlockAssembler.Options();
+		    AssemblerOptions options = new AssemblerOptions();
 
 		    options.BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_WEIGHT;
 		    options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
