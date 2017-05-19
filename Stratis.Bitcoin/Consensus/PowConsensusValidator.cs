@@ -17,30 +17,30 @@ namespace Stratis.Bitcoin.Consensus
 	public class PowConsensusValidator
 	{
 		private readonly NBitcoin.Consensus consensusParams;
-		private readonly ConsensusOptions consensusOptions;
+		private readonly PowConsensusOptions consensusOptions;
 
 		// Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
 		public static LockTimeFlags StandardLocktimeVerifyFlags = LockTimeFlags.VerifySequence | LockTimeFlags.MedianTimePast;
 
-		public PowConsensusValidator(Network network, ConsensusOptions consensusOptions)
+		public PowConsensusValidator(Network network)
 		{
 			Guard.NotNull(network, nameof(network));
-			Guard.NotNull(consensusOptions, nameof(consensusOptions));
+			Guard.NotNull(network.Consensus.Option<PowConsensusOptions>(), nameof(network.Consensus.Options));
 
 			this.consensusParams = network.Consensus;
-			this.consensusOptions = consensusOptions;
+			this.consensusOptions = network.Consensus.Option<PowConsensusOptions>();
 			this.PerformanceCounter = new ConsensusPerformanceCounter();
 		}
 
 		public NBitcoin.Consensus ConsensusParams => this.consensusParams;
 
-		public ConsensusOptions ConsensusOptions => this.consensusOptions;
+		public PowConsensusOptions ConsensusOptions => this.consensusOptions;
 
 		public ConsensusPerformanceCounter PerformanceCounter { get; }
 
 		public virtual void CheckBlockHeader(ContextInformation context)
 		{
-			if (!context.BlockResult.Block.Header.CheckProofOfWork())
+			if (context.CheckPow && !context.BlockResult.Block.Header.CheckProofOfWork())
 				ConsensusErrors.HighHash.Throw();
 
 			context.NextWorkRequired = context.BlockResult.ChainedBlock.GetWorkRequired(context.Consensus);
@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
 		}
 
-		private Money GetBlockSubsidy(int nHeight)
+		public Money GetBlockSubsidy(int nHeight)
 		{
 			int halvings = nHeight / consensusParams.SubsidyHalvingInterval;
 			// Force block reward to zero when right shift is undefined.
@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			bool mutated = false;
 			uint256 hashMerkleRoot2 = BlockMerkleRoot(block, ref mutated);
-			if(block.Header.HashMerkleRoot != hashMerkleRoot2)
+			if(context.CheckMerkleRoot && block.Header.HashMerkleRoot != hashMerkleRoot2)
 				ConsensusErrors.BadMerkleRoot.Throw();
 
 			// Check for merkle tree malleability (CVE-2012-2459): repeating sequences
@@ -495,7 +495,7 @@ namespace Stratis.Bitcoin.Consensus
 		}
 
 
-		private long GetBlockWeight(Block block)
+		public long GetBlockWeight(Block block)
 		{
 			// This implements the weight = (stripped_size * 4) + witness_size formula,
 			// using only serialization with and without witness data. As witness_size

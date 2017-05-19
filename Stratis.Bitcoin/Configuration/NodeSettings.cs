@@ -18,74 +18,45 @@ namespace Stratis.Bitcoin.Configuration
 
 		const int DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
 
-		public RpcSettings RPC
+		public NodeSettings()
 		{
-			get; set;
-		}
-		public CacheSettings Cache
-		{
-			get; set;
-		} = new CacheSettings();
-		public ConnectionManagerSettings ConnectionManager
-		{
-			get; set;
-		} = new ConnectionManagerSettings();
-		public MempoolSettings Mempool
-		{
-			get; set;
-		} = new MempoolSettings();
-		public StoreSettings Store
-		{
-			get; set;
-		} = new StoreSettings();
-		public bool Testnet
-		{
-			get; set;
-		}
-		public string DataDir
-		{
-			get; set;
-		}
-		public bool RegTest
-		{
-			get;
-			set;
-		}
-		public string ConfigurationFile
-		{
-			get;
-			set;
-		}
-		public bool RequireStandard
-		{
-			get;
-			set;
-		}
-		public int MaxTipAge
-		{
-			get;
-			set;
+			this.Cache = new CacheSettings();
+			this.ConnectionManager = new ConnectionManagerSettings();
+			this.Mempool = new MempoolSettings();
+			this.Store = new StoreSettings();
 		}
 
-		public ProtocolVersion ProtocolVersion
-		{
-			get;
-			set;
-		}
+		public RpcSettings RPC { get; set; }
+		public CacheSettings Cache { get; set; }
+		public ConnectionManagerSettings ConnectionManager { get; set; }
+		public MempoolSettings Mempool { get; set; }
+		public StoreSettings Store { get; set; }
 
+		public bool Testnet { get; set; }
+		public string DataDir { get; set; }
+		public bool RegTest { get; set; }
+		public string ConfigurationFile { get; set; }
+		public bool RequireStandard { get; set; }
+		public int MaxTipAge { get; set; }
+		public ProtocolVersion ProtocolVersion { get; set; }
 		public Network Network { get; private set; }
+		public string Name { get; set; }
 
 		public static NodeSettings Default(Network network = null,
 			ProtocolVersion protocolVersion = SupportedProtocolVersion)
 		{
-			return NodeSettings.FromArguments(new string[0], network);
+			return NodeSettings.FromArguments(new string[0], innernetwork: network);
 		}
 
-		public static NodeSettings FromArguments(string[] args,
+		public static NodeSettings FromArguments(string[] args, string name = "bitcoin" ,
 			Network innernetwork = null,
 			ProtocolVersion protocolVersion = SupportedProtocolVersion)
 		{
-			NodeSettings nodeSettings = new NodeSettings();
+			if (string.IsNullOrEmpty(name))
+				throw new ConfigurationException("A network name is mandatory");
+
+			NodeSettings nodeSettings = new NodeSettings {Name = name};
+
 			if (innernetwork != null)
 				nodeSettings.Network = innernetwork;
 
@@ -115,10 +86,10 @@ namespace Stratis.Bitcoin.Configuration
 			if (nodeSettings.Testnet && nodeSettings.RegTest)
 				throw new ConfigurationException("Invalid combination of -regtest and -testnet");
 
-			Network network = nodeSettings.GetNetwork();
+			nodeSettings.Network = nodeSettings.GetNetwork();
 			if (nodeSettings.DataDir == null)
 			{
-				nodeSettings.DataDir = GetDefaultDataDir("stratisbitcoin", network);
+				nodeSettings.DataDir = GetDefaultDataDir($"stratis{nodeSettings.Name}", nodeSettings.Network);
 			}
 
 			if (nodeSettings.ConfigurationFile == null)
@@ -149,7 +120,7 @@ namespace Stratis.Bitcoin.Configuration
 				if (nodeSettings.RPC.RpcUser == null && nodeSettings.RPC.RpcPassword != null)
 					throw new ConfigurationException("rpcuser should be provided");
 
-				var defaultPort = config.GetOrDefault<int>("rpcport", network.RPCPort);
+				var defaultPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
 				nodeSettings.RPC.RPCPort = defaultPort;
 				try
 				{
@@ -195,7 +166,7 @@ namespace Stratis.Bitcoin.Configuration
 			try
 			{
 				nodeSettings.ConnectionManager.Connect.AddRange(config.GetAll("connect")
-					.Select(c => ConvertToEndpoint(c, network.DefaultPort)));
+					.Select(c => ConvertToEndpoint(c, nodeSettings.Network.DefaultPort)));
 			}
 			catch (FormatException)
 			{
@@ -205,14 +176,14 @@ namespace Stratis.Bitcoin.Configuration
 			try
 			{
 				nodeSettings.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
-						.Select(c => ConvertToEndpoint(c, network.DefaultPort)));
+						.Select(c => ConvertToEndpoint(c, nodeSettings.Network.DefaultPort)));
 			}
 			catch (FormatException)
 			{
 				throw new ConfigurationException("Invalid addnode parameter");
 			}
 
-			var port = config.GetOrDefault<int>("port", network.DefaultPort);
+			var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
 			try
 			{
 				nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("listen")
@@ -253,7 +224,7 @@ namespace Stratis.Bitcoin.Configuration
 
 			if (nodeSettings.ConnectionManager.ExternalEndpoint == null)
 			{
-				nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, network.DefaultPort);
+				nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
 			}
 
 			nodeSettings.Mempool.Load(config);
@@ -298,7 +269,7 @@ namespace Stratis.Bitcoin.Configuration
 
 		private string GetDefaultConfigurationFile()
 		{
-			var config = Path.Combine(this.DataDir, this.Network.GetDefaultConfigurationFilename());
+			var config = Path.Combine(this.DataDir, $"{this.Name}.conf");
 			Logs.Configuration.LogInformation("Configuration file set to " + config);
 			if (!File.Exists(config))
 			{

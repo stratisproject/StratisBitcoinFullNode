@@ -17,84 +17,92 @@ namespace Stratis.Bitcoin.Miner
 
 	public class Mining
     {
-	    private readonly FullNode fullNode;
-	    private readonly IDateTimeProvider dateTimeProvider;
+		// Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
+		public const int DefaultBlockMinTxFee = 1000;
+		// Default for -blockmaxsize, which controls the maximum size of block the mining code will create 
+		public const int DefaultBlockMaxSize = 750000;
+		// Default for -blockmaxweight, which controls the range of block weights the mining code will create 
+		public const int DefaultBlockMaxWeight = 3000000;
 
-	    public Mining(FullNode fullNode, IDateTimeProvider dateTimeProvider)
+		private readonly FullNode fullNode;
+	    private readonly ConsensusLoop consensusLoop;
+	    private readonly ConcurrentChain chain;
+	    private readonly Network network;
+	    private readonly IDateTimeProvider dateTimeProvider;
+	    private readonly BlockAssemblerFactory blockAssemblerFactory;
+
+	    public Mining(FullNode fullNode, ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, IDateTimeProvider dateTimeProvider, BlockAssemblerFactory blockAssemblerFactory)
 	    {
 		    this.fullNode = fullNode;
+		    this.consensusLoop = consensusLoop;
+		    this.chain = chain;
+		    this.network = network;
 		    this.dateTimeProvider = dateTimeProvider;
+		    this.blockAssemblerFactory = blockAssemblerFactory;
 	    }
+
+		const int nInnerLoopCount = 0x10000;
 
 		public List<uint256> GenerateBlocks(ReserveScript reserveScript, int generate, int maxTries, bool keepScript)
 	    {
-			// temporary code to mine blocks while doing some simulations
-			// this will be refactored to have the same logic as core with regards to 
-			// selecting and sorting transactions from the mempool. 
+			int nHeightStart = 0;
+			int nHeightEnd = 0;
+			int nHeight = 0;
 
-		    if (fullNode.Chain.Tip != fullNode.ConsensusLoop.Tip)
-			    return Enumerable.Empty<uint256>().ToList();
+			nHeightStart = this.chain.Height;
+			nHeight = nHeightStart;
+			nHeightEnd = nHeightStart + generate;
+			int nExtraNonce = 0;
+			var blocks = new List<uint256>();
 
-			List<Block> blocks = new List<Block>();
+		    if (this.chain.Tip != this.consensusLoop.Tip)
+			    return blocks;
 
-			for (int i = 0; i < generate; i++)
+			while (nHeight < nHeightEnd)
 			{
-				uint nonce = 0;
-				Block block = new Block();
-				block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
-				//block.Header.Bits = GetWorkRequired(fullNode.Network.Consensus,new ChainedBlock(block.Header, (uint256) null, fullNode.Chain.Tip));
-				block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
-				block.Header.UpdateTime(dateTimeProvider.GetTimeOffset(), fullNode.Network, fullNode.Chain.Tip);
-				var coinbase = new Transaction();
-				coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
-				coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), reserveScript.reserveSfullNodecript));
-				block.AddTransaction(coinbase);
-				//if (passedTransactions?.Any() ?? false)
-				//{
-				//	passedTransactions = Reorder(passedTransactions);
-				//	block.Transactions.AddRange(passedTransactions);
-				//}
-				block.UpdateMerkleRoot();
-				var retry = 0;
-				while (!block.CheckProofOfWork() && !fullNode.IsDisposed && ++retry < maxTries)
-					block.Header.Nonce = ++nonce;
-				if (fullNode.IsDisposed || retry >= maxTries)
-					return blocks.Select(b => b.GetHash()).ToList();
-				if (block.Header.HashPrevBlock != fullNode.Chain.Tip.HashBlock)
+				var pblocktemplate = this.blockAssemblerFactory.Create().CreateNewBlock(reserveScript.reserveSfullNodecript);
+				BlockAssembler.IncrementExtraNonce(pblocktemplate.Block, this.chain.Tip, nExtraNonce);
+				var pblock = pblocktemplate.Block;
+
+				while (maxTries > 0 && pblock.Header.Nonce < nInnerLoopCount && !pblock.CheckProofOfWork())
 				{
-					i--;
-					continue; // a new block was found continue to look
+					++pblock.Header.Nonce;
+					--maxTries;
 				}
-				blocks.Add(block);
-				var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
-				fullNode.Chain.SetTip(newChain);
 
-				var blockResult = new BlockResult {Block = block};
-				fullNode.ConsensusLoop.AcceptBlock(blockResult);
+				if (maxTries == 0)
+					break;
 
-				if(blockResult.ChainedBlock == null)
+				if (pblock.Header.Nonce == nInnerLoopCount)
+					continue;
+
+				var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), fullNode.Chain.Tip);
+				this.chain.SetTip(newChain);
+
+				var blockResult = new BlockResult {Block = pblock };
+				fullNode.ConsensusLoop.AcceptBlock(new ContextInformation(blockResult, fullNode.Network.Consensus));
+
+				if (blockResult.ChainedBlock == null)
 					break; //reorg
 
+				if (blockResult.Error != null)
+					return blocks;
+				
 				// similar logic to what's in the full node code
-				if (blockResult.Error == null)
-				{
-					fullNode.ChainBehaviorState.HighestValidatedPoW = fullNode.ConsensusLoop.Tip;
-					//if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
-					//{
-					//	var unused = cache.FlushAsync();
-					//}
-					fullNode.Signals.Blocks.Broadcast(block);
-				}
+				fullNode.ChainBehaviorState.HighestValidatedPoW = fullNode.ConsensusLoop.Tip;
+				fullNode.Signals.Blocks.Broadcast(pblock);
+
+				++nHeight;
+				blocks.Add(pblock.GetHash());
 
 				// ensure the block is written to disk
-				retry = 0;
-				while (++retry < maxTries && this.fullNode.BlockStoreManager.BlockRepository.GetAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult() == null)
-					Thread.Sleep(100);	
-				if (retry >= maxTries)
-					return blocks.Select(b => b.GetHash()).ToList();
+				var retry = 0;
+				while (++retry < maxTries &&
+				       !this.fullNode.BlockStoreManager.BlockRepository.ExistAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
+					Thread.Sleep(100);
 			}
 
-		    return blocks.Select(b => b.GetHash()).ToList();
+		    return blocks;
 	    }
 
 		public static Target GetWorkRequired(NBitcoin.Consensus consensus, ChainedBlock chainedBlock)

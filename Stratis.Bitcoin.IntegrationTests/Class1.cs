@@ -517,7 +517,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 				BlockResult = new BlockResult { Block = block },
 				Flags = consensusFlags,
 			};
-			var validator = new PowConsensusValidator(Network.Main, new BitcoinConsensusOptions());
+			Network.Main.Consensus.Options = new PowConsensusOptions();
+			var validator = new PowConsensusValidator(Network.Main);
 			//validator.CheckBlockHeader(context);
 			validator.ContextualCheckBlock(context);
 			validator.CheckBlock(context);

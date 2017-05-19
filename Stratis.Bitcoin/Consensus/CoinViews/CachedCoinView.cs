@@ -38,6 +38,22 @@ namespace Stratis.Bitcoin.Consensus
 			this.PerformanceCounter =  new CachePerformanceCounter();
 		}
 
+		/// <summary>
+		/// This is used for testing the coin view
+		/// it allows a coinview that only has in memory entries
+		/// </summary>
+		public CachedCoinView(InMemoryCoinView inner, StakeChainStore stakeChainStore = null)
+		{
+			Guard.NotNull(inner, nameof(inner));
+
+			this.inner = inner;
+			this.stakeChainStore = stakeChainStore;
+			this.MaxItems = 100000;
+			this.lockobj = new ReaderWriterLock();
+			this.unspents = new Dictionary<uint256, CacheItem>();
+			this.PerformanceCounter = new CachePerformanceCounter();
+		}
+
 		public CoinView Inner => inner;
 
 		public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)

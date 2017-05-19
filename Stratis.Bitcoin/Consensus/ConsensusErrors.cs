@@ -88,6 +88,7 @@ namespace Stratis.Bitcoin.Consensus
 	}
 	public static class ConsensusErrors
 	{
+		public readonly static ConsensusError InvalidPrevTip = new ConsensusError("invalid-prev-tip", "invalid previous tip");
 		public readonly static ConsensusError HighHash = new ConsensusError("high-hash", "proof of work failed");
 		public readonly static ConsensusError BadCoinbaseHeight = new ConsensusError("bad-cb-height", "block height mismatch in coinbase");
 		public readonly static ConsensusError BadTransactionNonFinal = new ConsensusError("bad-txns-nonfinal", "non-final transaction");
