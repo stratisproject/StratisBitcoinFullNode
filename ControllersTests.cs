@@ -10,6 +10,8 @@ using Breeze.Wallet.Errors;
 using Breeze.Wallet.Helpers;
 using Breeze.Wallet.Models;
 using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 
 namespace Breeze.Api.Tests
@@ -22,8 +24,8 @@ namespace Breeze.Api.Tests
             Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             var mockWalletCreate = new Mock<IWalletManager>();
             mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null)).Returns(mnemonic);
-
-            var controller = new WalletController(mockWalletCreate.Object, new Mock<ITracker>().Object, new Mock<ConnectionManager>().Object, new Mock<Network>().Object, new Mock<ConcurrentChain>().Object);
+            
+            var controller = new WalletController(mockWalletCreate.Object, new Mock<ITracker>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object);
 
             // Act
             var result = controller.Create(new WalletCreationRequest
@@ -51,9 +53,9 @@ namespace Breeze.Api.Tests
             };
 
             var mockWalletWrapper = new Mock<IWalletManager>();
-            mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null, It.IsAny<DateTime>())).Returns(wallet);
+            mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null)).Returns(wallet);
 
-            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object, new Mock<ConnectionManager>().Object, new Mock<Network>().Object, new Mock<ConcurrentChain>().Object);
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object);
 
             // Act
             var result = controller.Recover(new WalletRecoveryRequest
@@ -82,7 +84,7 @@ namespace Breeze.Api.Tests
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(wallet);
 
-            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object, new Mock<ConnectionManager>().Object, new Mock<Network>().Object, new Mock<ConcurrentChain>().Object);
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object);
 
             // Act
             var result = controller.Load(new WalletLoadRequest
@@ -103,8 +105,8 @@ namespace Breeze.Api.Tests
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
-
-            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object, new Mock<ConnectionManager>().Object, new Mock<Network>().Object, new Mock<ConcurrentChain>().Object);
+            
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<ITracker>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object);
 
             // Act
             var result = controller.Load(new WalletLoadRequest
