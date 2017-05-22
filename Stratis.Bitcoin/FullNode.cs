@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin
 
         public IApplicationLifetime ApplicationLifetime
         {
-            get => this.applicationLifetime;
-            private set => this.applicationLifetime = (ApplicationLifetime) value;
+            get { return this.applicationLifetime; }
+            private set { this.applicationLifetime = (ApplicationLifetime) value; }
         } // this will replace the cancellation token on the full node
 
         public IFullNodeServiceProvider Services { get; set; }
