@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using NBitcoin;
@@ -26,8 +27,9 @@ namespace Stratis.Bitcoin.Consensus
 			this.coinView = coinView;
 			this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
 		}
-	
-		public void CheckProofOfStake(ContextInformation context, ChainedBlock pindexPrev, BlockStake prevBlockStake, Transaction tx, uint nBits)
+
+		public void CheckProofOfStake(ContextInformation context, ChainedBlock pindexPrev, BlockStake prevBlockStake,
+			Transaction tx, uint nBits)
 		{
 			if (!tx.IsCoinStake)
 				ConsensusErrors.NonCoinstake.Throw();
@@ -36,7 +38,7 @@ namespace Stratis.Bitcoin.Consensus
 			var txIn = tx.Inputs[0];
 
 			// First try finding the previous transaction in database
-			var coins = coinView.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
+			var coins = coinView.FetchCoinsAsync(new[] {txIn.PrevOut.Hash}).GetAwaiter().GetResult();
 			if (coins == null || coins.UnspentOutputs.Length != 1)
 				ConsensusErrors.ReadTxPrevFailed.Throw();
 
@@ -48,7 +50,7 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
 
 			// Min age requirement
-			if (IsProtocolV3((int)tx.Time))
+			if (IsProtocolV3((int) tx.Time))
 			{
 				if (IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
 					ConsensusErrors.InvalidStakeDepth.Throw();
@@ -65,7 +67,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		private static bool IsConfirmedInNPrevBlocks(UnspentOutputs utxoSet, ChainedBlock pindexFrom, long maxDepth)
 		{
-			var actualDepth = pindexFrom.Height - (int)utxoSet.Height;
+			var actualDepth = pindexFrom.Height - (int) utxoSet.Height;
 
 			if (actualDepth < maxDepth)
 				return true;
@@ -87,7 +89,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			var txData = new PrecomputedTransactionData(txTo);
 			var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);
-			var ctx = new ScriptEvaluationContext { ScriptVerify = flagScriptVerify };
+			var ctx = new ScriptEvaluationContext {ScriptVerify = flagScriptVerify};
 
 			return ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
 		}
@@ -129,6 +131,47 @@ namespace Stratis.Bitcoin.Consensus
 			throw new NotImplementedException();
 		}
 
+		//private static uint256 ToUInt256_(BigInteger input)
+		//{
+		//	var nSize = input.BitLength; 
+		//	if (nSize < 4)
+		//		return 0;
+		//	var vch = input.ToByteArray();
+		//	//if (vch.Count() > 4)
+		//	//	vch[4] &= 0x7f;
+		//	vch = vch.Reverse().ToArray();
+		//	uint256 n = uint256.Zero;
+		//	var b = n.ToBytes();
+		//	var count = vch.Length - 1;
+		//	var start = vch.Length < 32 ? 1 : 0;
+		//	var finish = vch.Length > 32 ? 5 : 4;
+		//	for (int i = start, j = count; i < n.Size && j >= finish; i++, j--)
+		//		b[i] = vch[j];
+		//	return new uint256(b, false);
+		//}
+
+		private static uint256 ToUInt256(BigInteger input)
+		{
+			var array = input.ToByteArray();
+
+			var missingZero = 32 - array.Length;
+			if (missingZero < 0)
+			{
+				//throw new InvalidOperationException("Awful bug, this should never happen");
+				array = array.Skip(Math.Abs(missingZero)).ToArray();
+			}
+			if (missingZero > 0)
+			{
+				array = new byte[missingZero].Concat(array).ToArray();
+			}
+			return new uint256(array, false);
+		}
+
+		private static BigInteger FromUInt256(uint256 input)
+		{
+			return BigInteger.Zero;
+		}
+
 		// Stratis kernel protocol
 		// coinstake must meet hash target according to the protocol:
 		// kernel (input 0) must meet the formula
@@ -151,7 +194,8 @@ namespace Stratis.Bitcoin.Consensus
 		//   quantities so as to generate blocks faster, degrading the system back into
 		//   a proof-of-work situation.
 		//
-		private void CheckStakeKernelHashV2(ContextInformation context, ChainedBlock pindexPrev, uint nBits, uint nTimeBlockFrom,
+		private void CheckStakeKernelHashV2(ContextInformation context, ChainedBlock pindexPrev, uint nBits,
+			uint nTimeBlockFrom,
 			BlockStake prevBlockStake, UnspentOutputs txPrev, OutPoint prevout, uint nTimeTx)
 		{
 			if (nTimeTx < txPrev.Time)
@@ -160,13 +204,17 @@ namespace Stratis.Bitcoin.Consensus
 			// Base target
 			var bnTarget = new Target(nBits).ToBigInteger();
 
+			// TODO: Investigate:
+			// The POS protocol should probably put a limit on the max amount that can be staked
+			// not a hard limit but a limit that allow any amount to be staked with a max weight value.
+			// the max weight should not exceed the max uint256 array size (array siez = 32)
+			
 			// Weighted target
 			var nValueIn = txPrev._Outputs[prevout.N].Value.Satoshi;
 			var bnWeight = BigInteger.ValueOf(nValueIn);
 			bnTarget = bnTarget.Multiply(bnWeight);
 
-			// todo: investigate this issue, is the convertion to uint256 similar to the c++ implementation
-			//context.Stake.TargetProofOfStake =  Target.ToUInt256(bnTarget,);
+			context.Stake.TargetProofOfStake = ToUInt256(bnTarget);
 
 			var nStakeModifier = prevBlockStake.StakeModifier; //pindexPrev.Header.BlockStake.StakeModifier;
 			uint256 bnStakeModifierV2 = prevBlockStake.StakeModifierV2; //pindexPrev.Header.BlockStake.StakeModifierV2;
@@ -207,7 +255,7 @@ namespace Stratis.Bitcoin.Consensus
 			//	hashProofOfStake.ToString());
 
 			// Now check if proof-of-stake hash meets target protocol
-			var hashProofOfStakeTarget = new BigInteger(context.Stake.HashProofOfStake.ToBytes(false));
+			var hashProofOfStakeTarget = new BigInteger(1, context.Stake.HashProofOfStake.ToBytes(false));
 			if (hashProofOfStakeTarget.CompareTo(bnTarget) > 0)
 				ConsensusErrors.StakeHashInvalidTarget.Throw();
 
@@ -484,7 +532,7 @@ namespace Stratis.Bitcoin.Consensus
 		// guaranteed to be in main chain by sync-checkpoint. This rule is
 		// introduced to help nodes establish a consistent view of the coin
 		// age (trust score) of competing branches.
-		public bool GetCoinAge(ConcurrentChain chain, CachedCoinView cachedCoinView,
+		public bool GetCoinAge(ConcurrentChain chain, CoinView coinView,
 			Transaction trx, ChainedBlock pindexPrev, out ulong nCoinAge)
 		{
 
@@ -496,7 +544,7 @@ namespace Stratis.Bitcoin.Consensus
 
 			foreach (var txin in trx.Inputs)
 			{
-				var coins = cachedCoinView.FetchCoinsAsync(new[] { txin.PrevOut.Hash }).GetAwaiter().GetResult();
+				var coins = coinView.FetchCoinsAsync(new[] { txin.PrevOut.Hash }).GetAwaiter().GetResult();
 				if (coins == null || coins.UnspentOutputs.Length != 1)
 					continue;
 
@@ -581,9 +629,8 @@ namespace Stratis.Bitcoin.Consensus
 			if (prevBlockStake == null)
 				ConsensusErrors.BadStakeBlock.Throw();
 
-			// todo: check this unclear logic
 			//if (pBlockTime)
-			//	pBlockTime = block.Header.Time;
+				pBlockTime = prevBlock.Header.Time;
 
 			this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, prevout, (uint)nTime);
 		}

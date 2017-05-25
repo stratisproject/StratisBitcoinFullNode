@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.BlockStore
 		Task<Block> GetBlockAsync(uint256 blockid);
 		Task<Block> GetBlockByTrxAsync(uint256 trxid);
 		Task<Transaction> GetTrxAsync(uint256 trxid);
-
+		void AddToCache(Block block);
 	}
 	public class BlockStoreCache : IBlockStoreCache
 	{
@@ -90,6 +90,14 @@ namespace Stratis.Bitcoin.BlockStore
 
 			var block = await this.GetBlockByTrxAsync(trxid);
 			return block?.Transactions.Find(t => t.GetHash() == trxid);
+		}
+
+		public void AddToCache(Block block)
+		{
+			var blockid = block.GetHash();
+			Block unused;
+			if (!this.cache.TryGetValue(blockid, out unused))
+				this.cache.Set(blockid, block, TimeSpan.FromMinutes(10));
 		}
 
 		public void Dispose()

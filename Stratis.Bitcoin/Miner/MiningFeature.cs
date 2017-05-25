@@ -18,57 +18,47 @@ namespace Stratis.Bitcoin.Miner
 {
 	public class MiningFeature : FullNodeFeature
 	{		
-		private readonly FullNode node;
-
-		public MiningFeature(FullNode node, BlockAssemblerFactory blockAssemblerFactory)
-		{			
-			this.node = node;
-		}
-
 		public override void Start()
 		{
-			// == mining thread ==			
-			new Thread(() =>
-			{
-				Thread.Sleep(10000); // let the node start
-				while (!this.node.IsDisposed)
-				{
-					Thread.Sleep(100); // wait 1 sec
-										// generate 1 block
-					var res = this.node.Miner.GenerateBlocks(new Stratis.Bitcoin.Miner.ReserveScript() { reserveSfullNodecript = new NBitcoin.Key().ScriptPubKey }, 1, int.MaxValue, false);
-					if (res.Any())
-						Console.WriteLine("mined tip at: " + this.node?.Chain.Tip.Height);
-				}
-			})
-			{
-				IsBackground = true //so the process terminate
-			}.Start();			
 		}
 
 		public override void Stop()
 		{
-			Logs.Mining.LogInformation("Stopping mining process...");			
 		}
 	}
 
 	public static class MiningFeatureExtension
 	{
-		public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder, bool doMining)
+		public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder)
 		{
-			if (doMining)
+			fullNodeBuilder.ConfigureFeature(features =>
 			{
-				fullNodeBuilder.ConfigureFeature(features =>
-				{
-					features
+				features
 					.AddFeature<MiningFeature>()
 					.FeatureServices(services =>
 					{
-						services.AddSingleton<Mining>();
-						services.AddSingleton<BlockAssemblerFactory>();
+						services.AddSingleton<PowMining>();
+						services.AddSingleton<AssemblerFactory, PowAssemblerFactory>();
 					});
-				});
-			}
-			
+			});
+
+			return fullNodeBuilder;
+		}
+
+		public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder)
+		{
+			fullNodeBuilder.ConfigureFeature(features =>
+			{
+				features
+					.AddFeature<MiningFeature>()
+					.FeatureServices(services =>
+					{
+						services.AddSingleton<PowMining>();
+						services.AddSingleton<PosMinting>();
+						services.AddSingleton<AssemblerFactory, PosAssemblerFactory>();
+					});
+			});
+
 			return fullNodeBuilder;
 		}
 	}

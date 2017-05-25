@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,11 @@ namespace Stratis.Bitcoin.Builder
 		public static IFullNodeBuilder UseDefaultNodeSettings(this IFullNodeBuilder builder)
 		{
 			return builder.UseNodeSettings(NodeSettings.Default());
+		}
+
+		public static T Service<T>(this IServiceProvider serviceProvider)
+		{
+			return (T)serviceProvider.GetService<T>();
 		}
 	}
 }

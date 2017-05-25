@@ -4,12 +4,14 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.Miner;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.BitcoinD
 {
@@ -33,15 +35,28 @@ namespace Stratis.BitcoinD
 				.UseConsensus()
 				.UseBlockStore()
 				.UseMempool()
-				.AddMining(args.Any(a => a.Contains("mine")))
+				.AddMining()
 				.AddRPC()
 				.Build();
 
-			// TODO: bring the logic out of IWebHost.Run()
-			node.Start();
-			Console.WriteLine("Press any key to stop");
-			Console.ReadLine();
-			node.Dispose();
+			// start the miner (this is temporary a miner should be started using RPC.
+			Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith((t) => { TryStartMiner(args, node); });
+
+			node.Run();
+		}
+
+		private static void TryStartMiner(string[] args, IFullNode node)
+		{
+			// mining can be called from either RPC or on start
+			// to manage the on strat we need to get an address to the mining code
+			var mine = args.FirstOrDefault(a => a.Contains("mine="));
+			if (mine != null)
+			{
+				// get the address to mine to
+				var addres = mine.Replace("mine=", string.Empty);
+				var pubkey = BitcoinAddress.Create(addres, node.Network);
+				node.Services.ServiceProvider.Service<PowMining>().Mine(pubkey.ScriptPubKey);
+			}
 		}
 	}
 }

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -9,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisD
@@ -34,9 +37,53 @@ namespace Stratis.StratisD
 				.UseStratisConsensus()
 				.UseBlockStore()
 				.UseMempool()
+				.AddPowPosMining()
 				.Build();
 
+			Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith(t =>
+			{
+				//TryStartPowMiner(args, node);
+				//TryStartPosMiner(args, node);
+			});
+
 		    node.Run();
+
+			
+		}
+
+		private static void TryStartPowMiner(string[] args, IFullNode node)
+		{
+			// mining can be called from either RPC or on start
+			// to manage the on strat we need to get an address to the mining code
+			var mine = args.FirstOrDefault(a => a.Contains("mine="));
+			if (mine != null)
+			{
+				// get the address to mine to
+				var addres = mine.Replace("mine=", string.Empty);
+				var pubkey = BitcoinAddress.Create(addres, node.Network);
+				node.Services.ServiceProvider.Service<PowMining>().Mine(pubkey.ScriptPubKey);
+			}
+		}
+
+		private static void TryStartPosMiner(string[] args, IFullNode node)
+		{
+			// mining can be called from either RPC or on start
+			// to manage the on strat we need to get an address to the mining code
+			var mine = args.FirstOrDefault(a => a.Contains("mine="));
+			if (mine != null)
+			{
+				// TODO: this will be replaced by the wallet, for now the UTXO's 
+				// that can stake are manually inserted in the miner.
+				var stakes = new List<PosMinting.TrxStakingInfo>()
+				{
+					new PosMinting.TrxStakingInfo { TransactionHash = uint256.Parse("d9f12b2e8a75bb4657b0594374559d77a8fd036e55b43809d62ebfed75de25a2"), PrvKey = Key.Parse("[output priv key]")},
+					new PosMinting.TrxStakingInfo { TransactionHash = uint256.Parse("d521cf4703e726b505d06ecf37b8f20715294b9db4979e5f17414da64f01123a"), PrvKey = Key.Parse("[output priv key]")},
+					new PosMinting.TrxStakingInfo { TransactionHash = uint256.Parse("d09b2576fbf9a89dc08cf1ce8ff0dee52a96fab2c7db26047717866a65e2be12"), PrvKey = Key.Parse("[output priv key]")},
+					new PosMinting.TrxStakingInfo { TransactionHash = uint256.Parse("1130f0d6e45290a33f0a8525a531b005e357196d5cc40b5d781d75af5f19795f"), PrvKey = Key.Parse("[output priv key]")},
+				};
+
+				node.Services.ServiceProvider.Service<PosMinting>().Mine(stakes);
+			}
 		}
 
 		private static Network InitStratisTest()
