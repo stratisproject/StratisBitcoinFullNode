@@ -57,7 +57,9 @@ namespace Stratis.Bitcoin.Utilities
 
 				if (!string.IsNullOrEmpty(shutdownMessage))
 				{
+					Console.WriteLine();
 					Console.WriteLine(shutdownMessage);
+					Console.WriteLine();
 				}
 
 				cancellationToken.Register(state =>
