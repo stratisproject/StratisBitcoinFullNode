@@ -4,12 +4,14 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.Miner;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.BitcoinD
 {
@@ -37,14 +39,10 @@ namespace Stratis.BitcoinD
 				.AddRPC()
 				.Build();
 
-			// TODO: bring the logic out of IWebHost.Run()
-			node.Start();
+			// start the miner (this is temporary a miner should be started using RPC.
+			Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith((t) => { TryStartMiner(args, node); });
 
-			TryStartMiner(args, node);
-
-			Console.WriteLine("Press any key to stop");
-			Console.ReadLine();
-			node.Dispose();
+			node.Run();
 		}
 
 		private static void TryStartMiner(string[] args, IFullNode node)

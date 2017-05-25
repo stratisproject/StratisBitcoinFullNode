@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -13,16 +12,15 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
-using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisD
 {
 	public class Program
 	{
-		public static void Main(string[] args)
+        public static void Main(string[] args)
 		{
-			ILoggerFactory loggerFactory = new LoggerFactory()
+			var loggerFactory = new LoggerFactory()
 				.AddConsole(LogLevel.Trace, false);
 			Logs.Configure(loggerFactory);
 
@@ -30,7 +28,7 @@ namespace Stratis.StratisD
 				return;
 
 			var network = args.Contains("-testnet") ? InitStratisTest() : Network.StratisMain;
-			NodeSettings nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
+			var nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
 
 			// NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
 
@@ -42,14 +40,15 @@ namespace Stratis.StratisD
 				.AddPowPosMining()
 				.Build();
 
-			//TryStartPowMiner(args, node);
-			//TryStartPosMiner(args, node);
+			Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith(t =>
+			{
+				//TryStartPowMiner(args, node);
+				//TryStartPosMiner(args, node);
+			});
 
-			// TODO: bring the logic out of IWebHost.Run()
-			node.Start();
-			Console.WriteLine("Press any key to stop");
-			Console.ReadLine();
-			node.Dispose();
+		    node.Run();
+
+			
 		}
 
 		private static void TryStartPowMiner(string[] args, IFullNode node)
@@ -134,6 +133,5 @@ namespace Stratis.StratisD
 
 			return builder.BuildAndRegister();
 		}
-
 	}
 }

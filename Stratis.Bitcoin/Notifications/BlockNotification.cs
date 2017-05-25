@@ -38,7 +38,14 @@ namespace Stratis.Bitcoin.Notifications
 			if (this.StartHash != null)
 			{
 				this.reSync = true;
-			}
+			    ChainedBlock startBlock = this.Chain.GetBlock(startHash);
+			    if (startBlock != null)
+			    {
+			        // sets the location of the puller to the latest hash that was broadcasted
+			        this.Puller.SetLocation(startBlock);
+                }
+                
+            }
 
 			this.StartHash = startHash;
 		}
