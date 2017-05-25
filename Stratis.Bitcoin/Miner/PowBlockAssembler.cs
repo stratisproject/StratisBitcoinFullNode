@@ -21,6 +21,7 @@ namespace Stratis.Bitcoin.Miner
 		public long BlockMaxWeight = PowMining.DefaultBlockMaxWeight;
 		public long BlockMaxSize = PowMining.DefaultBlockMaxSize;
 		public FeeRate BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
+		public bool IsProofOfStake = false;
 	};
 
 	public class BlockTemplate
@@ -237,7 +238,7 @@ namespace Stratis.Bitcoin.Miner
 			pblock.Header.Nonce = 0;
 		}
 
-		private void TestBlockValidity()
+		protected virtual void TestBlockValidity()
 		{
 			var context = new ContextInformation(new BlockResult {Block = pblock}, network.Consensus)
 			{

@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.Miner
 			this.stakeChain = stakeChain;
 		}
 
+
 		public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
 		{
 			base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
@@ -47,7 +48,12 @@ namespace Stratis.Bitcoin.Miner
 			base.UpdateHeaders();
 
 			var stake = new BlockStake(this.pblock);
-			this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(stakeChain, this.chain.Tip, this.network.Consensus, stake.IsProofOfStake());
+			this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(stakeChain, this.chain.Tip, this.network.Consensus, this.options.IsProofOfStake);
+		}
+
+		protected override void TestBlockValidity()
+		{
+			//base.TestBlockValidity();
 		}
 	}
 }

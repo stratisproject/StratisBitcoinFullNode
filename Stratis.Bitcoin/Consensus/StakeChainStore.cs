@@ -89,14 +89,14 @@ namespace Stratis.Bitcoin.Consensus
 			return this.GetAsync(blockid).GetAwaiter().GetResult();
 		}
 
-		public async Task SetAsync(uint256 blockid, BlockStake blockStake)
+		public async Task SetAsync(ChainedBlock chainedBlock, BlockStake blockStake)
 		{
-			if(this.items.ContainsKey(blockid))
+			if(this.items.ContainsKey(chainedBlock.HashBlock))
 				return;
 			
-			var chainedBlock = this.chain.GetBlock(blockid);
-			var item = new StakeItem {BlockId = blockid, Height = chainedBlock.Height, BlockStake = blockStake, InStore = false};
-			var added = this.items.TryAdd(blockid, item);
+			//var chainedBlock = this.chain.GetBlock(blockid);
+			var item = new StakeItem {BlockId = chainedBlock.HashBlock, Height = chainedBlock.Height, BlockStake = blockStake, InStore = false};
+			var added = this.items.TryAdd(chainedBlock.HashBlock, item);
 
 			if (added)
 				await this.Flush(false);
@@ -125,7 +125,16 @@ namespace Stratis.Bitcoin.Consensus
 
 		public sealed override void Set(uint256 blockid, BlockStake blockStake)
 		{
-			this.SetAsync(blockid, blockStake).GetAwaiter().GetResult();
+			// TODO: a temporary fix til this methods is fixed in NStratis
+			// this removed the dependency on chain.
+
+			throw new NotImplementedException();
+			//this.SetAsync(blockid, blockStake).GetAwaiter().GetResult();
+		}
+
+		public void Set(ChainedBlock chainedBlock, BlockStake blockStake)
+		{
+			this.SetAsync(chainedBlock, blockStake).GetAwaiter().GetResult();
 		}
 	}
 }

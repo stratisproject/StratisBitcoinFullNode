@@ -62,8 +62,9 @@ namespace Stratis.Bitcoin.Consensus
 			this.CheckAndComputeStake(context);
 
 			base.ExecuteBlock(context, taskScheduler);
-			
-			this.stakeChain.Set(context.BlockResult.ChainedBlock.HashBlock, context.Stake.BlockStake);
+
+			// TODO: a temporary fix til this methods is fixed in NStratis
+			(this.stakeChain as StakeChainStore).Set(context.BlockResult.ChainedBlock, context.Stake.BlockStake);
 		}
 
 		public override void CheckBlock(ContextInformation context)
@@ -173,7 +174,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		}
 
-		public const int STAKE_TIMESTAMP_MASK = 15;
+		public const uint STAKE_TIMESTAMP_MASK = 15;
 		// Check whether the coinstake timestamp meets protocol
 		public static bool CheckCoinStakeTimestamp(int nHeight, long nTimeBlock, long nTimeTx)
 		{

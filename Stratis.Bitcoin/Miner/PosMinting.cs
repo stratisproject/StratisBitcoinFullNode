@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Miner
 {
 
+
 	public class PosMinting
 	{
 		// Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
@@ -26,20 +27,20 @@ namespace Stratis.Bitcoin.Miner
 		// Default for -blockmaxweight, which controls the range of block weights the mining code will create 
 		public const int DefaultBlockMaxWeight = 3000000;
 
-	    private readonly ConsensusLoop consensusLoop;
-	    private readonly ConcurrentChain chain;
-	    private readonly Network network;
+		private readonly ConsensusLoop consensusLoop;
+		private readonly ConcurrentChain chain;
+		private readonly Network network;
 		private readonly ConnectionManager connection;
 		private readonly IDateTimeProvider dateTimeProvider;
-	    private readonly AssemblerFactory blockAssemblerFactory;
-	    private readonly BlockRepository blockRepository;
-	    private readonly ChainBehavior.ChainState chainState;
-	    private readonly Signals signals;
-	    private readonly FullNode.CancellationProvider cancellationProvider;
+		private readonly AssemblerFactory blockAssemblerFactory;
+		private readonly BlockRepository blockRepository;
+		private readonly ChainBehavior.ChainState chainState;
+		private readonly Signals signals;
+		private readonly FullNode.CancellationProvider cancellationProvider;
 		private readonly NodeSettings settings;
-		private readonly CachedCoinView cachedCoinView;
-		private readonly BlockStoreCache blockStore;
+		private readonly CoinView coinView;
 		private readonly StakeChain stakeChain;
+		private readonly BlockStoreCache blockStoreCache;
 		private uint256 hashPrevBlock;
 		private Task mining;
 		private long lastCoinStakeSearchTime;
@@ -51,101 +52,151 @@ namespace Stratis.Bitcoin.Miner
 		public long LastCoinStakeSearchInterval;
 		public long LastCoinStakeSearchTime;
 
-		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, ConnectionManager connection, 
-			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository, 
-			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider, 
-			NodeSettings settings, CachedCoinView cachedCoinView, BlockStoreCache blockStore, StakeChain stakeChain)
-	    {
-		    this.consensusLoop = consensusLoop;
-		    this.chain = chain;
-		    this.network = network;
-		    this.connection = connection;
-		    this.dateTimeProvider = dateTimeProvider;
-		    this.blockAssemblerFactory = blockAssemblerFactory;
-		    this.blockRepository = blockRepository;
-		    this.chainState = chainState;
-		    this.signals = signals;
-		    this.cancellationProvider = cancellationProvider;
-		    this.settings = settings;
-		    this.cachedCoinView = cachedCoinView;
-		    this.blockStore = blockStore;
-		    this.stakeChain = stakeChain;
+		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, ConnectionManager connection,
+			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
+			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider,
+			NodeSettings settings, CoinView coinView, StakeChain stakeChain, BlockStoreCache blockStoreCache)
+		{
+			this.consensusLoop = consensusLoop;
+			this.chain = chain;
+			this.network = network;
+			this.connection = connection;
+			this.dateTimeProvider = dateTimeProvider;
+			this.blockAssemblerFactory = blockAssemblerFactory;
+			this.blockRepository = blockRepository;
+			this.chainState = chainState;
+			this.signals = signals;
+			this.cancellationProvider = cancellationProvider;
+			this.settings = settings;
+			this.coinView = coinView;
+			this.stakeChain = stakeChain;
+			this.blockStoreCache = blockStoreCache;
 
 			this.minerSleep = 500; // GetArg("-minersleep", 500);
 			this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
-		    this.reserveBalance = 0;  // TOOD:settings.ReserveBalance 
-		    this.minimumInputValue = 0;
+			this.reserveBalance = 0; // TOOD:settings.ReserveBalance 
+			this.minimumInputValue = 0;
 
 			this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
-	    }
+		}
 
-		public Task Mine(List<StakeTx> stakeTxes)
+		public class StakeOutput
+		{
+			public StakeTx StakeTx;
+			public int Depth;
+		}
+
+		public class StakeTx
+		{
+			public uint256 HashBlock;
+			public TxOut TxOut;
+			public OutPoint OutPoint;
+			public int OutputIndex;
+			public Key PrvKey;
+			public UnspentOutputs UtxoSet;
+		}
+
+		public class TrxStakingInfo
+		{
+			public uint256 TransactionHash;
+			public Key PrvKey;
+		}
+
+		public Task Mine(List<TrxStakingInfo> stakeTxes)
 		{
 			if (this.mining != null)
 				return this.mining; // already mining
 
 			this.mining = AsyncLoop.Run("PosMining.Mine", token =>
-			{
-				this.GenerateBlocks(stakeTxes);
-				return Task.CompletedTask;
-			},
-			cancellationProvider.Cancellation.Token,
-			repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
-			startAfter: TimeSpans.TenSeconds);
+				{
+					this.GenerateBlocks(stakeTxes);
+					return Task.CompletedTask;
+				},
+				cancellationProvider.Cancellation.Token,
+				repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
+				startAfter: TimeSpans.TenSeconds);
 
 			return this.mining;
 		}
 
-		public void GenerateBlocks(List<StakeTx> stakeTxes)
-	    {
+		public void GenerateBlocks(List<TrxStakingInfo> trxPairs)
+		{
 			this.LastCoinStakeSearchInterval = 0;
 
-		    if (this.chain.Tip != this.consensusLoop.Tip)
-			    return;
+			if (this.chain.Tip != this.consensusLoop.Tip)
+				return;
 
-		    BlockTemplate pblocktemplate = null;
+			BlockTemplate pblocktemplate = null;
 			bool tryToSync = true;
 
-		    while (true)
-		    {
-			    while (!this.connection.ConnectedNodes.Any() || chainState.IsInitialBlockDownload)
-			    {
+			while (true)
+			{
+				while (!this.connection.ConnectedNodes.Any() || chainState.IsInitialBlockDownload)
+				{
 					this.LastCoinStakeSearchInterval = 0;
-				    tryToSync = true;
-				    this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(this.minerSleep));
-			    }
+					tryToSync = true;
+					this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(this.minerSleep));
+				}
 
-			    if (tryToSync)
-			    {
-				    tryToSync = false;
-				    if (this.connection.ConnectedNodes.Count() < 3 ||
-				        this.chain.Tip.Header.Time < dateTimeProvider.GetTime() - 10*60)
-				    {
-					    this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
-					    continue;
-				    }
-			    }
+				if (tryToSync)
+				{
+					tryToSync = false;
+					if (this.connection.ConnectedNodes.Count() < 3 ||
+					    this.chain.Tip.Header.Time < dateTimeProvider.GetTime() - 10*60)
+					{
+						this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
+						continue;
+					}
+				}
 
-			    if (pblocktemplate == null)
-				    pblocktemplate = this.blockAssemblerFactory.Create().CreateNewBlock(new Script());
+				if (pblocktemplate == null)
+					pblocktemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() {IsProofOfStake = true}).CreateNewBlock(new Script());
 
-			    var pblock = pblocktemplate.Block;
-			    var pindexPrev = this.chain.Tip;
 
-			    // Trying to sign a block
-			    if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblocktemplate.TotalFee))
-			    {
-					var blockResult = new BlockResult { Block = pblock };
-					this.CheckState(new ContextInformation { BlockResult = blockResult }, pindexPrev);
+				var pblock = pblocktemplate.Block;
+				var pindexPrev = this.chain.Tip;
+
+				var stakeTxes = new List<StakeTx>();
+
+				var coinset =
+					this.coinView.FetchCoinsAsync(trxPairs.Select(s => s.TransactionHash).ToArray()).GetAwaiter().GetResult();
+				foreach (var sets in coinset.UnspentOutputs)
+				{
+					int index = 0;
+					foreach (var outputx in sets._Outputs)
+					{
+						if (outputx != null && outputx.Value > Money.Zero)
+						{
+							var stakeTx = new StakeTx();
+
+							stakeTx.TxOut = outputx;
+							stakeTx.OutPoint = new OutPoint(sets.TransactionId, index);
+							stakeTx.PrvKey = trxPairs.First(t => t.TransactionHash == sets.TransactionId).PrvKey;
+							stakeTx.OutputIndex = index;
+							stakeTx.HashBlock = this.chain.GetBlock((int) sets.Height).HashBlock;
+							stakeTx.UtxoSet = sets;
+
+							stakeTxes.Add(stakeTx);
+						}
+
+						index++;
+					}
+				}
+
+				// Trying to sign a block
+				if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblocktemplate.TotalFee))
+				{
+					var blockResult = new BlockResult {Block = pblock};
+					this.CheckState(new ContextInformation(blockResult, network.Consensus), pindexPrev);
 
 					pblocktemplate = null;
 				}
-			    else
-			    {
+				else
+				{
 					this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(this.minerSleep));
 				}
-		    }
-	    }
+			}
+		}
 
 		private void CheckState(ContextInformation context, ChainedBlock pindexPrev)
 		{
@@ -159,6 +210,7 @@ namespace Stratis.Bitcoin.Miner
 			if (prevBlockStake == null)
 				ConsensusErrors.PrevStakeNull.Throw();
 
+			context.SetStake();
 			this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, pindexPrev, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
 
 			// Found a solution
@@ -166,15 +218,23 @@ namespace Stratis.Bitcoin.Miner
 				return;
 
 			var newChain = new ChainedBlock(block.Header, block.GetHash(), this.chain.Tip);
-			this.chain.SetTip(newChain);
+
+			if (newChain.ChainWork <= this.chain.Tip.ChainWork)
+				return;
 
 			this.consensusLoop.AcceptBlock(context);
+			this.chain.SetTip(newChain);
 
 			if (context.BlockResult.ChainedBlock == null)
 				return; //reorg
 
 			if (context.BlockResult.Error != null)
-				return ;
+				return;
+
+			// push the bock to cach 
+			// this will make it available for peers immediatly
+			// if peers reject the block it will just expire from cache
+			this.blockStoreCache.AddToCache(block);
 
 			// similar logic to what's in the full node code
 			this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
@@ -182,9 +242,30 @@ namespace Stratis.Bitcoin.Miner
 
 			// ensure the block is written to disk
 			var retry = 0;
-			while (++retry < 1000 &&
-				   !this.blockRepository.ExistAsync(context.BlockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
-				Thread.Sleep(100);
+			while (++retry < 100 && !this.blockRepository.ExistAsync(context.BlockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
+				Thread.Sleep(1000);
+
+			// wait for peers to get the block
+			Thread.Sleep(1000);
+
+			// ask peers for thier headers
+			foreach (var node in this.connection.ConnectedNodes)
+				node.Behavior<ChainBehavior>().TrySync();
+
+			// wait for all peers to accept the block
+			retry = 0;
+			foreach (var node in this.connection.ConnectedNodes)
+			{
+				var chainBehaviour = node.Behavior<ChainBehavior>();
+				while (++retry < 100 && chainBehaviour.PendingTip != this.chain.Tip)
+					Thread.Sleep(1000);
+			}
+
+			if (retry == 100)
+			{
+				// seems the block was not accepted
+				throw new MinerException("Block rejected by peers");
+			}
 		}
 
 		// To decrease granularity of timestamp
@@ -205,16 +286,16 @@ namespace Stratis.Bitcoin.Miner
 			Key key = null;
 			Transaction txCoinStake = new Transaction();
 
-			txCoinStake.Time  &= ~(uint)BlockValidator.STAKE_TIMESTAMP_MASK;
+			txCoinStake.Time &= ~PosConsensusValidator.STAKE_TIMESTAMP_MASK;
 
 			long searchTime = txCoinStake.Time; // search to current time
 
 
 			if (searchTime > this.lastCoinStakeSearchTime)
-			//if (DateTime.UtcNow.Second % 16 == 0) // every 16 sedons
+				//if (DateTime.UtcNow.Second % 16 == 0) // every 16 sedons
 			{
 				long searchInterval = searchTime - this.lastCoinStakeSearchTime;
-				if (this.CreateCoinStake(stakeTxes, pindexBest, block.Header.Bits, searchInterval, fees, ref txCoinStake, ref key))
+				if (this.CreateCoinStake(stakeTxes, pindexBest, block, searchInterval, fees, ref txCoinStake, ref key))
 				{
 					if (txCoinStake.Time >= BlockValidator.GetPastTimeLimit(pindexBest) + 1)
 					{
@@ -234,10 +315,11 @@ namespace Stratis.Bitcoin.Miner
 						// append a signature to our block
 						var signature = key.Sign(block.GetHash());
 
-						block.BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+						block.BlockSignatur = new BlockSignature {Signature = signature.ToDER()};
 						return true;
 					}
 				}
+
 				this.LastCoinStakeSearchInterval = searchTime - this.LastCoinStakeSearchTime;
 				this.LastCoinStakeSearchTime = searchTime;
 			}
@@ -245,27 +327,12 @@ namespace Stratis.Bitcoin.Miner
 			return false;
 		}
 
-		public class Output
-		{
-			public StakeTx StakeTx;
-			public int Depth;
-		}
 
-		public class StakeTx 
-		{
-			public uint256 HashBlock;
-			public uint256 TransactionHash;
-			public TxOut TxOut;
-			public int OutputIndex;
-			public Transaction Transaction;
-			public PubKey PubKey;
-			public Key PrvKey;
-		}
-
-		public bool CreateCoinStake(List<StakeTx> stakeTxes, ChainedBlock pindexBest, uint bits, long nSearchInterval, long fees, ref Transaction txNew, ref Key key)
+		public bool CreateCoinStake(List<StakeTx> stakeTxes, ChainedBlock pindexBest, Block block, long nSearchInterval,
+			long fees, ref Transaction txNew, ref Key key)
 		{
 			var pindexPrev = pindexBest;
-			var bnTargetPerCoinDay = new Target(bits).ToCompact();
+			var bnTargetPerCoinDay = new Target(block.Header.Bits).ToCompact();
 
 			txNew.Inputs.Clear();
 			txNew.Outputs.Clear();
@@ -301,57 +368,73 @@ namespace Stratis.Bitcoin.Miner
 
 			long nCredit = 0;
 			Script scriptPubKeyKernel = null;
+			
+			// Note: I would expect to see coins sorted by weight on the original implementation 
+			// sort the coins from heighest weight
+			setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
 
 			foreach (var coin in setCoins)
 			{
 				int maxStakeSearchInterval = 60;
 				bool fKernelFound = false;
 
-				for (uint n = 0;
-					n < Math.Min(nSearchInterval, maxStakeSearchInterval) 
-					&& !fKernelFound 
-					&& pindexPrev == this.chain.Tip;
-					n++)
+				for (uint n = 0; n < Math.Min(nSearchInterval, maxStakeSearchInterval) && !fKernelFound && pindexPrev == this.chain.Tip; n++)
 				{
-					var prevoutStake = new OutPoint(coin.TransactionHash, coin.OutputIndex);
-					long nBlockTime = 0;
-
-					var context = new ContextInformation();
-					this.posConsensusValidator.StakeValidator.CheckKernel(context, pindexPrev, bits, txNew.Time - n, prevoutStake, ref nBlockTime);
-					if (context.Stake.HashProofOfStake != null)
+					try
 					{
-						scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
+						var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
+						long nBlockTime = 0;
 
-						key = null;
-						// calculate the key type
-						if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+						var context = new ContextInformation(new BlockResult {Block = block}, network.Consensus);
+						context.SetStake();
+						this.posConsensusValidator.StakeValidator.CheckKernel(context, pindexPrev, block.Header.Bits, txNew.Time - n, prevoutStake, ref nBlockTime);
+
+						var timemaskceck = txNew.Time - n;
+
+						if ((timemaskceck & PosConsensusValidator.STAKE_TIMESTAMP_MASK) != 0)
+							continue;
+
+						if (context.Stake.HashProofOfStake != null)
 						{
-							var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-							key = coin.PrvKey;
-						}
-						else if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
-						{
-							var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-							key = coin.PrvKey;
-						}
-						else
-						{
-							//LogPrint("coinstake", "CreateCoinStake : no support for kernel type=%d\n", whichType);
-							break; // only support pay to public key and pay to address
+							scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
+
+							key = null;
+							// calculate the key type
+							if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+							{
+								var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
+								key = coin.PrvKey;
+							}
+							else if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+							{
+								var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
+								key = coin.PrvKey;
+							}
+							else
+							{
+								//LogPrint("coinstake", "CreateCoinStake : no support for kernel type=%d\n", whichType);
+								break; // only support pay to public key and pay to address
+							}
+
+							// create a pubkey script form the current script
+							var scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(key.PubKey); //scriptPubKeyKernel;
+
+							txNew.Time -= n;
+							txNew.AddInput(new TxIn(prevoutStake));
+							nCredit += coin.TxOut.Value;
+							vwtxPrev.Add(coin);
+							txNew.Outputs.Add(new TxOut(0, scriptPubKeyOut));
+
+							//LogPrint("coinstake", "CreateCoinStake : added kernel type=%d\n", whichType);
+							fKernelFound = true;
+							break;
 						}
 
-						// create a pubkey script form the current script
-						var scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(key.PubKey); //scriptPubKeyKernel;
-
-						txNew.Time -= n;
-						txNew.AddInput(new TxIn(prevoutStake));
-						nCredit += coin.TxOut.Value;
-						vwtxPrev.Add(coin);
-						txNew.Outputs.Add(new TxOut(0, scriptPubKeyOut));
-
-						//LogPrint("coinstake", "CreateCoinStake : added kernel type=%d\n", whichType);
-						fKernelFound = true;
-						break;
+					}
+					catch (ConsensusErrorException cex)
+					{
+						if (cex.ConsensusError != ConsensusErrors.StakeHashInvalidTarget)
+							throw;
 					}
 				}
 
@@ -374,9 +457,9 @@ namespace Stratis.Bitcoin.Miner
 						cointrx.TxOut.ScriptPubKey == scriptPubKeyKernel ||
 						cointrx.TxOut.ScriptPubKey == txNew.Outputs[1].ScriptPubKey
 					)
-					&& cointrx.TransactionHash != txNew.Inputs[0].PrevOut.Hash)
+					&& cointrx.UtxoSet.TransactionId != txNew.Inputs[0].PrevOut.Hash)
 				{
-					long nTimeWeight = BlockValidator.GetWeight((long)cointrx.Transaction.Time, (long)txNew.Time);
+					long nTimeWeight = BlockValidator.GetWeight((long)cointrx.UtxoSet.Time, (long)txNew.Time);
 
 					// Stop adding more inputs if already too many inputs
 					if (txNew.Inputs.Count >= 100)
@@ -398,7 +481,7 @@ namespace Stratis.Bitcoin.Miner
 							continue;
 					}
 
-					txNew.Inputs.Add(new TxIn(new OutPoint(cointrx.TransactionHash, cointrx.OutputIndex)));
+					txNew.Inputs.Add(new TxIn(new OutPoint(cointrx.UtxoSet.TransactionId, cointrx.OutputIndex)));
 
 					nCredit += cointrx.TxOut.Value;
 					vwtxPrev.Add(coin);
@@ -407,7 +490,7 @@ namespace Stratis.Bitcoin.Miner
 
 			// Calculate coin age reward
 			ulong nCoinAge;
-			if (!this.posConsensusValidator.StakeValidator.GetCoinAge(this.chain, this.cachedCoinView, txNew, pindexPrev, out nCoinAge))
+			if (!this.posConsensusValidator.StakeValidator.GetCoinAge(this.chain, this.coinView, txNew, pindexPrev, out nCoinAge))
 				return false; //error("CreateCoinStake : failed to calculate coin age");
 
 			long nReward = fees + this.posConsensusValidator.GetProofOfStakeReward(pindexPrev.Height);
@@ -429,10 +512,9 @@ namespace Stratis.Bitcoin.Miner
 				txNew.Outputs[1].Value = nCredit;
 
 			// Sign
-			int nIn = 0;
 			foreach (var walletTx in vwtxPrev)
 			{
-				if (!SignSignature(new[] { key }, walletTx.Transaction, txNew, nIn++))
+				if (!SignSignature(walletTx, txNew))
 					return false; // error("CreateCoinStake : failed to sign coinstake");
 			}
 
@@ -450,14 +532,14 @@ namespace Stratis.Bitcoin.Miner
 		/** The maximum size for mined blocks */
 		public const int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE / 2;
 
-		private bool SignSignature(Key[] keys, Transaction txFrom, Transaction txTo, int n, params Script[] knownRedeems)
+		private bool SignSignature(StakeTx from, Transaction txTo, params Script[] knownRedeems)
 		{
 			try
 			{
 				new TransactionBuilder()
-					.AddKeys(keys)
+					.AddKeys(from.PrvKey)
 					.AddKnownRedeems(knownRedeems)
-					.AddCoins(txFrom)
+					.AddCoins(new Coin(from.OutPoint, from.TxOut))
 					.SignTransactionInPlace(txTo);
 			}
 			catch (Exception)
@@ -484,7 +566,7 @@ namespace Stratis.Bitcoin.Miner
 			foreach (var stakeTx in stakeTxes)
 			{
 				// Must wait until coinbase is safely deep enough in the chain before valuing it
-				if ((stakeTx.Transaction.IsCoinBase || stakeTx.Transaction.IsCoinStake) && this.GetBlocksToMaturity(stakeTx) > 0)
+				if ((stakeTx.UtxoSet.IsCoinbase || stakeTx.UtxoSet.IsCoinstake) && this.GetBlocksToMaturity(stakeTx) > 0)
 					continue;
 
 				money += stakeTx.TxOut.Value;
@@ -528,9 +610,9 @@ namespace Stratis.Bitcoin.Miner
 			return true;
 		}
 
-		private List<Output> AvailableCoinsForStaking(List<StakeTx> stakeTxes, uint nSpendTime)
+		private List<StakeOutput> AvailableCoinsForStaking(List<StakeTx> stakeTxes, uint nSpendTime)
 		{
-			var vCoins = new List<Output>();
+			var vCoins = new List<StakeOutput>();
 
 			foreach (var pcoin in stakeTxes)
 			{
@@ -546,7 +628,7 @@ namespace Stratis.Bitcoin.Miner
 				else
 				{
 					// Filtering by tx timestamp instead of block timestamp may give false positives but never false negatives
-					if (pcoin.Transaction.Time + this.network.Consensus.Option<PosConsensusOptions>().StakeMinAge > nSpendTime)
+					if (pcoin.UtxoSet.Time + this.network.Consensus.Option<PosConsensusOptions>().StakeMinAge > nSpendTime)
 						continue;
 				}
 
@@ -556,7 +638,7 @@ namespace Stratis.Bitcoin.Miner
 				if (pcoin.TxOut.Value >= this.minimumInputValue)
 				{
 					// check if the coin is already staking
-					vCoins.Add(new Output { Depth = nDepth, StakeTx = pcoin });
+					vCoins.Add(new StakeOutput { Depth = nDepth, StakeTx = pcoin });
 				}
 			}
 
@@ -565,7 +647,7 @@ namespace Stratis.Bitcoin.Miner
 
 		private int GetBlocksToMaturity(StakeTx stakeTx)
 		{
-			if (!(stakeTx.Transaction.IsCoinBase || stakeTx.Transaction.IsCoinStake))
+			if (!(stakeTx.UtxoSet.IsCoinbase || stakeTx.UtxoSet.IsCoinstake))
 				return 0;
 
 			return Math.Max(0, (int)this.network.Consensus.Option<PosConsensusOptions>().COINBASE_MATURITY + 1 - this.GetDepthInMainChain(stakeTx));

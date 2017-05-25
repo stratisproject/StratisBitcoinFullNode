@@ -61,7 +61,6 @@ namespace Stratis.Bitcoin.Consensus
 		}
 
 		public uint256 TargetProofOfStake
-
 		{
 			get;
 			set;
