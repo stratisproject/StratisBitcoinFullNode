@@ -24,320 +24,355 @@ using System.Reflection;
 namespace Stratis.Bitcoin
 {
 
-	public class FullNode : IFullNode, IDisposable
-	{
-		private ApplicationLifetime applicationLifetime; // this will replace the cancellation token on the full node
-		ILogger _logger;
-		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
+    public class FullNode : IFullNode
+    {
+        private readonly ILogger logger;
+        private ApplicationLifetime applicationLifetime;
+        private FullNodeFeatureExecutor fullNodeFeatureExecutor;
+        private readonly ManualResetEvent isDisposed = new ManualResetEvent(false);
+        private readonly ManualResetEvent isStarted = new ManualResetEvent(false);
+        
+        internal bool Stopped;
 
-		public IFullNodeServiceProvider Services { get; set; }
+        public IApplicationLifetime ApplicationLifetime
+        {
+            get { return this.applicationLifetime; }
+            private set { this.applicationLifetime = (ApplicationLifetime) value; }
+        } // this will replace the cancellation token on the full node
 
-		NodeSettings _Settings;
+        public IFullNodeServiceProvider Services { get; set; }
 
-		public NodeSettings Settings
-		{
-			get { return this._Settings; }
-		}
+        public NodeSettings Settings { get; private set; }
 
-		public Version Version
-		{
-			get
-			{
-				string versionString = typeof(FullNode).GetTypeInfo().Assembly.GetCustomAttribute<System.Reflection.AssemblyFileVersionAttribute>()?.Version ??
-									   Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion;
-				if (!string.IsNullOrEmpty(versionString))
-				{
-					try
-					{
-						return new Version(versionString);
-					}
-					catch (ArgumentException) { }
-					catch (OverflowException) { }
-				}
-				return new Version(0, 0);
-			}
-		}
+        public Version Version
+        {
+            get
+            {
+                string versionString = typeof(FullNode).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ??
+                                       Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion;
+                if (!string.IsNullOrEmpty(versionString))
+                {
+                    try
+                    {
+                        return new Version(versionString);
+                    }
+                    catch (ArgumentException) { }
+                    catch (OverflowException) { }
+                }
+                return new Version(0, 0);
+            }
+        }
 
-		public FullNode()
-		{
-			_logger = Logs.LoggerFactory.CreateLogger<FullNode>();
-		}
+        public FullNode()
+        {
+            this.logger = Logs.LoggerFactory.CreateLogger<FullNode>();
+        }
 
-		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
-		{
-			Guard.NotNull(serviceProvider, nameof(serviceProvider));
+        public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
-			this.Services = serviceProvider;
+            this.Services = serviceProvider;
 
-			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
-			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
-			this.Network = this.Services.ServiceProvider.GetService<Network>();
-			this._Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
-			this._ChainBehaviorState = this.Services.ServiceProvider.GetService<BlockStore.ChainBehavior.ChainState>();
-			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
-			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
-			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
-			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
-			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
+            this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+            this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
+            this.Network = this.Services.ServiceProvider.GetService<Network>();
+            this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
+            this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainBehavior.ChainState>();
+            this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
+            this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
+            this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
+            this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
+            this.Signals = this.Services.ServiceProvider.GetService<Signals>();
 
-			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
-			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
-			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
-			this.Miner = this.Services.ServiceProvider.GetService<Mining>();
+            this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
+            this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
+            this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
+            this.Miner = this.Services.ServiceProvider.GetService<Mining>();
 
-			_logger.LogDebug("Full node initialized on {0}", Network.Name);
+            this.logger.LogDebug("Full node initialized on {0}", this.Network.Name);
 
-			return this;
-		}
+            return this;
+        }
 
-		protected void StartFeatures()
-		{
-			this.applicationLifetime = this.Services?.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
-			this.fullNodeFeatureExecutor = this.Services?.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
+        protected void StartFeatures()
+        {
+            this.ApplicationLifetime = this.Services?.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
+            this.fullNodeFeatureExecutor = this.Services?.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
 
-			// Fire IApplicationLifetime.Started
-			this.applicationLifetime?.NotifyStarted();
+            // Fire IApplicationLifetime.Started
+            this.applicationLifetime?.NotifyStarted();
 
-			//start all registered features
-			this.fullNodeFeatureExecutor?.Start();
-		}
+            //start all registered features
+            this.fullNodeFeatureExecutor?.Start();
+        }
 
-		protected void DisposeFeatures()
-		{
-			// Fire IApplicationLifetime.Stopping
-			this.applicationLifetime?.StopApplication();
-			// Fire the IHostedService.Stop
-			this.fullNodeFeatureExecutor?.Stop();
-			(this.Services.ServiceProvider as IDisposable)?.Dispose();
-			//(this.Services.ServiceProvider as IDisposable)?.Dispose();
-			// Fire IApplicationLifetime.Stopped
-			this.applicationLifetime?.NotifyStopped();
-		}
+        protected internal void DisposeFeatures()
+        {
+            // Fire IApplicationLifetime.Stopping
+            this.ApplicationLifetime?.StopApplication();
+            // Fire the IHostedService.Stop
+            this.fullNodeFeatureExecutor?.Stop();
+            (this.Services.ServiceProvider as IDisposable)?.Dispose();
+            //(this.Services.ServiceProvider as IDisposable)?.Dispose();
+        }
 
-		public Network Network
-		{
-			get;
-			internal set;
-		}
+        public Network Network
+        {
+            get;
+            internal set;
+        }
 
-		public CoinView CoinView
-		{
-			get; set;
-		}
+        public CoinView CoinView
+        {
+            get; set;
+        }
 
-		public DataFolder DataFolder
-		{
-			get; set;
-		}
+        public DataFolder DataFolder
+        {
+            get; set;
+        }
 
-		public IDateTimeProvider DateTimeProvider
-		{
-			get; set;
-		}
+        public IDateTimeProvider DateTimeProvider
+        {
+            get; set;
+        }
 
-		public bool IsInitialBlockDownload()
-		{
-			//if (fImporting || fReindex)
-			//	return true;
-			if (this.ConsensusLoop.Tip == null)
-				return true;
-			if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))
-				return true;
-			if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
-				return true;
-			return false;
-		}
+        public bool IsInitialBlockDownload()
+        {
+            //if (fImporting || fReindex)
+            //	return true;
+            if (this.ConsensusLoop.Tip == null)
+                return true;
+            if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))
+                return true;
+            if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
+                return true;
+            return false;
+        }
 
-		List<IDisposable> _Resources = new List<IDisposable>();
-		public List<IDisposable> Resources => _Resources;
+        public List<IDisposable> Resources { get; } = new List<IDisposable>();
 
-		public void Start()
-		{
-			if (IsDisposed)
-				throw new ObjectDisposedException("FullNode");
-			_IsStarted.Reset();
+        public void Start()
+        {
+            if (this.IsDisposed)
+                throw new ObjectDisposedException("FullNode");
+            this.isStarted.Reset();
 
-			// start all the features defined
-			this.StartFeatures();
+            // start all the features defined
+            this.StartFeatures();
 
-			ConnectionManager.Start();
-			_IsStarted.Set();
+            this.ConnectionManager.Start();
+            this.isStarted.Set();
 
-			this.StartPeriodicLog();
-		}
+            this.StartPeriodicLog();
+        }
 
-		private BlockStore.ChainBehavior.ChainState _ChainBehaviorState;
-		public BlockStore.ChainBehavior.ChainState ChainBehaviorState
-		{
-			get { return _ChainBehaviorState; }
-		}
+        public void Stop()
+        {
+            if (this.Stopped)
+            {
+                return;
+            }
+            this.Stopped = true;
 
-		public Mining Miner
-		{
-			get; set;
-		}
+            // Fire IApplicationLifetime.Stopping
+            this.ApplicationLifetime?.StopApplication();
 
-		public Signals Signals
-		{
-			get; set;
-		}
+            if (this.GlobalCancellation != null)
+            {
+                this.GlobalCancellation.Cancellation.Cancel();
 
-		public ConsensusLoop ConsensusLoop
-		{
-			get; set;
-		}
+                this.ConnectionManager.Dispose();
+                foreach (IDisposable dispo in this.Resources)
+                    dispo.Dispose();
 
-		public IWebHost RPCHost
-		{
-			get; set;
-		}
+                this.DisposeFeatures();
+            }
 
-		public ConnectionManager ConnectionManager
-		{
-			get; set;
-		}
+            // Fire IApplicationLifetime.Stopped
+            this.applicationLifetime?.NotifyStopped();
+        }
 
-		public MempoolManager MempoolManager
-		{
-			get; set;
-		}
+        public ChainBehavior.ChainState ChainBehaviorState { get; private set; }
 
-		public ChainRepository ChainRepository
-		{
-			get; set;
-		}
+        public Mining Miner
+        {
+            get; set;
+        }
 
-		public BlockStoreManager BlockStoreManager
-		{
-			get; set;
-		}
+        public Signals Signals
+        {
+            get; set;
+        }
 
-		/// <summary>
-		/// The longest PoW chain
-		/// </summary>
-		public ConcurrentChain Chain
-		{
-			get; set;
-		}
+        public ConsensusLoop ConsensusLoop
+        {
+            get; set;
+        }
 
-		public PeriodicTask FlushAddrmanTask
-		{
-			get; set;
-		}
+        public IWebHost RPCHost
+        {
+            get; set;
+        }
 
-		public PeriodicTask FlushChainTask
-		{
-			get; set;
-		}
+        public ConnectionManager ConnectionManager
+        {
+            get; set;
+        }
 
-		public CancellationProvider GlobalCancellation
-		{
-			get; set;
-		}
-		public class CancellationProvider
-		{
-			public CancellationTokenSource Cancellation { get; set; }
-		}
+        public MempoolManager MempoolManager
+        {
+            get; set;
+        }
 
-		ManualResetEvent _IsDisposed = new ManualResetEvent(false);
-		ManualResetEvent _IsStarted = new ManualResetEvent(false);
-		public bool IsDisposed
-		{
-			get
-			{
-				return _IsDisposedValue;
-			}
-		}
+        public ChainRepository ChainRepository
+        {
+            get; set;
+        }
 
-		private void StartPeriodicLog()
-		{
-			AsyncLoop.Run("PeriodicLog", (cancellation) =>
-			{
-				// TODO: move stats to each of its components
-				StringBuilder benchLogs = new StringBuilder();
+        public BlockStoreManager BlockStoreManager
+        {
+            get; set;
+        }
 
-				benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " + this.ConnectionManager.Parameters.UserAgent);
-				benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+        /// <summary>
+        /// The longest PoW chain
+        /// </summary>
+        public ConcurrentChain Chain
+        {
+            get; set;
+        }
 
-				if (this.ConsensusLoop != null)
-				{
-					benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestValidatedPoW.HashBlock);
-				}
+        public PeriodicTask FlushAddrmanTask
+        {
+            get; set;
+        }
 
-				if (this._ChainBehaviorState.HighestPersistedBlock != null)
-				{
-					benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this._ChainBehaviorState.HighestPersistedBlock.HashBlock);
-				}
+        public PeriodicTask FlushChainTask
+        {
+            get; set;
+        }
 
-				benchLogs.AppendLine();
+        public CancellationProvider GlobalCancellation
+        {
+            get; private set;
+        }
+        public class CancellationProvider
+        {
+            public CancellationTokenSource Cancellation { get; set; }
+        }
 
-				if (this.MempoolManager != null)
-				{
-					benchLogs.AppendLine("======Mempool======");
-					benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
-				}
+        public bool IsDisposed
+        {
+            get
+            {
+                return this.isDisposedValue;
+            }
+        }
 
-				benchLogs.AppendLine("======Connection======");
-				benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-				Logs.Bench.LogInformation(benchLogs.ToString());
-				return Task.CompletedTask;
-			},
-			this.GlobalCancellation.Cancellation.Token,
-			repeatEvery: TimeSpans.FiveSeconds,
-			startAfter: TimeSpans.FiveSeconds);
-		}
+        private void StartPeriodicLog()
+        {
+            AsyncLoop.Run("PeriodicLog", (cancellation) =>
+            {
+                // TODO: move stats to each of its components
+                StringBuilder benchLogs = new StringBuilder();
 
-		public void WaitDisposed()
-		{
-			_IsDisposed.WaitOne();
-			Dispose();
-		}
+                benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " + this.ConnectionManager.Parameters.UserAgent);
+                benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.Height.ToString().PadRight(8) + " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
 
-		bool _IsDisposedValue;
+                if (this.ConsensusLoop != null)
+                {
+                    benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) + this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) + this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
+                }
 
+                if (this.ChainBehaviorState.HighestPersistedBlock != null)
+                {
+                    benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) + this.ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) + " Store.Hash: ".PadRight(Logs.ColumnLength + 3) + this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+                }
 
-		private bool _HasExited;
-		private Exception _UncatchedException;
+                benchLogs.AppendLine();
 
-		public bool HasExited
-		{
-			get
-			{
-				return _HasExited;
-			}
-		}
+                if (this.MempoolManager != null)
+                {
+                    benchLogs.AppendLine("======Mempool======");
+                    benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+                }
 
-		public void Dispose()
-		{
-			if (IsDisposed)
-				return;
-			_IsDisposedValue = true;
-			Logs.FullNode.LogInformation("Closing node pending...");
-			_IsStarted.WaitOne();
-			if (this.GlobalCancellation != null)
-			{
-				this.GlobalCancellation.Cancellation.Cancel();
+                benchLogs.AppendLine("======Connection======");
+                benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
+                Logs.Bench.LogInformation(benchLogs.ToString());
+                return Task.CompletedTask;
+            },
+            this.GlobalCancellation.Cancellation.Token,
+            repeatEvery: TimeSpans.FiveSeconds,
+            startAfter: TimeSpans.FiveSeconds);
+        }
 
-				ConnectionManager.Dispose();
-				foreach (var dispo in _Resources)
-					dispo.Dispose();
+        public void WaitDisposed()
+        {
+            this.isDisposed.WaitOne();
+            this.Dispose();
+        }
 
-				DisposeFeatures();
-			}
-			_IsDisposed.Set();
-			_HasExited = true;
-		}
+        private bool isDisposedValue;
+        private bool hasExited;
+#pragma warning disable 649
+        private Exception uncatchedException;
+#pragma warning restore 649
 
-		public void ThrowIfUncatchedException()
-		{
-			if (_UncatchedException != null)
-			{
-				var ex = _UncatchedException;
-				var aex = _UncatchedException as AggregateException;
-				if (aex != null)
-					ex = aex.InnerException;
-				ExceptionDispatchInfo.Capture(ex).Throw();
-			}
-		}
-	}
+        public bool HasExited
+        {
+            get
+            {
+                return this.hasExited;
+            }
+        }
+
+        public void Dispose()
+        {
+            if (this.IsDisposed)
+                return;
+            this.isDisposedValue = true;
+            Logs.FullNode.LogInformation("Closing node pending...");
+
+            if (!this.Stopped)
+            {
+                try
+                {
+                    this.Stop();
+                }
+                catch (Exception ex)
+                {
+                    this.logger?.LogError(ex.Message);
+                }
+            }
+
+            this.isStarted.WaitOne();
+            //if (this.GlobalCancellation != null)
+            //{
+            //	this.GlobalCancellation.Cancellation.Cancel();
+
+            //	ConnectionManager.Dispose();
+            //	foreach (var dispo in _Resources)
+            //		dispo.Dispose();
+
+            //	DisposeFeatures();
+            //}
+            this.isDisposed.Set();
+            this.hasExited = true;
+        }
+
+        public void ThrowIfUncatchedException()
+        {
+            if (this.uncatchedException != null)
+            {
+                var ex = this.uncatchedException;
+                var aex = this.uncatchedException as AggregateException;
+                if (aex != null)
+                    ex = aex.InnerException;
+                ExceptionDispatchInfo.Capture(ex).Throw();
+            }
+        }
+    }
 }
