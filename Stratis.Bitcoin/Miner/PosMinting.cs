@@ -40,22 +40,23 @@ namespace Stratis.Bitcoin.Miner
 		private readonly NodeSettings settings;
 		private readonly CoinView coinView;
 		private readonly StakeChain stakeChain;
-		private readonly BlockStoreCache blockStoreCache;
+		private readonly PosConsensusValidator posConsensusValidator;
+
 		private uint256 hashPrevBlock;
 		private Task mining;
-		private long lastCoinStakeSearchTime;
+		private readonly long lastCoinStakeSearchTime;
 		private Money reserveBalance;
 		private readonly int minimumInputValue;
 		private readonly int minerSleep;
 
-		private PosConsensusValidator posConsensusValidator;
+		
 		public long LastCoinStakeSearchInterval;
 		public long LastCoinStakeSearchTime;
 
 		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, ConnectionManager connection,
 			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
 			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider,
-			NodeSettings settings, CoinView coinView, StakeChain stakeChain, BlockStoreCache blockStoreCache)
+			NodeSettings settings, CoinView coinView, StakeChain stakeChain)
 		{
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -70,7 +71,6 @@ namespace Stratis.Bitcoin.Miner
 			this.settings = settings;
 			this.coinView = coinView;
 			this.stakeChain = stakeChain;
-			this.blockStoreCache = blockStoreCache;
 
 			this.minerSleep = 500; // GetArg("-minersleep", 500);
 			this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
@@ -189,6 +189,12 @@ namespace Stratis.Bitcoin.Miner
 					var blockResult = new BlockResult {Block = pblock};
 					this.CheckState(new ContextInformation(blockResult, network.Consensus), pindexPrev);
 
+					trxPairs.Add(new TrxStakingInfo
+					{
+						TransactionHash = pblock.Transactions[1].GetHash(),
+						PrvKey = trxPairs.First().PrvKey
+					});
+
 					pblocktemplate = null;
 				}
 				else
@@ -216,34 +222,24 @@ namespace Stratis.Bitcoin.Miner
 			// Found a solution
 			if (block.Header.HashPrevBlock != this.chain.Tip.HashBlock)
 				return;
-
-			var newChain = new ChainedBlock(block.Header, block.GetHash(), this.chain.Tip);
-
-			if (newChain.ChainWork <= this.chain.Tip.ChainWork)
-				return;
-
+			
+			// validate the block
 			this.consensusLoop.AcceptBlock(context);
-			this.chain.SetTip(newChain);
 
-			if (context.BlockResult.ChainedBlock == null)
-				return; //reorg
+			if (context.BlockResult.ChainedBlock == null) return; //reorg
+			if (context.BlockResult.Error != null) return;
 
-			if (context.BlockResult.Error != null)
+			if (context.BlockResult.ChainedBlock.ChainWork <= this.chain.Tip.ChainWork)
 				return;
 
-			// push the bock to cach 
-			// this will make it available for peers immediatly
-			// if peers reject the block it will just expire from cache
-			this.blockStoreCache.AddToCache(block);
-
-			// similar logic to what's in the full node code
+				// similar logic to what's in the full node code
+			this.chain.SetTip(context.BlockResult.ChainedBlock);
+			this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
 			this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
+			this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
 			this.signals.Blocks.Broadcast(block);
 
-			// ensure the block is written to disk
-			var retry = 0;
-			while (++retry < 100 && !this.blockRepository.ExistAsync(context.BlockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
-				Thread.Sleep(1000);
+			Logs.Mining.LogInformation($"Found new POS block {context.BlockResult.ChainedBlock.HashBlock}");
 
 			// wait for peers to get the block
 			Thread.Sleep(1000);
@@ -253,7 +249,7 @@ namespace Stratis.Bitcoin.Miner
 				node.Behavior<ChainBehavior>().TrySync();
 
 			// wait for all peers to accept the block
-			retry = 0;
+			var retry = 0;
 			foreach (var node in this.connection.ConnectedNodes)
 			{
 				var chainBehaviour = node.Behavior<ChainBehavior>();
@@ -292,7 +288,6 @@ namespace Stratis.Bitcoin.Miner
 
 
 			if (searchTime > this.lastCoinStakeSearchTime)
-				//if (DateTime.UtcNow.Second % 16 == 0) // every 16 sedons
 			{
 				long searchInterval = searchTime - this.lastCoinStakeSearchTime;
 				if (this.CreateCoinStake(stakeTxes, pindexBest, block, searchInterval, fees, ref txCoinStake, ref key))
