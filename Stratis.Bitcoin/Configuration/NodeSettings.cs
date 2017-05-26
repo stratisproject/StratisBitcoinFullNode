@@ -72,10 +72,10 @@ namespace Stratis.Bitcoin.Configuration
 					nodeSettings.ConfigurationFile = Path.Combine(nodeSettings.DataDir, nodeSettings.ConfigurationFile);
 				}
 			}
-			nodeSettings.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
-			nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
+            nodeSettings.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
+            nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
 
-			if (nodeSettings.ConfigurationFile != null)
+            if (nodeSettings.ConfigurationFile != null)
 			{
 				AssetConfigFileExists(nodeSettings);
 				var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
@@ -352,8 +352,8 @@ namespace Stratis.Bitcoin.Configuration
 				builder.AppendLine("-help/--help		Show this help.");
 				builder.AppendLine($"-conf=<Path>		Path to the configuration file. Default {defaults.ConfigurationFile}.");
 				builder.AppendLine($"-datadir=<Path>		Path to the data directory. Default {defaults.DataDir}.");
-				builder.AppendLine($"-testnet=<0 or 1>		Use the testnet chain. Default {defaults.Testnet}.");
-				builder.AppendLine($"-regtest=<0 or 1>		Use the regtestnet chain. Default {defaults.RegTest}.");
+				builder.AppendLine($"-testnet		        Use the testnet chain.");
+				builder.AppendLine($"-regtest		        Use the regtestnet chain.");
 				builder.AppendLine($"-acceptnonstdtxn=<0 or 1>	Accept non-standard transactions. Default {defaults.RequireStandard}.");
 				builder.AppendLine($"-maxtipage=<number>	Max tip age. Default {DEFAULT_MAX_TIP_AGE}.");
 				builder.AppendLine($"-server=<0 or 1>		Accept command line and JSON-RPC commands. Default {defaults.RPC != null}.");
