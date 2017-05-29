@@ -6,7 +6,7 @@ using Xunit;
 using Moq;
 using Breeze.Wallet;
 using Breeze.Wallet.Controllers;
-using Breeze.Wallet.Errors;
+using Breeze.Common.JsonErrors;
 using Breeze.Wallet.Helpers;
 using Breeze.Wallet.Models;
 using NBitcoin;
