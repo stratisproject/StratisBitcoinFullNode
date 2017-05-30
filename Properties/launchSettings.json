@@ -5,7 +5,7 @@
     },
     "Breeze.Daemon TestNet": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet"
+      "commandLineArgs": "-testnet -tumbler-uri=http://localhost:5050"
     }
   }
 }
