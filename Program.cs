@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using Breeze.Wallet;
 using Stratis.Bitcoin.Notifications;
+using Stratis.Bitcoin.Utilities;
 
 namespace Breeze.Daemon
 {
@@ -17,13 +18,13 @@ namespace Breeze.Daemon
     {
         public static void Main(string[] args)
         {
-            // configure Full Node
-            Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
+			// configure Full Node
+			Logs.Configure(Logs.GetLoggerFactory(args));
             NodeSettings nodeSettings = NodeSettings.FromArguments(args);
             
             var fullNodeBuilder = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
-                .UseWallet()
+                .UseLightWallet()
                 .UseBlockNotification()
                 .UseTransactionNotification()
                 .UseApi();
@@ -36,13 +37,10 @@ namespace Breeze.Daemon
                 fullNodeBuilder.UseTumbleBit(new Uri(tumblerAddress));
             }
             
-            var node = (FullNode)fullNodeBuilder.Build();
-            
-            // start Full Node - this will also start the API
-            node.Start();
-            Console.WriteLine("Press any key to stop");
-            Console.ReadLine();
-            node.Dispose();
+            var node = fullNodeBuilder.Build();
+
+	        // start Full Node - this will also start the API
+			node.Run();
         }
     }
 }
