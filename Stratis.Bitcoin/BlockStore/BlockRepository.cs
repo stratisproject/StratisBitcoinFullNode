@@ -31,8 +31,11 @@ namespace Stratis.Bitcoin.BlockStore
 
 	public class BlockRepository : IBlockRepository
 	{
-		readonly DBreezeSingleThreadSession session;
-		readonly Network network;
+		private readonly DBreezeSingleThreadSession session;
+		private readonly Network network;
+		private static readonly byte[] BlockHashKey = new byte[0];
+		private static readonly byte[] TxIndexKey = new byte[1];
+		public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
 
 		public BlockRepository(Network network, DataFolder dataFolder)
 			: this(network, dataFolder.BlockPath)
@@ -46,6 +49,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 			this.session = new DBreezeSingleThreadSession("DBreeze BlockRepository", folder);
 			this.network = network;
+			this.PerformanceCounter = new BlockStoreRepositoryPerformanceCounter();
 		}
 
 		public Task Initialize()
@@ -91,11 +95,27 @@ namespace Stratis.Bitcoin.BlockStore
 			return this.session.Do(() =>
 			{
 				var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
-				if (!blockid.Exists)
-					return null;
-				var block = this.session.Transaction.Select<byte[], Block>("Block", blockid.Value.ToBytes());
-				return block?.Value?.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
-			});
+                if (!blockid.Exists)
+                {
+                    this.PerformanceCounter.AddRepositoryMissCount(1);
+                    return null;
+                }
+
+                this.PerformanceCounter.AddRepositoryHitCount(1);
+                var block = this.session.Transaction.Select<byte[], Block>("Block", blockid.Value.ToBytes());
+				var trx = block?.Value?.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
+
+                if (trx == null)
+                {
+                    this.PerformanceCounter.AddRepositoryMissCount(1);
+                }
+                else
+                {
+                    this.PerformanceCounter.AddRepositoryHitCount(1);
+                }
+
+                return trx;
+            });
 		}
 
 		public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
@@ -108,12 +128,19 @@ namespace Stratis.Bitcoin.BlockStore
 			return this.session.Do(() =>
 			{
 				var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
-				return !blockid.Exists ? null : blockid.Value;
-			});
-		}
 
-		static readonly byte[] BlockHashKey = new byte[0];
-		static readonly byte[] TxIndexKey = new byte[1];
+                if (!blockid.Exists)
+                {
+                    this.PerformanceCounter.AddRepositoryMissCount(1);
+                    return null;
+                }
+                else
+                {
+                    this.PerformanceCounter.AddRepositoryHitCount(1);
+                    return blockid.Value;
+                }
+			});
+		}		
 
 		public uint256 BlockHash { get; private set; }
 		public bool TxIndex { get; private set; }
@@ -135,21 +162,28 @@ namespace Stratis.Bitcoin.BlockStore
 
 					// if the block is already in store don't write it again
 					var item = this.session.Transaction.Select<byte[], Block>("Block", blockId.ToBytes());
-					if (!item.Exists)
-					{
-						this.session.Transaction.Insert<byte[], Block>("Block", blockId.ToBytes(), block);
+                    if (!item.Exists)
+                    {
+                        this.PerformanceCounter.AddRepositoryMissCount(1);
+                        this.PerformanceCounter.AddRepositoryInsertCount(1);
+                        this.session.Transaction.Insert<byte[], Block>("Block", blockId.ToBytes(), block);
 
-						if (this.TxIndex)
-						{
-							// index transactions
-							foreach (var transaction in block.Transactions)
-							{
-								var trxId = transaction.GetHash();
-								this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId);
-							}
-						}
-					}
-				}
+                        if (this.TxIndex)
+                        {
+                            // index transactions
+                            foreach (var transaction in block.Transactions)
+                            {
+                                var trxId = transaction.GetHash();
+                                this.PerformanceCounter.AddRepositoryInsertCount(1);
+                                this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        this.PerformanceCounter.AddRepositoryHitCount(1);
+                    }
+                }
 
 				this.SaveBlockHash(nextBlockHash);
 				this.session.Transaction.Commit();
@@ -159,14 +193,23 @@ namespace Stratis.Bitcoin.BlockStore
 		private bool? LoadTxIndex()
 		{
 			var item = this.session.Transaction.Select<byte[], bool>("Common", TxIndexKey);
-			if (!item.Exists)
-				return null;
-			this.TxIndex = item.Value;
-			return item.Value;
+
+            if (!item.Exists)
+            {
+                this.PerformanceCounter.AddRepositoryMissCount(1);
+                return null;
+            }
+            else
+            {
+                this.PerformanceCounter.AddRepositoryHitCount(1);
+                this.TxIndex = item.Value;
+                return item.Value;
+            }
 		}
 		private void SaveTxIndex(bool txIndex)
 		{
 			this.TxIndex = txIndex;
+            this.PerformanceCounter.AddRepositoryInsertCount(1);
 			this.session.Transaction.Insert<byte[], bool>("Common", TxIndexKey, txIndex);
 		}
 
@@ -199,6 +242,7 @@ namespace Stratis.Bitcoin.BlockStore
 		private void SaveBlockHash(uint256 nextBlockHash)
 		{
 			this.BlockHash = nextBlockHash;
+            this.PerformanceCounter.AddRepositoryInsertCount(1);
 			this.session.Transaction.Insert<byte[], uint256>("Common", BlockHashKey, nextBlockHash);
 		}
 
@@ -208,9 +252,18 @@ namespace Stratis.Bitcoin.BlockStore
 
 			return this.session.Do(() =>
 			{
-				var key = hash.ToBytes();
-				var item = this.session.Transaction.Select<byte[], Block>("Block", key);
-				return item?.Value;
+				var key = hash.ToBytes();                
+                var item = this.session.Transaction.Select<byte[], Block>("Block", key);
+                if (!item.Exists)
+                {
+                    this.PerformanceCounter.AddRepositoryMissCount(1);
+                }
+                else
+                {
+                    this.PerformanceCounter.AddRepositoryHitCount(1);
+                }
+
+                return item?.Value;                
 			});
 		}
 
@@ -222,8 +275,17 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				var key = hash.ToBytes();
 				var item = this.session.Transaction.Select<byte[], Block>("Block", key);
-				return item.Exists; // lazy loading is on so we don't fetch the whole value, just the row.
-			});
+                if (!item.Exists)
+                {
+                    this.PerformanceCounter.AddRepositoryMissCount(1);                    
+                }
+                else
+                {
+                    this.PerformanceCounter.AddRepositoryHitCount(1);                
+                }
+
+                return item.Exists; // lazy loading is on so we don't fetch the whole value, just the row.
+            });
 		}
 
 		public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
@@ -241,12 +303,23 @@ namespace Stratis.Bitcoin.BlockStore
 					if (this.TxIndex)
 					{
 						var block = this.session.Transaction.Select<byte[], Block>("Block", key);
-						if (block.Exists)
-							foreach (var transaction in block.Value.Transactions)
-								this.session.Transaction.RemoveKey<byte[]>("Transaction", transaction.GetHash().ToBytes());
+                        if (block.Exists)
+                        {
+                            this.PerformanceCounter.AddRepositoryHitCount(1);
+
+                            foreach (var transaction in block.Value.Transactions)
+                            {
+                                this.PerformanceCounter.AddRepositoryDeleteCount(1);
+                                this.session.Transaction.RemoveKey<byte[]>("Transaction", transaction.GetHash().ToBytes());
+                            }
+                        }
+                        else {
+                            this.PerformanceCounter.AddRepositoryMissCount(1);
+                        }
 					}
 
-					this.session.Transaction.RemoveKey<byte[]>("Block", key);
+                    this.PerformanceCounter.AddRepositoryDeleteCount(1);
+                    this.session.Transaction.RemoveKey<byte[]>("Block", key);
 				}
 
 				this.SaveBlockHash(newlockHash);

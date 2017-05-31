@@ -25,22 +25,28 @@ namespace Stratis.Bitcoin.BlockStore
 		public BlockRepository BlockRepository { get; } // public for testing
 		private readonly NodeSettings nodeArgs;
 		private readonly StoreBlockPuller blockPuller;
-		public BlockStore.ChainBehavior.ChainState ChainState { get; }
+        private readonly BlockStoreCache blockStoreCache;
+        private readonly BlockStoreStats blockStoreStats;
+
+        public BlockStore.ChainBehavior.ChainState ChainState { get; }
 
 		public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
 		public BlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, NodeSettings nodeArgs,
 			BlockStore.ChainBehavior.ChainState chainState,
-			StoreBlockPuller blockPuller)
+			StoreBlockPuller blockPuller,
+            BlockStoreCache cache)
 		{
 			this.chain = chain;
 			this.BlockRepository = blockRepository;
 			this.nodeArgs = nodeArgs;
 			this.blockPuller = blockPuller;
 			this.ChainState = chainState;
+            this.blockStoreCache = cache;
 
-			PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-		}
+            PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
+            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache);
+        }
 
 		// downaloading 5mb is not much in case the store need to catchup
 		private uint insertsizebyte = 1000000 * 5; // Block.MAX_BLOCK_SIZE 
@@ -49,7 +55,7 @@ namespace Stratis.Bitcoin.BlockStore
 		private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
 		private readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
-		public async Task Initialize(CancellationTokenSource tokenSource)
+        public async Task Initialize(CancellationTokenSource tokenSource)
 		{
 			if (this.nodeArgs.Store.ReIndex)
 				throw new NotImplementedException();
@@ -130,13 +136,13 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public async Task DownloadAndStoreBlocks(CancellationToken token, bool disposemode = false)
 		{
-			// TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
-			// When in IBD we may need many reads for the block key without fetching the block
-			// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
-			// a read is normally done when a peer is asking for the entire block (not just the key) 
-			// then if LazyLoadingOn = false the read will be faster on the entire block
+            // TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
+            // When in IBD we may need many reads for the block key without fetching the block
+            // So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
+            // a read is normally done when a peer is asking for the entire block (not just the key) 
+            // then if LazyLoadingOn = false the read will be faster on the entire block            
 
-			while (!token.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
 			{
 				if (StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
 					break;
@@ -146,8 +152,13 @@ namespace Stratis.Bitcoin.BlockStore
 				if (next == null)
 					break; //no blocks to store
 
-				// reorg logic
-				if (this.StoredBlock.HashBlock != next.Header.HashPrevBlock)
+                if (this.blockStoreStats.CanLog)
+                {
+                    blockStoreStats.Log();
+                }                
+
+                // reorg logic
+                if (this.StoredBlock.HashBlock != next.Header.HashPrevBlock)
 				{
 					if (disposemode)
 						break;
@@ -253,8 +264,8 @@ namespace Stratis.Bitcoin.BlockStore
 				int stallCount = 0;
 				bool download = true;
 				while (!token.IsCancellationRequested)
-				{
-					if (download)
+				{                   
+                    if (download)
 					{
 						var old = next;
 						next = this.chain.GetBlock(old.Height + 1);
@@ -315,7 +326,7 @@ namespace Stratis.Bitcoin.BlockStore
 						// waiting for blocks so sleep 100 ms
 						await Task.Delay(100, token);
 						stallCount++;
-					}
+					}                   
 				}
 			}
 		}
