@@ -60,7 +60,8 @@ namespace Stratis.Bitcoin.Logging
                 { "fullnode", "Stratis.Bitcoin.FullNode" },
                 { "consensus", "Stratis.Bitcoin.FullNode" },
                 { "mining", "Stratis.Bitcoin.FullNode" },
-            };
+	            { "wallet", "Stratis.Bitcoin.Wallet" },
+			};
             var filterSettings = new FilterLoggerSettings();
             // Default level is Information
             filterSettings.Add("Default", LogLevel.Information);

@@ -40,10 +40,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Wallet\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Stratis.Bitcoin.Common\Stratis.Bitcoin.Common.csproj" />
   </ItemGroup>
 

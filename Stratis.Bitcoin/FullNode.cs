@@ -20,6 +20,7 @@ using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Utilities;
 using System.Reflection;
+using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin
 {
@@ -109,6 +110,8 @@ namespace Stratis.Bitcoin
 
 		public ConsensusLoop ConsensusLoop { get; set; }
 
+		public WalletManager Wallet { get; set; }
+
 		public IWebHost RPCHost { get; set; }
 
 		public ConnectionManager ConnectionManager { get; set; }
@@ -146,8 +149,9 @@ namespace Stratis.Bitcoin
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
+			this.Wallet = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
 
-			this.logger.LogDebug("Full node initialized on {0}", this.Network.Name);
+			this.logger.LogInformation("Full node initialized on {0}", this.Network.Name);
 
 			return this;
 		}
@@ -243,6 +247,15 @@ namespace Stratis.Bitcoin
 						                     this.ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) +
 						                     " Store.Hash: ".PadRight(Logs.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+					}
+
+					if (this.Wallet != null)
+					{
+						var height = this.Wallet.LastBlockHeight();
+						benchLogs.AppendLine("Wallet.Height: ".PadRight(Logs.ColumnLength + 3) +
+						                     height.ToString().PadRight(8) +
+											 " Wallet.Hash: ".PadRight(Logs.ColumnLength + 3) +
+						                     this.Chain.GetBlock(height).HashBlock);
 					}
 
 					benchLogs.AppendLine();

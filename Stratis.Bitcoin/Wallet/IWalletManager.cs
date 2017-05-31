@@ -9,16 +9,22 @@ namespace Stratis.Bitcoin.Wallet
     /// </summary>
     public interface IWalletManager : IDisposable
     {
-        /// <summary>
-        /// Creates a wallet and persist it as a file on the local system.
-        /// </summary>
-        /// <param name="password">The password used to encrypt sensitive info.</param>
-        /// <param name="folderPath">The folder where the wallet will be saved.</param>
-        /// <param name="name">The name of the wallet.</param>
-        /// <param name="network">The network this wallet is for.</param>
-        /// <param name="passphrase">The passphrase used in the seed.</param>
-        /// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
-        Mnemonic CreateWallet(string password, string folderPath, string name, string network, string passphrase = null);
+		/// <summary>
+		/// List all spendable transactions from all accounts
+		/// </summary>
+		/// <returns>A collection of spendable outputs</returns>
+		List<UnspentInfo> GetSpendableTransactions();
+
+		/// <summary>
+		/// Creates a wallet and persist it as a file on the local system.
+		/// </summary>
+		/// <param name="password">The password used to encrypt sensitive info.</param>
+		/// <param name="folderPath">The folder where the wallet will be saved.</param>
+		/// <param name="name">The name of the wallet.</param>
+		/// <param name="network">The network this wallet is for.</param>
+		/// <param name="passphrase">The passphrase used in the seed.</param>
+		/// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
+		Mnemonic CreateWallet(string password, string folderPath, string name, string network, string passphrase = null);
 
         /// <summary>
         /// Loads a wallet from a file.

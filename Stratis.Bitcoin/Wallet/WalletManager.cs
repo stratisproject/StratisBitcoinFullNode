@@ -340,8 +340,52 @@ namespace Stratis.Bitcoin.Wallet
             return wallet.GetAccountsByCoinType(coinType);
         }
 
-        /// <inheritdoc />
-        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, CoinType coinType, string password, string destinationAddress, Money amount, string feeType, bool allowUnconfirmed)
+	    public int LastBlockHeight()
+	    {
+		    if (!this.Wallets.Any())
+		    {
+			    return this.chain.Tip.Height;
+		    }
+
+			return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight) ?? 0;
+	    }
+
+	    /// <inheritdoc />
+		public List<UnspentInfo> GetSpendableTransactions()
+	    {
+		    var outs = new List<UnspentInfo>();
+		    var accounts = this.Wallets.SelectMany(wallet => wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts);
+
+		    foreach (var account in accounts)
+		    {
+			    foreach (var externalAddress in account.ExternalAddresses)
+			    {
+				    var info = new UnspentInfo
+				    {
+						Account = account,
+					    Address = externalAddress,
+					    Transactions = externalAddress.UnspentTransactions()
+				    };
+				    outs.Add(info);
+
+				}
+			    foreach (var internalAddress in account.InternalAddresses)
+			    {
+					var info = new UnspentInfo
+				    {
+					    Account = account,
+						Address = internalAddress,
+					    Transactions = internalAddress.UnspentTransactions()
+				    };
+				    outs.Add(info);
+				}
+		    }
+
+		    return outs;
+	    }
+
+		/// <inheritdoc />
+		public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, CoinType coinType, string password, string destinationAddress, Money amount, string feeType, bool allowUnconfirmed)
         {
             if (amount == Money.Zero)
             {
@@ -861,4 +905,14 @@ namespace Stratis.Bitcoin.Wallet
             this.TransactionHash = transactionHash;
         }
     }
+
+	public class UnspentInfo
+	{
+		public HdAccount Account { get; set; }
+
+		public HdAddress Address { get; set; }
+
+		public List<TransactionData> Transactions { get; set; }
+	}
+
 }

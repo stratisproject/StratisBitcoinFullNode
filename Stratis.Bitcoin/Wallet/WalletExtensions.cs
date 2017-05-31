@@ -1,10 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Wallet
 {
-    public static class ChainExtensions
+    public static class WalletExtensions
     {
+	    public static List<TransactionData> UnspentTransactions(this HdAddress address)
+	    {
+		    return address.Transactions.Where(t => t.SpentInTransaction == null && t.Amount > Money.Zero).ToList();
+	    }
+
         /// <summary>
         /// Determines whether the chain is downloaded and up to date.
         /// </summary>
