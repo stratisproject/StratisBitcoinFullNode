@@ -105,10 +105,10 @@ namespace Stratis.Bitcoin.Logging
                 .WithFilter(filterSettings);
             loggerFactory.AddDebug(LogLevel.Trace);
             loggerFactory.AddConsole(LogLevel.Trace);
+	        loggerFactory.AddFile("Logs/node-{Date}.json", isJson: true, minimumLevel: LogLevel.Debug,
+		        fileSizeLimitBytes: 10000000);
 
-            // TODO: To add file logging, need to get -datadir / -config from args
-
-            return loggerFactory;
+			return loggerFactory;
         }
 
         public static ILogger Configuration

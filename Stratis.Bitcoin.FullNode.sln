@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.12
+VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331FD3-D493-46A9-928B-B786FC6F3103}"
 	ProjectSection(SolutionItems) = preProject
@@ -18,6 +18,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Tests", "Stratis.Bitcoin.Tests\Stratis.Bitcoin.Tests.csproj", "{94FEB14E-D123-486D-A24D-D2BE725D96E3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.StratisD", "Stratis.StratisD\Stratis.StratisD.csproj", "{34C17104-704E-4790-B398-D1F73CBEE31E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Api", "Stratis.Bitcoin.Api\Stratis.Bitcoin.Api.csproj", "{D5C7B853-9129-4335-951E-D2B5CF7B354B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Common", "Stratis.Bitcoin.Common\Stratis.Bitcoin.Common.csproj", "{2D21A110-D7DE-474A-A684-A954D2C86C25}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +49,14 @@ Global
 		{34C17104-704E-4790-B398-D1F73CBEE31E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34C17104-704E-4790-B398-D1F73CBEE31E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34C17104-704E-4790-B398-D1F73CBEE31E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5C7B853-9129-4335-951E-D2B5CF7B354B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5C7B853-9129-4335-951E-D2B5CF7B354B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5C7B853-9129-4335-951E-D2B5CF7B354B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5C7B853-9129-4335-951E-D2B5CF7B354B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D21A110-D7DE-474A-A684-A954D2C86C25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D21A110-D7DE-474A-A684-A954D2C86C25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D21A110-D7DE-474A-A684-A954D2C86C25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D21A110-D7DE-474A-A684-A954D2C86C25}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
