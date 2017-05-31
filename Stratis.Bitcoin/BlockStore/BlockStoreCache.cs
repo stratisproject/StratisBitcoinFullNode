@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.BlockStore
 {
 	public interface IBlockStoreCache : IDisposable
-	{	
+	{
 		void Expire(uint256 blockid);
 		Task<Block> GetBlockAsync(uint256 blockid);
 		Task<Block> GetBlockByTrxAsync(uint256 trxid);
@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.BlockStore
 	{
 		private readonly IBlockRepository blockRepository;
 		private readonly IMemoryCache cache;
+		public BlockStoreCachePerformanceCounter PerformanceCounter { get; }	
 
 		public BlockStoreCache(BlockRepository blockRepository) : this(blockRepository, new MemoryCache(new MemoryCacheOptions()))
 		{
@@ -34,8 +35,9 @@ namespace Stratis.Bitcoin.BlockStore
 			Guard.NotNull(blockRepository, nameof(blockRepository));
 			Guard.NotNull(memoryCache, nameof(memoryCache));
 
-			this.blockRepository = blockRepository;		
+			this.blockRepository = blockRepository;
 			this.cache = memoryCache;
+			this.PerformanceCounter = new BlockStoreCachePerformanceCounter();
 		}
 
 		public void Expire(uint256 blockid)
@@ -44,7 +46,11 @@ namespace Stratis.Bitcoin.BlockStore
 
 			Block block;
 			if (this.cache.TryGetValue(blockid, out block))
-				this.cache.Remove(block);
+			{
+				this.PerformanceCounter.AddCacheHitCount(1);
+                this.PerformanceCounter.AddCacheRemoveCount(1);
+                this.cache.Remove(block);                
+			}
 		}
 
 		public async Task<Block> GetBlockAsync(uint256 blockid)
@@ -53,11 +59,19 @@ namespace Stratis.Bitcoin.BlockStore
 
 			Block block;
 			if (this.cache.TryGetValue(blockid, out block))
+			{
+                this.PerformanceCounter.AddCacheHitCount(1);
 				return block;
+			}
+
+            this.PerformanceCounter.AddCacheMissCount(1);
 
 			block = await this.blockRepository.GetAsync(blockid);
-			if(block != null)
+			if (block != null)
+			{
 				this.cache.Set(blockid, block, TimeSpan.FromMinutes(10));
+				this.PerformanceCounter.AddCacheSetCount(1);
+			}
 
 			return block;
 		}
@@ -70,16 +84,20 @@ namespace Stratis.Bitcoin.BlockStore
 			Block block;
 			if (this.cache.TryGetValue(trxid, out blokcid))
 			{
+                this.PerformanceCounter.AddCacheHitCount(1);
 				block = await this.GetBlockAsync(blokcid);
+				return block;
 			}
-			else
-			{
-				blokcid = await this.blockRepository.GetTrxBlockIdAsync(trxid);
-				if (blokcid == null)
-					return null;
-				this.cache.Set(trxid, blokcid, TimeSpan.FromMinutes(10));
-				block = await this.GetBlockAsync(blokcid);
-			}
+
+            this.PerformanceCounter.AddCacheMissCount(1);
+
+			blokcid = await this.blockRepository.GetTrxBlockIdAsync(trxid);
+			if (blokcid == null)
+				return null;
+
+			this.cache.Set(trxid, blokcid, TimeSpan.FromMinutes(10));
+            this.PerformanceCounter.AddCacheSetCount(1);
+			block = await this.GetBlockAsync(blokcid);
 
 			return block;
 		}
