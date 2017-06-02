@@ -97,23 +97,23 @@ namespace Stratis.Bitcoin.Miner
 			public int OutputIndex;
 			public HdAddress Address;
 			public UnspentOutputs UtxoSet;
-			public WalltSecret Secret;
+			public WalletSecret Secret;
 			public Key Key;
 		}
 
-		public class WalltSecret
+		public class WalletSecret
 		{
 			public string WalletPassword;
 		}
 
-		public Task Mine(WalltSecret walltSecret)
+		public Task Mine(WalletSecret walletSecret)
 		{
 			if (this.mining != null)
 				return this.mining; // already mining
 
 			this.mining = AsyncLoop.Run("PosMining.Mine", token =>
 				{
-					this.GenerateBlocks(walltSecret);
+					this.GenerateBlocks(walletSecret);
 					return Task.CompletedTask;
 				},
 				this.cancellationProvider.Cancellation.Token,
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Miner
 			return this.mining;
 		}
 
-		public void GenerateBlocks(WalltSecret walltSecret)
+		public void GenerateBlocks(WalletSecret walletSecret)
 		{
 			this.LastCoinStakeSearchInterval = 0;
 
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Miner
 							stakeTx.OutputIndex = index;
 							stakeTx.HashBlock = this.chain.GetBlock((int) sets.Height).HashBlock;
 							stakeTx.UtxoSet = sets;
-							stakeTx.Secret = walltSecret; //temporary
+							stakeTx.Secret = walletSecret; //temporary
 							stakeTxes.Add(stakeTx);
 						}
 

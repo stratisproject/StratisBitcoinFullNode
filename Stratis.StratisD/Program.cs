@@ -70,7 +70,7 @@ namespace Stratis.StratisD
 			var mine = args.FirstOrDefault(a => a.Contains("mine="));
 			if (mine != null)
 			{
-				node.Services.ServiceProvider.Service<PosMinting>().Mine(new PosMinting.WalltSecret() {WalletPassword = ""});
+				node.Services.ServiceProvider.Service<PosMinting>().Mine(new PosMinting.WalletSecret() {WalletPassword = ""});
 			}
 		}
 
