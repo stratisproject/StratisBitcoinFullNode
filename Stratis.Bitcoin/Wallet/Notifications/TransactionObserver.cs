@@ -8,11 +8,11 @@ namespace Stratis.Bitcoin.Wallet.Notifications
     /// </summary>
 	public class TransactionObserver : SignalObserver<Transaction>
     {        
-        private readonly IWalletManager walletManager;
+        private readonly IWalletSyncManager walletSyncManager;
 
-        public TransactionObserver(IWalletManager walletManager)
+        public TransactionObserver(IWalletSyncManager walletSyncManager)
         {
-            this.walletManager = walletManager;            
+            this.walletSyncManager = walletSyncManager;            
         }
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Wallet.Notifications
         /// <param name="transaction">The new transaction</param>
         protected override void OnNextCore(Transaction transaction)
         {
-            this.walletManager.ProcessTransaction(transaction);
+            this.walletSyncManager.ProcessTransaction(transaction);
         }
     }
 }

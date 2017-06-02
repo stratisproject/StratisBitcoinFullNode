@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Miner
 {
@@ -40,6 +41,7 @@ namespace Stratis.Bitcoin.Miner
 		private readonly NodeSettings settings;
 		private readonly CoinView coinView;
 		private readonly StakeChain stakeChain;
+		private readonly WalletManager wallet;
 		private readonly PosConsensusValidator posConsensusValidator;
 
 		private uint256 hashPrevBlock;
@@ -56,7 +58,7 @@ namespace Stratis.Bitcoin.Miner
 		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, ConnectionManager connection,
 			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
 			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider,
-			NodeSettings settings, CoinView coinView, StakeChain stakeChain)
+			NodeSettings settings, CoinView coinView, StakeChain stakeChain, WalletManager wallet)
 		{
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -71,6 +73,7 @@ namespace Stratis.Bitcoin.Miner
 			this.settings = settings;
 			this.coinView = coinView;
 			this.stakeChain = stakeChain;
+			this.wallet = wallet;
 
 			this.minerSleep = 500; // GetArg("-minersleep", 500);
 			this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
@@ -92,34 +95,35 @@ namespace Stratis.Bitcoin.Miner
 			public TxOut TxOut;
 			public OutPoint OutPoint;
 			public int OutputIndex;
-			public Key PrvKey;
+			public HdAddress Address;
 			public UnspentOutputs UtxoSet;
+			public WalltSecret Secret;
+			public Key Key;
 		}
 
-		public class TrxStakingInfo
+		public class WalltSecret
 		{
-			public uint256 TransactionHash;
-			public Key PrvKey;
+			public string WalletPassword;
 		}
 
-		public Task Mine(List<TrxStakingInfo> stakeTxes)
+		public Task Mine(WalltSecret walltSecret)
 		{
 			if (this.mining != null)
 				return this.mining; // already mining
 
 			this.mining = AsyncLoop.Run("PosMining.Mine", token =>
 				{
-					this.GenerateBlocks(stakeTxes);
+					this.GenerateBlocks(walltSecret);
 					return Task.CompletedTask;
 				},
-				cancellationProvider.Cancellation.Token,
+				this.cancellationProvider.Cancellation.Token,
 				repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
 				startAfter: TimeSpans.TenSeconds);
 
 			return this.mining;
 		}
 
-		public void GenerateBlocks(List<TrxStakingInfo> trxPairs)
+		public void GenerateBlocks(WalltSecret walltSecret)
 		{
 			this.LastCoinStakeSearchInterval = 0;
 
@@ -157,9 +161,9 @@ namespace Stratis.Bitcoin.Miner
 				var pindexPrev = this.chain.Tip;
 
 				var stakeTxes = new List<StakeTx>();
+				var spendable = this.wallet.GetSpendableTransactions();
 
-				var coinset =
-					this.coinView.FetchCoinsAsync(trxPairs.Select(s => s.TransactionHash).ToArray()).GetAwaiter().GetResult();
+				var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.Transactions.Select(t => t.Id)).ToArray()).GetAwaiter().GetResult();
 				foreach (var sets in coinset.UnspentOutputs)
 				{
 					int index = 0;
@@ -171,11 +175,11 @@ namespace Stratis.Bitcoin.Miner
 
 							stakeTx.TxOut = outputx;
 							stakeTx.OutPoint = new OutPoint(sets.TransactionId, index);
-							stakeTx.PrvKey = trxPairs.First(t => t.TransactionHash == sets.TransactionId).PrvKey;
+							stakeTx.Address = spendable.First(t => t.Address.Transactions.Any(a => a.Id == sets.TransactionId)).Address;
 							stakeTx.OutputIndex = index;
 							stakeTx.HashBlock = this.chain.GetBlock((int) sets.Height).HashBlock;
 							stakeTx.UtxoSet = sets;
-
+							stakeTx.Secret = walltSecret; //temporary
 							stakeTxes.Add(stakeTx);
 						}
 
@@ -187,13 +191,7 @@ namespace Stratis.Bitcoin.Miner
 				if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblocktemplate.TotalFee))
 				{
 					var blockResult = new BlockResult {Block = pblock};
-					this.CheckState(new ContextInformation(blockResult, network.Consensus), pindexPrev);
-
-					trxPairs.Add(new TrxStakingInfo
-					{
-						TransactionHash = pblock.Transactions[1].GetHash(),
-						PrvKey = trxPairs.First().PrvKey
-					});
+					this.CheckState(new ContextInformation(blockResult, this.network.Consensus), pindexPrev);
 
 					pblocktemplate = null;
 				}
@@ -398,12 +396,12 @@ namespace Stratis.Bitcoin.Miner
 							if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
 							{
 								var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-								key = coin.PrvKey;
+								key = this.wallet.GetKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
 							}
 							else if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
 							{
 								var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-								key = coin.PrvKey;
+								key = this.wallet.GetKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
 							}
 							else
 							{
@@ -414,6 +412,7 @@ namespace Stratis.Bitcoin.Miner
 							// create a pubkey script form the current script
 							var scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(key.PubKey); //scriptPubKeyKernel;
 
+							coin.Key = key;
 							txNew.Time -= n;
 							txNew.AddInput(new TxIn(prevoutStake));
 							nCredit += coin.TxOut.Value;
@@ -532,7 +531,7 @@ namespace Stratis.Bitcoin.Miner
 			try
 			{
 				new TransactionBuilder()
-					.AddKeys(from.PrvKey)
+					.AddKeys(from.Key)
 					.AddKnownRedeems(knownRedeems)
 					.AddCoins(new Coin(from.OutPoint, from.TxOut))
 					.SignTransactionInPlace(txTo);

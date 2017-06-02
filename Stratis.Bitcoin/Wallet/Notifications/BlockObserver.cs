@@ -9,12 +9,12 @@ namespace Stratis.Bitcoin.Wallet.Notifications
 	public class BlockObserver : SignalObserver<Block>
     {
         private readonly ConcurrentChain chain;
-        private readonly IWalletManager walletManager;
+        private readonly IWalletSyncManager walletSyncManager;
 
-        public BlockObserver(ConcurrentChain chain, IWalletManager walletManager)
+        public BlockObserver(ConcurrentChain chain, IWalletSyncManager walletSyncManager)
         {
             this.chain = chain;
-            this.walletManager = walletManager;
+            this.walletSyncManager = walletSyncManager;
         }
 
         /// <summary>
@@ -23,10 +23,7 @@ namespace Stratis.Bitcoin.Wallet.Notifications
         /// <param name="block">The new block</param>
         protected override void OnNextCore(Block block)
         {            
-            var hash = block.Header.GetHash();
-            var height = this.chain.GetBlock(hash).Height;
-
-            this.walletManager.ProcessBlock(height, block);
+            this.walletSyncManager.ProcessBlock(block);
         }
     }
 }

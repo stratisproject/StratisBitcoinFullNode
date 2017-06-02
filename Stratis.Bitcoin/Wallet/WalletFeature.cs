@@ -1,30 +1,46 @@
-﻿using Stratis.Bitcoin.Wallet.Controllers;
+﻿using System;
+using Stratis.Bitcoin.Wallet.Controllers;
 using Microsoft.Extensions.DependencyInjection;
+using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Wallet.Notifications;
 
 namespace Stratis.Bitcoin.Wallet
 {
     public class WalletFeature : FullNodeFeature
     {
-        private readonly ITracker tracker;
+        private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
+	    private readonly Signals signals;
+	    private readonly ConcurrentChain chain;
 
-        public WalletFeature(ITracker tracker, IWalletManager walletManager)
+	    private IDisposable blockSubscriberdDisposable;
+	    private IDisposable transactionSubscriberdDisposable;
+
+		public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals signals, ConcurrentChain chain)
         {
-            this.tracker = tracker;
+            this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
+	        this.signals = signals;
+	        this.chain = chain;
         }
 
         public override void Start()
         {
-            this.tracker.Initialize();
+	        // subscribe to receiving blocks and transactions
+	        this.blockSubscriberdDisposable = new BlockSubscriber(this.signals.Blocks, new BlockObserver(this.chain, this.walletSyncManager)).Subscribe();
+	        this.transactionSubscriberdDisposable = new TransactionSubscriber(this.signals.Transactions, new TransactionObserver(this.walletSyncManager)).Subscribe();
+
+			this.walletSyncManager.Initialize();
         }
 
         public override void Stop()
         {
+			this.blockSubscriberdDisposable.Dispose();
+			this.transactionSubscriberdDisposable.Dispose();
+
             this.walletManager.Dispose();
-            base.Stop();
         }
     }
 
@@ -38,11 +54,7 @@ namespace Stratis.Bitcoin.Wallet
                 .AddFeature<WalletFeature>()
                 .FeatureServices(services =>
                     {
-                       // var loggerFactory = Logs.LoggerFactory;                        
-                        //loggerFactory.AddFile("Logs/Breeze-{Date}.json", isJson: true, minimumLevel:LogLevel.Debug, fileSizeLimitBytes: 10000000);
-
-                        services.AddSingleton<ITracker, Tracker>();
-                        //services.AddSingleton<ILoggerFactory>(loggerFactory);
+                        services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
                         services.AddSingleton<IWalletManager, WalletManager>();
                         services.AddSingleton<WalletController>();
                     });

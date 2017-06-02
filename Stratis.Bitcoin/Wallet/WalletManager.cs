@@ -356,6 +356,11 @@ namespace Stratis.Bitcoin.Wallet
 		    var outs = new List<UnspentInfo>();
 		    var accounts = this.Wallets.SelectMany(wallet => wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts);
 
+			// this will take all the spendable coins 
+			// and keep the reference to the HDAddress
+			// so later the private key can be calculated 
+			// for the given unspent outputs 
+
 		    foreach (var account in accounts)
 		    {
 			    foreach (var externalAddress in account.ExternalAddresses)
@@ -364,7 +369,7 @@ namespace Stratis.Bitcoin.Wallet
 				    {
 						Account = account,
 					    Address = externalAddress,
-					    Transactions = externalAddress.UnspentTransactions()
+					    Transactions = externalAddress.UnspentTransactions().ToList()
 				    };
 				    outs.Add(info);
 
@@ -375,13 +380,26 @@ namespace Stratis.Bitcoin.Wallet
 				    {
 					    Account = account,
 						Address = internalAddress,
-					    Transactions = internalAddress.UnspentTransactions()
-				    };
+					    Transactions = internalAddress.UnspentTransactions().ToList()
+					};
 				    outs.Add(info);
 				}
 		    }
 
 		    return outs;
+	    }
+
+	    /// <inheritdoc />
+		public ISecret GetKeyForAddress(string password, HdAddress address)
+	    {
+			// TODO: can we have more then one wallet per coins?
+		    var walletTree = this.Wallets.First(); 
+			// get extended private key
+		    var privateKey = Key.Parse(walletTree.EncryptedSeed, password, walletTree.Network);
+		    var seedExtKey = new ExtKey(privateKey, walletTree.ChainCode);
+		    ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
+		    BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(walletTree.Network);
+		    return addressPrivateKey;
 	    }
 
 		/// <inheritdoc />

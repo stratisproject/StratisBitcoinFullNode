@@ -386,7 +386,16 @@ namespace Stratis.Bitcoin.Wallet
         {
             return int.Parse(this.HdPath.Split('/')[4]) == 1;
         }
-    }
+
+		/// <summary>
+		/// List all spendable transactions in an address.
+		/// </summary>
+		/// <returns></returns>
+	    public IEnumerable<TransactionData> UnspentTransactions()
+	    {
+		    return this.Transactions.Where(t => t.IsSpendable());
+	    }
+	}
 
     /// <summary>
     /// An object containing transaction data.
@@ -445,7 +454,6 @@ namespace Stratis.Bitcoin.Wallet
         [JsonProperty(PropertyName = "merkleProof", NullValueHandling = NullValueHandling.Ignore)]
         public MerkleProof MerkleProof { get; set; }
 
-
         /// <summary>
         /// Determines whether this transaction is confirmed.
         /// </summary>    
@@ -453,6 +461,14 @@ namespace Stratis.Bitcoin.Wallet
         {
             return this.BlockHeight != null;
         }
+
+		/// <summary>
+		/// Indicates an output is spendable.
+		/// </summary>
+	    public bool IsSpendable()
+	    {
+		    return this.SpentInTransaction == null && this.Amount > Money.Zero;
+	    }
     }
 
     /// <summary>

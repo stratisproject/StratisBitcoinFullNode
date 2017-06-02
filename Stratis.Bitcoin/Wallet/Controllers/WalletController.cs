@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
     {
         private readonly IWalletManager walletManager;
 
-        private readonly ITracker tracker;
+        private readonly IWalletSyncManager walletSyncManager;
 
         private readonly CoinType coinType;
 
@@ -31,19 +31,15 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
         private readonly ConcurrentChain chain;
 
-	    private readonly BlockNotification blockNotification;
-
-		// TODO: remove the dependency on BlockNotification
-		public WalletController(IWalletManager walletManager, ITracker tracker, ConnectionManager connectionManager, Network network, 
-			ConcurrentChain chain, BlockNotification blockNotification = null)
+		public WalletController(IWalletManager walletManager, IWalletSyncManager walletSyncManager, ConnectionManager connectionManager, Network network, 
+			ConcurrentChain chain)
         {
             this.walletManager = walletManager;
-            this.tracker = tracker;
+            this.walletSyncManager = walletSyncManager;
             this.connectionManager = connectionManager;
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
-	        this.blockNotification = blockNotification;
         }
 
         /// <summary>
@@ -138,16 +134,10 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 DirectoryInfo walletFolder = GetWalletFolder(request.FolderPath);
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, walletFolder.FullName, request.Name, request.Network, request.Mnemonic, request.CreationDate, null);
 
-	            if (this.blockNotification != null)
-	            {
-					// TODO: this should be refactored out its related to the light wallet
-		            // start syncing the wallet from the creation date
-		            int blockSyncStart = this.chain.GetHeightAtTime(request.CreationDate);
-		            var hash = this.chain.GetBlock(blockSyncStart).HashBlock;
-		            this.blockNotification.SyncFrom(hash);
-	            }
+				// start syncing the wallet from the creation date
+	            this.walletSyncManager.SyncFrom(request.CreationDate);
 
-	            return this.Ok();
+				return this.Ok();
             }
             catch (InvalidOperationException e)
             {
@@ -225,7 +215,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 WalletHistoryModel model = new WalletHistoryModel { TransactionsHistory = new List<TransactionItemModel>() };
 
                 // get transactions contained in the wallet
-                var addresses = this.walletManager.GetHistoryByCoinType(request.WalletName, request.CoinType);
+                var addresses = this.walletManager.GetHistoryByCoinType(request.WalletName, this.coinType);
                 foreach (var address in addresses.Where(a => !a.IsChangeAddress()))
                 {
                     foreach (var transaction in address.Transactions)
@@ -297,7 +287,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 WalletBalanceModel model = new WalletBalanceModel { AccountsBalances = new List<AccountBalance>() };
 
-                var accounts = this.walletManager.GetAccountsByCoinType(request.WalletName, request.CoinType).ToList();
+                var accounts = this.walletManager.GetAccountsByCoinType(request.WalletName, this.coinType).ToList();
                 foreach (var account in accounts)
                 {
                     var allTransactions = account.ExternalAddresses.SelectMany(a => a.Transactions)
@@ -305,7 +295,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
                     AccountBalance balance = new AccountBalance
                     {
-                        CoinType = request.CoinType,
+                        CoinType = this.coinType,
                         Name = account.Name,
                         HdPath = account.HdPath,
                         AmountConfirmed = allTransactions.Where(t => t.IsConfirmed()).Sum(t => t.Amount),
@@ -340,7 +330,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, request.CoinType, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed);                
+                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, this.coinType, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed);                
                 var model = new WalletBuildTransactionModel
                 {
                     Hex = transactionResult.hex,
@@ -430,7 +420,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                var result = this.walletManager.GetUnusedAccount(request.WalletName, request.CoinType, request.Password);
+                var result = this.walletManager.GetUnusedAccount(request.WalletName, this.coinType, request.Password);
                 return this.Json(result.Name);
             }
             catch (Exception e)
@@ -456,7 +446,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {               
-                var result = this.walletManager.GetUnusedAddress(request.WalletName, request.CoinType, request.AccountName);
+                var result = this.walletManager.GetUnusedAddress(request.WalletName, this.coinType, request.AccountName);
                 return this.Json(result);
             }
             catch (Exception e)
