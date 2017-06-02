@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Notifications
         {            
             try
             {
-                Guard.Assert(node == this.AttachedNode); // just in case
+                //Guard.Assert(node == this.AttachedNode); // just in case
                 await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)

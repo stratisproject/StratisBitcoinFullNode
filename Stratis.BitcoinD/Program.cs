@@ -19,8 +19,7 @@ namespace Stratis.BitcoinD
 	{
 		public static void Main(string[] args)
 		{
-			ILoggerFactory loggerFactory = Logs.GetLoggerFactory(args);
-			Logs.Configure(loggerFactory);
+			Logs.Configure(Logs.GetLoggerFactory(args));
 
 			if (NodeSettings.PrintHelp(args, Network.Main))
 				return;

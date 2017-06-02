@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly MempoolOrphans orphans;
 		private readonly ConnectionManager connectionManager;
 		private readonly BlockStore.ChainBehavior.ChainState chainState;
+		private readonly Signals signals;
 
 		public long LastMempoolReq { get; private set; }
 		public long NextInvSend { get; set; }
@@ -36,13 +37,14 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
 		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, 
-			ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState)
+			ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState, Signals signals)
 		{
 			this.validator = validator;
 			this.manager = manager;
 			this.orphans = orphans;
 			this.connectionManager = connectionManager;
 			this.chainState = chainState;
+			this.signals = signals;
 
 			this.inventoryTxToSend = new Dictionary<uint256, uint256>();
 			this.filterInventoryKnown = new Dictionary<uint256, uint256>();
@@ -185,6 +187,8 @@ namespace Stratis.Bitcoin.MemoryPool
 			{
 				await this.validator.SanityCheck();
 				await this.RelayTransaction(trxHash).ConfigureAwait(false);
+
+				this.signals.Transactions.Broadcast(trx);
 
 				var mmsize = state.MempoolSize;
 				var memdyn = state.MempoolDynamicSize;
@@ -361,7 +365,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public override object Clone()
 		{
-			return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState);
+			return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState, this.signals);
 		}
 	}
 }

@@ -20,9 +20,7 @@ namespace Stratis.StratisD
 	{
         public static void Main(string[] args)
 		{
-			var loggerFactory = new LoggerFactory()
-				.AddConsole(LogLevel.Trace, false);
-			Logs.Configure(loggerFactory);
+			Logs.Configure(Logs.GetLoggerFactory(args));
 
 			if (NodeSettings.PrintHelp(args, Network.StratisMain))
 				return;
@@ -72,17 +70,7 @@ namespace Stratis.StratisD
 			var mine = args.FirstOrDefault(a => a.Contains("mine="));
 			if (mine != null)
 			{
-				// TODO: this will be replaced by the wallet, for now the UTXO's 
-				// that can stake are manually inserted in the miner.
-				var stakes = new List<PosMinting.TrxStakingInfo>()
-				{
-					new PosMinting.TrxStakingInfo { TransactionHash = uint256.Parse("d9f12b2e8a75bb4657b0594374559d77a8fd036e55b43809d62ebfed75de25a2"), PrvKey = Key.Parse("[output priv key]")},
-					new PosMinting.TrxStakingInfo { TransactionHash = uint256.Parse("d521cf4703e726b505d06ecf37b8f20715294b9db4979e5f17414da64f01123a"), PrvKey = Key.Parse("[output priv key]")},
-					new PosMinting.TrxStakingInfo { TransactionHash = uint256.Parse("d09b2576fbf9a89dc08cf1ce8ff0dee52a96fab2c7db26047717866a65e2be12"), PrvKey = Key.Parse("[output priv key]")},
-					new PosMinting.TrxStakingInfo { TransactionHash = uint256.Parse("1130f0d6e45290a33f0a8525a531b005e357196d5cc40b5d781d75af5f19795f"), PrvKey = Key.Parse("[output priv key]")},
-				};
-
-				node.Services.ServiceProvider.Service<PosMinting>().Mine(stakes);
+				node.Services.ServiceProvider.Service<PosMinting>().Mine(new PosMinting.WalletSecret() {WalletPassword = ""});
 			}
 		}
 

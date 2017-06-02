@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		public MempoolValidator Validator { get; } // public for testing
 		private readonly TxMempool memPool;
 		private readonly ConcurrentChain chain;
+	    private readonly Signals signals;
 	    private readonly PowConsensusValidator consensusValidator;
 	    private readonly CoinView coinView;
 	    private readonly IDateTimeProvider dateTimeProvider;
@@ -36,12 +37,13 @@ namespace Stratis.Bitcoin.MemoryPool
 	    private readonly Random random = new Random();
 		private uint256 hashRecentRejectsChainTip;
 
-		public MempoolOrphans(MempoolScheduler mempoolScheduler, TxMempool memPool, ConcurrentChain chain, 
+		public MempoolOrphans(MempoolScheduler mempoolScheduler, TxMempool memPool, ConcurrentChain chain, Signals signals, 
 			MempoolValidator validator, PowConsensusValidator consensusValidator, CoinView coinView, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
 			this.chain = chain;
+			this.signals = signals;
 			this.consensusValidator = consensusValidator;
 			this.coinView = coinView;
 			this.dateTimeProvider = dateTimeProvider;
@@ -126,6 +128,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					{
 						Logging.Logs.Mempool.LogInformation($"accepted orphan tx {orphanHash}");
 						await behavior.RelayTransaction(orphanTx.GetHash());
+						this.signals.Transactions.Broadcast(orphanTx);
 						for (var index = 0; index < orphanTx.Outputs.Count; index++)
 							vWorkQueue.Enqueue(new OutPoint(orphanHash, index));
 						vEraseQueue.Add(orphanHash);

@@ -60,7 +60,8 @@ namespace Stratis.Bitcoin.Logging
                 { "fullnode", "Stratis.Bitcoin.FullNode" },
                 { "consensus", "Stratis.Bitcoin.FullNode" },
                 { "mining", "Stratis.Bitcoin.FullNode" },
-            };
+	            { "wallet", "Stratis.Bitcoin.Wallet" },
+			};
             var filterSettings = new FilterLoggerSettings();
             // Default level is Information
             filterSettings.Add("Default", LogLevel.Information);
@@ -105,10 +106,10 @@ namespace Stratis.Bitcoin.Logging
                 .WithFilter(filterSettings);
             loggerFactory.AddDebug(LogLevel.Trace);
             loggerFactory.AddConsole(LogLevel.Trace);
+	        loggerFactory.AddFile("Logs/node-{Date}.json", isJson: true, minimumLevel: LogLevel.Debug,
+		        fileSizeLimitBytes: 10000000);
 
-            // TODO: To add file logging, need to get -datadir / -config from args
-
-            return loggerFactory;
+			return loggerFactory;
         }
 
         public static ILogger Configuration

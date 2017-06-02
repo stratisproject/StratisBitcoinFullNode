@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
 			NBitcoin.Network.Main.Consensus.Options = new PosConsensusOptions();
 			var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main);
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolScheduler, consensusValidator, dateTimeProvider, settings, chain, coins);
-            var mempoolOrphans = new MempoolOrphans(mempoolScheduler, txMemPool, chain, mempoolValidator, consensusValidator, coins, dateTimeProvider, settings);
+            var mempoolOrphans = new MempoolOrphans(mempoolScheduler, txMemPool, chain, new Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, settings);
 
             return new MempoolManager(mempoolScheduler, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, settings, mempoolPersistence);
         }
