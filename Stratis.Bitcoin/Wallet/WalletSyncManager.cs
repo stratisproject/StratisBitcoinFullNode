@@ -27,12 +27,12 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public virtual void Initialize()
+        public virtual async Task Initialize()
         {
-
             // start syncing blocks
             var bestHeightForSyncing = this.FindBestHeightForSyncing();
             this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {bestHeightForSyncing}.");
+            await Task.CompletedTask;
         }
 
 	    public void ProcessBlock(Block block)

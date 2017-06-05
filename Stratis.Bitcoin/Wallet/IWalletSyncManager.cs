@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Wallet
 		/// Initializes the walletSyncManager.
 		/// </summary>
 		/// <returns></returns>
-		void Initialize();
+		Task Initialize();
 
 		/// <summary>
 		/// Processes a new block
