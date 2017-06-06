@@ -246,8 +246,11 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                                 }
                             }
 
-                            var changeAddress = addresses.Single(a => a.IsChangeAddress() && a.Transactions.Any(t => t.Id == transaction.Id));
-                            item.Fee =  transaction.Amount.Abs() - item.Amount - changeAddress.Transactions.First(t => t.Id == transaction.Id).Amount;
+                            var changeAddress = addresses.SingleOrDefault(a => a.IsChangeAddress() && a.Transactions.Any(t => t.Id == transaction.Id));
+                            item.Fee = transaction.Amount.Abs() - item.Amount - (changeAddress == null ? 0 : changeAddress.Transactions.First(t => t.Id == transaction.Id).Amount);
+	                        if (item.Fee < 0)
+		                        item.Fee = 0;
+
                         }
 
                         item.Id = transaction.Id;
