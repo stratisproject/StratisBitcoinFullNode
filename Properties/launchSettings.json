@@ -1,15 +1,16 @@
 {
   "profiles": {
     "Breeze.Daemon Main": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "light"
     },
     "Breeze.Daemon TestNet": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet -tumbler-uri=http://localhost:5050"
+      "commandLineArgs": "-testnet -tumbler-uri=http://localhost:5050 light -debug"
     },
     "StratisTest": {
       "commandName": "Project",
-      "commandLineArgs": "stratis -testnet -datadir=I:\\\\stratistestnet"
+      "commandLineArgs": "stratis -testnet"
     }
   }
 }
