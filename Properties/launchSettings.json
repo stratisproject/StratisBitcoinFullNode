@@ -9,7 +9,7 @@
     },
     "StratisTest": {
       "commandName": "Project",
-      "commandLineArgs": "stratis -testnet "
+      "commandLineArgs": "stratis -testnet -datadir=I:\\\\stratistestnet"
     }
   }
 }
