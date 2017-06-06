@@ -34,11 +34,11 @@ namespace Stratis.Bitcoin.Wallet
 
         private readonly ConcurrentChain chain;
 
-		//TODO: a second lookup dictionary is proposed to lookup for spent outputs
-		// every time we find a trx that credits we need to add it to this lookup
-	    // private Dictionary<OutPoint, TransactionData> outpointLookup;
+        //TODO: a second lookup dictionary is proposed to lookup for spent outputs
+        // every time we find a trx that credits we need to add it to this lookup
+        // private Dictionary<OutPoint, TransactionData> outpointLookup;
 
-		private Dictionary<Script, HdAddress> keysLookup;
+        private Dictionary<Script, HdAddress> keysLookup;
 
         private readonly ILogger logger;
 
@@ -302,16 +302,16 @@ namespace Stratis.Bitcoin.Wallet
             for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
             {
                 // generate new receiving address
-				var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange, network);
-				BitcoinPubKeyAddress address = pubkey.GetAddress(network);
+                var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange, network);
+                BitcoinPubKeyAddress address = pubkey.GetAddress(network);
 
-				// add address details
-				addresses.Add(new HdAddress
+                // add address details
+                addresses.Add(new HdAddress
                 {
                     Index = i,
                     HdPath = CreateBip44Path(account.GetCoinType(), account.Index, i, isChange),
                     ScriptPubKey = address.ScriptPubKey,
-					Pubkey = pubkey.ScriptPubKey,
+                    Pubkey = pubkey.ScriptPubKey,
                     Address = address.ToString(),
                     Transactions = new List<TransactionData>()
                 });
@@ -346,78 +346,78 @@ namespace Stratis.Bitcoin.Wallet
             return wallet.GetAccountsByCoinType(coinType);
         }
 
-	    public int LastBlockHeight()
-	    {
-		    if (!this.Wallets.Any())
-		    {
-			    return this.chain.Tip.Height;
-		    }
+        public int LastBlockHeight()
+        {
+            if (!this.Wallets.Any())
+            {
+                return this.chain.Tip.Height;
+            }
 
-			return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight) ?? 0;
-	    }
+            return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight) ?? 0;
+        }
 
-	    /// <inheritdoc />
-		public List<UnspentInfo> GetSpendableTransactions(int confirmations = 0)
-	    {
-		    var outs = new List<UnspentInfo>();
-		    var accounts = this.Wallets.SelectMany(wallet => wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts);
+        /// <inheritdoc />
+        public List<UnspentInfo> GetSpendableTransactions(int confirmations = 0)
+        {
+            var outs = new List<UnspentInfo>();
+            var accounts = this.Wallets.SelectMany(wallet => wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts);
 
-		    var currentHeight = this.chain.Tip.Height;
+            var currentHeight = this.chain.Tip.Height;
 
-			// this will take all the spendable coins 
-			// and keep the reference to the HDAddress
-			// so later the private key can be calculated 
-			// for the given unspent outputs 
+            // this will take all the spendable coins 
+            // and keep the reference to the HDAddress
+            // so later the private key can be calculated 
+            // for the given unspent outputs 
 
-		    foreach (var account in accounts)
-		    {
-			    foreach (var externalAddress in account.ExternalAddresses)
-			    {
-				    var unspent = externalAddress.UnspentTransactions().Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
-				    if (unspent.Any())
-				    {
-					    outs.Add(new UnspentInfo
-					    {
-						    Account = account,
-						    Address = externalAddress,
-						    Transactions = unspent
-					    });
-				    }
+            foreach (var account in accounts)
+            {
+                foreach (var externalAddress in account.ExternalAddresses)
+                {
+                    var unspent = externalAddress.UnspentTransactions().Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
+                    if (unspent.Any())
+                    {
+                        outs.Add(new UnspentInfo
+                        {
+                            Account = account,
+                            Address = externalAddress,
+                            Transactions = unspent
+                        });
+                    }
 
-			    }
-			    foreach (var internalAddress in account.InternalAddresses)
-			    {
-				    var unspent = internalAddress.UnspentTransactions().Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
-				    if (unspent.Any())
-				    {
-					    outs.Add(new UnspentInfo
-					    {
-						    Account = account,
-						    Address = internalAddress,
-						    Transactions = unspent
-					    });
-				    }
-			    }
-		    }
+                }
+                foreach (var internalAddress in account.InternalAddresses)
+                {
+                    var unspent = internalAddress.UnspentTransactions().Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
+                    if (unspent.Any())
+                    {
+                        outs.Add(new UnspentInfo
+                        {
+                            Account = account,
+                            Address = internalAddress,
+                            Transactions = unspent
+                        });
+                    }
+                }
+            }
 
-		    return outs;
-	    }
+            return outs;
+        }
 
-	    /// <inheritdoc />
-		public ISecret GetKeyForAddress(string password, HdAddress address)
-	    {
-			// TODO: can we have more then one wallet per coins?
-		    var walletTree = this.Wallets.First(); 
-			// get extended private key
-		    var privateKey = Key.Parse(walletTree.EncryptedSeed, password, walletTree.Network);
-		    var seedExtKey = new ExtKey(privateKey, walletTree.ChainCode);
-		    ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
-		    BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(walletTree.Network);
-		    return addressPrivateKey;
-	    }
+        /// <inheritdoc />
+        public ISecret GetKeyForAddress(string password, HdAddress address)
+        {
+            // TODO: can we have more then one wallet per coins?
+            var walletTree = this.Wallets.First();
+            // get extended private key
+            var privateKey = Key.Parse(walletTree.EncryptedSeed, password, walletTree.Network);
+            var seedExtKey = new ExtKey(privateKey, walletTree.ChainCode);
+            ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
+            BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(walletTree.Network);
+            return addressPrivateKey;
+        }
 
-		/// <inheritdoc />
-		public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, CoinType coinType, string password, string destinationAddress, Money amount, string feeType, bool allowUnconfirmed)
+        /// <inheritdoc />
+        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, CoinType coinType, string password, string destinationAddress, Money amount, string feeType, bool allowUnconfirmed)
         {
             if (amount == Money.Zero)
             {
@@ -541,16 +541,16 @@ namespace Stratis.Bitcoin.Wallet
         {
             this.logger.LogDebug($"transaction received - hash: {transaction.GetHash()}, coin: {this.coinType}");
 
-	        // check the outputs
-			foreach (TxOut utxo in transaction.Outputs)
-	        {
-		        HdAddress pubKey;
-		        // check if the outputs contain one of our addresses
-				if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out pubKey))
-		        {
-			        this.AddTransactionToWallet(transaction.GetHash(), transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
-				}
-			}
+            // check the outputs
+            foreach (TxOut utxo in transaction.Outputs)
+            {
+                HdAddress pubKey;
+                // check if the outputs contain one of our addresses
+                if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out pubKey))
+                {
+                    this.AddTransactionToWallet(transaction.GetHash(), transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
+                }
+            }
 
             // check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index            
             foreach (TxIn input in transaction.Inputs.Where(txIn => this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Any(trackedTx => trackedTx.Id == txIn.PrevOut.Hash && trackedTx.Index == txIn.PrevOut.N)))
@@ -560,127 +560,126 @@ namespace Stratis.Bitcoin.Wallet
                 // find the script this input references
                 var keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
 
-				// get the details of the outputs paid out. 
-				IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o =>
-	            {
-		            // if scipt is empty ignore it
-		            if (o.IsEmpty)
-			            return false;
+                // get the details of the outputs paid out. 
+                IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o =>
+                {
+                    // if script is empty ignore it
+                    if (o.IsEmpty)
+                        return false;
 
-					HdAddress addr;
-		            var found = this.keysLookup.TryGetValue(o.ScriptPubKey, out addr);
+                    var found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
 
-		            // include the keys we don't hold
-					if (!found)
-			            return true;
+                    // include the keys we don't hold
+                    if (!found)
+                        return true;
 
-					// include the keys we do hold but that are for receiving 
-					// addresses (which would mean the user paid itself).
-					return !addr.IsChangeAddress();
-	            });
+                    // include the keys we do hold but that are for receiving 
+                    // addresses (which would mean the user paid itself).
+                    return !addr.IsChangeAddress();
+                });
 
-				AddTransactionToWallet(transaction.GetHash(), transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
+                AddTransactionToWallet(transaction.GetHash(), transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
             }
         }
 
-	    /// <summary>
-	    /// Adds the transaction to the wallet.
-	    /// </summary>
-	    /// <param name="transactionHash">The transaction hash.</param>
-	    /// <param name="time">The time.</param>
-	    /// <param name="index">The index.</param>
-	    /// <param name="amount">The amount.</param>
-	    /// <param name="script">The script.</param>
-	    /// <param name="blockHeight">Height of the block.</param>
-	    /// <param name="block">The block containing the transaction to add.</param>
-	    /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
-	    /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
-	    private void AddTransactionToWallet(uint256 transactionHash, uint time, int? index, Money amount, Script script, 
-			int? blockHeight = null, Block block = null, uint256 spendingTransactionId = null, 
-			int? spendingTransactionIndex = null, IEnumerable<TxOut> paidToOutputs = null)
-	    {
-		    // get the collection of transactions to add to.
-		    this.keysLookup.TryGetValue(script, out HdAddress address);
+        /// <summary>
+        /// Adds the transaction to the wallet.
+        /// </summary>
+        /// <param name="transactionHash">The transaction hash.</param>
+        /// <param name="time">The time.</param>
+        /// <param name="index">The index.</param>
+        /// <param name="amount">The amount.</param>
+        /// <param name="script">The script.</param>
+        /// <param name="blockHeight">Height of the block.</param>
+        /// <param name="block">The block containing the transaction to add.</param>
+        /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
+        /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
+        private void AddTransactionToWallet(uint256 transactionHash, uint time, int? index, Money amount, Script script,
+            int? blockHeight = null, Block block = null, uint256 spendingTransactionId = null,
+            int? spendingTransactionIndex = null, IEnumerable<TxOut> paidToOutputs = null)
+        {
+            // get the collection of transactions to add to.
+            this.keysLookup.TryGetValue(script, out HdAddress address);
 
-		    var isSpendingTransaction = paidToOutputs != null && paidToOutputs.Any();
-		    var trans = address.Transactions;
+            var isSpendingTransaction = paidToOutputs != null && paidToOutputs.Any();
+            var trans = address.Transactions;
 
-		    // check if a similar UTXO exists or not (same transaction id and same index)
-		    // new UTXOs are added, existing ones are updated
-		    var foundTransaction = trans.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
-		    if (foundTransaction == null)
-		    {
-			    var newTransaction = new TransactionData
-			    {
-				    Amount = amount,
-				    BlockHeight = blockHeight,
-				    Id = transactionHash,
-				    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
-				    Index = index,
-					ScriptPubKey = script
-			    };
+            // check if a similar UTXO exists or not (same transaction id and same index)
+            // new UTXOs are added, existing ones are updated
+            var foundTransaction = trans.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
+            if (foundTransaction == null)
+            {
+                var newTransaction = new TransactionData
+                {
+                    Amount = amount,
+                    BlockHeight = blockHeight,
+                    Id = transactionHash,
+                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
+                    Index = index,
+                    ScriptPubKey = script
+                };
 
-			    // add the Merkle proof to the (non-spending) transaction
-			    if (block != null && !isSpendingTransaction)
-			    {
-				    newTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
-			    }
+                // add the Merkle proof to the (non-spending) transaction
+                if (block != null && !isSpendingTransaction)
+                {
+                    newTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
+                }
 
-			    // if this is a spending transaction, keep a record of the payments made out to other scripts.
-			    if (isSpendingTransaction)
-			    {
-				    List<PaymentDetails> payments = new List<PaymentDetails>();
-				    foreach (var paidToOutput in paidToOutputs)
-				    {
-					    payments.Add(new PaymentDetails
-					    {
-						    DestinationScriptPubKey = paidToOutput.ScriptPubKey,
-						    DestinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
-						    Amount = paidToOutput.Value
-					    });
-				    }
+                // if this is a spending transaction, keep a record of the payments made out to other scripts.
+                if (isSpendingTransaction)
+                {
+                    List<PaymentDetails> payments = new List<PaymentDetails>();
+                    foreach (var paidToOutput in paidToOutputs)
+                    {
+                        payments.Add(new PaymentDetails
+                        {
+                            DestinationScriptPubKey = paidToOutput.ScriptPubKey,
+                            DestinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
+                            Amount = paidToOutput.Value
+                        });
+                    }
 
-				    newTransaction.Payments = payments;
+                    newTransaction.Payments = payments;
 
-				    // mark the transaction spent by this transaction as such
-				    var transactions = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
-					    .Where(t => t.Id == spendingTransactionId);
-				    if (transactions.Any())
-				    {
-					    var spentTransaction = transactions.Single(t => t.Index == spendingTransactionIndex);
-					    spentTransaction.SpentInTransaction = transactionHash;
-					    spentTransaction.MerkleProof = null;
-				    }
-			    }
+                    // mark the transaction spent by this transaction as such
+                    var transactions = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
+                        .Where(t => t.Id == spendingTransactionId);
+                    if (transactions.Any())
+                    {
+                        var spentTransaction = transactions.Single(t => t.Index == spendingTransactionIndex);
+                        spentTransaction.SpentInTransaction = transactionHash;
+                        spentTransaction.MerkleProof = null;
+                    }
+                }
 
-			    trans.Add(newTransaction);
-		    }
-		    else
-		    {
-			    // update the block height
-			    if (foundTransaction.BlockHeight == null && blockHeight != null)
-			    {
-				    foundTransaction.BlockHeight = blockHeight;
-			    }
+                trans.Add(newTransaction);
+            }
+            else
+            {
+                // update the block height
+                if (foundTransaction.BlockHeight == null && blockHeight != null)
+                {
+                    foundTransaction.BlockHeight = blockHeight;
+                }
 
-			    // update the block time
-			    if (block != null)
-			    {
-				    foundTransaction.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
-			    }
+                // update the block time
+                if (block != null)
+                {
+                    foundTransaction.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
+                }
 
-			    // add the Merkle proof now that the transaction is confirmed in a block
-			    if (!isSpendingTransaction && foundTransaction.MerkleProof == null)
-			    {
-				    foundTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
-			    }
-		    }
+                // add the Merkle proof now that the transaction is confirmed in a block
+                if (!isSpendingTransaction && foundTransaction.MerkleProof == null)
+                {
+                    foundTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
+                }
+            }
 
-		    // notify a transaction has been found
-		    this.TransactionFound?.Invoke(this, new TransactionFoundEventArgs(script, transactionHash));
-	    }
+            // notify a transaction has been found
+            this.TransactionFound?.Invoke(this, new TransactionFoundEventArgs(script, transactionHash));
+        }
 
-	    private MerkleProof CreateMerkleProof(Block block, uint256 transactionHash)
+        private MerkleProof CreateMerkleProof(Block block, uint256 transactionHash)
         {
             MerkleBlock merkleBlock = new MerkleBlock(block, new[] { transactionHash });
 
@@ -912,8 +911,8 @@ namespace Stratis.Bitcoin.Wallet
                     foreach (var address in addresses)
                     {
                         this.keysLookup.Add(address.ScriptPubKey, address);
-	                    if (address.Pubkey != null)
-		                    this.keysLookup.Add(address.Pubkey, address);
+                        if (address.Pubkey != null)
+                            this.keysLookup.Add(address.Pubkey, address);
                     }
                 }
             }
@@ -959,13 +958,13 @@ namespace Stratis.Bitcoin.Wallet
         }
     }
 
-	public class UnspentInfo
-	{
-		public HdAccount Account { get; set; }
+    public class UnspentInfo
+    {
+        public HdAccount Account { get; set; }
 
-		public HdAddress Address { get; set; }
+        public HdAddress Address { get; set; }
 
-		public List<TransactionData> Transactions { get; set; }
-	}
+        public List<TransactionData> Transactions { get; set; }
+    }
 
 }
