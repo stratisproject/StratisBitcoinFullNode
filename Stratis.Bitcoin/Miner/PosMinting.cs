@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Miner
 		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, ConnectionManager connection,
 			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
 			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider,
-			NodeSettings settings, CoinView coinView, StakeChain stakeChain, WalletManager wallet)
+			NodeSettings settings, CoinView coinView, StakeChain stakeChain, IWalletManager wallet)
 		{
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Miner
 			this.settings = settings;
 			this.coinView = coinView;
 			this.stakeChain = stakeChain;
-			this.wallet = wallet;
+			this.wallet = wallet as WalletManager;
 
 			this.minerSleep = 500; // GetArg("-minersleep", 500);
 			this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
@@ -127,14 +127,14 @@ namespace Stratis.Bitcoin.Miner
 		{
 			this.LastCoinStakeSearchInterval = 0;
 
-			if (this.chain.Tip != this.consensusLoop.Tip)
-				return;
-
 			BlockTemplate pblocktemplate = null;
 			bool tryToSync = true;
 
 			while (true)
 			{
+				if (this.chain.Tip != this.consensusLoop.Tip)
+					return;
+
 				while (!this.connection.ConnectedNodes.Any() || chainState.IsInitialBlockDownload)
 				{
 					this.LastCoinStakeSearchInterval = 0;
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Miner
 					if (this.connection.ConnectedNodes.Count() < 3 ||
 					    this.chain.Tip.Header.Time < dateTimeProvider.GetTime() - 10*60)
 					{
-						this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
+						//this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
 						continue;
 					}
 				}
@@ -158,32 +158,33 @@ namespace Stratis.Bitcoin.Miner
 
 
 				var pblock = pblocktemplate.Block;
-				var pindexPrev = this.chain.Tip;
+				var pindexPrev = this.consensusLoop.Tip;
 
 				var stakeTxes = new List<StakeTx>();
-				var spendable = this.wallet.GetSpendableTransactions();
+				var spendable = this.wallet.GetSpendableTransactions(1);
 
 				var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.Transactions.Select(t => t.Id)).ToArray()).GetAwaiter().GetResult();
-				foreach (var sets in coinset.UnspentOutputs)
+
+				foreach (var unspentInfo in spendable)
 				{
-					int index = 0;
-					foreach (var outputx in sets._Outputs)
+					foreach (var infoTransaction in unspentInfo.Transactions)
 					{
-						if (outputx != null && outputx.Value > Money.Zero)
+						var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Id);
+						var utxo = set?._Outputs[infoTransaction.Index.Value];
+
+						if (utxo != null && utxo.Value > Money.Zero)
 						{
 							var stakeTx = new StakeTx();
 
-							stakeTx.TxOut = outputx;
-							stakeTx.OutPoint = new OutPoint(sets.TransactionId, index);
-							stakeTx.Address = spendable.First(t => t.Address.Transactions.Any(a => a.Id == sets.TransactionId)).Address;
-							stakeTx.OutputIndex = index;
-							stakeTx.HashBlock = this.chain.GetBlock((int) sets.Height).HashBlock;
-							stakeTx.UtxoSet = sets;
+							stakeTx.TxOut = utxo;
+							stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Index.Value);
+							stakeTx.Address = unspentInfo.Address;
+							stakeTx.OutputIndex = infoTransaction.Index.Value;
+							stakeTx.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
+							stakeTx.UtxoSet = set;
 							stakeTx.Secret = walletSecret; //temporary
 							stakeTxes.Add(stakeTx);
 						}
-
-						index++;
 					}
 				}
 
@@ -237,7 +238,9 @@ namespace Stratis.Bitcoin.Miner
 			this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
 			this.signals.Blocks.Broadcast(block);
 
-			Logs.Mining.LogInformation($"Found new POS block {context.BlockResult.ChainedBlock.HashBlock}");
+			Logs.Mining.LogInformation($"==================================================================");
+			Logs.Mining.LogInformation($"Found new POS block hash={context.BlockResult.ChainedBlock.HashBlock} height={context.BlockResult.ChainedBlock.Height}");
+			Logs.Mining.LogInformation($"==================================================================");
 
 			// wait for peers to get the block
 			Thread.Sleep(1000);
@@ -348,14 +351,6 @@ namespace Stratis.Bitcoin.Miner
 			if (!SelectCoinsForStaking(stakeTxes, nBalance - this.reserveBalance, txNew.Time, out setCoins, out nValueIn))
 				return false;
 
-			//// check if coins are already staking
-			//// this is different from the c++ implementation
-			//// which pushes the new block to the main chain
-			//// and removes it when a longer chain is found
-			//foreach (var walletTx in setCoins.ToList())
-			//	if (this.minerService.IsStaking(walletTx.TransactionHash, walletTx.OutputIndex))
-			//		setCoins.Remove(walletTx);
-
 			if (!setCoins.Any())
 				return false;
 
@@ -371,8 +366,11 @@ namespace Stratis.Bitcoin.Miner
 				int maxStakeSearchInterval = 60;
 				bool fKernelFound = false;
 
-				for (uint n = 0; n < Math.Min(nSearchInterval, maxStakeSearchInterval) && !fKernelFound && pindexPrev == this.chain.Tip; n++)
+				for (uint n = 0; n < Math.Min(nSearchInterval, maxStakeSearchInterval) && !fKernelFound; n++)
 				{
+					if (pindexPrev != this.chain.Tip)
+						return false;
+
 					try
 					{
 						var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
@@ -427,8 +425,10 @@ namespace Stratis.Bitcoin.Miner
 					}
 					catch (ConsensusErrorException cex)
 					{
-						if (cex.ConsensusError != ConsensusErrors.StakeHashInvalidTarget)
-							throw;
+						if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
+							continue;
+						
+						throw;
 					}
 				}
 

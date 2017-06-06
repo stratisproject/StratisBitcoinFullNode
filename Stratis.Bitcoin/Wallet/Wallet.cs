@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.Wallet
         public IEnumerable<TransactionData> GetSpendableTransactions()
         {
             var addresses = this.ExternalAddresses.Concat(this.InternalAddresses);
-            return addresses.SelectMany(a => a.Transactions.Where(t => t.SpentInTransaction == null && t.Amount > Money.Zero));
+            return addresses.SelectMany(a => a.Transactions.Where(t => t.IsSpendable()));
         }
 
         /// <summary>
@@ -351,6 +351,13 @@ namespace Stratis.Bitcoin.Wallet
         [JsonProperty(PropertyName = "scriptPubKey")]
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script ScriptPubKey { get; set; }
+
+        /// <summary>
+        /// The script pub key for this address.
+        /// </summary>
+        [JsonProperty(PropertyName = "pubkey")]
+        [JsonConverter(typeof(ScriptJsonConverter))]
+        public Script Pubkey { get; set; }
 
         /// <summary>
         /// The Base58 representation of this address.
@@ -454,10 +461,17 @@ namespace Stratis.Bitcoin.Wallet
         [JsonProperty(PropertyName = "merkleProof", NullValueHandling = NullValueHandling.Ignore)]
         public MerkleProof MerkleProof { get; set; }
 
-        /// <summary>
-        /// Determines whether this transaction is confirmed.
-        /// </summary>    
-        public bool IsConfirmed()
+	    /// <summary>
+	    /// The script pub key for this address.
+	    /// </summary>
+	    [JsonProperty(PropertyName = "scriptPubKey")]
+	    [JsonConverter(typeof(ScriptJsonConverter))]
+	    public Script ScriptPubKey { get; set; }
+
+		/// <summary>
+		/// Determines whether this transaction is confirmed.
+		/// </summary>    
+		public bool IsConfirmed()
         {
             return this.BlockHeight != null;
         }

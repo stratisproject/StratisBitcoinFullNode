@@ -34,6 +34,10 @@ namespace Stratis.Bitcoin.Wallet
 
         private readonly ConcurrentChain chain;
 
+        //TODO: a second lookup dictionary is proposed to lookup for spent outputs
+        // every time we find a trx that credits we need to add it to this lookup
+        // private Dictionary<OutPoint, TransactionData> outpointLookup;
+
         private Dictionary<Script, HdAddress> keysLookup;
 
         private readonly ILogger logger;
@@ -298,7 +302,8 @@ namespace Stratis.Bitcoin.Wallet
             for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
             {
                 // generate new receiving address
-                BitcoinPubKeyAddress address = this.GenerateAddress(account.ExtendedPubKey, i, isChange, network);
+                var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange, network);
+                BitcoinPubKeyAddress address = pubkey.GetAddress(network);
 
                 // add address details
                 addresses.Add(new HdAddress
@@ -306,6 +311,7 @@ namespace Stratis.Bitcoin.Wallet
                     Index = i,
                     HdPath = CreateBip44Path(account.GetCoinType(), account.Index, i, isChange),
                     ScriptPubKey = address.ScriptPubKey,
+                    Pubkey = pubkey.ScriptPubKey,
                     Address = address.ToString(),
                     Transactions = new List<TransactionData>()
                 });
@@ -340,70 +346,78 @@ namespace Stratis.Bitcoin.Wallet
             return wallet.GetAccountsByCoinType(coinType);
         }
 
-	    public int LastBlockHeight()
-	    {
-		    if (!this.Wallets.Any())
-		    {
-			    return this.chain.Tip.Height;
-		    }
+        public int LastBlockHeight()
+        {
+            if (!this.Wallets.Any())
+            {
+                return this.chain.Tip.Height;
+            }
 
-			return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight) ?? 0;
-	    }
+            return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight) ?? 0;
+        }
 
-	    /// <inheritdoc />
-		public List<UnspentInfo> GetSpendableTransactions()
-	    {
-		    var outs = new List<UnspentInfo>();
-		    var accounts = this.Wallets.SelectMany(wallet => wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts);
+        /// <inheritdoc />
+        public List<UnspentInfo> GetSpendableTransactions(int confirmations = 0)
+        {
+            var outs = new List<UnspentInfo>();
+            var accounts = this.Wallets.SelectMany(wallet => wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts);
 
-			// this will take all the spendable coins 
-			// and keep the reference to the HDAddress
-			// so later the private key can be calculated 
-			// for the given unspent outputs 
+            var currentHeight = this.chain.Tip.Height;
 
-		    foreach (var account in accounts)
-		    {
-			    foreach (var externalAddress in account.ExternalAddresses)
-			    {
-				    var info = new UnspentInfo
-				    {
-						Account = account,
-					    Address = externalAddress,
-					    Transactions = externalAddress.UnspentTransactions().ToList()
-				    };
-				    outs.Add(info);
+            // this will take all the spendable coins 
+            // and keep the reference to the HDAddress
+            // so later the private key can be calculated 
+            // for the given unspent outputs 
 
-				}
-			    foreach (var internalAddress in account.InternalAddresses)
-			    {
-					var info = new UnspentInfo
-				    {
-					    Account = account,
-						Address = internalAddress,
-					    Transactions = internalAddress.UnspentTransactions().ToList()
-					};
-				    outs.Add(info);
-				}
-		    }
+            foreach (var account in accounts)
+            {
+                foreach (var externalAddress in account.ExternalAddresses)
+                {
+                    var unspent = externalAddress.UnspentTransactions().Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
+                    if (unspent.Any())
+                    {
+                        outs.Add(new UnspentInfo
+                        {
+                            Account = account,
+                            Address = externalAddress,
+                            Transactions = unspent
+                        });
+                    }
 
-		    return outs;
-	    }
+                }
+                foreach (var internalAddress in account.InternalAddresses)
+                {
+                    var unspent = internalAddress.UnspentTransactions().Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
+                    if (unspent.Any())
+                    {
+                        outs.Add(new UnspentInfo
+                        {
+                            Account = account,
+                            Address = internalAddress,
+                            Transactions = unspent
+                        });
+                    }
+                }
+            }
 
-	    /// <inheritdoc />
-		public ISecret GetKeyForAddress(string password, HdAddress address)
-	    {
-			// TODO: can we have more then one wallet per coins?
-		    var walletTree = this.Wallets.First(); 
-			// get extended private key
-		    var privateKey = Key.Parse(walletTree.EncryptedSeed, password, walletTree.Network);
-		    var seedExtKey = new ExtKey(privateKey, walletTree.ChainCode);
-		    ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
-		    BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(walletTree.Network);
-		    return addressPrivateKey;
-	    }
+            return outs;
+        }
 
-		/// <inheritdoc />
-		public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, CoinType coinType, string password, string destinationAddress, Money amount, string feeType, bool allowUnconfirmed)
+        /// <inheritdoc />
+        public ISecret GetKeyForAddress(string password, HdAddress address)
+        {
+            // TODO: can we have more then one wallet per coins?
+            var walletTree = this.Wallets.First();
+            // get extended private key
+            var privateKey = Key.Parse(walletTree.EncryptedSeed, password, walletTree.Network);
+            var seedExtKey = new ExtKey(privateKey, walletTree.ChainCode);
+            ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
+            BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(walletTree.Network);
+            return addressPrivateKey;
+        }
+
+        /// <inheritdoc />
+        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, CoinType coinType, string password, string destinationAddress, Money amount, string feeType, bool allowUnconfirmed)
         {
             if (amount == Money.Zero)
             {
@@ -437,12 +451,12 @@ namespace Stratis.Bitcoin.Wallet
             var coins = new List<Coin>();
             foreach (var transactionToUse in calculationResult.transactionsToUse)
             {
-                var address = account.FindAddressesForTransaction(t => t.Id == transactionToUse.Id && t.Amount > 0).Single();
+                var address = account.FindAddressesForTransaction(t => t.Id == transactionToUse.Id && t.Index == transactionToUse.Index && t.Amount > 0).Single();
                 ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
                 BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
                 signingKeys.Add(addressPrivateKey);
 
-                coins.Add(new Coin(transactionToUse.Id, (uint)transactionToUse.Index, transactionToUse.Amount, address.ScriptPubKey));
+                coins.Add(new Coin(transactionToUse.Id, (uint)transactionToUse.Index, transactionToUse.Amount, transactionToUse.ScriptPubKey));
             }
 
             // get address to send the change to
@@ -528,27 +542,41 @@ namespace Stratis.Bitcoin.Wallet
             this.logger.LogDebug($"transaction received - hash: {transaction.GetHash()}, coin: {this.coinType}");
 
             // check the outputs
-            foreach (var pubKey in this.keysLookup.Keys)
+            foreach (TxOut utxo in transaction.Outputs)
             {
+                HdAddress pubKey;
                 // check if the outputs contain one of our addresses
-                var utxo = transaction.Outputs.SingleOrDefault(o => pubKey == o.ScriptPubKey);
-                if (utxo != null)
+                if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out pubKey))
                 {
-                    AddTransactionToWallet(transaction.GetHash(), transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, pubKey, blockHeight, block);
+                    this.AddTransactionToWallet(transaction.GetHash(), transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
                 }
             }
 
             // check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index            
-            foreach (TxIn input in transaction.Inputs.Where(txIn => this.keysLookup.Values.SelectMany(v => v.Transactions).Any(trackedTx => trackedTx.Id == txIn.PrevOut.Hash && trackedTx.Index == txIn.PrevOut.N)))
+            foreach (TxIn input in transaction.Inputs.Where(txIn => this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Any(trackedTx => trackedTx.Id == txIn.PrevOut.Hash && trackedTx.Index == txIn.PrevOut.N)))
             {
-                TransactionData tTx = this.keysLookup.Values.SelectMany(v => v.Transactions).Single(trackedTx => trackedTx.Id == input.PrevOut.Hash && trackedTx.Index == input.PrevOut.N);
+                TransactionData tTx = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Single(trackedTx => trackedTx.Id == input.PrevOut.Hash && trackedTx.Index == input.PrevOut.N);
 
                 // find the script this input references
-                var keyToSpend = this.keysLookup.Single(v => v.Value.Transactions.Contains(tTx)).Key;
+                var keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
 
                 // get the details of the outputs paid out. 
-                // We first include the keys we don't hold and then we include the keys we do hold but that are for receiving addresses (which would mean the user paid itself).
-                IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o => !this.keysLookup.Keys.Contains(o.ScriptPubKey) || (this.keysLookup.ContainsKey(o.ScriptPubKey) && !this.keysLookup[o.ScriptPubKey].IsChangeAddress()));
+                IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o =>
+                {
+                    // if script is empty ignore it
+                    if (o.IsEmpty)
+                        return false;
+
+                    var found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
+
+                    // include the keys we don't hold
+                    if (!found)
+                        return true;
+
+                    // include the keys we do hold but that are for receiving 
+                    // addresses (which would mean the user paid itself).
+                    return !addr.IsChangeAddress();
+                });
 
                 AddTransactionToWallet(transaction.GetHash(), transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
             }
@@ -566,7 +594,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="block">The block containing the transaction to add.</param>
         /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
         /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
-        private void AddTransactionToWallet(uint256 transactionHash, uint time, int? index, Money amount, Script script, int? blockHeight = null, Block block = null, uint256 spendingTransactionId = null, int? spendingTransactionIndex = null, IEnumerable<TxOut> paidToOutputs = null)
+        private void AddTransactionToWallet(uint256 transactionHash, uint time, int? index, Money amount, Script script,
+            int? blockHeight = null, Block block = null, uint256 spendingTransactionId = null,
+            int? spendingTransactionIndex = null, IEnumerable<TxOut> paidToOutputs = null)
         {
             // get the collection of transactions to add to.
             this.keysLookup.TryGetValue(script, out HdAddress address);
@@ -574,8 +604,10 @@ namespace Stratis.Bitcoin.Wallet
             var isSpendingTransaction = paidToOutputs != null && paidToOutputs.Any();
             var trans = address.Transactions;
 
-            // if it's the first time we see this transaction
-            if (trans.All(t => t.Id != transactionHash))
+            // check if a similar UTXO exists or not (same transaction id and same index)
+            // new UTXOs are added, existing ones are updated
+            var foundTransaction = trans.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
+            if (foundTransaction == null)
             {
                 var newTransaction = new TransactionData
                 {
@@ -583,7 +615,8 @@ namespace Stratis.Bitcoin.Wallet
                     BlockHeight = blockHeight,
                     Id = transactionHash,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
-                    Index = index
+                    Index = index,
+                    ScriptPubKey = script
                 };
 
                 // add the Merkle proof to the (non-spending) transaction
@@ -591,7 +624,7 @@ namespace Stratis.Bitcoin.Wallet
                 {
                     newTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
                 }
-                
+
                 // if this is a spending transaction, keep a record of the payments made out to other scripts.
                 if (isSpendingTransaction)
                 {
@@ -601,7 +634,7 @@ namespace Stratis.Bitcoin.Wallet
                         payments.Add(new PaymentDetails
                         {
                             DestinationScriptPubKey = paidToOutput.ScriptPubKey,
-                            DestinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                            DestinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
                             Amount = paidToOutput.Value
                         });
                     }
@@ -609,7 +642,8 @@ namespace Stratis.Bitcoin.Wallet
                     newTransaction.Payments = payments;
 
                     // mark the transaction spent by this transaction as such
-                    var transactions = this.keysLookup.Values.SelectMany(v => v.Transactions).Where(t => t.Id == spendingTransactionId);
+                    var transactions = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
+                        .Where(t => t.Id == spendingTransactionId);
                     if (transactions.Any())
                     {
                         var spentTransaction = transactions.Single(t => t.Index == spendingTransactionIndex);
@@ -620,10 +654,8 @@ namespace Stratis.Bitcoin.Wallet
 
                 trans.Add(newTransaction);
             }
-            else if (trans.Any(t => t.Id == transactionHash)) // if this is an unconfirmed transaction now received in a block
+            else
             {
-                var foundTransaction = trans.Single(t => t.Id == transactionHash);
-
                 // update the block height
                 if (foundTransaction.BlockHeight == null && blockHeight != null)
                 {
@@ -813,12 +845,12 @@ namespace Stratis.Bitcoin.Wallet
             this.Wallets.Add(wallet);
         }
 
-        private BitcoinPubKeyAddress GenerateAddress(string accountExtPubKey, int index, bool isChange, Network network)
+        private PubKey GenerateAddress(string accountExtPubKey, int index, bool isChange, Network network)
         {
             int change = isChange ? 1 : 0;
             KeyPath keyPath = new KeyPath($"{change}/{index}");
             ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey).Derive(keyPath);
-            return extPubKey.PubKey.GetAddress(network);
+            return extPubKey.PubKey;
         }
 
         private IEnumerable<string> GetWalletFilesPaths()
@@ -879,6 +911,8 @@ namespace Stratis.Bitcoin.Wallet
                     foreach (var address in addresses)
                     {
                         this.keysLookup.Add(address.ScriptPubKey, address);
+                        if (address.Pubkey != null)
+                            this.keysLookup.Add(address.Pubkey, address);
                     }
                 }
             }
@@ -924,13 +958,13 @@ namespace Stratis.Bitcoin.Wallet
         }
     }
 
-	public class UnspentInfo
-	{
-		public HdAccount Account { get; set; }
+    public class UnspentInfo
+    {
+        public HdAccount Account { get; set; }
 
-		public HdAddress Address { get; set; }
+        public HdAddress Address { get; set; }
 
-		public List<TransactionData> Transactions { get; set; }
-	}
+        public List<TransactionData> Transactions { get; set; }
+    }
 
 }

@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Wallet
 		/// List all spendable transactions from all accounts
 		/// </summary>
 		/// <returns>A collection of spendable outputs</returns>
-		List<UnspentInfo> GetSpendableTransactions();
+		List<UnspentInfo> GetSpendableTransactions(int confirmations = 0);
 
 		/// <summary>
 		/// Creates a wallet and persist it as a file on the local system.
