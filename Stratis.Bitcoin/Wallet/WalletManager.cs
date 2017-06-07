@@ -68,16 +68,18 @@ namespace Stratis.Bitcoin.Wallet
             // load data in memory for faster lookups
             this.LoadKeysLookup();
 
-            
+            // register events
+            this.TransactionFound += this.OnTransactionFound;
+        }
+
+        public void SetBlock()
+        {
             // find the last chain block.
             this.LastBlock = this.chain.GetBlock(this.LastBlockHash());
-            
+
             // TODO: fix reorg logic
             if (this.LastBlock == null)
                 throw new WalletException("Reorg on startup");
-
-            // register events
-            this.TransactionFound += this.OnTransactionFound;
         }
 
         /// <inheritdoc />
