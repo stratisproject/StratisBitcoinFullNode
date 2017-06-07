@@ -118,6 +118,13 @@ namespace Stratis.Bitcoin.Wallet
         public int? LastBlockSyncedHeight { get; set; }
 
         /// <summary>
+        /// The hash of the last block that was synced.
+        /// </summary>
+        [JsonProperty(PropertyName = "lastBlockSyncedHash", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonConverter(typeof(UInt256JsonConverter))]
+        public uint256 LastBlockSyncedHash { get; set; }
+
+        /// <summary>
         /// The accounts used in the wallet.
         /// </summary>
         [JsonProperty(PropertyName = "accounts")]

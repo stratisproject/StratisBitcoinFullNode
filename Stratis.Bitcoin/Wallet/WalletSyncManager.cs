@@ -37,10 +37,7 @@ namespace Stratis.Bitcoin.Wallet
 
 	    public void ProcessBlock(Block block)
 	    {
-			var hash = block.Header.GetHash();
-		    var height = this.chain.GetBlock(hash).Height;
-
-		    this.walletManager.ProcessBlock(height, block);
+		    this.walletManager.ProcessBlock(block);
 		}
 
 		public void ProcessTransaction(Transaction transaction)

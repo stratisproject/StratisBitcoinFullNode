@@ -9,11 +9,11 @@ namespace Stratis.Bitcoin.Wallet
     /// </summary>
     public interface IWalletManager : IDisposable
     {
-		/// <summary>
-		/// List all spendable transactions from all accounts
-		/// </summary>
-		/// <returns>A collection of spendable outputs</returns>
-		List<UnspentInfo> GetSpendableTransactions(int confirmations = 0);
+        /// <summary>
+        /// List all spendable transactions from all accounts
+        /// </summary>
+        /// <returns>A collection of spendable outputs</returns>
+        List<UnspentInfo> GetSpendableTransactions(int confirmations = 0);
 
 		/// <summary>
 		/// Creates a wallet and persist it as a file on the local system.
@@ -157,9 +157,8 @@ namespace Stratis.Bitcoin.Wallet
         /// <summary>
         /// Processes a block received from the network.
         /// </summary>
-        /// <param name="height">The height of the block in the blockchain.</param>
         /// <param name="block">The block.</param>
-        void ProcessBlock(int height, Block block);
+        void ProcessBlock(Block block);
 
         /// <summary>
         /// Processes a transaction received from the network.
@@ -184,13 +183,13 @@ namespace Stratis.Bitcoin.Wallet
         /// Updates the wallet with the height of the last block synced.
         /// </summary>
         /// <param name="wallet">The wallet to update.</param>
-        /// <param name="height">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(Wallet wallet, int height);
+        /// <param name="chainedBlock">The height of the last block synced.</param>
+        void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock);
 
         /// <summary>
         /// Updates all the loaded wallets with the height of the last block synced.
         /// </summary>
-        /// <param name="height">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(int height);
+        /// <param name="chainedBlock">The height of the last block synced.</param>
+        void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock);
     }
 }

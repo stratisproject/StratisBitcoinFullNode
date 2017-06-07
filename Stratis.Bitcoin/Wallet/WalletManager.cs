@@ -34,6 +34,8 @@ namespace Stratis.Bitcoin.Wallet
 
         private readonly ConcurrentChain chain;
 
+        private ChainedBlock LastBlock;
+
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
@@ -65,6 +67,14 @@ namespace Stratis.Bitcoin.Wallet
 
             // load data in memory for faster lookups
             this.LoadKeysLookup();
+
+            
+            // find the last chain block.
+            this.LastBlock = this.chain.GetBlock(this.LastBlockHash());
+            
+            // TODO: fix reorg logic
+            if (this.LastBlock == null)
+                throw new WalletException("Reorg on startup");
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
@@ -98,7 +108,7 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             // update the height of the we start syncing from
-            this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip.Height);
+            this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
 
             // save the changes to the file and add addresses to be tracked
             this.SaveToFile(wallet);
@@ -146,7 +156,7 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
-            this.UpdateLastBlockSyncedHeight(wallet, blockSyncStart);
+            this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
 
             // save the changes to the file and add addresses to be tracked
             this.SaveToFile(wallet);
@@ -356,6 +366,17 @@ namespace Stratis.Bitcoin.Wallet
             return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight) ?? 0;
         }
 
+        public uint256 LastBlockHash()
+        {
+            if (!this.Wallets.Any())
+            {
+                return this.chain.Tip.HashBlock;
+            }
+
+            return this.Wallets.Select(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType))
+                       .OrderBy(o => o.LastBlockSyncedHeight).FirstOrDefault()?.LastBlockSyncedHash ?? this.network.GenesisHash;
+        }
+
         /// <inheritdoc />
         public List<UnspentInfo> GetSpendableTransactions(int confirmations = 0)
         {
@@ -421,7 +442,7 @@ namespace Stratis.Bitcoin.Wallet
         {
             if (amount == Money.Zero)
             {
-                throw new Exception($"Cannot send transaction with 0 {this.coinType}");
+                throw new WalletException($"Cannot send transaction with 0 {this.coinType}");
             }
 
             // get the wallet and the account
@@ -437,7 +458,7 @@ namespace Stratis.Bitcoin.Wallet
             // make sure we have enough funds
             if (balance < amount)
             {
-                throw new Exception("Not enough funds.");
+                throw new WalletException("Not enough funds.");
             }
 
             // calculate which addresses needs to be used as well as the fee to be charged
@@ -477,7 +498,7 @@ namespace Stratis.Bitcoin.Wallet
 
             if (!builder.Verify(tx))
             {
-                throw new Exception("Could not build transaction, please make sure you entered the correct data.");
+                throw new WalletException("Could not build transaction, please make sure you entered the correct data.");
             }
 
             return (tx.ToHex(), tx.GetHash(), calculationResult.fee);
@@ -523,17 +544,25 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public void ProcessBlock(int height, Block block)
+        public void ProcessBlock(Block block)
         {
-            this.logger.LogDebug($"block notification - height: {height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
+            var chainedBlock = this.chain.GetBlock(block.GetHash());
+
+            this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
+
+            // TODO: fix reorg logic
+            // check for reorg
+            if (block.Header.HashPrevBlock != this.LastBlock.HashBlock)
+                throw new WalletException("Reorg");
+
 
             foreach (Transaction transaction in block.Transactions)
             {
-                this.ProcessTransaction(transaction, height, block);
+                this.ProcessTransaction(transaction, chainedBlock.Height, block);
             }
 
             // update the wallets with the last processed block height
-            this.UpdateLastBlockSyncedHeight(height);
+            this.UpdateLastBlockSyncedHeight(chainedBlock);
         }
 
         /// <inheritdoc />
@@ -541,6 +570,7 @@ namespace Stratis.Bitcoin.Wallet
         {
             this.logger.LogDebug($"transaction received - hash: {transaction.GetHash()}, coin: {this.coinType}");
 
+            var hash = transaction.GetHash().ToString();
             // check the outputs
             foreach (TxOut utxo in transaction.Outputs)
             {
@@ -738,22 +768,25 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public void UpdateLastBlockSyncedHeight(int height)
+        public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
         {
             // update the wallets with the last processed block height
             foreach (var wallet in this.Wallets)
             {
-                this.UpdateLastBlockSyncedHeight(wallet, height);
+                this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);
             }
         }
 
         /// <inheritdoc />
-        public void UpdateLastBlockSyncedHeight(Wallet wallet, int height)
+        public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock)
         {
+            this.LastBlock = chainedBlock;
+
             // update the wallets with the last processed block height
             foreach (var accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
             {
-                accountRoot.LastBlockSyncedHeight = height;
+                accountRoot.LastBlockSyncedHeight = chainedBlock.Height;
+                accountRoot.LastBlockSyncedHash = chainedBlock.HashBlock;
             }
         }
 
@@ -928,7 +961,7 @@ namespace Stratis.Bitcoin.Wallet
             Wallet wallet = this.Wallets.SingleOrDefault(w => w.Name == walletName);
             if (wallet == null)
             {
-                throw new Exception($"No wallet with name {walletName} could be found.");
+                throw new WalletException($"No wallet with name {walletName} could be found.");
             }
 
             return wallet;
