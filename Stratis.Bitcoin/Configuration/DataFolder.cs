@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Configuration
 			ChainPath = Path.Combine(path, "chain");
 			BlockPath = Path.Combine(path, "blocks");
 			RPCCookieFile = Path.Combine(path, ".cookie");
+			WalletFile = Path.Combine(path, "wallet");
 		}
 
 		public string AddrManFile
@@ -49,5 +50,11 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			internal set;
 		}
+
+	    public string WalletFile
+	    {
+		    get;
+		    internal set;
+	    }
 	}
 }

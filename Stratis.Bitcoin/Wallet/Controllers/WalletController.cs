@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
-    [Route("api/v{version:apiVersion}/[controller]")]
+    [Route("api/[controller]")]
     public class WalletController : Controller
     {
         private readonly IWalletManager walletManager;
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 // get the wallet folder 
                 DirectoryInfo walletFolder = GetWalletFolder(request.FolderPath);
-                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, walletFolder.FullName, request.Name, request.Network);
+                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, walletFolder.FullName, request.Name);
 
                 return this.Json(mnemonic.ToString());
             }
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 // get the wallet folder 
                 DirectoryInfo walletFolder = GetWalletFolder(request.FolderPath);
-                Wallet wallet = this.walletManager.LoadWallet(request.Password, walletFolder.FullName, request.Name);
+                Wallet wallet = this.walletManager.LoadWallet(request.Password, request.Name);
 
                 return this.Ok();
             }
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 // get the wallet folder 
                 DirectoryInfo walletFolder = GetWalletFolder(request.FolderPath);
-                Wallet wallet = this.walletManager.RecoverWallet(request.Password, walletFolder.FullName, request.Name, request.Network, request.Mnemonic, request.CreationDate, null);
+                Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, null);
 
 				// start syncing the wallet from the creation date
 	            this.walletSyncManager.SyncFrom(request.CreationDate);
@@ -178,7 +178,6 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 var model = new WalletGeneralInfoModel
                 {
                     Network = wallet.Network,
-                    WalletFilePath = wallet.WalletFilePath,
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
                     ConnectedNodes = this.connectionManager.ConnectedNodes.Count(),
@@ -335,7 +334,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, this.coinType, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed);                
+                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed ? 0 : 1);                
                 var model = new WalletBuildTransactionModel
                 {
                     Hex = transactionResult.hex,
@@ -451,7 +450,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {               
-                var result = this.walletManager.GetUnusedAddress(request.WalletName, this.coinType, request.AccountName);
+                var result = this.walletManager.GetUnusedAddress(request.WalletName, request.AccountName);
                 return this.Json(result);
             }
             catch (Exception e)
@@ -465,15 +464,9 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         /// </summary>
         /// <returns>The path folder of the folder.</returns>
         /// <remarks>The folder is created if it doesn't exist.</remarks>
-        private static DirectoryInfo GetWalletFolder(string folderPath = null)
+        private DirectoryInfo GetWalletFolder(string folderPath = null)
         {
-            if (string.IsNullOrEmpty(folderPath))
-            {
-                folderPath = WalletManager.GetDefaultWalletFolderPath();
-            }
-            return Directory.CreateDirectory(folderPath);
+            return Directory.CreateDirectory(this.walletManager.WalletFile());
         }
-
-
     }
 }

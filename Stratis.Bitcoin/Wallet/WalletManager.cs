@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Transaction = NBitcoin.Transaction;
 
@@ -34,7 +35,10 @@ namespace Stratis.Bitcoin.Wallet
 
         private readonly ConcurrentChain chain;
 
-        private ChainedBlock LastBlock;
+		private readonly NodeSettings settings;
+	    private readonly DataFolder dataFolder;
+
+	    private ChainedBlock lastBlock;
 
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
@@ -49,24 +53,26 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
-        public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain)
+        public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain, 
+			NodeSettings settings, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new List<Wallet>();
-
-            // find wallets and load them in memory
-            foreach (var path in this.GetWalletFilesPaths())
-            {
-                this.Load(this.DeserializeWallet(path));
-            }
 
             this.connectionManager = connectionManager;
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
+	        this.settings = settings;
+	        this.dataFolder = dataFolder;
 
-            // load data in memory for faster lookups
-            this.LoadKeysLookup();
+	        // find wallets and load them in memory
+	        var path = this.WalletFile();
+	        if (File.Exists(path))
+		        this.Load(this.DeserializeWallet(path));
+
+			// load data in memory for faster lookups
+			this.LoadKeysLookup();
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
@@ -75,15 +81,15 @@ namespace Stratis.Bitcoin.Wallet
         public void SetBlock()
         {
             // find the last chain block.
-            this.LastBlock = this.chain.GetBlock(this.LastBlockHash());
+            this.lastBlock = this.chain.GetBlock(this.LastBlockHash());
 
             // TODO: fix reorg logic
-            if (this.LastBlock == null)
+            if (this.lastBlock == null)
                 throw new WalletException("Reorg on startup");
         }
 
         /// <inheritdoc />
-        public Mnemonic CreateWallet(string password, string folderPath, string name, string network, string passphrase = null)
+        public Mnemonic CreateWallet(string password, string name, string passphrase = null)
         {
             // for now the passphrase is set to be the password by default.
             if (passphrase == null)
@@ -96,17 +102,15 @@ namespace Stratis.Bitcoin.Wallet
             Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             ExtKey extendedKey = mnemonic.DeriveExtKey(passphrase);
 
-            Network coinNetwork = WalletHelpers.GetNetwork(network);
-
             // create a wallet file 
-            Wallet wallet = this.GenerateWalletFile(password, folderPath, name, coinNetwork, extendedKey);
+            Wallet wallet = this.GenerateWalletFile(password, name, extendedKey);
 
             // generate multiple accounts and addresses from the get-go
             for (int i = 0; i < WalletCreationAccountsCount; i++)
             {
                 HdAccount account = CreateNewAccount(wallet, this.coinType, password);
-                this.CreateAddressesInAccount(account, coinNetwork, UnusedAddressesBuffer);
-                this.CreateAddressesInAccount(account, coinNetwork, UnusedAddressesBuffer, true);
+                this.CreateAddressesInAccount(account, UnusedAddressesBuffer);
+                this.CreateAddressesInAccount(account, UnusedAddressesBuffer, true);
             }
 
             // update the height of the we start syncing from
@@ -121,19 +125,19 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public Wallet LoadWallet(string password, string folderPath, string name)
+        public Wallet LoadWallet(string password, string name)
         {
-            string walletFilePath = Path.Combine(folderPath, $"{name}.json");
+	        string walletFilePath = this.WalletFile();
 
-            // load the file from the local system
-            Wallet wallet = this.DeserializeWallet(walletFilePath);
+			// load the file from the local system
+			Wallet wallet = this.DeserializeWallet(walletFilePath);
 
             this.Load(wallet);
             return wallet;
         }
 
         /// <inheritdoc />
-        public Wallet RecoverWallet(string password, string folderPath, string name, string network, string mnemonic, DateTime creationTime, string passphrase = null)
+        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null)
         {
             // for now the passphrase is set to be the password by default.
             if (passphrase == null)
@@ -144,17 +148,15 @@ namespace Stratis.Bitcoin.Wallet
             // generate the root seed used to generate keys
             ExtKey extendedKey = (new Mnemonic(mnemonic)).DeriveExtKey(passphrase);
 
-            Network coinNetwork = WalletHelpers.GetNetwork(network);
-
             // create a wallet file 
-            Wallet wallet = this.GenerateWalletFile(password, folderPath, name, coinNetwork, extendedKey, creationTime);
+            Wallet wallet = this.GenerateWalletFile(password, name, extendedKey, creationTime);
 
             // generate multiple accounts and addresses from the get-go
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
                 HdAccount account = CreateNewAccount(wallet, this.coinType, password);
-                this.CreateAddressesInAccount(account, coinNetwork, UnusedAddressesBuffer);
-                this.CreateAddressesInAccount(account, coinNetwork, UnusedAddressesBuffer, true);
+                this.CreateAddressesInAccount(account, UnusedAddressesBuffer);
+                this.CreateAddressesInAccount(account, UnusedAddressesBuffer, true);
             }
 
             int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
@@ -239,12 +241,12 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public string GetUnusedAddress(string walletName, CoinType coinType, string accountName)
+        public HdAddress GetUnusedAddress(string walletName, string accountName)
         {
             Wallet wallet = this.GetWalletByName(walletName);
 
             // get the account
-            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == coinType).GetAccountByName(accountName);
+            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).GetAccountByName(accountName);
 
             // validate address creation
             if (account.ExternalAddresses.Any())
@@ -253,19 +255,19 @@ namespace Stratis.Bitcoin.Wallet
                 var firstUnusedExternalAddress = account.GetFirstUnusedReceivingAddress();
                 if (firstUnusedExternalAddress != null)
                 {
-                    return firstUnusedExternalAddress.Address;
+                    return firstUnusedExternalAddress;
                 }
             }
 
             // creates an address
-            this.CreateAddressesInAccount(account, wallet.Network, 1);
+            this.CreateAddressesInAccount(account, 1);
 
             // persists the address to the wallet file
             this.SaveToFile(wallet);
 
             // adds the address to the list of tracked addresses
             this.LoadKeysLookup();
-            return account.GetFirstUnusedReceivingAddress().Address;
+            return account.GetFirstUnusedReceivingAddress();
         }
 
         /// <inheritdoc />
@@ -294,11 +296,10 @@ namespace Stratis.Bitcoin.Wallet
         /// Creates a number of addresses in the provided account.
         /// </summary>
         /// <param name="account">The account.</param>
-        /// <param name="network">The network.</param>
         /// <param name="addressesQuantity">The number of addresses to create.</param>
         /// <param name="isChange">Whether the addresses added are change (internal) addresses or receiving (external) addresses.</param>
         /// <returns>A list of addresses in Base58.</returns>
-        private List<string> CreateAddressesInAccount(HdAccount account, Network network, int addressesQuantity, bool isChange = false)
+        private List<string> CreateAddressesInAccount(HdAccount account, int addressesQuantity, bool isChange = false)
         {
             List<string> addressesCreated = new List<string>();
 
@@ -314,8 +315,8 @@ namespace Stratis.Bitcoin.Wallet
             for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
             {
                 // generate new receiving address
-                var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange, network);
-                BitcoinPubKeyAddress address = pubkey.GetAddress(network);
+                var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange, this.network);
+                BitcoinPubKeyAddress address = pubkey.GetAddress(this.network);
 
                 // add address details
                 addresses.Add(new HdAddress
@@ -440,7 +441,7 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, CoinType coinType, string password, string destinationAddress, Money amount, string feeType, bool allowUnconfirmed)
+        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, string feeType, int minConfirmations)
         {
             if (amount == Money.Zero)
             {
@@ -449,10 +450,14 @@ namespace Stratis.Bitcoin.Wallet
 
             // get the wallet and the account
             Wallet wallet = this.GetWalletByName(walletName);
-            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == coinType).GetAccountByName(accountName);
+            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).GetAccountByName(accountName);
 
             // get a list of transactions outputs that have not been spent
-            IEnumerable<TransactionData> spendableTransactions = account.GetSpendableTransactions();
+            var spendableTransactions = account.GetSpendableTransactions().ToList();
+
+			// remove whats under min confirmations
+	        var currentHeight = this.chain.Height;
+	        spendableTransactions = spendableTransactions.Where(s => currentHeight - s.BlockHeight >= minConfirmations).ToList();
 
             // get total spendable balance in the account.
             var balance = spendableTransactions.Sum(t => t.Amount);
@@ -514,18 +519,18 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns>The collection of transactions to be used and the fee to be charged</returns>
         private (List<TransactionData> transactionsToUse, Money fee) CalculateFees(IEnumerable<TransactionData> spendableTransactions, Money amount)
         {
-            // TODO make this a bit smarter!            
-            List<TransactionData> transactionsToUse = new List<TransactionData>();
+			// TODO make this a bit smarter!     
+			Money fee = new Money(new decimal(0.001), MoneyUnit.BTC);
+			List<TransactionData> transactionsToUse = new List<TransactionData>();
             foreach (var transaction in spendableTransactions)
             {
                 transactionsToUse.Add(transaction);
-                if (transactionsToUse.Sum(t => t.Amount) >= amount)
+                if (transactionsToUse.Sum(t => t.Amount) >= amount + fee)
                 {
                     break;
                 }
             }
 
-            Money fee = new Money(new decimal(0.001), MoneyUnit.BTC);
             return (transactionsToUse, fee);
         }
 
@@ -548,14 +553,30 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
+            if (!this.Wallets.Any())
+                return;
+
             var chainedBlock = this.chain.GetBlock(block.GetHash());
 
             this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
 
             // TODO: fix reorg logic
-            // check for reorg
-            if (block.Header.HashPrevBlock != this.LastBlock.HashBlock)
-                throw new WalletException("Reorg");
+            // is this the next block
+            if (block.Header.HashPrevBlock != this.lastBlock.HashBlock)
+            {
+                // are we still on the main chain
+                var current = this.chain.GetBlock(this.lastBlock.HashBlock);
+                if(current == null)
+                    throw new WalletException("Reorg");
+
+                // if the block was processed before then just ignore it
+                if (chainedBlock.Height <= this.lastBlock.Height)
+                    return;
+
+                // this should not happen as the sync manager will have 
+                // to make sure only the next block is pushed to the wallet
+                throw new WalletException("block too far the future has arrived to the wallet");
+            }
 
 
             foreach (Transaction transaction in block.Transactions)
@@ -747,7 +768,7 @@ namespace Stratis.Bitcoin.Wallet
                     int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
                     int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
                     int accountsToAdd = UnusedAddressesBuffer - emptyAddressesCount;
-                    this.CreateAddressesInAccount(account, wallet.Network, accountsToAdd, isChange);
+                    this.CreateAddressesInAccount(account, accountsToAdd, isChange);
 
                     // persists the address to the wallet file
                     this.SaveToFile(wallet);
@@ -758,15 +779,15 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public void DeleteWallet(string walletFilePath)
+        public void DeleteWallet()
         {
-            File.Delete(walletFilePath);
+			throw new NotImplementedException();
         }
 
         /// <inheritdoc />
         public void SaveToFile(Wallet wallet)
         {
-            File.WriteAllText(wallet.WalletFilePath, JsonConvert.SerializeObject(wallet, Formatting.Indented));
+            File.WriteAllText(this.WalletFile(), JsonConvert.SerializeObject(wallet, Formatting.Indented));
         }
 
         /// <inheritdoc />
@@ -782,7 +803,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock)
         {
-            this.LastBlock = chainedBlock;
+            this.lastBlock = chainedBlock;
 
             // update the wallets with the last processed block height
             foreach (var accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
@@ -811,6 +832,11 @@ namespace Stratis.Bitcoin.Wallet
             }
         }
 
+	    public string WalletFile()
+	    {
+		    return $"{this.dataFolder.WalletFile}.json";
+	    }
+
         /// <summary>
         /// Generates the wallet file.
         /// </summary>
@@ -822,9 +848,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="creationTime">The time this wallet was created.</param>
         /// <returns></returns>
         /// <exception cref="System.NotSupportedException"></exception>
-        private Wallet GenerateWalletFile(string password, string folderPath, string name, Network network, ExtKey extendedKey, DateTimeOffset? creationTime = null)
+        private Wallet GenerateWalletFile(string password, string name, ExtKey extendedKey, DateTimeOffset? creationTime = null)
         {
-            string walletFilePath = Path.Combine(folderPath, $"{name}.json");
+	        string walletFilePath = this.WalletFile();
 
             if (File.Exists(walletFilePath))
                 throw new InvalidOperationException($"Wallet already exists at {walletFilePath}");
@@ -840,8 +866,6 @@ namespace Stratis.Bitcoin.Wallet
                     new AccountRoot { Accounts = new List<HdAccount>(), CoinType = CoinType.Bitcoin },
                     new AccountRoot { Accounts = new List<HdAccount>(), CoinType = CoinType.Testnet },
                     new AccountRoot { Accounts = new List<HdAccount>(), CoinType = CoinType.Stratis} },
-                WalletFilePath = walletFilePath,
-
             };
 
             // create a folder if none exists and persist the file
@@ -888,17 +912,6 @@ namespace Stratis.Bitcoin.Wallet
             return extPubKey.PubKey;
         }
 
-        private IEnumerable<string> GetWalletFilesPaths()
-        {
-            // TODO look in user-chosen folder as well.
-            // maybe the api can maintain a list of wallet paths it knows about
-            var defaultFolderPath = GetDefaultWalletFolderPath();
-
-            // create the directory if it doesn't exist
-            Directory.CreateDirectory(defaultFolderPath);
-            return Directory.EnumerateFiles(defaultFolderPath, "*.json", SearchOption.TopDirectoryOnly);
-        }
-
         /// <summary>
         /// Creates the bip44 path.
         /// </summary>
@@ -914,20 +927,6 @@ namespace Stratis.Bitcoin.Wallet
 
             int change = isChange ? 1 : 0;
             return $"m/44'/{(int)coinType}'/{accountIndex}'/{change}/{addressIndex}";
-        }
-
-        /// <summary>
-        /// Gets the path of the default folder in which the wallets will be stored.
-        /// </summary>
-        /// <returns>The folder path for Windows, Linux or OSX systems.</returns>
-        public static string GetDefaultWalletFolderPath()
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return $@"{Environment.GetEnvironmentVariable("AppData")}\Breeze";
-            }
-
-            return $"{Environment.GetEnvironmentVariable("HOME")}/.breeze";
         }
 
         /// <summary>

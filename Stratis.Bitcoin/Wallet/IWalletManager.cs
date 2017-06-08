@@ -19,40 +19,34 @@ namespace Stratis.Bitcoin.Wallet
 		/// Creates a wallet and persist it as a file on the local system.
 		/// </summary>
 		/// <param name="password">The password used to encrypt sensitive info.</param>
-		/// <param name="folderPath">The folder where the wallet will be saved.</param>
 		/// <param name="name">The name of the wallet.</param>
-		/// <param name="network">The network this wallet is for.</param>
 		/// <param name="passphrase">The passphrase used in the seed.</param>
 		/// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
-		Mnemonic CreateWallet(string password, string folderPath, string name, string network, string passphrase = null);
+		Mnemonic CreateWallet(string password, string name, string passphrase = null);
 
         /// <summary>
         /// Loads a wallet from a file.
         /// </summary>
         /// <param name="password">The user's password.</param>
-        /// <param name="folderPath">The folder where the wallet will be loaded.</param>
         /// <param name="name">The name of the wallet.</param>
         /// <returns>The wallet.</returns>
-        Wallet LoadWallet(string password, string folderPath, string name);
+        Wallet LoadWallet(string password, string name);
 
         /// <summary>
         /// Recovers a wallet.
         /// </summary>
         /// <param name="password">The user's password.</param>
-        /// <param name="folderPath">The folder where the wallet will be loaded.</param>
         /// <param name="name">The name of the wallet.</param>
-        /// <param name="network">The network in which to creae this wallet</param>
         /// <param name="mnemonic">The user's mnemonic for the wallet.</param>		
         /// <param name="passphrase">The passphrase used in the seed.</param>
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns>The recovered wallet.</returns>
-        Wallet RecoverWallet(string password, string folderPath, string name, string network, string mnemonic, DateTime creationTime, string passphrase = null);
+        Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null);
 
         /// <summary>
         /// Deletes a wallet.
         /// </summary>
-        /// <param name="walletFilePath">The location of the wallet file.</param>        
-        void DeleteWallet(string walletFilePath);
+        void DeleteWallet();
 
         /// <summary>
         /// Gets an account that contains no transactions.
@@ -93,14 +87,14 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns>The new account.</returns>
         HdAccount CreateNewAccount(Wallet wallet, CoinType coinType, string password);
 
-        /// <summary>
-        /// Gets an address that contains no transaction.
-        /// </summary>
-        /// <param name="walletName">The name of the wallet in which this address is contained.</param>
-        /// <param name="coinType">The type of coin for which to get the address.</param>
-        /// <param name="accountName">The name of the account in which this address is contained.</param>
-        /// <returns>An unused address or a newly created address, in Base58 format.</returns>
-        string GetUnusedAddress(string walletName, CoinType coinType, string accountName);
+		/// <summary>
+		/// Gets an address that contains no transaction.
+		/// </summary>
+		/// <param name="walletName">The name of the wallet in which this address is contained.</param>
+		/// <param name="coinType">The type of coin for which to get the address.</param>
+		/// <param name="accountName">The name of the account in which this address is contained.</param>
+		/// <returns>An unused address or a newly created address, in Base58 format.</returns>
+		HdAddress GetUnusedAddress(string walletName, string accountName);
 
         /// <summary>
         /// Gets a collection of addresses containing transactions for this coin.
@@ -145,7 +139,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="feeType">The type of fee to be included.</param>
         /// <param name="allowUnconfirmed">Whether or not we allow this transaction to rely on unconfirmed outputs.</param>
         /// <returns></returns>
-        (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, CoinType coinType, string password, string destinationAddress, Money amount, string feeType, bool allowUnconfirmed);
+        (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, string feeType, int minConfirmations);
 
         /// <summary>
         /// Sends a transaction to the network.
@@ -191,5 +185,11 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         /// <param name="chainedBlock">The height of the last block synced.</param>
         void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock);
+
+		/// <summary>
+		/// The pasth to the folder
+		/// </summary>
+		/// <returns></returns>
+	    string WalletFile();
     }
 }
