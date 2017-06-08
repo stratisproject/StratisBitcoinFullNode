@@ -20,18 +20,22 @@ Getting started
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
 ```
 
-3. Checkout the develop branch (or master without latest changes)
+3. Checkout the master branch
 ```
 cd StratisBitcoinFullNode
-git checkout develop
+git checkout master
 ```
 
 4. Restore the project packages  
 ```
 dotnet restore
 ```
+5. Go into the Stratis.BitcoinD folder
+```
+cd Stratis.BitcoinD
+```
 
-5. Run the node on Main net
+6. Run the node on Main net
 ```
 cd Stratis.BitcoinD
 dotnet run
