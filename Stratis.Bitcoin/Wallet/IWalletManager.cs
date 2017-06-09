@@ -185,11 +185,5 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         /// <param name="chainedBlock">The height of the last block synced.</param>
         void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock);
-
-		/// <summary>
-		/// The pasth to the folder
-		/// </summary>
-		/// <returns></returns>
-	    string WalletFile();
     }
 }

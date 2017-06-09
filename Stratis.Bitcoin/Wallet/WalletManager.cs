@@ -22,19 +22,13 @@ namespace Stratis.Bitcoin.Wallet
         public List<Wallet> Wallets { get; }
 
         private const int UnusedAddressesBuffer = 20;
-
         private const int WalletRecoveryAccountsCount = 3;
-
         private const int WalletCreationAccountsCount = 2;
 
         private readonly CoinType coinType;
-
         private readonly Network network;
-
         private readonly ConnectionManager connectionManager;
-
         private readonly ConcurrentChain chain;
-
 		private readonly NodeSettings settings;
 	    private readonly DataFolder dataFolder;
 
@@ -66,11 +60,12 @@ namespace Stratis.Bitcoin.Wallet
 	        this.settings = settings;
 	        this.dataFolder = dataFolder;
 
-	        // find wallets and load them in memory
-	        var path = this.WalletFile();
-	        if (File.Exists(path))
-		        this.Load(this.DeserializeWallet(path));
-
+            // find wallets and load them in memory
+            foreach (var path in this.GetWalletFilesPaths())
+            {
+                this.Load(this.DeserializeWallet(path));
+            }
+          
 			// load data in memory for faster lookups
 			this.LoadKeysLookup();
 
@@ -127,7 +122,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public Wallet LoadWallet(string password, string name)
         {
-	        string walletFilePath = this.WalletFile();
+            var walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.json");
 
 			// load the file from the local system
 			Wallet wallet = this.DeserializeWallet(walletFilePath);
@@ -591,9 +586,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
         {
-            this.logger.LogDebug($"transaction received - hash: {transaction.GetHash()}, coin: {this.coinType}");
+            var hash = transaction.GetHash();
+            this.logger.LogDebug($"transaction received - hash: {hash}, coin: {this.coinType}");
 
-            var hash = transaction.GetHash().ToString();
             // check the outputs
             foreach (TxOut utxo in transaction.Outputs)
             {
@@ -601,7 +596,7 @@ namespace Stratis.Bitcoin.Wallet
                 // check if the outputs contain one of our addresses
                 if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out pubKey))
                 {
-                    this.AddTransactionToWallet(transaction.GetHash(), transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
+                    this.AddTransactionToWallet(hash, transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
                 }
             }
 
@@ -631,7 +626,7 @@ namespace Stratis.Bitcoin.Wallet
                     return !addr.IsChangeAddress();
                 });
 
-                AddTransactionToWallet(transaction.GetHash(), transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
+                AddTransactionToWallet(hash, transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
             }
         }
 
@@ -654,7 +649,8 @@ namespace Stratis.Bitcoin.Wallet
             // get the collection of transactions to add to.
             this.keysLookup.TryGetValue(script, out HdAddress address);
 
-            var isSpendingTransaction = paidToOutputs != null && paidToOutputs.Any();
+            // if paidToOutputs is not null this is a spending trx
+            var isSpendingTransaction = paidToOutputs != null;
             var trans = address.Transactions;
 
             // check if a similar UTXO exists or not (same transaction id and same index)
@@ -784,10 +780,22 @@ namespace Stratis.Bitcoin.Wallet
 			throw new NotImplementedException();
         }
 
+        private IEnumerable<string> GetWalletFilesPaths()
+        {
+            // TODO look in user-chosen folder as well.
+            // maybe the api can maintain a list of wallet paths it knows about
+            var defaultFolderPath = this.dataFolder.WalletPath;
+
+            // create the directory if it doesn't exist
+            Directory.CreateDirectory(defaultFolderPath);
+            return Directory.EnumerateFiles(defaultFolderPath, "*.json", SearchOption.TopDirectoryOnly);
+        }
+
         /// <inheritdoc />
         public void SaveToFile(Wallet wallet)
         {
-            File.WriteAllText(this.WalletFile(), JsonConvert.SerializeObject(wallet, Formatting.Indented));
+            var walletfile = Path.Combine(this.dataFolder.WalletPath, $"{wallet.Name}.json");
+            File.WriteAllText(walletfile, JsonConvert.SerializeObject(wallet, Formatting.Indented));
         }
 
         /// <inheritdoc />
@@ -832,11 +840,6 @@ namespace Stratis.Bitcoin.Wallet
             }
         }
 
-	    public string WalletFile()
-	    {
-		    return $"{this.dataFolder.WalletFile}.json";
-	    }
-
         /// <summary>
         /// Generates the wallet file.
         /// </summary>
@@ -850,7 +853,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <exception cref="System.NotSupportedException"></exception>
         private Wallet GenerateWalletFile(string password, string name, ExtKey extendedKey, DateTimeOffset? creationTime = null)
         {
-	        string walletFilePath = this.WalletFile();
+            string walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.json");
 
             if (File.Exists(walletFilePath))
                 throw new InvalidOperationException($"Wallet already exists at {walletFilePath}");
@@ -858,7 +861,7 @@ namespace Stratis.Bitcoin.Wallet
             Wallet walletFile = new Wallet
             {
                 Name = name,
-                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, network).ToWif(),
+                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif(),
                 ChainCode = extendedKey.ChainCode,
                 CreationTime = creationTime ?? DateTimeOffset.Now,
                 Network = network,

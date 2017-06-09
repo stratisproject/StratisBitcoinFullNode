@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Common.JsonErrors;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Wallet;
 using Stratis.Bitcoin.Wallet.Controllers;
@@ -13,16 +14,19 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {
-    public class ControllersTests
+    public class ControllersTests : TestBase
     {
         [Fact]
         public void CreateWalletSuccessfullyReturnsMnemonic()
         {
             Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             var mockWalletCreate = new Mock<IWalletManager>();
-            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), null)).Returns(mnemonic);
-            
-            var controller = new WalletController(mockWalletCreate.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object);
+            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(mnemonic);
+
+            string dir = AssureEmptyDir("TestData/ControllersTests/CreateWalletSuccessfullyReturnsMnemonic");
+            var dataFolder = new DataFolder(new NodeSettings {DataDir = dir});
+
+            var controller = new WalletController(mockWalletCreate.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
 
             // Act
             var result = controller.Create(new WalletCreationRequest
@@ -51,8 +55,10 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null)).Returns(wallet);
+            string dir = AssureEmptyDir("TestData/ControllersTests/LoadWalletSuccessfullyReturnsWalletModel");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(mockWalletWrapper.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object);
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
 
             // Act
             var result = controller.Recover(new WalletRecoveryRequest
@@ -80,8 +86,10 @@ namespace Stratis.Bitcoin.Tests.Wallet
             };
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Returns(wallet);
+            string dir = AssureEmptyDir("TestData/ControllersTests/RecoverWalletSuccessfullyReturnsWalletModel");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(mockWalletWrapper.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object);
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
 
             // Act
             var result = controller.Load(new WalletLoadRequest
@@ -102,8 +110,10 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
-            
-            var controller = new WalletController(mockWalletWrapper.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object);
+            string dir = AssureEmptyDir("TestData/ControllersTests/FileNotFoundExceptionandReturns404");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+
+            var controller = new WalletController(mockWalletWrapper.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
 
             // Act
             var result = controller.Load(new WalletLoadRequest

@@ -18,12 +18,12 @@ namespace Stratis.Bitcoin.Configuration
 		public DataFolder(NodeSettings settings)
 		{
 			string path = settings.DataDir;
-			CoinViewPath = Path.Combine(path, "coinview");
-			AddrManFile = Path.Combine(path, "addrman.dat");
-			ChainPath = Path.Combine(path, "chain");
-			BlockPath = Path.Combine(path, "blocks");
-			RPCCookieFile = Path.Combine(path, ".cookie");
-			WalletFile = Path.Combine(path, "wallet");
+		    this.CoinViewPath = Path.Combine(path, "coinview");
+		    this.AddrManFile = Path.Combine(path, "addrman.dat");
+		    this.ChainPath = Path.Combine(path, "chain");
+		    this.BlockPath = Path.Combine(path, "blocks");
+		    this.RPCCookieFile = Path.Combine(path, ".cookie");
+			this.WalletPath = Path.Combine(path);
 		}
 
 		public string AddrManFile
@@ -50,9 +50,8 @@ namespace Stratis.Bitcoin.Configuration
 			get;
 			internal set;
 		}
-
-	    public string WalletFile
-	    {
+	    public string WalletPath
+        {
 		    get;
 		    internal set;
 	    }
