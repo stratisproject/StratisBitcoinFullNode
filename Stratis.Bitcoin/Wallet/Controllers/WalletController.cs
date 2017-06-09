@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Common.JsonErrors;
 using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.Wallet.Models;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Notifications;
 
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
-    [Route("api/v{version:apiVersion}/[controller]")]
+    [Route("api/[controller]")]
     public class WalletController : Controller
     {
         private readonly IWalletManager walletManager;
@@ -31,8 +32,10 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
         private readonly ConcurrentChain chain;
 
-		public WalletController(IWalletManager walletManager, IWalletSyncManager walletSyncManager, ConnectionManager connectionManager, Network network, 
-			ConcurrentChain chain)
+        private readonly DataFolder dataFolder;
+
+        public WalletController(IWalletManager walletManager, IWalletSyncManager walletSyncManager, ConnectionManager connectionManager, Network network, 
+			ConcurrentChain chain, DataFolder dataFolder)
         {
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
@@ -40,6 +43,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
+            this.dataFolder = dataFolder;
         }
 
         /// <summary>
@@ -61,8 +65,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             try
             {
                 // get the wallet folder 
-                DirectoryInfo walletFolder = GetWalletFolder(request.FolderPath);
-                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, walletFolder.FullName, request.Name, request.Network);
+                DirectoryInfo walletFolder = this.GetWalletFolder();
+                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name);
 
                 return this.Json(mnemonic.ToString());
             }
@@ -92,8 +96,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             try
             {
                 // get the wallet folder 
-                DirectoryInfo walletFolder = GetWalletFolder(request.FolderPath);
-                Wallet wallet = this.walletManager.LoadWallet(request.Password, walletFolder.FullName, request.Name);
+                DirectoryInfo walletFolder = this.GetWalletFolder();
+                Wallet wallet = this.walletManager.LoadWallet(request.Password, request.Name);
 
                 return this.Ok();
             }
@@ -131,8 +135,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             try
             {
                 // get the wallet folder 
-                DirectoryInfo walletFolder = GetWalletFolder(request.FolderPath);
-                Wallet wallet = this.walletManager.RecoverWallet(request.Password, walletFolder.FullName, request.Name, request.Network, request.Mnemonic, request.CreationDate, null);
+                DirectoryInfo walletFolder = this.GetWalletFolder();
+                Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, null);
 
 				// start syncing the wallet from the creation date
 	            this.walletSyncManager.SyncFrom(request.CreationDate);
@@ -178,7 +182,6 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 var model = new WalletGeneralInfoModel
                 {
                     Network = wallet.Network,
-                    WalletFilePath = wallet.WalletFilePath,
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
                     ConnectedNodes = this.connectionManager.ConnectedNodes.Count(),
@@ -335,7 +338,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, this.coinType, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed);                
+                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed ? 0 : 1);                
                 var model = new WalletBuildTransactionModel
                 {
                     Hex = transactionResult.hex,
@@ -451,8 +454,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {               
-                var result = this.walletManager.GetUnusedAddress(request.WalletName, this.coinType, request.AccountName);
-                return this.Json(result);
+                var result = this.walletManager.GetUnusedAddress(request.WalletName, request.AccountName);
+                return this.Json(result.Address);
             }
             catch (Exception e)
             {
@@ -464,16 +467,10 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         /// Gets a folder.
         /// </summary>
         /// <returns>The path folder of the folder.</returns>
-        /// <remarks>The folder is created if it doesn't exist.</remarks>
-        private static DirectoryInfo GetWalletFolder(string folderPath = null)
+        /// <remarks>The folder will always be the same as the running node.</remarks>
+        private DirectoryInfo GetWalletFolder()
         {
-            if (string.IsNullOrEmpty(folderPath))
-            {
-                folderPath = WalletManager.GetDefaultWalletFolderPath();
-            }
-            return Directory.CreateDirectory(folderPath);
+            return Directory.CreateDirectory(this.dataFolder.WalletPath);
         }
-
-
     }
 }

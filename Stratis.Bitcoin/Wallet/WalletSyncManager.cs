@@ -29,18 +29,17 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public virtual async Task Initialize()
         {
+            
             // start syncing blocks
             var bestHeightForSyncing = this.FindBestHeightForSyncing();
             this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {bestHeightForSyncing}.");
+            this.walletManager.SetBlock();
             await Task.CompletedTask;
         }
 
 	    public void ProcessBlock(Block block)
 	    {
-			var hash = block.Header.GetHash();
-		    var height = this.chain.GetBlock(hash).Height;
-
-		    this.walletManager.ProcessBlock(height, block);
+		    this.walletManager.ProcessBlock(block);
 		}
 
 		public void ProcessTransaction(Transaction transaction)
@@ -53,18 +52,10 @@ namespace Stratis.Bitcoin.Wallet
 			// TODO: this will enable resyncing the wallet from an earlier block
 			// this means the syncer will need to find the blocks 
 			// either form the block store or download them in case of a pruned node
-
-			throw new NotImplementedException();
-			//int blockSyncStart = this.chain.GetHeightAtTime(date);
-
-		    // start syncing blocks
-		   // this.SyncFrom(blockSyncStart);
 		}
 
 	    public virtual void SyncFrom(int height)
 	    {
-		    throw new NotImplementedException();
-			//this.blockNotification.SyncFrom(this.chain.GetBlock(height).HashBlock);
 		}
 
 	    private int FindBestHeightForSyncing()

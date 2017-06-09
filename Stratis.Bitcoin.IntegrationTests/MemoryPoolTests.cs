@@ -20,6 +20,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class MemoryPoolTests
 	{
+		public MemoryPoolTests()
+		{
+			Logs.Configure(new LoggerFactory());
+		}
+
 		[Fact]
 		public void MempoolRemoveTest()
 	    {

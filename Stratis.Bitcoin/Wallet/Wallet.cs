@@ -47,12 +47,6 @@ namespace Stratis.Bitcoin.Wallet
         public DateTimeOffset CreationTime { get; set; }
 
         /// <summary>
-        /// The location of the wallet file on the local system.
-        /// </summary>
-        [JsonProperty(PropertyName = "walletFilePath")]
-        public string WalletFilePath { get; set; }
-
-        /// <summary>
         /// The root of the accounts tree.
         /// </summary>
         [JsonProperty(PropertyName = "accountsRoot")]
@@ -116,6 +110,13 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "lastBlockSyncedHeight", NullValueHandling = NullValueHandling.Ignore)]
         public int? LastBlockSyncedHeight { get; set; }
+
+        /// <summary>
+        /// The hash of the last block that was synced.
+        /// </summary>
+        [JsonProperty(PropertyName = "lastBlockSyncedHash", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonConverter(typeof(UInt256JsonConverter))]
+        public uint256 LastBlockSyncedHash { get; set; }
 
         /// <summary>
         /// The accounts used in the wallet.

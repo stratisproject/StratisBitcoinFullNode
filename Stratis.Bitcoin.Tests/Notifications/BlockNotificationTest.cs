@@ -51,7 +51,8 @@ namespace Stratis.Bitcoin.Tests.Notifications
 
 			notification.Notify(this.source.Token);
 			notification.SyncFrom(startBlockId);
-			stub.Verify(s => s.SetLocation(It.Is<ChainedBlock>(c => c.Height == 0 && c.Header.GetHash() == header.GetHash())));
+		    notification.SyncFrom(startBlockId);
+            stub.Verify(s => s.SetLocation(It.Is<ChainedBlock>(c => c.Height == 0 && c.Header.GetHash() == header.GetHash())));
 		}
 
 		[Fact]

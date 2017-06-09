@@ -24,6 +24,7 @@ using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.RPC;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -77,6 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				.UseConsensus()
 				.UseBlockStore()
 				.UseMempool()
+				.UseWallet()
 				.AddRPC()
 				.Build();
 

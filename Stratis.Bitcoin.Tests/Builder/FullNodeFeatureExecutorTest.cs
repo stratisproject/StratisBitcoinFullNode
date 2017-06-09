@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder
@@ -31,7 +33,9 @@ namespace Stratis.Bitcoin.Tests.Builder
 			this.fullNodeServiceProvider.Setup(f => f.Features)
 				.Returns(new List<IFullNodeFeature>() { this.feature.Object, this.feature2.Object });
 
-			this.executor = new FullNodeFeatureExecutor(this.fullNode.Object);
+		    Logs.Configure(new LoggerFactory());
+
+            this.executor = new FullNodeFeatureExecutor(this.fullNode.Object);
 		}
 
 		[Fact]
