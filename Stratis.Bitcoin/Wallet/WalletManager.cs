@@ -649,11 +649,11 @@ namespace Stratis.Bitcoin.Wallet
 
             // if paidToOutputs is not null this is a spending trx
             var isSpendingTransaction = paidToOutputs != null;
-            var trans = address.Transactions;
+            var addressTransactions = address.Transactions;
 
             // check if a similar UTXO exists or not (same transaction id and same index)
             // new UTXOs are added, existing ones are updated
-            var foundTransaction = trans.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
+            var foundTransaction = addressTransactions.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
             if (foundTransaction == null)
             {
                 var newTransaction = new TransactionData
@@ -699,7 +699,7 @@ namespace Stratis.Bitcoin.Wallet
                     }
                 }
 
-                trans.Add(newTransaction);
+                addressTransactions.Add(newTransaction);
             }
             else
             {
