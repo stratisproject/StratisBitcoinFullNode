@@ -163,9 +163,9 @@ namespace Stratis.Bitcoin.Consensus
 			{
 				PerformanceCounter.AddProcessedTransactions(1);
 				var tx = block.Transactions[i];
-				if(!tx.IsCoinBase && !tx.IsCoinStake)
-				{
-					int[] prevheights;
+                if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                {
+                    int[] prevheights;
 
 					if(!view.HaveInputs(tx))
 						ConsensusErrors.BadTransactionMissingInput.Throw();
@@ -191,9 +191,9 @@ namespace Stratis.Bitcoin.Consensus
 				if(nSigOpsCost > this.consensusOptions.MAX_BLOCK_SIGOPS_COST)
 					ConsensusErrors.BadBlockSigOps.Throw();
 
-				if(!tx.IsCoinBase && !tx.IsCoinStake)
-				{
-					CheckInputs(tx, view, index.Height);
+                if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                {
+                    CheckInputs(tx, view, index.Height);
 					nFees += view.GetValueIn(tx) - tx.TotalOut;
 					int ii = i;
 					var localTx = tx;
@@ -224,10 +224,7 @@ namespace Stratis.Bitcoin.Consensus
 					}
 				}
 
-				if (tx.IsCoinStake)
-					context.Stake.TotalCoinStakeValueIn = view.GetValueIn(tx);
-
-				view.Update(tx, index.Height);
+                this.UpdateCoinView(context, tx);
 			}
 
 			this.CheckBlockReward(context, nFees, index, block);
@@ -237,7 +234,15 @@ namespace Stratis.Bitcoin.Consensus
 				ConsensusErrors.BadTransactionScriptError.Throw();
 		}
 
-		public virtual void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
+        protected virtual void UpdateCoinView(ContextInformation context, Transaction tx)
+        {
+            ChainedBlock index = context.BlockResult.ChainedBlock;
+            UnspentOutputSet view = context.Set;
+
+            view.Update(tx, index.Height);
+        }
+
+        public virtual void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
 		{
 			Money blockReward = nFees + GetProofOfWorkReward(chainedBlock.Height);
 			if (block.Transactions[0].TotalOut > blockReward)
@@ -250,6 +255,16 @@ namespace Stratis.Bitcoin.Consensus
 			set;
 		}
 
+        protected virtual void CheckMaturity(UnspentOutputs coins, int nSpendHeight)
+        {
+            // If prev is coinbase, check that it's matured
+            if (coins.IsCoinbase)
+            {
+                if (nSpendHeight - coins.Height < this.consensusOptions.COINBASE_MATURITY)
+                    ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
+            }
+        }
+
 		public virtual void CheckInputs(Transaction tx, UnspentOutputSet inputs, int nSpendHeight)
 		{
 			if(!inputs.HaveInputs(tx))
@@ -261,18 +276,7 @@ namespace Stratis.Bitcoin.Consensus
 				var prevout = tx.Inputs[i].PrevOut;
 				var coins = inputs.AccessCoins(prevout.Hash);
 
-				// If prev is coinbase, check that it's matured
-				if(coins.IsCoinbase)
-				{
-					if(nSpendHeight - coins.Height < this.consensusOptions.COINBASE_MATURITY)
-						ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
-				}
-
-				if (coins.IsCoinstake)
-				{
-					if (nSpendHeight - coins.Height < this.consensusOptions.COINBASE_MATURITY)
-						ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
-				}
+                this.CheckMaturity(coins, nSpendHeight);
 
 				// Check for negative or overflow input values
 				nValueIn += coins.TryGetOutput(prevout.N).Value;

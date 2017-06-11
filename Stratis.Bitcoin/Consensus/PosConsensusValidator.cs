@@ -104,7 +104,28 @@ namespace Stratis.Bitcoin.Consensus
 			}
 		}
 
-		public override void ContextualCheckBlock(ContextInformation context)
+        protected override void UpdateCoinView(ContextInformation context, Transaction tx)
+        {
+            UnspentOutputSet view = context.Set;
+
+            if (tx.IsCoinStake)
+                context.Stake.TotalCoinStakeValueIn = view.GetValueIn(tx);
+
+            base.UpdateCoinView(context, tx);
+        }
+
+        protected override void CheckMaturity(UnspentOutputs coins, int nSpendHeight)
+        {
+            base.CheckMaturity(coins, nSpendHeight);
+
+            if (coins.IsCoinstake)
+            {
+                if (nSpendHeight - coins.Height < this.consensusOptions.COINBASE_MATURITY)
+                    ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
+            }
+        }
+
+        public override void ContextualCheckBlock(ContextInformation context)
 		{
 			base.ContextualCheckBlock(context);
 
