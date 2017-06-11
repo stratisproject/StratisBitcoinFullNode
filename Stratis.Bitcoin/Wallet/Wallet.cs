@@ -416,14 +416,7 @@ namespace Stratis.Bitcoin.Wallet
         [JsonProperty(PropertyName = "id")]
         [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 Id { get; set; }
-
-        /// <summary>
-        /// The id of the transaction in which the output referenced in this transaction is spent.
-        /// </summary>
-        [JsonProperty(PropertyName = "spentIn", NullValueHandling = NullValueHandling.Ignore)]
-        [JsonConverter(typeof(UInt256JsonConverter))]
-        public uint256 SpentInTransaction { get; set; }
-
+       
         /// <summary>
         /// The details of the transaction in which the output referenced in this transaction is spent.
         /// </summary>
@@ -488,7 +481,7 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         public bool IsSpendable()
         {
-            return this.SpentInTransaction == null && this.Amount > Money.Zero;
+            return this.SpendingDetails == null;
         }
     }
 

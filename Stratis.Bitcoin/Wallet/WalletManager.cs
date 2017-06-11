@@ -695,7 +695,6 @@ namespace Stratis.Bitcoin.Wallet
                         .SingleOrDefault(t => t.Id == spendingTransactionId && t.Index == spendingTransactionIndex);
                     if (spentTransaction != null)
                     {
-                        spentTransaction.SpentInTransaction = transactionHash;
                         spentTransaction.MerkleProof = null;
                     }
                 }
