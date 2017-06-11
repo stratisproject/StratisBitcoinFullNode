@@ -418,12 +418,6 @@ namespace Stratis.Bitcoin.Wallet
         public uint256 Id { get; set; }
        
         /// <summary>
-        /// The details of the transaction in which the output referenced in this transaction is spent.
-        /// </summary>
-        [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]        
-        public SpendingDetails SpendingDetails { get; set; }
-
-        /// <summary>
         /// The transaction amount.
         /// </summary>
         [JsonProperty(PropertyName = "amount")]
@@ -469,19 +463,68 @@ namespace Stratis.Bitcoin.Wallet
         public Script ScriptPubKey { get; set; }
 
         /// <summary>
+        /// The details of the transaction in which the output referenced in this transaction is spent.
+        /// </summary>
+        [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
+        public SpendingDetails SpendingDetails { get; set; }
+
+        /// <summary>
         /// Determines whether this transaction is confirmed.
         /// </summary>    
         public bool IsConfirmed()
         {
             return this.BlockHeight != null;
         }
-
+        
         /// <summary>
         /// Indicates an output is spendable.
         /// </summary>
         public bool IsSpendable()
         {
             return this.SpendingDetails == null;
+        }
+
+        public Money SpendableAmount(bool confirmedOnly)
+        {
+            // if this transaction hasn't been spent
+            if (this.SpendingDetails == null)
+            {
+                if (this.IsConfirmed())
+                {
+                    return this.Amount;
+                }
+                else if (confirmedOnly)
+                {
+                    return Money.Zero;
+                }
+                else
+                {
+                    return this.Amount;
+                }
+            }
+
+            // if the transaction and its spending transaction are both confirmed spent or
+            // if the transaction and its spending transaction are unconfirmed spent
+            if (this.IsConfirmed() && this.SpendingDetails.IsSpentConfirmed() || 
+                !this.IsConfirmed() && !this.SpendingDetails.IsSpentConfirmed())
+            {
+                return Money.Zero;
+            }
+            
+            // if the transaction is a confirmed spent but the spending transaction is not yet confirmed
+            if (this.IsConfirmed() && !this.SpendingDetails.IsSpentConfirmed())
+            {
+                if (confirmedOnly)
+                {
+                    return this.Amount;
+                }
+                else
+                {
+                    return Money.Zero;
+                }
+            }
+
+            return Money.Zero;
         }
     }
 
@@ -557,5 +600,13 @@ namespace Stratis.Bitcoin.Wallet
         [JsonProperty(PropertyName = "creationTime")]
         [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset CreationTime { get; set; }
+
+        /// <summary>
+        /// Determines whether this transaction being spent is confirmed.
+        /// </summary>    
+        public bool IsSpentConfirmed()
+        {
+            return this.BlockHeight != null;
+        }
     }
 }

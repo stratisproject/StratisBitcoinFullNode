@@ -624,7 +624,6 @@ namespace Stratis.Bitcoin.Wallet
                     return !addr.IsChangeAddress();
                 });
 
-                this.AddTransactionToWallet(hash, transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
                 this.AddSpendingTransactionToWallet(hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
             }
         }
@@ -638,19 +637,12 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="amount">The amount.</param>
         /// <param name="script">The script.</param>
         /// <param name="blockHeight">Height of the block.</param>
-        /// <param name="block">The block containing the transaction to add.</param>
-        /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
-        /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
-        /// <param name="paidToOutputs">A list of payments made out</param>
+        /// <param name="block">The block containing the transaction to add.</param>       
         private void AddTransactionToWallet(uint256 transactionHash, uint time, int? index, Money amount, Script script,
-            int? blockHeight = null, Block block = null, uint256 spendingTransactionId = null,
-            int? spendingTransactionIndex = null, IEnumerable<TxOut> paidToOutputs = null)
+            int? blockHeight = null, Block block = null)
         {
             // get the collection of transactions to add to.
-            this.keysLookup.TryGetValue(script, out HdAddress address);
-
-            // if paidToOutputs is not null this is a spending trx
-            var isSpendingTransaction = paidToOutputs != null;
+            this.keysLookup.TryGetValue(script, out HdAddress address);            
             var addressTransactions = address.Transactions;
 
             // check if a similar UTXO exists or not (same transaction id and same index)
@@ -669,36 +661,11 @@ namespace Stratis.Bitcoin.Wallet
                 };
 
                 // add the Merkle proof to the (non-spending) transaction
-                if (block != null && !isSpendingTransaction)
+                if (block != null)
                 {
                     newTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
                 }
-
-                // if this is a spending transaction, keep a record of the payments made out to other scripts.
-                if (isSpendingTransaction)
-                {
-                    List<PaymentDetails> payments = new List<PaymentDetails>();
-                    foreach (var paidToOutput in paidToOutputs)
-                    {
-                        payments.Add(new PaymentDetails
-                        {
-                            DestinationScriptPubKey = paidToOutput.ScriptPubKey,
-                            DestinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
-                            Amount = paidToOutput.Value
-                        });
-                    }
-
-                    newTransaction.Payments = payments;
-
-                    // mark the transaction spent by this transaction as such
-                    var spentTransaction = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
-                        .SingleOrDefault(t => t.Id == spendingTransactionId && t.Index == spendingTransactionIndex);
-                    if (spentTransaction != null)
-                    {
-                        spentTransaction.MerkleProof = null;
-                    }
-                }
-
+                
                 addressTransactions.Add(newTransaction);
             }
             else
@@ -716,7 +683,7 @@ namespace Stratis.Bitcoin.Wallet
                 }
 
                 // add the Merkle proof now that the transaction is confirmed in a block
-                if (!isSpendingTransaction && foundTransaction.MerkleProof == null)
+                if (foundTransaction.MerkleProof == null)
                 {
                     foundTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
                 }
