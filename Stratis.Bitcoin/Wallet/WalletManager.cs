@@ -689,11 +689,10 @@ namespace Stratis.Bitcoin.Wallet
                     newTransaction.Payments = payments;
 
                     // mark the transaction spent by this transaction as such
-                    var transactions = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
-                        .Where(t => t.Id == spendingTransactionId);
-                    if (transactions.Any())
+                    var spentTransaction = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
+                        .SingleOrDefault(t => t.Id == spendingTransactionId && t.Index == spendingTransactionIndex);
+                    if (spentTransaction != null)
                     {
-                        var spentTransaction = transactions.Single(t => t.Index == spendingTransactionIndex);
                         spentTransaction.SpentInTransaction = transactionHash;
                         spentTransaction.MerkleProof = null;
                     }
