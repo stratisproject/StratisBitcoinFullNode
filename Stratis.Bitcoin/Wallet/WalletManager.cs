@@ -624,7 +624,8 @@ namespace Stratis.Bitcoin.Wallet
                     return !addr.IsChangeAddress();
                 });
 
-                AddTransactionToWallet(hash, transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
+                this.AddTransactionToWallet(hash, transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
+                this.AddSpendingTransactionToWallet(hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
             }
         }
 
@@ -640,6 +641,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="block">The block containing the transaction to add.</param>
         /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
         /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
+        /// <param name="paidToOutputs">A list of payments made out</param>
         private void AddTransactionToWallet(uint256 transactionHash, uint time, int? index, Money amount, Script script,
             int? blockHeight = null, Block block = null, uint256 spendingTransactionId = null,
             int? spendingTransactionIndex = null, IEnumerable<TxOut> paidToOutputs = null)
@@ -723,6 +725,69 @@ namespace Stratis.Bitcoin.Wallet
 
             // notify a transaction has been found
             this.TransactionFound?.Invoke(this, new TransactionFoundEventArgs(script, transactionHash));
+        }
+
+        /// <summary>
+        /// Adds the transaction to the wallet.
+        /// </summary>
+        /// <param name="transactionHash">The transaction hash.</param>
+        /// <param name="time">The time.</param>
+        /// <param name="paidToOutputs">A list of payments made out</param>
+        /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
+        /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
+        /// <param name="blockHeight">Height of the block.</param>
+        /// <param name="block">The block containing the transaction to add.</param>
+        private void AddSpendingTransactionToWallet(uint256 transactionHash, uint time, IEnumerable<TxOut> paidToOutputs, 
+            uint256 spendingTransactionId, int? spendingTransactionIndex, int? blockHeight = null, Block block = null)
+        {
+            // get the transaction being spent
+            TransactionData spentTransaction = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
+                .SingleOrDefault(t => t.Id == spendingTransactionId && t.Index == spendingTransactionIndex);
+            if (spentTransaction == null)
+            {
+                // strange, why would it be null?
+                return;
+            }
+
+            // if the details of this spending transaction are seen for the first time
+            if (spentTransaction.SpendingDetails == null)
+            {
+                List<PaymentDetails> payments = new List<PaymentDetails>();
+                foreach (var paidToOutput in paidToOutputs)
+                {
+                    payments.Add(new PaymentDetails
+                    {
+                        DestinationScriptPubKey = paidToOutput.ScriptPubKey,
+                        DestinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
+                        Amount = paidToOutput.Value
+                    });
+                }
+
+                SpendingDetails spendingDetails = new SpendingDetails
+                {
+                    TransactionId = transactionHash,
+                    Payments = payments,
+                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
+                    BlockHeight = blockHeight
+                };
+
+                spentTransaction.SpendingDetails = spendingDetails;
+                spentTransaction.MerkleProof = null;
+            }            
+            else // if this spending transaction is being comfirmed in a block
+            {
+                // update the block height
+                if (spentTransaction.SpendingDetails.BlockHeight == null && blockHeight != null)
+                {
+                    spentTransaction.SpendingDetails.BlockHeight = blockHeight;
+                }
+
+                // update the block time to be that of the block in which the transaction is confirmed
+                if (block != null)
+                {
+                    spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
+                }
+            }            
         }
 
         private MerkleProof CreateMerkleProof(Block block, uint256 transactionHash)
