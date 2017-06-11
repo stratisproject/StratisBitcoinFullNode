@@ -30,7 +30,7 @@
 		{
 			"name": "Start syncing from hash",
 			"request": {
-				"url": "http://localhost:5000/api/v1/node/sync",
+				"url": "http://localhost:5000/api/node/sync",
 				"method": "POST",
 				"header": [
 					{
