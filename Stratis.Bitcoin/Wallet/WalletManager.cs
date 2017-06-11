@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using Stratis.Bitcoin.Wallet.Helpers;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -29,10 +27,10 @@ namespace Stratis.Bitcoin.Wallet
         private readonly Network network;
         private readonly ConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
-		private readonly NodeSettings settings;
-	    private readonly DataFolder dataFolder;
+        private readonly NodeSettings settings;
+        private readonly DataFolder dataFolder;
 
-	    private ChainedBlock lastBlock;
+        private ChainedBlock lastBlock;
 
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
@@ -48,7 +46,7 @@ namespace Stratis.Bitcoin.Wallet
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
         public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain, 
-			NodeSettings settings, DataFolder dataFolder)
+            NodeSettings settings, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new List<Wallet>();
@@ -57,8 +55,8 @@ namespace Stratis.Bitcoin.Wallet
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
-	        this.settings = settings;
-	        this.dataFolder = dataFolder;
+            this.settings = settings;
+            this.dataFolder = dataFolder;
 
             // find wallets and load them in memory
             foreach (var path in this.GetWalletFilesPaths())
@@ -66,8 +64,8 @@ namespace Stratis.Bitcoin.Wallet
                 this.Load(this.DeserializeWallet(path));
             }
           
-			// load data in memory for faster lookups
-			this.LoadKeysLookup();
+            // load data in memory for faster lookups
+            this.LoadKeysLookup();
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
@@ -124,8 +122,8 @@ namespace Stratis.Bitcoin.Wallet
         {
             var walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.json");
 
-			// load the file from the local system
-			Wallet wallet = this.DeserializeWallet(walletFilePath);
+            // load the file from the local system
+            Wallet wallet = this.DeserializeWallet(walletFilePath);
 
             this.Load(wallet);
             return wallet;
@@ -450,9 +448,9 @@ namespace Stratis.Bitcoin.Wallet
             // get a list of transactions outputs that have not been spent
             var spendableTransactions = account.GetSpendableTransactions().ToList();
 
-			// remove whats under min confirmations
-	        var currentHeight = this.chain.Height;
-	        spendableTransactions = spendableTransactions.Where(s => currentHeight - s.BlockHeight >= minConfirmations).ToList();
+            // remove whats under min confirmations
+            var currentHeight = this.chain.Height;
+            spendableTransactions = spendableTransactions.Where(s => currentHeight - s.BlockHeight >= minConfirmations).ToList();
 
             // get total spendable balance in the account.
             var balance = spendableTransactions.Sum(t => t.Amount);
@@ -514,9 +512,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns>The collection of transactions to be used and the fee to be charged</returns>
         private (List<TransactionData> transactionsToUse, Money fee) CalculateFees(IEnumerable<TransactionData> spendableTransactions, Money amount)
         {
-			// TODO make this a bit smarter!     
-			Money fee = new Money(new decimal(0.001), MoneyUnit.BTC);
-			List<TransactionData> transactionsToUse = new List<TransactionData>();
+            // TODO make this a bit smarter!     
+            Money fee = new Money(new decimal(0.001), MoneyUnit.BTC);
+            List<TransactionData> transactionsToUse = new List<TransactionData>();
             foreach (var transaction in spendableTransactions)
             {
                 transactionsToUse.Add(transaction);
@@ -777,7 +775,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void DeleteWallet()
         {
-			throw new NotImplementedException();
+            throw new NotImplementedException();
         }
 
         private IEnumerable<string> GetWalletFilesPaths()

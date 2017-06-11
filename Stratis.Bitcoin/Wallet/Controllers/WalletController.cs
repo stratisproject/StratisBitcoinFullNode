@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         private readonly DataFolder dataFolder;
 
         public WalletController(IWalletManager walletManager, IWalletSyncManager walletSyncManager, ConnectionManager connectionManager, Network network, 
-			ConcurrentChain chain, DataFolder dataFolder)
+            ConcurrentChain chain, DataFolder dataFolder)
         {
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
@@ -138,10 +138,10 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 DirectoryInfo walletFolder = this.GetWalletFolder();
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, null);
 
-				// start syncing the wallet from the creation date
-	            this.walletSyncManager.SyncFrom(request.CreationDate);
+                // start syncing the wallet from the creation date
+                this.walletSyncManager.SyncFrom(request.CreationDate);
 
-				return this.Ok();
+                return this.Ok();
             }
             catch (InvalidOperationException e)
             {
@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                             // generated coins add more coins to the total out 
                             // that makes the fee negative if thats the case ignore the fee
                             if (item.Fee < 0)
-		                        item.Fee = 0;
+                                item.Fee = 0;
                         }
 
                         item.Id = transaction.Id;
