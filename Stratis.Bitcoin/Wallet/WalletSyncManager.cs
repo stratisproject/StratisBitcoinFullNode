@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,12 +34,63 @@ namespace Stratis.Bitcoin.Wallet
             var bestHeightForSyncing = this.FindBestHeightForSyncing();
             this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {bestHeightForSyncing}.");
 
+
+            // try to detect if a reorg happened when offline.
+            var current = this.chain.GetBlock(this.walletManager.LastReceivedBlockHash());
+            if (current == null)
+            {
+                // the current wallet hash was not found on the main chain
+                // a reorg happenend so bring the wallet back top the last known fork
+
+                var blockstoremove = new List<uint256>();
+                var fork = this.walletManager.LastReceivedBlock;
+
+                // we walk back the chained block object to find the fork
+                while (this.chain.GetBlock(fork.HashBlock) == null)
+                {
+                    blockstoremove.Add(fork.HashBlock);
+                    fork = fork.Previous;
+                }
+
+                this.walletManager.RemoveBlocks(fork);
+            }
+
             await Task.CompletedTask;
         }
 
         public void ProcessBlock(Block block)
         {
-            this.walletManager.ProcessBlock(block);
+            if (block.Header.HashPrevBlock != this.walletManager.LastReceivedBlock.HashBlock)
+            {
+                // if previous block does not match there might have 
+                // been a reorg, check if we still on the main chain
+                var current = this.chain.GetBlock(this.walletManager.LastReceivedBlock.HashBlock);
+                if (current == null)
+                {
+                    // the current wallet hash was not found on the main chain
+                    // a reorg happenend so bring the wallet back top the last known fork
+
+                    var blockstoremove = new List<uint256>();
+                    var fork = this.walletManager.LastReceivedBlock;
+
+                    // we walk back the chained block object to find the fork
+                    while (this.chain.GetBlock(fork.HashBlock) == null)
+                    {
+                        blockstoremove.Add(fork.HashBlock);
+                        fork = fork.Previous;
+                    }
+
+                    this.walletManager.RemoveBlocks(fork);
+                }
+                else if (current.Height > this.walletManager.LastReceivedBlock.Height)
+                {
+                    // the wallet is falling behind we need to catch up
+                    throw new NotImplementedException();
+                }
+            }
+
+            var chainedBlock = this.chain.GetBlock(block.GetHash());
+            this.walletManager.ProcessBlock(block, chainedBlock);
         }
 
         public void ProcessTransaction(Transaction transaction)
