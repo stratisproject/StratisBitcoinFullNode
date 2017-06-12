@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Wallet
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
 
-        public ChainedBlock LastReceivedBlock { get; private set; }
+        public uint256 LastReceivedBlock { get; private set; }
 
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
@@ -74,11 +74,7 @@ namespace Stratis.Bitcoin.Wallet
             this.LoadKeysLookup();
 
             // find the last chain block received by the wallet manager.
-            this.LastReceivedBlock = this.chain.GetBlock(this.LastReceivedBlockHash());
-
-            // TODO: fix reorg logic
-            if (this.LastReceivedBlock == null)
-                throw new WalletException("Reorg on startup");
+            this.LastReceivedBlock = this.LastReceivedBlockHash();
         }
 
         /// <inheritdoc />
@@ -570,15 +566,15 @@ namespace Stratis.Bitcoin.Wallet
             this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
             
             // is this the next block
-            if (chainedBlock.Header.HashPrevBlock != this.LastReceivedBlock.HashBlock)
+            if (chainedBlock.Header.HashPrevBlock != this.LastReceivedBlock)
             {
                 // are we still on the main chain
-                var current = this.chain.GetBlock(this.LastReceivedBlock.HashBlock);
+                var current = this.chain.GetBlock(this.LastReceivedBlock);
                 if (current == null)
                     throw new WalletException("Reorg");
 
                 // if the block was processed before then just ignore it
-                if (chainedBlock.Height <= this.LastReceivedBlock.Height)
+                if (chainedBlock.Height <= current.Height)
                     return;
 
                 // this should not happen as the sync manager will have 
@@ -849,7 +845,7 @@ namespace Stratis.Bitcoin.Wallet
                 this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);
             }
 
-            this.LastReceivedBlock = chainedBlock;
+            this.LastReceivedBlock = chainedBlock.HashBlock;
         }
 
         /// <inheritdoc />

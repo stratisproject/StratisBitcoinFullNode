@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Wallet
         protected readonly CoinType coinType;
         protected readonly ILogger logger;
 
+        private ChainedBlock lastReceivedBlock;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, Network network)
         {
@@ -28,50 +29,54 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public virtual async Task Initialize()
+        public virtual Task Initialize()
         {
-            // start syncing blocks
-            var bestHeightForSyncing = this.FindBestHeightForSyncing();
-            this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {bestHeightForSyncing}.");
+            // initialize the wallet
+            this.walletManager.Initialize();
 
+            this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {this.walletManager.LastBlockHeight()}.");
+
+            if (!this.walletManager.Wallets.Any())
+                return Task.CompletedTask;
 
             // try to detect if a reorg happened when offline.
-            var current = this.chain.GetBlock(this.walletManager.LastReceivedBlockHash());
-            if (current == null)
+            this.lastReceivedBlock = this.chain.GetBlock(this.walletManager.LastReceivedBlock);
+            if (this.lastReceivedBlock == null)
             {
-                // the current wallet hash was not found on the main chain
-                // a reorg happenend so bring the wallet back top the last known fork
+                // if a fork happeend when the wallet was offline
+                // there is no way to know the block that forked as 
+                // the wallet does not persist the chain of headers.
+                // to recover from a reorg we use the blocklocator
+                // the block locator keeps an incremental list of hash
+                // headers this will help determine the last chain the
+                // wallet was on and allow to find the fork.
 
                 var blockstoremove = new List<uint256>();
-                var fork = this.walletManager.LastReceivedBlock;
-
-                // we walk back the chained block object to find the fork
-                while (this.chain.GetBlock(fork.HashBlock) == null)
-                {
-                    blockstoremove.Add(fork.HashBlock);
-                    fork = fork.Previous;
-                }
-
+                var locators = this.walletManager.Wallets.First().BlockLocator;
+                BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
+                var fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
             }
 
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         public void ProcessBlock(Block block)
         {
-            if (block.Header.HashPrevBlock != this.walletManager.LastReceivedBlock.HashBlock)
+            // if the new block previous hash is the same as the 
+            // wallet hash then just pass the block to the manager 
+            if (block.Header.HashPrevBlock != this.walletManager.LastReceivedBlock)
             {
                 // if previous block does not match there might have 
-                // been a reorg, check if we still on the main chain
-                var current = this.chain.GetBlock(this.walletManager.LastReceivedBlock.HashBlock);
+                // been a reorg, check if the wallet is still on the main chain
+                var current = this.chain.GetBlock(this.lastReceivedBlock.HashBlock);
                 if (current == null)
                 {
                     // the current wallet hash was not found on the main chain
                     // a reorg happenend so bring the wallet back top the last known fork
 
                     var blockstoremove = new List<uint256>();
-                    var fork = this.walletManager.LastReceivedBlock;
+                    var fork = this.lastReceivedBlock;
 
                     // we walk back the chained block object to find the fork
                     while (this.chain.GetBlock(fork.HashBlock) == null)
@@ -82,15 +87,15 @@ namespace Stratis.Bitcoin.Wallet
 
                     this.walletManager.RemoveBlocks(fork);
                 }
-                else if (current.Height > this.walletManager.LastReceivedBlock.Height)
+                else if (current.Height > this.lastReceivedBlock.Height)
                 {
                     // the wallet is falling behind we need to catch up
                     throw new NotImplementedException();
                 }
             }
 
-            var chainedBlock = this.chain.GetBlock(block.GetHash());
-            this.walletManager.ProcessBlock(block, chainedBlock);
+            this.lastReceivedBlock = this.chain.GetBlock(block.GetHash());
+            this.walletManager.ProcessBlock(block, this.lastReceivedBlock);
         }
 
         public void ProcessTransaction(Transaction transaction)
@@ -107,24 +112,6 @@ namespace Stratis.Bitcoin.Wallet
 
         public virtual void SyncFrom(int height)
         {
-        }
-
-        private int FindBestHeightForSyncing()
-        {
-            // if there are no wallets, get blocks from now
-            if (!this.walletManager.Wallets.Any())
-            {
-                return this.chain.Tip.Height;
-            }
-
-            // sync the accounts with new blocks, starting from the most out of date
-            int? syncFromHeight = this.walletManager.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight);
-            if (syncFromHeight == null)
-            {
-                return this.chain.Tip.Height;
-            }
-
-            return Math.Min(syncFromHeight.Value, this.chain.Tip.Height);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <summary>
         /// The last processed block.
         /// </summary>
-        ChainedBlock LastReceivedBlock { get; }
+        uint256 LastReceivedBlock { get; }
 
         /// <summary>
         /// List all spendable transactions from all accounts
