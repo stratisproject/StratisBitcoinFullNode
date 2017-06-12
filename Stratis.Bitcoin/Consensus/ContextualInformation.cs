@@ -105,6 +105,11 @@ namespace Stratis.Bitcoin.Consensus
 			};
 		}
 
+        public bool IsPoS
+        {
+            get { return this.Stake != null; }
+        }
+
 		public NBitcoin.Consensus Consensus
 		{
 			get;
