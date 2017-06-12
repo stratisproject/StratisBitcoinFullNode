@@ -12,34 +12,34 @@ namespace Stratis.Bitcoin.Wallet
     {
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
-	    private readonly Signals signals;
-	    private readonly ConcurrentChain chain;
+        private readonly Signals signals;
+        private readonly ConcurrentChain chain;
 
-	    private IDisposable blockSubscriberdDisposable;
-	    private IDisposable transactionSubscriberdDisposable;
+        private IDisposable blockSubscriberdDisposable;
+        private IDisposable transactionSubscriberdDisposable;
 
-		public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals signals, ConcurrentChain chain)
+        public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals signals, ConcurrentChain chain)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
-	        this.signals = signals;
-	        this.chain = chain;
+            this.signals = signals;
+            this.chain = chain;
         }
 
         public override void Start()
         {
-	        // subscribe to receiving blocks and transactions
-	        this.blockSubscriberdDisposable = new BlockSubscriber(this.signals.Blocks, new BlockObserver(this.chain, this.walletSyncManager)).Subscribe();
-	        this.transactionSubscriberdDisposable = new TransactionSubscriber(this.signals.Transactions, new TransactionObserver(this.walletSyncManager)).Subscribe();
+            // subscribe to receiving blocks and transactions
+            this.blockSubscriberdDisposable = new BlockSubscriber(this.signals.Blocks, new BlockObserver(this.chain, this.walletSyncManager)).Subscribe();
+            this.transactionSubscriberdDisposable = new TransactionSubscriber(this.signals.Transactions, new TransactionObserver(this.walletSyncManager)).Subscribe();
 
-			this.walletSyncManager.Initialize();
+            this.walletSyncManager.Initialize();
             this.walletManager.Initialize();
         }
 
         public override void Stop()
         {
-			this.blockSubscriberdDisposable.Dispose();
-			this.transactionSubscriberdDisposable.Dispose();
+            this.blockSubscriberdDisposable.Dispose();
+            this.transactionSubscriberdDisposable.Dispose();
 
             this.walletManager.Dispose();
         }

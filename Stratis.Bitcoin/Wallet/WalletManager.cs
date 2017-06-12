@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
-        public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain, 
+        public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain,
             NodeSettings settings, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Wallet
             this.chain = chain;
             this.settings = settings;
             this.dataFolder = dataFolder;
-            
+
             // register events
             this.TransactionFound += this.OnTransactionFound;
         }
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Wallet
             if (this.lastReceivedBlock == null)
                 throw new WalletException("Reorg on startup");
         }
-        
+
         /// <inheritdoc />
         public Mnemonic CreateWallet(string password, string name, string passphrase = null)
         {
@@ -570,7 +570,7 @@ namespace Stratis.Bitcoin.Wallet
             {
                 // are we still on the main chain
                 var current = this.chain.GetBlock(this.lastReceivedBlock.HashBlock);
-                if(current == null)
+                if (current == null)
                     throw new WalletException("Reorg");
 
                 // if the block was processed before then just ignore it
@@ -580,13 +580,13 @@ namespace Stratis.Bitcoin.Wallet
                 // this should not happen as the sync manager will have 
                 // to make sure only the next block is pushed to the wallet
                 throw new WalletException("block too far the future has arrived to the wallet");
-            }           
+            }
 
             foreach (Transaction transaction in block.Transactions)
             {
                 this.ProcessTransaction(transaction, chainedBlock.Height, block);
             }
-            
+
             // update the wallets with the last processed block height
             this.UpdateLastBlockSyncedHeight(chainedBlock);
         }
@@ -652,7 +652,7 @@ namespace Stratis.Bitcoin.Wallet
             int? blockHeight = null, Block block = null)
         {
             // get the collection of transactions to add to.
-            this.keysLookup.TryGetValue(script, out HdAddress address);            
+            this.keysLookup.TryGetValue(script, out HdAddress address);
             var addressTransactions = address.Transactions;
 
             // check if a similar UTXO exists or not (same transaction id and same index)
@@ -675,7 +675,7 @@ namespace Stratis.Bitcoin.Wallet
                 {
                     newTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
                 }
-                
+
                 addressTransactions.Add(newTransaction);
             }
             else
@@ -713,7 +713,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        private void AddSpendingTransactionToWallet(uint256 transactionHash, uint time, IEnumerable<TxOut> paidToOutputs, 
+        private void AddSpendingTransactionToWallet(uint256 transactionHash, uint time, IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId, int? spendingTransactionIndex, int? blockHeight = null, Block block = null)
         {
             // get the transaction being spent
@@ -749,7 +749,7 @@ namespace Stratis.Bitcoin.Wallet
 
                 spentTransaction.SpendingDetails = spendingDetails;
                 spentTransaction.MerkleProof = null;
-            }            
+            }
             else // if this spending transaction is being comfirmed in a block
             {
                 // update the block height
@@ -763,7 +763,7 @@ namespace Stratis.Bitcoin.Wallet
                 {
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
                 }
-            }            
+            }
         }
 
         private MerkleProof CreateMerkleProof(Block block, uint256 transactionHash)
