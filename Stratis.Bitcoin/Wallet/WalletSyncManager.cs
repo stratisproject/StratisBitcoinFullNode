@@ -13,12 +13,12 @@ namespace Stratis.Bitcoin.Wallet
     public class WalletSyncManager : IWalletSyncManager
     {
         protected readonly WalletManager walletManager;
-	    protected readonly ConcurrentChain chain;
-	    protected readonly CoinType coinType;
-	    protected readonly ILogger logger;
+        protected readonly ConcurrentChain chain;
+        protected readonly CoinType coinType;
+        protected readonly ILogger logger;
 
 
-		public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, Network network)
+        public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, Network network)
         {
             this.walletManager = walletManager as WalletManager;
             this.chain = chain;
@@ -29,36 +29,35 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public virtual async Task Initialize()
         {
-            
             // start syncing blocks
             var bestHeightForSyncing = this.FindBestHeightForSyncing();
             this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {bestHeightForSyncing}.");
-            this.walletManager.SetBlock();
+
             await Task.CompletedTask;
         }
 
-	    public void ProcessBlock(Block block)
-	    {
-		    this.walletManager.ProcessBlock(block);
-		}
+        public void ProcessBlock(Block block)
+        {
+            this.walletManager.ProcessBlock(block);
+        }
 
-		public void ProcessTransaction(Transaction transaction)
-	    {
-			this.walletManager.ProcessTransaction(transaction);
-		}
+        public void ProcessTransaction(Transaction transaction)
+        {
+            this.walletManager.ProcessTransaction(transaction);
+        }
 
-	    public virtual void SyncFrom(DateTime date)
-	    {
-			// TODO: this will enable resyncing the wallet from an earlier block
-			// this means the syncer will need to find the blocks 
-			// either form the block store or download them in case of a pruned node
-		}
+        public virtual void SyncFrom(DateTime date)
+        {
+            // TODO: this will enable resyncing the wallet from an earlier block
+            // this means the syncer will need to find the blocks 
+            // either form the block store or download them in case of a pruned node
+        }
 
-	    public virtual void SyncFrom(int height)
-	    {
-		}
+        public virtual void SyncFrom(int height)
+        {
+        }
 
-	    private int FindBestHeightForSyncing()
+        private int FindBestHeightForSyncing()
         {
             // if there are no wallets, get blocks from now
             if (!this.walletManager.Wallets.Any())
