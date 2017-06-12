@@ -556,14 +556,7 @@ namespace Stratis.Bitcoin.Wallet
             var chainedBlock = this.chain.GetBlock(block.GetHash());
 
             this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
-
-            // if the newly received block is too far forward, ignore it because the syncManager should step in and sort it out 
-            if (chainedBlock.Height > this.lastReceivedBlock.Height + 1)
-            {
-                this.logger.LogDebug($"block received with height: {chainedBlock.Height} and hash: {block.Header.GetHash()} is too far in advance. Ignoring.");
-                return;
-            }
-
+            
             // TODO: fix reorg logic
             // is this the next block
             if (block.Header.HashPrevBlock != this.lastReceivedBlock.HashBlock)
