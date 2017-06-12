@@ -34,8 +34,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
         private readonly DataFolder dataFolder;
 
-        public WalletController(IWalletManager walletManager, IWalletSyncManager walletSyncManager, ConnectionManager connectionManager, Network network, 
-			ConcurrentChain chain, DataFolder dataFolder)
+        public WalletController(IWalletManager walletManager, IWalletSyncManager walletSyncManager, ConnectionManager connectionManager, Network network,
+            ConcurrentChain chain, DataFolder dataFolder)
         {
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
@@ -138,10 +138,10 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 DirectoryInfo walletFolder = this.GetWalletFolder();
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, null);
 
-				// start syncing the wallet from the creation date
-	            this.walletSyncManager.SyncFrom(request.CreationDate);
+                // start syncing the wallet from the creation date
+                this.walletSyncManager.SyncFrom(request.CreationDate);
 
-				return this.Ok();
+                return this.Ok();
             }
             catch (InvalidOperationException e)
             {
@@ -223,49 +223,60 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 {
                     foreach (var transaction in address.Transactions)
                     {
-                        TransactionItemModel item = new TransactionItemModel();
-                        if (transaction.Amount > Money.Zero)
+                        // add incoming fund transaction details
+                        TransactionItemModel receivedItem = new TransactionItemModel
                         {
-                            item.Type = TransactionItemType.Received;
-                            item.ToAddress = address.Address;
-                            item.Amount = transaction.Amount;
-                        }
-                        else
+                            Type = TransactionItemType.Received,
+                            ToAddress = address.Address,
+                            Amount = transaction.Amount,
+                            Id = transaction.Id,
+                            Timestamp = transaction.CreationTime,
+                            ConfirmedInBlock = transaction.BlockHeight
+                        };
+
+                        model.TransactionsHistory.Add(receivedItem);
+
+                        // add outgoing fund transaction details
+                        if (transaction.SpendingDetails != null)
                         {
-                            item.Type = TransactionItemType.Send;
-                            item.Amount = Money.Zero;
-                            if (transaction.Payments != null)
+                            TransactionItemModel sentItem = new TransactionItemModel();
+                            sentItem.Type = TransactionItemType.Send;
+                            sentItem.Id = transaction.SpendingDetails.TransactionId;
+                            sentItem.Timestamp = transaction.SpendingDetails.CreationTime;
+                            sentItem.ConfirmedInBlock = transaction.SpendingDetails.BlockHeight;
+
+                            sentItem.Amount = Money.Zero;
+                            if (transaction.SpendingDetails.Payments != null)
                             {
-                                item.Payments = new List<PaymentDetailModel>();
-                                foreach (var payment in transaction.Payments)
+                                sentItem.Payments = new List<PaymentDetailModel>();
+                                foreach (var payment in transaction.SpendingDetails.Payments)
                                 {
-                                    item.Payments.Add(new PaymentDetailModel
+                                    sentItem.Payments.Add(new PaymentDetailModel
                                     {
                                         DestinationAddress = payment.DestinationAddress,
                                         Amount = payment.Amount
                                     });
 
-                                    item.Amount += payment.Amount;
+                                    sentItem.Amount += payment.Amount;
                                 }
                             }
 
-                            var changeAddress = addresses.SingleOrDefault(a => a.IsChangeAddress() && a.Transactions.Any(t => t.Id == transaction.Id));
-                            item.Fee = transaction.Amount.Abs() - item.Amount - (changeAddress == null ? 0 : changeAddress.Transactions.First(t => t.Id == transaction.Id).Amount);
+                            // get the change address for this spending transaction
+                            var changeAddress = addresses.SingleOrDefault(a => a.IsChangeAddress() && a.Transactions.Any(t => t.Id == transaction.SpendingDetails.TransactionId));
 
-                            // generated coins add more coins to the total out 
+                            // the fee is calculated as follows: fund in utxo - amount spent - amount sent as change
+                            sentItem.Fee = transaction.Amount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transactions.First(t => t.Id == transaction.SpendingDetails.TransactionId).Amount);
+
+                            // mined/staked coins add more coins to the total out 
                             // that makes the fee negative if thats the case ignore the fee
-                            if (item.Fee < 0)
-		                        item.Fee = 0;
+                            if (sentItem.Fee < 0)
+                                sentItem.Fee = 0;
+                            
+                            model.TransactionsHistory.Add(sentItem);
                         }
-
-                        item.Id = transaction.Id;
-                        item.Timestamp = transaction.CreationTime;
-                        item.ConfirmedInBlock = transaction.BlockHeight;
-
-                        model.TransactionsHistory.Add(item);
                     }
                 }
-                
+
                 model.TransactionsHistory = model.TransactionsHistory.OrderByDescending(t => t.Timestamp).ToList();
                 return this.Json(model);
             }
@@ -306,9 +317,10 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                         CoinType = this.coinType,
                         Name = account.Name,
                         HdPath = account.HdPath,
-                        AmountConfirmed = allTransactions.Where(t => t.IsConfirmed()).Sum(t => t.Amount),
-                        AmountUnconfirmed = allTransactions.Where(t => !t.IsConfirmed()).Sum(t => t.Amount)
+                        AmountConfirmed = allTransactions.Sum(t => t.SpendableAmount(true)),
+                        AmountUnconfirmed = allTransactions.Sum(t => t.SpendableAmount(false)),
                     };
+
                     model.AccountsBalances.Add(balance);
                 }
 
@@ -338,7 +350,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed ? 0 : 1);                
+                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed ? 0 : 1);
                 var model = new WalletBuildTransactionModel
                 {
                     Hex = transactionResult.hex,
@@ -436,7 +448,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-        
+
         /// <summary>
         /// Gets an unused address.
         /// </summary>
@@ -453,7 +465,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             }
 
             try
-            {               
+            {
                 var result = this.walletManager.GetUnusedAddress(request.WalletName, request.AccountName);
                 return this.Json(result.Address);
             }

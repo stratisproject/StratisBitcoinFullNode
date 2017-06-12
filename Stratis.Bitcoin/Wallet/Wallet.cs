@@ -395,15 +395,15 @@ namespace Stratis.Bitcoin.Wallet
             return int.Parse(this.HdPath.Split('/')[4]) == 1;
         }
 
-		/// <summary>
-		/// List all spendable transactions in an address.
-		/// </summary>
-		/// <returns></returns>
-	    public IEnumerable<TransactionData> UnspentTransactions()
-	    {
-		    return this.Transactions.Where(t => t.IsSpendable());
-	    }
-	}
+        /// <summary>
+        /// List all spendable transactions in an address.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<TransactionData> UnspentTransactions()
+        {
+            return this.Transactions.Where(t => t.IsSpendable());
+        }
+    }
 
     /// <summary>
     /// An object containing transaction data.
@@ -416,14 +416,7 @@ namespace Stratis.Bitcoin.Wallet
         [JsonProperty(PropertyName = "id")]
         [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 Id { get; set; }
-
-        /// <summary>
-        /// The id of the transaction in which the output referenced in this transaction is spent.
-        /// </summary>
-        [JsonProperty(PropertyName = "spentIn", NullValueHandling = NullValueHandling.Ignore)]
-        [JsonConverter(typeof(UInt256JsonConverter))]
-        public uint256 SpentInTransaction { get; set; }
-
+       
         /// <summary>
         /// The transaction amount.
         /// </summary>
@@ -462,28 +455,77 @@ namespace Stratis.Bitcoin.Wallet
         [JsonProperty(PropertyName = "merkleProof", NullValueHandling = NullValueHandling.Ignore)]
         public MerkleProof MerkleProof { get; set; }
 
-	    /// <summary>
-	    /// The script pub key for this address.
-	    /// </summary>
-	    [JsonProperty(PropertyName = "scriptPubKey")]
-	    [JsonConverter(typeof(ScriptJsonConverter))]
-	    public Script ScriptPubKey { get; set; }
+        /// <summary>
+        /// The script pub key for this address.
+        /// </summary>
+        [JsonProperty(PropertyName = "scriptPubKey")]
+        [JsonConverter(typeof(ScriptJsonConverter))]
+        public Script ScriptPubKey { get; set; }
 
-		/// <summary>
-		/// Determines whether this transaction is confirmed.
-		/// </summary>    
-		public bool IsConfirmed()
+        /// <summary>
+        /// The details of the transaction in which the output referenced in this transaction is spent.
+        /// </summary>
+        [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
+        public SpendingDetails SpendingDetails { get; set; }
+
+        /// <summary>
+        /// Determines whether this transaction is confirmed.
+        /// </summary>    
+        public bool IsConfirmed()
         {
             return this.BlockHeight != null;
         }
+        
+        /// <summary>
+        /// Indicates an output is spendable.
+        /// </summary>
+        public bool IsSpendable()
+        {
+            return this.SpendingDetails == null;
+        }
 
-		/// <summary>
-		/// Indicates an output is spendable.
-		/// </summary>
-	    public bool IsSpendable()
-	    {
-		    return this.SpentInTransaction == null && this.Amount > Money.Zero;
-	    }
+        public Money SpendableAmount(bool confirmedOnly)
+        {
+            // if this transaction hasn't been spent
+            if (this.SpendingDetails == null)
+            {
+                if (this.IsConfirmed())
+                {
+                    return this.Amount;
+                }
+                else if (confirmedOnly)
+                {
+                    return Money.Zero;
+                }
+                else
+                {
+                    return this.Amount;
+                }
+            }
+
+            // if the transaction and its spending transaction are both confirmed spent or
+            // if the transaction and its spending transaction are unconfirmed spent
+            if (this.IsConfirmed() && this.SpendingDetails.IsSpentConfirmed() || 
+                !this.IsConfirmed() && !this.SpendingDetails.IsSpentConfirmed())
+            {
+                return Money.Zero;
+            }
+            
+            // if the transaction is a confirmed spent but the spending transaction is not yet confirmed
+            if (this.IsConfirmed() && !this.SpendingDetails.IsSpentConfirmed())
+            {
+                if (confirmedOnly)
+                {
+                    return this.Amount;
+                }
+                else
+                {
+                    return Money.Zero;
+                }
+            }
+
+            return Money.Zero;
+        }
     }
 
     /// <summary>
@@ -529,5 +571,42 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "merklePath", ItemConverterType = typeof(UInt256JsonConverter))]
         public ICollection<uint256> MerklePath { get; set; }
+    }
+
+    public class SpendingDetails
+    {
+        /// <summary>
+        /// The id of the transaction in which the output referenced in this transaction is spent.
+        /// </summary>
+        [JsonProperty(PropertyName = "transactionId", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonConverter(typeof(UInt256JsonConverter))]
+        public uint256 TransactionId { get; set; }
+
+        /// <summary>
+        /// A list of payments made out in this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "payments", NullValueHandling = NullValueHandling.Ignore)]
+        public ICollection<PaymentDetails> Payments { get; set; }
+
+        /// <summary>
+        /// The height of the block including this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockHeight", NullValueHandling = NullValueHandling.Ignore)]
+        public int? BlockHeight { get; set; }
+
+        /// <summary>
+        /// Gets or sets the creation time.
+        /// </summary>
+        [JsonProperty(PropertyName = "creationTime")]
+        [JsonConverter(typeof(DateTimeOffsetConverter))]
+        public DateTimeOffset CreationTime { get; set; }
+
+        /// <summary>
+        /// Determines whether this transaction being spent is confirmed.
+        /// </summary>    
+        public bool IsSpentConfirmed()
+        {
+            return this.BlockHeight != null;
+        }
     }
 }

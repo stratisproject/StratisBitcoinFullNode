@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using Stratis.Bitcoin.Wallet.Helpers;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -29,10 +27,10 @@ namespace Stratis.Bitcoin.Wallet
         private readonly Network network;
         private readonly ConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
-		private readonly NodeSettings settings;
-	    private readonly DataFolder dataFolder;
+        private readonly NodeSettings settings;
+        private readonly DataFolder dataFolder;
 
-	    private ChainedBlock lastBlock;
+        private ChainedBlock lastBlock;
 
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
@@ -48,7 +46,7 @@ namespace Stratis.Bitcoin.Wallet
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
         public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain, 
-			NodeSettings settings, DataFolder dataFolder)
+            NodeSettings settings, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new List<Wallet>();
@@ -57,8 +55,8 @@ namespace Stratis.Bitcoin.Wallet
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
-	        this.settings = settings;
-	        this.dataFolder = dataFolder;
+            this.settings = settings;
+            this.dataFolder = dataFolder;
 
             // find wallets and load them in memory
             foreach (var path in this.GetWalletFilesPaths())
@@ -66,8 +64,8 @@ namespace Stratis.Bitcoin.Wallet
                 this.Load(this.DeserializeWallet(path));
             }
           
-			// load data in memory for faster lookups
-			this.LoadKeysLookup();
+            // load data in memory for faster lookups
+            this.LoadKeysLookup();
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
@@ -124,8 +122,8 @@ namespace Stratis.Bitcoin.Wallet
         {
             var walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.json");
 
-			// load the file from the local system
-			Wallet wallet = this.DeserializeWallet(walletFilePath);
+            // load the file from the local system
+            Wallet wallet = this.DeserializeWallet(walletFilePath);
 
             this.Load(wallet);
             return wallet;
@@ -450,9 +448,9 @@ namespace Stratis.Bitcoin.Wallet
             // get a list of transactions outputs that have not been spent
             var spendableTransactions = account.GetSpendableTransactions().ToList();
 
-			// remove whats under min confirmations
-	        var currentHeight = this.chain.Height;
-	        spendableTransactions = spendableTransactions.Where(s => currentHeight - s.BlockHeight >= minConfirmations).ToList();
+            // remove whats under min confirmations
+            var currentHeight = this.chain.Height;
+            spendableTransactions = spendableTransactions.Where(s => currentHeight - s.BlockHeight >= minConfirmations).ToList();
 
             // get total spendable balance in the account.
             var balance = spendableTransactions.Sum(t => t.Amount);
@@ -514,9 +512,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns>The collection of transactions to be used and the fee to be charged</returns>
         private (List<TransactionData> transactionsToUse, Money fee) CalculateFees(IEnumerable<TransactionData> spendableTransactions, Money amount)
         {
-			// TODO make this a bit smarter!     
-			Money fee = new Money(new decimal(0.001), MoneyUnit.BTC);
-			List<TransactionData> transactionsToUse = new List<TransactionData>();
+            // TODO make this a bit smarter!     
+            Money fee = new Money(new decimal(0.001), MoneyUnit.BTC);
+            List<TransactionData> transactionsToUse = new List<TransactionData>();
             foreach (var transaction in spendableTransactions)
             {
                 transactionsToUse.Add(transaction);
@@ -626,7 +624,7 @@ namespace Stratis.Bitcoin.Wallet
                     return !addr.IsChangeAddress();
                 });
 
-                AddTransactionToWallet(hash, transaction.Time, null, -tTx.Amount, keyToSpend, blockHeight, block, tTx.Id, tTx.Index, paidoutto);
+                this.AddSpendingTransactionToWallet(hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
             }
         }
 
@@ -639,23 +637,17 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="amount">The amount.</param>
         /// <param name="script">The script.</param>
         /// <param name="blockHeight">Height of the block.</param>
-        /// <param name="block">The block containing the transaction to add.</param>
-        /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
-        /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
+        /// <param name="block">The block containing the transaction to add.</param>       
         private void AddTransactionToWallet(uint256 transactionHash, uint time, int? index, Money amount, Script script,
-            int? blockHeight = null, Block block = null, uint256 spendingTransactionId = null,
-            int? spendingTransactionIndex = null, IEnumerable<TxOut> paidToOutputs = null)
+            int? blockHeight = null, Block block = null)
         {
             // get the collection of transactions to add to.
-            this.keysLookup.TryGetValue(script, out HdAddress address);
-
-            // if paidToOutputs is not null this is a spending trx
-            var isSpendingTransaction = paidToOutputs != null;
-            var trans = address.Transactions;
+            this.keysLookup.TryGetValue(script, out HdAddress address);            
+            var addressTransactions = address.Transactions;
 
             // check if a similar UTXO exists or not (same transaction id and same index)
             // new UTXOs are added, existing ones are updated
-            var foundTransaction = trans.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
+            var foundTransaction = addressTransactions.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
             if (foundTransaction == null)
             {
                 var newTransaction = new TransactionData
@@ -669,39 +661,12 @@ namespace Stratis.Bitcoin.Wallet
                 };
 
                 // add the Merkle proof to the (non-spending) transaction
-                if (block != null && !isSpendingTransaction)
+                if (block != null)
                 {
                     newTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
                 }
-
-                // if this is a spending transaction, keep a record of the payments made out to other scripts.
-                if (isSpendingTransaction)
-                {
-                    List<PaymentDetails> payments = new List<PaymentDetails>();
-                    foreach (var paidToOutput in paidToOutputs)
-                    {
-                        payments.Add(new PaymentDetails
-                        {
-                            DestinationScriptPubKey = paidToOutput.ScriptPubKey,
-                            DestinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
-                            Amount = paidToOutput.Value
-                        });
-                    }
-
-                    newTransaction.Payments = payments;
-
-                    // mark the transaction spent by this transaction as such
-                    var transactions = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
-                        .Where(t => t.Id == spendingTransactionId);
-                    if (transactions.Any())
-                    {
-                        var spentTransaction = transactions.Single(t => t.Index == spendingTransactionIndex);
-                        spentTransaction.SpentInTransaction = transactionHash;
-                        spentTransaction.MerkleProof = null;
-                    }
-                }
-
-                trans.Add(newTransaction);
+                
+                addressTransactions.Add(newTransaction);
             }
             else
             {
@@ -718,7 +683,7 @@ namespace Stratis.Bitcoin.Wallet
                 }
 
                 // add the Merkle proof now that the transaction is confirmed in a block
-                if (!isSpendingTransaction && foundTransaction.MerkleProof == null)
+                if (foundTransaction.MerkleProof == null)
                 {
                     foundTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
                 }
@@ -726,6 +691,69 @@ namespace Stratis.Bitcoin.Wallet
 
             // notify a transaction has been found
             this.TransactionFound?.Invoke(this, new TransactionFoundEventArgs(script, transactionHash));
+        }
+
+        /// <summary>
+        /// Adds the transaction to the wallet.
+        /// </summary>
+        /// <param name="transactionHash">The transaction hash.</param>
+        /// <param name="time">The time.</param>
+        /// <param name="paidToOutputs">A list of payments made out</param>
+        /// <param name="spendingTransactionId">The id of the transaction containing the output being spent, if this is a spending transaction.</param>
+        /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
+        /// <param name="blockHeight">Height of the block.</param>
+        /// <param name="block">The block containing the transaction to add.</param>
+        private void AddSpendingTransactionToWallet(uint256 transactionHash, uint time, IEnumerable<TxOut> paidToOutputs, 
+            uint256 spendingTransactionId, int? spendingTransactionIndex, int? blockHeight = null, Block block = null)
+        {
+            // get the transaction being spent
+            TransactionData spentTransaction = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
+                .SingleOrDefault(t => t.Id == spendingTransactionId && t.Index == spendingTransactionIndex);
+            if (spentTransaction == null)
+            {
+                // strange, why would it be null?
+                return;
+            }
+
+            // if the details of this spending transaction are seen for the first time
+            if (spentTransaction.SpendingDetails == null)
+            {
+                List<PaymentDetails> payments = new List<PaymentDetails>();
+                foreach (var paidToOutput in paidToOutputs)
+                {
+                    payments.Add(new PaymentDetails
+                    {
+                        DestinationScriptPubKey = paidToOutput.ScriptPubKey,
+                        DestinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
+                        Amount = paidToOutput.Value
+                    });
+                }
+
+                SpendingDetails spendingDetails = new SpendingDetails
+                {
+                    TransactionId = transactionHash,
+                    Payments = payments,
+                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
+                    BlockHeight = blockHeight
+                };
+
+                spentTransaction.SpendingDetails = spendingDetails;
+                spentTransaction.MerkleProof = null;
+            }            
+            else // if this spending transaction is being comfirmed in a block
+            {
+                // update the block height
+                if (spentTransaction.SpendingDetails.BlockHeight == null && blockHeight != null)
+                {
+                    spentTransaction.SpendingDetails.BlockHeight = blockHeight;
+                }
+
+                // update the block time to be that of the block in which the transaction is confirmed
+                if (block != null)
+                {
+                    spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
+                }
+            }            
         }
 
         private MerkleProof CreateMerkleProof(Block block, uint256 transactionHash)
@@ -777,7 +805,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void DeleteWallet()
         {
-			throw new NotImplementedException();
+            throw new NotImplementedException();
         }
 
         private IEnumerable<string> GetWalletFilesPaths()
