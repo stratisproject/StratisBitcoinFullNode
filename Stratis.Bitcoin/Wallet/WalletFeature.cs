@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.Wallet
 	        this.transactionSubscriberdDisposable = new TransactionSubscriber(this.signals.Transactions, new TransactionObserver(this.walletSyncManager)).Subscribe();
 
 			this.walletSyncManager.Initialize();
+            this.walletManager.Initialize();
         }
 
         public override void Stop()

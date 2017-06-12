@@ -10,6 +10,11 @@ namespace Stratis.Bitcoin.Wallet
     public interface IWalletManager : IDisposable
     {
         /// <summary>
+        /// Initializes this wallet manager.
+        /// </summary>
+        void Initialize();
+
+        /// <summary>
         /// List all spendable transactions from all accounts
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
