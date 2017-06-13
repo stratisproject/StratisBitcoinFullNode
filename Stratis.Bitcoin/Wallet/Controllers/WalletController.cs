@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                         Name = account.Name,
                         HdPath = account.HdPath,
                         AmountConfirmed = allTransactions.Sum(t => t.SpendableAmount(true)),
-                        AmountUnconfirmed = allTransactions.Sum(t => t.SpendableAmount(false)),
+                        AmountUnconfirmed = allTransactions.Sum(t => t.SpendableAmount(false)) - allTransactions.Sum(t => t.SpendableAmount(true)),
                     };
 
                     model.AccountsBalances.Add(balance);

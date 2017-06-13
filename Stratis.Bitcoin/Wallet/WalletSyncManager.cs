@@ -36,9 +36,6 @@ namespace Stratis.Bitcoin.Wallet
 
             this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {this.walletManager.LastBlockHeight()}.");
 
-            if (!this.walletManager.Wallets.Any())
-                return Task.CompletedTask;
-
             // try to detect if a reorg happened when offline.
             this.lastReceivedBlock = this.chain.GetBlock(this.walletManager.LastReceivedBlock);
             if (this.lastReceivedBlock == null)
@@ -65,7 +62,7 @@ namespace Stratis.Bitcoin.Wallet
         {
             // if the new block previous hash is the same as the 
             // wallet hash then just pass the block to the manager 
-            if (block.Header.HashPrevBlock != this.walletManager.LastReceivedBlock)
+            if (block.Header.HashPrevBlock != this.lastReceivedBlock.HashBlock)
             {
                 // if previous block does not match there might have 
                 // been a reorg, check if the wallet is still on the main chain

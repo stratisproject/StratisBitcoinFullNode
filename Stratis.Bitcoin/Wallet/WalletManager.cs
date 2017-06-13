@@ -560,9 +560,6 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedBlock chainedBlock)
         {
-            if (!this.Wallets.Any())
-                return;
-
             this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
             
             // is this the next block
@@ -579,12 +576,15 @@ namespace Stratis.Bitcoin.Wallet
 
                 // this should not happen as the sync manager will have 
                 // to make sure only the next block is pushed to the wallet
-                throw new WalletException("block too far the future has arrived to the wallet");
+                throw new WalletException("block too far in the future has arrived to the wallet");
             }
 
-            foreach (Transaction transaction in block.Transactions)
+            if (this.Wallets.Any())
             {
-                this.ProcessTransaction(transaction, chainedBlock.Height, block);
+                foreach (Transaction transaction in block.Transactions)
+                {
+                    this.ProcessTransaction(transaction, chainedBlock.Height, block);
+                }
             }
 
             // update the wallets with the last processed block height
