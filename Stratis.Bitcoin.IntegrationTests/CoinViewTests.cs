@@ -200,9 +200,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 				stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
 				((CachedCoinView)stratisNode.FullNode.CoinView).FlushAsync().Wait();
 
-			    TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode, coreNode1));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode, coreNode2));
-            }
+			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
+			}
         }
 
 		[Fact]

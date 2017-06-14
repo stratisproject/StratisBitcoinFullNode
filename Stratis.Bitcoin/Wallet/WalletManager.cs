@@ -851,10 +851,6 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock)
         {
-            // the block locator will help when the wallet 
-            // needs to rewind this will be used to find the fork 
-            wallet.BlockLocator = chainedBlock.GetLocator().Blocks;
-
             // update the wallets with the last processed block height
             foreach (var accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
             {

@@ -31,29 +31,20 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public virtual Task Initialize()
         {
-            // initialize the wallet
-            this.walletManager.Initialize();
-
             this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {this.walletManager.LastBlockHeight()}.");
 
-            // try to detect if a reorg happened when offline.
             this.lastReceivedBlock = this.chain.GetBlock(this.walletManager.LastReceivedBlock);
             if (this.lastReceivedBlock == null)
-            {
-                // if a fork happeend when the wallet was offline
-                // there is no way to know the block that forked as 
-                // the wallet does not persist the chain of headers.
-                // to recover from a reorg we use the blocklocator
-                // the block locator keeps an incremental list of hash
-                // headers this will help determine the last chain the
-                // wallet was on and allow to find the fork.
+                throw new WalletException("Wallet tip was not found in the best chain, rescan the wallet");
 
-                var blockstoremove = new List<uint256>();
-                var locators = this.walletManager.Wallets.First().BlockLocator;
-                BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
-                var fork = this.chain.FindFork(blockLocator);
-                this.walletManager.RemoveBlocks(fork);
-            }
+            // offline reorg is extreamly reare it will 
+            // only happen if the node crashes during a reorg
+
+            //var blockstoremove = new List<uint256>();
+            //var locators = this.walletManager.Wallets.First().BlockLocator;
+            //BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
+            //var fork = this.chain.FindFork(blockLocator);
+            //this.walletManager.RemoveBlocks(fork);
 
             return Task.CompletedTask;
         }
