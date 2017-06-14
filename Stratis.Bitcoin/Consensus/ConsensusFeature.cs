@@ -110,10 +110,8 @@ namespace Stratis.Bitcoin.Consensus
 				ChainedBlock lastTip = this.consensusLoop.Tip;
 				foreach (var block in this.consensusLoop.Execute(cancellationToken))
 				{
-					bool reorg = false;
 					if (this.consensusLoop.Tip.FindFork(lastTip) != lastTip)
 					{
-						reorg = true;
 						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + this.consensusLoop.Tip.Height + " (" + this.consensusLoop.Tip.HashBlock + ")");
 					}
 					lastTip = this.consensusLoop.Tip;
@@ -140,7 +138,7 @@ namespace Stratis.Bitcoin.Consensus
 						this.chainState.MarkBlockInvalid(block.Block.GetHash());
 					}
 
-					if (!reorg && block.Error == null)
+					if (block.Error == null)
 					{
 						this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
 						if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)

@@ -15,10 +15,15 @@ namespace Stratis.Bitcoin.Wallet
         void Initialize();
 
         /// <summary>
+        /// The last processed block.
+        /// </summary>
+        uint256 LastReceivedBlock { get; }
+
+        /// <summary>
         /// List all spendable transactions from all accounts
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
-        List<UnspentInfo> GetSpendableTransactions(int confirmations = 0);
+            List<UnspentInfo> GetSpendableTransactions(int confirmations = 0);
 
 		/// <summary>
 		/// Creates a wallet and persist it as a file on the local system.
@@ -147,6 +152,11 @@ namespace Stratis.Bitcoin.Wallet
         (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, string feeType, int minConfirmations);
 
         /// <summary>
+        /// Remove all the thransactions in the wallet that are above this block height
+        /// </summary>
+        void RemoveBlocks(ChainedBlock fork);
+
+        /// <summary>
         /// Sends a transaction to the network.
         /// </summary>
         /// <param name="transactionHex">The hex of the transaction.</param>
@@ -157,7 +167,8 @@ namespace Stratis.Bitcoin.Wallet
         /// Processes a block received from the network.
         /// </summary>
         /// <param name="block">The block.</param>
-        void ProcessBlock(Block block);
+        /// <param name="chainedBlock">The blocks chain of headers.</param>
+        void ProcessBlock(Block block, ChainedBlock chainedBlock);
 
         /// <summary>
         /// Processes a transaction received from the network.

@@ -40,6 +40,12 @@ namespace Stratis.Bitcoin.Wallet
         public Network Network { get; set; }
 
         /// <summary>
+        /// Gets or sets the merkle path.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockLocator", ItemConverterType = typeof(UInt256JsonConverter))]
+        public ICollection<uint256> BlockLocator { get; set; }
+
+        /// <summary>
         /// The time this wallet was created.
         /// </summary>
         [JsonProperty(PropertyName = "creationTime")]
@@ -441,6 +447,13 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "blockHeight", NullValueHandling = NullValueHandling.Ignore)]
         public int? BlockHeight { get; set; }
+
+        /// <summary>
+        /// The height of the block including this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockHash")]
+        [JsonConverter(typeof(UInt256JsonConverter))]
+        public uint256 BlockHash { get; set; }
 
         /// <summary>
         /// Gets or sets the creation time.

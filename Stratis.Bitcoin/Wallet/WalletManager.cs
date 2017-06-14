@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Wallet
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
 
-        private ChainedBlock lastReceivedBlock;
+        public uint256 LastReceivedBlock { get; private set; }
 
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
@@ -74,11 +74,7 @@ namespace Stratis.Bitcoin.Wallet
             this.LoadKeysLookup();
 
             // find the last chain block received by the wallet manager.
-            this.lastReceivedBlock = this.chain.GetBlock(this.LastReceivedBlockHash());
-
-            // TODO: fix reorg logic
-            if (this.lastReceivedBlock == null)
-                throw new WalletException("Reorg on startup");
+            this.LastReceivedBlock = this.LastReceivedBlockHash();
         }
 
         /// <inheritdoc />
@@ -548,36 +544,47 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public void ProcessBlock(Block block)
+        public void RemoveBlocks(ChainedBlock fork)
         {
-            if (!this.Wallets.Any())
-                return;
+            var allAddresses = this.keysLookup.Values;
+            foreach (var address in allAddresses)
+            {
+                var toremove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
+                foreach (var transactionData in toremove)
+                    address.Transactions.Remove(transactionData);
+            }
 
-            var chainedBlock = this.chain.GetBlock(block.GetHash());
+            this.UpdateLastBlockSyncedHeight(fork);
+        }
 
+        /// <inheritdoc />
+        public void ProcessBlock(Block block, ChainedBlock chainedBlock)
+        {
             this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
             
-            // TODO: fix reorg logic
             // is this the next block
-            if (block.Header.HashPrevBlock != this.lastReceivedBlock.HashBlock)
+            if (chainedBlock.Header.HashPrevBlock != this.LastReceivedBlock)
             {
                 // are we still on the main chain
-                var current = this.chain.GetBlock(this.lastReceivedBlock.HashBlock);
+                var current = this.chain.GetBlock(this.LastReceivedBlock);
                 if (current == null)
                     throw new WalletException("Reorg");
 
                 // if the block was processed before then just ignore it
-                if (chainedBlock.Height <= this.lastReceivedBlock.Height)
+                if (chainedBlock.Height <= current.Height)
                     return;
 
                 // this should not happen as the sync manager will have 
                 // to make sure only the next block is pushed to the wallet
-                throw new WalletException("block too far the future has arrived to the wallet");
+                throw new WalletException("block too far in the future has arrived to the wallet");
             }
 
-            foreach (Transaction transaction in block.Transactions)
+            if (this.Wallets.Any())
             {
-                this.ProcessTransaction(transaction, chainedBlock.Height, block);
+                foreach (Transaction transaction in block.Transactions)
+                {
+                    this.ProcessTransaction(transaction, chainedBlock.Height, block);
+                }
             }
 
             // update the wallets with the last processed block height
@@ -837,12 +844,16 @@ namespace Stratis.Bitcoin.Wallet
             {
                 this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);
             }
+
+            this.LastReceivedBlock = chainedBlock.HashBlock;
         }
 
         /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock)
         {
-            this.lastReceivedBlock = chainedBlock;
+            // the block locator will help when the wallet 
+            // needs to rewind this will be used to find the fork 
+            wallet.BlockLocator = chainedBlock.GetLocator().Blocks;
 
             // update the wallets with the last processed block height
             foreach (var accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
