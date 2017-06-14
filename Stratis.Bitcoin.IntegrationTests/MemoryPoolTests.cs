@@ -574,8 +574,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
 				var prevTrx = block.Transactions.First();
@@ -589,7 +589,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 				stratisNodeSync.Broadcast(tx);
 
-				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
+				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
 			}
 		}
 
@@ -604,8 +604,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
 				var prevTrx = block.Transactions.First();
@@ -619,10 +619,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 				parentTx.Sign(stratisNodeSync.MinerSecret, false);
 				stratisNodeSync.Broadcast(parentTx);
 				// wiat for the trx to enter the pool
-				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
+				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
 				// mine the transactions in the mempool
 				stratisNodeSync.GenerateStratis(1, stratisNodeSync.FullNode.MempoolManager.InfoAllAsync().Result.Select(s => s.Trx).ToList());
-				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
+				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
 				
 				//create a new trx spending both outputs
 				Transaction tx = new Transaction();
@@ -632,7 +632,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				var signed = new TransactionBuilder().AddKeys(dest1, dest2).AddCoins(parentTx.Outputs.AsCoins()).SignTransaction(tx);
 
 				stratisNodeSync.Broadcast(signed);
-				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
+				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
 			}
 		}
 
@@ -647,8 +647,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(201); // coinbase maturity = 100
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				var trxs = new List<Transaction>();
 				foreach (var index in Enumerable.Range(1, 100))
@@ -670,7 +670,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 					stratisNodeSync.Broadcast(transaction);
 				});
 
-				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 100);
+				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 100);
 			}
 		}
 
@@ -686,8 +686,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(100); // coinbase maturity = 100
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				// Make sure skipping validation of transctions that were
 				// validated going into the memory pool does not allow
@@ -710,20 +710,20 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 				// Test 1: block with both of those transactions should be rejected.
 				var block = stratisNodeSync.GenerateStratis(1, spends).Single();
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
 
 				// Test 2: ... and should be rejected if spend1 is in the memory pool
 				Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
 				block = stratisNodeSync.GenerateStratis(1, spends).Single();
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
 				stratisNodeSync.FullNode.MempoolManager.Clear().Wait();
 
 				// Test 3: ... and should be rejected if spend2 is in the memory pool
 				Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
 				block = stratisNodeSync.GenerateStratis(1, spends).Single();
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
 				stratisNodeSync.FullNode.MempoolManager.Clear().Wait();
 
@@ -732,12 +732,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 				oneSpend.Add(spends[0]);
 				Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
 				block = stratisNodeSync.GenerateStratis(1, oneSpend).Single();
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block.GetHash());
 
 				// spends[1] should have been removed from the mempool when the
 				// block with spends[0] is accepted:
-				Class1.Eventually(() => stratisNodeSync.FullNode.MempoolManager.MempoolSize().Result == 0);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.MempoolManager.MempoolSize().Result == 0);
 			}
 		}
 
@@ -827,9 +827,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(101); // coinbase maturity = 100
-				Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
 				var block = stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
 				var prevTrx = block.Transactions.First();
@@ -849,12 +849,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 				// broadcast the orphan
 				stratisNodeSync.Broadcast(txOrphan);
-				Class1.Eventually(() => stratisNodeSync.FullNode.MempoolManager.Orphans.OrphansList().Count == 1);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.MempoolManager.Orphans.OrphansList().Count == 1);
 				// broadcast the parent
 				stratisNodeSync.Broadcast(tx);
-				Class1.Eventually(() => stratisNodeSync.FullNode.MempoolManager.Orphans.OrphansList().Count == 0);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.MempoolManager.Orphans.OrphansList().Count == 0);
 				// wait for orphan to get in the pool
-				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 2);
+				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 2);
 			}
 		}
 
@@ -877,17 +877,17 @@ namespace Stratis.Bitcoin.IntegrationTests
 				stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
 				// wait for block repo for block sync to work
-				Class1.Eventually(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
-				Class1.Eventually(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null); 
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null); 
 
 				// sync both nodes
 				stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
 				stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
 
 				// create some transactions and push them to the pool
 				var trxs = new List<Transaction>();
@@ -911,7 +911,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				});
 
 				// wait for all nodes to have all trx
-				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 5);
+				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 5);
 
 				// the full node should be connected to both nodes
 				Assert.Equal(stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes.Count(), 2);
@@ -919,18 +919,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 				// reset the trickle timer on the full node that has the transactions in the pool
 				foreach (var node in stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes) node.Behavior<MempoolBehavior>().NextInvSend = 0;
 
-				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 5);
-				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 5);
+				TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 5);
+				TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 5);
 
 				// mine the transactions in the mempool
 				stratisNodeSync.GenerateStratis(1, stratisNodeSync.FullNode.MempoolManager.InfoAllAsync().Result.Select(s => s.Trx).ToList());
-				Class1.Eventually(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
+				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
 
 				// wait for block and mempool to change
-				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash()); 
-				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 0);
-				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 0);
+				TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash()); 
+				TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetRawMempool().Length == 0);
+				TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 0);
 			}
 		}
 	}
