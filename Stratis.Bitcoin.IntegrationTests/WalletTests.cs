@@ -229,8 +229,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        // this test does not work yet.
-        // [Fact]
+        [Fact]
         public void WalletCanCatchupWithBestChain()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
