@@ -23,7 +23,6 @@ namespace Stratis.Bitcoin.Notifications
 			this.Chain = chain;
 			this.Puller = puller;
 			this.signals = signals;
-            this.CointinueOnReorg = true;
 		}
 
 		public ILookaheadBlockPuller Puller { get; }
@@ -33,7 +32,6 @@ namespace Stratis.Bitcoin.Notifications
 		public uint256 StartHash { get; private set; }
 
 		private bool reSync;
-        public bool CointinueOnReorg { get; set; }
 
 		public void SyncFrom(uint256 startHash)
 		{
@@ -101,9 +99,6 @@ namespace Stratis.Bitcoin.Notifications
 
                         // set the puller to the fork location
                         this.Puller.SetLocation(this.tip);
-
-                        if (!this.CointinueOnReorg)
-                            break;
 					}
 				}
 				

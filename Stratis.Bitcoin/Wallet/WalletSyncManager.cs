@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Wallet
         protected readonly CoinType coinType;
         protected readonly ILogger logger;
 
-        private ChainedBlock lastReceivedBlock;
+        protected ChainedBlock lastReceivedBlock;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, Network network)
         {
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Wallet
             return Task.CompletedTask;
         }
 
-        public void ProcessBlock(Block block)
+        public virtual void ProcessBlock(Block block)
         {
             // if the new block previous hash is the same as the 
             // wallet hash then just pass the block to the manager 
@@ -63,22 +63,21 @@ namespace Stratis.Bitcoin.Wallet
                     // the current wallet hash was not found on the main chain
                     // a reorg happenend so bring the wallet back top the last known fork
 
-                    var blockstoremove = new List<uint256>();
                     var fork = this.lastReceivedBlock;
 
                     // we walk back the chained block object to find the fork
                     while (this.chain.GetBlock(fork.HashBlock) == null)
-                    {
-                        blockstoremove.Add(fork.HashBlock);
                         fork = fork.Previous;
-                    }
 
+                    Guard.Assert(fork.HashBlock == block.Header.HashPrevBlock);
                     this.walletManager.RemoveBlocks(fork);
                 }
-                else if (current.Height > this.lastReceivedBlock.Height)
+                else
                 {
-                    // the wallet is falling behind we need to catch up
-                    throw new NotImplementedException();
+                    var chainedBlock = this.chain.GetBlock(block.GetHash());
+                    if (chainedBlock.Height > this.lastReceivedBlock.Height)
+                        // the wallet is falling behind we need to catch up
+                        throw new NotImplementedException();
                 }
             }
 
@@ -86,20 +85,24 @@ namespace Stratis.Bitcoin.Wallet
             this.walletManager.ProcessBlock(block, this.lastReceivedBlock);
         }
 
-        public void ProcessTransaction(Transaction transaction)
+        public virtual void ProcessTransaction(Transaction transaction)
         {
             this.walletManager.ProcessTransaction(transaction);
         }
 
         public virtual void SyncFrom(DateTime date)
         {
-            // TODO: this will enable resyncing the wallet from an earlier block
-            // this means the syncer will need to find the blocks 
-            // either form the block store or download them in case of a pruned node
+            int blockSyncStart = this.chain.GetHeightAtTime(date);
+            this.SyncFrom(blockSyncStart);
         }
 
         public virtual void SyncFrom(int height)
         {
+            var chainedBlock = this.chain.GetBlock(height);
+            if(chainedBlock == null)
+                throw  new WalletException("Invalid block height");
+            this.lastReceivedBlock = chainedBlock;
+            this.walletManager.LastReceivedBlock = chainedBlock.HashBlock;
         }
     }
 }

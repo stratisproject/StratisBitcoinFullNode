@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Wallet
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
 
-        public uint256 LastReceivedBlock { get; private set; }
+        public uint256 LastReceivedBlock { get; set; }
 
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
@@ -570,13 +570,10 @@ namespace Stratis.Bitcoin.Wallet
                 if (current == null)
                     throw new WalletException("Reorg");
 
-                // if the block was processed before then just ignore it
-                if (chainedBlock.Height <= current.Height)
-                    return;
-
-                // this should not happen as the sync manager will have 
-                // to make sure only the next block is pushed to the wallet
-                throw new WalletException("block too far in the future has arrived to the wallet");
+                // the block coming in to the wallet should
+                // never be ahead of the wallet, if the block is behind let it pass
+                if (chainedBlock.Height > current.Height)
+                    throw new WalletException("block too far in the future has arrived to the wallet");
             }
 
             if (this.Wallets.Any())

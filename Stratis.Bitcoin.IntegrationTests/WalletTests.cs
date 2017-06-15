@@ -6,7 +6,9 @@ using NBitcoin;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Wallet;
 using Xunit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -224,6 +226,37 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var newsecondamount = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
                 Assert.Equal(newamount, newsecondamount);
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Any(b => b.BlockHeight == transaction2MinedHeight));
+            }
+        }
+
+        // this test does not work yet.
+        // [Fact]
+        public void WalletCanCatchupWithBestChain()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                var stratisminer = builder.CreateStratisNode();
+
+                builder.StartAll();
+                stratisminer.NotInIBD();
+
+                // get a key from the wallet
+                var mnemonic = stratisminer.FullNode.WalletManager.CreateWallet("123456", "mywallet");
+                Assert.Equal(12, mnemonic.Words.Length);
+                var addr = stratisminer.FullNode.WalletManager.GetUnusedAddress("mywallet", "account 0");
+                var key = stratisminer.FullNode.WalletManager.GetKeyForAddress("123456", addr).PrivateKey;
+
+                stratisminer.SetDummyMinerSecret(key.GetBitcoinSecret(stratisminer.FullNode.Network));
+                stratisminer.GenerateStratis(10);
+                // wait for block repo for block sync to work
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisminer));
+
+                // push the wallet back
+                stratisminer.FullNode.Services.ServiceProvider.GetService<IWalletSyncManager>().SyncFrom(5);
+
+                stratisminer.GenerateStratis(5);
+
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisminer));
             }
         }
     }
