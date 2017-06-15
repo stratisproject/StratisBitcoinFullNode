@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Notifications
 	public class BlockNotification
 	{
 		private readonly ISignals signals;
+        private ChainedBlock tip;
 
 		public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals)
 		{
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Notifications
 			this.Chain = chain;
 			this.Puller = puller;
 			this.signals = signals;
-			
+            this.CointinueOnReorg = true;
 		}
 
 		public ILookaheadBlockPuller Puller { get; }
@@ -32,6 +33,7 @@ namespace Stratis.Bitcoin.Notifications
 		public uint256 StartHash { get; private set; }
 
 		private bool reSync;
+        public bool CointinueOnReorg { get; set; }
 
 		public void SyncFrom(uint256 startHash)
 		{
@@ -43,6 +45,7 @@ namespace Stratis.Bitcoin.Notifications
 			    {
 			        // sets the location of the puller to the latest hash that was broadcasted
 			        this.Puller.SetLocation(startBlock);
+                    this.tip = startBlock;
                 }
                 
             }
@@ -73,6 +76,7 @@ namespace Stratis.Bitcoin.Notifications
 
 				// sets the location of the puller to the latest hash that was broadcasted
 				this.Puller.SetLocation(startBlock);
+                this.tip = startBlock;
 
 				// send notifications for all the following blocks
 				while (!this.reSync)
@@ -83,10 +87,23 @@ namespace Stratis.Bitcoin.Notifications
 					{
 						// broadcast the block to the registered observers
 						this.signals.Blocks.Broadcast(block);
+                        this.tip = this.Chain.GetBlock(block.GetHash());
 					}
 					else
 					{
-						break;
+                        // in reorg we reset the puller to the fork
+                        // when a reorg happens the puller is pushed
+                        // back and continues from the current fork
+
+                        // find the fork
+                        while (this.Chain.GetBlock(this.tip.HashBlock) == null)
+                            this.tip = this.tip.Previous;
+
+                        // set the puller to the fork location
+                        this.Puller.SetLocation(this.tip);
+
+                        if (!this.CointinueOnReorg)
+                            break;
 					}
 				}
 				

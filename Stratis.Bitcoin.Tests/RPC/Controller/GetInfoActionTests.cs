@@ -14,33 +14,6 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
     public class GetInfoActionTests : BaseRPCControllerTest
     {
         [Fact]
-        public void CallWithoutDependencies()
-        {
-            var controller = new FullNodeController();
-
-            GetInfoModel info = controller.GetInfo();
-
-            Assert.NotNull(info);
-            Assert.NotNull(info.version);
-            Assert.NotNull(info.protocolversion);
-            Assert.NotNull(info.blocks);
-            Assert.NotNull(info.timeoffset);
-            Assert.Null(info.connections);
-            Assert.NotNull(info.proxy);
-            Assert.NotNull(info.difficulty);
-            Assert.NotNull(info.testnet);
-            Assert.NotNull(info.relayfee);
-            Assert.NotNull(info.errors);
-            Assert.Null(info.walletversion);
-            Assert.Null(info.balance);
-            Assert.Null(info.keypoololdest);
-            Assert.Null(info.keypoolsize);
-            Assert.Null(info.unlocked_until);
-            Assert.Null(info.paytxfee);
-
-        }
-
-        [Fact]
         public void CallWithDependencies()
         {
             string dir = AssureEmptyDir("Stratis.Bitcoin.Tests/TestData/GetInfoActionTests/CallWithDependencies");

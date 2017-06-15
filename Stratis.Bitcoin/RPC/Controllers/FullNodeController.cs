@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
                 connections = this._ConnectionManager?.ConnectedNodes?.Count(),
                 proxy = string.Empty,
                 difficulty = GetNetworkDifficulty()?.Difficulty ?? 0,
-                testnet = this._Network == NBitcoin.Network.TestNet,
+                testnet = this._Network.IsTest(),
                 relayfee = MempoolValidator.MinRelayTxFee.FeePerK.ToUnit(MoneyUnit.BTC),
                 errors = string.Empty,
 
