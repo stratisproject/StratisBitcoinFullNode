@@ -147,15 +147,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
 				stratisNodeSync.GenerateStratis(10); // coinbase maturity = 10
 				// wait for block repo for block sync to work
-                Class1.Eventually(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Class1.Eventually(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 // sync both nodes
                 stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
 				stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
 
 				// set node2 to use inv (not headers)
 				stratisNode2.FullNode.ConnectionManager.ConnectedNodes.First().Behavior<BlockStoreBehavior>().PreferHeaders = false;
@@ -163,12 +163,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 				// generate two new blocks
 				stratisNodeSync.GenerateStratis(2);
 				// wait for block repo for block sync to work
-				Class1.Eventually(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
-				Class1.Eventually(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
+				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null);
 
 				// wait for the other nodes to pick up the newly generated blocks
-				Class1.Eventually(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-				Class1.Eventually(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+				TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
 			}
 		}
 
@@ -193,10 +193,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 				stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
 
 				stratisNode1.GenerateStratis(10);
-				Class1.Eventually(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 10);
+				TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 10);
 
-				Class1.Eventually(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
-				Class1.Eventually(() => stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+				TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+				TestHelper.WaitLoop(() => stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 
 				// remove node 2
 				stratisNodeSync.CreateRPCClient().RemoveNode(stratisNode2.Endpoint);
@@ -205,21 +205,21 @@ namespace Stratis.Bitcoin.IntegrationTests
 				stratisNode1.GenerateStratis(10);
 
 				// wait for node 1 to sync
-				Class1.Eventually(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 20);
-				Class1.Eventually(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+				TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 20);
+				TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 
 				// remove node 1
 				stratisNodeSync.CreateRPCClient().RemoveNode(stratisNode1.Endpoint);
 
 				// mine a higher chain with node2
 				stratisNode2.GenerateStratis(20);
-				Class1.Eventually(() => stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 30);
+				TestHelper.WaitLoop(() => stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 30);
 
 				// add node2 
 				stratisNodeSync.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
 
 				// node2 should be synced
-				Class1.Eventually(() => stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+				TestHelper.WaitLoop(() => stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 			}
 		}
 
@@ -240,8 +240,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 				// sync both nodes
 				stratisNode1.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
 				stratisNode1.GenerateStratis(10);
-				Class1.Eventually(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 10);
-				Class1.Eventually(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+				TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 10);
+				TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 
 				var bestBlock1 = stratisNode1.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNode1.FullNode.Chain.Tip.HashBlock).Result;
 				Assert.NotNull(bestBlock1);

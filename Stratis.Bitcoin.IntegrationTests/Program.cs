@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public static void Main(string[] args)
 		{
 			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
-			new Class1().CanRewind();
+			new CoinViewTests().CanRewind();
 		}
 
 		private static void WaitReachBlock(FullNode fullNode, int height)

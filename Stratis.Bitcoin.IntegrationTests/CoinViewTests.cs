@@ -29,7 +29,7 @@ using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-	public class Class1
+	public class CoinViewTests
 	{
 		[Fact]
 		public void TestDBreezeSerialization()
@@ -164,35 +164,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-
-
-
-		[Fact]
-		public void NodesCanConnectToEachOthers()
-		{
-			using(NodeBuilder builder = NodeBuilder.Create())
-			{
-				var node1 = builder.CreateStratisNode();
-				var node2 = builder.CreateStratisNode();
-				builder.StartAll();
-				Assert.Equal(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
-				Assert.Equal(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
-				var rpc1 = node1.CreateRPCClient();
-				var rpc2 = node2.CreateRPCClient();
-				rpc1.AddNode(node2.Endpoint, true);
-				Assert.Equal(1, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
-				Assert.Equal(1, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
-
-				var behavior = node1.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
-				Assert.False(behavior.Inbound);
-				Assert.True(behavior.OneTry);
-				behavior = node2.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
-				Assert.True(behavior.Inbound);
-				Assert.False(behavior.OneTry);
-			}
-		}
-
-
 		[Fact]
 		public void CanHandleReorgs()
 		{
@@ -206,184 +177,32 @@ namespace Stratis.Bitcoin.IntegrationTests
 				//Core1 discovers 10 blocks, sends to stratis
 				var tip = coreNode1.FindBlock(10).Last();
 				stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
-				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
+			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
 				stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
 
 				//Core2 discovers 20 blocks, sends to stratis
 				tip = coreNode2.FindBlock(20).Last();
 				stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
-				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
+			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
 				stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
 				((CachedCoinView)stratisNode.FullNode.CoinView).FlushAsync().Wait();
 
 				//Core1 discovers 30 blocks, sends to stratis
 				tip = coreNode1.FindBlock(30).Last();
 				stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
-				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
+			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
 				stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
 
 				//Core2 discovers 50 blocks, sends to stratis
 				tip = coreNode2.FindBlock(50).Last();
 				stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
-				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
+			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
 				stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
 				((CachedCoinView)stratisNode.FullNode.CoinView).FlushAsync().Wait();
+
+			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
 			}
-		}
-
-		[Fact]
-		public void CanStratisSyncFromCore()
-		{
-			using(NodeBuilder builder = NodeBuilder.Create())
-			{
-				var stratisNode = builder.CreateStratisNode();
-				var coreNode = builder.CreateNode();
-				builder.StartAll();
-				
-				// not in IBD
-				stratisNode.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-
-				var tip = coreNode.FindBlock(10).Last();
-				stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
-				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
-				var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-				Assert.Equal(tip.GetHash(), bestBlockHash);
-
-				//Now check if Core connect to stratis
-				stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
-				tip = coreNode.FindBlock(10).Last();
-				coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
-				bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-				Assert.Equal(tip.GetHash(), bestBlockHash);
-
-
-				//For Core synching from Stratis, need to save blocks in stratis
-			}
-		}
-
-		[Fact]
-		public void CanStratisSyncFromStratis()
-		{
-			using (NodeBuilder builder = NodeBuilder.Create())
-			{
-				var stratisNode = builder.CreateStratisNode();
-				var stratisNodeSync = builder.CreateStratisNode();
-				var coreCreateNode = builder.CreateNode();
-				builder.StartAll();
-
-				// not in IBD
-				stratisNode.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-				stratisNodeSync.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-
-				// first seed a core node with blocks and sync them to a stratis node
-				// and wait till the stratis node is fully synced
-				var tip = coreCreateNode.FindBlock(5).Last();
-				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
-				var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-				Assert.Equal(tip.GetHash(), bestBlockHash);
-
-				// add a new stratis node which will download
-				// the blocks using the GetData payload
-				stratisNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-
-				// wait for download and assert
-				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-				bestBlockHash = stratisNodeSync.CreateRPCClient().GetBestBlockHash();
-				Assert.Equal(tip.GetHash(), bestBlockHash);
-
-			}
-		}
-
-		[Fact]
-		public void CanCoreSyncFromStratis()
-		{
-			using (NodeBuilder builder = NodeBuilder.Create())
-			{
-				var stratisNode = builder.CreateStratisNode();
-				var coreNodeSync = builder.CreateNode();
-				var coreCreateNode = builder.CreateNode();
-				builder.StartAll();
-
-				// not in IBD
-				stratisNode.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
-
-				// first seed a core node with blocks and sync them to a stratis node
-				// and wait till the stratis node is fully synced
-				var tip = coreCreateNode.FindBlock(5).Last();
-				stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-				Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
-				Class1.Eventually(() => stratisNode.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNode.FullNode.Chain.Tip.HashBlock);
-
-				var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-				Assert.Equal(tip.GetHash(), bestBlockHash);
-
-				// add a new stratis node which will download
-				// the blocks using the GetData payload
-				coreNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-
-				// wait for download and assert
-				Class1.Eventually(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNodeSync.CreateRPCClient().GetBestBlockHash());
-				bestBlockHash = coreNodeSync.CreateRPCClient().GetBestBlockHash();
-				Assert.Equal(tip.GetHash(), bestBlockHash);
-			}
-		}
-
-		public static void Eventually(Func<bool> act)
-		{
-			var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
-			while(!act())
-			{
-				cancel.Token.ThrowIfCancellationRequested();
-				Thread.Sleep(50);
-			}
-		}
-
-		[Fact]
-		public void CheckRPCFailures()
-		{
-			using(NodeBuilder builder = NodeBuilder.Create())
-			{
-				var node = builder.CreateStratisNode();
-				builder.StartAll();
-				var client = node.CreateRPCClient();
-				var hash = client.GetBestBlockHash();
-				try
-				{
-					client.SendCommand("lol");
-					Assert.True(false, "should throw");
-				}
-				catch(RPCException ex)
-				{
-					Assert.Equal(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.RPCCode);
-				}
-				Assert.Equal(hash, Network.RegTest.GetGenesis().GetHash());
-				var oldClient = client;
-				client = new NBitcoin.RPC.RPCClient("abc:def", client.Address, client.Network);
-				try
-				{
-					client.GetBestBlockHash();
-					Assert.True(false, "should throw");
-				}
-				catch(Exception ex)
-				{
-					Assert.True(ex.Message.Contains("401"));
-				}
-				client = oldClient;
-
-				try
-				{
-					client.SendCommand("addnode", "regreg", "addr");
-					Assert.True(false, "should throw");
-				}
-				catch(RPCException ex)
-				{
-					Assert.Equal(RPCErrorCode.RPC_MISC_ERROR, ex.RPCCode);
-				}
-
-			}
-		}
+        }
 
 		[Fact]
 		public void TestDBreezeInsertOrder()

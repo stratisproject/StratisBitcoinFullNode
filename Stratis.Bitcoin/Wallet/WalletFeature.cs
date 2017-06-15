@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Wallet
             this.blockSubscriberdDisposable = new BlockSubscriber(this.signals.Blocks, new BlockObserver(this.chain, this.walletSyncManager)).Subscribe();
             this.transactionSubscriberdDisposable = new TransactionSubscriber(this.signals.Transactions, new TransactionObserver(this.walletSyncManager)).Subscribe();
 
+            this.walletManager.Initialize();
             this.walletSyncManager.Initialize();           
         }
 
