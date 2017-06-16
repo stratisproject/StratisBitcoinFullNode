@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
 
                 // ensure wallet reorg complete
-                TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.LastReceivedBlock == stratisReorg.CreateRPCClient().GetBestBlockHash());
+                TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.WalletTipHash == stratisReorg.CreateRPCClient().GetBestBlockHash());
                 // check the wallet amont was roled back
                 var newtotal = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
                 Assert.Equal(receivetotal, newtotal);
@@ -229,8 +229,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        // this test does not work yet.
-        // [Fact]
+        [Fact]
         public void WalletCanCatchupWithBestChain()
         {
             using (NodeBuilder builder = NodeBuilder.Create())

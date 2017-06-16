@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Wallet
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
 
-        public uint256 LastReceivedBlock { get; set; }
+        public uint256 WalletTipHash { get; set; }
 
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Wallet
             this.LoadKeysLookup();
 
             // find the last chain block received by the wallet manager.
-            this.LastReceivedBlock = this.LastReceivedBlockHash();
+            this.WalletTipHash = this.LastReceivedBlockHash();
         }
 
         /// <inheritdoc />
@@ -563,10 +563,10 @@ namespace Stratis.Bitcoin.Wallet
             this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
             
             // is this the next block
-            if (chainedBlock.Header.HashPrevBlock != this.LastReceivedBlock)
+            if (chainedBlock.Header.HashPrevBlock != this.WalletTipHash)
             {
                 // are we still on the main chain
-                var current = this.chain.GetBlock(this.LastReceivedBlock);
+                var current = this.chain.GetBlock(this.WalletTipHash);
                 if (current == null)
                     throw new WalletException("Reorg");
 
@@ -842,7 +842,7 @@ namespace Stratis.Bitcoin.Wallet
                 this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);
             }
 
-            this.LastReceivedBlock = chainedBlock.HashBlock;
+            this.WalletTipHash = chainedBlock.HashBlock;
         }
 
         /// <inheritdoc />
