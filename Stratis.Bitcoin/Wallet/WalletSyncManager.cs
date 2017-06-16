@@ -101,7 +101,8 @@ namespace Stratis.Bitcoin.Wallet
 
                             next = this.chain.GetBlock(next.Height +1);
                             var nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
-                            Guard.Assert(nextblock != null);
+                            if(nextblock == null)
+                                return; // temporary to allow wallet ot recover when store is behind
                             this.walletManager.ProcessBlock(nextblock, next);
                         }
                     }

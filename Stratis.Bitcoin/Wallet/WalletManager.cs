@@ -8,6 +8,7 @@ using NBitcoin.Protocol;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.MemoryPool;
 using Transaction = NBitcoin.Transaction;
 
 namespace Stratis.Bitcoin.Wallet
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.Wallet
         private readonly ConcurrentChain chain;
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
+        private readonly MempoolValidator mempoolValidator;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -46,7 +48,8 @@ namespace Stratis.Bitcoin.Wallet
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
         public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder)
+            NodeSettings settings, DataFolder dataFolder, 
+            MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new List<Wallet>();
@@ -57,6 +60,7 @@ namespace Stratis.Bitcoin.Wallet
             this.chain = chain;
             this.settings = settings;
             this.dataFolder = dataFolder;
+            this.mempoolValidator = mempoolValidator;
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
@@ -445,6 +449,17 @@ namespace Stratis.Bitcoin.Wallet
             Wallet wallet = this.GetWalletByName(walletName);
             HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).GetAccountByName(accountName);
 
+            // get script destination address
+            Script destinationScript = null;
+            try
+            {
+                destinationScript = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new BitcoinPubKeyAddress(destinationAddress, wallet.Network));
+            }
+            catch
+            {
+                throw new WalletException("Invalid address.");
+            }
+
             // get a list of transactions outputs that have not been spent
             var spendableTransactions = account.GetSpendableTransactions().ToList();
 
@@ -482,9 +497,6 @@ namespace Stratis.Bitcoin.Wallet
 
             // get address to send the change to
             var changeAddress = account.GetFirstUnusedChangeAddress();
-
-            // get script destination address
-            Script destinationScript = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new BitcoinPubKeyAddress(destinationAddress, wallet.Network));
 
             // build transaction
             var builder = new TransactionBuilder();
@@ -530,16 +542,36 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public bool SendTransaction(string transactionHex)
         {
-            // TODO move this to a behavior on the full node
+            // TODO move this to a behavior to a dedicated interface
             // parse transaction
             Transaction transaction = Transaction.Parse(transactionHex);
-            TxPayload payload = new TxPayload(transaction);
 
+            // replace this we a dedicated WalletBroadcast interface
+            // in a fullnode implementation this will validate with the 
+            // mempool and broadcast, in a lightnode this will push to 
+            // the wallet and then broadcast (we might add some basic validation
+            if (this.mempoolValidator == null)
+            {
+                this.ProcessTransaction(transaction);
+            }
+            else
+            {
+                var state = new MempoolValidationState(false);
+                if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
+                {
+                    return false;
+                }
+            }
+            
+            // broadcast to peers
+            TxPayload payload = new TxPayload(transaction);
             foreach (var node in this.connectionManager.ConnectedNodes)
             {
                 node.SendMessage(payload);
             }
 
+            // we might want to create a behaviour that tracks how many times
+            // the broadcast trasnactions was sent back to us by other peers
             return true;
         }
 
