@@ -8,12 +8,10 @@ namespace Stratis.Bitcoin.Wallet.Notifications
     /// </summary>
 	public class BlockObserver : SignalObserver<Block>
     {
-        private readonly ConcurrentChain chain;
         private readonly IWalletSyncManager walletSyncManager;
 
-        public BlockObserver(ConcurrentChain chain, IWalletSyncManager walletSyncManager)
+        public BlockObserver(IWalletSyncManager walletSyncManager)
         {
-            this.chain = chain;
             this.walletSyncManager = walletSyncManager;
         }
 

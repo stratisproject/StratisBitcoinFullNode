@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Wallet
         private readonly ConcurrentChain chain;
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
+        private readonly ILogger logger;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Wallet
 
         private Dictionary<Script, HdAddress> keysLookup;
 
-        private readonly ILogger logger;
+        
 
         /// <summary>
         /// Occurs when a transaction is found.
