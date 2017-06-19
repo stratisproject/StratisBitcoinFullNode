@@ -172,7 +172,39 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		[Fact]
+        [Fact]
+        public void BlockStoreCanRecoverOnStartup()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                var stratisNodeSync = builder.CreateStratisNode();
+                builder.StartAll();
+                stratisNodeSync.NotInIBD();
+
+                // generate blocks and wait for the downloader to pickup
+                stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+
+                stratisNodeSync.GenerateStratis(10);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
+
+                // set the tip of best chain some blocks in the apst
+                stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
+
+                // stop the node it will persist the chain with the reset tip
+                stratisNodeSync.FullNode.Stop();
+
+                var newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
+
+                // load the node, this should hit the block store recover code
+                newNodeInstance.Start();
+
+                // check that store recovered to be the same as the best chain.
+               Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+                //TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
+            }
+        }
+
+        [Fact]
 		public void BlockStoreCanReorg()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
