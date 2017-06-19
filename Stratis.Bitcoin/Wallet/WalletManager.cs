@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Wallet
         private const int UnusedAddressesBuffer = 20;
         private const int WalletRecoveryAccountsCount = 3;
         private const int WalletCreationAccountsCount = 2;
+        private const string WalletFileExtension = "wallet.json";
 
         private readonly CoinType coinType;
         private readonly Network network;
@@ -30,6 +31,7 @@ namespace Stratis.Bitcoin.Wallet
         private readonly ConcurrentChain chain;
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
+        private readonly ILogger logger;
         private readonly MempoolValidator mempoolValidator;
 
         public uint256 WalletTipHash { get; set; }
@@ -40,7 +42,7 @@ namespace Stratis.Bitcoin.Wallet
 
         private Dictionary<Script, HdAddress> keysLookup;
 
-        private readonly ILogger logger;
+        
 
         /// <summary>
         /// Occurs when a transaction is found.
@@ -120,7 +122,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public Wallet LoadWallet(string password, string name)
         {
-            var walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.json");
+            var walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.{WalletFileExtension}");
 
             // load the file from the local system
             Wallet wallet = this.DeserializeWallet(walletFilePath);
@@ -855,13 +857,13 @@ namespace Stratis.Bitcoin.Wallet
 
             // create the directory if it doesn't exist
             Directory.CreateDirectory(defaultFolderPath);
-            return Directory.EnumerateFiles(defaultFolderPath, "*.json", SearchOption.TopDirectoryOnly);
+            return Directory.EnumerateFiles(defaultFolderPath, $"*.{WalletFileExtension}", SearchOption.TopDirectoryOnly);
         }
 
         /// <inheritdoc />
         public void SaveToFile(Wallet wallet)
         {
-            var walletfile = Path.Combine(this.dataFolder.WalletPath, $"{wallet.Name}.json");
+            var walletfile = Path.Combine(this.dataFolder.WalletPath, $"{wallet.Name}.{WalletFileExtension}");
             File.WriteAllText(walletfile, JsonConvert.SerializeObject(wallet, Formatting.Indented));
         }
 
@@ -911,16 +913,14 @@ namespace Stratis.Bitcoin.Wallet
         /// Generates the wallet file.
         /// </summary>
         /// <param name="password">The password used to encrypt sensitive info.</param>
-        /// <param name="folderPath">The folder where the wallet will be generated.</param>
         /// <param name="name">The name of the wallet.</param>
-        /// <param name="network">The network this wallet is for.</param>
         /// <param name="extendedKey">The root key used to generate keys.</param>
         /// <param name="creationTime">The time this wallet was created.</param>
         /// <returns></returns>
         /// <exception cref="System.NotSupportedException"></exception>
         private Wallet GenerateWalletFile(string password, string name, ExtKey extendedKey, DateTimeOffset? creationTime = null)
         {
-            string walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.json");
+            string walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.{WalletFileExtension}");
 
             if (File.Exists(walletFilePath))
                 throw new InvalidOperationException($"Wallet already exists at {walletFilePath}");
