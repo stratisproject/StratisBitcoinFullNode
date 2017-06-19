@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Notifications;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Wallet;
+using Stratis.Bitcoin.WatchOnlyWallet;
 
 namespace Breeze.Daemon
 {
@@ -90,6 +91,7 @@ namespace Breeze.Daemon
             {
                 tumblerAddress = tumblerAddress.Replace("-tumbler-uri=", string.Empty);
                 fullNodeBuilder.UseTumbleBit(new Uri(tumblerAddress));
+                fullNodeBuilder.UseWatchOnlyWallet();
             }
 
             var node = fullNodeBuilder.Build();
