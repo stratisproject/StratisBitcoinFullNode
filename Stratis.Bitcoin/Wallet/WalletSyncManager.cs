@@ -49,16 +49,22 @@ namespace Stratis.Bitcoin.Wallet
 
             this.walletTip = this.chain.GetBlock(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
-                throw new WalletException("Wallet tip was not found in the best chain, rescan the wallet");
+            {
+                // the wallet tip was not found int he main chain
+                // this can happen if the node crashes unexpecdidely
+                // reo reconver we need to find the first common fork 
+                // with the best chain, as the wallet does not have a  
+                // list of chain headers we use a BlockLocator and persist 
+                // tha tin the wallet, the block locator will help finding 
+                // a common form and bringing the wallet back to a good 
+                // state (behind the best chain)
 
-            // offline reorg is extreamly reare it will 
-            // only happen if the node crashes during a reorg
-
-            //var blockstoremove = new List<uint256>();
-            //var locators = this.walletManager.Wallets.First().BlockLocator;
-            //BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
-            //var fork = this.chain.FindFork(blockLocator);
-            //this.walletManager.RemoveBlocks(fork);
+                var locators = this.walletManager.Wallets.First().BlockLocator;
+                BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
+                var fork = this.chain.FindFork(blockLocator);
+                this.walletManager.RemoveBlocks(fork);
+                this.walletManager.WalletTipHash = fork.HashBlock;
+            }
 
             return Task.CompletedTask;
         }
@@ -100,9 +106,23 @@ namespace Stratis.Bitcoin.Wallet
                             // will stop til the wallet is up to date.
 
                             next = this.chain.GetBlock(next.Height +1);
-                            var nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
-                            if(nextblock == null)
-                                return; // temporary to allow wallet ot recover when store is behind
+                            Block nextblock = null;
+                            while (true) //replace with cancelation token
+                            {
+                                nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                                if (nextblock == null)
+                                {
+                                    // really ugly hack to let store catch up
+                                    // this will block the entire consensus pulling
+                                    this.logger.LogInformation("Wallet is behind the best chain and the next block is not found in store");
+                                    Thread.Sleep(100);
+                                    continue;
+                                }
+                                
+                                break;
+                            }
+
+                            this.walletTip = next;
                             this.walletManager.ProcessBlock(nextblock, next);
                         }
                     }

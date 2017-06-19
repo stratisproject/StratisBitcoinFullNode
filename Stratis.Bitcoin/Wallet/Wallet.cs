@@ -33,6 +33,12 @@ namespace Stratis.Bitcoin.Wallet
         public byte[] ChainCode { get; set; }
 
         /// <summary>
+        /// Gets or sets the merkle path.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockLocator", ItemConverterType = typeof(UInt256JsonConverter))]
+        public ICollection<uint256> BlockLocator { get; set; }
+
+        /// <summary>
         /// The network this wallet is for.
         /// </summary>
         [JsonProperty(PropertyName = "network")]

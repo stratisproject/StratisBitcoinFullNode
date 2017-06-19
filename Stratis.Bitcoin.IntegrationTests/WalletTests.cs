@@ -258,5 +258,40 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisminer));
             }
         }
+
+        [Fact]
+        public void WalletCanRecoverOnStartup()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                var stratisNodeSync = builder.CreateStratisNode();
+                builder.StartAll();
+                stratisNodeSync.NotInIBD();
+
+                // get a key from the wallet
+                var mnemonic = stratisNodeSync.FullNode.WalletManager.CreateWallet("123456", "mywallet");
+                Assert.Equal(12, mnemonic.Words.Length);
+                var addr = stratisNodeSync.FullNode.WalletManager.GetUnusedAddress("mywallet", "account 0");
+                var key = stratisNodeSync.FullNode.WalletManager.GetKeyForAddress("123456", addr).PrivateKey;
+
+                stratisNodeSync.SetDummyMinerSecret(key.GetBitcoinSecret(stratisNodeSync.FullNode.Network));
+                stratisNodeSync.GenerateStratis(10);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
+
+                // set the tip of best chain some blocks in the apst
+                stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
+
+                // stop the node it will persist the chain with the reset tip
+                stratisNodeSync.FullNode.Stop();
+
+                var newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
+
+                // load the node, this should hit the block store recover code
+                newNodeInstance.Start();
+
+                // check that store recovered to be the same as the best chain.
+                Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.WalletManager.WalletTipHash);
+            }
+        }
     }
 }
