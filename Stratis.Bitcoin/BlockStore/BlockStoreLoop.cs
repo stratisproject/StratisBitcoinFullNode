@@ -63,34 +63,31 @@ namespace Stratis.Bitcoin.BlockStore
 			this.StoredBlock = this.chain.GetBlock(this.BlockRepository.BlockHash);
 			if (this.StoredBlock == null)
 			{
-                // this should never happen as the chain and store 
-                // must be in the same state when persisted
-			    throw new BlockStoreException("block repo was not found in the main chain");
+                // the store is out of sync, this can happen if the node crashed 
+                // or was not closed down properly and bestchain tip is not 
+                // the same as in store tip, to recover we walk back the chain til  
+                // a common block header is found and set the block store tip to that
 
-                //// a reorg happened and the ChainedBlock is lost
-                //// to solve this each block needs to be pulled from storage and deleted 
-                //// all the way till a common fork is found with Chain
+                var blockstoreResetList = new List<uint256>();
+                var resetBlock = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
+                var resetBlockHash = resetBlock.GetHash();
+                // walk back the chain and find the common block
+                while (this.chain.GetBlock(resetBlockHash) == null)
+                {
+                    blockstoreResetList.Add(resetBlockHash);
+                    if (resetBlock.Header.HashPrevBlock == this.chain.Genesis.HashBlock)
+                    {
+                        resetBlockHash = this.chain.Genesis.HashBlock;
+                        break;
+                    }
+                    resetBlock = await this.BlockRepository.GetAsync(resetBlock.Header.HashPrevBlock);
+                    Guard.NotNull(resetBlock, nameof(resetBlock));
+                    resetBlockHash = resetBlock.GetHash();
+                }
 
-                //var blockstoremove = new List<uint256>();
-                //var remove = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
-                //var removeHash = remove.GetHash();
-                //// reorg - we need to delete blocks, start walking back the chain
-                //while (this.chain.GetBlock(removeHash) == null)
-                //{
-                //	blockstoremove.Add(removeHash);
-                //	if (remove.Header.HashPrevBlock == chain.Genesis.HashBlock)
-                //	{
-                //		removeHash = chain.Genesis.HashBlock;
-                //		break;
-                //	}
-                //	remove = await this.BlockRepository.GetAsync(remove.Header.HashPrevBlock);
-                //	Guard.NotNull(remove, nameof(remove));
-                //	removeHash = remove.GetHash();
-                //}
-
-                //var newTip = this.chain.GetBlock(removeHash);
-                //await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockstoremove);
-                //this.StoredBlock = newTip;
+                var newTip = this.chain.GetBlock(resetBlockHash);
+                await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockstoreResetList);
+                this.StoredBlock = newTip;
             }
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)

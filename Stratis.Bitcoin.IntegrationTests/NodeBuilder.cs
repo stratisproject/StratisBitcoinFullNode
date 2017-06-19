@@ -300,7 +300,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 			return node;
 		}
 
-		private string CreateNewEmptyFolder()
+	    public CoreNode CloneStratisNode(CoreNode cloneNode)
+	    {
+	        var node = new CoreNode(cloneNode.Folder, new StratisBitcoinRunner(), this, false);
+	        Nodes.Add(node);
+	        Nodes.Remove(cloneNode);
+	        return node;
+	    }
+
+        private string CreateNewEmptyFolder()
 		{
 			var child = Path.Combine(_Root, last.ToString());
 			last++;
@@ -364,13 +372,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 			get { return _ConfigParameters; }
 		}
 
-		public CoreNode(string folder, INodeRunner runner, NodeBuilder builder)
+		public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, bool cleanfolders = true)
 		{
 			_Runner = runner;
 			this._Builder = builder;
 			this._Folder = folder;
 			_State = CoreNodeState.Stopped;
-			CleanFolder();
+		    if (cleanfolders)
+		        CleanFolder();
 			Directory.CreateDirectory(folder);
 			dataDir = Path.Combine(folder, "data");
 			Directory.CreateDirectory(dataDir);
