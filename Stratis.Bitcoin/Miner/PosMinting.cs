@@ -354,7 +354,9 @@ namespace Stratis.Bitcoin.Miner
 			if (!setCoins.Any())
 				return false;
 
-			long nCredit = 0;
+		    Logs.Mining.LogInformation($"Node staking with amount {new Money(setCoins.Sum(s => s.TxOut.Value))}"); //replace this with staking weight
+
+            long nCredit = 0;
 			Script scriptPubKeyKernel = null;
 			
 			// Note: I would expect to see coins sorted by weight on the original implementation 
