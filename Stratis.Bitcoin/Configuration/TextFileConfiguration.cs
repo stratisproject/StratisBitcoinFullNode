@@ -139,9 +139,9 @@ namespace Stratis.Bitcoin.Configuration
 			}
 			else if (typeof(T) == typeof(Uri))
 			{
-			    return (T)(object)new Uri(str);
+				return (T)(object)new Uri(str);
 			}
-            else
+			else
 			{
 				throw new NotSupportedException("Configuration value does not support time " + typeof(T).Name);
 			}
