@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Configuration
 			nodeSettings.Network = nodeSettings.GetNetwork();
 			if (nodeSettings.DataDir == null)
 			{
-				nodeSettings.DataDir = GetDefaultDataDir($"stratis{nodeSettings.Name}", nodeSettings.Network);
+				nodeSettings.DataDir = GetDefaultDataDir($"StratisNode/{nodeSettings.Name}", nodeSettings.Network);
 			}
 
 			if (nodeSettings.ConfigurationFile == null)
