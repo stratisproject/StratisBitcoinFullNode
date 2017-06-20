@@ -24,6 +24,9 @@ namespace Breeze.Daemon
 {
     public class Program
     {
+        private const string DefaultBitcoinUri = "http://localhost:5000";
+        private const string DefaultStratisUri = "http://localhost:5105";
+
         public static void Main(string[] args)
         {
             IFullNodeBuilder fullNodeBuilder = null;
@@ -31,13 +34,21 @@ namespace Breeze.Daemon
             // configure logging
             Logs.Configure(Logs.GetLoggerFactory(args));
 
+            // get the api uri 
+            var apiUri = args.SingleOrDefault(arg => arg.StartsWith("apiuri"));
+            if (!string.IsNullOrEmpty(apiUri))
+            {
+                apiUri = apiUri.Replace("apiuri=", string.Empty);
+            }
+
             if (args.Contains("stratis"))
             {
                 if (NodeSettings.PrintHelp(args, Network.StratisMain))
                     return;
 
                 var network = args.Contains("-testnet") ? InitStratisTest() : Network.StratisMain;
-                var nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
+                var nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);                
+                nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
 
                 if (args.Contains("light"))
                 {
@@ -63,6 +74,7 @@ namespace Breeze.Daemon
             else
             {
                 NodeSettings nodeSettings = NodeSettings.FromArguments(args);
+                nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultBitcoinUri : apiUri);
 
                 if (args.Contains("light"))
                 {

@@ -1,0 +1,2 @@
+cd ..
+dotnet run light
