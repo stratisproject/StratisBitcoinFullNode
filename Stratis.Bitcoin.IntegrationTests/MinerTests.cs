@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.MemoryPool.Fee;
 using Stratis.Bitcoin.Miner;
 using Xunit;
 
@@ -134,7 +135,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				date1.time = DateTimeProvider.Default.GetTime();
 				date1.timeutc = DateTimeProvider.Default.GetUtcNow();
 				date = date1;
-				mempool = new TxMempool(new FeeRate(0), new NodeSettings());
+				mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default())); ;
 				scheduler = new MempoolScheduler();
 
 				// Simple block creation, nothing special yet:

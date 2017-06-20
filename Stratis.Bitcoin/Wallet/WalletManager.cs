@@ -31,8 +31,9 @@ namespace Stratis.Bitcoin.Wallet
         private readonly ConcurrentChain chain;
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
-        private readonly ILogger logger;
+        private readonly IWalletFeePolicy walletFeePolicy;
         private readonly MempoolValidator mempoolValidator;
+        private readonly ILogger logger;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -42,16 +43,13 @@ namespace Stratis.Bitcoin.Wallet
 
         private Dictionary<Script, HdAddress> keysLookup;
 
-        
-
         /// <summary>
         /// Occurs when a transaction is found.
         /// </summary>
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
         public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder, 
-            MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+            NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new List<Wallet>();
@@ -62,10 +60,12 @@ namespace Stratis.Bitcoin.Wallet
             this.chain = chain;
             this.settings = settings;
             this.dataFolder = dataFolder;
+            this.walletFeePolicy = walletFeePolicy;
             this.mempoolValidator = mempoolValidator;
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
+
         }
 
         public void Initialize()
@@ -479,7 +479,7 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             // calculate which addresses needs to be used as well as the fee to be charged
-            var calculationResult = this.CalculateFees(spendableTransactions, amount);
+            var calculationResult = this.CalculateFees(spendableTransactions, amount, 5);
 
             // get extended private key
             var privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
@@ -524,13 +524,15 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="spendableTransactions">The transactions with unspent funds.</param>
         /// <param name="amount">The amount to be sent.</param>
         /// <returns>The collection of transactions to be used and the fee to be charged</returns>
-        private (List<TransactionData> transactionsToUse, Money fee) CalculateFees(IEnumerable<TransactionData> spendableTransactions, Money amount)
+        private (List<TransactionData> transactionsToUse, Money fee) CalculateFees(IEnumerable<TransactionData> spendableTransactions, Money amount, int targetConfirmations)
         {
-            // TODO make this a bit smarter!     
-            Money fee = new Money(new decimal(0.001), MoneyUnit.BTC);
+            Money fee = 0;
             List<TransactionData> transactionsToUse = new List<TransactionData>();
+            var inputCount = 1;
             foreach (var transaction in spendableTransactions)
             {
+                fee = this.walletFeePolicy.GetMinimumFee(inputCount * 180 + 74, targetConfirmations);
+
                 transactionsToUse.Add(transaction);
                 if (transactionsToUse.Sum(t => t.Amount) >= amount + fee)
                 {
@@ -564,7 +566,7 @@ namespace Stratis.Bitcoin.Wallet
                     return false;
                 }
             }
-            
+
             // broadcast to peers
             TxPayload payload = new TxPayload(transaction);
             foreach (var node in this.connectionManager.ConnectedNodes)
