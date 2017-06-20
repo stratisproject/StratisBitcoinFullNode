@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="feeType">The type of fee to be included.</param>
         /// <param name="allowUnconfirmed">Whether or not we allow this transaction to rely on unconfirmed outputs.</param>
         /// <returns></returns>
-        (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, string feeType, int minConfirmations);
+        (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, FeeType feeType, int minConfirmations);
 
         /// <summary>
         /// Remove all the thransactions in the wallet that are above this block height
