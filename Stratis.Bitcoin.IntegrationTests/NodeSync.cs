@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Stratis.Bitcoin.Connection;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
+    [TestClass]
     public class NodeSync
     {
-        [Fact]
+        [TestMethod]
         public void NodesCanConnectToEachOthers()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
@@ -17,24 +18,24 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var node1 = builder.CreateStratisNode();
                 var node2 = builder.CreateStratisNode();
                 builder.StartAll();
-                Assert.Equal(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
-                Assert.Equal(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
+                Assert.AreEqual(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
+                Assert.AreEqual(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
                 var rpc1 = node1.CreateRPCClient();
                 var rpc2 = node2.CreateRPCClient();
                 rpc1.AddNode(node2.Endpoint, true);
-                Assert.Equal(1, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
-                Assert.Equal(1, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
+                Assert.AreEqual(1, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
+                Assert.AreEqual(1, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
 
                 var behavior = node1.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
-                Assert.False(behavior.Inbound);
-                Assert.True(behavior.OneTry);
+                Assert.IsFalse(behavior.Inbound);
+                Assert.IsTrue(behavior.OneTry);
                 behavior = node2.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
-                Assert.True(behavior.Inbound);
-                Assert.False(behavior.OneTry);
+                Assert.IsTrue(behavior.Inbound);
+                Assert.IsFalse(behavior.OneTry);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void CanStratisSyncFromCore()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
                 var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                Assert.AreEqual(tip.GetHash(), bestBlockHash);
 
                 //Now check if Core connect to stratis
                 stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
@@ -58,11 +59,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
                 bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                Assert.AreEqual(tip.GetHash(), bestBlockHash);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void CanStratisSyncFromStratis()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
@@ -82,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
                 var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                Assert.AreEqual(tip.GetHash(), bestBlockHash);
 
                 // add a new stratis node which will download
                 // the blocks using the GetData payload
@@ -91,12 +92,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // wait for download and assert
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
                 bestBlockHash = stratisNodeSync.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                Assert.AreEqual(tip.GetHash(), bestBlockHash);
 
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void CanCoreSyncFromStratis()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNode.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNode.FullNode.Chain.Tip.HashBlock);
 
                 var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                Assert.AreEqual(tip.GetHash(), bestBlockHash);
 
                 // add a new stratis node which will download
                 // the blocks using the GetData payload
@@ -126,7 +127,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // wait for download and assert
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNodeSync.CreateRPCClient().GetBestBlockHash());
                 bestBlockHash = coreNodeSync.CreateRPCClient().GetBestBlockHash();
-                Assert.Equal(tip.GetHash(), bestBlockHash);
+                Assert.AreEqual(tip.GetHash(), bestBlockHash);
             }
         }
 

@@ -20,11 +20,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public NodeContext(string name, Network network, bool clean)
 		{
 			network = network ?? Network.RegTest;
-			_Network = network;
-			_TestDirectory = TestDirectory.Create(name, clean);
-			_PersistentCoinView = new DBreezeCoinView(network, _TestDirectory.FolderName);
-			_PersistentCoinView.Initialize().GetAwaiter().GetResult();
-			_CleanList.Add(_PersistentCoinView);
+			this._Network = network;
+			this._TestDirectory = TestDirectory.Create(name, clean);
+			this._PersistentCoinView = new DBreezeCoinView(network, this._TestDirectory.FolderName);
+			this._PersistentCoinView.Initialize().GetAwaiter().GetResult();
+			this._CleanList.Add(this._PersistentCoinView);
 		}
 
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			get
 			{
-				return _Network;
+				return this._Network;
 			}
 		}
 
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			get
 			{
-				return _ChainBuilder = _ChainBuilder ?? new ChainBuilder(Network);
+				return this._ChainBuilder = this._ChainBuilder ?? new ChainBuilder(this.Network);
 			}
 		}
 		
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			get
 			{
-				return _PersistentCoinView;
+				return this._PersistentCoinView;
 			}
 		}
 
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			get
 			{
-				return _TestDirectory.FolderName;
+				return this._TestDirectory.FolderName;
 			}
 		}
 
@@ -72,18 +72,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public void Dispose()
 		{
-			foreach(var item in _CleanList)
+			foreach(var item in this._CleanList)
 				item.Dispose();
-			_TestDirectory.Dispose(); //Not into cleanlist because it must run last
+			this._TestDirectory.Dispose(); //Not into cleanlist because it must run last
 		}
 
 		public void ReloadPersistentCoinView()
 		{
-			_PersistentCoinView.Dispose();
-			_CleanList.Remove(_PersistentCoinView);
-			_PersistentCoinView = new DBreezeCoinView(_Network, _TestDirectory.FolderName);
-			_PersistentCoinView.Initialize().GetAwaiter().GetResult();
-			_CleanList.Add(_PersistentCoinView);
+			this._PersistentCoinView.Dispose();
+			this._CleanList.Remove(this._PersistentCoinView);
+			this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName);
+			this._PersistentCoinView.Initialize().GetAwaiter().GetResult();
+			this._CleanList.Add(this._PersistentCoinView);
 		}		
 	}
 }
