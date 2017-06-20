@@ -13,7 +13,7 @@ using Moq;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.RPC;
 using Stratis.Bitcoin.Tests.Logging;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 		private FeatureCollection featureCollection;
 		private HttpRequestFeature request;
 
-		public RPCMiddlewareTest()
+		protected override void Initialize()
 		{
 			this.httpContext = new DefaultHttpContext();
 			this.authorization = new Mock<IRPCAuthorization>();
@@ -42,42 +42,42 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.middleware = new RPCMiddleware(this.delegateContext.Object, this.authorization.Object);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeValidAuthorizationReturns200()
 		{
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
-			Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
+			Assert.AreEqual(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeUnauthorizedReturns401()
 		{
 			this.InitializeFeatureContext();
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(false);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
-			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
+			Assert.AreEqual(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeAuthorizedWithoutAuthorizationHeaderReturns401()
 		{
 			this.InitializeFeatureContext();
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
-			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
+			Assert.AreEqual(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeAuthorizedWithBearerAuthorizationHeaderReturns401()
 		{
 			this.request.Headers.Add("Authorization", "Bearer hiuehewuytwe");
@@ -85,12 +85,12 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
-			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
+			Assert.AreEqual(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeAuthorizedWithEmptyAuthorizationHeaderReturns401()
 		{
 			this.request.Headers.Add("Authorization", "");
@@ -98,12 +98,12 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
-			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
+			Assert.AreEqual(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeAuthorizedWithBasicAuthorizationHeaderForUnauthorizedUserReturns401()
 		{
 			var header = Convert.ToBase64String(Encoding.ASCII.GetBytes("MyUser"));
@@ -114,12 +114,12 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized("MyUser"))
 				.Returns(false);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
-			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
+			Assert.AreEqual(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeAuthorizedWithBasicAuthorizationHeaderWithInvalidEncodingReturns401()
 		{
 			this.request.Headers.Add("Authorization", "Basic kljseuhtiuorewytiuoer");
@@ -127,12 +127,12 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
-			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
+			Assert.AreEqual(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}		
 
-		[Fact]
+		[TestMethod]
 		public void InvokeThrowsArgumentExceptionWritesArgumentError()
 		{			
 			this.delegateContext.Setup(d => d(It.IsAny<DefaultHttpContext>()))
@@ -140,18 +140,18 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
 				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -1,\r\n    \"message\": \"Argument error: Name is required.\"\r\n  }\r\n}";
-				Assert.Equal(expected, reader.ReadToEnd());
-				Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
+				Assert.AreEqual(expected, reader.ReadToEnd());
+				Assert.AreEqual(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
 			}
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeThrowsFormatExceptionWritesArgumentError()
 		{
 			this.delegateContext.Setup(d => d(It.IsAny<DefaultHttpContext>()))
@@ -159,55 +159,55 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
 				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -1,\r\n    \"message\": \"Argument error: Int x is invalid format.\"\r\n  }\r\n}";
-				Assert.Equal(expected, reader.ReadToEnd());
-				Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
+				Assert.AreEqual(expected, reader.ReadToEnd());
+				Assert.AreEqual(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
 			}
 		}
 
-		[Fact]
+		[TestMethod]
 		public void Invoke404WritesMethodNotFoundError()
 		{
 			this.response.StatusCode = StatusCodes.Status404NotFound;
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
 				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -32601,\r\n    \"message\": \"Method not found\"\r\n  }\r\n}";
-				Assert.Equal(expected, reader.ReadToEnd());
-				Assert.Equal(StatusCodes.Status404NotFound, this.httpContext.Response.StatusCode);
+				Assert.AreEqual(expected, reader.ReadToEnd());
+				Assert.AreEqual(StatusCodes.Status404NotFound, this.httpContext.Response.StatusCode);
 			}
 		}
 
-		[Fact]
+		[TestMethod]
 		public void Invoke500WritesInternalErrorAndLogsResult()
 		{
 			this.response.StatusCode = StatusCodes.Status500InternalServerError;
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
 				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -32603,\r\n    \"message\": \"Internal error\"\r\n  }\r\n}";
-				Assert.Equal(expected, reader.ReadToEnd());
-				Assert.Equal(StatusCodes.Status500InternalServerError, this.httpContext.Response.StatusCode);
+				Assert.AreEqual(expected, reader.ReadToEnd());
+				Assert.AreEqual(StatusCodes.Status500InternalServerError, this.httpContext.Response.StatusCode);
 				base.AssertLog(this.RPCLogger, LogLevel.Error, "Internal error while calling RPC Method");
 			}
 		}
 
-		[Fact]
+		[TestMethod]
 		public void InvokeThrowsUnhandledExceptionWritesInternalErrorAndLogsResult()
 		{
 			this.delegateContext.Setup(d => d(It.IsAny<DefaultHttpContext>()))
@@ -215,14 +215,14 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
 				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -32603,\r\n    \"message\": \"Internal error\"\r\n  }\r\n}";
-				Assert.Equal(expected, reader.ReadToEnd());
-				Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
+				Assert.AreEqual(expected, reader.ReadToEnd());
+				Assert.AreEqual(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
 				base.AssertLog<InvalidOperationException>(this.RPCLogger, LogLevel.Error, "Operation not valid.", "Internal error while calling RPC Method");
 			}
 		}

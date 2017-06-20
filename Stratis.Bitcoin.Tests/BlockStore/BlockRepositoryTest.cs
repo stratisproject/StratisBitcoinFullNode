@@ -2,6 +2,7 @@
 {
     using Bitcoin.BlockStore;
     using DBreeze;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
     using NBitcoin;
     using System;
@@ -9,11 +10,11 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Xunit;
 
+    [TestClass]
     public class BlockRepositoryTest : TestBase
     {
-        [Fact]
+        [TestMethod]
         public void InitializesGenBlockAndTxIndexOnFirstLoad()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/InitializeGenBlockAndTxIndex");
@@ -28,12 +29,12 @@
                 var blockRow = transaction.Select<byte[], uint256>("Common", new byte[0]);
                 var txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
 
-                Assert.Equal(Network.Main.GetGenesis().GetHash(), blockRow.Value);
-                Assert.Equal(false, txIndexRow.Value);
+                Assert.AreEqual(Network.Main.GetGenesis().GetHash(), blockRow.Value);
+                Assert.AreEqual(false, txIndexRow.Value);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void DoesNotOverwriteExistingBlockAndTxIndexOnFirstLoad()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/NoOverwriteExistingBlockAndTxIndex");
@@ -58,12 +59,12 @@
                 var blockRow = transaction.Select<byte[], uint256>("Common", new byte[0]);
                 var txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
 
-                Assert.Equal(new uint256(56), blockRow.Value);
-                Assert.Equal(true, txIndexRow.Value);
+                Assert.AreEqual(new uint256(56), blockRow.Value);
+                Assert.AreEqual(true, txIndexRow.Value);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void GetTrxAsyncWithoutTransactionIndexReturnsNewTransaction()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithoutTxIndex");
@@ -82,11 +83,11 @@
                 var task = repository.GetTrxAsync(uint256.Zero);
                 task.Wait();
 
-                Assert.Equal(default(Transaction), task.Result);
+                Assert.AreEqual(default(Transaction), task.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void GetTrxAsyncWithoutTransactionInIndexReturnsNull()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithoutTransactionFound");
@@ -105,11 +106,11 @@
                 var task = repository.GetTrxAsync(new uint256(65));
                 task.Wait();
 
-                Assert.Null(task.Result);
+                Assert.IsNull(task.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void GetTrxAsyncWithTransactionReturnsExistingTransaction()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithTransaction");
@@ -135,11 +136,11 @@
                 var task = repository.GetTrxAsync(trans.GetHash());
                 task.Wait();
 
-                Assert.Equal((uint)125, task.Result.Version);
+                Assert.AreEqual((uint)125, task.Result.Version);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void GetTrxBlockIdAsyncWithoutTxIndexReturnsDefaultId()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTxIndex");
@@ -157,11 +158,11 @@
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
                 task.Wait();
 
-                Assert.Equal(default(uint256), task.Result);
+                Assert.AreEqual(default(uint256), task.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void GetTrxBlockIdAsyncWithoutExistingTransactionReturnsNull()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTransaction");
@@ -179,11 +180,11 @@
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
                 task.Wait();
 
-                Assert.Equal(null, task.Result);
+                Assert.AreEqual(null, task.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void GetTrxBlockIdAsyncWithTransactionReturnsBlockId()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTransaction");
@@ -202,11 +203,11 @@
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
                 task.Wait();
 
-                Assert.Equal(new uint256(42), task.Result);
+                Assert.AreEqual(new uint256(42), task.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void PutAsyncWritesBlocksAndTransactionsToDbAndSavesNextBlockHash()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/PutAsyncStoresBlocksAndTxs");
@@ -253,25 +254,25 @@
                 var blockDict = trans.SelectDictionary<byte[], byte[]>("Block");
                 var transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
-                Assert.Equal(nextBlockHash, blockHashKeyRow.Value);
-                Assert.Equal(2, blockDict.Count);
-                Assert.Equal(3, transDict.Count);
+                Assert.AreEqual(nextBlockHash, blockHashKeyRow.Value);
+                Assert.AreEqual(2, blockDict.Count);
+                Assert.AreEqual(3, transDict.Count);
 
                 foreach (var item in blockDict)
                 {
                     var bl = blocks.Where(b => b.GetHash() == new uint256(item.Key)).Single();
-                    Assert.Equal(bl.Header.GetHash(), new Block(item.Value).Header.GetHash());
+                    Assert.AreEqual(bl.Header.GetHash(), new Block(item.Value).Header.GetHash());
                 }
 
                 foreach (var item in transDict)
                 {
                     var bl = blocks.Where(b => b.Transactions.Any(t => t.GetHash() == new uint256(item.Key))).Single();
-                    Assert.Equal(bl.GetHash(), new uint256(item.Value));
+                    Assert.AreEqual(bl.GetHash(), new uint256(item.Value));
                 }
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void SetTxIndexUpdatesTxIndex()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/SetTxIndexUpdatesTxIndex");
@@ -293,11 +294,11 @@
                 var trans = engine.GetTransaction();
 
                 var txIndexRow = trans.Select<byte[], bool>("Common", new byte[1]);
-                Assert.Equal(false, txIndexRow.Value);
+                Assert.AreEqual(false, txIndexRow.Value);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void SetBlockHashUpdatesBlockHash()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/SetBlockHashUpdatesBlockHash");
@@ -319,11 +320,11 @@
                 var trans = engine.GetTransaction();
 
                 var blockHashKeyRow = trans.Select<byte[], byte[]>("Common", new byte[0]);
-                Assert.Equal(new uint256(56), new uint256(blockHashKeyRow.Value));
+                Assert.AreEqual(new uint256(56), new uint256(blockHashKeyRow.Value));
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void GetAsyncWithExistingBlockReturnsBlock()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetAsyncWithExistingBlock");
@@ -341,11 +342,11 @@
                 var task = repository.GetAsync(block.GetHash());
                 task.Wait();
 
-                Assert.Equal(block.GetHash(), task.Result.GetHash());
+                Assert.AreEqual(block.GetHash(), task.Result.GetHash());
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void GetAsyncWithoutExistingBlockReturnsNull()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetAsyncWithoutExistingBlock");
@@ -355,11 +356,11 @@
                 var task = repository.GetAsync(new uint256());
                 task.Wait();
 
-                Assert.Equal(null, task.Result);
+                Assert.AreEqual(null, task.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void ExistAsyncWithExistingBlockReturnsTrue()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/ExistAsyncWithExistingBlock");
@@ -377,11 +378,11 @@
                 var task = repository.ExistAsync(block.GetHash());
                 task.Wait();
 
-                Assert.Equal(true, task.Result);
+                Assert.AreEqual(true, task.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void ExistAsyncWithoutExistingBlockReturnsFalse()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/ExistAsyncWithoutExistingBlock");
@@ -391,11 +392,11 @@
                 var task = repository.ExistAsync(new uint256());
                 task.Wait();
 
-                Assert.Equal(false, task.Result);
+                Assert.AreEqual(false, task.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void DeleteAsyncRemovesBlocksAndTransactions()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/DeleteAsyncRemovesBlocksAndTransactions");
@@ -425,9 +426,9 @@
                 var blockDict = trans.SelectDictionary<byte[], byte[]>("Block");
                 var transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
-                Assert.Equal(new uint256(45), blockHashKeyRow.Value);
-                Assert.Equal(0, blockDict.Count);
-                Assert.Equal(0, transDict.Count);
+                Assert.AreEqual(new uint256(45), blockHashKeyRow.Value);
+                Assert.AreEqual(0, blockDict.Count);
+                Assert.AreEqual(0, transDict.Count);
             }
         }
 

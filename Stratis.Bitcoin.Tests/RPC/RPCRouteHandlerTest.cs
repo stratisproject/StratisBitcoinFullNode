@@ -7,30 +7,32 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Routing;
 using Moq;
 using Stratis.Bitcoin.RPC;
-using Xunit;
 using Microsoft.AspNetCore.Http.Features;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
+    [TestClass]
 	public class RPCRouteHandlerTest
 	{
 		private Mock<IRouter> inner;
 		private Mock<IActionDescriptorCollectionProvider> actionDescriptor;
 		private RPCRouteHandler handler;
 
-		public RPCRouteHandlerTest()
+        [TestInitialize]
+		public void Initialize()
 		{
 			this.inner = new Mock<IRouter>();
 			this.actionDescriptor = new Mock<IActionDescriptorCollectionProvider>();
 			this.handler = new RPCRouteHandler(this.inner.Object, this.actionDescriptor.Object);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetVirtualPathReturnsInnerVirtualPath()
 		{
 			this.inner.Setup(i => i.GetVirtualPath(It.IsAny<VirtualPathContext>()))
@@ -39,11 +41,11 @@ namespace Stratis.Bitcoin.Tests.RPC
 			var context = new VirtualPathContext(new DefaultHttpContext(), new RouteValueDictionary(), new RouteValueDictionary());
 			var result = this.handler.GetVirtualPath(context);
 
-			Assert.Equal("/~/root/", result.VirtualPath);
-			Assert.Equal(this.inner.Object, result.Router);
+			Assert.AreEqual("/~/root/", result.VirtualPath);
+			Assert.AreEqual(this.inner.Object, result.Router);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void RouteAsyncLoadsRouteContextOntoRouteData()
 		{
 			var request = new HttpRequestFeature();
@@ -61,18 +63,18 @@ namespace Stratis.Bitcoin.Tests.RPC
 					ControllerName = "RPCController"
 				}
 			}, 1);
-			actionDescriptor.Setup(a => a.ActionDescriptors)
+			this.actionDescriptor.Setup(a => a.ActionDescriptors)
 				.Returns(desciptors);			
 
 			var task = this.handler.RouteAsync(context);
 			task.Wait();
 
-			Assert.Equal("GET", callback.RouteData.Values["action"]);
-			Assert.Equal("RPCController", callback.RouteData.Values["controller"]);
-			Assert.True(callback.RouteData.Values["req"].GetType() == typeof(JObject));
+			Assert.AreEqual("GET", callback.RouteData.Values["action"]);
+			Assert.AreEqual("RPCController", callback.RouteData.Values["controller"]);
+			Assert.IsTrue(callback.RouteData.Values["req"].GetType() == typeof(JObject));
 		}
 
-		[Fact]
+		[TestMethod]
 		public async Task RouteAsyncLoadsRouteContextWithoutControllerDescriptorOntoRouteData()
 		{
 			var request = new HttpRequestFeature();
@@ -83,14 +85,14 @@ namespace Stratis.Bitcoin.Tests.RPC
 				.Callback<RouteContext>((r) => { callback = r; })
 				.Returns(Task.FromResult(0));
 			var desciptors = new ActionDescriptorCollection(new List<ControllerActionDescriptor>(), 1);
-			actionDescriptor.Setup(a => a.ActionDescriptors)
+			this.actionDescriptor.Setup(a => a.ActionDescriptors)
 				.Returns(desciptors);
 
 			await this.handler.RouteAsync(context);
 
-			Assert.Equal("GET", callback.RouteData.Values["action"]);
-			Assert.Equal(string.Empty, callback.RouteData.Values["controller"]);
-			Assert.True(callback.RouteData.Values["req"].GetType() == typeof(JObject));
+			Assert.AreEqual("GET", callback.RouteData.Values["action"]);
+			Assert.AreEqual(string.Empty, callback.RouteData.Values["controller"]);
+			Assert.IsTrue(callback.RouteData.Values["req"].GetType() == typeof(JObject));
 		}
 
 		private static void SetupRequestBody(HttpRequestFeature request, string requestBody)

@@ -8,13 +8,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Logging;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
-{
+{    
     public class MempoolActionTests : BaseRPCControllerTest
     {
-        [Fact]
+        [TestMethod]
         public async Task CanCall()
         {
 			Logs.Configure(new LoggerFactory());
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
 
             List<uint256> result = await controller.GetRawMempool();
 
-            Assert.NotNull(result);
+            Assert.IsNotNull(result);
         }
     }
 }
