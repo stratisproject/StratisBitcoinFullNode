@@ -10,13 +10,14 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.MemoryPool.Fee;
 using Stratis.Bitcoin.MemoryPool;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
+    [TestClass]
     public class FeeTests
 	{
-		[Fact]
+		[TestMethod]
 		public void BlockPolicyEstimates()
 	    {
 			var dateTimeSet = new MemoryPoolTests.DateTimeProviderSet();
@@ -89,16 +90,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 					// At this point we should need to combine 5 buckets to get enough data points
 					// So estimateFee(1,2,3) should fail and estimateFee(4) should return somewhere around
 					// 8*baserate.  estimateFee(4) %'s are 100,100,100,100,90 = average 98%
-					Assert.True(mpool.EstimateFee(1) == new FeeRate(0));
-					Assert.True(mpool.EstimateFee(2) == new FeeRate(0));
-					Assert.True(mpool.EstimateFee(3) == new FeeRate(0));
-					Assert.True(mpool.EstimateFee(4).FeePerK < 8 * baseRate.FeePerK + deltaFee);
-					Assert.True(mpool.EstimateFee(4).FeePerK > 8 * baseRate.FeePerK - deltaFee);
+					Assert.IsTrue(mpool.EstimateFee(1) == new FeeRate(0));
+					Assert.IsTrue(mpool.EstimateFee(2) == new FeeRate(0));
+					Assert.IsTrue(mpool.EstimateFee(3) == new FeeRate(0));
+					Assert.IsTrue(mpool.EstimateFee(4).FeePerK < 8 * baseRate.FeePerK + deltaFee);
+					Assert.IsTrue(mpool.EstimateFee(4).FeePerK > 8 * baseRate.FeePerK - deltaFee);
 					
-					Assert.True(mpool.EstimateSmartFee(1, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
-					Assert.True(mpool.EstimateSmartFee(3, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
-					Assert.True(mpool.EstimateSmartFee(4, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
-					Assert.True(mpool.EstimateSmartFee(8, out answerFound) == mpool.EstimateFee(8) && answerFound == 8);
+					Assert.IsTrue(mpool.EstimateSmartFee(1, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
+					Assert.IsTrue(mpool.EstimateSmartFee(3, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
+					Assert.IsTrue(mpool.EstimateSmartFee(4, out answerFound) == mpool.EstimateFee(4) && answerFound == 4);
+					Assert.IsTrue(mpool.EstimateSmartFee(8, out answerFound) == mpool.EstimateFee(8) && answerFound == 8);
 				}
 			}
 
@@ -114,17 +115,17 @@ namespace Stratis.Bitcoin.IntegrationTests
 				origFeeEst.Add(mpool.EstimateFee(i).FeePerK);
 				if (i > 2)
 				{ // Fee estimates should be monotonically decreasing
-					Assert.True(origFeeEst[i - 1] <= origFeeEst[i - 2]);
+					Assert.IsTrue(origFeeEst[i - 1] <= origFeeEst[i - 2]);
 				}
 				int mult = 11 - i;
 				if (i > 1)
 				{
-					Assert.True(origFeeEst[i - 1] < mult * baseRate.FeePerK + deltaFee);
-					Assert.True(origFeeEst[i - 1] > mult * baseRate.FeePerK - deltaFee);
+					Assert.IsTrue(origFeeEst[i - 1] < mult * baseRate.FeePerK + deltaFee);
+					Assert.IsTrue(origFeeEst[i - 1] > mult * baseRate.FeePerK - deltaFee);
 				}
 				else
 				{
-					Assert.True(origFeeEst[i - 1] == new FeeRate(0).FeePerK);
+					Assert.IsTrue(origFeeEst[i - 1] == new FeeRate(0).FeePerK);
 				}
 			}
 
@@ -133,11 +134,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 			while (blocknum < 250)
 				mpool.RemoveForBlock(block, ++blocknum);
 
-			Assert.True(mpool.EstimateFee(1) == new FeeRate(0));
+			Assert.IsTrue(mpool.EstimateFee(1) == new FeeRate(0));
 			for (int i = 2; i < 10; i++)
 			{
-				Assert.True(mpool.EstimateFee(i).FeePerK < origFeeEst[i - 1] + deltaFee);
-				Assert.True(mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
+				Assert.IsTrue(mpool.EstimateFee(i).FeePerK < origFeeEst[i - 1] + deltaFee);
+				Assert.IsTrue(mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
 			}
 
 
@@ -161,8 +162,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			for (int i = 1; i < 10; i++)
 			{
-				Assert.True(mpool.EstimateFee(i) == new FeeRate(0) || mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
-				Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK > origFeeEst[answerFound - 1] - deltaFee);
+				Assert.IsTrue(mpool.EstimateFee(i) == new FeeRate(0) || mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
+				Assert.IsTrue(mpool.EstimateSmartFee(i, out answerFound).FeePerK > origFeeEst[answerFound - 1] - deltaFee);
 			}
 
 			// Mine all those transactions
@@ -179,10 +180,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 			mpool.RemoveForBlock(block, 265);
 			block.Clear();
-			Assert.True(mpool.EstimateFee(1) == new FeeRate(0));
+			Assert.IsTrue(mpool.EstimateFee(1) == new FeeRate(0));
 			for (int i = 2; i < 10; i++)
 			{
-				Assert.True(mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
+				Assert.IsTrue(mpool.EstimateFee(i).FeePerK > origFeeEst[i - 1] - deltaFee);
 			}
 
 			// Mine 200 more blocks where everything is mined every block
@@ -206,10 +207,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 				mpool.RemoveForBlock(block, ++blocknum);
 				block.Clear();
 			}
-			Assert.True(mpool.EstimateFee(1) ==  new FeeRate(0));
+			Assert.IsTrue(mpool.EstimateFee(1) ==  new FeeRate(0));
 			for (int i = 2; i < 10; i++)
 			{
-				Assert.True(mpool.EstimateFee(i).FeePerK < origFeeEst[i - 1] - deltaFee);
+				Assert.IsTrue(mpool.EstimateFee(i).FeePerK < origFeeEst[i - 1] - deltaFee);
 			}
 
 			// Test that if the mempool is limited, estimateSmartFee won't return a value below the mempool min fee
@@ -217,12 +218,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 			mpool.AddUnchecked(txf.GetHash(), entry.Fee(feeV[5]).Time(dateTimeSet.GetTime()).Priority(0).Height(blocknum).FromTx(txf, mpool));
 			// evict that transaction which should set a mempool min fee of minRelayTxFee + feeV[5]
 			mpool.TrimToSize(1);
-			Assert.True(mpool.GetMinFee(1).FeePerK > feeV[5]);
+			Assert.IsTrue(mpool.GetMinFee(1).FeePerK > feeV[5]);
 			for (int i = 1; i < 10; i++)
 			{
-				Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.EstimateFee(i).FeePerK);
-				Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.GetMinFee(1).FeePerK);
-				Assert.True(mpool.EstimateSmartPriority(i, out answerFound) == BlockPolicyEstimator.INF_PRIORITY);
+				Assert.IsTrue(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.EstimateFee(i).FeePerK);
+				Assert.IsTrue(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.GetMinFee(1).FeePerK);
+				Assert.IsTrue(mpool.EstimateSmartPriority(i, out answerFound) == BlockPolicyEstimator.INF_PRIORITY);
 			}
 		}
     }

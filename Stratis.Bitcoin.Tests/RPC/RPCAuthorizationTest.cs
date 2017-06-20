@@ -4,85 +4,87 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.RPC;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
+    [TestClass]
     public class RPCAuthorizationTest
     {
         private RPCAuthorization authorization;
 
-        public RPCAuthorizationTest()
+        [TestInitialize]
+        public void Initialize()
         {
             this.authorization = new RPCAuthorization();
         }
 
-        [Fact]
+        [TestMethod]
         public void IsAuthorizedWithLowerCasedUserOnListReturnsTrue()
         {
             this.authorization.Authorized.Add("TestUser");
 
             var result = this.authorization.IsAuthorized("testuser");
 
-            Assert.True(result);
+            Assert.IsTrue(result);
         }
 
-        [Fact]
+        [TestMethod]
         public void IsAuthorizedWithCamelCasedUserOnListReturnsTrue()
         {
             this.authorization.Authorized.Add("TestUser");
 
             var result = this.authorization.IsAuthorized("testUser");
 
-            Assert.True(result);
+            Assert.IsTrue(result);
         }
 
-        [Fact]
+        [TestMethod]
         public void IsAuthorizedWithUpperCasedUserOnListReturnsTrue()
         {
             this.authorization.Authorized.Add("TestUser");
 
             var result = this.authorization.IsAuthorized("TESTUSER");
 
-            Assert.True(result);
+            Assert.IsTrue(result);
         }
 
-        [Fact]
+        [TestMethod]
         public void IsAuthorizedWithUserNotOnListReturnsFalse()
         {
             this.authorization.Authorized.Add("TestUser");
 
             var result = this.authorization.IsAuthorized("newuser");
 
-            Assert.False(result);
+            Assert.IsFalse(result);
         }
 
-        [Fact]
+        [TestMethod]
         public void IsAuthorizedWithEmptyListReturnsTrue()
         {
             var result = this.authorization.IsAuthorized(IPAddress.Parse("127.1.1.15"));
 
-            Assert.True(result);
+            Assert.IsTrue(result);
         }
 
-        [Fact]
+        [TestMethod]
         public void IsAuthorizedWithIPAddressOnListReturnsTrue()
         {
             this.authorization.AllowIp.Add(IPAddress.Parse("127.1.1.15"));
 
             var result = this.authorization.IsAuthorized(IPAddress.Parse("127.1.1.15"));
 
-            Assert.True(result);
+            Assert.IsTrue(result);
         }
 
-        [Fact]
+        [TestMethod]
         public void IsAuthorizedIpNotOnListReturnsFalse()
         {
             this.authorization.AllowIp.Add(IPAddress.Parse("127.0.0.1"));
 
             var result = this.authorization.IsAuthorized(IPAddress.Parse("127.1.1.15"));
 
-            Assert.False(result);
+            Assert.IsFalse(result);
         }
     }
 }

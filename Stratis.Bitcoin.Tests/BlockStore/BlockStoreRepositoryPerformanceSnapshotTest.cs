@@ -1,18 +1,15 @@
-﻿using Stratis.Bitcoin.BlockStore;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stratis.Bitcoin.BlockStore;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
+    [TestClass]
     public class BlockStoreRepositoryPerformanceSnapshotTest
-    {
-        public BlockStoreRepositoryPerformanceSnapshotTest()
-        {
-        }
-
-        [Fact]
+    { 
+        [TestMethod]
         public void Constructor_InitializesCounters()
         {
             var snapshot = new BlockStoreRepositoryPerformanceSnapshot(1301, 2352, 1244, 6452)
@@ -21,13 +18,13 @@ namespace Stratis.Bitcoin.Tests.BlockStore
                 Taken = DateTime.UtcNow
             };
 
-            Assert.Equal(1301, snapshot.TotalRepositoryHitCount);
-            Assert.Equal(2352, snapshot.TotalRepositoryMissCount);
-            Assert.Equal(1244, snapshot.TotalRepositoryDeleteCount);
-            Assert.Equal(6452, snapshot.TotalRepositoryInsertCount);
+            Assert.AreEqual(1301, snapshot.TotalRepositoryHitCount);
+            Assert.AreEqual(2352, snapshot.TotalRepositoryMissCount);
+            Assert.AreEqual(1244, snapshot.TotalRepositoryDeleteCount);
+            Assert.AreEqual(6452, snapshot.TotalRepositoryInsertCount);
         }
 
-        [Fact]
+        [TestMethod]
         public void SubtractOperator_SubtractsValuesFromMultipleSnapshots_CreatesNewSnapshot()
         {
             var snapshot = new BlockStoreRepositoryPerformanceSnapshot(1301, 2352, 1244, 6452)
@@ -44,12 +41,12 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 
             BlockStoreRepositoryPerformanceSnapshot snapshot3 = snapshot2 - snapshot;
 
-            Assert.Equal(3011, snapshot3.TotalRepositoryHitCount);
-            Assert.Equal(1200, snapshot3.TotalRepositoryMissCount);
-            Assert.Equal(972, snapshot3.TotalRepositoryDeleteCount);
-            Assert.Equal(2571, snapshot3.TotalRepositoryInsertCount);
-            Assert.Equal(new DateTime(2017, 1, 1, 1, 1, 1), snapshot3.Start);
-            Assert.Equal(new DateTime(2017, 1, 1, 3, 1, 1), snapshot3.Taken);
+            Assert.AreEqual(3011, snapshot3.TotalRepositoryHitCount);
+            Assert.AreEqual(1200, snapshot3.TotalRepositoryMissCount);
+            Assert.AreEqual(972, snapshot3.TotalRepositoryDeleteCount);
+            Assert.AreEqual(2571, snapshot3.TotalRepositoryInsertCount);
+            Assert.AreEqual(new DateTime(2017, 1, 1, 1, 1, 1), snapshot3.Start);
+            Assert.AreEqual(new DateTime(2017, 1, 1, 3, 1, 1), snapshot3.Taken);
         }
     }
 }

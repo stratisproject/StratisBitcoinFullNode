@@ -6,18 +6,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
 using Microsoft.Extensions.Primitives;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
+    [TestClass]
     public class BlockStoreCacheTest
     {
 		private Mock<Bitcoin.BlockStore.IBlockRepository> blockRepository;
 		private BlockStoreCache blockStoreCache;
 		private Mock<IMemoryCache> cache;
 
-		public BlockStoreCacheTest()
+        [TestInitialize]
+		public void Initialize()
 		{
 			this.blockRepository = new Mock<Bitcoin.BlockStore.IBlockRepository>();
 			this.cache = new Mock<IMemoryCache>();
@@ -25,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, this.cache.Object);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ExpireRemovesBlockFromCacheWhenExists()
 		{
 			object block = null;
@@ -38,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			this.cache.Verify(c => c.Remove(It.IsAny<Block>()), Times.Exactly(1));
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ExpireDoesNotRemoveBlockFromCacheWhenNotExists()
 		{
 			object block = null;
@@ -51,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			this.cache.Verify(c => c.Remove(It.IsAny<Block>()), Times.Exactly(0));
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetBlockAsyncBlockInCacheReturnsBlock()
 		{
 			object block = null;			
@@ -66,10 +68,10 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			var task = this.blockStoreCache.GetBlockAsync(blockId);
 			task.Wait();
 
-			Assert.Equal(1513, ((Block)block).Header.Version);
+			Assert.AreEqual(1513, ((Block)block).Header.Version);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock()
 		{
 			uint256 blockId = new uint256(2389704);
@@ -79,16 +81,16 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 				.Returns(Task.FromResult(repositoryBlock));
 
 			var memoryCacheStub = new MemoryCacheStub();
-			this.blockStoreCache = new BlockStoreCache(blockRepository.Object, memoryCacheStub);
+			this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub);
 
 			var result = this.blockStoreCache.GetBlockAsync(blockId);
 			result.Wait();
 
-			Assert.Equal(blockId, memoryCacheStub.GetLastCreateCalled());
-			Assert.Equal(1451, result.Result.Header.Version);
+			Assert.AreEqual(blockId, memoryCacheStub.GetLastCreateCalled());
+			Assert.AreEqual(1451, result.Result.Header.Version);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetBlockByTrxAsyncBlockInCacheReturnsBlock()
 		{
 			uint256 txId = new uint256(3252);
@@ -100,15 +102,15 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			dict.Add(blockId, block);
 
 			var memoryCacheStub = new MemoryCacheStub(dict);
-			this.blockStoreCache = new BlockStoreCache(blockRepository.Object, memoryCacheStub);
+			this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub);
 
 			var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
 			result.Wait();
 
-			Assert.Equal(1451, result.Result.Header.Version);
+			Assert.AreEqual(1451, result.Result.Header.Version);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetBlockByTrxAsyncBlockNotInCacheLookupInRepository()
 		{
 			uint256 txId = new uint256(3252);
@@ -119,33 +121,33 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			dict.Add(blockId, block);
 
 			var memoryCacheStub = new MemoryCacheStub(dict);			
-			this.blockStoreCache = new BlockStoreCache(blockRepository.Object, memoryCacheStub);
+			this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub);
 			this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
 				.Returns(Task.FromResult(blockId));
 
 			var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
 			result.Wait();
 
-			Assert.Equal(1451, result.Result.Header.Version);
-			Assert.Equal(txId, memoryCacheStub.GetLastCreateCalled());
+			Assert.AreEqual(1451, result.Result.Header.Version);
+			Assert.AreEqual(txId, memoryCacheStub.GetLastCreateCalled());
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetBlockByTrxAsyncBlockNotInCacheLookupNotInRepositoryReturnsNull()
 		{
 			uint256 txId = new uint256(3252);			
 			var memoryCacheStub = new MemoryCacheStub();
-			this.blockStoreCache = new BlockStoreCache(blockRepository.Object, memoryCacheStub);
+			this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub);
 			this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
 				.Returns(Task.FromResult((uint256)null));
 
 			var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
 			result.Wait();
 
-			Assert.Equal(null, result.Result);
+			Assert.AreEqual(null, result.Result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetTrxAsyncReturnsTransactionFromBlockInCache()
 		{
 			var trans = new Transaction();
@@ -160,15 +162,15 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			dict.Add(blockId, block);
 
 			var memoryCacheStub = new MemoryCacheStub(dict);
-			this.blockStoreCache = new BlockStoreCache(blockRepository.Object, memoryCacheStub);
+			this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub);
 
 			var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
 			result.Wait();
 
-			Assert.Equal(trans.GetHash(), result.Result.GetHash());
+			Assert.AreEqual(trans.GetHash(), result.Result.GetHash());
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetTrxAsyncReturnsNullWhenNotInCache()
 		{
 			var trans = new Transaction();
@@ -177,12 +179,12 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 				.Returns(Task.FromResult((uint256)null));
 
 			var memoryCacheStub = new MemoryCacheStub();
-			this.blockStoreCache = new BlockStoreCache(blockRepository.Object, memoryCacheStub);
+			this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub);
 
 			var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
 			result.Wait();
 
-			Assert.Equal(null, result.Result);
+			Assert.AreEqual(null, result.Result);
 		}
 	}
 }

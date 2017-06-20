@@ -9,52 +9,54 @@ using Microsoft.AspNetCore.Routing;
 using Moq;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.RPC;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
+    [TestClass]
 	public class RPCParametersValueProviderTest
 	{
 		private ValueProviderFactoryContext context;
 		private RPCParametersValueProvider provider;
 		private ActionContext actionContext;
 
-		public RPCParametersValueProviderTest()
+        [TestInitialize]
+		public void Initialize()
 		{
 			this.actionContext = new ActionContext();
 			this.context = new ValueProviderFactoryContext(this.actionContext);
 			this.provider = new RPCParametersValueProvider(this.context);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void CreateValueProviderAsyncCreatesValueProviderForContext()
 		{
 			var task = this.provider.CreateValueProviderAsync(this.context);
 			task.Wait();
 
-			Assert.Equal(1, this.context.ValueProviders.Count);
-			Assert.True(this.context.ValueProviders[0] is RPCParametersValueProvider);
+			Assert.AreEqual(1, this.context.ValueProviders.Count);
+			Assert.IsTrue(this.context.ValueProviders[0] is RPCParametersValueProvider);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixWithoutRouteDataReturnsFalse()
 		{
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.False(result);
+			Assert.IsFalse(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixWithEmptyRouteDataReturnsFalse()
 		{
 			this.actionContext.RouteData = new RouteData();
 
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.False(result);
+			Assert.IsFalse(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixWithReqValueWithoutParameterInRouteDataReturnsFalse()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -62,10 +64,10 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.False(result);
+			Assert.IsFalse(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixWithoutActionDescriptorReturnsFalse()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -74,10 +76,10 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.False(result);
+			Assert.IsFalse(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixWithoutActionDescriptorParametersReturnsFalse()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -87,10 +89,10 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.False(result);
+			Assert.IsFalse(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixWithoutKeyInParametersReturnsFalse()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -100,10 +102,10 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.False(result);
+			Assert.IsFalse(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixIndexBeyondParametersReturnsFalse()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -118,10 +120,10 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.False(result);
+			Assert.IsFalse(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixParameterNullReturnsFalse()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -134,10 +136,10 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.False(result);
+			Assert.IsFalse(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void ContainsPrefixParameterNotNullReturnsTrue()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -150,10 +152,10 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.ContainsPrefix("rpc_");
 
-			Assert.True(result);
+			Assert.IsTrue(result);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetValueReturnsResultIfExists()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -166,10 +168,10 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.GetValue("rpc_");
 
-			Assert.Equal("Yes", result.FirstValue);
+			Assert.AreEqual("Yes", result.FirstValue);
 		}
 
-		[Fact]
+		[TestMethod]
 		public void GetValueReturnsNullIfNotExists()
 		{
 			this.actionContext.RouteData = new RouteData();
@@ -182,7 +184,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.GetValue("rpc_");
 
-			Assert.Equal(null, result.FirstValue);
+			Assert.AreEqual(null, result.FirstValue);
 		}
 	}
 }

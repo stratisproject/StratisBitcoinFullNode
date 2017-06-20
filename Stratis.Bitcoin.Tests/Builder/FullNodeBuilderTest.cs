@@ -16,198 +16,194 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Logging;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.Builder
 {
-	public class FullNodeBuilderTest
-	{
-		private FeatureCollection featureCollection;
-		private List<Action<IFeatureCollection>> featureCollectionDelegates;
-		private FullNodeBuilder fullNodeBuilder;
-		private List<Action<IServiceCollection>> serviceCollectionDelegates;
-		private List<Action<IServiceProvider>> serviceProviderDelegates;
+    [TestClass]
+    public class FullNodeBuilderTest
+    {
+        private FeatureCollection featureCollection;
+        private List<Action<IFeatureCollection>> featureCollectionDelegates;
+        private FullNodeBuilder fullNodeBuilder;
+        private List<Action<IServiceCollection>> serviceCollectionDelegates;
+        private List<Action<IServiceProvider>> serviceProviderDelegates;
 
-		public FullNodeBuilderTest()
-		{
-			this.serviceCollectionDelegates = new List<Action<IServiceCollection>>();
-			this.serviceProviderDelegates = new List<Action<IServiceProvider>>();
-			this.featureCollectionDelegates = new List<Action<IFeatureCollection>>();
-			this.featureCollection = new FeatureCollection();
+        [TestInitialize]
+        public void Initialize()
+        {
+            this.serviceCollectionDelegates = new List<Action<IServiceCollection>>();
+            this.serviceProviderDelegates = new List<Action<IServiceProvider>>();
+            this.featureCollectionDelegates = new List<Action<IFeatureCollection>>();
+            this.featureCollection = new FeatureCollection();
 
-			Logs.Configure(new LoggerFactory());
+            Logs.Configure(new LoggerFactory());
 
-			this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
-		}
+            this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
+        }
 
-		[Fact]
-		public void ConstructorWithoutNodeSettingsDoesNotSetupBaseServices()
-		{
-			this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
+        [TestMethod]
+        public void ConstructorWithoutNodeSettingsDoesNotSetupBaseServices()
+        {
+            this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
-			Assert.Equal(0, this.featureCollection.FeatureRegistrations.Count);
-			Assert.Equal(0, this.featureCollectionDelegates.Count);
-			Assert.Equal(0, this.serviceProviderDelegates.Count);
-			Assert.Equal(0, this.serviceCollectionDelegates.Count);
-			Assert.Equal(null, this.fullNodeBuilder.Network);
-			Assert.Equal(null, this.fullNodeBuilder.NodeSettings);
-		}
+            Assert.AreEqual(0, this.featureCollection.FeatureRegistrations.Count);
+            Assert.AreEqual(0, this.featureCollectionDelegates.Count);
+            Assert.AreEqual(0, this.serviceProviderDelegates.Count);
+            Assert.AreEqual(0, this.serviceCollectionDelegates.Count);
+            Assert.AreEqual(null, this.fullNodeBuilder.Network);
+            Assert.AreEqual(null, this.fullNodeBuilder.NodeSettings);
+        }
 
-		[Fact]
-		public void ConstructorWithNodeSettingsSetupBaseServices()
-		{
-			var settings = new NodeSettings();
+        [TestMethod]
+        public void ConstructorWithNodeSettingsSetupBaseServices()
+        {
+            var settings = new NodeSettings();
 
-			this.fullNodeBuilder = new FullNodeBuilder(settings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
-			
-			Assert.Equal(0, this.featureCollection.FeatureRegistrations.Count);
-			Assert.Equal(1, this.featureCollectionDelegates.Count);
-			Assert.Equal(0, this.serviceProviderDelegates.Count);
-			Assert.Equal(1, this.serviceCollectionDelegates.Count);
-			Assert.Equal(Network.Main, this.fullNodeBuilder.Network);
-			Assert.Equal(settings, this.fullNodeBuilder.NodeSettings);
-		}
+            this.fullNodeBuilder = new FullNodeBuilder(settings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
-		[Fact]
-		public void ConfigureServicesAddsServiceToDelegatesList()
-		{
-			var action = new Action<IServiceCollection>(e => { e.AddSingleton<IServiceProvider>(); });
+            Assert.AreEqual(0, this.featureCollection.FeatureRegistrations.Count);
+            Assert.AreEqual(1, this.featureCollectionDelegates.Count);
+            Assert.AreEqual(0, this.serviceProviderDelegates.Count);
+            Assert.AreEqual(1, this.serviceCollectionDelegates.Count);
+            Assert.AreEqual(Network.Main, this.fullNodeBuilder.Network);
+            Assert.AreEqual(settings, this.fullNodeBuilder.NodeSettings);
+        }
 
-			var result = this.fullNodeBuilder.ConfigureServices(action);
+        [TestMethod]
+        public void ConfigureServicesAddsServiceToDelegatesList()
+        {
+            var action = new Action<IServiceCollection>(e => { e.AddSingleton<IServiceProvider>(); });
 
-			Assert.Equal(1, this.serviceCollectionDelegates.Count);
-			Assert.Equal(action, this.serviceCollectionDelegates[0]);
-			Assert.Equal(this.fullNodeBuilder, result);
-		}
+            var result = this.fullNodeBuilder.ConfigureServices(action);
 
-		[Fact]
-		public void ConfigureFeatureAddsFeatureToDelegatesList()
-		{
-			var action = new Action<IFeatureCollection>(e => { var registrations = e.FeatureRegistrations; });
+            Assert.AreEqual(1, this.serviceCollectionDelegates.Count);
+            Assert.AreEqual(action, this.serviceCollectionDelegates[0]);
+            Assert.AreEqual(this.fullNodeBuilder, result);
+        }
 
-			var result = this.fullNodeBuilder.ConfigureFeature(action);
+        [TestMethod]
+        public void ConfigureFeatureAddsFeatureToDelegatesList()
+        {
+            var action = new Action<IFeatureCollection>(e => { var registrations = e.FeatureRegistrations; });
 
-			Assert.Equal(1, this.featureCollectionDelegates.Count);
-			Assert.Equal(action, this.featureCollectionDelegates[0]);
-			Assert.Equal(this.fullNodeBuilder, result);
-		}
+            var result = this.fullNodeBuilder.ConfigureFeature(action);
 
-		[Fact]
-		public void ConfigureServiceProviderAddsServiceProviderToDelegatesList()
-		{
-			var action = new Action<IServiceProvider>(e => { var serv = e.GetService(typeof(string)); });
+            Assert.AreEqual(1, this.featureCollectionDelegates.Count);
+            Assert.AreEqual(action, this.featureCollectionDelegates[0]);
+            Assert.AreEqual(this.fullNodeBuilder, result);
+        }
 
-			var result = this.fullNodeBuilder.ConfigureServiceProvider(action);
+        [TestMethod]
+        public void ConfigureServiceProviderAddsServiceProviderToDelegatesList()
+        {
+            var action = new Action<IServiceProvider>(e => { var serv = e.GetService(typeof(string)); });
 
-			Assert.Equal(1, this.serviceProviderDelegates.Count);
-			Assert.Equal(action, this.serviceProviderDelegates[0]);
-			Assert.Equal(this.fullNodeBuilder, result);
-		}
+            var result = this.fullNodeBuilder.ConfigureServiceProvider(action);
 
-		[Fact]
-		public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
-		{
-			var nodeSettings = new NodeSettings();
-			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
+            Assert.AreEqual(1, this.serviceProviderDelegates.Count);
+            Assert.AreEqual(action, this.serviceProviderDelegates[0]);
+            Assert.AreEqual(this.fullNodeBuilder, result);
+        }
 
-			this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
+        [TestMethod]
+        public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
+        {
+            var nodeSettings = new NodeSettings();
+            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
 
-			this.fullNodeBuilder.ConfigureServices(e =>
-			{
-				e.AddSingleton<FullNode>();
-			});
+            this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
-			this.fullNodeBuilder.ConfigureFeature(e =>
-			{
-				e.AddFeature<BlockStoreFeature>();
-			});
+            this.fullNodeBuilder.ConfigureServices(e =>
+            {
+                e.AddSingleton<FullNode>();
+            });
 
-			this.fullNodeBuilder.ConfigureServiceProvider(e =>
-			{
-				var settings = e.GetService<NodeSettings>();
-				settings.Testnet = true;
-			});
+            this.fullNodeBuilder.ConfigureFeature(e =>
+            {
+                e.AddFeature<BlockStoreFeature>();
+            });
 
-			var result = this.fullNodeBuilder.Build();
+            this.fullNodeBuilder.ConfigureServiceProvider(e =>
+            {
+                var settings = e.GetService<NodeSettings>();
+                settings.Testnet = true;
+            });
 
-			Assert.NotNull(result);
-		}
+            var result = this.fullNodeBuilder.Build();
 
-		[Fact]
-		public void BuildConfiguresFullNodeUsingConfiguration()
-		{
-			var nodeSettings = new NodeSettings();
-			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            Assert.IsNotNull(result);
+        }
 
-			this.fullNodeBuilder.ConfigureServices(e =>
-			{
-				e.AddSingleton(nodeSettings);
-				e.AddSingleton(nodeSettings.GetNetwork());
-				e.AddSingleton<FullNode>();
-			});
+        [TestMethod]
+        public void BuildConfiguresFullNodeUsingConfiguration()
+        {
+            var nodeSettings = new NodeSettings();
+            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
 
-			this.fullNodeBuilder.ConfigureFeature(e =>
-			{
-				e.AddFeature<BlockStoreFeature>();
-			});
+            this.fullNodeBuilder.ConfigureServices(e =>
+            {
+                e.AddSingleton(nodeSettings);
+                e.AddSingleton(nodeSettings.GetNetwork());
+                e.AddSingleton<FullNode>();
+            });
 
-			this.fullNodeBuilder.ConfigureServiceProvider(e =>
-			{
-				var settings = e.GetService<NodeSettings>();
-				settings.Testnet = true;
-			});
+            this.fullNodeBuilder.ConfigureFeature(e =>
+            {
+                e.AddFeature<BlockStoreFeature>();
+            });
 
-			var result = this.fullNodeBuilder.Build();
+            this.fullNodeBuilder.ConfigureServiceProvider(e =>
+            {
+                var settings = e.GetService<NodeSettings>();
+                settings.Testnet = true;
+            });
 
-			Assert.NotNull(result);
-		}
+            var result = this.fullNodeBuilder.Build();
 
-		[Fact]
-		public void BuildWithoutFullNodeInServiceConfigurationThrowsException()
-		{
-			Assert.Throws<InvalidOperationException>(() =>
-			{
-				this.fullNodeBuilder.ConfigureServices(e =>
-				{
-					e.AddSingleton<NodeSettings>();
-					e.AddSingleton<Network>(NodeSettings.Default().GetNetwork());
-				});
+            Assert.IsNotNull(result);
+        }
 
-				this.fullNodeBuilder.Build();
-				this.fullNodeBuilder.Build();
-			});
-		}
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void BuildWithoutFullNodeInServiceConfigurationThrowsException()
+        {
+            this.fullNodeBuilder.ConfigureServices(e =>
+            {
+                e.AddSingleton<NodeSettings>();
+                e.AddSingleton<Network>(NodeSettings.Default().GetNetwork());
+            });
 
-		[Fact]
-		public void BuildTwiceThrowsException()
-		{
-			var nodeSettings = new NodeSettings();
-			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
+            this.fullNodeBuilder.Build();
+            this.fullNodeBuilder.Build();
+        }
 
-			Assert.Throws<InvalidOperationException>(() =>
-			{
-				this.fullNodeBuilder.ConfigureServices(e =>
-				{
-					e.AddSingleton(nodeSettings);
-					e.AddSingleton(nodeSettings.GetNetwork());
-					e.AddSingleton<FullNode>();
-				});
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void BuildTwiceThrowsException()
+        {
+            var nodeSettings = new NodeSettings();
+            nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildConfiguresFullNodeUsingConfiguration";
 
-				this.fullNodeBuilder.Build();
-				this.fullNodeBuilder.Build();
-			});
-		}
+            this.fullNodeBuilder.ConfigureServices(e =>
+            {
+                e.AddSingleton(nodeSettings);
+                e.AddSingleton(nodeSettings.GetNetwork());
+                e.AddSingleton<FullNode>();
+            });
 
-		[Fact]
-		public void BuildWithoutNodeSettingsInServiceConfigurationThrowsException()
-		{
-			Assert.Throws<NodeBuilderException>(() =>
-			{
-				this.fullNodeBuilder.Build();
-			});
-		}
+            this.fullNodeBuilder.Build();
+            this.fullNodeBuilder.Build();
+        }
 
-        [Fact]
+        [TestMethod]
+        [ExpectedException(typeof(NodeBuilderException))]
+        public void BuildWithoutNodeSettingsInServiceConfigurationThrowsException()
+        {
+            this.fullNodeBuilder.Build();
+        }
+
+        [TestMethod]
         public void CanHaveAllServicesTest()
         {
             var nodeSettings = NodeSettings.Default();
@@ -231,15 +227,15 @@ namespace Stratis.Bitcoin.Tests.Builder
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
             var connectionManager = serviceProvider.GetService<ConnectionManager>();
 
-            Assert.NotNull(fullNode);
-            Assert.NotNull(network);
-            Assert.NotNull(settings);
-            Assert.NotNull(consensusLoop);
-            Assert.NotNull(consensus);
-            Assert.NotNull(chain);
-            Assert.NotNull(chainState);
-            Assert.NotNull(blockStoreManager);
-            Assert.NotNull(mempoolManager);
+            Assert.IsNotNull(fullNode);
+            Assert.IsNotNull(network);
+            Assert.IsNotNull(settings);
+            Assert.IsNotNull(consensusLoop);
+            Assert.IsNotNull(consensus);
+            Assert.IsNotNull(chain);
+            Assert.IsNotNull(chainState);
+            Assert.IsNotNull(blockStoreManager);
+            Assert.IsNotNull(mempoolManager);
         }
 
     }

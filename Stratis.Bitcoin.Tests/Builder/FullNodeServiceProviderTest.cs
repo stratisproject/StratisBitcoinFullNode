@@ -1,19 +1,21 @@
-﻿using Moq;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder
 {
+    [TestClass]
 	public class FullNodeServiceProviderTest
 	{
 		private Mock<IServiceProvider> serviceProvider;
 
-		public FullNodeServiceProviderTest()
+        [TestInitialize]
+		public void Initialize()
 		{
 			this.serviceProvider = new Mock<IServiceProvider>();
 			this.serviceProvider.Setup(c => c.GetService(typeof(TestFeatureStub)))
@@ -22,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.Builder
 				.Returns(new TestFeatureStub2());
 		}
 
-		[Fact]
+		[TestMethod]
 		public void FeaturesReturnsFullNodeFeaturesFromServiceProvider()
 		{
 			var types = new List<Type> {
@@ -33,12 +35,12 @@ namespace Stratis.Bitcoin.Tests.Builder
 			var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);
 			var result = fullnodeServiceProvider.Features.ToList();
 
-			Assert.Equal(2, result.Count);			
-			Assert.Equal(typeof(TestFeatureStub), result[0].GetType());
-			Assert.Equal(typeof(TestFeatureStub2), result[1].GetType());
+			Assert.AreEqual(2, result.Count);			
+			Assert.AreEqual(typeof(TestFeatureStub), result[0].GetType());
+			Assert.AreEqual(typeof(TestFeatureStub2), result[1].GetType());
 		}
 
-		[Fact]
+		[TestMethod]
 		public void FeaturesReturnsInGivenOrder()
 		{
 			var types = new List<Type> {
@@ -50,9 +52,9 @@ namespace Stratis.Bitcoin.Tests.Builder
 			var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);
 			var result = fullnodeServiceProvider.Features.ToList();
 
-			Assert.Equal(2, result.Count);
-			Assert.Equal(typeof(TestFeatureStub2), result[0].GetType());
-			Assert.Equal(typeof(TestFeatureStub), result[1].GetType());
+			Assert.AreEqual(2, result.Count);
+			Assert.AreEqual(typeof(TestFeatureStub2), result[0].GetType());
+			Assert.AreEqual(typeof(TestFeatureStub), result[1].GetType());
 		}
 
 		private class TestFeatureStub : IFullNodeFeature

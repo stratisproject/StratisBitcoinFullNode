@@ -3,34 +3,35 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests
 {
+    [TestClass]
     public class DateTimeProviderTest
     {
-        [Fact]
+        [TestMethod]
         public void GetUtcNowReturnsCurrentUtcDateTime()
         {
             var result = DateTimeProvider.Default.GetUtcNow();
 
-            Assert.Equal(DateTime.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
+            Assert.AreEqual(DateTime.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
         }
 
-        [Fact]
+        [TestMethod]
         public void GetTimeOffsetReturnsCurrentUtcTimeOffset()
         {
             var result = DateTimeProvider.Default.GetTimeOffset();
 
-            Assert.Equal(DateTimeOffset.UtcNow, result);
+            Assert.AreEqual(DateTimeOffset.UtcNow, result);
         }
 
-        [Fact]
+        [TestMethod]
         public void GetTimeReturnsUnixTimeStamp()
         {
             var timeStamp = DateTimeProvider.Default.GetTime();
 
-            Assert.Equal(DateTime.UtcNow.ToUnixTimestamp(), timeStamp);
+            Assert.AreEqual(DateTime.UtcNow.ToUnixTimestamp(), timeStamp);
         }
     }
 }

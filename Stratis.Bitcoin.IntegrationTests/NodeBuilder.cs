@@ -48,14 +48,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 	{
 		public bool HasExited
 		{
-			get { return FullNode.HasExited; }
+			get { return this.FullNode.HasExited; }
 		}
 
 		public void Kill()
 		{
-			if (FullNode != null)
+			if (this.FullNode != null)
 			{
-				FullNode.Dispose();
+				this.FullNode.Dispose();
 			}
 		}
 
@@ -67,8 +67,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			var node = BuildFullNode(args);
 
-			FullNode = node;
-			FullNode.Start();
+			this.FullNode = node;
+			this.FullNode.Start();
 		}
 
 		public static FullNode BuildFullNode(NodeSettings args)
@@ -94,28 +94,28 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public BitcoinCoreRunner(string bitcoinD)
 		{
-			_BitcoinD = bitcoinD;
+			this._BitcoinD = bitcoinD;
 		}
 
 		Process _Process;
 
 		public bool HasExited
 		{
-			get { return _Process == null && _Process.HasExited; }
+			get { return this._Process == null && this._Process.HasExited; }
 		}
 
 		public void Kill()
 		{
-			if (!HasExited)
+			if (!this.HasExited)
 			{
-				_Process.Kill();
-				_Process.WaitForExit();
+				this._Process.Kill();
+				this._Process.WaitForExit();
 			}
 		}
 
 		public void Start(string dataDir)
 		{
-			_Process = Process.Start(new FileInfo(_BitcoinD).FullName,
+			this._Process = Process.Start(new FileInfo(this._BitcoinD).FullName,
 				"-conf=bitcoin.conf" + " -datadir=" + dataDir + " -debug=net");
 		}
 	}
@@ -197,9 +197,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public void SyncNodes()
 		{
-			foreach (var node in Nodes)
+			foreach (var node in this.Nodes)
 			{
-				foreach (var node2 in Nodes)
+				foreach (var node2 in this.Nodes)
 				{
 					if (node != node2)
 						node.Sync(node2, true);
@@ -217,11 +217,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 			{
-				var bitcoind = String.Format("TestData/bitcoin-{0}/bin/bitcoind.exe", version);
+				var bitcoind = string.Format("TestData/bitcoin-{0}/bin/bitcoind.exe", version);
 				if (File.Exists(bitcoind))
 					return bitcoind;
-				var zip = String.Format("TestData/bitcoin-{0}-win32.zip", version);
-				string url = String.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
+				var zip = string.Format("TestData/bitcoin-{0}-win32.zip", version);
+				string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
 				HttpClient client = new HttpClient();
 				client.Timeout = TimeSpan.FromMinutes(10.0);
 				var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
@@ -231,15 +231,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 			else
 			{
-				string bitcoind = String.Format("TestData/bitcoin-{0}/bin/bitcoind", version);
+				string bitcoind = string.Format("TestData/bitcoin-{0}/bin/bitcoind", version);
 				if (File.Exists(bitcoind))
 					return bitcoind;
 
 				var zip = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-					? String.Format("TestData/bitcoin-{0}-x86_64-linux-gnu.tar.gz", version)
-					: String.Format("TestData/bitcoin-{0}-osx64.tar.gz", version);
+					? string.Format("TestData/bitcoin-{0}-x86_64-linux-gnu.tar.gz", version)
+					: string.Format("TestData/bitcoin-{0}-osx64.tar.gz", version);
 
-				string url = String.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
+				string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
 				HttpClient client = new HttpClient();
 				client.Timeout = TimeSpan.FromMinutes(10.0);
 				var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public string BitcoinD
 		{
-			get { return _Bitcoind; }
+			get { return this._Bitcoind; }
 		}
 
 
@@ -269,7 +269,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public List<CoreNode> Nodes
 		{
-			get { return _Nodes; }
+			get { return this._Nodes; }
 		}
 
 
@@ -277,14 +277,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public NodeConfigParameters ConfigParameters
 		{
-			get { return _ConfigParameters; }
+			get { return this._ConfigParameters; }
 		}
 
 		public CoreNode CreateNode(bool start = false)
 		{
 			string child = CreateNewEmptyFolder();
-			var node = new CoreNode(child, new BitcoinCoreRunner(_Bitcoind), this);
-			Nodes.Add(node);
+			var node = new CoreNode(child, new BitcoinCoreRunner(this._Bitcoind), this);
+            this.Nodes.Add(node);
 			if (start)
 				node.Start();
 			return node;
@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			string child = CreateNewEmptyFolder();
 			var node = new CoreNode(child, new StratisBitcoinRunner(), this);
-			Nodes.Add(node);
+            this.Nodes.Add(node);
 			if (start)
 				node.Start();
 			return node;
@@ -303,15 +303,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 	    public CoreNode CloneStratisNode(CoreNode cloneNode)
 	    {
 	        var node = new CoreNode(cloneNode.Folder, new StratisBitcoinRunner(), this, false);
-	        Nodes.Add(node);
-	        Nodes.Remove(cloneNode);
+            this.Nodes.Add(node);
+            this.Nodes.Remove(cloneNode);
 	        return node;
 	    }
 
         private string CreateNewEmptyFolder()
 		{
-			var child = Path.Combine(_Root, last.ToString());
-			last++;
+			var child = Path.Combine(this._Root, this.last.ToString());
+            this.last++;
 			try
 			{
 				Directory.Delete(child, true);
@@ -325,14 +325,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public void StartAll()
 		{
-			Task.WaitAll(Nodes.Where(n => n.State == CoreNodeState.Stopped).Select(n => n.StartAsync()).ToArray());
+			Task.WaitAll(this.Nodes.Where(n => n.State == CoreNodeState.Stopped).Select(n => n.StartAsync()).ToArray());
 		}
 
 		public void Dispose()
 		{
-			foreach (var node in Nodes)
+			foreach (var node in this.Nodes)
 				node.Kill();
-			foreach (var disposable in _Disposables)
+			foreach (var disposable in this._Disposables)
 				disposable.Dispose();
 		}
 
@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		internal void AddDisposable(IDisposable group)
 		{
-			_Disposables.Add(group);
+            this._Disposables.Add(group);
 		}
 	}
 
@@ -351,17 +351,17 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public string Folder
 		{
-			get { return _Folder; }
+			get { return this._Folder; }
 		}
 
 		public IPEndPoint Endpoint
 		{
-			get { return new IPEndPoint(IPAddress.Parse("127.0.0.1"), ports[0]); }
+			get { return new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ports[0]); }
 		}
 
 		public string Config
 		{
-			get { return _Config; }
+			get { return this._Config; }
 		}
 
 		private readonly NodeConfigParameters _ConfigParameters = new NodeConfigParameters();
@@ -369,26 +369,26 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public NodeConfigParameters ConfigParameters
 		{
-			get { return _ConfigParameters; }
+			get { return this._ConfigParameters; }
 		}
 
 		public CoreNode(string folder, INodeRunner runner, NodeBuilder builder, bool cleanfolders = true)
 		{
-			_Runner = runner;
+            this._Runner = runner;
 			this._Builder = builder;
 			this._Folder = folder;
-			_State = CoreNodeState.Stopped;
+            this._State = CoreNodeState.Stopped;
 		    if (cleanfolders)
 		        CleanFolder();
 			Directory.CreateDirectory(folder);
-			dataDir = Path.Combine(folder, "data");
-			Directory.CreateDirectory(dataDir);
+			this.dataDir = Path.Combine(folder, "data");
+			Directory.CreateDirectory(this.dataDir);
 			var pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
-			creds = new NetworkCredential(pass, pass);
-			_Config = Path.Combine(dataDir, "bitcoin.conf");
-			ConfigParameters.Import(builder.ConfigParameters);
-			ports = new int[2];
-			FindPorts(ports);
+            this.creds = new NetworkCredential(pass, pass);
+            this._Config = Path.Combine(this.dataDir, "bitcoin.conf");
+			this.ConfigParameters.Import(builder.ConfigParameters);
+            this.ports = new int[2];
+			FindPorts(this.ports);
 		}
 
 		/// <summary>
@@ -396,14 +396,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 		/// </summary>
 		public FullNode FullNode
 		{
-			get { return ((StratisBitcoinRunner) _Runner).FullNode; }
+			get { return ((StratisBitcoinRunner)this._Runner).FullNode; }
 		}
 
 		private void CleanFolder()
 		{
 			try
 			{
-				Directory.Delete(_Folder, true);
+				Directory.Delete(this._Folder, true);
 			}
 			catch (DirectoryNotFoundException)
 			{
@@ -428,14 +428,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public CoreNodeState State
 		{
-			get { return _State; }
+			get { return this._State; }
 		}
 
 		int[] ports;
 
 		public int ProtocolPort
 		{
-			get { return ports[0]; }
+			get { return this.ports[0]; }
 		}
 
 		public void NotInIBD()
@@ -453,23 +453,23 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public RPCClient CreateRPCClient()
 		{
-			return new RPCClient(creds, new Uri("http://127.0.0.1:" + ports[1].ToString() + "/"), Network.RegTest);
+			return new RPCClient(this.creds, new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"), Network.RegTest);
 		}
 
 		public RestClient CreateRESTClient()
 		{
-			return new RestClient(new Uri("http://127.0.0.1:" + ports[1].ToString() + "/"));
+			return new RestClient(new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"));
 		}
 
 #if !NOSOCKET
 		public Node CreateNodeClient()
 		{
-			return Node.Connect(Network.RegTest, "127.0.0.1:" + ports[0].ToString());
+			return Node.Connect(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString());
 		}
 
 		public Node CreateNodeClient(NodeConnectionParameters parameters)
 		{
-			return Node.Connect(Network.RegTest, "127.0.0.1:" + ports[0].ToString(), parameters);
+			return Node.Connect(Network.RegTest, "127.0.0.1:" + this.ports[0].ToString(), parameters);
 		}
 #endif
 
@@ -480,31 +480,31 @@ namespace Stratis.Bitcoin.IntegrationTests
 			config.Add("rest", "1");
 			config.Add("server", "1");
 			config.Add("txindex", "1");
-			config.Add("rpcuser", creds.UserName);
-			config.Add("rpcpassword", creds.Password);
-			config.Add("port", ports[0].ToString());
-			config.Add("rpcport", ports[1].ToString());
+			config.Add("rpcuser", this.creds.UserName);
+			config.Add("rpcpassword", this.creds.Password);
+			config.Add("port", this.ports[0].ToString());
+			config.Add("rpcport", this.ports[1].ToString());
 			config.Add("printtoconsole", "1");
 			config.Add("keypool", "10");
-			config.Import(ConfigParameters);
-			File.WriteAllText(_Config, config.ToString());
-			lock (l)
+			config.Import(this.ConfigParameters);
+			File.WriteAllText(this._Config, config.ToString());
+			lock (this.l)
 			{
-				_Runner.Start(dataDir);
-				_State = CoreNodeState.Starting;
+				this._Runner.Start(this.dataDir);
+                this._State = CoreNodeState.Starting;
 			}
 			while (true)
 			{
 				try
 				{
 					await CreateRPCClient().GetBlockHashAsync(0).ConfigureAwait(false);
-					_State = CoreNodeState.Running;
+                    this._State = CoreNodeState.Running;
 					break;
 				}
 				catch
 				{
 				}
-				if (_Runner.HasExited)
+				if (this._Runner.HasExited)
 					break;
 			}
 		}
@@ -545,28 +545,28 @@ namespace Stratis.Bitcoin.IntegrationTests
 			var rpc = CreateRPCClient();
 			TransactionBuilder builder = new TransactionBuilder();
 			builder.AddKeys(rpc.ListSecrets().OfType<ISecret>().ToArray());
-			builder.AddCoins(rpc.ListUnspent().Where(c => !locked.Contains(c.OutPoint)).Select(c => c.AsCoin()));
+			builder.AddCoins(rpc.ListUnspent().Where(c => !this.locked.Contains(c.OutPoint)).Select(c => c.AsCoin()));
 			builder.Send(destination, amount);
-			builder.SendFees(fee);
+			builder.SendFees(this.fee);
 			builder.SetChange(GetFirstSecret(rpc));
 			var tx = builder.BuildTransaction(true);
 			foreach (var outpoint in tx.Inputs.Select(i => i.PrevOut))
 			{
-				locked.Add(outpoint);
+                this.locked.Add(outpoint);
 			}
 			if (broadcast)
 				Broadcast(tx);
 			else
-				transactions.Add(tx);
+                this.transactions.Add(tx);
 			return tx;
 		}
 
 		public void Rollback(Transaction tx)
 		{
-			transactions.Remove(tx);
+            this.transactions.Remove(tx);
 			foreach (var outpoint in tx.Inputs.Select(i => i.PrevOut))
 			{
-				locked.Remove(outpoint);
+                this.locked.Remove(outpoint);
 			}
 
 		}
@@ -596,7 +596,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			var txs = rpc.GetRawMempool();
 			var tasks = txs.Select(t => rpc.GetRawTransactionAsync(t)).ToArray();
 			Task.WaitAll(tasks);
-			transactions.AddRange(tasks.Select(t => t.Result).ToArray());
+            this.transactions.AddRange(tasks.Select(t => t.Result).ToArray());
 		}
 
 		public void Split(Money amount, int parts)
@@ -606,11 +606,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 			builder.AddKeys(rpc.ListSecrets().OfType<ISecret>().ToArray());
 			builder.AddCoins(rpc.ListUnspent().Select(c => c.AsCoin()));
 			var secret = GetFirstSecret(rpc);
-			foreach (var part in (amount - fee).Split(parts))
+			foreach (var part in (amount - this.fee).Split(parts))
 			{
 				builder.Send(secret, part);
 			}
-			builder.SendFees(fee);
+			builder.SendFees(this.fee);
 			builder.SetChange(secret);
 			var tx = builder.BuildTransaction(true);
 			Broadcast(tx);
@@ -620,10 +620,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public void Kill(bool cleanFolder = true)
 		{
-			lock (l)
+			lock (this.l)
 			{
-				_Runner.Kill();
-				_State = CoreNodeState.Killed;
+				this._Runner.Kill();
+                this._State = CoreNodeState.Killed;
 				if (cleanFolder)
 					CleanFolder();
 			}
@@ -634,12 +634,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public void SetMinerSecret(BitcoinSecret secret)
 		{
 			CreateRPCClient().ImportPrivKey(secret);
-			MinerSecret = secret;
+            this.MinerSecret = secret;
 		}
 
 		public void SetDummyMinerSecret(BitcoinSecret secret)
 		{
-			MinerSecret = secret;
+            this.MinerSecret = secret;
 		}
 
 		public BitcoinSecret MinerSecret { get; private set; }
@@ -651,7 +651,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			var bestBlock = rpc.GetBestBlockHash();
 			ConcurrentChain chain = null;
 			List<Block> blocks = new List<Block>();
-			DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
+			DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
 #if !NOSOCKET
 			using (var node = CreateNodeClient())
 			{
@@ -671,9 +671,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 					block.AddTransaction(coinbase);
 					if (includeUnbroadcasted)
 					{
-						transactions = Reorder(transactions);
-						block.Transactions.AddRange(transactions);
-						transactions.Clear();
+                        this.transactions = Reorder(this.transactions);
+						block.Transactions.AddRange(this.transactions);
+                        this.transactions.Clear();
 					}
 					block.UpdateMerkleRoot();
 					while (!block.CheckProofOfWork())
@@ -690,7 +690,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public bool AddToStratisMempool(Transaction trx)
 		{
-			var fullNode = (_Runner as StratisBitcoinRunner).FullNode;
+			var fullNode = (this._Runner as StratisBitcoinRunner).FullNode;
 			var state = new MempoolValidationState(true);
 
 			return fullNode.MempoolManager.Validator.AcceptToMemoryPool(state, trx).Result;
@@ -698,10 +698,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
 		{
-			var fullNode = (_Runner as StratisBitcoinRunner).FullNode;
-			BitcoinSecret dest = MinerSecret;
+			var fullNode = (this._Runner as StratisBitcoinRunner).FullNode;
+			BitcoinSecret dest = this.MinerSecret;
 			List<Block> blocks = new List<Block>();
-			DateTimeOffset now = MockTime == null ? DateTimeOffset.UtcNow : MockTime.Value;
+			DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
 #if !NOSOCKET
 
 			for (int i = 0; i < blockCount; i++)
@@ -792,8 +792,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			public TransactionNode(Transaction tx)
 			{
-				Transaction = tx;
-				Hash = tx.GetHash();
+                this.Transaction = tx;
+                this.Hash = tx.GetHash();
 			}
 			public uint256 Hash = null;
 			public Transaction Transaction = null;
@@ -838,8 +838,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		private BitcoinSecret GetFirstSecret(RPCClient rpc)
 		{
-			if(MinerSecret != null)
-				return MinerSecret;
+			if(this.MinerSecret != null)
+				return this.MinerSecret;
 			var dest = rpc.ListSecrets().FirstOrDefault();
 			if(dest == null)
 			{

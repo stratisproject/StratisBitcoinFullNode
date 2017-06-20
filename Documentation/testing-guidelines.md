@@ -3,7 +3,7 @@ Test Guidelines
 
 Unit Testing
 ------------
-For unit testing we use Xunit and Moq.
+For unit testing we use the Visual Studio Unit Testing Framework and Moq.
 
 Unit test preparations
 1. If a class contains multiple classes try to see if you can move them to separate files inside the same folder. Ideally we have 1 file per class.
@@ -71,9 +71,20 @@ General testing rules:
 		}
    }
    
+   [TestClass]
    public class BaseRepositoryTest
    {
-		[Fact]
+		[TestInitialize]
+		public void Initialize() {
+			// optional: initialize code that has to be run before each test.
+		}
+		
+		[TestCleanup]
+		public void Cleanup() {
+			// optional: cleanup the initialized code after each test has run.
+		}
+		
+		[TestMethod]
 		public void GetContextReturnsContext()
 		{
 			var connection = new DbConnection();
@@ -84,7 +95,7 @@ General testing rules:
 			var repository = new BaseRepositoryStub(dbConnectionMock.Object);
 			var result = repository.GetContext();
 			
-			Assert.Equal(connection, result);
+			Assert.AreEqual(connection, result);
 		}
    
 		private class BaseRepositoryStub : BaseRepository
