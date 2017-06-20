@@ -42,6 +42,8 @@ namespace Stratis.Bitcoin.Configuration
 		public Network Network { get; private set; }
 		public string Name { get; set; }
 
+	    public Uri ApiUri { get; set; }
+
 		public static NodeSettings Default(Network network = null,
 			ProtocolVersion protocolVersion = SupportedProtocolVersion)
 		{
@@ -109,8 +111,9 @@ namespace Stratis.Bitcoin.Configuration
 
 			nodeSettings.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.RegTest || nodeSettings.Testnet));
 			nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DEFAULT_MAX_TIP_AGE);
+		    nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:5000"));
 
-			nodeSettings.RPC = config.GetOrDefault<bool>("server", false) ? new RpcSettings() : null;
+            nodeSettings.RPC = config.GetOrDefault<bool>("server", false) ? new RpcSettings() : null;
 			if (nodeSettings.RPC != null)
 			{
 				nodeSettings.RPC.RpcUser = config.GetOrDefault<string>("rpcuser", null);
