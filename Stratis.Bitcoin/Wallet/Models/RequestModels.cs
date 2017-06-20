@@ -65,18 +65,12 @@ namespace Stratis.Bitcoin.Wallet.Models
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
-
-        [Required(ErrorMessage = "The type of coin for which history is requested is missing.")]
-        public CoinType CoinType { get; set; }
     }
 
     public class WalletBalanceRequest : RequestModel
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
-
-        [Required(ErrorMessage = "The type of coin for which history is requested is missing.")]
-        public CoinType CoinType { get; set; }
     }
 
     public class WalletName : RequestModel
@@ -89,10 +83,7 @@ namespace Stratis.Bitcoin.Wallet.Models
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
-
-        [Required]
-        public CoinType CoinType { get; set; }
-
+        
         [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
 
@@ -124,13 +115,7 @@ namespace Stratis.Bitcoin.Wallet.Models
         /// </summary>
         [Required]
         public string WalletName { get; set; }
-
-        /// <summary>
-        /// The type of coin this address is for.
-        /// </summary>
-        [Required]
-        public CoinType CoinType { get; set; }
-
+        
         /// <summary>
         /// The name of the account for which to get the address.
         /// </summary>
@@ -145,13 +130,7 @@ namespace Stratis.Bitcoin.Wallet.Models
         /// </summary>
         [Required]
         public string WalletName { get; set; }
-
-        /// <summary>
-        /// The type of coin this account contains.
-        /// </summary>
-        [Required]
-        public CoinType CoinType { get; set; }
-
+        
         /// <summary>
         /// The password for this wallet.
         /// </summary>

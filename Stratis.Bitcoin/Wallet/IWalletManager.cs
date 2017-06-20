@@ -23,16 +23,16 @@ namespace Stratis.Bitcoin.Wallet
         /// List all spendable transactions from all accounts
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
-            List<UnspentInfo> GetSpendableTransactions(int confirmations = 0);
+        List<UnspentInfo> GetSpendableTransactions(int confirmations = 0);
 
-		/// <summary>
-		/// Creates a wallet and persist it as a file on the local system.
-		/// </summary>
-		/// <param name="password">The password used to encrypt sensitive info.</param>
-		/// <param name="name">The name of the wallet.</param>
-		/// <param name="passphrase">The passphrase used in the seed.</param>
-		/// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
-		Mnemonic CreateWallet(string password, string name, string passphrase = null);
+        /// <summary>
+        /// Creates a wallet and persist it as a file on the local system.
+        /// </summary>
+        /// <param name="password">The password used to encrypt sensitive info.</param>
+        /// <param name="name">The name of the wallet.</param>
+        /// <param name="passphrase">The passphrase used in the seed.</param>
+        /// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
+        Mnemonic CreateWallet(string password, string name, string passphrase = null);
 
         /// <summary>
         /// Loads a wallet from a file.
@@ -62,65 +62,59 @@ namespace Stratis.Bitcoin.Wallet
         /// Gets an account that contains no transactions.
         /// </summary>
         /// <param name="walletName">The name of the wallet from which to get an account.</param>
-        /// <param name="coinType">The type of coin for which to get an account.</param>
         /// <param name="password">The password used to decrypt the private key.</param>
         /// <remarks>
         /// According to BIP44, an account at index (i) can only be created when the account
         /// at index (i - 1) contains transactions.
         /// </remarks>
         /// <returns>An unused account.</returns>
-        HdAccount GetUnusedAccount(string walletName, CoinType coinType, string password);
+        HdAccount GetUnusedAccount(string walletName, string password);
 
         /// <summary>
         /// Gets an account that contains no transactions.
         /// </summary>
         /// <param name="wallet">The wallet from which to get an account.</param>
-        /// <param name="coinType">The type of coin for which to get an account.</param>
         /// <param name="password">The password used to decrypt the private key.</param>
         /// <remarks>
         /// According to BIP44, an account at index (i) can only be created when the account
         /// at index (i - 1) contains transactions.
         /// </remarks>
         /// <returns>An unused account.</returns>
-        HdAccount GetUnusedAccount(Wallet wallet, CoinType coinType, string password);
+        HdAccount GetUnusedAccount(Wallet wallet, string password);
 
         /// <summary>
         /// Creates a new account.
         /// </summary>
         /// <param name="wallet">The wallet in which this account will be created.</param>
-        /// <param name="coinType">The type of coin for which to create an account.</param>
         /// <param name="password">The password used to decrypt the private key.</param>
         /// <remarks>
         /// According to BIP44, an account at index (i) can only be created when the account
         /// at index (i - 1) contains transactions.
         /// </remarks>
         /// <returns>The new account.</returns>
-        HdAccount CreateNewAccount(Wallet wallet, CoinType coinType, string password);
+        HdAccount CreateNewAccount(Wallet wallet, string password);
 
-		/// <summary>
-		/// Gets an address that contains no transaction.
-		/// </summary>
-		/// <param name="walletName">The name of the wallet in which this address is contained.</param>
-		/// <param name="coinType">The type of coin for which to get the address.</param>
-		/// <param name="accountName">The name of the account in which this address is contained.</param>
-		/// <returns>An unused address or a newly created address, in Base58 format.</returns>
-		HdAddress GetUnusedAddress(string walletName, string accountName);
+        /// <summary>
+        /// Gets an address that contains no transaction.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet in which this address is contained.</param>
+        /// <param name="accountName">The name of the account in which this address is contained.</param>
+        /// <returns>An unused address or a newly created address, in Base58 format.</returns>
+        HdAddress GetUnusedAddress(string walletName, string accountName);
 
         /// <summary>
         /// Gets a collection of addresses containing transactions for this coin.
         /// </summary>
         /// <param name="walletName">The name of the wallet to get history from.</param>
-        /// <param name="coinType">Type of the coin.</param>
         /// <returns></returns>
-        IEnumerable<HdAddress> GetHistoryByCoinType(string walletName, CoinType coinType);
+        IEnumerable<HdAddress> GetHistory(string walletName);
 
         /// <summary>
         /// Gets a collection of addresses containing transactions for this coin.
         /// </summary>
         /// <param name="wallet">The wallet to get history from.</param>
-        /// <param name="coinType">Type of the coin.</param>
         /// <returns></returns>
-        IEnumerable<HdAddress> GetHistoryByCoinType(Wallet wallet, CoinType coinType);
+        IEnumerable<HdAddress> GetHistory(Wallet wallet);
 
         /// <summary>
         /// Gets some general information about a wallet.
@@ -130,24 +124,22 @@ namespace Stratis.Bitcoin.Wallet
         Wallet GetWallet(string walletName);
 
         /// <summary>
-        /// Gets a list of accounts filtered by coin type.
+        /// Gets a list of accounts.
         /// </summary>
         /// <param name="walletName">The name of the wallet to look into.</param>
-        /// <param name="coinType">The type of coin to filter by.</param>
         /// <returns></returns>
-        IEnumerable<HdAccount> GetAccountsByCoinType(string walletName, CoinType coinType);
+        IEnumerable<HdAccount> GetAccounts(string walletName);
 
         /// <summary>
         /// Builds a transaction to be sent to the network.
         /// </summary>
         /// <param name="walletName">The name of the wallet in which this address is contained.</param>
-        /// <param name="coinType">The type of coin for which to get the address.</param>
         /// <param name="accountName">The name of the account in which this address is contained.</param>
         /// <param name="password">The password used to decrypt the private key.</param>
         /// <param name="destinationAddress">The destination address to send the funds to.</param>
         /// <param name="amount">The amount of funds to be sent.</param>
         /// <param name="feeType">The type of fee to be included.</param>
-        /// <param name="allowUnconfirmed">Whether or not we allow this transaction to rely on unconfirmed outputs.</param>
+        /// <param name="minConfirmations">The minimum number of confirmations we require for unspent outputs to be included.</param>
         /// <returns></returns>
         (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, string feeType, int minConfirmations);
 

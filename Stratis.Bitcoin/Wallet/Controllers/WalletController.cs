@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 WalletHistoryModel model = new WalletHistoryModel { TransactionsHistory = new List<TransactionItemModel>() };
 
                 // get transactions contained in the wallet
-                var addresses = this.walletManager.GetHistoryByCoinType(request.WalletName, this.coinType);
+                var addresses = this.walletManager.GetHistory(request.WalletName);
                 foreach (var address in addresses.Where(a => !a.IsChangeAddress()))
                 {
                     foreach (var transaction in address.Transactions)
@@ -306,7 +306,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 WalletBalanceModel model = new WalletBalanceModel { AccountsBalances = new List<AccountBalance>() };
 
-                var accounts = this.walletManager.GetAccountsByCoinType(request.WalletName, this.coinType).ToList();
+                var accounts = this.walletManager.GetAccounts(request.WalletName).ToList();
                 foreach (var account in accounts)
                 {
                     var allTransactions = account.ExternalAddresses.SelectMany(a => a.Transactions)
@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                var result = this.walletManager.GetUnusedAccount(request.WalletName, this.coinType, request.Password);
+                var result = this.walletManager.GetUnusedAccount(request.WalletName, request.Password);
                 return this.Json(result.Name);
             }
             catch (Exception e)
