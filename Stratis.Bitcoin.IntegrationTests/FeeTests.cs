@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 	        Logs.Configure(new LoggerFactory());
 	    }
 
-        [Fact]
+	    [TestMethod]
 		public void BlockPolicyEstimates()
 	    {
 			var dateTimeSet = new MemoryPoolTests.DateTimeProviderSet();
