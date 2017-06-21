@@ -31,8 +31,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="password">The password used to encrypt sensitive info.</param>
         /// <param name="name">The name of the wallet.</param>
         /// <param name="passphrase">The passphrase used in the seed.</param>
+        /// <param name="mnemonic">The user's mnemonic for the wallet.</param>		
         /// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
-        Mnemonic CreateWallet(string password, string name, string passphrase = null);
+        Mnemonic CreateWallet(string password, string name, string passphrase = null, string mnemonic = null);
 
         /// <summary>
         /// Loads a wallet from a file.

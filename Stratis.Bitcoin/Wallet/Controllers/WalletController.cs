@@ -48,6 +48,55 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
         /// <summary>
         /// Creates a new wallet on the local machine.
+        /// </summary>        
+        /// <param name="language">The language for the words in the mnemonic. Options are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional. The default is 'English'.</param>
+        /// <param name="wordCount">The number of words in the mnemonic. Options are: 12,15,18,21 or 24. the default is 12.</param>
+        /// <returns>A JSON object containing the mnemonic created for the new wallet.</returns>
+        [Route("mnemonic")]
+        [HttpGet]
+        public IActionResult GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12)
+        {
+            try
+            {
+                Wordlist wordList;
+                switch (language.ToLowerInvariant())
+                {
+                    case "english":
+                        wordList = Wordlist.English;
+                        break;
+                    case "french":
+                        wordList = Wordlist.French;
+                        break;
+                    case "spanish":
+                        wordList = Wordlist.Spanish;
+                        break;
+                    case "japanese":
+                        wordList = Wordlist.Japanese;
+                        break;
+                    case "chinesetraditional":
+                        wordList = Wordlist.ChineseTraditional;
+                        break;
+                    case "chinesesimplified":
+                        wordList = Wordlist.ChineseSimplified;
+                        break;
+                    default:
+                        throw new FormatException($"Invalid language '{language}'. Choices are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional.");
+                }
+
+                WordCount count = (WordCount)wordCount;
+
+                // generate the mnemonic 
+                Mnemonic mnemonic = new Mnemonic(wordList, count);
+                return this.Json(mnemonic.ToString());
+            }
+            catch (Exception e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Creates a new wallet on the local machine.
         /// </summary>
         /// <param name="request">The object containing the parameters used to create the wallet.</param>
         /// <returns>A JSON object containing the mnemonic created for the new wallet.</returns>
@@ -66,7 +115,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 // get the wallet folder 
                 DirectoryInfo walletFolder = this.GetWalletFolder();
-                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name);
+                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic:request.Mnemonic);
 
                 return this.Json(mnemonic.ToString());
             }
@@ -74,6 +123,10 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 // indicates that this wallet already exists
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, "This wallet already exists.", e.ToString());
+            }
+            catch (NotSupportedException e)
+            {                
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem creating a wallet.", e.ToString());
             }
         }
 
@@ -271,7 +324,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                             // that makes the fee negative if thats the case ignore the fee
                             if (sentItem.Fee < 0)
                                 sentItem.Fee = 0;
-                            
+
                             model.TransactionsHistory.Add(sentItem);
                         }
                     }
