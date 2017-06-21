@@ -942,11 +942,8 @@ namespace Stratis.Bitcoin.Wallet
                 EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif(),
                 ChainCode = extendedKey.ChainCode,
                 CreationTime = creationTime ?? DateTimeOffset.Now,
-                Network = network,
-                AccountsRoot = new List<AccountRoot> {
-                    new AccountRoot { Accounts = new List<HdAccount>(), CoinType = CoinType.Bitcoin },
-                    new AccountRoot { Accounts = new List<HdAccount>(), CoinType = CoinType.Testnet },
-                    new AccountRoot { Accounts = new List<HdAccount>(), CoinType = CoinType.Stratis} },
+                Network = this.network,
+                AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
             };
 
             // create a folder if none exists and persist the file
