@@ -1,2 +1,2 @@
-cd..
+cd ..
 dotnet run light stratis
