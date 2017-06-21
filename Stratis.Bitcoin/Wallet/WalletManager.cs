@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public Mnemonic CreateWallet(string password, string name, string passphrase = null)
+        public Mnemonic CreateWallet(string password, string name, string passphrase = null, string mnemonicList = null)
         {
             // for now the passphrase is set to be the password by default.
             if (passphrase == null)
@@ -93,8 +93,8 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             // generate the root seed used to generate keys from a mnemonic picked at random 
-            // and a passphrase optionally provided by the user
-            Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+            // and a passphrase optionally provided by the user            
+            Mnemonic mnemonic = string.IsNullOrEmpty(mnemonicList) ? new Mnemonic(Wordlist.English, WordCount.Twelve) : new Mnemonic(mnemonicList);
             ExtKey extendedKey = mnemonic.DeriveExtKey(passphrase);
 
             // create a wallet file 

@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 // get the wallet folder 
                 DirectoryInfo walletFolder = this.GetWalletFolder();
-                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name);
+                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic:request.Mnemonic);
 
                 return this.Json(mnemonic.ToString());
             }
@@ -123,6 +123,10 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             {
                 // indicates that this wallet already exists
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, "This wallet already exists.", e.ToString());
+            }
+            catch (NotSupportedException e)
+            {                
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem creating a wallet.", e.ToString());
             }
         }
 
