@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             var mockWalletCreate = new Mock<IWalletManager>();
-            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(mnemonic);
+            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(mnemonic);
 
             string dir = AssureEmptyDir("TestData/ControllersTests/CreateWalletSuccessfullyReturnsMnemonic");
             var dataFolder = new DataFolder(new NodeSettings {DataDir = dir});
