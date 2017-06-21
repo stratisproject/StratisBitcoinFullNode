@@ -252,10 +252,13 @@ namespace Stratis.Bitcoin
 					if (this.WalletManager != null)
 					{
 						var height = this.WalletManager.LastBlockHeight();
-						benchLogs.AppendLine("Wallet.Height: ".PadRight(Logs.ColumnLength + 3) +
+					    var block = this.Chain.GetBlock(height);
+					    var hashBlock = block == null ? uint256.Zero : block.HashBlock;
+
+                        benchLogs.AppendLine("Wallet.Height: ".PadRight(Logs.ColumnLength + 3) +
 						                     height.ToString().PadRight(8) +
 											 " Wallet.Hash: ".PadRight(Logs.ColumnLength + 3) +
-						                     this.Chain.GetBlock(height).HashBlock);
+                                             hashBlock);
 					}
 
 					benchLogs.AppendLine();
