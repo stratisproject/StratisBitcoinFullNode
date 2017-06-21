@@ -42,6 +42,8 @@ namespace Stratis.Bitcoin.Configuration
 		public Network Network { get; private set; }
 		public string Name { get; set; }
 
+		public Uri ApiUri { get; set; }
+
 		public static NodeSettings Default(Network network = null,
 			ProtocolVersion protocolVersion = SupportedProtocolVersion)
 		{
@@ -72,10 +74,10 @@ namespace Stratis.Bitcoin.Configuration
 					nodeSettings.ConfigurationFile = Path.Combine(nodeSettings.DataDir, nodeSettings.ConfigurationFile);
 				}
 			}
-            nodeSettings.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
-            nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
+			nodeSettings.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
+			nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
 
-            if (nodeSettings.ConfigurationFile != null)
+			if (nodeSettings.ConfigurationFile != null)
 			{
 				AssetConfigFileExists(nodeSettings);
 				var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
@@ -89,7 +91,7 @@ namespace Stratis.Bitcoin.Configuration
 			nodeSettings.Network = nodeSettings.GetNetwork();
 			if (nodeSettings.DataDir == null)
 			{
-				nodeSettings.DataDir = GetDefaultDataDir($"stratis{nodeSettings.Name}", nodeSettings.Network);
+				nodeSettings.DataDir = GetDefaultDataDir($"StratisNode/{nodeSettings.Name}", nodeSettings.Network);
 			}
 
 			if (nodeSettings.ConfigurationFile == null)
@@ -109,6 +111,7 @@ namespace Stratis.Bitcoin.Configuration
 
 			nodeSettings.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.RegTest || nodeSettings.Testnet));
 			nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DEFAULT_MAX_TIP_AGE);
+			nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:5000"));
 
 			nodeSettings.RPC = config.GetOrDefault<bool>("server", false) ? new RpcSettings() : null;
 			if (nodeSettings.RPC != null)

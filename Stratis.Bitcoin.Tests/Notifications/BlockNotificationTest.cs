@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Notifications;
@@ -7,20 +8,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Notifications
 {
+    [TestClass]
 	public class BlockNotificationTest
 	{
 		private CancellationTokenSource source;
 
-		public BlockNotificationTest()
+        [TestInitialize]
+		public void Initialize()
 		{
 			this.source = new CancellationTokenSource();
 		}
 
-		[Fact]
+		[TestMethod]
 		public void NotifyStartHashNotOnChainCompletes()
 		{
 
@@ -34,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
 			notification.Notify(this.source.Token);			
 		}
 
-		[Fact]
+		[TestMethod]
 		public void NotifySetsPullerLocationToBlockMatchingStartHash()
 		{
 			var startBlockId = new uint256(156);
@@ -55,7 +57,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
             stub.Verify(s => s.SetLocation(It.Is<ChainedBlock>(c => c.Height == 0 && c.Header.GetHash() == header.GetHash())));
 		}
 
-		[Fact]
+		[TestMethod]
 		public void NotifyBroadcastsOnNextBlock()
 		{
 			var startBlockId = new uint256(156);

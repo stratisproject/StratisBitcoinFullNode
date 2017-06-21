@@ -7,14 +7,15 @@ using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Wallet;
-using Xunit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
+    [TestClass]
     public class WalletTests
     {
-        [Fact]
+        [TestMethod]
         public void WalletCanReceiveAndSendCorrectly()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
@@ -29,8 +30,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // get a key from the wallet
                 var mnemonic1 = stratisSender.FullNode.WalletManager.CreateWallet("123456", "mywallet");
                 var mnemonic2 = stratisReceiver.FullNode.WalletManager.CreateWallet("123456", "mywallet");
-                Assert.Equal(12, mnemonic1.Words.Length);
-                Assert.Equal(12, mnemonic2.Words.Length);
+                Assert.AreEqual(12, mnemonic1.Words.Length);
+                Assert.AreEqual(12, mnemonic2.Words.Length);
                 var addr = stratisSender.FullNode.WalletManager.GetUnusedAddress("mywallet", "account 0");
                 var key = stratisSender.FullNode.WalletManager.GetKeyForAddress("123456", addr).PrivateKey;
 
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // the mining should add coins to the wallet
                 var total = stratisSender.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
-				Assert.Equal(Money.COIN * 105 * 50, total);
+				Assert.AreEqual(Money.COIN * 105 * 50, total);
 
 				// sync both nodes
 				stratisSender.CreateRPCClient().AddNode(stratisReceiver.Endpoint, true);
@@ -61,8 +62,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 	            TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Any());
 
 				var receivetotal = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
-	            Assert.Equal(Money.COIN * 100, receivetotal);
-	            Assert.Null(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).First().BlockHeight);
+	            Assert.AreEqual(Money.COIN * 100, receivetotal);
+	            Assert.IsNull(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).First().BlockHeight);
 
 				// generate two new blocks do the trx is confirmed
 	            stratisSender.GenerateStratis(1, new List<Transaction>(new[] {new Transaction(trx.hex)}));
@@ -77,7 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         }
 
-        [Fact]
+        [TestMethod]
         public void WalletCanReorg()
         {
             // this test has 4 parts:
@@ -100,8 +101,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // get a key from the wallet
                 var mnemonic1 = stratisSender.FullNode.WalletManager.CreateWallet("123456", "mywallet");
                 var mnemonic2 = stratisReceiver.FullNode.WalletManager.CreateWallet("123456", "mywallet");
-                Assert.Equal(12, mnemonic1.Words.Length);
-                Assert.Equal(12, mnemonic2.Words.Length);
+                Assert.AreEqual(12, mnemonic1.Words.Length);
+                Assert.AreEqual(12, mnemonic2.Words.Length);
                 var addr = stratisSender.FullNode.WalletManager.GetUnusedAddress("mywallet", "account 0");
                 var key = stratisSender.FullNode.WalletManager.GetKeyForAddress("123456", addr).PrivateKey;
 
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // the mining should add coins to the wallet
                 var total = stratisSender.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
-                Assert.Equal(Money.COIN * currentBestHeight * 50, total);
+                Assert.AreEqual(Money.COIN * currentBestHeight * 50, total);
 
                 // sync all nodes
                 stratisReceiver.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
@@ -137,12 +138,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction1.transactionId, false));
+                Assert.IsNotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction1.transactionId, false));
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Any());
 
                 var receivetotal = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
-                Assert.Equal(Money.COIN * 100, receivetotal);
-                Assert.Null(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).First().BlockHeight);
+                Assert.AreEqual(Money.COIN * 100, receivetotal);
+                Assert.IsNull(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).First().BlockHeight);
 
                 // generate two new blocks so the trx is confirmed
                 stratisSender.GenerateStratis(1, new List<Transaction>(new[] { new Transaction(transaction1.hex) }));
@@ -154,7 +155,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
-                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.AreEqual(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
                 TestHelper.WaitLoop(() => transaction1MinedHeight == stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).First().BlockHeight);
 
                 // Build Transaction 2
@@ -170,11 +171,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSender.FullNode.WalletManager.SendTransaction(transaction2.hex);
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction2.transactionId, false));
+                Assert.IsNotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction2.transactionId, false));
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Any());
                 var newamount = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
-                Assert.Equal(Money.COIN * 110, newamount);
-                Assert.True(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Any(b => b.BlockHeight == null));
+                Assert.AreEqual(Money.COIN * 110, newamount);
+                Assert.IsTrue(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Any(b => b.BlockHeight == null));
 
                 // mine more blocks so its included in the chain
               
@@ -184,7 +185,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 currentBestHeight = currentBestHeight + 2;
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.AreEqual(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Any(b => b.BlockHeight == transaction2MinedHeight));
 
                 // create a reog by mining on two different chains
@@ -202,13 +203,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // wait for the chains to catch up
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
-                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.AreEqual(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
 
                 // ensure wallet reorg complete
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.WalletTipHash == stratisReorg.CreateRPCClient().GetBestBlockHash());
                 // check the wallet amont was roled back
                 var newtotal = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
-                Assert.Equal(receivetotal, newtotal);
+                Assert.AreEqual(receivetotal, newtotal);
                 TestHelper.WaitLoop(() => maturity + 16 == stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).First().BlockHeight);
 
                 // ReBuild Transaction 2
@@ -222,14 +223,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
-                Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
+                Assert.AreEqual(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
                 var newsecondamount = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Sum(s => s.Amount);
-                Assert.Equal(newamount, newsecondamount);
+                Assert.AreEqual(newamount, newsecondamount);
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.GetSpendableTransactions().SelectMany(s => s.Transactions).Any(b => b.BlockHeight == transaction2MinedHeight));
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void WalletCanCatchupWithBestChain()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
@@ -241,7 +242,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // get a key from the wallet
                 var mnemonic = stratisminer.FullNode.WalletManager.CreateWallet("123456", "mywallet");
-                Assert.Equal(12, mnemonic.Words.Length);
+                Assert.AreEqual(12, mnemonic.Words.Length);
                 var addr = stratisminer.FullNode.WalletManager.GetUnusedAddress("mywallet", "account 0");
                 var key = stratisminer.FullNode.WalletManager.GetKeyForAddress("123456", addr).PrivateKey;
 
@@ -259,7 +260,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void WalletCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
@@ -270,7 +271,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // get a key from the wallet
                 var mnemonic = stratisNodeSync.FullNode.WalletManager.CreateWallet("123456", "mywallet");
-                Assert.Equal(12, mnemonic.Words.Length);
+                Assert.AreEqual(12, mnemonic.Words.Length);
                 var addr = stratisNodeSync.FullNode.WalletManager.GetUnusedAddress("mywallet", "account 0");
                 var key = stratisNodeSync.FullNode.WalletManager.GetKeyForAddress("123456", addr).PrivateKey;
 
@@ -290,7 +291,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 newNodeInstance.Start();
 
                 // check that store recovered to be the same as the best chain.
-                Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.WalletManager.WalletTipHash);
+                Assert.AreEqual(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.WalletManager.WalletTipHash);
             }
         }
     }

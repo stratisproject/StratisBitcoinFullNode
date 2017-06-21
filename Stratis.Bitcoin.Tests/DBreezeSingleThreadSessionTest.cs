@@ -9,48 +9,47 @@ using DBreeze;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Consensus;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests
 {
+    [TestClass]
     public class DBreezeSingleThreadSessionTest : TestBase
     {
         public DBreezeSingleThreadSessionTest()
         {
         }
 
-        [Fact]
+        [TestMethod]
         public void NBitcoinSerializeWithBitcoinSerializableReturnsAsBytes()
         {
             Block block = new Block();
 
             var result = DBreezeSingleThreadSession.NBitcoinSerialize(block);
 
-            Assert.Equal(block.ToBytes(), result);
+            Assert.IsTrue(block.ToBytes().SequenceEqual(result));
         }
 
-        [Fact]
+        [TestMethod]
         public void NBitcoinSerializeWithuint256ReturnsAsBytes()
         {
             uint256 uInt = new uint256();
 
             var result = DBreezeSingleThreadSession.NBitcoinSerialize(uInt);
 
-            Assert.Equal(uInt.ToBytes(), result);
+            Assert.IsTrue(uInt.ToBytes().SequenceEqual(result));
         }
 
-        [Fact]
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
         public void NBitcoinSerializeWithUnsupportedObjectThrowsException()
         {
-            Assert.Throws(typeof(NotSupportedException), () =>
-            {
-                string test = "Should throw exception.";
+            string test = "Should throw exception.";
 
-                DBreezeSingleThreadSession.NBitcoinSerialize(test);
-            });
+            DBreezeSingleThreadSession.NBitcoinSerialize(test);            
         }
 
-        [Fact]
+        [TestMethod]
         public void NBitcoinDeserializeWithCoinsDeserializesObject()
         {
             var network = Network.RegTest;
@@ -59,19 +58,19 @@ namespace Stratis.Bitcoin.Tests
 
             var result = (Coins)DBreezeSingleThreadSession.NBitcoinDeserialize(coins.ToBytes(), typeof(Coins));
 
-            Assert.Equal(coins.CoinBase, result.CoinBase);
-            Assert.Equal(coins.Height, result.Height);
-            Assert.Equal(coins.IsEmpty, result.IsEmpty);
-            Assert.Equal(coins.IsPruned, result.IsPruned);
-            Assert.Equal(coins.Outputs.Count, result.Outputs.Count);
-            Assert.Equal(coins.Outputs[0].ScriptPubKey.Hash, result.Outputs[0].ScriptPubKey.Hash);
-            Assert.Equal(coins.Outputs[0].Value, result.Outputs[0].Value);
-            Assert.Equal(coins.UnspentCount, result.UnspentCount);
-            Assert.Equal(coins.Value, result.Value);
-            Assert.Equal(coins.Version, result.Version);
+            Assert.AreEqual(coins.CoinBase, result.CoinBase);
+            Assert.AreEqual(coins.Height, result.Height);
+            Assert.AreEqual(coins.IsEmpty, result.IsEmpty);
+            Assert.AreEqual(coins.IsPruned, result.IsPruned);
+            Assert.AreEqual(coins.Outputs.Count, result.Outputs.Count);
+            Assert.AreEqual(coins.Outputs[0].ScriptPubKey.Hash, result.Outputs[0].ScriptPubKey.Hash);
+            Assert.AreEqual(coins.Outputs[0].Value, result.Outputs[0].Value);
+            Assert.AreEqual(coins.UnspentCount, result.UnspentCount);
+            Assert.AreEqual(coins.Value, result.Value);
+            Assert.AreEqual(coins.Version, result.Version);
         }
 
-        [Fact]
+        [TestMethod]
         public void NBitcoinDeserializeWithBlockHeaderDeserializesObject()
         {
             var network = Network.RegTest;
@@ -80,10 +79,10 @@ namespace Stratis.Bitcoin.Tests
 
             var result = (BlockHeader)DBreezeSingleThreadSession.NBitcoinDeserialize(blockHeader.ToBytes(), typeof(BlockHeader));
 
-            Assert.Equal(blockHeader.GetHash(), result.GetHash());
+            Assert.AreEqual(blockHeader.GetHash(), result.GetHash());
         }
 
-        [Fact]
+        [TestMethod]
         public void NBitcoinDeserializeWithRewindDataDeserializesObject()
         {
             var network = Network.RegTest;
@@ -92,20 +91,20 @@ namespace Stratis.Bitcoin.Tests
 
             var result = (RewindData)DBreezeSingleThreadSession.NBitcoinDeserialize(rewindData.ToBytes(), typeof(RewindData));
 
-            Assert.Equal(genesis.GetHash(), result.PreviousBlockHash);
+            Assert.AreEqual(genesis.GetHash(), result.PreviousBlockHash);
         }
 
-        [Fact]
+        [TestMethod]
         public void NBitcoinDeserializeWithuint256DeserializesObject()
         {
             var val = uint256.One;
 
             var result = (uint256)DBreezeSingleThreadSession.NBitcoinDeserialize(val.ToBytes(), typeof(uint256));
 
-            Assert.Equal(val, result);
+            Assert.AreEqual(val, result);
         }
 
-        [Fact]
+        [TestMethod]
         public void NBitcoinDeserializeWithBlockDeserializesObject()
         {
             var network = Network.RegTest;
@@ -113,33 +112,31 @@ namespace Stratis.Bitcoin.Tests
 
             var result = (Block)DBreezeSingleThreadSession.NBitcoinDeserialize(block.ToBytes(), typeof(Block));
 
-            Assert.Equal(block.GetHash(), result.GetHash());
+            Assert.AreEqual(block.GetHash(), result.GetHash());
         }
 
-        [Fact]
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
         public void NBitcoinDeserializeWithNotSupportedClassThrowsException()
         {
-            Assert.Throws(typeof(NotSupportedException), () =>
-            {
-                string test = "Should throw exception.";
+            string test = "Should throw exception.";
 
-                DBreezeSingleThreadSession.NBitcoinDeserialize(Encoding.UTF8.GetBytes(test), typeof(string));
-            });
+            DBreezeSingleThreadSession.NBitcoinDeserialize(Encoding.UTF8.GetBytes(test), typeof(string));         
         }
 
-        [Fact]
+        [TestMethod]
         public void DoRunsSameThreadAsSessionCreated()
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoRunsSameThreadAsSessionCreated")))
             {
                 session.Do(() =>
                 {
-                    Assert.Equal("TestThread", Thread.CurrentThread.Name);
+                    Assert.AreEqual("TestThread", Thread.CurrentThread.Name);
                 });
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void DoWithTypeRunsSameThreadAsSessionCreated()
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoWithTypeRunsSameThreadAsSessionCreated")))
@@ -150,23 +147,23 @@ namespace Stratis.Bitcoin.Tests
                 });
                 thread.Wait();
 
-                Assert.Equal("TestThread", thread.Result);
+                Assert.AreEqual("TestThread", thread.Result);
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void DoStartsTransaction()
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoStartsTransaction")))
             {
                 session.Do(() =>
                 {
-                    Assert.NotNull(session.Transaction);
+                    Assert.IsNotNull(session.Transaction);
                 });
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void DoAbleToAccessExistingTransactionData()
         {            
             var dir = AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoAbleToAccessExistingTransactionData");
@@ -184,12 +181,12 @@ namespace Stratis.Bitcoin.Tests
                         data2[i++] = new uint256(row.Key, false);
                     }
 
-                    Assert.True(data.SequenceEqual(data2));
+                    Assert.IsTrue(data.SequenceEqual(data2));
                 });
             }
         }
 
-        [Fact]
+        [TestMethod]
         public void DoWithTypePerformsTask()
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoWithTypePerformsTask")))
@@ -201,7 +198,7 @@ namespace Stratis.Bitcoin.Tests
                 });
                 task.Wait();
 
-                Assert.Equal("TaskResult", task.Result);
+                Assert.AreEqual("TaskResult", task.Result);
             }
         }
 

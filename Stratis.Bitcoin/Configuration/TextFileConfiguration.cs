@@ -137,6 +137,10 @@ namespace Stratis.Bitcoin.Configuration
 			{
 				return (T)(object)int.Parse(str, CultureInfo.InvariantCulture);
 			}
+			else if (typeof(T) == typeof(Uri))
+			{
+				return (T)(object)new Uri(str);
+			}
 			else
 			{
 				throw new NotSupportedException("Configuration value does not support time " + typeof(T).Name);

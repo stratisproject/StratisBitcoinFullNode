@@ -5,17 +5,17 @@ using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Notifications;
 using Stratis.Bitcoin.Tests.Logging;
-using Xunit;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.BlockStore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.Notifications
-{
+{    
 	public class BlockNotificationFeatureTest : LogsTestBase
 	{
-		[Fact]
+		[TestMethod]
 		public void BlockNotificationFeatureCallsNotifyOnStart()
 		{
 			var cancellationProvider = new FullNode.CancellationProvider

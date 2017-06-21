@@ -10,13 +10,14 @@ using Stratis.Bitcoin.Wallet;
 using Stratis.Bitcoin.Wallet.Controllers;
 using Stratis.Bitcoin.Wallet.Helpers;
 using Stratis.Bitcoin.Wallet.Models;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {
+    [TestClass]
     public class ControllersTests : TestBase
     {
-        [Fact]
+        [TestMethod]
         public void CreateWalletSuccessfullyReturnsMnemonic()
         {
             Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
@@ -39,12 +40,13 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             // Assert
             mockWalletCreate.VerifyAll();
-            var viewResult = Assert.IsType<JsonResult>(result);
-            Assert.Equal(mnemonic.ToString(), viewResult.Value);
-            Assert.NotNull(result);
+            var viewResult = result as JsonResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(mnemonic.ToString(), viewResult.Value);
+            Assert.IsNotNull(result);
         }
 
-        [Fact]
+        [TestMethod]
         public void LoadWalletSuccessfullyReturnsWalletModel()
         {
             Bitcoin.Wallet.Wallet wallet = new Bitcoin.Wallet.Wallet
@@ -72,11 +74,12 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             // Assert
             mockWalletWrapper.VerifyAll();
-            var viewResult = Assert.IsType<OkResult>(result);            
-            Assert.Equal(200, viewResult.StatusCode);
+            var viewResult = result as OkResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(200, viewResult.StatusCode);
         }
 
-        [Fact]
+        [TestMethod]
         public void RecoverWalletSuccessfullyReturnsWalletModel()
         {
             Bitcoin.Wallet.Wallet wallet = new Bitcoin.Wallet.Wallet
@@ -101,11 +104,12 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             // Assert
             mockWalletWrapper.VerifyAll();
-            var viewResult = Assert.IsType<OkResult>(result);
-            Assert.Equal(200, viewResult.StatusCode);
+            var viewResult = result as OkResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(200, viewResult.StatusCode);
         }
 
-        [Fact]
+        [TestMethod]
         public void FileNotFoundExceptionandReturns404()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
@@ -125,9 +129,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             // Assert
             mockWalletWrapper.VerifyAll();
-            var viewResult = Assert.IsType<ErrorResult>(result);
-            Assert.NotNull(viewResult);		
-            Assert.Equal(404, viewResult.StatusCode);
+            var viewResult = result as ErrorResult;
+            Assert.IsNotNull(viewResult);
+            Assert.AreEqual(404, viewResult.StatusCode);
         }        
     }
 }

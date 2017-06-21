@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.MemoryPool;
@@ -7,13 +8,12 @@ using Stratis.Bitcoin.RPC.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
 {
     public class GetInfoActionTests : BaseRPCControllerTest
     {
-        [Fact]
+        [TestMethod]
         public void CallWithDependencies()
         {
             string dir = AssureEmptyDir("Stratis.Bitcoin.Tests/TestData/GetInfoActionTests/CallWithDependencies");
@@ -24,17 +24,17 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
 
             uint expectedProtocolVersion = (uint)NodeSettings.Default().ProtocolVersion;
             var expectedRelayFee = MempoolValidator.MinRelayTxFee.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
-            Assert.NotNull(info);
-            Assert.Equal(0, info.blocks);
-            Assert.NotEqual<uint>(0, info.version);
-            Assert.Equal(expectedProtocolVersion, info.protocolversion);
-            Assert.Equal(0, info.timeoffset);
-            Assert.Equal(0, info.connections);
-            Assert.NotNull(info.proxy);
-            Assert.Equal(0, info.difficulty);
-            Assert.False(info.testnet);
-            Assert.Equal(expectedRelayFee, info.relayfee);
-            Assert.Empty(info.errors);
+            Assert.IsNotNull(info);
+            Assert.AreEqual(0, info.blocks);
+            Assert.AreNotEqual<uint>(0, info.version);
+            Assert.AreEqual(expectedProtocolVersion, info.protocolversion);
+            Assert.AreEqual(0, info.timeoffset);
+            Assert.AreEqual(0, info.connections);
+            Assert.IsNotNull(info.proxy);
+            Assert.AreEqual(0, info.difficulty);
+            Assert.IsFalse(info.testnet);
+            Assert.AreEqual(expectedRelayFee, info.relayfee);
+            Assert.AreEqual(string.Empty, info.errors);
         }
 
     }

@@ -1,15 +1,16 @@
-﻿using Stratis.Bitcoin.Utilities;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {
+    [TestClass]
     public class ActionDisposableTest
     {
-        [Fact]
+        [TestMethod]
         public void ConstructsWithAction()
         {
             bool onEnterCalled = false;
@@ -17,20 +18,20 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             var disposable = new ActionDisposable(onEnter, () => { });
 
-            Assert.True(onEnterCalled);
+            Assert.IsTrue(onEnterCalled);
         }
 
-        [Fact]
+        [TestMethod]
         public void DisposesWithAction()
         {
             bool onLeaveCalled = false;
             Action onLeave = () => { onLeaveCalled = true; };
 
             var disposable = new ActionDisposable(() => { }, onLeave);
-            Assert.False(onLeaveCalled);
+            Assert.IsFalse(onLeaveCalled);
 
             disposable.Dispose();
-            Assert.True(onLeaveCalled);
+            Assert.IsTrue(onLeaveCalled);
         }
     }
 }

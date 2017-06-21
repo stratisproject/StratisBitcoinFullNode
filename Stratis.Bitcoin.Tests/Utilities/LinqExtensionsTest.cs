@@ -1,63 +1,62 @@
-﻿using System;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {
+    [TestClass]
     public class LinqExtensionsTest
     {
-        [Fact]
+        [TestMethod]
         public void EmptySetTest()
         {
             List<long> list = new List<long> { };
 
             var median = list.Median();
 
-            Assert.Equal(0, median);
+            Assert.AreEqual(0, median);
         }
 
-        [Fact]
+        [TestMethod]
         public void SingleSetTest()
         {
             List<long> list = new List<long> { 22 };
 
             var median = list.Median();
 
-            Assert.Equal(22, median);
+            Assert.AreEqual(22, median);
         }
 
-        [Fact]
+        [TestMethod]
         public void OddSetTest()
         {
             List<long> list = new List<long> { 0, 1, 4, 8, 9, 12 };
 
             var median = list.Median();
 
-            Assert.Equal(6, median);
+            Assert.AreEqual(6, median);
         }
 
-        [Fact]
+        [TestMethod]
         public void EvenSetTest()
         {
             List<long> list = new List<long> { 1, 4, 8, 9, 12 };
 
             var median = list.Median();
 
-            Assert.Equal(8, median);
+            Assert.AreEqual(8, median);
         }
 
-        [Fact]
+        [TestMethod]
         public void UnorderedSetTest()
         {
             List<long> list = new List<long> { 12, 0, 1, 4, 8, 9 };
 
             var median = list.Median();
 
-            Assert.Equal(6, median);
+            Assert.AreEqual(6, median);
         }
-
-
     }
 }
