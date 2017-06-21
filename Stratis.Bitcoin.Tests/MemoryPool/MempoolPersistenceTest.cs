@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.Tests.MemoryPool
 {
@@ -237,7 +238,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
         private static MempoolManager CreateTestMempool(NodeSettings settings, out TxMempool txMemPool)
         {
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
-            txMemPool = new TxMempool(new FeeRate(1000), settings);
+            txMemPool = new TxMempool(new FeeRate(1000), dateTimeProvider, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
             var mempoolScheduler = new MempoolScheduler();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);

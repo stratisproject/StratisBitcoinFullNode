@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Wallet
             this.walletTip = this.chain.GetBlock(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
             {
-                // the wallet tip was not found int he main chain
+                // the wallet tip was not found in the main chain
                 // this can happen if the node crashes unexpecdidely
                 // reo reconver we need to find the first common fork 
                 // with the best chain, as the wallet does not have a  

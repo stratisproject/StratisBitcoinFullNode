@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.MemoryPool.Fee;
 using Stratis.Bitcoin.Miner;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -134,9 +135,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 				var date1 = new MemoryPoolTests.DateTimeProviderSet();
 				date1.time = DateTimeProvider.Default.GetTime();
 				date1.timeutc = DateTimeProvider.Default.GetUtcNow();
-                this.date = date1;
-				this.mempool = new TxMempool(new FeeRate(0), new NodeSettings());
-                this.scheduler = new MempoolScheduler();
+				date = date1;
+				mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default())); ;
+				scheduler = new MempoolScheduler();
 
 				// Simple block creation, nothing special yet:
 				this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);

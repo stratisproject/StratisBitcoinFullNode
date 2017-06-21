@@ -55,6 +55,7 @@ namespace Stratis.Bitcoin.Wallet
                     {
                         services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
                         services.AddSingleton<IWalletManager, WalletManager>();
+                        services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
                         services.AddSingleton<WalletController>();
                     });
             });

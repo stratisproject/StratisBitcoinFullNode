@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -63,7 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				txGrandChild[i].AddOutput(new TxOut(new Money(11000L), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
 			}
 
-			TxMempool testPool = new TxMempool(new FeeRate(0), NodeSettings.Default());
+			TxMempool testPool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
 
 			// Nothing in pool, remove should do nothing:
 			var poolSize = testPool.Size;
@@ -128,8 +129,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		[TestMethod]
 		public void MempoolIndexingTest()
 		{
-			var pool = new TxMempool(new FeeRate(0), NodeSettings.Default());
-			var entry = new TestMemPoolEntryHelper();
+			var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+            var entry = new TestMemPoolEntryHelper();
 
 			/* 3rd highest fee */
 			Transaction tx1 = new Transaction();
@@ -311,8 +312,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		[TestMethod]
 		public void MempoolAncestorIndexingTest()
 		{
-			var pool = new TxMempool(new FeeRate(0), NodeSettings.Default());
-			var entry = new TestMemPoolEntryHelper();
+			var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+            var entry = new TestMemPoolEntryHelper();
 
 			/* 3rd highest fee */
 			Transaction tx1 = new Transaction();
@@ -405,7 +406,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public void MempoolSizeLimitTest()
 		{
 			var dateTimeSet = new DateTimeProviderSet();
-			var pool = new TxMempool(new FeeRate(1000), dateTimeSet, NodeSettings.Default());
+			var pool = new TxMempool(new FeeRate(1000), dateTimeSet, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
 			var entry = new TestMemPoolEntryHelper();
 			entry.Priority(10.0);
 
@@ -540,8 +541,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		[TestMethod]
 		public void MempoolConcurrencyTest()
 		{
-			var pool = new TxMempool(new FeeRate(1000), NodeSettings.Default());
-			var scheduler = new AsyncLock();
+			var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+            var scheduler = new AsyncLock();
 			var rand = new Random();
 
 			var value = 10000;
