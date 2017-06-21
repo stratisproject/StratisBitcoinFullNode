@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, request.Password, request.DestinationAddress, request.Amount, request.FeeType, request.AllowUnconfirmed ? 0 : 1);
+                var transactionResult = this.walletManager.BuildTransaction(request.WalletName, request.AccountName, request.Password, request.DestinationAddress, request.Amount, FeeParser.Parse(request.FeeType), request.AllowUnconfirmed ? 0 : 1);
                 var model = new WalletBuildTransactionModel
                 {
                     Hex = transactionResult.hex,

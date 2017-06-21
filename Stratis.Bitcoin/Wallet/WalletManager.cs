@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, string feeType, int minConfirmations)
+        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, FeeType feeType, int minConfirmations)
         {
             if (amount == Money.Zero)
             {
@@ -479,7 +479,7 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             // calculate which addresses needs to be used as well as the fee to be charged
-            var calculationResult = this.CalculateFees(spendableTransactions, amount, 5);
+            var calculationResult = this.CalculateFees(spendableTransactions, amount, feeType.ToConfirmations());
 
             // get extended private key
             var privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
@@ -528,10 +528,15 @@ namespace Stratis.Bitcoin.Wallet
         {
             Money fee = 0;
             List<TransactionData> transactionsToUse = new List<TransactionData>();
-            var inputCount = 1;
+            var inputCount = 0;
             foreach (var transaction in spendableTransactions)
             {
-                fee = this.walletFeePolicy.GetMinimumFee(inputCount * 180 + 74, targetConfirmations);
+                // TODO: revisit this where th entire trx is serialized to get its correct size
+                inputCount++; 
+                var inputsize = 180; // estimate size of an input
+                var outputsize = 34; // estimate size of an output
+                var extra = 10; // some extra bytes
+                fee = this.walletFeePolicy.GetMinimumFee(inputCount * inputsize + outputsize * 2 + extra, targetConfirmations);
 
                 transactionsToUse.Add(transaction);
                 if (transactionsToUse.Sum(t => t.Amount) >= amount + fee)
