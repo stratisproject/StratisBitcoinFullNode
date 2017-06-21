@@ -47,11 +47,11 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         }
 
         /// <summary>
-        /// Creates a new wallet on the local machine.
+        /// Generates a new mnemonic. The call can optionally specify a language and the number of words in the mnemonic.
         /// </summary>        
         /// <param name="language">The language for the words in the mnemonic. Options are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional. The default is 'English'.</param>
         /// <param name="wordCount">The number of words in the mnemonic. Options are: 12,15,18,21 or 24. the default is 12.</param>
-        /// <returns>A JSON object containing the mnemonic created for the new wallet.</returns>
+        /// <returns>A JSON object containing the mnemonic generated.</returns>
         [Route("mnemonic")]
         [HttpGet]
         public IActionResult GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12)
