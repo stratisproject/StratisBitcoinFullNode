@@ -64,6 +64,7 @@ namespace Stratis.Bitcoin.Wallet
                 var fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
                 this.walletManager.WalletTipHash = fork.HashBlock;
+                this.walletTip = fork;
             }
 
             return Task.CompletedTask;
