@@ -602,7 +602,14 @@ namespace Stratis.Bitcoin.Wallet
         public void ProcessBlock(Block block, ChainedBlock chainedBlock)
         {
             this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
-            
+
+            // if there is no wallet yet, update the wallet tip hash and do nothing else.
+            if (!this.Wallets.Any())
+            {
+                this.WalletTipHash = chainedBlock.HashBlock;
+                return;
+            }
+
             // is this the next block
             if (chainedBlock.Header.HashPrevBlock != this.WalletTipHash)
             {
@@ -617,14 +624,11 @@ namespace Stratis.Bitcoin.Wallet
                     throw new WalletException("block too far in the future has arrived to the wallet");
             }
 
-            if (this.Wallets.Any())
+            foreach (Transaction transaction in block.Transactions)
             {
-                foreach (Transaction transaction in block.Transactions)
-                {
-                    this.ProcessTransaction(transaction, chainedBlock.Height, block);
-                }
+                this.ProcessTransaction(transaction, chainedBlock.Height, block);
             }
-
+            
             // update the wallets with the last processed block height
             this.UpdateLastBlockSyncedHeight(chainedBlock);
         }
