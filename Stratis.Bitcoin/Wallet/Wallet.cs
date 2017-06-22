@@ -427,9 +427,9 @@ namespace Stratis.Bitcoin.Wallet
         public int? BlockHeight { get; set; }
 
         /// <summary>
-        /// The height of the block including this transaction.
+        /// The hash of the block including this transaction.
         /// </summary>
-        [JsonProperty(PropertyName = "blockHash")]
+        [JsonProperty(PropertyName = "blockHash", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 BlockHash { get; set; }
 
