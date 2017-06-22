@@ -1,28 +1,21 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.RPC.Converters
 {
-
     public class BtcDecimalJsonConverter : JsonConverter
     {
-        const int _minDecimals = 8;
+        private const int MinDecimals = 8;
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var d = (decimal)value;
-            var rounded = Math.Round(d, _minDecimals);
-            string result = d.ToString(CultureInfo.InvariantCulture);
-            if (_minDecimals > 0)
+            var result = d.ToString(CultureInfo.InvariantCulture);
+            if (!result.Contains('.') || result.Split('.')[1].Length < MinDecimals)
             {
-                if (!result.Contains('.') || result.Split('.')[1].Length < _minDecimals)
-                {
-                    result = d.ToString("0." + new string('0', _minDecimals), CultureInfo.InvariantCulture);
-                }
+                result = d.ToString("0." + new string('0', MinDecimals), CultureInfo.InvariantCulture);
             }
             writer.WriteRawValue(result);
         }
@@ -33,14 +26,8 @@ namespace Stratis.Bitcoin.RPC.Converters
             throw new NotImplementedException();
         }
 
-        public override bool CanRead
-        {
-            get { return false; }
-        }
+        public override bool CanRead => false;
 
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(decimal);
-        }
+        public override bool CanConvert(Type objectType) => objectType == typeof(decimal);
     }
 }
