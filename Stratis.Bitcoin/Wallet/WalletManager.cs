@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Utilities;
 using Transaction = NBitcoin.Transaction;
 
 namespace Stratis.Bitcoin.Wallet
@@ -375,8 +376,9 @@ namespace Stratis.Bitcoin.Wallet
                 return this.chain.Tip.HashBlock;
             }
 
-            return this.Wallets.Select(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType))
-                       .OrderBy(o => o.LastBlockSyncedHeight).FirstOrDefault()?.LastBlockSyncedHash ?? this.network.GenesisHash;
+            var lastBlockSyncedHash =  this.Wallets.Select(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType)).OrderBy(o => o.LastBlockSyncedHeight).FirstOrDefault()?.LastBlockSyncedHash;
+            Guard.Assert(lastBlockSyncedHash != null);
+            return lastBlockSyncedHash;
         }
 
         /// <inheritdoc />
