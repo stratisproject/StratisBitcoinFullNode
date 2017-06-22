@@ -702,6 +702,7 @@ namespace Stratis.Bitcoin.Wallet
                 {
                     Amount = amount,
                     BlockHeight = blockHeight,
+                    BlockHash = block?.GetHash(),
                     Id = transactionHash,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     Index = index,
@@ -718,10 +719,11 @@ namespace Stratis.Bitcoin.Wallet
             }
             else
             {
-                // update the block height
+                // update the block height and block hash
                 if (foundTransaction.BlockHeight == null && blockHeight != null)
                 {
                     foundTransaction.BlockHeight = blockHeight;
+                    foundTransaction.BlockHash = block?.GetHash();
                 }
 
                 // update the block time
