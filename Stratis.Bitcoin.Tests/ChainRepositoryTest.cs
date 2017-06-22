@@ -5,14 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
 using NBitcoin;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests
 {
-    [TestClass]
     public class ChainRepositoryTest : TestBase
     {
-        [TestMethod]
+        [Fact]
         public void SaveWritesChainToDisk()
         {
             string dir = AssureEmptyDir("TestData/ChainRepository/SaveWritesChainToDisk");
@@ -33,11 +32,11 @@ namespace Stratis.Bitcoin.Tests
                         break;
                     tip = new ChainedBlock(row.Value, null, tip);
                 }
-                Assert.AreEqual(tip, chain.Tip);
+                Assert.Equal(tip, chain.Tip);
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void GetChainReturnsConcurrentChainFromDisk()
         {
             string dir = AssureEmptyDir("TestData/ChainRepository/GetChainReturnsConcurrentChainFromDisk");
@@ -68,7 +67,7 @@ namespace Stratis.Bitcoin.Tests
             {
 				var testChain = new ConcurrentChain(Network.RegTest);
                 repo.Load(testChain).GetAwaiter().GetResult();
-                Assert.AreEqual(tip, testChain.Tip);
+                Assert.Equal(tip, testChain.Tip);
             }
         }        
 

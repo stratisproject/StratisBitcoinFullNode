@@ -4,43 +4,41 @@ using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests
 {
-    [TestClass]
     public class SignalsTest
     {
         private Mock<ISignaler<Block>> blockSignaler;
         private Signals signals;
         private Mock<ISignaler<Transaction>> transactionSignaler;
 
-        [TestInitialize]
-        public void Initialize()
+        public SignalsTest()
         {
-            this.blockSignaler = new Mock<ISignaler<Block>>();
-            this.transactionSignaler = new Mock<ISignaler<Transaction>>();
-            this.signals = new Signals(this.blockSignaler.Object, this.transactionSignaler.Object);
+            blockSignaler = new Mock<ISignaler<Block>>();
+            transactionSignaler = new Mock<ISignaler<Transaction>>();
+            signals = new Signals(blockSignaler.Object, transactionSignaler.Object);
         }
 
-        [TestMethod]
+        [Fact]
         public void SignalBlockBroadcastsToBlockSignaler()
         {
             var block = new Block();
 
-            this.signals.Signal(block);
+            signals.Signal(block);
 
-            this.blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));            
+            blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));            
         }
 
-        [TestMethod]
+        [Fact]
         public void SignalTransactionBroadcastsToTransactionSignaler()
         {
             var transaction = new Transaction();
 
-            this.signals.Signal(transaction);
-
-            this.transactionSignaler.Verify(b => b.Broadcast(transaction), Times.Exactly(1));
+            signals.Signal(transaction);
+            
+            transactionSignaler.Verify(b => b.Broadcast(transaction), Times.Exactly(1));
         }
     }
 }

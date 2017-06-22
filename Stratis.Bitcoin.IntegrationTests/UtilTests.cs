@@ -10,11 +10,10 @@ using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    [TestClass]
     public class UtilTests
 	{
 		// TODO: write test scenarios for the AsyncLock
@@ -26,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			return Enumerable.Range(1, a.Length - 1).All(i => a[i] - 1 == a[i - 1]);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void SchedulerPairSessionTest()
 		{
 			var session = new AsyncLock();
@@ -49,10 +48,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			task.Wait();
 
-			Assert.IsTrue(IsSequential(collector.ToArray()));
+			Assert.True(IsSequential(collector.ToArray()));
 		}
 
-        [TestMethod]
+        [Fact]
         public void AsyncDictionaryTest()
         {
             var dic = new AsyncDictionary<int, int>();
@@ -72,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             task.Wait();
 
-            Assert.AreEqual(1000, dic.Count.Result);
+            Assert.Equal(1000, dic.Count.Result);
         }
     }
 }

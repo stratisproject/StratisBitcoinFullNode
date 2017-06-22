@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
@@ -8,24 +7,23 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.MemoryPool.Fee;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.MemoryPool.Fee;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.MemoryPool
 {
-    [TestClass]
-    public class MempoolPersistenceTest
+    public class MempoolPersistenceTest : IDisposable
     {
-        private bool shouldDeleteFolder = false;
-        private string dir;
+        private readonly bool shouldDeleteFolder = false;
+        private readonly string dir;
 
-        [TestInitialize]
-        public void Initialize()
+        public MempoolPersistenceTest()
         {
             Logs.Configure(new LoggerFactory());
             this.dir = "TestData/MempoolPersistenceTest/";
@@ -37,16 +35,13 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             }
         }
 
-        [TestCleanup]
-        public void Cleanup()
+        public void Dispose()
         {
             if (this.shouldDeleteFolder)
-            {
                 Directory.Delete(this.dir, true);
-            }
         }
 
-        [TestMethod]
+        [Fact]
         public void SaveLoadFileTest()
         {
             int numTx = 22;
@@ -59,13 +54,13 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             MemPoolSaveResult result = persistence.Save(toSave, fileName);
             loaded = persistence.Load(fileName);
 
-            Assert.IsTrue(File.Exists(Path.Combine(settings.DataDir, fileName)));
-            Assert.IsTrue(result.Succeeded);
-            Assert.AreEqual((uint)numTx, result.TrxSaved);
-            Assert.IsTrue(loaded.SequenceEqual(toSave.ToArray()));
+            Assert.True(File.Exists(Path.Combine(settings.DataDir, fileName)));
+            Assert.True(result.Succeeded);
+            Assert.Equal((uint)numTx, result.TrxSaved);
+            Assert.Equal(loaded, toSave.ToArray());
         }
 
-        [TestMethod]
+        [Fact]
         public void LoadBadFileTest()
         {
             int numTx = 22;
@@ -82,12 +77,12 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             File.WriteAllText(fullFilePath, badFileData);
             loaded = persistence.Load(fileName);
 
-            Assert.IsTrue(File.Exists(fullFilePath));
-            Assert.IsTrue(result.Succeeded);
-            Assert.IsNull(loaded);
+            Assert.True(File.Exists(fullFilePath));
+            Assert.True(result.Succeeded);
+            Assert.Null(loaded);
         }
 
-        [TestMethod]
+        [Fact]
         public void LoadNoFileTest()
         {
             string fileName = "mempool.dat";
@@ -97,11 +92,11 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
 
             var loaded = persistence.Load(fileName);
 
-            Assert.IsFalse(File.Exists(fullFilePath));
-            Assert.IsNull(loaded);
+            Assert.False(File.Exists(fullFilePath));
+            Assert.Null(loaded);
         }
 
-        [TestMethod]
+        [Fact]
         public void LoadPoolTest_WithBadTransactions()
         {
             int numTx = 5;
@@ -115,10 +110,10 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             mempoolManager.LoadPool(fileName).GetAwaiter().GetResult();
             long actualSize = mempoolManager.MempoolSize().GetAwaiter().GetResult();
 
-            Assert.AreEqual(0, actualSize);
+            Assert.Equal(0, actualSize);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task LoadPoolTest_WithGoodTransactions()
         {
             string fileName = "mempool.dat";
@@ -147,12 +142,12 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             TxMempoolEntry actualEntry = txMemPool.MapTx.TryGet(tx1.GetHash());
             long? actualTx1FeedDelta = actualEntry?.feeDelta;
 
-            Assert.AreEqual(expectedSize, actualSize);
-            Assert.AreEqual(expectedTx1FeeDelta, actualTx1FeedDelta);
+            Assert.Equal(expectedSize, actualSize);
+            Assert.Equal(expectedTx1FeeDelta, actualTx1FeedDelta);
 
         }
 
-        [TestMethod]
+        [Fact]
         public void SaveStreamTest()
         {
             int numTx = 22;
@@ -187,10 +182,10 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
                 }
             }
 
-            Assert.IsTrue(actualStreamLength > 0);
-            Assert.AreEqual(MempoolPersistence.MEMPOOL_DUMP_VERSION, actualVersion);
-            Assert.AreEqual(numTx, actualCount);
-            Assert.IsTrue(loaded.SequenceEqual(toSave.ToArray()));
+            Assert.True(actualStreamLength > 0);
+            Assert.Equal(MempoolPersistence.MEMPOOL_DUMP_VERSION, actualVersion);
+            Assert.Equal(numTx, actualCount);
+            Assert.Equal(loaded, toSave.ToArray());
         }
 
         private NodeSettings CreateSettings(string subDirName)

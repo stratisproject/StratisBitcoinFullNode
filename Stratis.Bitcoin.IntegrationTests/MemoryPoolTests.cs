@@ -13,22 +13,20 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
+using Stratis.Bitcoin.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    [TestClass]
     public class MemoryPoolTests
 	{
-        [TestInitialize]
-		public void Initialize()
+		public MemoryPoolTests()
 		{
 			Logs.Configure(new LoggerFactory());
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MempoolRemoveTest()
 	    {
 			// Test CTxMemPool::remove functionality
@@ -64,18 +62,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 				txGrandChild[i].AddOutput(new TxOut(new Money(11000L), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
 			}
 
-			TxMempool testPool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+            TxMempool testPool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
 
-			// Nothing in pool, remove should do nothing:
-			var poolSize = testPool.Size;
+            // Nothing in pool, remove should do nothing:
+            var poolSize = testPool.Size;
 			testPool.RemoveRecursive(txParent);
-			Assert.AreEqual(testPool.Size, poolSize);
+			Assert.Equal(testPool.Size, poolSize);
 
 			// Just the parent:
 			testPool.AddUnchecked(txParent.GetHash(), entry.FromTx(txParent));
 			poolSize = testPool.Size;
 			testPool.RemoveRecursive(txParent);
-			Assert.AreEqual(testPool.Size, poolSize - 1);
+			Assert.Equal(testPool.Size, poolSize - 1);
 
 			// Parent, children, grandchildren:
 			testPool.AddUnchecked(txParent.GetHash(), entry.FromTx(txParent));
@@ -87,19 +85,19 @@ namespace Stratis.Bitcoin.IntegrationTests
 			// Remove Child[0], GrandChild[0] should be removed:
 			poolSize = testPool.Size;
 			testPool.RemoveRecursive(txChild[0]);
-			Assert.AreEqual(testPool.Size, poolSize - 2);
+			Assert.Equal(testPool.Size, poolSize - 2);
 			// ... make sure grandchild and child are gone:
 			poolSize = testPool.Size;
 			testPool.RemoveRecursive(txGrandChild[0]);
-			Assert.AreEqual(testPool.Size, poolSize);
+			Assert.Equal(testPool.Size, poolSize);
 			poolSize = testPool.Size;
 			testPool.RemoveRecursive(txChild[0]);
-			Assert.AreEqual(testPool.Size, poolSize);
+			Assert.Equal(testPool.Size, poolSize);
 			// Remove parent, all children/grandchildren should go:
 			poolSize = testPool.Size;
 			testPool.RemoveRecursive(txParent);
-			Assert.AreEqual(testPool.Size, poolSize - 5);
-			Assert.AreEqual(testPool.Size, 0);
+			Assert.Equal(testPool.Size, poolSize - 5);
+			Assert.Equal(testPool.Size, 0);
 
 			// Add children and grandchildren, but NOT the parent (simulate the parent being in a block)
 			for (int i = 0; i < 3; i++)
@@ -111,25 +109,25 @@ namespace Stratis.Bitcoin.IntegrationTests
 			// put into the mempool (maybe because it is non-standard):
 			poolSize = testPool.Size;
 			testPool.RemoveRecursive(txParent);
-			Assert.AreEqual(testPool.Size, poolSize - 6);
-			Assert.AreEqual(testPool.Size, 0);
+			Assert.Equal(testPool.Size, poolSize - 6);
+			Assert.Equal(testPool.Size, 0);
 		}
 
 		private void CheckSort(TxMempool pool, List<TxMempoolEntry> sortedSource, List<string> sortedOrder)
 		{
-			Assert.AreEqual(pool.Size, sortedOrder.Count());
+			Assert.Equal(pool.Size, sortedOrder.Count());
 			int count = 0;
 			using (var it = sortedSource.GetEnumerator())
 				for (; it.MoveNext(); ++count)
 				{
-					Assert.AreEqual(it.Current.TransactionHash.ToString(), sortedOrder[count]);
+					Assert.Equal(it.Current.TransactionHash.ToString(), sortedOrder[count]);
 				}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MempoolIndexingTest()
 		{
-			var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+            var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
             var entry = new TestMemPoolEntryHelper();
 
 			/* 3rd highest fee */
@@ -158,7 +156,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			pool.AddUnchecked(tx5.GetHash(), entry.Fee(new Money(10000L)).Priority(10.0).Time(1).FromTx(tx5));
 
 			// assert size
-			Assert.AreEqual(pool.Size, 5);
+			Assert.Equal(pool.Size, 5);
 
 			List<string> sortedOrder = new List<string>(5);
 			sortedOrder.Insert(0, tx3.GetHash().ToString()); // 0
@@ -175,7 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			pool.AddUnchecked(tx6.GetHash(), entry.Fee(new Money(0L)).FromTx(tx6));
 
 			// assert size
-			Assert.AreEqual(pool.Size, 6);
+			Assert.Equal(pool.Size, 6);
 
 			// Check that at this point, tx6 is sorted low
 			sortedOrder.Insert(0, tx6.GetHash().ToString());
@@ -191,11 +189,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			TxMempool.SetEntries setAncestorsCalculated = new TxMempool.SetEntries();
 			string dummy;
-			Assert.AreEqual(pool.CalculateMemPoolAncestors(entry.Fee(2000000L).FromTx(tx7), setAncestorsCalculated, 100, 1000000, 1000, 1000000, out dummy), true);
-			Assert.IsTrue(setAncestorsCalculated.Equals(setAncestors));
+			Assert.Equal(pool.CalculateMemPoolAncestors(entry.Fee(2000000L).FromTx(tx7), setAncestorsCalculated, 100, 1000000, 1000, 1000000, out dummy), true);
+			Assert.True(setAncestorsCalculated.Equals(setAncestors));
 
 			pool.AddUnchecked(tx7.GetHash(), entry.FromTx(tx7), setAncestors);
-			Assert.AreEqual(pool.Size, 7);
+			Assert.Equal(pool.Size, 7);
 
 			// Now tx6 should be sorted higher (high fee child): tx7, tx6, tx2, ...
 			sortedOrder.RemoveAt(0);
@@ -221,7 +219,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			pool.AddUnchecked(tx9.GetHash(), entry.Fee(0L).Time(3).FromTx(tx9), setAncestors);
 
 			// tx9 should be sorted low
-			Assert.AreEqual(pool.Size, 9);
+			Assert.Equal(pool.Size, 9);
 
 			sortedOrder.Insert(0, tx9.GetHash().ToString());
 			CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
@@ -237,8 +235,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 			tx10.AddOutput(new TxOut(new Money(10 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
 
 			setAncestorsCalculated.Clear();
-			Assert.AreEqual(pool.CalculateMemPoolAncestors(entry.Fee(200000L).Time(4).FromTx(tx10), setAncestorsCalculated, 100, 1000000, 1000, 1000000, out dummy), true);
-			Assert.IsTrue(setAncestorsCalculated.Equals(setAncestors));
+			Assert.Equal(pool.CalculateMemPoolAncestors(entry.Fee(200000L).Time(4).FromTx(tx10), setAncestorsCalculated, 100, 1000000, 1000, 1000000, out dummy), true);
+			Assert.True(setAncestorsCalculated.Equals(setAncestors));
 
 			pool.AddUnchecked(tx10.GetHash(), entry.FromTx(tx10), setAncestors);
 
@@ -264,7 +262,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			CheckSort(pool, pool.MapTx.DescendantScore.ToList(), sortedOrder);
 
 			// there should be 10 transactions in the mempool
-			Assert.AreEqual(pool.Size, 10);
+			Assert.Equal(pool.Size, 10);
 
 			// Now try removing tx10 and verify the sort order returns to normal
 			pool.RemoveRecursive(pool.MapTx.TryGet(tx10.GetHash()).Transaction);
@@ -309,10 +307,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 			CheckSort(pool, pool.MapTx.MiningScore.ToList(), sortedOrder);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MempoolAncestorIndexingTest()
 		{
-			var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+            var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
             var entry = new TestMemPoolEntryHelper();
 
 			/* 3rd highest fee */
@@ -342,7 +340,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			pool.AddUnchecked(tx5.GetHash(), entry.Fee(new Money(10000L)).Priority(1.0).FromTx(tx5));
 
 			// assert size
-			Assert.AreEqual(pool.Size, 5);
+			Assert.Equal(pool.Size, 5);
 
 			List<string> sortedOrder = new List<string>(5);
 			sortedOrder.Insert(0, tx2.GetHash().ToString()); // 20000
@@ -370,7 +368,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			tx6.AddOutput(new TxOut(new Money(20 * Money.COIN), new Script(OpcodeType.OP_11, OpcodeType.OP_EQUAL)));
 			pool.AddUnchecked(tx6.GetHash(), entry.Fee(new Money(0L)).FromTx(tx6));
 			var tx6Size = tx6.GetVirtualSize();
-			Assert.AreEqual(pool.Size, 6);
+			Assert.Equal(pool.Size, 6);
 			// Ties are broken by hash
 			if (tx3.GetHash() < tx6.GetHash())
 				sortedOrder.Add(tx6.GetHash().ToString());
@@ -384,7 +382,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			var tx7Size = tx7.GetVirtualSize();
 			Money fee = (20000 / tx2Size) * (tx7Size + tx6Size) - 1;
 			pool.AddUnchecked(tx7.GetHash(), entry.Fee(fee).FromTx(tx7));
-			Assert.AreEqual(pool.Size, 7);
+			Assert.Equal(pool.Size, 7);
 			sortedOrder.Insert(1, tx7.GetHash().ToString());
 			CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
 
@@ -402,12 +400,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 			CheckSort(pool, pool.MapTx.AncestorScore.ToList(), sortedOrder);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MempoolSizeLimitTest()
 		{
 			var dateTimeSet = new DateTimeProviderSet();
-			var pool = new TxMempool(new FeeRate(1000), dateTimeSet, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
-			var entry = new TestMemPoolEntryHelper();
+            var pool = new TxMempool(new FeeRate(1000), dateTimeSet, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+            var entry = new TestMemPoolEntryHelper();
 			entry.Priority(10.0);
 
 			Transaction tx1 = new Transaction();
@@ -421,12 +419,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 			pool.AddUnchecked(tx2.GetHash(), entry.Fee(5000L).FromTx(tx2, pool));
 
 			pool.TrimToSize(pool.DynamicMemoryUsage()); // should do nothing
-			Assert.IsTrue(pool.Exists(tx1.GetHash()));
-			Assert.IsTrue(pool.Exists(tx2.GetHash()));
+			Assert.True(pool.Exists(tx1.GetHash()));
+			Assert.True(pool.Exists(tx2.GetHash()));
 
 			pool.TrimToSize(pool.DynamicMemoryUsage() * 3 / 4); // should remove the lower-feerate transaction
-			Assert.IsTrue(pool.Exists(tx1.GetHash()));
-			Assert.IsTrue(!pool.Exists(tx2.GetHash()));
+			Assert.True(pool.Exists(tx1.GetHash()));
+			Assert.True(!pool.Exists(tx2.GetHash()));
 
 			pool.AddUnchecked(tx2.GetHash(), entry.FromTx(tx2, pool));
 			Transaction tx3 = new Transaction();
@@ -435,17 +433,17 @@ namespace Stratis.Bitcoin.IntegrationTests
 			pool.AddUnchecked(tx3.GetHash(), entry.Fee(20000L).FromTx(tx3, pool));
 
 			pool.TrimToSize(pool.DynamicMemoryUsage() * 3 / 4); // tx3 should pay for tx2 (CPFP)
-			Assert.IsTrue(!pool.Exists(tx1.GetHash()));
-			Assert.IsTrue(pool.Exists(tx2.GetHash()));
-			Assert.IsTrue(pool.Exists(tx3.GetHash()));
+			Assert.True(!pool.Exists(tx1.GetHash()));
+			Assert.True(pool.Exists(tx2.GetHash()));
+			Assert.True(pool.Exists(tx3.GetHash()));
 
 			pool.TrimToSize(tx1.GetVirtualSize()); // mempool is limited to tx1's size in memory usage, so nothing fits
-			Assert.IsTrue(!pool.Exists(tx1.GetHash()));
-			Assert.IsTrue(!pool.Exists(tx2.GetHash()));
-			Assert.IsTrue(!pool.Exists(tx3.GetHash()));
+			Assert.True(!pool.Exists(tx1.GetHash()));
+			Assert.True(!pool.Exists(tx2.GetHash()));
+			Assert.True(!pool.Exists(tx3.GetHash()));
 
 			FeeRate maxFeeRateRemoved = new FeeRate(25000, tx3.GetVirtualSize() + tx2.GetVirtualSize());
-			Assert.AreEqual(pool.GetMinFee(1).FeePerK, maxFeeRateRemoved.FeePerK + 1000); 
+			Assert.Equal(pool.GetMinFee(1).FeePerK, maxFeeRateRemoved.FeePerK + 1000); 
 
 			Transaction tx4 = new Transaction();
 			tx4.AddInput(new TxIn(new Script(OpcodeType.OP_4)));
@@ -479,46 +477,46 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			// we only require this remove, at max, 2 txn, because its not clear what we're really optimizing for aside from that
 			pool.TrimToSize(pool.DynamicMemoryUsage() - 1);
-			Assert.IsTrue(pool.Exists(tx4.GetHash()));
-			Assert.IsTrue(pool.Exists(tx6.GetHash()));
-			Assert.IsTrue(!pool.Exists(tx7.GetHash()));
+			Assert.True(pool.Exists(tx4.GetHash()));
+			Assert.True(pool.Exists(tx6.GetHash()));
+			Assert.True(!pool.Exists(tx7.GetHash()));
 
 			if (!pool.Exists(tx5.GetHash()))
 				pool.AddUnchecked(tx5.GetHash(), entry.Fee(1000L).FromTx(tx5, pool));
 			pool.AddUnchecked(tx7.GetHash(), entry.Fee(9000L).FromTx(tx7, pool));
 
 			pool.TrimToSize(pool.DynamicMemoryUsage() / 2); // should maximize mempool size by only removing 5/7
-			Assert.IsTrue(pool.Exists(tx4.GetHash()));
-			Assert.IsTrue(!pool.Exists(tx5.GetHash()));
-			Assert.IsTrue(pool.Exists(tx6.GetHash()));
-			Assert.IsTrue(!pool.Exists(tx7.GetHash()));
+			Assert.True(pool.Exists(tx4.GetHash()));
+			Assert.True(!pool.Exists(tx5.GetHash()));
+			Assert.True(pool.Exists(tx6.GetHash()));
+			Assert.True(!pool.Exists(tx7.GetHash()));
 
 			pool.AddUnchecked(tx5.GetHash(), entry.Fee(1000L).FromTx(tx5, pool));
 			pool.AddUnchecked(tx7.GetHash(), entry.Fee(9000L).FromTx(tx7, pool));
 
 			List<Transaction> vtx = new List<Transaction>();
 			dateTimeSet.time = 42 + TxMempool.RollingFeeHalflife ;
-			Assert.AreEqual(pool.GetMinFee(1).FeePerK.Satoshi, maxFeeRateRemoved.FeePerK.Satoshi + 1000);
+			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, maxFeeRateRemoved.FeePerK.Satoshi + 1000);
 			// ... we should keep the same min fee until we get a block
 			pool.RemoveForBlock(vtx, 1);
 			dateTimeSet.time = 42 + 2*+TxMempool.RollingFeeHalflife;
-			Assert.AreEqual(pool.GetMinFee(1).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 2);
+			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 2);
 			// ... then feerate should drop 1/2 each halflife
 
 			dateTimeSet.time = 42 + 2 * TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife / 2;
-			Assert.AreEqual(pool.GetMinFee(pool.DynamicMemoryUsage() * 5 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 4);
+			Assert.Equal(pool.GetMinFee(pool.DynamicMemoryUsage() * 5 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 4);
 			// ... with a 1/2 halflife when mempool is < 1/2 its target size
 
 			dateTimeSet.time = 42 + 2*TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife/2 + TxMempool.RollingFeeHalflife/4 ;
-			Assert.AreEqual(pool.GetMinFee(pool.DynamicMemoryUsage() * 9 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 8);
+			Assert.Equal(pool.GetMinFee(pool.DynamicMemoryUsage() * 9 / 2).FeePerK.Satoshi, (maxFeeRateRemoved.FeePerK.Satoshi + 1000) / 8);
 			// ... with a 1/4 halflife when mempool is < 1/4 its target size
 
 			dateTimeSet.time = 42 + 7* TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife/2 + TxMempool.RollingFeeHalflife/4 ;
-			Assert.AreEqual(pool.GetMinFee(1).FeePerK.Satoshi, 1000);
+			Assert.Equal(pool.GetMinFee(1).FeePerK.Satoshi, 1000);
 			// ... but feerate should never drop below 1000
 
 			dateTimeSet.time = 42 + 8* TxMempool.RollingFeeHalflife + TxMempool.RollingFeeHalflife/2 + TxMempool.RollingFeeHalflife/4 ;
-			Assert.AreEqual(pool.GetMinFee(1).FeePerK, 0);
+			Assert.Equal(pool.GetMinFee(1).FeePerK, 0);
 			// ... unless it has gone all the way to 0 (after getting past 1000/2)
 		}
 
@@ -529,19 +527,19 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			public override long GetTime()
 			{
-				return this.time;
+				return time;
 			}
 
 			public override DateTime GetUtcNow()
 			{
-				return this.timeutc;
+				return timeutc;
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MempoolConcurrencyTest()
 		{
-			var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+            var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
             var scheduler = new AsyncLock();
 			var rand = new Random();
 
@@ -564,10 +562,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 			});
 
 			Task.WaitAll(tasks.ToArray());
-			Assert.AreEqual(scheduler.ReadAsync(() => pool.Size).Result, 20);
+			Assert.Equal(scheduler.ReadAsync(() => pool.Size).Result, 20);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void AddToMempool()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -596,7 +594,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void AddToMempoolTrxSpendingTwoOutputFromSameTrx()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -639,7 +637,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MempoolReceiveFromManyNodes()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -677,7 +675,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TxMempoolBlockDoublespend()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -714,29 +712,29 @@ namespace Stratis.Bitcoin.IntegrationTests
 				// Test 1: block with both of those transactions should be rejected.
 				var block = stratisNodeSync.GenerateStratis(1, spends).Single();
 				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Assert.IsTrue(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
 
 				// Test 2: ... and should be rejected if spend1 is in the memory pool
-				Assert.IsTrue(stratisNodeSync.AddToStratisMempool(spends[0]));
+				Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
 				block = stratisNodeSync.GenerateStratis(1, spends).Single();
 				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Assert.IsTrue(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
 				stratisNodeSync.FullNode.MempoolManager.Clear().Wait();
 
 				// Test 3: ... and should be rejected if spend2 is in the memory pool
-				Assert.IsTrue(stratisNodeSync.AddToStratisMempool(spends[1]));
+				Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
 				block = stratisNodeSync.GenerateStratis(1, spends).Single();
 				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Assert.IsTrue(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
 				stratisNodeSync.FullNode.MempoolManager.Clear().Wait();
 
 				// Final sanity test: first spend in mempool, second in block, that's OK:
 				List<Transaction> oneSpend = new List<Transaction>();
 				oneSpend.Add(spends[0]);
-				Assert.IsTrue(stratisNodeSync.AddToStratisMempool(spends[1]));
+				Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
 				block = stratisNodeSync.GenerateStratis(1, oneSpend).Single();
 				TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-				Assert.IsTrue(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block.GetHash());
+				Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block.GetHash());
 
 				// spends[1] should have been removed from the mempool when the
 				// block with spends[0] is accepted:
@@ -744,7 +742,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TxMempoolMapOrphans()
 		{
 			var rand = new Random();
@@ -772,7 +770,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 					stratisNode.FullNode.MempoolManager.Orphans.AddOrphanTx(i, tx).Wait();
 				}
 
-				Assert.AreEqual(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 50);
+				Assert.Equal(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 50);
 
 				// ... and 50 that depend on other orphans:
 				for (ulong i = 0; i < 50; i++)
@@ -785,7 +783,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 					stratisNode.FullNode.MempoolManager.Orphans.AddOrphanTx(i, tx).Wait();
 				}
 
-				Assert.AreEqual(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 100);
+				Assert.Equal(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 100);
 
 				// This really-big orphan should be ignored:
 				for (ulong i = 0; i < 10; i++)
@@ -796,30 +794,30 @@ namespace Stratis.Bitcoin.IntegrationTests
 					foreach (var index in Enumerable.Range(0, 2777))
 						tx.AddInput(new TxIn(new OutPoint(txPrev.Tx.GetHash(), index), new Script(OpcodeType.OP_1)));
 
-					Assert.IsFalse(stratisNode.FullNode.MempoolManager.Orphans.AddOrphanTx(i, tx).Result);
+					Assert.False(stratisNode.FullNode.MempoolManager.Orphans.AddOrphanTx(i, tx).Result);
 				}
 
-				Assert.AreEqual(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 100);
+				Assert.Equal(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count, 100);
 
 				// Test EraseOrphansFor:
 				for (ulong i = 0; i < 3; i++)
 				{
 					var sizeBefore = stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count;
 					stratisNode.FullNode.MempoolManager.Orphans.EraseOrphansFor(i).Wait();
-					Assert.IsTrue(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count < sizeBefore);
+					Assert.True(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count < sizeBefore);
 				}
 
 				// Test LimitOrphanTxSize() function:
 				stratisNode.FullNode.MempoolManager.Orphans.LimitOrphanTxSize(40).Wait();
-				Assert.IsTrue(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count <= 40);
+				Assert.True(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count <= 40);
 				stratisNode.FullNode.MempoolManager.Orphans.LimitOrphanTxSize(10).Wait();
-				Assert.IsTrue(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count <= 10);
+				Assert.True(stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Count <= 10);
 				stratisNode.FullNode.MempoolManager.Orphans.LimitOrphanTxSize(0).Wait();
-				Assert.IsTrue(!stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Any());
+				Assert.True(!stratisNode.FullNode.MempoolManager.Orphans.OrphansList().Any());
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MempoolAddNodeWithOrphans()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -861,7 +859,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MempoolSyncTransactions()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -917,7 +915,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 5);
 
 				// the full node should be connected to both nodes
-				Assert.AreEqual(stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes.Count(), 2);
+				Assert.Equal(stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes.Count(), 2);
 
 				// reset the trickle timer on the full node that has the transactions in the pool
 				foreach (var node in stratisNodeSync.FullNode.ConnectionManager.ConnectedNodes) node.Behavior<MempoolBehavior>().NextInvSend = 0;
@@ -954,17 +952,17 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			Money inChainValue = (pool != null && pool.HasNoInputsOf(tx)) ? tx.TotalOut : 0;
 
-			return new TxMempoolEntry(tx, this.nFee, this.nTime, this.dPriority, this.nHeight,
-				inChainValue, this.spendsCoinbase, this.sigOpCost, this.lp, new PowConsensusOptions());
+			return new TxMempoolEntry(tx, nFee, nTime, dPriority, nHeight,
+				inChainValue, spendsCoinbase, sigOpCost, lp, new PowConsensusOptions());
 		}
 
 		// Change the default value
-		public TestMemPoolEntryHelper Fee(Money _fee) { this.nFee = _fee; return this; }
-		public TestMemPoolEntryHelper Time(long _time) { this.nTime = _time; return this; }
-		public TestMemPoolEntryHelper Priority(double _priority) { this.dPriority = _priority; return this; }
-		public TestMemPoolEntryHelper Height(int _height) { this.nHeight = _height; return this; }
-		public TestMemPoolEntryHelper SpendsCoinbase(bool _flag) { this.spendsCoinbase = _flag; return this; }
-		public TestMemPoolEntryHelper SigOpsCost(long _sigopsCost) { this.sigOpCost = _sigopsCost; return this; }
+		public TestMemPoolEntryHelper Fee(Money _fee) { nFee = _fee; return this; }
+		public TestMemPoolEntryHelper Time(long _time) { nTime = _time; return this; }
+		public TestMemPoolEntryHelper Priority(double _priority) { dPriority = _priority; return this; }
+		public TestMemPoolEntryHelper Height(int _height) { nHeight = _height; return this; }
+		public TestMemPoolEntryHelper SpendsCoinbase(bool _flag) { spendsCoinbase = _flag; return this; }
+		public TestMemPoolEntryHelper SigOpsCost(long _sigopsCost) { sigOpCost = _sigopsCost; return this; }
 
 	}
 }

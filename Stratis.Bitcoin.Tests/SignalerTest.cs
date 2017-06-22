@@ -2,18 +2,21 @@
 using System.Reactive.Subjects;
 using Moq;
 using NBitcoin;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests
 {
-    [TestClass]
     public class SignalerTest
-    {        
+    {
+        public SignalerTest()
+        {            
+        }
+
         /// <remarks>
         /// Because of the AsObservable that wraps classes in internal reactive classes it's hard to prove that the observer provided is subscribed to the subject so 
         /// we prove this by calling the onnext of the observer to prove it's the one we provided.
         /// </remarks>
-        [TestMethod]
+        [Fact]
         public void SubscribeRegistersObserverWithObservable()
         {
             var block = new Block();
@@ -32,7 +35,7 @@ namespace Stratis.Bitcoin.Tests
             observer.Verify(v => v.OnNext(block), Times.Exactly(1));
         }
 
-        [TestMethod]
+        [Fact]
         public void BroadcastSignalsSubject()
         {
             var block = new Block();

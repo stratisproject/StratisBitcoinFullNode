@@ -12,13 +12,12 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.MemoryPool.Fee;
 using Stratis.Bitcoin.Miner;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
+using Stratis.Bitcoin.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    [TestClass]
     public class MinerTests
     {
 		static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
@@ -115,77 +114,77 @@ namespace Stratis.Bitcoin.IntegrationTests
 				this.blockinfo = new List<Blockinfo>();
 				var lst = blockinfoarr.Cast<long>().ToList();
 				for (int i = 0; i < lst.Count; i += 2)
-                    this.blockinfo.Add(new Blockinfo() { extranonce = (int)lst[i], nonce = (uint)lst[i + 1] });
+					blockinfo.Add(new Blockinfo() { extranonce = (int)lst[i], nonce = (uint)lst[i + 1] });
 
-                // Note that by default, these tests run with size accounting enabled.
-                this.network = Network.Main;
+				// Note that by default, these tests run with size accounting enabled.
+				network = Network.Main;
 				var hex = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
-				this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
-                this.newBlock = new BlockTemplate();
+				scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
+				newBlock = new BlockTemplate();
 
-				this.entry = new TestMemPoolEntryHelper();
-				this.chain = new ConcurrentChain(this.network);
-				this.network.Consensus.Options = new PowConsensusOptions();
-				this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock));
-				this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings())));
-                this.consensus.Initialize();
+				entry = new TestMemPoolEntryHelper();
+				chain = new ConcurrentChain(network);
+				network.Consensus.Options = new PowConsensusOptions();
+				cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
+				consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings())));
+				consensus.Initialize();
 
-				this.entry.Fee(11);
-                this.entry.Height(11);
+				entry.Fee(11);
+				entry.Height(11);
 				var date1 = new MemoryPoolTests.DateTimeProviderSet();
 				date1.time = DateTimeProvider.Default.GetTime();
 				date1.timeutc = DateTimeProvider.Default.GetUtcNow();
 				date = date1;
-				mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default())); ;
-				scheduler = new MempoolScheduler();
+                mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default())); ;
+                scheduler = new MempoolScheduler();
 
 				// Simple block creation, nothing special yet:
-				this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
-				this.chain.SetTip(this.newBlock.Block.Header);
-                this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+				newBlock = AssemblerForTest(this).CreateNewBlock(scriptPubKey);
+				chain.SetTip(newBlock.Block.Header);
+				consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
 				// We can't make transactions until we have inputs
 				// Therefore, load 100 blocks :)
 				this.baseheight = 0;
 				List<Block> blocks = new List<Block>();
-                this.txFirst = new List<Transaction>();
-				for (int i = 0; i < this.blockinfo.Count; ++i)
+				txFirst = new List<Transaction>();
+				for (int i = 0; i < blockinfo.Count; ++i)
 				{
-					var pblock = this.newBlock.Block.Clone(); // pointer for convenience
-					pblock.Header.HashPrevBlock = this.chain.Tip.HashBlock;
+					var pblock = newBlock.Block.Clone(); // pointer for convenience
+					pblock.Header.HashPrevBlock = chain.Tip.HashBlock;
 					pblock.Header.Version = 1;
-					pblock.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
+					pblock.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
 					Transaction txCoinbase = pblock.Transactions[0].Clone();
 					txCoinbase.Inputs.Clear();
 					txCoinbase.Version = 1;
-					txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.chain.Height) })));
+					txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(blockinfo[i].extranonce), Op.GetPushOp(chain.Height) })));
 					// Ignore the (optional) segwit commitment added by CreateNewBlock (as the hardcoded nonces don't account for this)
 					txCoinbase.AddOutput(new TxOut(Money.Zero, new Script()));
 					pblock.Transactions[0] = txCoinbase;
 
-					if (this.txFirst.Count == 0)
-						this.baseheight = this.chain.Height;
-					if (this.txFirst.Count < 4)
-                        this.txFirst.Add(pblock.Transactions[0]);
+					if (txFirst.Count == 0)
+						this.baseheight = chain.Height;
+					if (txFirst.Count < 4)
+						txFirst.Add(pblock.Transactions[0]);
 					pblock.UpdateMerkleRoot();
 
-					pblock.Header.Nonce = this.blockinfo[i].nonce;
+					pblock.Header.Nonce = blockinfo[i].nonce;
 
-                    this.chain.SetTip(pblock.Header);
-                    this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+					chain.SetTip(pblock.Header);
+					consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 					blocks.Add(pblock);
 				}
 
-                // Just to make sure we can still make simple blocks
-                this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
-				Assert.IsNotNull(this.newBlock);
+				// Just to make sure we can still make simple blocks
+				newBlock = AssemblerForTest(this).CreateNewBlock(scriptPubKey);
+				Assert.NotNull(newBlock);
 			}
 		}
 
 		// Test suite for ancestor feerate transaction selection.
 		// Implemented as an additional function, rather than a separate test case,
 		// to allow reusing the blockchain created in CreateNewBlock_validity.
-		[TestMethod]
+		[Fact]
 		public void MinerTestPackageSelection()
 	    {
 			var context = new TestContext();
@@ -218,9 +217,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 			context.mempool.AddUnchecked(hashHighFeeTx, entry.Fee(50000).Time(context.date.GetTime()).SpendsCoinbase(false).FromTx(tx));
 
 		    var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-		    Assert.IsTrue(pblocktemplate.Block.Transactions[1].GetHash() == hashParentTx);
-		    Assert.IsTrue(pblocktemplate.Block.Transactions[2].GetHash() == hashHighFeeTx);
-		    Assert.IsTrue(pblocktemplate.Block.Transactions[3].GetHash() == hashMediumFeeTx);
+		    Assert.True(pblocktemplate.Block.Transactions[1].GetHash() == hashParentTx);
+		    Assert.True(pblocktemplate.Block.Transactions[2].GetHash() == hashHighFeeTx);
+		    Assert.True(pblocktemplate.Block.Transactions[3].GetHash() == hashMediumFeeTx);
 
 		    // Test that a package below the block min tx fee doesn't get included
 		    tx = tx.Clone();
@@ -243,8 +242,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		    // Verify that the free tx and the low fee tx didn't get selected
 		    for (var i = 0; i < pblocktemplate.Block.Transactions.Count; ++i)
 		    {
-			    Assert.IsTrue(pblocktemplate.Block.Transactions[i].GetHash() != hashFreeTx);
-			    Assert.IsTrue(pblocktemplate.Block.Transactions[i].GetHash() != hashLowFeeTx);
+			    Assert.True(pblocktemplate.Block.Transactions[i].GetHash() != hashFreeTx);
+			    Assert.True(pblocktemplate.Block.Transactions[i].GetHash() != hashLowFeeTx);
 		    }
 
 			// Test that packages above the min relay fee do get included, even if one
@@ -256,8 +255,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		    hashLowFeeTx = tx.GetHash();
 			context.mempool.AddUnchecked(hashLowFeeTx, entry.Fee(feeToUse + 2).FromTx(tx));
 		    pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-		    Assert.IsTrue(pblocktemplate.Block.Transactions[4].GetHash() == hashFreeTx);
-		    Assert.IsTrue(pblocktemplate.Block.Transactions[5].GetHash() == hashLowFeeTx);
+		    Assert.True(pblocktemplate.Block.Transactions[4].GetHash() == hashFreeTx);
+		    Assert.True(pblocktemplate.Block.Transactions[5].GetHash() == hashLowFeeTx);
 
 			// Test that transaction selection properly updates ancestor fee
 			// calculations as ancestor transactions get included in a block.
@@ -283,8 +282,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 		    // Verify that this tx isn't selected.
 		    for (var i = 0; i < pblocktemplate.Block.Transactions.Count; ++i)
 		    {
-			    Assert.IsTrue(pblocktemplate.Block.Transactions[i].GetHash() != hashFreeTx2);
-			    Assert.IsTrue(pblocktemplate.Block.Transactions[i].GetHash() != hashLowFeeTx2);
+			    Assert.True(pblocktemplate.Block.Transactions[i].GetHash() != hashFreeTx2);
+			    Assert.True(pblocktemplate.Block.Transactions[i].GetHash() != hashLowFeeTx2);
 		    }
 
 			// This tx will be mineable, and should cause hashLowFeeTx2 to be selected
@@ -294,10 +293,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 		    tx.Outputs[0].Value = 100000000 - 10000; // 10k satoshi fee
 			context.mempool.AddUnchecked(tx.GetHash(), entry.Fee(10000).FromTx(tx));
 		    pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-		    Assert.IsTrue(pblocktemplate.Block.Transactions[8].GetHash() == hashLowFeeTx2);
+		    Assert.True(pblocktemplate.Block.Transactions[8].GetHash() == hashLowFeeTx2);
 	    }
 
-	    [TestMethod]
+	    [Fact]
 	    public void MinerCreateBlockSigopsLimit1000()
 	    {
 		    var context = new TestContext();
@@ -317,8 +316,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 				tx = tx.Clone();
 				tx.Inputs[0].PrevOut.Hash = context.hash;
 			}
-			var error = Assert.ThrowsException<ConsensusErrorException>(() => AssemblerForTest(context).CreateNewBlock(context.scriptPubKey));
-			Assert.IsTrue(error.ConsensusError == ConsensusErrors.BadBlockSigOps);
+			var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).CreateNewBlock(context.scriptPubKey));
+			Assert.True(error.ConsensusError == ConsensusErrors.BadBlockSigOps);
 			context.mempool.Clear();
 
 			tx.Inputs[0].PrevOut.Hash = context.txFirst[0].GetHash();
@@ -334,11 +333,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 				tx.Inputs[0].PrevOut.Hash = context.hash;
 			}
 			var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-			Assert.IsNotNull(pblocktemplate);
+			Assert.NotNull(pblocktemplate);
 			context.mempool.Clear();
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MinerCreateBlockSizeGreaterThenLimit()
 		{
 			var context = new TestContext();
@@ -368,11 +367,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 				tx.Inputs[0].PrevOut.Hash = context.hash;
 			}
 			var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-			Assert.IsNotNull(pblocktemplate);
+			Assert.NotNull(pblocktemplate);
 			context.mempool.Clear();
 		}
 
-	    [TestMethod]
+	    [Fact]
 	    public void MinerCreateBlockChildWithHigherFeerateThanParent()
 	    {
 		    var context = new TestContext();
@@ -397,11 +396,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 			context.hash = tx.GetHash();
 			context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.HIGHERFEE).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
 			var pblocktemplate = AssemblerForTest(context).CreateNewBlock(context.scriptPubKey);
-			Assert.IsNotNull(pblocktemplate);
+			Assert.NotNull(pblocktemplate);
 			context.mempool.Clear();
 		}
 
-	    [TestMethod]
+	    [Fact]
 	    public void MinerCreateBlockCoinbaseMempoolTemplateCreationFails()
 	    {
 		    var context = new TestContext();
@@ -416,12 +415,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 			context.hash = tx.GetHash();
 			// give it a fee so it'll get mined
 			context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.date.GetTime()).SpendsCoinbase(false).FromTx(tx));
-			var error = Assert.ThrowsException<ConsensusErrorException>(() => AssemblerForTest(context).CreateNewBlock(context.scriptPubKey));
-			Assert.IsTrue(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
+			var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).CreateNewBlock(context.scriptPubKey));
+			Assert.True(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
 			context.mempool.Clear();
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MinerCreateBlockNonFinalTxsInMempool()
 		{
 			var context = new TestContext();
@@ -449,16 +448,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 			tx.LockTime = 0;
 			context.hash = tx.GetHash();
 			context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.HIGHFEE).Time(context.date.GetTime()).SpendsCoinbase(true).FromTx(tx));
-			Assert.IsTrue(MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime passes
-			Assert.IsTrue(!TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
+			Assert.True(MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime passes
+			Assert.True(!TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
 			context.chain.SetTip(new BlockHeader() { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
 			context.chain.SetTip(new BlockHeader() { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
 			context.chain.SetTip(new BlockHeader() { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 1 });
 			var locks = tx.CalculateSequenceLocks(prevheights.ToArray(), context.chain.Tip, flags);
-			Assert.IsTrue(locks.Evaluate(context.chain.Tip)); // Sequence locks pass on 2nd block
+			Assert.True(locks.Evaluate(context.chain.Tip)); // Sequence locks pass on 2nd block
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MinerCreateBlockRelativeTimeLocked()
 		{
 			var context = new TestContext();
@@ -483,11 +482,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 			prevheights[0] = context.baseheight + 2;
 			context.hash = tx.GetHash();
 			context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
-			Assert.IsTrue(MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime passes
-			Assert.IsTrue(!TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
+			Assert.True(MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime passes
+			Assert.True(!TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks fail
 		}
 
-	    [TestMethod]
+	    [Fact]
 	    public void MinerCreateBlockAbsoluteHeightLocked()
 	    {
 		    var context = new TestContext();
@@ -512,7 +511,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			for (int i = 0; i < MedianTimeSpan; i++)
 				context.chain.SetTip(new BlockHeader() { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
 		    var locks = (tx.CalculateSequenceLocks(prevheights.ToArray(), context.chain.Tip, flags));
-			Assert.IsTrue(locks.Evaluate(context.chain.Tip));
+			Assert.True(locks.Evaluate(context.chain.Tip));
 
 			context = new TestContext();
 
@@ -523,14 +522,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 			tx.LockTime = context.chain.Tip.Height + 1;
 			context.hash = tx.GetHash();
 			context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
-			Assert.IsTrue(!MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime fails
-			Assert.IsTrue(TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
+			Assert.True(!MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime fails
+			Assert.True(TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
 			context.chain.SetTip(new BlockHeader() { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
 			context.chain.SetTip(new BlockHeader() { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
-			Assert.IsTrue(tx.IsFinal(context.chain.Tip.GetMedianTimePast(), context.chain.Tip.Height + 2)); // Locktime passes on 2nd block
+			Assert.True(tx.IsFinal(context.chain.Tip.GetMedianTimePast(), context.chain.Tip.Height + 2)); // Locktime passes on 2nd block
 		}
 
-		[TestMethod]
+		[Fact]
 		public void MinerCreateBlockAbsoluteTimeLocked()
 	    {
 			var context = new TestContext();
@@ -554,11 +553,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 			prevheights[0] = context.baseheight + 4;
 			context.hash = tx.GetHash();
 			context.mempool.AddUnchecked(context.hash, context.entry.Time(context.date.GetTime()).FromTx(tx));
-			Assert.IsTrue(!MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime fails
-			Assert.IsTrue(TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
+			Assert.True(!MempoolValidator.CheckFinalTransaction(context.chain, context.date, tx, flags)); // Locktime fails
+			Assert.True(TestSequenceLocks(context, context.chain.Tip, tx, flags)); // Sequence locks pass
 			context.chain.SetTip(new BlockHeader() { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
 			context.chain.SetTip(new BlockHeader() { HashPrevBlock = context.chain.Tip.HashBlock, Time = Utils.DateTimeToUnixTime(context.chain.Tip.GetMedianTimePast()) + 512 });
-			Assert.IsTrue(tx.IsFinal(context.chain.Tip.GetMedianTimePast().AddMinutes(2), context.chain.Tip.Height + 2)); // Locktime passes 2 min later
+			Assert.True(tx.IsFinal(context.chain.Tip.GetMedianTimePast().AddMinutes(2), context.chain.Tip.Height + 2)); // Locktime passes 2 min later
 
 		}
 
@@ -570,7 +569,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			//hash = tx.GetHash();
 			//mempool.AddUnchecked(hash, entry.Fee(LOWFEE).Time(date.GetTime()).FromTx(tx));
 			//error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(consensus, network, date as DateTimeProvider, mempool, scheduler, chain).CreateNewBlock(scriptPubKey));
-			//Assert.IsTrue(error.ConsensusError == ConsensusErrors.BadBlockSigOps);
+			//Assert.True(error.ConsensusError == ConsensusErrors.BadBlockSigOps);
 			//mempool.Clear();
 
 			//TODO: fix this test
@@ -591,7 +590,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			//hash = tx.GetHash();
 			//mempool.AddUnchecked(hash, entry.Fee(LOWFEE).Time(date.GetTime()).SpendsCoinbase(false).FromTx(tx));
 			//error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(consensus, network, date as DateTimeProvider, mempool, scheduler, chain).CreateNewBlock(scriptPubKey));
-			//Assert.IsTrue(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
+			//Assert.True(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
 			//mempool.Clear();
 
 			//TODO: fix this test
@@ -609,7 +608,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			//hash = tx.GetHash();
 			//mempool.AddUnchecked(hash, entry.Fee(HIGHFEE).Time(date.GetTime()).SpendsCoinbase(true).FromTx(tx));
 			//error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(consensus, network, date as DateTimeProvider, mempool, scheduler, chain).CreateNewBlock(scriptPubKey));
-			//Assert.IsTrue(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
+			//Assert.True(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
 			//mempool.Clear();
 
 			//TODO: fix this test
@@ -635,7 +634,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			//}
 			//pblocktemplate = AssemblerForTest(consensus, network, date as DateTimeProvider, mempool, scheduler, chain).CreateNewBlock(scriptPubKey);
-			//Assert.IsNotNull(pblocktemplate);
+			//Assert.NotNull(pblocktemplate);
 
 			//TODO: fix this test
 			//// Extend to a 210000-long block chain.
@@ -654,7 +653,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			//	chain.SetTip(new ChainedBlock(block.Header, block.GetHash(), chain.Tip));
 			//}
 			//pblocktemplate = AssemblerForTest(consensus, network, date as DateTimeProvider, mempool, scheduler, chain).CreateNewBlock(scriptPubKey);
-			//Assert.IsNotNull(pblocktemplate);
+			//Assert.NotNull(pblocktemplate);
 
 			//// Delete the dummy blocks again.
 			//while (chain.Tip.Height > nHeight)

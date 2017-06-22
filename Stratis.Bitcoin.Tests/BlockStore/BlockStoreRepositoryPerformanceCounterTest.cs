@@ -1,79 +1,77 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Stratis.Bitcoin.BlockStore;
+﻿using Stratis.Bitcoin.BlockStore;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
-    [TestClass]
     public class BlockStoreRepositoryPerformanceCounterTest
     {
         private BlockStoreRepositoryPerformanceCounter performanceCounter;
 
-        [TestInitialize]
-        public void Initialize()
+        public BlockStoreRepositoryPerformanceCounterTest()
         {
             this.performanceCounter = new BlockStoreRepositoryPerformanceCounter();
         }
 
-        [TestMethod]
+        [Fact]
         public void Constructor_InitializesTimeAndCount()
         {
-            Assert.AreEqual(0, this.performanceCounter.RepositoryHitCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryMissCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryDeleteCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryInsertCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryHitCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryMissCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryDeleteCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryInsertCount);
 
-            Assert.AreEqual(DateTime.UtcNow.Date, this.performanceCounter.Start.Date);
+            Assert.Equal(DateTime.UtcNow.Date, this.performanceCounter.Start.Date);
         }
 
-        [TestMethod]
+        [Fact]
         public void AddRepositoryHitCount_WithGivenAmount_IncrementsHitCount()
         {
             this.performanceCounter.AddRepositoryHitCount(15);
 
-            Assert.AreEqual(15, this.performanceCounter.RepositoryHitCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryMissCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryDeleteCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryInsertCount);
+            Assert.Equal(15, this.performanceCounter.RepositoryHitCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryMissCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryDeleteCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryInsertCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void AddRepositoryMissCount_WithGivenAmount_IncrementsMissCount()
         {
             this.performanceCounter.AddRepositoryMissCount(15);
 
-            Assert.AreEqual(0, this.performanceCounter.RepositoryHitCount);
-            Assert.AreEqual(15, this.performanceCounter.RepositoryMissCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryDeleteCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryInsertCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryHitCount);
+            Assert.Equal(15, this.performanceCounter.RepositoryMissCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryDeleteCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryInsertCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void AddRepositoryDeleteCount_WithGivenAmount_IncrementsDeleteCount()
         {
             this.performanceCounter.AddRepositoryDeleteCount(15);
 
-            Assert.AreEqual(0, this.performanceCounter.RepositoryHitCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryMissCount);
-            Assert.AreEqual(15, this.performanceCounter.RepositoryDeleteCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryInsertCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryHitCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryMissCount);
+            Assert.Equal(15, this.performanceCounter.RepositoryDeleteCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryInsertCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void AddRepositoryInsertCount_WithGivenAmount_IncrementsInsertCount()
         {
             this.performanceCounter.AddRepositoryInsertCount(15);
 
-            Assert.AreEqual(0, this.performanceCounter.RepositoryHitCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryMissCount);
-            Assert.AreEqual(0, this.performanceCounter.RepositoryDeleteCount);
-            Assert.AreEqual(15, this.performanceCounter.RepositoryInsertCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryHitCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryMissCount);
+            Assert.Equal(0, this.performanceCounter.RepositoryDeleteCount);
+            Assert.Equal(15, this.performanceCounter.RepositoryInsertCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void Snapshot_CreatesSnapshotWithCurrentPerformanceCount()
         {
             this.performanceCounter.AddRepositoryHitCount(15);
@@ -90,15 +88,15 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 
             var snapshot2 = this.performanceCounter.Snapshot();
 
-            Assert.AreEqual(15, snapshot1.TotalRepositoryHitCount);
-            Assert.AreEqual(7, snapshot1.TotalRepositoryMissCount);
-            Assert.AreEqual(3, snapshot1.TotalRepositoryDeleteCount);
-            Assert.AreEqual(1, snapshot1.TotalRepositoryInsertCount);
+            Assert.Equal(15, snapshot1.TotalRepositoryHitCount);
+            Assert.Equal(7, snapshot1.TotalRepositoryMissCount);
+            Assert.Equal(3, snapshot1.TotalRepositoryDeleteCount);
+            Assert.Equal(1, snapshot1.TotalRepositoryInsertCount);
 
-            Assert.AreEqual(65, snapshot2.TotalRepositoryHitCount);
-            Assert.AreEqual(16, snapshot2.TotalRepositoryMissCount);
-            Assert.AreEqual(9, snapshot2.TotalRepositoryDeleteCount);
-            Assert.AreEqual(68, snapshot2.TotalRepositoryInsertCount);
+            Assert.Equal(65, snapshot2.TotalRepositoryHitCount);
+            Assert.Equal(16, snapshot2.TotalRepositoryMissCount);
+            Assert.Equal(9, snapshot2.TotalRepositoryDeleteCount);
+            Assert.Equal(68, snapshot2.TotalRepositoryInsertCount);
         }        
     }
 }

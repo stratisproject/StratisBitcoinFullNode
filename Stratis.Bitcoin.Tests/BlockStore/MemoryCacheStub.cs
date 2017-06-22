@@ -87,18 +87,18 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 
 		public object GetLastCreateCalled()
 		{
-			return this.lastCreateCalled;
+			return lastCreateCalled;
 		}
 
 		public MemoryCacheStub(IDictionary<object, object> dict)
 		{
-            this.lastCreateCalled = null;
+			lastCreateCalled = null;
 			this.internalDict = dict;
 		}
 
 		public ICacheEntry CreateEntry(object key)
 		{
-            this.lastCreateCalled = key;
+			lastCreateCalled = key;
 			this.internalDict.Add(key, null);
 			return new CacheEntryStub(key, null);
 		}

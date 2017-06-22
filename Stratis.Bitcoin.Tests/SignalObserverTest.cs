@@ -9,27 +9,27 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Tests.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests
-{  
+{
     public class SignalObserverTest : LogsTestBase
     {
         SignalObserver<Block> observer;               
 
-        protected override void Initialize()
+        public SignalObserverTest() : base()
         {
-            this.observer = new TestBlockSignalObserver();
+            observer = new TestBlockSignalObserver();
         }
 
-        [TestMethod]
+        [Fact]
         public void SignalObserverLogsSignalOnError()
         {
             var exception = new InvalidOperationException("This should not have occurred!");
 
-            this.observer.OnError(exception);
+            observer.OnError(exception);
 
-            AssertLog(this.FullNodeLogger, LogLevel.Error, exception.ToString());
+            AssertLog(FullNodeLogger, LogLevel.Error, exception.ToString());
         }            
 
         private class TestBlockSignalObserver : SignalObserver<Block>

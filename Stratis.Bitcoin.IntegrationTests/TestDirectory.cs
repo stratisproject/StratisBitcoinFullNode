@@ -20,15 +20,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			if(!Directory.Exists("TestData"))
 				Directory.CreateDirectory("TestData");
-			if(!Directory.Exists(this.FolderName))
-				Directory.CreateDirectory(this.FolderName);
+			if(!Directory.Exists(FolderName))
+				Directory.CreateDirectory(FolderName);
 		}
 
 		public TestDirectory(string name, bool clean)
 		{
-			this.FolderName = name;
-            this.Clean = clean;
-			if(this.Clean)
+			FolderName = name;
+			Clean = clean;
+			if(Clean)
 				CleanDirectory();
 		}
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			try
 			{
-				Directory.Delete(this.FolderName, true);
+				Directory.Delete(FolderName, true);
 			}
 			catch(DirectoryNotFoundException)
 			{
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public void Dispose()
 		{
-			if(this.Clean)
+			if(Clean)
 				CleanDirectory();
 		}		
 	}

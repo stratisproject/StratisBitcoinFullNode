@@ -1,18 +1,17 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Stratis.Bitcoin.Builder.Feature;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder.Feature
 {
-    [TestClass]
     public class FeatureRegistrationTest
     {
-		[TestMethod]
+		[Fact]
 		public void FeatureServicesAddServiceCollectionToDelegates()
 		{
 			var collection = new ServiceCollection();			
@@ -20,27 +19,27 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 			
 			registration.FeatureServices(d => { d.AddSingleton<FeatureCollection>(); });
 
-			Assert.AreEqual(typeof(FeatureRegistrationFullNodeFeature), registration.FeatureType);
-			Assert.AreEqual(1, registration.ConfigureServicesDelegates.Count);
+			Assert.Equal(typeof(FeatureRegistrationFullNodeFeature), registration.FeatureType);
+			Assert.Equal(1, registration.ConfigureServicesDelegates.Count);
 			registration.ConfigureServicesDelegates[0].Invoke(collection);
 			var descriptors = collection as IList<ServiceDescriptor>;
-			Assert.AreEqual(1, descriptors.Count);
-			Assert.AreEqual(typeof(FeatureCollection), descriptors[0].ImplementationType);
-			Assert.AreEqual(ServiceLifetime.Singleton, descriptors[0].Lifetime);
+			Assert.Equal(1, descriptors.Count);
+			Assert.Equal(typeof(FeatureCollection), descriptors[0].ImplementationType);
+			Assert.Equal(ServiceLifetime.Singleton, descriptors[0].Lifetime);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void UseStartupSetsFeatureStartupType()
 		{			
 			var registration = new FeatureRegistration<FeatureRegistrationFullNodeFeature>();
-			Assert.AreEqual(null, registration.FeatureStartupType);
+			Assert.Equal(null, registration.FeatureStartupType);
 
 			registration.UseStartup<ServiceCollection>();
 
-			Assert.AreEqual(typeof(ServiceCollection), registration.FeatureStartupType);		
+			Assert.Equal(typeof(ServiceCollection), registration.FeatureStartupType);		
 		}
 
-		[TestMethod]
+		[Fact]
 		public void BuildFeatureWithoutFeatureStartupTypeBootstrapsStartup()
 		{
 			var collection = new ServiceCollection();
@@ -50,17 +49,17 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 			registration.BuildFeature(collection);
 
 			var descriptors = collection as IList<ServiceDescriptor>;
-			Assert.AreEqual(3, descriptors.Count);			
-			Assert.AreEqual(typeof(FeatureRegistrationFullNodeFeature), descriptors[0].ImplementationType);
-			Assert.AreEqual(ServiceLifetime.Singleton, descriptors[0].Lifetime);
-			Assert.AreEqual(typeof(IFullNodeFeature), descriptors[1].ServiceType);
-			Assert.IsNotNull(descriptors[1].ImplementationFactory);
-			Assert.AreEqual(ServiceLifetime.Singleton, descriptors[1].Lifetime);
-			Assert.AreEqual(typeof(FeatureCollection), descriptors[2].ImplementationType);
-			Assert.AreEqual(ServiceLifetime.Singleton, descriptors[2].Lifetime);
+			Assert.Equal(3, descriptors.Count);			
+			Assert.Equal(typeof(FeatureRegistrationFullNodeFeature), descriptors[0].ImplementationType);
+			Assert.Equal(ServiceLifetime.Singleton, descriptors[0].Lifetime);
+			Assert.Equal(typeof(IFullNodeFeature), descriptors[1].ServiceType);
+			Assert.NotNull(descriptors[1].ImplementationFactory);
+			Assert.Equal(ServiceLifetime.Singleton, descriptors[1].Lifetime);
+			Assert.Equal(typeof(FeatureCollection), descriptors[2].ImplementationType);
+			Assert.Equal(ServiceLifetime.Singleton, descriptors[2].Lifetime);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void BuildFeatureWithFeatureStartupTypeBootstrapsStartupAndInvokesStartupWithCollection()
 		{						
 			var collection = new ServiceCollection();
@@ -71,7 +70,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 			registration.BuildFeature(collection);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void BuildFeatureWithFeatureStartupNotHavingStaticConfigureServicesMethodDoesNotCrash()
 		{
 			var collection = new ServiceCollection();
@@ -94,14 +93,14 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 			public static void ConfigureServices(IServiceCollection services)
 			{
 				var descriptors = services as IList<ServiceDescriptor>;
-				Assert.AreEqual(3, descriptors.Count);
-				Assert.AreEqual(typeof(FeatureRegistrationFullNodeFeature), descriptors[0].ImplementationType);
-				Assert.AreEqual(ServiceLifetime.Singleton, descriptors[0].Lifetime);
-				Assert.AreEqual(typeof(IFullNodeFeature), descriptors[1].ServiceType);
-				Assert.IsNotNull(descriptors[1].ImplementationFactory);
-				Assert.AreEqual(ServiceLifetime.Singleton, descriptors[1].Lifetime);
-				Assert.AreEqual(typeof(FeatureCollection), descriptors[2].ImplementationType);
-				Assert.AreEqual(ServiceLifetime.Singleton, descriptors[2].Lifetime);
+				Assert.Equal(3, descriptors.Count);
+				Assert.Equal(typeof(FeatureRegistrationFullNodeFeature), descriptors[0].ImplementationType);
+				Assert.Equal(ServiceLifetime.Singleton, descriptors[0].Lifetime);
+				Assert.Equal(typeof(IFullNodeFeature), descriptors[1].ServiceType);
+				Assert.NotNull(descriptors[1].ImplementationFactory);
+				Assert.Equal(ServiceLifetime.Singleton, descriptors[1].Lifetime);
+				Assert.Equal(typeof(FeatureCollection), descriptors[2].ImplementationType);
+				Assert.Equal(ServiceLifetime.Singleton, descriptors[2].Lifetime);
 			}
 		}
 
