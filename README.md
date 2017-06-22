@@ -14,6 +14,11 @@ At some point the code will be forked to support the Stratis Token using [NStrat
 [.NET Core](https://dotnet.github.io/) is an open source cross platform framework and enables the development of applications and services on Windows, macOS and Linux.
 Join our community on [slack](https://stratisplatform.slack.com).
 
+Build Status
+------------------
+
+[![AppVeyor build status](https://img.shields.io/appveyor/ci/detroitpro/stratisbitcoinfullnode/feature/test_branch.svg?label=appveyor&style=flat-square)](https://ci.appveyor.com/project/detroitpro/stratisbitcoinfullnode)
+
 Running a FullNode
 ------------------
 
