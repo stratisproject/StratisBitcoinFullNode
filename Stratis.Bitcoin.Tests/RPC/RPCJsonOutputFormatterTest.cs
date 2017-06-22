@@ -15,19 +15,17 @@ using Moq;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.RPC;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
-    [TestClass]
 	public class RPCJsonOutputFormatterTest
 	{
 		private TestRPCJsonOutputFormatter formatter;
 		private JsonSerializerSettings settings;
 		private ArrayPool<char> charpool;
 
-        [TestInitialize]
-		public void Initialize()
+		public RPCJsonOutputFormatterTest()
 		{
 			this.settings = new JsonSerializerSettings();
 			this.charpool = ArrayPool<char>.Create();
@@ -35,7 +33,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.formatter = new TestRPCJsonOutputFormatter(this.settings, this.charpool);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void CreateJsonWriterCreatesNewJsonWriterWithTextWriter()
 		{
 			using (var memoryStream = new MemoryStream())
@@ -50,24 +48,24 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 						writer.Flush();
 						memoryStream.Position = 0;
-						Assert.AreEqual("{}", reader.ReadToEnd());
+						Assert.Equal("{}", reader.ReadToEnd());
 					}
 				}
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void CreateJsonSerializerCreatesSerializerWithProvidedSettings()
 		{
 			this.settings.Culture = new System.Globalization.CultureInfo("en-GB");
-			this.formatter = new TestRPCJsonOutputFormatter(this.settings, this.charpool);
+			this.formatter = new TestRPCJsonOutputFormatter(settings, charpool);
 
 			var serializer = this.formatter.CreateJsonSerializer();
 
-			Assert.AreEqual("en-GB", serializer.Culture.Name);
+			Assert.Equal("en-GB", serializer.Culture.Name);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void WriteObjectWritesObjectToWriter()
 		{
 			using (var memoryStream = new MemoryStream())
@@ -79,13 +77,13 @@ namespace Stratis.Bitcoin.Tests.RPC
 					{
 						writer.Flush();
 						memoryStream.Position = 0;
-						Assert.AreEqual("{\"Authorized\":[],\"AllowIp\":[]}", reader.ReadToEnd());
+						Assert.Equal("{\"Authorized\":[],\"AllowIp\":[]}", reader.ReadToEnd());
 					}
 				}
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void WriteResponseBodyAsyncWritesContextToResponseBody()
 		{
 			Stream bodyStream = new MemoryStream();
@@ -112,14 +110,14 @@ namespace Stratis.Bitcoin.Tests.RPC
 			{
 				stream.Position = 0;
 				var result = reader.ReadToEnd();
-				Assert.AreEqual("{\"Authorized\":[],\"AllowIp\":[]}", result);
+				Assert.Equal("{\"Authorized\":[],\"AllowIp\":[]}", result);
 			}
 
 			using (StreamReader reader = new StreamReader(bodyStream))
 			{
 				bodyStream.Position = 0;
 				var result = reader.ReadToEnd();
-				Assert.AreEqual("{\"result\":{\"Authorized\":[],\"AllowIp\":[]},\"id\":1,\"error\":null}", result);
+				Assert.Equal("{\"result\":{\"Authorized\":[],\"AllowIp\":[]},\"id\":1,\"error\":null}", result);
 			}
 		}
 

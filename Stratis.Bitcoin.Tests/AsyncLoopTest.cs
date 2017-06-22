@@ -5,21 +5,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Tests.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests
 {
-    [TestClass]
     public class AsyncLoopTest : LogsTestBase
     {
         private int iterationCount;
 
-        protected override void Initialize()
+        public AsyncLoopTest() : base()
         {
-            this.iterationCount = 0;
+            iterationCount = 0;
         }
 
-        [TestMethod]
+        [Fact]
         public void RunOperationCanceledExceptionThrownBeforeCancellationTokenIsCancelledLogsException()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
@@ -29,13 +28,13 @@ namespace Stratis.Bitcoin.Tests
 
             asyncLoop.Run(new CancellationTokenSource(80).Token, TimeSpan.FromMilliseconds(33)).Wait();
 
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
-            AssertLog<OperationCanceledException>(this.FullNodeLogger, LogLevel.Critical, "This should not block the task from continuing.", "TestLoop threw an unhandled exception");
-            Assert.AreEqual(1, this.iterationCount);
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop starting");
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop stopping");
+            AssertLog<OperationCanceledException>(FullNodeLogger, LogLevel.Critical, "This should not block the task from continuing.", "TestLoop threw an unhandled exception");
+            Assert.Equal(1, iterationCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void RunWithoutCancellationTokenRunsUntilExceptionOccurs()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
@@ -45,13 +44,13 @@ namespace Stratis.Bitcoin.Tests
 
             asyncLoop.Run(TimeSpan.FromMilliseconds(33)).Wait();
 
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
-            AssertLog<InvalidOperationException>(this.FullNodeLogger, LogLevel.Critical, "Cannot run more than 3 times.", "TestLoop threw an unhandled exception");
-            Assert.AreEqual(3, this.iterationCount);
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop starting");
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop stopping");
+            AssertLog<InvalidOperationException>(FullNodeLogger, LogLevel.Critical, "Cannot run more than 3 times.", "TestLoop threw an unhandled exception");
+            Assert.Equal(3, iterationCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void RunWithCancellationTokenRunsUntilExceptionOccurs()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
@@ -61,13 +60,13 @@ namespace Stratis.Bitcoin.Tests
 
             asyncLoop.Run(new CancellationTokenSource(150).Token, TimeSpan.FromMilliseconds(33)).Wait();
 
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
-            AssertLog<InvalidOperationException>(this.FullNodeLogger, LogLevel.Critical, "Cannot run more than 3 times.", "TestLoop threw an unhandled exception");
-            Assert.AreEqual(3, this.iterationCount);
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop starting");
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop stopping");
+            AssertLog<InvalidOperationException>(FullNodeLogger, LogLevel.Critical, "Cannot run more than 3 times.", "TestLoop threw an unhandled exception");
+            Assert.Equal(3, iterationCount);         
         }
 
-        [TestMethod]
+        [Fact]
         public void RunLogsStartAndStop()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
@@ -77,24 +76,24 @@ namespace Stratis.Bitcoin.Tests
 
             asyncLoop.Run(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33)).Wait();
 
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop starting");
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop stopping");
         }
 
-        [TestMethod]
+        [Fact]
         public void RunWithoutDelayRunsTaskUntilCancelled()
-        {
+        {            
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
             {
                 await DoTask(token);
             });
-
+            
             asyncLoop.Run(new CancellationTokenSource(90).Token, TimeSpan.FromMilliseconds(33)).Wait();
 
-            Assert.AreEqual(3, this.iterationCount);
+            Assert.Equal(3, iterationCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void RunWithDelayRunsTaskUntilCancelled()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
@@ -104,14 +103,14 @@ namespace Stratis.Bitcoin.Tests
 
             asyncLoop.Run(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33), TimeSpan.FromMilliseconds(40)).Wait();
 
-            Assert.AreEqual(2, this.iterationCount);
+            Assert.Equal(2, iterationCount);
         }
 
         private Task DoExceptionalTask(CancellationToken token)
         {
-            this.iterationCount++;
+            iterationCount++;
 
-            if (this.iterationCount == 3)
+            if (iterationCount == 3)
             {
                 throw new InvalidOperationException("Cannot run more than 3 times.");
             }
@@ -121,9 +120,9 @@ namespace Stratis.Bitcoin.Tests
 
         private Task DoOperationCanceledExceptionTask(CancellationToken token)
         {
-            this.iterationCount++;
+            iterationCount++;
 
-            if (this.iterationCount == 1)
+            if (iterationCount == 1)
             {
                 throw new OperationCanceledException("This should not block the task from continuing.");
             }
@@ -133,7 +132,7 @@ namespace Stratis.Bitcoin.Tests
 
         private Task DoTask(CancellationToken token)
         {
-            this.iterationCount++;
+            iterationCount++;
             return Task.CompletedTask;
         }
     }

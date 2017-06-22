@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NBitcoin;
 using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
@@ -14,22 +13,15 @@ using Stratis.Bitcoin.RPC.Controllers;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
 {
-    [TestClass]
     public abstract class BaseRPCControllerTest : TestBase
     {
-        [TestInitialize]
-        public void InitializeBase()
+        public BaseRPCControllerTest()
         {
             Logs.Configure(new LoggerFactory());
-
-            this.Initialize();
-        }
-
-        protected virtual void Initialize()
-        {
         }
 
         public IFullNode BuildServicedNode(string dir)

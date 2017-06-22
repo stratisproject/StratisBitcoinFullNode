@@ -1,35 +1,37 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Stratis.Bitcoin.Builder.Feature;
+﻿using Stratis.Bitcoin.Builder.Feature;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder.Feature
 {
-    [TestClass]
     public class FeatureCollectionTest
     {
-		[TestMethod]
+		[Fact]
 		public void AddToCollectionReturnsOfGivenType()
 		{
 			var collection = new FeatureCollection();
 
 			collection.AddFeature<FeatureCollectionFullNodeFeature>();
 
-			Assert.AreEqual(1, collection.FeatureRegistrations.Count);
-			Assert.AreEqual(typeof(FeatureCollectionFullNodeFeature), collection.FeatureRegistrations[0].FeatureType);
+			Assert.Equal(1, collection.FeatureRegistrations.Count);
+			Assert.Equal(typeof(FeatureCollectionFullNodeFeature), collection.FeatureRegistrations[0].FeatureType);
 		}
 
-		[TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
+		[Fact]
 		public void AddFeatureAlreadyInCollectionThrowsException()
-		{			
-			var collection = new FeatureCollection();
+		{
+			Assert.Throws(typeof(ArgumentException), () =>
+			{
+				var collection = new FeatureCollection();
 
-			collection.AddFeature<FeatureCollectionFullNodeFeature>();
-			collection.AddFeature<FeatureCollectionFullNodeFeature>();		
+				collection.AddFeature<FeatureCollectionFullNodeFeature>();
+				collection.AddFeature<FeatureCollectionFullNodeFeature>();
+			});
 		}
+
 
 		private class FeatureCollectionFullNodeFeature : IFullNodeFeature
 		{

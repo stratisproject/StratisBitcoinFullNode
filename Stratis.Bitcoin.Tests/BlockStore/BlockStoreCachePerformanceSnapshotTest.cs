@@ -1,16 +1,18 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Stratis.Bitcoin.BlockStore;
+﻿using Stratis.Bitcoin.BlockStore;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
-    [TestClass]
     public class BlockStoreCachePerformanceSnapshotTest
     {
+        public BlockStoreCachePerformanceSnapshotTest()
+        {
+        }
 
-        [TestMethod]
+        [Fact]
         public void Constructor_InitializesCounters()
         {
             var snapshot = new BlockStoreCachePerformanceSnapshot(1301, 2352, 1244, 6452)
@@ -19,13 +21,13 @@ namespace Stratis.Bitcoin.Tests.BlockStore
                 Taken = DateTime.UtcNow
             };
 
-            Assert.AreEqual(1301, snapshot.TotalCacheHitCount);
-            Assert.AreEqual(2352, snapshot.TotalCacheMissCount);
-            Assert.AreEqual(1244, snapshot.TotalCacheRemoveCount);
-            Assert.AreEqual(6452, snapshot.TotalCacheSetCount);
+            Assert.Equal(1301, snapshot.TotalCacheHitCount);
+            Assert.Equal(2352, snapshot.TotalCacheMissCount);
+            Assert.Equal(1244, snapshot.TotalCacheRemoveCount);
+            Assert.Equal(6452, snapshot.TotalCacheSetCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void SubtractOperator_SubtractsValuesFromMultipleSnapshots_CreatesNewSnapshot()
         {
             var snapshot = new BlockStoreCachePerformanceSnapshot(1301, 2352, 1244, 6452)
@@ -42,12 +44,12 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 
             BlockStoreCachePerformanceSnapshot snapshot3 = snapshot2 - snapshot;
 
-            Assert.AreEqual(3011, snapshot3.TotalCacheHitCount);
-            Assert.AreEqual(1200, snapshot3.TotalCacheMissCount);
-            Assert.AreEqual(972, snapshot3.TotalCacheRemoveCount);
-            Assert.AreEqual(2571, snapshot3.TotalCacheSetCount);
-            Assert.AreEqual(new DateTime(2017, 1, 1, 1, 1, 1), snapshot3.Start);
-            Assert.AreEqual(new DateTime(2017, 1, 1, 3, 1, 1), snapshot3.Taken);
+            Assert.Equal(3011, snapshot3.TotalCacheHitCount);
+            Assert.Equal(1200, snapshot3.TotalCacheMissCount);
+            Assert.Equal(972, snapshot3.TotalCacheRemoveCount);
+            Assert.Equal(2571, snapshot3.TotalCacheSetCount);
+            Assert.Equal(new DateTime(2017, 1, 1, 1, 1, 1), snapshot3.Start);
+            Assert.Equal(new DateTime(2017, 1, 1, 3, 1, 1), snapshot3.Taken);
         }
     }
 }

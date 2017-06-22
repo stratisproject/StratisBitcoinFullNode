@@ -1,16 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NBitcoin;
+﻿using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.RPC.Models;
-using Stratis.Bitcoin.Tests.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC.Models
 {
-    [TestClass]
     public class GetInfoModelTest : BaseRPCModelTest
     {
         static readonly string[] AllPropertyNames = new string[] {
@@ -44,7 +42,7 @@ namespace Stratis.Bitcoin.Tests.RPC.Models
                 "errors",
             };
 
-        [TestMethod]
+        [Fact]
         public void GetInfoSerializeFullTest()
         {
             var expectedOrderedPropertyNames = AllPropertyNames;
@@ -60,26 +58,26 @@ namespace Stratis.Bitcoin.Tests.RPC.Models
             };
 
             JObject obj = ModelToJObject(info);
-            Assert.IsTrue(obj.HasValues);
+            Assert.True(obj.HasValues);
             var actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name);
-            
-            Assert.IsTrue(expectedOrderedPropertyNames.SequenceEqual(actualOrderedPropertyNames));
+
+            Assert.Equal(expectedOrderedPropertyNames, actualOrderedPropertyNames);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetInfoSerializeSparseTest()
         {
             var expectedOrderedPropertyNames = RequiredPropertyNames;
             var info = new GetInfoModel();
 
             JObject obj = ModelToJObject(info);
-            Assert.IsTrue(obj.HasValues);
+            Assert.True(obj.HasValues);
             var actualOrderedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name);
 
-            Assert.IsTrue(expectedOrderedPropertyNames.SequenceEqual(actualOrderedPropertyNames));
+            Assert.Equal(expectedOrderedPropertyNames, actualOrderedPropertyNames);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetInfoDeserializeSparseTest()
         {
             IOrderedEnumerable<string> expectedSortedPropertyNames = RequiredPropertyNames.OrderBy(name => name);
@@ -98,10 +96,11 @@ namespace Stratis.Bitcoin.Tests.RPC.Models
             JObject obj = JObject.Parse(json);
             IOrderedEnumerable<string> actualSortedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name).OrderBy(name => name);
 
-            Assert.IsTrue(expectedSortedPropertyNames.SequenceEqual(actualSortedPropertyNames));
+            Assert.Equal(expectedSortedPropertyNames, actualSortedPropertyNames);
+
         }
 
-        [TestMethod]
+        [Fact]
         public void GetInfoDeserializeFullTest()
         {
             IOrderedEnumerable<string> expectedSortedPropertyNames = AllPropertyNames.OrderBy(name => name);
@@ -128,22 +127,23 @@ namespace Stratis.Bitcoin.Tests.RPC.Models
             IOrderedEnumerable<string> actualSortedPropertyNames = obj.Children().Select(o => (o as JProperty)?.Name).OrderBy(name => name);
             GetInfoModel model = Newtonsoft.Json.JsonConvert.DeserializeObject<GetInfoModel>(json);
 
-            Assert.IsTrue(expectedSortedPropertyNames.SequenceEqual(actualSortedPropertyNames));
-            Assert.AreEqual(1010000u, model.version);
-            Assert.AreEqual(70012u, model.protocolversion);
-            Assert.AreEqual(Money.Satoshis(2).ToUnit(MoneyUnit.BTC), model.balance);
-            Assert.AreEqual(460828, model.blocks);
-            Assert.AreEqual(0, model.timeoffset);
-            Assert.AreEqual(44, model.connections);
-            Assert.AreEqual(string.Empty, model.proxy);
-            Assert.AreEqual(499635929816.6675, model.difficulty, 3);
-            Assert.IsFalse(model.testnet);
-            Assert.AreEqual(1437418454, model.keypoololdest);
-            Assert.AreEqual(101, model.keypoolsize);
-            Assert.AreEqual(0u, model.unlocked_until);
-            Assert.AreEqual(Money.Satoshis(10000).ToUnit(MoneyUnit.BTC), model.paytxfee);
-            Assert.AreEqual(Money.Satoshis(1000).ToUnit(MoneyUnit.BTC), model.relayfee);
-            Assert.AreEqual("URGENT: Alert key compromised, upgrade required", model.errors);
-        }       
+            Assert.Equal(expectedSortedPropertyNames, actualSortedPropertyNames);
+            Assert.Equal(1010000u, model.version);
+            Assert.Equal(70012u, model.protocolversion);
+            Assert.Equal(Money.Satoshis(2).ToUnit(MoneyUnit.BTC), model.balance);
+            Assert.Equal(460828, model.blocks);
+            Assert.Equal(0, model.timeoffset);
+            Assert.Equal(44, model.connections);
+            Assert.Empty(model.proxy);
+            Assert.Equal(499635929816.6675, model.difficulty, 3);
+            Assert.False(model.testnet);
+            Assert.Equal(1437418454, model.keypoololdest);
+            Assert.Equal(101, model.keypoolsize);
+            Assert.Equal(0u, model.unlocked_until);
+            Assert.Equal(Money.Satoshis(10000).ToUnit(MoneyUnit.BTC), model.paytxfee);
+            Assert.Equal(Money.Satoshis(1000).ToUnit(MoneyUnit.BTC), model.relayfee);
+            Assert.Equal("URGENT: Alert key compromised, upgrade required", model.errors);
+        }
+
     }
 }

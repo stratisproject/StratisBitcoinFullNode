@@ -1,55 +1,56 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.Wallet.Helpers;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {
-    [TestClass]
     public class WalletHelpersTest
     {
-        [TestMethod]
+        [Fact]
         public void GetMainNetworkRetuirnsNetworkMain()
         {
             Network network = WalletHelpers.GetNetwork("main");
-            Assert.AreEqual(Network.Main, network);            
+            Assert.Equal(Network.Main, network);            
         }
 
-        [TestMethod]
+        [Fact]
         public void GetMainNetNetworkRetuirnsNetworkMain()
         {
             Network network = WalletHelpers.GetNetwork("mainnet");
-            Assert.AreEqual(Network.Main, network);
+            Assert.Equal(Network.Main, network);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetTestNetworkRetuirnsNetworkTest()
         {
             Network network = WalletHelpers.GetNetwork("test");
-            Assert.AreEqual(Network.TestNet, network);
+            Assert.Equal(Network.TestNet, network);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetTestNetNetworkRetuirnsNetworkTest()
         {
             Network network = WalletHelpers.GetNetwork("testnet");
-            Assert.AreEqual(Network.TestNet, network);
+            Assert.Equal(Network.TestNet, network);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetNetworkIsCaseInsensitive()
         {
             Network testNetwork = WalletHelpers.GetNetwork("Test");
-            Assert.AreEqual(Network.TestNet, testNetwork);
+            Assert.Equal(Network.TestNet, testNetwork);
 
             Network mainNetwork = WalletHelpers.GetNetwork("MainNet");
-            Assert.AreEqual(Network.Main, mainNetwork);
+            Assert.Equal(Network.Main, mainNetwork);
         }
 
-        [TestMethod]
+        [Fact]
         public void WrongNetworkThrowsArgumentException()
         {
-            Assert.ThrowsException<ArgumentException>(() => WalletHelpers.GetNetwork("myNetwork"));
+            var exception = Record.Exception(() => WalletHelpers.GetNetwork("myNetwork"));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
         }
     }
 }

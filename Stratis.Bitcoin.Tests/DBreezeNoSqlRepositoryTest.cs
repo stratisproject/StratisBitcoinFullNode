@@ -4,14 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DBreeze;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests
 {
-    [TestClass]
     public class DBreezeNoSqlRepositoryTest : TestBase
     {
-        [TestMethod]
+        public DBreezeNoSqlRepositoryTest()
+        {
+        }
+
+        [Fact]
         public void GetBytesWithKeyRetrievesBytesForExistingGivenKey()
         {
             var dir = AssureEmptyDir("TestData/DBreezeNoSqlRepository/GetBytesWithKeyRetrievesBytesForExistingGivenKey");
@@ -27,11 +30,11 @@ namespace Stratis.Bitcoin.Tests
                 var task = repo.GetBytes("testKey");
                 task.Wait();
 
-                Assert.AreEqual("keyValueResult", Encoding.UTF8.GetString(task.Result));
+                Assert.Equal("keyValueResult", Encoding.UTF8.GetString(task.Result));
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void GetBytesWithKeyRetrievesNullWhenKeyNotExists()
         {
             using (var repo = new DBreezeTestNoSqlRepository("TestRepo", AssureEmptyDir("TestData/DBreezeNoSqlRepository/GetBytesWithKeyRetrievesNullWhenKeyNotExists")))
@@ -39,11 +42,11 @@ namespace Stratis.Bitcoin.Tests
                 var task = repo.GetBytes("testKey");
                 task.Wait();
 
-                Assert.AreEqual(null, task.Result);
+                Assert.Equal(null, task.Result);
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void PutBytesWithKeyAndDataStoresDataUnderGivenKey()
         {
             var dir = AssureEmptyDir("TestData/DBreezeNoSqlRepository/PutBytesWithKeyAndDataStoresDataUnderGivenKey");
@@ -59,11 +62,11 @@ namespace Stratis.Bitcoin.Tests
             {
                 var transaction = engine.GetTransaction();
                 var row = transaction.Select<string, byte[]>("TestRepo2", "dataKey");
-                Assert.IsTrue(expected.SequenceEqual(row.Value));
+                Assert.Equal(expected, row.Value);
             }
         }
 
-        [TestMethod]
+        [Fact]
         public void PutBytesBatchWithListStoresDataUnderGivenKeys()
         {
             var dir = AssureEmptyDir("TestData/DBreezeNoSqlRepository/PutBytesBatchWithListStoresDataUnderGivenKeys");
@@ -82,10 +85,10 @@ namespace Stratis.Bitcoin.Tests
             {
                 var transaction = engine.GetTransaction();
                 var row = transaction.Select<string, byte[]>("TestRepo3", expected[0].Item1);
-                Assert.IsTrue(expected[0].Item2.SequenceEqual(row.Value));
+                Assert.Equal(expected[0].Item2, row.Value);
 
                 row = transaction.Select<string, byte[]>("TestRepo3", expected[1].Item1);
-                Assert.IsTrue(expected[1].Item2.SequenceEqual(row.Value));
+                Assert.Equal(expected[1].Item2, row.Value);
             }
         }
 

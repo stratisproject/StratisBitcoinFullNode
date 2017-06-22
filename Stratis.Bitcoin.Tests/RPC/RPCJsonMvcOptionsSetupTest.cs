@@ -3,14 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.RPC;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
-    [TestClass]
     public class RPCJsonMvcOptionsSetupTest
     {
-        [TestMethod]
+        [Fact]
         public void ConfigureMvcReplacesJsonFormattedWithRPCJsonOutputFormatter()
         {
             var settings = new JsonSerializerSettings();
@@ -21,8 +20,8 @@ namespace Stratis.Bitcoin.Tests.RPC
 
             RPCJsonMvcOptionsSetup.ConfigureMvc(options, settings, null, charpool, null);
 
-            Assert.AreEqual(1, options.OutputFormatters.Count);
-            Assert.AreEqual(typeof(RPCJsonOutputFormatter), options.OutputFormatters[0].GetType());
+            Assert.Equal(1, options.OutputFormatters.Count);
+            Assert.Equal(typeof(RPCJsonOutputFormatter), options.OutputFormatters[0].GetType());
         }
     }
 }

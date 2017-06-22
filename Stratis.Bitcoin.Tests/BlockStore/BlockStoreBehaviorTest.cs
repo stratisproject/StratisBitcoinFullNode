@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+﻿using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockStore;
@@ -7,10 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
-    [TestClass]
     public class BlockStoreBehaviorTest
     {
 		private BlockStoreBehavior behavior;
@@ -18,8 +17,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 		private Mock<Bitcoin.BlockStore.IBlockRepository> blockRepository;
 		private ConcurrentChain chain;
 
-        [TestInitialize]
-		public void Initialize()
+		public BlockStoreBehaviorTest()
 		{
 			this.chain = new ConcurrentChain();
 			this.blockRepository = new Mock<Bitcoin.BlockStore.IBlockRepository>();
@@ -28,18 +26,18 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			this.behavior = new BlockStoreBehavior(this.chain, this.blockRepository.Object, this.blockCache.Object);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void AnnounceBlocksWithoutBlocksReturns()
 		{
 			List<uint256> blocks = new List<uint256>();			
 
 			var task = this.behavior.AnnounceBlocks(blocks);
 
-			Assert.AreEqual(task.Status, TaskStatus.RanToCompletion);
-			Assert.IsNull(behavior.AttachedNode);
+			Assert.Equal(task.Status, TaskStatus.RanToCompletion);
+			Assert.Null(behavior.AttachedNode);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void AnnounceBlocksWithoutAttachedNodeWithoutBlocksReturns()
 		{
 			List<uint256> blocks = new List<uint256>();
@@ -47,8 +45,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 
 			var task = this.behavior.AnnounceBlocks(blocks);
 
-			Assert.AreEqual(task.Status, TaskStatus.RanToCompletion);
-			Assert.IsNull(behavior.AttachedNode);
+			Assert.Equal(task.Status, TaskStatus.RanToCompletion);
+			Assert.Null(behavior.AttachedNode);
 		}		
 	}
 }

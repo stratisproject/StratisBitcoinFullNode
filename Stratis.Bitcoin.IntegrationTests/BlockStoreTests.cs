@@ -10,15 +10,14 @@ using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    [TestClass]
     public class BlockStoreTests
     {
 
-		//[TestMethod]
+		//[Fact]
 		public void BlockRepositoryBench()
 		{
 			using (var dir = TestDirectory.Create())
@@ -66,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void BlockRepositoryPutBatch()
 	    {
 			using (var dir = TestDirectory.Create())
@@ -97,24 +96,24 @@ namespace Stratis.Bitcoin.IntegrationTests
 					foreach (var block in lst)
 					{
 						var received = blockRepo.GetAsync(block.GetHash()).GetAwaiter().GetResult();
-						Assert.IsTrue(block.ToBytes().SequenceEqual(received.ToBytes()));
+						Assert.True(block.ToBytes().SequenceEqual(received.ToBytes()));
 
 						foreach (var transaction in block.Transactions)
 						{
 							var trx = blockRepo.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
-							Assert.IsTrue(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
+							Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
 						}
 					}
 
 					// delete
 					blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] {lst.ElementAt(2).GetHash()}.ToList());
 					var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
-					Assert.IsNull(deleted);
+					Assert.Null(deleted);
 				}
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void BlockRepositoryBlockHash()
 		{
 			using (var dir = TestDirectory.Create())
@@ -123,15 +122,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 				{
                     blockRepo.Initialize().GetAwaiter().GetResult();
 
-                    Assert.AreEqual(Network.Main.GenesisHash, blockRepo.BlockHash);
+                    Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
 					var hash = new Block().GetHash();
 					blockRepo.SetBlockHash(hash).GetAwaiter().GetResult();
-					Assert.AreEqual(hash, blockRepo.BlockHash);
+					Assert.Equal(hash, blockRepo.BlockHash);
 				}
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void BlockBroadcastInv()
 	    {
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -173,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-        [TestMethod]
+        [Fact]
         public void BlockStoreCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
@@ -200,12 +199,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 newNodeInstance.Start();
 
                 // check that store recovered to be the same as the best chain.
-               Assert.AreEqual(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+               Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
                 //TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
             }
         }
 
-        [TestMethod]
+        [Fact]
 		public void BlockStoreCanReorg()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -256,7 +255,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void BlockStoreIndexTx()
 		{
 			using (NodeBuilder builder = NodeBuilder.Create())
@@ -277,12 +276,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 				TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 
 				var bestBlock1 = stratisNode1.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNode1.FullNode.Chain.Tip.HashBlock).Result;
-				Assert.IsNotNull(bestBlock1);
+				Assert.NotNull(bestBlock1);
 
 				// get the block coinbase trx 
 				var trx = stratisNode2.FullNode.BlockStoreManager.BlockRepository.GetTrxAsync(bestBlock1.Transactions.First().GetHash()).Result;
-				Assert.IsNotNull(trx);
-				Assert.AreEqual(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
+				Assert.NotNull(trx);
+				Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
 			}
 		}
 	}

@@ -1,87 +1,96 @@
 ﻿using System;
+using Xunit;
 using Stratis.Bitcoin.Utilities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Stratis.Bitcoin.Tests
 {
-    [TestClass]
     public class GuardTest
     {
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void NullValueThrowsArgumentNullException()
         {
             object obj = null;
-            Guard.NotNull(obj, "someObjectName");           
+            var exception = Record.Exception(() => Guard.NotNull(obj, "someObjectName"));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentNullException>(exception);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void NullParameterNameThrowsArgumentNullException()
         {
-            Guard.NotNull(DateTime.Now, null);            
+            var exception = Record.Exception(() => Guard.NotNull(DateTime.Now, null));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentNullException>(exception);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void EmptyParameterNameThrowsArgumentNullException()
         {
-            Guard.NotNull(DateTime.Now, string.Empty);            
+            var exception = Record.Exception(() => Guard.NotNull(DateTime.Now, string.Empty));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentNullException>(exception);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void WhiteSpacesParameterNameThrowsArgumentNullException()
         {
-            Guard.NotNull(DateTime.Now, "   ");            
+            var exception = Record.Exception(() => Guard.NotNull(DateTime.Now, "   "));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentNullException>(exception);
         }
 
-        [TestMethod]
+        [Fact]
         public void ValueDefinedObjectWithParameterNameDoesntThrow()
         {
-            Guard.NotNull(DateTime.Now, "someDate");            
+            var exception = Record.Exception(() => Guard.NotNull(DateTime.Now, "someDate"));
+            Assert.Null(exception);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
+        [Fact]
         public void EmptyStringThrowsArgumentNullException()
         {
-            Guard.NotEmpty(string.Empty, "someObjectName");            
+            var exception = Record.Exception(() => Guard.NotEmpty(string.Empty, "someObjectName"));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void NullStringThrowsArgumentNullException()
         {
-            Guard.NotEmpty(null, "someObjectName");
+            var exception = Record.Exception(() => Guard.NotEmpty(null, "someObjectName"));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentNullException>(exception);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
+        [Fact]
         public void WhiteSpacesStringThrowsArgumentNullException()
         {
-            Guard.NotEmpty("   ", "someObjectName");            
+            var exception = Record.Exception(() => Guard.NotEmpty("   ", "someObjectName"));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
         }
 
-        [TestMethod]
+        [Fact]
         public void NotEmptyStringReturnsString()
         {
             var result = Guard.NotEmpty("value", "someObjectName");
 
-            Assert.AreEqual(result, "value");
+            Assert.Equal(result, "value");
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [Fact]
         public void FalseAssertionThrowsException()
         {
-            Guard.Assert(false);            
+            var exception = Record.Exception(() => Guard.Assert(false));
+            Assert.NotNull(exception);
+            Assert.IsType<Exception>(exception);
         }
 
-        [TestMethod]
+        [Fact]
         public void TrueAssertionDoesntThrowException()
         {
-            Guard.Assert(true);            
+            var exception = Record.Exception(() => Guard.Assert(true));
+            Assert.Null(exception);
         }
     }
 }

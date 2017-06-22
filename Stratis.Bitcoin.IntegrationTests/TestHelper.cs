@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 
 namespace Stratis.Bitcoin.IntegrationTests
-{    
+{
     public class TestHelper
     {
         public static void WaitLoop(Func<bool> act)

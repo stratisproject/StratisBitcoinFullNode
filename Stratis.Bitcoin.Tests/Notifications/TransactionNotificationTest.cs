@@ -4,14 +4,13 @@ using System.Text;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Notifications;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Notifications
 {    
-    [TestClass]
     public class TransactionNotificationTest
     {
-        [TestMethod]
+        [Fact]
         public void NotifyWithTransactionBroadcastsSuccessfully()
         {
             var signals = new Mock<ISignals>();
@@ -24,7 +23,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
 
         }
 
-        [TestMethod]
+        [Fact]
         public void NotifyWithNullTransactionDoesntBroadcast()
         {
             var signals = new Mock<ISignals>();
@@ -37,10 +36,12 @@ namespace Stratis.Bitcoin.Tests.Notifications
 
         }
 
-        [TestMethod]
+        [Fact]
         public void NullSignalsThrowsArgumentNullException()
         {
-            Assert.ThrowsException<ArgumentNullException>(() => new TransactionNotification(null));            
+            var exception = Record.Exception(() => new TransactionNotification(null));
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentNullException>(exception);            
         }
     }
 }

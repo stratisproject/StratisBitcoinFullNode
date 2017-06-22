@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.RPC.Controllers;
@@ -7,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
 {
@@ -15,27 +15,27 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
         private IFullNode fullNode;
         private ConsensusController controller;
 
-        protected override void Initialize()
+        public ConsensusActionTests()
         {
             string dir = "Stratis.Bitcoin.Tests/TestData/ConsensusActionTests";
             this.fullNode = this.BuildServicedNode(dir);
             this.controller = this.fullNode.Services.ServiceProvider.GetService<ConsensusController>();
         }
 
-        [TestMethod]
+        [Fact]
         public void CanCall_GetBestBlockHash()
         {
             uint256 result = this.controller.GetBestBlockHash();
 
-            Assert.IsNull(result);
+            Assert.Null(result);
         }
 
-        [TestMethod]
+        [Fact]
         public void CanCall_GetBlockHash()
         {
             uint256 result = this.controller.GetBlockHash(0);
 
-            Assert.IsNull(result);
+            Assert.Null(result);
         }
     }
 }

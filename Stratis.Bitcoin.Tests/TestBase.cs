@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests
-{    
+{
     public class TestBase
     {
         public static string AssureEmptyDir(string dir)

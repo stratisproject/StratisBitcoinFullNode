@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+﻿using Moq;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
@@ -7,25 +6,24 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {
-    [TestClass]
     public class AsyncDictionaryTest
     {
         private Mock<IAsyncLock> asyncLock;
         private AsyncDictionary<string, decimal> dictionary;
         private IDictionary<string, decimal> underlyingDict;
 
-        [TestInitialize]
-        public void Initialize()
+        public AsyncDictionaryTest()
         {
             this.asyncLock = new Mock<IAsyncLock>();
             this.underlyingDict = new Dictionary<string, decimal>();
             this.dictionary = new AsyncDictionary<string, decimal>(this.asyncLock.Object, this.underlyingDict);
         }
 
-        [TestMethod]
+        [Fact]
         public void AddWritesValuesToDictionary()
         {
             this.asyncLock.Setup(a => a.WriteAsync(It.IsAny<Action>()))
@@ -33,12 +31,12 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             this.dictionary.Add("txamt", 15.00m);
 
-            Assert.AreEqual(1, this.underlyingDict.Keys.Count);
-            Assert.AreEqual(15.00m, this.underlyingDict["txamt"]);
+            Assert.Equal(1, this.underlyingDict.Keys.Count);
+            Assert.Equal(15.00m, this.underlyingDict["txamt"]);
             this.asyncLock.VerifyAll();
         }
 
-        [TestMethod]
+        [Fact]
         public void ClearsValuesFromDictionary()
         {
             this.underlyingDict.Add("key", 15m);
@@ -49,11 +47,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             this.dictionary.Clear();
 
-            Assert.AreEqual(0, this.underlyingDict.Keys.Count);
+            Assert.Equal(0, this.underlyingDict.Keys.Count);
             this.asyncLock.VerifyAll();
         }
 
-        [TestMethod]
+        [Fact]
         public void CountReturnsCountFRomDictionar()
         {
             this.underlyingDict.Add("key", 15m);
@@ -68,12 +66,12 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var task = this.dictionary.Count;
             task.Wait();
 
-            Assert.AreEqual(1, task.Result);
+            Assert.Equal(1, task.Result);
             this.asyncLock.VerifyAll();
         }
 
 
-        [TestMethod]
+        [Fact]
         public void ContainsKeyReturnsTrueIfDictionaryHasKey()
         {
             this.underlyingDict.Add("key", 15m);
@@ -88,11 +86,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var task = this.dictionary.ContainsKey("key");
             task.Wait();
 
-            Assert.IsTrue(task.Result);
+            Assert.True(task.Result);
             this.asyncLock.VerifyAll();
         }
 
-        [TestMethod]
+        [Fact]
         public void ContainsKeyReturnsFalseIfDictionaryDoesNotHasKey()
         {
             this.dictionary = new AsyncDictionary<string, decimal>(this.asyncLock.Object, this.underlyingDict);
@@ -106,11 +104,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var task = this.dictionary.ContainsKey("key");
             task.Wait();
 
-            Assert.IsFalse(task.Result);
+            Assert.False(task.Result);
             this.asyncLock.VerifyAll();
         }
 
-        [TestMethod]
+        [Fact]
         public void TryGetValueReturnsValueIfDictionaryHasKey()
         {
             this.underlyingDict.Add("key", 15m);
@@ -125,11 +123,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var task = this.dictionary.TryGetValue("key");
             task.Wait();
 
-            Assert.AreEqual(15m, task.Result);
+            Assert.Equal(15m, task.Result);
             this.asyncLock.VerifyAll();
         }
 
-        [TestMethod]
+        [Fact]
         public void TryGetValueReturnsNullIfDictionaryDoesNotHasKey()
         {
             this.dictionary = new AsyncDictionary<string, decimal>(this.asyncLock.Object, this.underlyingDict);
@@ -143,11 +141,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var task = this.dictionary.TryGetValue("key");
             task.Wait();
 
-            Assert.AreEqual(0, task.Result);
+            Assert.Equal(0, task.Result);
             this.asyncLock.VerifyAll();
         }
 
-        [TestMethod]
+        [Fact]
         public void RemoveDeletesKeyFromDictionary()
         {
             this.underlyingDict.Add("key", 15m);
@@ -163,14 +161,14 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var task = this.dictionary.Remove("key");
             task.Wait();
 
-            Assert.IsTrue(task.Result);
-            Assert.AreEqual(1, this.underlyingDict.Count);
-            Assert.AreEqual("key2", this.underlyingDict.Keys.First());
+            Assert.True(task.Result);
+            Assert.Equal(1, this.underlyingDict.Count);
+            Assert.Equal("key2", this.underlyingDict.Keys.First());
             this.asyncLock.VerifyAll();
         }
 
 
-        [TestMethod]
+        [Fact]
         public void KeysReturnsKeysFromDictionary()
         {
             this.underlyingDict.Add("key", 15m);
@@ -185,13 +183,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var task = this.dictionary.Keys;
             task.Wait();
 
-            Assert.AreEqual(2, task.Result.Count);
-            Assert.AreEqual("key", task.Result[0]);
-            Assert.AreEqual("key2", task.Result[1]);
+            Assert.Equal(2, task.Result.Count);
+            Assert.Equal("key", task.Result[0]);
+            Assert.Equal("key2", task.Result[1]);
             this.asyncLock.VerifyAll();
         }
 
-        [TestMethod]
+        [Fact]
         public void ValuesReturnsValuesFromDictionary()
         {
             this.underlyingDict.Add("key", 15m);
@@ -206,9 +204,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var task = this.dictionary.Values;
             task.Wait();
 
-            Assert.AreEqual(2, task.Result.Count);
-            Assert.AreEqual(15m, task.Result[0]);
-            Assert.AreEqual(30m, task.Result[1]);
+            Assert.Equal(2, task.Result.Count);
+            Assert.Equal(15m, task.Result[0]);
+            Assert.Equal(30m, task.Result[1]);
             this.asyncLock.VerifyAll();
         }
     }

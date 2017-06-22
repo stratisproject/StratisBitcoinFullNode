@@ -5,10 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Tests.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests
-{    
+{
     public class PeriodicTaskTest : LogsTestBase
     {
         private int iterationCount;
@@ -16,12 +16,12 @@ namespace Stratis.Bitcoin.Tests
         /// <remarks>
         /// Unable to tests background thread exception throwing due to https://github.com/xunit/xunit/issues/157.
         /// </remarks>
-        protected override void Initialize()
+        public PeriodicTaskTest() : base()
         {
-            this.iterationCount = 0;
+            iterationCount = 0;
         }
 
-        [TestMethod]
+        [Fact]
         public void StartLogsStartAndStop()
         {
             var periodicTask = new PeriodicTask("TestTask", async token =>
@@ -32,11 +32,11 @@ namespace Stratis.Bitcoin.Tests
             periodicTask.Start(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33));
 
             Thread.Sleep(120);            
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestTask starting");
-            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestTask stopping");
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestTask starting");
+            AssertLog(FullNodeLogger, LogLevel.Information, "TestTask stopping");
         }
 
-        [TestMethod]
+        [Fact]
         public void StartWithoutDelayRunsTaskUntilCancelled()
         {
             var periodicTask = new PeriodicTask("TestTask", async token =>
@@ -47,10 +47,10 @@ namespace Stratis.Bitcoin.Tests
             periodicTask.Start(new CancellationTokenSource(80).Token, TimeSpan.FromMilliseconds(33));
 
             Thread.Sleep(100);
-            Assert.AreEqual(3, this.iterationCount);
+            Assert.Equal(3, iterationCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void StartWithDelayUsesIntervalForDelayRunsTaskUntilCancelled()
         {
             var periodicTask = new PeriodicTask("TestTask", async token =>
@@ -61,10 +61,10 @@ namespace Stratis.Bitcoin.Tests
             periodicTask.Start(new CancellationTokenSource(70).Token, TimeSpan.FromMilliseconds(33), true);
 
             Thread.Sleep(100);
-            Assert.AreEqual(2, this.iterationCount);
+            Assert.Equal(2, iterationCount);
         }
 
-        [TestMethod]
+        [Fact]
         public void RunOnceDoesOneExecutionCycle()
         {
             var periodicTask = new PeriodicTask("TestTask", async token =>
@@ -74,14 +74,14 @@ namespace Stratis.Bitcoin.Tests
 
             periodicTask.RunOnce();
 
-            Assert.AreEqual(1, this.iterationCount);
+            Assert.Equal(1, iterationCount);
         }
 
         private Task DoExceptionalTask(CancellationToken token)
         {
-            Interlocked.Increment(ref this.iterationCount);
+            Interlocked.Increment(ref iterationCount);
 
-            if (this.iterationCount == 3)
+            if (iterationCount == 3)
             {
                 throw new InvalidOperationException("Cannot run more than 3 times.");
             }
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests
 
         private Task DoTask(CancellationToken token)
         {
-            Interlocked.Increment(ref this.iterationCount);
+            Interlocked.Increment(ref iterationCount);
             return Task.CompletedTask;
         }
     }
