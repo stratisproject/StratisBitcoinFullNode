@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Utilities;
 using Transaction = NBitcoin.Transaction;
 
 namespace Stratis.Bitcoin.Wallet
@@ -375,8 +376,9 @@ namespace Stratis.Bitcoin.Wallet
                 return this.chain.Tip.HashBlock;
             }
 
-            return this.Wallets.Select(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType))
-                       .OrderBy(o => o.LastBlockSyncedHeight).FirstOrDefault()?.LastBlockSyncedHash ?? this.network.GenesisHash;
+            var lastBlockSyncedHash =  this.Wallets.Select(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType)).OrderBy(o => o.LastBlockSyncedHeight).FirstOrDefault()?.LastBlockSyncedHash;
+            Guard.Assert(lastBlockSyncedHash != null);
+            return lastBlockSyncedHash;
         }
 
         /// <inheritdoc />
@@ -602,7 +604,14 @@ namespace Stratis.Bitcoin.Wallet
         public void ProcessBlock(Block block, ChainedBlock chainedBlock)
         {
             this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
-            
+
+            // if there is no wallet yet, update the wallet tip hash and do nothing else.
+            if (!this.Wallets.Any())
+            {
+                this.WalletTipHash = chainedBlock.HashBlock;
+                return;
+            }
+
             // is this the next block
             if (chainedBlock.Header.HashPrevBlock != this.WalletTipHash)
             {
@@ -617,14 +626,11 @@ namespace Stratis.Bitcoin.Wallet
                     throw new WalletException("block too far in the future has arrived to the wallet");
             }
 
-            if (this.Wallets.Any())
+            foreach (Transaction transaction in block.Transactions)
             {
-                foreach (Transaction transaction in block.Transactions)
-                {
-                    this.ProcessTransaction(transaction, chainedBlock.Height, block);
-                }
+                this.ProcessTransaction(transaction, chainedBlock.Height, block);
             }
-
+            
             // update the wallets with the last processed block height
             this.UpdateLastBlockSyncedHeight(chainedBlock);
         }
