@@ -13,17 +13,20 @@ namespace Stratis.Bitcoin.Notifications
 	{
 		private readonly ISignals signals;
         private ChainedBlock tip;
+        private IAsyncLoopFactory asyncLoopFactory;
 
-		public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals)
+        public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals, IAsyncLoopFactory asyncLoopFactory)
 		{
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(puller, nameof(puller));
 			Guard.NotNull(signals, nameof(signals));
+            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
 
 			this.Chain = chain;
 			this.Puller = puller;
 			this.signals = signals;
-		}
+            this.asyncLoopFactory = asyncLoopFactory;
+        }
 
 		public ILookaheadBlockPuller Puller { get; }
 
@@ -55,9 +58,9 @@ namespace Stratis.Bitcoin.Notifications
 		/// Notifies about blocks, starting from block with hash passed as parameter.
 		/// </summary>
 		/// <param name="cancellationToken">A cancellation token</param>
-		public virtual void Notify(CancellationToken cancellationToken)
+		public virtual Task Notify(CancellationToken cancellationToken)
 		{
-			AsyncLoop.Run("block notifier", token =>
+			return this.asyncLoopFactory.Run("block notifier", token =>
 			{
 				// if the StartHash hasn't been set yet
 				if (this.StartHash == null)

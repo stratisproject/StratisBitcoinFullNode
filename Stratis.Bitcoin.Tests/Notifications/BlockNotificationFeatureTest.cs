@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
 			var chain = new Mock<ConcurrentChain>();
 			var chainState = new Mock<ChainBehavior.ChainState>(new Mock<FullNode>().Object);
 			var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object);
-			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Signals());
+			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Signals(), new AsyncLoopFactory());
 
 			var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, cancellationProvider, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
 			blockNotificationFeature.Start();
