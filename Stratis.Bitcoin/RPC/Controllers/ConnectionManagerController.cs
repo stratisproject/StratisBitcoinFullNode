@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
 {
     public class ConnectionManagerController : BaseRPCController
     {
-        public ConnectionManagerController(ConnectionManager connectionManager) : base(connectionManager: connectionManager)
+        public ConnectionManagerController(IConnectionManager connectionManager) : base(connectionManager: connectionManager)
         {
             Guard.NotNull(this._ConnectionManager, nameof(_ConnectionManager));
         }

@@ -14,9 +14,9 @@ namespace Stratis.Bitcoin.MemoryPool
 	{
 		private readonly MempoolManager manager;
 		private readonly ConcurrentChain chain;
-		private readonly ConnectionManager connection;
+		private readonly IConnectionManager connection;
 
-		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, ConnectionManager connection, FullNode.CancellationProvider cancellationProvider)
+		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, IConnectionManager connection, FullNode.CancellationProvider cancellationProvider)
 		{
 			this.manager = manager;
 			this.chain = chain;

@@ -170,6 +170,12 @@ namespace Stratis.Bitcoin.Wallet
     /// </summary>
     public class HdAccount
     {
+        public HdAccount()
+        {
+            this.ExternalAddresses = new List<HdAddress>();
+            this.InternalAddresses = new List<HdAddress>();
+        }
+
         /// <summary>
         /// The index of the account.
         /// </summary>
@@ -324,6 +330,11 @@ namespace Stratis.Bitcoin.Wallet
     /// </summary>
     public class HdAddress
     {
+        public HdAddress()
+        {
+            this.Transactions = new List<TransactionData>();
+        }
+
         /// <summary>
         /// The index of the address.
         /// </summary>
@@ -479,19 +490,13 @@ namespace Stratis.Bitcoin.Wallet
         {
             // if this transaction hasn't been spent
             if (this.SpendingDetails == null)
-            {
-                if (this.IsConfirmed())
-                {
-                    return this.Amount;
-                }
-                else if (confirmedOnly)
+            {            
+                if (confirmedOnly && !this.IsConfirmed())
                 {
                     return Money.Zero;
                 }
-                else
-                {
-                    return this.Amount;
-                }
+
+                return this.Amount;
             }
 
             // if the transaction and its spending transaction are both confirmed spent or
@@ -566,6 +571,11 @@ namespace Stratis.Bitcoin.Wallet
 
     public class SpendingDetails
     {
+        public SpendingDetails()
+        {
+            this.Payments = new List<PaymentDetails>();
+        }
+
         /// <summary>
         /// The id of the transaction in which the output referenced in this transaction is spent.
         /// </summary>

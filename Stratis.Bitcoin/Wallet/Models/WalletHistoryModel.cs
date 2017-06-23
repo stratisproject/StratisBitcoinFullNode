@@ -11,12 +11,22 @@ namespace Stratis.Bitcoin.Wallet.Models
 {
     public class WalletHistoryModel
     {
+        public WalletHistoryModel()
+        {
+            this.TransactionsHistory = new List<TransactionItemModel>();
+        }
+
         [JsonProperty(PropertyName = "transactionsHistory")]
         public List<TransactionItemModel> TransactionsHistory { get; set; }
     }
 
     public class TransactionItemModel
     {
+        public TransactionItemModel()
+        {
+            this.Payments = new List<PaymentDetailModel>();
+        }
+
         [JsonProperty(PropertyName = "type")]
         [JsonConverter(typeof(StringEnumConverter), true)]
         public TransactionItemType Type { get; set; }

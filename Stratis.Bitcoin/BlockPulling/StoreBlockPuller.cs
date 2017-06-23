@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 	public class StoreBlockPuller : BlockPuller
 	{
-		public StoreBlockPuller(ConcurrentChain chain, Connection.ConnectionManager nodes) 
+		public StoreBlockPuller(ConcurrentChain chain, Connection.IConnectionManager nodes) 
 			: base(chain, nodes.ConnectedNodes, nodes.NodeSettings.ProtocolVersion)
 		{
 		}

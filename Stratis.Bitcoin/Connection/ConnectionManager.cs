@@ -16,8 +16,31 @@ using Stratis.Bitcoin.Configuration.Settings;
 
 namespace Stratis.Bitcoin.Connection
 {
-	public class ConnectionManager : IDisposable
-	{
+    public interface IConnectionManager : IDisposable
+    {
+        NodesGroup AddNodeNodeGroup { get; }
+        IReadOnlyNodesCollection ConnectedNodes { get; }
+        NodesGroup ConnectNodeGroup { get; }
+        NodesGroup DiscoveredNodeGroup { get; set; }
+        Network Network { get; }
+        NodeSettings NodeSettings { get; }
+        NodeConnectionParameters Parameters { get; }
+        List<NodeServer> Servers { get; }
+
+        void AddDiscoveredNodesRequirement(NodeServices services);
+        void AddNodeAddress(IPEndPoint endpoint);
+        Node Connect(IPEndPoint endpoint);
+        Node FindLocalNode();
+        Node FindNodeByEndpoint(IPEndPoint endpoint);
+        Node FindNodeByIp(IPAddress ip);
+        string GetNodeStats();
+        string GetStats();
+        void RemoveNodeAddress(IPEndPoint endpoint);
+        void Start();
+    }
+
+    public class ConnectionManager : IConnectionManager
+    {
 		// The maximum number of entries in an 'inv' protocol message 
 		public const int MAX_INV_SZ = 50000;
 

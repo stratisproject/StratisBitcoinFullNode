@@ -15,12 +15,12 @@ namespace Stratis.Bitcoin.Notifications
 	{
 		private readonly BlockNotification blockNotification;
 		private readonly FullNode.CancellationProvider cancellationProvider;
-		private readonly ConnectionManager connectionManager;
+		private readonly IConnectionManager connectionManager;
 		private readonly LookaheadBlockPuller blockPuller;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly ConcurrentChain chain;
 
-		public BlockNotificationFeature(BlockNotification blockNotification, FullNode.CancellationProvider cancellationProvider, ConnectionManager connectionManager, LookaheadBlockPuller blockPuller, ChainBehavior.ChainState chainState, ConcurrentChain chain)
+		public BlockNotificationFeature(BlockNotification blockNotification, FullNode.CancellationProvider cancellationProvider, IConnectionManager connectionManager, LookaheadBlockPuller blockPuller, ChainBehavior.ChainState chainState, ConcurrentChain chain)
 		{
 			this.blockNotification = blockNotification;
 			this.cancellationProvider = cancellationProvider;

@@ -22,13 +22,13 @@ namespace Stratis.Bitcoin.WatchOnlyWallet
 
         private readonly CoinType coinType;
         private readonly Network network;
-        private readonly ConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
         private readonly ILogger logger;
 
-        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain,
+        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain,
             NodeSettings settings, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

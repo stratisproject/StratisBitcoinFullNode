@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
         protected ChainBehavior.ChainState _ChainState;
         protected BlockStoreManager _BlockManager;
         protected MempoolManager _MempoolManager;
-        protected Connection.ConnectionManager _ConnectionManager;
+        protected Connection.IConnectionManager _ConnectionManager;
 
         public BaseRPCController(
             IFullNode fullNode = null,
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
             ChainBehavior.ChainState chainState = null,
             BlockStoreManager blockManager = null,
             MempoolManager mempoolManager = null,
-            Connection.ConnectionManager connectionManager = null)
+            Connection.IConnectionManager connectionManager = null)
         {
             this._FullNode = fullNode;
             this._Settings = nodeSettings;

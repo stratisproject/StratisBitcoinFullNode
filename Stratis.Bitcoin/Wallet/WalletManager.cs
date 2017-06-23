@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Wallet
 
         private readonly CoinType coinType;
         private readonly Network network;
-        private readonly ConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
-        public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain,
+        public WalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain,
             NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

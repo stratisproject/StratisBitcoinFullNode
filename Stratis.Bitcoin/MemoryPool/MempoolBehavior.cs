@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly MempoolValidator validator;
 		private readonly MempoolManager manager;
 		private readonly MempoolOrphans orphans;
-		private readonly ConnectionManager connectionManager;
+		private readonly IConnectionManager connectionManager;
 		private readonly BlockStore.ChainBehavior.ChainState chainState;
 		private readonly Signals signals;
 
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
 		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, 
-			ConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState, Signals signals)
+			IConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState, Signals signals)
 		{
 			this.validator = validator;
 			this.manager = manager;

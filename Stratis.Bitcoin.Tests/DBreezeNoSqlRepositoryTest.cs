@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Tests
                 var task = repo.GetBytes("testKey");
                 task.Wait();
 
-                Assert.Equal(null, task.Result);
+                Assert.Null(task.Result);
             }
         }
 

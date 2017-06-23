@@ -22,10 +22,10 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly BlockStoreManager blockStoreManager;
 		private readonly BlockStoreSignaled blockStoreSignaled;
 		private readonly FullNode.CancellationProvider cancellationProvider;
-		private readonly ConnectionManager connectionManager;
+		private readonly IConnectionManager connectionManager;
 		private readonly NodeSettings nodeSettings;
 
-		public BlockStoreFeature(ConcurrentChain chain, ConnectionManager connectionManager, Signals signals, BlockRepository blockRepository,  
+		public BlockStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals signals, BlockRepository blockRepository,  
 			BlockStoreCache blockStoreCache, StoreBlockPuller blockPuller, BlockStoreLoop blockStoreLoop, BlockStoreManager blockStoreManager,
 			BlockStoreSignaled blockStoreSignaled, FullNode.CancellationProvider cancellationProvider, NodeSettings nodeSettings)
 		{

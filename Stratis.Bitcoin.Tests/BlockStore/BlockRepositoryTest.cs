@@ -29,7 +29,7 @@
                 var txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
 
                 Assert.Equal(Network.Main.GetGenesis().GetHash(), blockRow.Value);
-                Assert.Equal(false, txIndexRow.Value);
+                Assert.False(txIndexRow.Value);
             }
         }
 
@@ -59,7 +59,7 @@
                 var txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
 
                 Assert.Equal(new uint256(56), blockRow.Value);
-                Assert.Equal(true, txIndexRow.Value);
+                Assert.True(txIndexRow.Value);
             }
         }
 
@@ -179,7 +179,7 @@
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
                 task.Wait();
 
-                Assert.Equal(null, task.Result);
+                Assert.Null(task.Result);
             }
         }
 
@@ -293,7 +293,7 @@
                 var trans = engine.GetTransaction();
 
                 var txIndexRow = trans.Select<byte[], bool>("Common", new byte[1]);
-                Assert.Equal(false, txIndexRow.Value);
+                Assert.False(txIndexRow.Value);
             }
         }
 
@@ -355,7 +355,7 @@
                 var task = repository.GetAsync(new uint256());
                 task.Wait();
 
-                Assert.Equal(null, task.Result);
+                Assert.Null(task.Result);
             }
         }
 
@@ -377,7 +377,7 @@
                 var task = repository.ExistAsync(block.GetHash());
                 task.Wait();
 
-                Assert.Equal(true, task.Result);
+                Assert.True(task.Result);
             }
         }
 
@@ -391,7 +391,7 @@
                 var task = repository.ExistAsync(new uint256());
                 task.Wait();
 
-                Assert.Equal(false, task.Result);
+                Assert.False(task.Result);
             }
         }
 
