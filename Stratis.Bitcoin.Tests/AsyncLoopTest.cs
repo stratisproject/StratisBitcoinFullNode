@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -19,14 +17,14 @@ namespace Stratis.Bitcoin.Tests
         }
 
         [Fact]
-        public void RunOperationCanceledExceptionThrownBeforeCancellationTokenIsCancelledLogsException()
+        public async Task RunOperationCanceledExceptionThrownBeforeCancellationTokenIsCancelledLogsException()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
             {
                 await DoOperationCanceledExceptionTask(token);
             });
 
-            asyncLoop.Run(new CancellationTokenSource(80).Token, TimeSpan.FromMilliseconds(33)).Wait();
+            await asyncLoop.Run(new CancellationTokenSource(80).Token, TimeSpan.FromMilliseconds(33));
 
             AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop starting");
             AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop stopping");
@@ -35,14 +33,14 @@ namespace Stratis.Bitcoin.Tests
         }
 
         [Fact]
-        public void RunWithoutCancellationTokenRunsUntilExceptionOccurs()
+        public async Task RunWithoutCancellationTokenRunsUntilExceptionOccurs()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
             {
                 await DoExceptionalTask(token);
             });
 
-            asyncLoop.Run(TimeSpan.FromMilliseconds(33)).Wait();
+            await asyncLoop.Run(TimeSpan.FromMilliseconds(33));
 
             AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop starting");
             AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop stopping");
@@ -51,57 +49,57 @@ namespace Stratis.Bitcoin.Tests
         }
 
         [Fact]
-        public void RunWithCancellationTokenRunsUntilExceptionOccurs()
+        public async Task RunWithCancellationTokenRunsUntilExceptionOccurs()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
             {
                 await DoExceptionalTask(token);
             });
 
-            asyncLoop.Run(new CancellationTokenSource(150).Token, TimeSpan.FromMilliseconds(33)).Wait();
+            await asyncLoop.Run(new CancellationTokenSource(150).Token, TimeSpan.FromMilliseconds(33));
 
             AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop starting");
             AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop stopping");
             AssertLog<InvalidOperationException>(FullNodeLogger, LogLevel.Critical, "Cannot run more than 3 times.", "TestLoop threw an unhandled exception");
-            Assert.Equal(3, iterationCount);         
+            Assert.Equal(3, iterationCount);
         }
 
         [Fact]
-        public void RunLogsStartAndStop()
+        public async Task RunLogsStartAndStop()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
             {
                 await DoTask(token);
             });
 
-            asyncLoop.Run(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33)).Wait();
+            await asyncLoop.Run(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33));
 
             AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop starting");
             AssertLog(FullNodeLogger, LogLevel.Information, "TestLoop stopping");
         }
 
         [Fact]
-        public void RunWithoutDelayRunsTaskUntilCancelled()
-        {            
+        public async Task RunWithoutDelayRunsTaskUntilCancelled()
+        {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
             {
                 await DoTask(token);
             });
-            
-            asyncLoop.Run(new CancellationTokenSource(90).Token, TimeSpan.FromMilliseconds(33)).Wait();
+
+            await asyncLoop.Run(new CancellationTokenSource(90).Token, TimeSpan.FromMilliseconds(33));
 
             Assert.Equal(3, iterationCount);
         }
 
         [Fact]
-        public void RunWithDelayRunsTaskUntilCancelled()
+        public async Task RunWithDelayRunsTaskUntilCancelled()
         {
             var asyncLoop = new AsyncLoop("TestLoop", async token =>
             {
                 await DoTask(token);
             });
 
-            asyncLoop.Run(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33), TimeSpan.FromMilliseconds(40)).Wait();
+            await asyncLoop.Run(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33), TimeSpan.FromMilliseconds(40));
 
             Assert.Equal(2, iterationCount);
         }
