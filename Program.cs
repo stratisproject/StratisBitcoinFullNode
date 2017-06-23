@@ -47,6 +47,8 @@ namespace Breeze.Daemon
                     return;
 
                 var network = args.Contains("-testnet") ? InitStratisTest() : Network.StratisMain;
+                if (args.Contains("-testnet"))
+                    args = args.Append("-addnode=13.64.76.48").ToArray(); // TODO: fix this temp hack 
                 var nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);                
                 nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
 

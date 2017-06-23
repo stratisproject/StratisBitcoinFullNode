@@ -10,7 +10,7 @@
     },
     "StratisTest": {
       "commandName": "Project",
-      "commandLineArgs": "stratis -testnet -addnode=13.64.76.48"
+      "commandLineArgs": "stratis -testnet"
     }
   }
 }
