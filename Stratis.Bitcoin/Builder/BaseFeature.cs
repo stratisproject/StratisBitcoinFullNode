@@ -168,6 +168,7 @@ namespace Stratis.Bitcoin.Builder
 					services.AddSingleton<BlockStore.ChainBehavior.ChainState>();
 					services.AddSingleton<ChainRepository>();
 					services.AddSingleton(serviceProvider => new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() });
+				    services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
 
 					// == connection ==
 					services.AddSingleton<NodeConnectionParameters>(new NodeConnectionParameters());

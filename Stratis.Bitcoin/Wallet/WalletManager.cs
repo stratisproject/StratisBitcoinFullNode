@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -34,6 +36,8 @@ namespace Stratis.Bitcoin.Wallet
         private readonly DataFolder dataFolder;
         private readonly IWalletFeePolicy walletFeePolicy;
         private readonly MempoolValidator mempoolValidator;
+        private readonly CancellationToken cancellationToken;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly ILogger logger;
 
         public uint256 WalletTipHash { get; set; }
@@ -50,7 +54,7 @@ namespace Stratis.Bitcoin.Wallet
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
         public WalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+            NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, IAsyncLoopFactory asyncLoopFactory, FullNode.CancellationProvider cancellationProvider, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new List<Wallet>();
@@ -63,10 +67,11 @@ namespace Stratis.Bitcoin.Wallet
             this.dataFolder = dataFolder;
             this.walletFeePolicy = walletFeePolicy;
             this.mempoolValidator = mempoolValidator;
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.cancellationToken = cancellationProvider.Cancellation.Token;
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
-
         }
 
         public void Initialize()
@@ -82,6 +87,13 @@ namespace Stratis.Bitcoin.Wallet
 
             // find the last chain block received by the wallet manager.
             this.WalletTipHash = this.LastReceivedBlockHash();
+
+            // save the wallets file every 5 minutes to help against crashes.
+            this.asyncLoopFactory.Run("wallet persist job", token => {
+                this.SaveToFile();
+                this.logger.LogInformation($"Wallets saved to file at {DateTime.Now}.");
+                return Task.CompletedTask;
+            }, this.cancellationToken, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));            
         }
 
         /// <inheritdoc />
