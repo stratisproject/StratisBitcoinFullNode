@@ -242,5 +242,11 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.NotNull(mempoolManager);
         }
 
+	    [Fact]
+	    public void WhenNodeSettingsIsNullUseDefault()
+	    {
+	        var builder = new FullNodeBuilder(null);
+            Assert.Equal(Network.Main, builder.Network);
+        }
     }
 }

@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Threading;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Builder
 {
