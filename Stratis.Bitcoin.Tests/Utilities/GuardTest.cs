@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Tests
         {
             var result = Guard.NotEmpty("value", "someObjectName");
 
-            Assert.Equal(result, "value");
+            Assert.Equal("value", result);
         }
 
         [Fact]

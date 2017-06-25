@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Builder
 		private readonly Network network;
 		private readonly FullNode.CancellationProvider cancellationProvider;
 		private readonly ConcurrentChain chain;
-		private readonly ConnectionManager connectionManager;
+		private readonly IConnectionManager connectionManager;
 
 		private PeriodicTask flushChainTask;
 		private PeriodicTask flushAddressManagerTask;
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Builder
 			FullNode.CancellationProvider cancellationProvider, //trigger when to dispose resources because of a global cancellation
 			ConcurrentChain chain,
 			BlockStore.ChainBehavior.ChainState chainState,
-			ConnectionManager connectionManager,
+			IConnectionManager connectionManager,
 			ChainRepository chainRepository)
 		{
 			this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Builder
 
 					// == connection ==
 					services.AddSingleton<NodeConnectionParameters>(new NodeConnectionParameters());
-					services.AddSingleton<ConnectionManager>();
+					services.AddSingleton<IConnectionManager, ConnectionManager>();
 				});
 			});
 

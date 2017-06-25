@@ -23,7 +23,14 @@ namespace Stratis.Bitcoin.Tests.Notifications
 				Cancellation = new CancellationTokenSource()
 			};
 
-			var connectionManager = new Mock<ConnectionManager>(Network.Main, new Mock<NodeConnectionParameters>().Object, new Mock<NodeSettings>().Object);
+            var connectionManager = new Mock<IConnectionManager>();
+            connectionManager.Setup(c => c.ConnectedNodes)
+                .Returns(new NodesCollection());
+            connectionManager.Setup(c => c.NodeSettings)
+                .Returns(NodeSettings.Default());
+            connectionManager.Setup(c => c.Parameters)
+                .Returns(new NodeConnectionParameters());
+            
 			var chain = new Mock<ConcurrentChain>();
 			var chainState = new Mock<ChainBehavior.ChainState>(new Mock<FullNode>().Object);
 			var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object);

@@ -17,13 +17,13 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly ConcurrentChain chain;
 		private readonly NodeSettings nodeArgs;
 		private readonly ChainBehavior.ChainState chainState;
-		private readonly ConnectionManager connection;
+		private readonly IConnectionManager connection;
 
 		private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 
 		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeSettings nodeArgs, 
-			BlockStore.ChainBehavior.ChainState chainState, ConnectionManager connection)
+			BlockStore.ChainBehavior.ChainState chainState, IConnectionManager connection)
 		{
 			this.storeLoop = storeLoop;
 			this.chain = chain;

@@ -9,10 +9,10 @@ namespace Stratis.Bitcoin.Connection
 {
 	public class ConnectionManagerBehavior : NodeBehavior
 	{
-		public ConnectionManagerBehavior(bool inbound, ConnectionManager connectionManager)
+		public ConnectionManagerBehavior(bool inbound, IConnectionManager connectionManager)
 		{
 			this.Inbound = inbound;
-			this.ConnectionManager = connectionManager;
+			this.ConnectionManager = connectionManager as ConnectionManager;
 		}
 
 		public ConnectionManager ConnectionManager

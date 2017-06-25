@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 
 			var result = this.provider.GetValue("rpc_");
 
-			Assert.Equal(null, result.FirstValue);
+			Assert.Null(result.FirstValue);
 		}
 	}
 }

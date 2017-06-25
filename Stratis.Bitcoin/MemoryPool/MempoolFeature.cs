@@ -12,12 +12,12 @@ namespace Stratis.Bitcoin.MemoryPool
 	public class MempoolFeature : FullNodeFeature 
 	{
 		private readonly Signals signals;
-		private readonly ConnectionManager connectionManager;
+		private readonly IConnectionManager connectionManager;
 		private readonly MempoolSignaled mempoolSignaled;
 		private readonly MempoolBehavior mempoolBehavior;
 		private readonly MempoolManager mempoolManager;
 
-		public MempoolFeature(ConnectionManager connectionManager, Signals signals, MempoolSignaled mempoolSignaled, MempoolBehavior mempoolBehavior, MempoolManager mempoolManager)
+		public MempoolFeature(IConnectionManager connectionManager, Signals signals, MempoolSignaled mempoolSignaled, MempoolBehavior mempoolBehavior, MempoolManager mempoolManager)
 		{
 			this.signals = signals;
 			this.connectionManager = connectionManager;
