@@ -32,8 +32,8 @@ namespace Stratis.Bitcoin.Builder.Feature
 
 		public IFeatureRegistration AddFeature<TImplementation>() where TImplementation : class, IFullNodeFeature
 		{
-			if (featureRegistrations.Any(f => f.FeatureType == typeof(TImplementation)))
-				throw new ArgumentException(String.Format(CultureInfo.CurrentCulture, "Feature of type {0} has already been registered.", typeof(TImplementation).FullName));			
+			if (this.featureRegistrations.Any(f => f.FeatureType == typeof(TImplementation)))
+				throw new ArgumentException(string.Format(CultureInfo.CurrentCulture, "Feature of type {0} has already been registered.", typeof(TImplementation).FullName));			
 
 			var featureRegistration = new FeatureRegistration<TImplementation>();
 			this.featureRegistrations.Add(featureRegistration);

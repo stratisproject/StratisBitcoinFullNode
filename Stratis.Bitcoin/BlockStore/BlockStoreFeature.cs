@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache));
 			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));
-			this.connectionManager.Parameters.Services = (nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+			this.connectionManager.Parameters.Services = (this.nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 			this.signals.Blocks.Subscribe(this.blockStoreSignaled);
 
 			this.blockRepository.Initialize().GetAwaiter().GetResult();

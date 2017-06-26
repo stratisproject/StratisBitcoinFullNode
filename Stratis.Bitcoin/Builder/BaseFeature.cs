@@ -76,8 +76,8 @@ namespace Stratis.Bitcoin.Builder
 			StartAddressManager();
 			StartChain();
 
-			var connectionParameters = connectionManager.Parameters;
-			connectionParameters.IsRelay = nodeSettings.Mempool.RelayTxes;
+			var connectionParameters = this.connectionManager.Parameters;
+			connectionParameters.IsRelay = this.nodeSettings.Mempool.RelayTxes;
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(this.chain, this.chainState));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
 
@@ -87,60 +87,60 @@ namespace Stratis.Bitcoin.Builder
 
 		private void StartChain()
 		{
-			if (!Directory.Exists(dataFolder.ChainPath))
+			if (!Directory.Exists(this.dataFolder.ChainPath))
 			{
-				Logs.FullNode.LogInformation("Creating " + dataFolder.ChainPath);
-				Directory.CreateDirectory(dataFolder.ChainPath);
+				Logs.FullNode.LogInformation("Creating " + this.dataFolder.ChainPath);
+				Directory.CreateDirectory(this.dataFolder.ChainPath);
 			}
 
 			Logs.FullNode.LogInformation("Loading chain");
-			chainRepository.Load(chain).GetAwaiter().GetResult();
+            this.chainRepository.Load(this.chain).GetAwaiter().GetResult();
 
-			Logs.FullNode.LogInformation("Chain loaded at height " + chain.Height);
-			flushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
+			Logs.FullNode.LogInformation("Chain loaded at height " + this.chain.Height);
+            this.flushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
 			{
-				chainRepository.Save(chain);
+                this.chainRepository.Save(this.chain);
 			})
-			.Start(cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+			.Start(this.cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		private void StartAddressManager()
 		{
-			if (!File.Exists(dataFolder.AddrManFile))
+			if (!File.Exists(this.dataFolder.AddrManFile))
 			{
 				Logs.FullNode.LogInformation($"Creating {dataFolder.AddrManFile}");
-				addressManager = new AddressManager();
-				addressManager.SavePeerFile(dataFolder.AddrManFile, network);
+				this.addressManager = new AddressManager();
+                this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
 				Logs.FullNode.LogInformation("Created");
 			}
 			else
 			{
 				Logs.FullNode.LogInformation($"Loading  {dataFolder.AddrManFile}");
-				addressManager = AddressManager.LoadPeerFile(dataFolder.AddrManFile);
+                this.addressManager = AddressManager.LoadPeerFile(this.dataFolder.AddrManFile);
 				Logs.FullNode.LogInformation("Loaded");
 			}
 
-			if (addressManager.Count == 0)
+			if (this.addressManager.Count == 0)
 			{
 				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
 			}
 
-			flushAddressManagerTask = new PeriodicTask("FlushAddressManager", (cancellation) =>
+            this.flushAddressManagerTask = new PeriodicTask("FlushAddressManager", (cancellation) =>
 			{
-				addressManager.SavePeerFile(dataFolder.AddrManFile, network);
+                this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
 			})
-		   .Start(cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+		   .Start(this.cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		public override void Stop()
 		{
 			Logs.FullNode.LogInformation("FlushAddressManager stopped");
-			flushAddressManagerTask?.RunOnce();
+            this.flushAddressManagerTask?.RunOnce();
 
 			Logs.FullNode.LogInformation("FlushChain stopped");
-			flushChainTask?.RunOnce();
+            this.flushChainTask?.RunOnce();
 
-			foreach (var disposable in disposableResources)
+			foreach (var disposable in this.disposableResources)
 			{
 				disposable.Dispose();
 			}

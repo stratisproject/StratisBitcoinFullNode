@@ -22,18 +22,18 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			Guard.NotNull(chain, nameof(chain));
 
-			_State = chainState;
-			_Chain = chain;
-			AutoSync = true;
-			CanSync = true;
-			CanRespondToGetHeaders = true;
+            this._State = chainState;
+			this._Chain = chain;
+            this.AutoSync = true;
+            this.CanSync = true;
+            this.CanRespondToGetHeaders = true;
 		}
 
 		public ChainState SharedState
 		{
 			get
 			{
-				return _State;
+				return this._State;
 			}
 		}
 		/// <summary>
@@ -58,12 +58,12 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			get
 			{
-				return _Chain;
+				return this._Chain;
 			}
 			set
 			{
 				AssertNotAttached();
-				_Chain = value;
+                this._Chain = value;
 			}
 		}
 
@@ -75,26 +75,26 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			get
 			{
-				return _SynchingCount != 0;
+				return this._SynchingCount != 0;
 			}
 		}
 
 		Timer _Refresh;
 		protected override void AttachCore()
 		{
-			_Refresh = new Timer(o =>
+            this._Refresh = new Timer(o =>
 			{
-				if (AutoSync)
+				if (this.AutoSync)
 					TrySync();
 			}, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
-			RegisterDisposable(_Refresh);
-			if (AttachedNode.State == NodeState.Connected)
+			RegisterDisposable(this._Refresh);
+			if (this.AttachedNode.State == NodeState.Connected)
 			{
-				var highPoW = SharedState.HighestValidatedPoW;
-				AttachedNode.MyVersion.StartHeight = highPoW?.Height ?? 0;
+				var highPoW = this.SharedState.HighestValidatedPoW;
+                this.AttachedNode.MyVersion.StartHeight = highPoW?.Height ?? 0;
 			}
-			AttachedNode.StateChanged += AttachedNode_StateChanged;
-			RegisterDisposable(AttachedNode.Filters.Add(Intercept));
+            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
+			RegisterDisposable(this.AttachedNode.Filters.Add(Intercept));
 		}
 
 		void Intercept(IncomingMessage message, Action act)
@@ -102,10 +102,10 @@ namespace Stratis.Bitcoin.BlockStore
 			var inv = message.Message.Payload as InvPayload;
 			if (inv != null)
 			{
-				if (inv.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !Chain.Contains(i.Hash)))
+				if (inv.Inventory.Any(i => ((i.Type & InventoryType.MSG_BLOCK) != 0) && !this.Chain.Contains(i.Hash)))
 				{
-					_Refresh.Dispose(); //No need of periodical refresh, the peer is notifying us
-					if (AutoSync)
+                    this._Refresh.Dispose(); //No need of periodical refresh, the peer is notifying us
+					if (this.AutoSync)
 						TrySync();
 				}
 			}
@@ -120,14 +120,14 @@ namespace Stratis.Bitcoin.BlockStore
 
 			// Ignoring getheaders from peers because node is in initial block download
 			var getheaders = message.Message.Payload as GetHeadersPayload;
-			if (getheaders != null && CanRespondToGetHeaders &&
+			if (getheaders != null && this.CanRespondToGetHeaders &&
 				(!this.SharedState.IsInitialBlockDownload || 
 				this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted)) // if not in IBD whitelisted won't be checked
 			{
 				HeadersPayload headers = new HeadersPayload();
-				var highestPow = SharedState.HighestValidatedPoW;
-				highestPow = Chain.GetBlock(highestPow.HashBlock);
-				var fork = Chain.FindFork(getheaders.BlockLocators);
+				var highestPow = this.SharedState.HighestValidatedPoW;
+				highestPow = this.Chain.GetBlock(highestPow.HashBlock);
+				var fork = this.Chain.FindFork(getheaders.BlockLocators);
 
 				if (fork != null)
 				{
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.BlockStore
 					}
 					if (fork != null)
 					{
-						foreach (var header in Chain.EnumerateToTip(fork).Skip(1))
+						foreach (var header in this.Chain.EnumerateToTip(fork).Skip(1))
 						{
 							if (header.Height > highestPow.Height)
 								break;
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.BlockStore
 						}
 					}
 				}
-				AttachedNode.SendMessageAsync(headers);
+                this.AttachedNode.SendMessageAsync(headers);
 			}
 
 			// == HeadersPayload ==
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 			var newheaders = message.Message.Payload as HeadersPayload;
 			var pendingTipBefore = GetPendingTipOrChainTip();
-			if (newheaders != null && CanSync)
+			if (newheaders != null && this.CanSync)
 			{
 				// TODO: implement MAX_HEADERS_RESULTS in NBitcoin.HeadersPayload
 
@@ -172,31 +172,31 @@ namespace Stratis.Bitcoin.BlockStore
 					if (prev == null)
 						break;
 					tip = new ChainedBlock(header, header.GetHash(), prev);
-					var validated = Chain.GetBlock(tip.HashBlock) != null || tip.Validate(AttachedNode.Network);
-					validated &= !SharedState.IsMarkedInvalid(tip.HashBlock);
+					var validated = this.Chain.GetBlock(tip.HashBlock) != null || tip.Validate(this.AttachedNode.Network);
+					validated &= !this.SharedState.IsMarkedInvalid(tip.HashBlock);
 					if (!validated)
 					{
-						invalidHeaderReceived = true;
+                        this.invalidHeaderReceived = true;
 						break;
 					}
-					_PendingTip = tip;
+                    this._PendingTip = tip;
 				}
 
-				if (_PendingTip.ChainWork > Chain.Tip.ChainWork)
+				if (this._PendingTip.ChainWork > this.Chain.Tip.ChainWork)
 				{
-					Chain.SetTip(_PendingTip);
+                    this.Chain.SetTip(this._PendingTip);
 				}
 
-				var chainedPendingTip = Chain.GetBlock(_PendingTip.HashBlock);
+				var chainedPendingTip = this.Chain.GetBlock(this._PendingTip.HashBlock);
 				if (chainedPendingTip != null)
 				{
-					_PendingTip = chainedPendingTip; //This allows garbage collection to collect the duplicated pendingtip and ancestors
+                    this._PendingTip = chainedPendingTip; //This allows garbage collection to collect the duplicated pendingtip and ancestors
 				}
 
 				if (newheaders.Headers.Count != 0 && pendingTipBefore.HashBlock != GetPendingTipOrChainTip().HashBlock)
 					TrySync();
 
-				Interlocked.Decrement(ref _SynchingCount);
+				Interlocked.Decrement(ref this._SynchingCount);
 			}
 
 			act();
@@ -206,10 +206,10 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			if (newTip.ChainWork > this.PendingTip.ChainWork)
 			{
-				var chainedPendingTip = Chain.GetBlock(newTip.HashBlock);
+				var chainedPendingTip = this.Chain.GetBlock(newTip.HashBlock);
 				if (chainedPendingTip != null)
 				{
-					_PendingTip = chainedPendingTip;
+                    this._PendingTip = chainedPendingTip;
 						//This allows garbage collection to collect the duplicated pendingtip and ancestors
 				}
 			}
@@ -221,28 +221,28 @@ namespace Stratis.Bitcoin.BlockStore
 		/// <returns>True if no invalid block is received</returns>
 		public bool CheckAnnouncedBlocks()
 		{
-			var tip = _PendingTip;
-			if (tip != null && !invalidHeaderReceived)
+			var tip = this._PendingTip;
+			if (tip != null && !this.invalidHeaderReceived)
 			{
 				try
 				{
-					_State._InvalidBlocksLock.EnterReadLock();
-					if (_State._InvalidBlocks.Count != 0)
+                    this._State._InvalidBlocksLock.EnterReadLock();
+					if (this._State._InvalidBlocks.Count != 0)
 					{
 						foreach (var header in tip.EnumerateToGenesis())
 						{
-							if (invalidHeaderReceived)
+							if (this.invalidHeaderReceived)
 								break;
-							invalidHeaderReceived |= _State._InvalidBlocks.Contains(header.HashBlock);
+                            this.invalidHeaderReceived |= this._State._InvalidBlocks.Contains(header.HashBlock);
 						}
 					}
 				}
 				finally
 				{
-					_State._InvalidBlocksLock.ExitReadLock();
+                    this._State._InvalidBlocksLock.ExitReadLock();
 				}
 			}
-			return !invalidHeaderReceived;
+			return !this.invalidHeaderReceived;
 		}
 
 		/// <summary>
@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			get
 			{
-				return invalidHeaderReceived;
+				return this.invalidHeaderReceived;
 			}
 		}
 
@@ -275,12 +275,12 @@ namespace Stratis.Bitcoin.BlockStore
 		/// </summary>
 		public void TrySync()
 		{
-			var node = AttachedNode;
+			var node = this.AttachedNode;
 			if (node != null)
 			{
-				if (node.State == NodeState.HandShaked && CanSync && !invalidHeaderReceived)
+				if (node.State == NodeState.HandShaked && this.CanSync && !this.invalidHeaderReceived)
 				{
-					Interlocked.Increment(ref _SynchingCount);
+					Interlocked.Increment(ref this._SynchingCount);
 					node.SendMessageAsync(new GetHeadersPayload()
 					{
 						BlockLocators = GetPendingTipOrChainTip().GetLocator()
@@ -291,25 +291,25 @@ namespace Stratis.Bitcoin.BlockStore
 
 		private ChainedBlock GetPendingTipOrChainTip()
 		{
-			_PendingTip = _PendingTip ?? this.SharedState.HighestValidatedPoW ?? Chain.Tip;
-			return _PendingTip;
+            this._PendingTip = this._PendingTip ?? this.SharedState.HighestValidatedPoW ?? this.Chain.Tip;
+			return this._PendingTip;
 		}
 
 		public ChainedBlock PendingTip
 		{
 			get
 			{
-				var tip = _PendingTip;
+				var tip = this._PendingTip;
 				if (tip == null)
 					return null;
 				//Prevent memory leak by returning a block from the chain instead of real pending tip of possible
-				return Chain.GetBlock(tip.HashBlock) ?? tip;
+				return this.Chain.GetBlock(tip.HashBlock) ?? tip;
 			}
 		}
 
 		protected override void DetachCore()
 		{
-			AttachedNode.StateChanged -= AttachedNode_StateChanged;
+            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
 		}
 
 
@@ -329,12 +329,12 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				try
 				{
-					_InvalidBlocksLock.EnterReadLock();
-					return _InvalidBlocks.Contains(hashBlock);
+                    this._InvalidBlocksLock.EnterReadLock();
+					return this._InvalidBlocks.Contains(hashBlock);
 				}
 				finally
 				{
-					_InvalidBlocksLock.ExitReadLock();
+                    this._InvalidBlocksLock.ExitReadLock();
 				}
 			}
 
@@ -342,12 +342,12 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				try
 				{
-					_InvalidBlocksLock.EnterWriteLock();
-					_InvalidBlocks.Add(blockHash);
+                    this._InvalidBlocksLock.EnterWriteLock();
+					this._InvalidBlocks.Add(blockHash);
 				}
 				finally
 				{
-					_InvalidBlocksLock.ExitWriteLock();
+                    this._InvalidBlocksLock.ExitWriteLock();
 				}
 			}
 
@@ -357,12 +357,12 @@ namespace Stratis.Bitcoin.BlockStore
 			{
 				get
 				{
-					if (lastupdate < this.fullNode.DateTimeProvider.GetUtcNow().Ticks)
+					if (this.lastupdate < this.fullNode.DateTimeProvider.GetUtcNow().Ticks)
 					{
-						lastupdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks; // sample every minute
-						lastresult = this.fullNode.IsInitialBlockDownload();
+                        this.lastupdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks; // sample every minute
+                        this.lastresult = this.fullNode.IsInitialBlockDownload();
 					}
-					return lastresult;
+					return this.lastresult;
 				}
 			}
 
@@ -395,12 +395,12 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override object Clone()
 		{
-			var clone = new BlockStore.ChainBehavior(Chain, this.SharedState)
+			var clone = new BlockStore.ChainBehavior(this.Chain, this.SharedState)
 			{
-				CanSync = CanSync,
-				CanRespondToGetHeaders = CanRespondToGetHeaders,
-				AutoSync = AutoSync,
-				_State = _State
+				CanSync = this.CanSync,
+				CanRespondToGetHeaders = this.CanRespondToGetHeaders,
+				AutoSync = this.AutoSync,
+				_State = this._State
 			};
 			return clone;
 		}

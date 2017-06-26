@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.BlockStore
 			this.ChainState = chainState;
             this.blockStoreCache = cache;
 
-            PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
+            this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache);
         }
 
@@ -145,17 +145,17 @@ namespace Stratis.Bitcoin.BlockStore
 
             while (!token.IsCancellationRequested)
 			{
-				if (StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
+				if (this.StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
 					break;
 
 				// find next block to download
-				var next = this.chain.GetBlock(StoredBlock.Height + 1);
+				var next = this.chain.GetBlock(this.StoredBlock.Height + 1);
 				if (next == null)
 					break; //no blocks to store
 
                 if (this.blockStoreStats.CanLog)
                 {
-                    blockStoreStats.Log();
+                    this.blockStoreStats.Log();
                 }                
 
                 // reorg logic
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.BlockStore
 				{
 					// if in IBD and batch is not full then wait for more blocks
 					if (this.ChainState.IsInitialBlockDownload && !disposemode)
-						if (this.PendingStorage.Skip(0).Count() < batchtriggersize) // ConcurrentDictionary perf
+						if (this.PendingStorage.Skip(0).Count() < this.batchtriggersize) // ConcurrentDictionary perf
 							break;
 
 					if (!this.PendingStorage.TryRemove(next.HashBlock, out insert))
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.BlockStore
 							insertSize += insert.Block.GetSerializedSize(); // TODO: add the size to the result coming from the signaler	
 						}
 
-						if (insertSize > insertsizebyte || stop)
+						if (insertSize > this.insertsizebyte || stop)
 						{
 							// store missing blocks and remove them from pending blocks
 							await this.BlockRepository.PutAsync(storebest.HashBlock, tostore.Select(b => b.Block).ToList());
@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 							// this can be twicked if insert is effecting the consensus speed
 							if (this.ChainState.IsInitialBlockDownload)
-								await Task.Delay(pushIntervalIBD, token);
+								await Task.Delay(this.pushIntervalIBD, token);
 						}
 					}
 
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.BlockStore
 							this.blockPuller.AskBlock(next);
 							downloadStack.Enqueue(next);
 
-							if (downloadStack.Count == batchdownloadsize)
+							if (downloadStack.Count == this.batchdownloadsize)
 								download = false;
 						}
 					}
@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.BlockStore
 						stallCount = 0;
 
 						// can we push
-						if (insertDownloadSize > insertsizebyte || !downloadStack.Any()) // this might go above the max insert size
+						if (insertDownloadSize > this.insertsizebyte || !downloadStack.Any()) // this might go above the max insert size
 						{
 							await this.BlockRepository.PutAsync(downloadbest.HashBlock, store.Select(t => t.Block).ToList());
 							this.StoredBlock = downloadbest;
