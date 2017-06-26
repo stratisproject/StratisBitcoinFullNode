@@ -17,6 +17,10 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1705;IDE0008;</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="Stratis.Bitcoin.Tests\**" />
     <EmbeddedResource Remove="Stratis.Bitcoin.Tests\**" />
