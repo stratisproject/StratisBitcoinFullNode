@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Wallet
         /// The root of the accounts tree.
         /// </summary>
         [JsonProperty(PropertyName = "accountsRoot")]
-        public IEnumerable<AccountRoot> AccountsRoot { get; set; }
+        public ICollection<AccountRoot> AccountsRoot { get; set; }
 
         /// <summary>
         /// Gets the type of the accounts by coin.

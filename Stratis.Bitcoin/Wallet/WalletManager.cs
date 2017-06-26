@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Wallet
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
 
-        private Dictionary<Script, HdAddress> keysLookup;
+        internal Dictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
         /// Occurs when a transaction is found.
@@ -1032,9 +1032,9 @@ namespace Stratis.Bitcoin.Wallet
         /// Loads the keys and transactions we're tracking in memory for faster lookups.
         /// </summary>
         /// <returns></returns>
-        private void LoadKeysLookup()
+        internal void LoadKeysLookup()
         {
-            this.keysLookup = new Dictionary<Script, HdAddress>();
+            var lookup = new Dictionary<Script, HdAddress>();
             foreach (var wallet in this.Wallets)
             {
                 var accounts = wallet.GetAccountsByCoinType(this.coinType);
@@ -1043,12 +1043,13 @@ namespace Stratis.Bitcoin.Wallet
                     var addresses = account.ExternalAddresses.Concat(account.InternalAddresses);
                     foreach (var address in addresses)
                     {
-                        this.keysLookup.Add(address.ScriptPubKey, address);
+                        lookup.Add(address.ScriptPubKey, address);
                         if (address.Pubkey != null)
-                            this.keysLookup.Add(address.Pubkey, address);
+                            lookup.Add(address.Pubkey, address);
                     }
                 }
             }
+            this.keysLookup = lookup;
         }
 
         /// <summary>
