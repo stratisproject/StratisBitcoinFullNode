@@ -13,10 +13,10 @@ namespace Stratis.Bitcoin.Consensus
 		public BackendPerformanceSnapshot(long insertedEntities, long insertTime,
 										  long queriedEntities, long queryTime)
 		{
-			_TotalInsertedEntities = insertedEntities;
-			_TotalInsertTime = insertTime;
-			_TotalQueryTime = queryTime;
-			_TotalQueriedEntities = queriedEntities;
+			this._TotalInsertedEntities = insertedEntities;
+			this._TotalInsertTime = insertTime;
+			this._TotalQueryTime = queryTime;
+            this._TotalQueriedEntities = queriedEntities;
 		}
 
 
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _TotalQueriedEntities;
+				return this._TotalQueriedEntities;
 			}
 		}
 
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_TotalQueryTime);
+				return TimeSpan.FromTicks(this._TotalQueryTime);
 			}
 		}
 
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_TotalInsertTime);
+				return TimeSpan.FromTicks(this._TotalInsertTime);
 			}
 		}
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _TotalInsertedEntities;
+				return this._TotalInsertedEntities;
 			}
 		}
 
@@ -92,21 +92,21 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return Taken - Start;
+				return this.Taken - this.Start;
 			}
 		}
 
 		public override string ToString()
 		{
 			StringBuilder builder = new StringBuilder();
-			if(TotalInsertedEntities > 0)
-				builder.AppendLine("Insert speed:".PadRight(Logs.ColumnLength) + (TotalInsertTime.TotalMilliseconds / TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
-			builder.AppendLine("Insert time:".PadRight(Logs.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(TotalInsertTime));
-			builder.AppendLine("Inserted UTXO:".PadRight(Logs.ColumnLength) + TotalInsertedEntities);
-			if(TotalQueriedEntities > 0)
-				builder.AppendLine("Query speed:".PadRight(Logs.ColumnLength) + (TotalQueryTime.TotalMilliseconds / TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
-			builder.AppendLine("Query time:".PadRight(Logs.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(TotalQueryTime));
-			builder.AppendLine("Queried UTXO:".PadRight(Logs.ColumnLength) + TotalQueriedEntities);
+			if(this.TotalInsertedEntities > 0)
+				builder.AppendLine("Insert speed:".PadRight(Logs.ColumnLength) + (this.TotalInsertTime.TotalMilliseconds / this.TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
+			builder.AppendLine("Insert time:".PadRight(Logs.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalInsertTime));
+			builder.AppendLine("Inserted UTXO:".PadRight(Logs.ColumnLength) + this.TotalInsertedEntities);
+			if(this.TotalQueriedEntities > 0)
+				builder.AppendLine("Query speed:".PadRight(Logs.ColumnLength) + (this.TotalQueryTime.TotalMilliseconds / this.TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
+			builder.AppendLine("Query time:".PadRight(Logs.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalQueryTime));
+			builder.AppendLine("Queried UTXO:".PadRight(Logs.ColumnLength) + this.TotalQueriedEntities);
 			return builder.ToString();
 		}
 	}
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		public BackendPerformanceCounter()
 		{
-			_Start = DateTime.UtcNow;
+            this._Start = DateTime.UtcNow;
 		}
 
 		DateTime _Start;
@@ -122,14 +122,14 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Start;
+				return this._Start;
 			}
 		}
 		public TimeSpan Elapsed
 		{
 			get
 			{
-				return DateTime.UtcNow - Start;
+				return DateTime.UtcNow - this.Start;
 			}
 		}
 
@@ -140,33 +140,33 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void AddInsertTime(long count)
 		{
-			Interlocked.Add(ref _InsertTime, count);
+			Interlocked.Add(ref this._InsertTime, count);
 		}
 		private long _InsertTime;
 		public TimeSpan InsertTime
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_InsertTime);
+				return TimeSpan.FromTicks(this._InsertTime);
 			}
 		}
 
 		public void AddInsertedEntities(long count)
 		{
-			Interlocked.Add(ref _InsertedEntities, count);
+			Interlocked.Add(ref this._InsertedEntities, count);
 		}
 		private long _InsertedEntities;
 		public long InsertedEntities
 		{
 			get
 			{
-				return _InsertedEntities;
+				return this._InsertedEntities;
 			}
 		}
 
 		public void AddQueryTime(long count)
 		{
-			Interlocked.Add(ref _QueryTime, count);
+			Interlocked.Add(ref this._QueryTime, count);
 		}
 
 		private long _QueryTime;
@@ -174,20 +174,20 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_QueryTime);
+				return TimeSpan.FromTicks(this._QueryTime);
 			}
 		}
 
 		public void AddQueriedEntities(long count)
 		{
-			Interlocked.Add(ref _QueriedEntities, count);
+			Interlocked.Add(ref this._QueriedEntities, count);
 		}
 		private long _QueriedEntities;
 		public long QueriedEntities
 		{
 			get
 			{
-				return _QueriedEntities;
+				return this._QueriedEntities;
 			}
 		}
 
@@ -196,9 +196,9 @@ namespace Stratis.Bitcoin.Consensus
 #if !(PORTABLE || NETCORE)
 			Thread.MemoryBarrier();
 #endif
-			var snap = new BackendPerformanceSnapshot(_InsertedEntities, _InsertTime, _QueriedEntities, _QueryTime)
+			var snap = new BackendPerformanceSnapshot(this._InsertedEntities, this._InsertTime, this._QueriedEntities, this._QueryTime)
 			{
-				Start = Start,
+				Start = this.Start,
 				Taken = DateTime.UtcNow
 			};
 			return snap;

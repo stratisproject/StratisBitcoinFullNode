@@ -9,39 +9,39 @@ namespace Stratis.Bitcoin.MemoryPool
 	{
 		public MempoolPerformanceCounter()
 		{
-			Start = DateTime.UtcNow;
+            this.Start = DateTime.UtcNow;
 		}
 
 		public DateTime Start { get; }
 
-		public TimeSpan Elapsed => DateTime.UtcNow - Start;
+		public TimeSpan Elapsed => DateTime.UtcNow - this.Start;
 
 		private long mempoolSize;
-		public long MempoolSize => mempoolSize;
+		public long MempoolSize => this.mempoolSize;
 		public void SetMempoolSize(long size)
 		{
-			Interlocked.Exchange(ref mempoolSize, size);
+			Interlocked.Exchange(ref this.mempoolSize, size);
 		}
 
 		private long mempoolDynamicSize;
-		public long MempoolDynamicSize => mempoolDynamicSize;
+		public long MempoolDynamicSize => this.mempoolDynamicSize;
 		public void SetMempoolDynamicSize(long size)
 		{
-			Interlocked.Exchange(ref mempoolDynamicSize, size);
+			Interlocked.Exchange(ref this.mempoolDynamicSize, size);
 		}
 
 		private long mempoolOrphanSize;
 		public long MempoolOrphanSize { get; set; }
 		public void SetMempoolOrphanSize(long size)
 		{
-			Interlocked.Exchange(ref mempoolOrphanSize, size);
+			Interlocked.Exchange(ref this.mempoolOrphanSize, size);
 		}
 
 		private long hitCount;
-		public long HitCount => hitCount;
+		public long HitCount => this.hitCount;
 		public void AddHitCount(long count)
 		{
-			Interlocked.Add(ref hitCount, count);
+			Interlocked.Add(ref this.hitCount, count);
 		}
 
 		public override string ToString()

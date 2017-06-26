@@ -12,11 +12,11 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			public StopwatchDisposable(System.Diagnostics.Stopwatch watch, Action<long> act)
 			{
-				//Somehow, the watch is imprecise when time accumulate (maybe due to performance impact of calling underlying high precision API)
-				//_Watch = watch;
-				_Do = act;
-				//watch.Restart();
-				_Start = DateTimeOffset.UtcNow;
+                //Somehow, the watch is imprecise when time accumulate (maybe due to performance impact of calling underlying high precision API)
+                //_Watch = watch;
+                this._Do = act;
+                //watch.Restart();
+                this._Start = DateTimeOffset.UtcNow;
 			}
 			
 			//System.Diagnostics.Stopwatch _Watch;
@@ -25,8 +25,8 @@ namespace Stratis.Bitcoin.Consensus
 
 			public void Dispose()
 			{
-				//_Watch.Stop();
-				_Do((DateTimeOffset.UtcNow - _Start).Ticks);
+                //_Watch.Stop();
+                this._Do((DateTimeOffset.UtcNow - this._Start).Ticks);
 			}
 		}
 
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public IDisposable Start(Action<long> act)
 		{
-			return new StopwatchDisposable(_Watch, act);
+			return new StopwatchDisposable(this._Watch, act);
 		}
 	}
 }

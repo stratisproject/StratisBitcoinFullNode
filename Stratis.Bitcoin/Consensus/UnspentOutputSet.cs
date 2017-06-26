@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Consensus
 		Dictionary<uint256, UnspentOutputs> _Unspents;
 		public TxOut GetOutputFor(TxIn txIn)
 		{
-			var unspent = _Unspents.TryGet(txIn.PrevOut.Hash);
+			var unspent = this._Unspents.TryGet(txIn.PrevOut.Hash);
 			if(unspent == null)
 				return null;
 			return unspent.TryGetOutput(txIn.PrevOut.N);
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public UnspentOutputs AccessCoins(uint256 uint256)
 		{
-			return _Unspents.TryGet(uint256);
+			return this._Unspents.TryGet(uint256);
 		}
 
 		public Money GetValueIn(Transaction tx)
@@ -40,32 +40,32 @@ namespace Stratis.Bitcoin.Consensus
 					var c = AccessCoins(input.PrevOut.Hash);
 					c.Spend(input.PrevOut.N);
 				}
-			_Unspents.AddOrReplace(tx.GetHash(), new UnspentOutputs((uint)height, tx));
+            this._Unspents.AddOrReplace(tx.GetHash(), new UnspentOutputs((uint)height, tx));
 		}
 
 		public void SetCoins(FetchCoinsResponse coins)
 		{
-			_Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
+            this._Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
 			foreach(var coin in coins.UnspentOutputs)
 			{
 				if(coin != null)
-					_Unspents.Add(coin.TransactionId, coin);
+                    this._Unspents.Add(coin.TransactionId, coin);
 			}
 		}
 
 		public void TrySetCoins(FetchCoinsResponse coins)
 		{
-			_Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
+            this._Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
 			foreach (var coin in coins.UnspentOutputs)
 			{
 				if (coin != null)
-					_Unspents.TryAdd(coin.TransactionId, coin);
+                    this._Unspents.TryAdd(coin.TransactionId, coin);
 			}
 		}
 
 		public IEnumerable<UnspentOutputs> GetCoins(CoinView utxo)
 		{
-			return _Unspents.Select(u => u.Value).ToList();
+			return this._Unspents.Select(u => u.Value).ToList();
 		}
 	}
 }

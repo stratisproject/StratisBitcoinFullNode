@@ -73,22 +73,22 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.LockPoints = lp;
 
 			this.TxWeight = MempoolValidator.GetTransactionWeight(transaction, consensusOptions);
-			nModSize = MempoolValidator.CalculateModifiedSize(this.Transaction.GetSerializedSize(), this.Transaction, consensusOptions);
+            this.nModSize = MempoolValidator.CalculateModifiedSize(this.Transaction.GetSerializedSize(), this.Transaction, consensusOptions);
 
-			nUsageSize = transaction.GetSerializedSize(); // RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(Transaction);
+            this.nUsageSize = transaction.GetSerializedSize(); // RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(Transaction);
 
-			CountWithDescendants = 1;
-			SizeWithDescendants = GetTxSize();
-			ModFeesWithDescendants = Fee;
-			Money nValueIn = transaction.TotalOut + Fee;
-			Guard.Assert(InChainInputValue <= nValueIn);
+			this.CountWithDescendants = 1;
+			this.SizeWithDescendants = GetTxSize();
+            this.ModFeesWithDescendants = this.Fee;
+			Money nValueIn = transaction.TotalOut + this.Fee;
+			Guard.Assert(this.InChainInputValue <= nValueIn);
 
-			feeDelta = 0;
+            this.feeDelta = 0;
 
-			CountWithAncestors = 1;
-			SizeWithAncestors = GetTxSize();
-			ModFeesWithAncestors = Fee;
-			SigOpCostWithAncestors = SigOpCost;
+			this.CountWithAncestors = 1;
+			this.SizeWithAncestors = GetTxSize();
+			this.ModFeesWithAncestors = this.Fee;
+            this.SigOpCostWithAncestors = this.SigOpCost;
 		}
 
 		public TxMempoolEntry(TxMempoolEntry other)
@@ -100,8 +100,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		 // from entry priority. Only inputs that were originally in-chain will age.
 		public double GetPriority(int currentHeight)
 		{
-			double deltaPriority = ((double) (currentHeight - this.EntryHeight)*InChainInputValue.Satoshi)/nModSize;
-			double dResult = entryPriority + deltaPriority;
+			double deltaPriority = ((double) (currentHeight - this.EntryHeight)* this.InChainInputValue.Satoshi)/ this.nModSize;
+			double dResult = this.entryPriority + deltaPriority;
 			if (dResult < 0) // This should only happen if it was called with a height below entry height
 				dResult = 0;
 			return dResult;
@@ -112,42 +112,42 @@ namespace Stratis.Bitcoin.MemoryPool
 			return (long) this.Transaction.GetVirtualSize();
 		}
 
-		public long ModifiedFee => Fee + feeDelta;
+		public long ModifiedFee => this.Fee + this.feeDelta;
 
 		public long DynamicMemoryUsage()
 		{
-			return nUsageSize;
+			return this.nUsageSize;
 		}
 
 		// Adjusts the descendant state, if this entry is not dirty.
 		public void UpdateDescendantState(long modifySize, Money modifyFee, long modifyCount)
 		{
-			SizeWithDescendants += modifySize;
-			Guard.Assert(SizeWithDescendants > 0);
-			ModFeesWithDescendants += modifyFee;
-			CountWithDescendants += modifyCount;
-			Guard.Assert(CountWithDescendants > 0);
+            this.SizeWithDescendants += modifySize;
+			Guard.Assert(this.SizeWithDescendants > 0);
+			this.ModFeesWithDescendants += modifyFee;
+            this.CountWithDescendants += modifyCount;
+			Guard.Assert(this.CountWithDescendants > 0);
 		}
 
 		// Adjusts the ancestor state
 		public void UpdateAncestorState(long modifySize, Money modifyFee, long modifyCount, long modifySigOps)
 		{
-			SizeWithAncestors += modifySize;
-			Guard.Assert(SizeWithAncestors > 0);
-			ModFeesWithAncestors += modifyFee;
-			CountWithAncestors += modifyCount;
-			Guard.Assert(CountWithAncestors > 0);
-			SigOpCostWithAncestors += modifySigOps;
-			Guard.Assert(SigOpCostWithAncestors >= 0);
+            this.SizeWithAncestors += modifySize;
+			Guard.Assert(this.SizeWithAncestors > 0);
+            this.ModFeesWithAncestors += modifyFee;
+			this.CountWithAncestors += modifyCount;
+			Guard.Assert(this.CountWithAncestors > 0);
+            this.SigOpCostWithAncestors += modifySigOps;
+			Guard.Assert(this.SigOpCostWithAncestors >= 0);
 		}
 
 		// Updates the fee delta used for mining priority score, and the
 		// modified fees with descendants.
 		public void UpdateFeeDelta(long newFeeDelta)
 		{
-			ModFeesWithDescendants += newFeeDelta - feeDelta;
-			ModFeesWithAncestors += newFeeDelta - feeDelta;
-			feeDelta = newFeeDelta;
+			this.ModFeesWithDescendants += newFeeDelta - this.feeDelta;
+			this.ModFeesWithAncestors += newFeeDelta - this.feeDelta;
+            this.feeDelta = newFeeDelta;
 		}
 
 		// Update the LockPoints after a reorg

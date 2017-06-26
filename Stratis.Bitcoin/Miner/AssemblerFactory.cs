@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Miner
 		public override BlockAssembler Create(AssemblerOptions options = null)
 		{
 			return new PosBlockAssembler(this.consensusLoop, this.network, this.chain, this.mempoolScheduler, this.mempool,
-				this.dateTimeProvider, stakeChain, options);
+				this.dateTimeProvider, this.stakeChain, options);
 		}
 
 	}

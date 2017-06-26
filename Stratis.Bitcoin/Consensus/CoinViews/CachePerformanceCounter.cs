@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		public CachePerformanceCounter()
 		{
-			_Start = DateTime.UtcNow;
+            this._Start = DateTime.UtcNow;
 		}
 
 		DateTime _Start;
@@ -20,39 +20,39 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Start;
+				return this._Start;
 			}
 		}
 		public TimeSpan Elapsed
 		{
 			get
 			{
-				return DateTime.UtcNow - Start;
+				return DateTime.UtcNow - this.Start;
 			}
 		}
 
 		public void AddMissCount(long count)
 		{
-			Interlocked.Add(ref _MissCount, count);
+			Interlocked.Add(ref this._MissCount, count);
 		}
 		private long _MissCount;
 		public long MissCount
 		{
 			get
 			{
-				return _MissCount;
+				return this._MissCount;
 			}
 		}
 		public void AddHitCount(long count)
 		{
-			Interlocked.Add(ref _HitCount, count);
+			Interlocked.Add(ref this._HitCount, count);
 		}
 		private long _HitCount;
 		public long HitCount
 		{
 			get
 			{
-				return _HitCount;
+				return this._HitCount;
 			}
 		}
 
@@ -61,9 +61,9 @@ namespace Stratis.Bitcoin.Consensus
 #if !(PORTABLE || NETCORE)
 			Thread.MemoryBarrier();
 #endif
-			var snap = new CachePerformanceSnapshot(_MissCount, _HitCount)
+			var snap = new CachePerformanceSnapshot(this._MissCount, this._HitCount)
 			{
-				Start = Start,
+				Start = this.Start,
 				Taken = DateTime.UtcNow
 			};
 			return snap;
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _HitCount;
+				return this._HitCount;
 			}
 		}
 
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _MissCount;
+				return this._MissCount;
 			}
 		}
 
@@ -130,19 +130,19 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return Taken - Start;
+				return this.Taken - this.Start;
 			}
 		}
 
 		public override string ToString()
 		{
-			var total = TotalMissCount + TotalHitCount;
+			var total = this.TotalMissCount + this.TotalHitCount;
 			StringBuilder builder = new StringBuilder();
 			builder.AppendLine("====Cache Stats(%)====");
 			if(total != 0)
 			{
-				builder.AppendLine("Hit:".PadRight(Logs.ColumnLength) + ((decimal)TotalHitCount * 100m / total).ToString("0.00") + " %");
-				builder.AppendLine("Miss:".PadRight(Logs.ColumnLength) + ((decimal)TotalMissCount * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Hit:".PadRight(Logs.ColumnLength) + ((decimal)this.TotalHitCount * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Miss:".PadRight(Logs.ColumnLength) + ((decimal)this.TotalMissCount * 100m / total).ToString("0.00") + " %");
 			}
 			builder.AppendLine("========================");
 			return builder.ToString();

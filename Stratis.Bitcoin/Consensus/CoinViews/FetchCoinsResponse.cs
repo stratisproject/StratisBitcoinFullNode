@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.Consensus
 		}
 		public FetchCoinsResponse(UnspentOutputs[] unspent, uint256 blockHash)
 		{
-			BlockHash = blockHash;
-			UnspentOutputs = unspent;
+			this.BlockHash = blockHash;
+            this.UnspentOutputs = unspent;
 		}
 		public UnspentOutputs[] UnspentOutputs
 		{
