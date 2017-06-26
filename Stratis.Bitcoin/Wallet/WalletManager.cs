@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Wallet
         private const int WalletRecoveryAccountsCount = 3;
         private const int WalletCreationAccountsCount = 2;
         private const string WalletFileExtension = "wallet.json";
+        private const int WalletSavetimeIntervalInMinutes = 5;
 
         private readonly CoinType coinType;
         private readonly Network network;
@@ -93,7 +94,7 @@ namespace Stratis.Bitcoin.Wallet
                 this.SaveToFile();
                 this.logger.LogInformation($"Wallets saved to file at {DateTime.Now}.");
                 return Task.CompletedTask;
-            }, this.cancellationToken, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));            
+            }, this.cancellationToken, TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes), TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));            
         }
 
         /// <inheritdoc />
