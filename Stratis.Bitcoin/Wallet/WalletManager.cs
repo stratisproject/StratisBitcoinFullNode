@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Transaction = NBitcoin.Transaction;
+using System.Collections.Concurrent;
 
 namespace Stratis.Bitcoin.Wallet
 {
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Wallet
     /// </summary>
     public class WalletManager : IWalletManager
     {
-        public List<Wallet> Wallets { get; }
+        public ConcurrentBag<Wallet> Wallets { get; }
 
         private const int UnusedAddressesBuffer = 20;
         private const int WalletRecoveryAccountsCount = 3;
@@ -57,7 +58,7 @@ namespace Stratis.Bitcoin.Wallet
             NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, IAsyncLoopFactory asyncLoopFactory, FullNode.CancellationProvider cancellationProvider, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.Wallets = new List<Wallet>();
+            this.Wallets = new ConcurrentBag<Wallet>();
 
             this.connectionManager = connectionManager;
             this.network = network;
@@ -897,10 +898,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
         {
-            // update the wallets with the last processed block height
-            foreach (var wallet in this.Wallets)
-            {
-                this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);
+            // update the wallets with the last processed block height                        
+            foreach(var wallet in this.Wallets) { 
+                this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);                
             }
 
             this.WalletTipHash = chainedBlock.HashBlock;
