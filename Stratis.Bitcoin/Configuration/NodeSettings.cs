@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Configuration
 			nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
 
 			if (nodeSettings.ConfigurationFile != null)
-			{
+			{  
 				AssetConfigFileExists(nodeSettings);
 				var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
 				nodeSettings.Testnet = configTemp.GetOrDefault<bool>("testnet", false);

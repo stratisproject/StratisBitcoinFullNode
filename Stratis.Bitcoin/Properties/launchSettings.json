@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "Stratis.Bitcoin": {
+      "commandName": "Project"
+    }
+  }
+}
