@@ -99,14 +99,15 @@ namespace Breeze.Daemon
                 }
             }
 
-            // add the tumbler's settings
-            var tumblerAddress = args.SingleOrDefault(arg => arg.StartsWith("-tumbler-uri="));
-            if (!string.IsNullOrEmpty(tumblerAddress))
-            {
-                tumblerAddress = tumblerAddress.Replace("-tumbler-uri=", string.Empty);
-                fullNodeBuilder.UseTumbleBit(new Uri(tumblerAddress));
-                fullNodeBuilder.UseWatchOnlyWallet();
-            }
+            // TODO: Add this when TB is enabled
+            //// add the tumbler's settings
+            //var tumblerAddress = args.SingleOrDefault(arg => arg.StartsWith("-tumbler-uri="));
+            //if (!string.IsNullOrEmpty(tumblerAddress))
+            //{
+            //    tumblerAddress = tumblerAddress.Replace("-tumbler-uri=", string.Empty);
+            //    fullNodeBuilder.UseTumbleBit(new Uri(tumblerAddress));
+            //    fullNodeBuilder.UseWatchOnlyWallet();
+            //}
 
             var node = fullNodeBuilder.Build();
 
