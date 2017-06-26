@@ -27,14 +27,14 @@ namespace Stratis.Bitcoin
             Guard.NotEmpty(threadName, nameof(threadName));
             Guard.NotEmpty(folder, nameof(folder));
 
-            _SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
+            this._SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
 			new Task(() =>
 			{
 				DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
 				DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
-				_Engine = new DBreezeEngine(folder);
-				_Transaction = _Engine.GetTransaction();
-			}).Start(_SingleThread);
+                this._Engine = new DBreezeEngine(folder);
+				this._Transaction = this._Engine.GetTransaction();
+			}).Start(this._SingleThread);
 		}
 
 		internal static byte[] NBitcoinSerialize(object obj)
@@ -86,26 +86,26 @@ namespace Stratis.Bitcoin
 
 		public void Dispose()
 		{
-			_IsDiposed = true;
-			if(_SingleThread == null)
+            this._IsDiposed = true;
+			if(this._SingleThread == null)
 				return;
 			ManualResetEventSlim cleaned = new ManualResetEventSlim();
 			new Task(() =>
 			{
-				if(Transaction != null)
+				if(this.Transaction != null)
 				{
-					_Transaction.Dispose();
-					_Transaction = null;
+                    this._Transaction.Dispose();
+					this._Transaction = null;
 				}
-				if(_Engine != null)
+				if(this._Engine != null)
 				{
-					_Engine.Dispose();
-					_Engine = null;
+                    this._Engine.Dispose();
+					this._Engine = null;
 				}
-				_SingleThread.Dispose();
-				_SingleThread = null;
+                this._SingleThread.Dispose();
+				this._SingleThread = null;
 				cleaned.Set();
-			}).Start(_SingleThread);
+			}).Start(this._SingleThread);
 			cleaned.Wait();
 		}
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin
 		{
 			get
 			{
-				return _Transaction;
+				return this._Transaction;
 			}
 		}
 
@@ -131,13 +131,13 @@ namespace Stratis.Bitcoin
 				AssertNotDisposed();
 				act();
 			});
-			task.Start(_SingleThread);
+			task.Start(this._SingleThread);
 			return task;
 		}
 
 		private void AssertNotDisposed()
 		{
-			if(_IsDiposed)
+			if(this._IsDiposed)
 				throw new ObjectDisposedException("DBreezeSession");
 		}
 
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin
 				AssertNotDisposed();
 				return act();
 			});
-			task.Start(_SingleThread);
+			task.Start(this._SingleThread);
 			return task;
 		}
 	}

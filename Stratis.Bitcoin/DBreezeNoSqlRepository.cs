@@ -16,26 +16,26 @@ namespace Stratis.Bitcoin
             Guard.NotEmpty(name, nameof(name));
             Guard.NotEmpty(folder, nameof(folder));
 
-            _Name = name;
-			_Session = new DBreezeSingleThreadSession(name, folder);
-			_Session.Do(() =>
+            this._Name = name;
+			this._Session = new DBreezeSingleThreadSession(name, folder);
+            this._Session.Do(() =>
 			{
-				_Session.Transaction.ValuesLazyLoadingIsOn = false;
+                this._Session.Transaction.ValuesLazyLoadingIsOn = false;
 			});
 		}
 
 		public void Dispose()
 		{
-			_Session.Dispose();
+            this._Session.Dispose();
 		}
 
 		protected override Task<byte[]> GetBytes(string key)
 		{
             Guard.NotEmpty(key, nameof(key));
 
-			return _Session.Do(() =>
+			return this._Session.Do(() =>
 			{
-				var row = _Session.Transaction.Select<string, byte[]>(_Name, key);
+				var row = this._Session.Transaction.Select<string, byte[]>(this._Name, key);
 				if(row == null || !row.Exists)
 					return null;
 				return row.Value;
@@ -46,10 +46,10 @@ namespace Stratis.Bitcoin
             Guard.NotEmpty(key, nameof(key));
             Guard.NotNull(data, nameof(data));
 
-            return _Session.Do(() =>
+            return this._Session.Do(() =>
 			{
-				_Session.Transaction.Insert(_Name, key, data);
-				_Session.Transaction.Commit();
+				this._Session.Transaction.Insert(this._Name, key, data);
+                this._Session.Transaction.Commit();
 			});
 		}
 

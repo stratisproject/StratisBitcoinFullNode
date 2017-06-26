@@ -47,15 +47,15 @@ namespace Stratis.Bitcoin.RPC
         {
             Guard.NotEmpty(user, nameof(user));
 
-            return Authorized.Any(a => a.Equals(user, StringComparison.OrdinalIgnoreCase));
+            return this.Authorized.Any(a => a.Equals(user, StringComparison.OrdinalIgnoreCase));
         }
         public bool IsAuthorized(IPAddress ip)
         {
             Guard.NotNull(ip, nameof(ip));
 
-            if (AllowIp.Count == 0)
+            if (this.AllowIp.Count == 0)
                 return true;
-            return AllowIp.Any(i => i.AddressFamily == ip.AddressFamily && i.Equals(ip));
+            return this.AllowIp.Any(i => i.AddressFamily == ip.AddressFamily && i.Equals(ip));
         }
     }
 }

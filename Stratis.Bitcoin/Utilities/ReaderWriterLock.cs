@@ -13,11 +13,11 @@ namespace Stratis.Bitcoin.Utilities
 
 		public IDisposable LockRead()
 		{
-			return new ActionDisposable(() => @lock.EnterReadLock(), () => @lock.ExitReadLock());
+			return new ActionDisposable(() => this.@lock.EnterReadLock(), () => this.@lock.ExitReadLock());
 		}
 		public IDisposable LockWrite()
 		{
-			return new ActionDisposable(() => @lock.EnterWriteLock(), () => @lock.ExitWriteLock());
+			return new ActionDisposable(() => this.@lock.EnterWriteLock(), () => this.@lock.ExitWriteLock());
 		}
 
 		internal bool TryLockWrite(out IDisposable locked)

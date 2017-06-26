@@ -13,9 +13,9 @@ namespace Stratis.Bitcoin.Utilities
 		int _ThreadCount;
 		public CustomThreadPoolTaskScheduler(int threadCount, int maxQueued, string name = null)
 		{
-			_ThreadCount = threadCount;
-			_Tasks = new BlockingCollection<Task>(new ConcurrentQueue<Task>(), maxQueued);
-			_AvailableThreads = threadCount;
+			this._ThreadCount = threadCount;
+			this._Tasks = new BlockingCollection<Task>(new ConcurrentQueue<Task>(), maxQueued);
+            this._AvailableThreads = threadCount;
 			for(int i = 0; i < threadCount; i++)
 			{
 				new Thread(Do)
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Utilities
 		{
 			get
 			{
-				return _ThreadCount;
+				return this._ThreadCount;
 			}
 		}
 
@@ -39,13 +39,13 @@ namespace Stratis.Bitcoin.Utilities
 		{
 			try
 			{
-				foreach(var task in _Tasks.GetConsumingEnumerable(_Cancel.Token))
+				foreach(var task in this._Tasks.GetConsumingEnumerable(this._Cancel.Token))
 				{
-					Interlocked.Decrement(ref _AvailableThreads);
+					Interlocked.Decrement(ref this._AvailableThreads);
 					TryExecuteTask(task);
-					Interlocked.Increment(ref _AvailableThreads);
-					if(RemainingTasks == 0)
-						_Finished.Set();
+					Interlocked.Increment(ref this._AvailableThreads);
+					if(this.RemainingTasks == 0)
+                        this._Finished.Set();
 				}
 			}
 			catch(OperationCanceledException)
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Utilities
 		{
 			get
 			{
-				return _Tasks.Count;
+				return this._Tasks.Count;
 			}
 		}
 
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Utilities
 		{
 			get
 			{
-				return _AvailableThreads;
+				return this._AvailableThreads;
 			}
 		}
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Utilities
 		{
 			get
 			{
-				return (_ThreadCount - AvailableThreads) + QueuedCount;
+				return (this._ThreadCount - this.AvailableThreads) + this.QueuedCount;
 			}
 		}
 
@@ -82,20 +82,20 @@ namespace Stratis.Bitcoin.Utilities
 		{
 			get
 			{
-				return _ThreadCount;
+				return this._ThreadCount;
 			}
 		}
 
 		BlockingCollection<Task> _Tasks;
 		protected override IEnumerable<Task> GetScheduledTasks()
 		{
-			return _Tasks;
+			return this._Tasks;
 		}
 
 		protected override void QueueTask(Task task)
 		{
 			AssertNotDisposed();
-			_Tasks.Add(task);
+            this._Tasks.Add(task);
 		}
 
 		protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
@@ -109,8 +109,8 @@ namespace Stratis.Bitcoin.Utilities
 		bool _disposed;
 		public void Dispose()
 		{
-			_disposed = true;
-			_Cancel.Cancel();
+            this._disposed = true;
+            this._Cancel.Cancel();
 		}
 
 		#endregion
@@ -121,17 +121,17 @@ namespace Stratis.Bitcoin.Utilities
 			AssertNotDisposed();
 			while(true)
 			{
-				if(_disposed)
+				if(this._disposed)
 					return;
-				if(RemainingTasks == 0)
+				if(this.RemainingTasks == 0)
 					return;
-				_Finished.WaitOne(1000);
+                this._Finished.WaitOne(1000);
 			}
 		}
 
 		private void AssertNotDisposed()
 		{
-			if(_disposed)
+			if(this._disposed)
 				throw new ObjectDisposedException("CustomThreadPoolTaskScheduler");
 		}
 	}
