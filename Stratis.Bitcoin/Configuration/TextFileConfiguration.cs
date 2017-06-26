@@ -58,33 +58,34 @@ namespace Stratis.Bitcoin.Configuration
 			this._Args = args;
 		}
 
-        public static TextFileConfiguration Parse(string data)
-        {
-            return new TextFileConfiguration(data);
-        }
-
-		public TextFileConfiguration(string data)
+		public static TextFileConfiguration Parse(string data)
 		{
-            this._Args = new Dictionary<string, List<string>>();
-            int lineNumber = 0;
-            // Process all lines, even if empty
-			foreach(var l in data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
+			Dictionary<string, List<string>> result = new Dictionary<string, List<string>>();
+			var lines = data.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+			int lineCount = -1;
+			foreach(var l in lines)
 			{
-                // Track line numbers, also for empty lines..
-                lineNumber++;
+				lineCount++;
 				var line = l.Trim();
-                // From here onwards don't process empty or commented lines
-                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
-                    continue;
-                // Split on '='
-                string[] split = line.Split('=');
-                if (split.Length == 1)
-                    throw new FormatException("Line " + lineNumber + $": \"{l}\" : No value is set");
-                if (split.Length > 2)
-                    throw new FormatException("Line " + lineNumber + $": \"{l}\" : Only one '=' was expected");
-                // Add to dictionary. Trim spaces around keys and values
-                Add(split[0].Trim(), split[1].Trim());
+				if(string.IsNullOrEmpty(line) || line.StartsWith("#"))
+					continue;
+				var split = line.Split('=');
+				if(split.Length == 0)
+					continue;
+				if(split.Length == 1)
+					throw new FormatException("Line " + lineCount + ": No value are set");
+
+				var key = split[0];
+				List<string> values;
+				if(!result.TryGetValue(key, out values))
+				{
+					values = new List<string>();
+					result.Add(key, values);
+				}
+				var value = String.Join("=", split.Skip(1).ToArray());
+				values.Add(value);
 			}
+			return new TextFileConfiguration(result);
 		}
 
 		public bool Contains(string key)
