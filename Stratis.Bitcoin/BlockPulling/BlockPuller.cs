@@ -6,6 +6,7 @@ using NBitcoin;
 using System.Collections.Concurrent;
 using NBitcoin.Protocol.Behaviors;
 using System.Threading;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -36,7 +37,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
         public class BlockPullerBehavior : NodeBehavior
         {
-
             private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
             public CancellationTokenSource CancellationTokenSource => this.cancellationToken;
 
@@ -44,9 +44,9 @@ namespace Stratis.Bitcoin.BlockPulling
             public ICollection<uint256> PendingDownloads => this.pendingDownloads.Values;
 
             private readonly BlockPuller puller;
-            public BlockPuller Puller => this.puller;
+            public BlockStore.ChainBehavior ChainBehavior { get; private set; }
 
-            public ChainedBlock BestKnownTip { get; private set; }
+            public BlockPuller Puller => this.puller;
 
             public BlockPullerBehavior(BlockPuller puller)
             {
@@ -65,17 +65,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
             private void Node_MessageReceived(Node node, IncomingMessage message)
             {
-                // Attempting to find the peers current best chain
-                // to be used by the puller to determine if the peer can server blocks
-                message.Message.IfPayloadIs<HeadersPayload>(header =>
-                {
-                    foreach (BlockHeader blockHeader in header.Headers)
-                    {
-                        ChainedBlock cahinedBlock = this.puller.Chain.GetBlock(blockHeader.GetHash());
-                        this.TrySetBestKnownTip(cahinedBlock);
-                    }
-                });
-
                 message.Message.IfPayloadIs<BlockPayload>((block) =>
                 {
                     block.Object.Header.CacheHashes();
@@ -127,12 +116,13 @@ namespace Stratis.Bitcoin.BlockPulling
                     inv.Type = this.AttachedNode.AddSupportedOptions(inv.Type);
                     this.pendingDownloads.TryAdd(inv.Hash, inv.Hash);
                 }
-                this.AttachedNode.SendMessageAsync(getDataPayload);
+                this.AttachedNode.SendMessageAsync(getDataPayload);                
             }
 
             protected override void AttachCore()
             {
                 this.AttachedNode.MessageReceived += Node_MessageReceived;
+                this.ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
                 AssignPendingVector();
             }
 
@@ -168,52 +158,6 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
             }
 
-            private void TrySetBestKnownTip(ChainedBlock block)
-            {
-                // best know tip is only set when the headers is at the same
-                // height as us or ahead, its an indicator if the node can be used
-                // to download blocks from, nodes which are behind do not send headers
-                if (block != null && block.ChainWork > 0)
-                    if (this.BestKnownTip == null || block.ChainWork > this.BestKnownTip.ChainWork)
-                        this.BestKnownTip = block;
-            }
-
-            //public uint256 LastUnknownBlock { get; private set; }
-            //public ChainedBlock BestKnownBlock { get; private set; }
-
-            //// Check whether the last unknown block a peer advertised is not yet known. 
-            //private void ProcessBlockAvailability()
-            //{
-            //	if (this.LastUnknownBlock != null)
-            //	{
-            //		var chainedBlock = this._Puller.Chain.GetBlock(this.LastUnknownBlock);
-            //		if (chainedBlock != null && chainedBlock.ChainWork > 0)
-            //		{
-            //			if (this.BestKnownBlock == null || chainedBlock.ChainWork >= this.BestKnownBlock.ChainWork)
-            //				this.BestKnownBlock = chainedBlock;
-            //			this.LastUnknownBlock = null;
-            //		}
-            //	}
-            //}
-
-            //// Update tracking information about which blocks a peer is assumed to have. 
-            //private void UpdateBlockAvailability(uint256 hash)
-            //{
-            //	ProcessBlockAvailability();
-
-            //	var chainedBlock = this._Puller.Chain.GetBlock(hash);
-            //	if (chainedBlock != null && chainedBlock.ChainWork > 0)
-            //	{
-            //		// An actually better block was announced.
-            //		if (this.BestKnownBlock == null || chainedBlock.ChainWork >= this.BestKnownBlock.ChainWork)
-            //			this.BestKnownBlock = chainedBlock;
-            //	}
-            //	else
-            //	{
-            //		// An unknown block was announced; just assume that the latest one is the best one.
-            //		this.LastUnknownBlock = hash;
-            //	}
-            //}
         }
 
         protected BlockPuller(ConcurrentChain chain, IReadOnlyNodesCollection nodes, ProtocolVersion protocolVersion)
@@ -322,8 +266,9 @@ namespace Stratis.Bitcoin.BlockPulling
             var selectnodes = new List<BlockPullerBehavior>();
             foreach (BlockPullerBehavior behavior in innernodes)
             {
-                // filter nodes that are still behind
-                if (behavior.BestKnownTip?.Height >= minHight)
+                // filter nodes that are still behind using the 
+                // pending tip in the chain behaviour
+                if (behavior.ChainBehavior?.PendingTip?.Height >= minHight)
                     selectnodes.Add(behavior);
             }
             innernodes = selectnodes.ToArray();
