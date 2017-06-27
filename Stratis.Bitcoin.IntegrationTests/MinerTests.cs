@@ -10,6 +10,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
@@ -126,7 +127,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				chain = new ConcurrentChain(network);
 				network.Consensus.Options = new PowConsensusOptions();
 				cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
-				consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings())));
+				consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings())),new NodeDeployments(this.network));
 				consensus.Initialize();
 
 				entry.Fee(11);

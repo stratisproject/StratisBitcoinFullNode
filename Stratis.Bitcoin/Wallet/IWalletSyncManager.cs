@@ -37,5 +37,10 @@ namespace Stratis.Bitcoin.Wallet
 		/// <param name="height">The height from which to start the sync process.</param>
 		/// <returns>The height of the block sync will start from</returns>
 		void SyncFrom(int height);
+
+        /// <summary>
+        /// The current tip of the wallet.
+        /// </summary>
+        ChainedBlock WalletTip { get; }
 	}
 }

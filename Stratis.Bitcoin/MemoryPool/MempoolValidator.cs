@@ -9,6 +9,7 @@ using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.MemoryPool

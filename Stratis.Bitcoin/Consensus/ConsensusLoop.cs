@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -27,17 +28,19 @@ namespace Stratis.Bitcoin.Consensus
 	}
 	public class ConsensusLoop
 	{
-		public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, StakeChain stakeChain = null)
+		public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, StakeChain stakeChain = null)
 		{
 			Guard.NotNull(validator, nameof(validator));
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(utxoSet, nameof(utxoSet));
 			Guard.NotNull(puller, nameof(puller));
-			
-			this.Validator = validator;
+		    Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
+
+            this.Validator = validator;
 			this.Chain = chain;
 			this.UTXOSet = utxoSet;
 			this.Puller = puller;
+		    this.NodeDeployments = nodeDeployments;
 
 			// chain of stake info can be null if POS is not enabled
 			this.StakeChain = stakeChain;
@@ -51,7 +54,7 @@ namespace Stratis.Bitcoin.Consensus
 		public CoinView UTXOSet { get; }
 		public PowConsensusValidator Validator { get; }
 		public ChainedBlock Tip { get; private set; }
-		public ThresholdConditionCache BIP9 { get; private set; }
+		public NodeDeployments NodeDeployments { get; private set; }
 
 		public void Initialize()
 		{
@@ -64,7 +67,6 @@ namespace Stratis.Bitcoin.Consensus
 				utxoHash = UTXOSet.Rewind().GetAwaiter().GetResult();
 			}
 			Puller.SetLocation(Tip);
-			BIP9 = new ThresholdConditionCache(Validator.ConsensusParams);
 		}
 
 		public IEnumerable<BlockResult> Execute(CancellationToken cancellationToken)
@@ -72,17 +74,6 @@ namespace Stratis.Bitcoin.Consensus
 			while(true)
 			{
 				yield return ExecuteNextBlock(cancellationToken);
-			}
-		}
-
-		public virtual ConsensusFlags GetFlags(ChainedBlock block = null)
-		{
-			block = block ?? Tip;
-			lock(this.BIP9)
-			{
-				var states = this.BIP9.GetStates(block.Previous);
-				var flags = new ConsensusFlags(block, states, Validator.ConsensusParams);
-				return flags;
 			}
 		}
 
@@ -149,7 +140,7 @@ namespace Stratis.Bitcoin.Consensus
 
 				// calculate the consensus flags  
 				// and check they are valid
-				context.Flags = this.GetFlags(context.BlockResult.ChainedBlock);
+				context.Flags = this.NodeDeployments.GetFlags(context.BlockResult.ChainedBlock);
 				Validator.ContextualCheckBlock(context);
 
 				// check the block itself

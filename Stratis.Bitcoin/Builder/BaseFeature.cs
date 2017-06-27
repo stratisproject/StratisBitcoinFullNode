@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Builder.Feature;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Internal;
+using Stratis.Bitcoin.Consensus.Deployments;
 using ChainBehavior = Stratis.Bitcoin.BlockStore.ChainBehavior;
 
 namespace Stratis.Bitcoin.Builder
@@ -169,9 +170,10 @@ namespace Stratis.Bitcoin.Builder
 					services.AddSingleton<ChainRepository>();
 					services.AddSingleton(serviceProvider => new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() });
 				    services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
+				    services.AddSingleton<NodeDeployments>();
 
-					// == connection ==
-					services.AddSingleton<NodeConnectionParameters>(new NodeConnectionParameters());
+                    // == connection ==
+                    services.AddSingleton<NodeConnectionParameters>(new NodeConnectionParameters());
 					services.AddSingleton<IConnectionManager, ConnectionManager>();
 				});
 			});
