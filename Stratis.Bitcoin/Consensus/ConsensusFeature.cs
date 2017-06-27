@@ -12,7 +12,6 @@ using Stratis.Bitcoin.Logging;
 using System;
 using System.Threading;
 using Stratis.Bitcoin.Consensus.Deployments;
-using static Stratis.Bitcoin.FullNode;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -26,7 +25,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly CoinView coinView;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly IConnectionManager connectionManager;
-		private readonly CancellationProvider globalCancellation;
+		private readonly FullNode.CancellationProvider globalCancellation;
 		private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
 		private readonly NodeSettings nodeSettings;
@@ -42,7 +41,7 @@ namespace Stratis.Bitcoin.Consensus
 			CoinView coinView,
 			ChainBehavior.ChainState chainState,
 			IConnectionManager connectionManager,
-			CancellationProvider globalCancellation,
+			FullNode.CancellationProvider globalCancellation,
 			Signals signals,
 			ConsensusLoop consensusLoop,
 			NodeSettings nodeSettings,

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Consensus.Deployments
 		public static readonly int ArraySize;
 		static ThresholdConditionCache()
 		{
-			ArraySize = Enum.GetValues(typeof(NBitcoin.BIP9Deployments)).Length;
+			ArraySize = Enum.GetValues(typeof(BIP9Deployments)).Length;
 		}
 
 		NBitcoin.Consensus _Consensus;
@@ -35,13 +35,13 @@ namespace Stratis.Bitcoin.Consensus.Deployments
 
 		public ThresholdState[] GetStates(ChainedBlock pindexPrev)
 		{
-			return Enum.GetValues(typeof(NBitcoin.BIP9Deployments))
-				.OfType<NBitcoin.BIP9Deployments>()
+			return Enum.GetValues(typeof(BIP9Deployments))
+				.OfType<BIP9Deployments>()
 				.Select(b => this.GetState(pindexPrev, b))
 				.ToArray();
 		}
 
-		public ThresholdState GetState(ChainedBlock pindexPrev, NBitcoin.BIP9Deployments deployment)
+		public ThresholdState GetState(ChainedBlock pindexPrev, BIP9Deployments deployment)
 		{
 			int nPeriod = this._Consensus.MinerConfirmationWindow;
 			int nThreshold = this._Consensus.RuleChangeActivationThreshold;
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Consensus.Deployments
 			return state;
 		}
 
-		private ThresholdState Get(uint256 hash, NBitcoin.BIP9Deployments deployment)
+		private ThresholdState Get(uint256 hash, BIP9Deployments deployment)
 		{
 			if(hash == null)
 				return ThresholdState.Defined;
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Consensus.Deployments
 			return threshold[(int)deployment].Value;
 		}
 
-		private void Set(uint256 hash, NBitcoin.BIP9Deployments deployment, ThresholdState state)
+		private void Set(uint256 hash, BIP9Deployments deployment, ThresholdState state)
 		{
 			if(hash == null)
 				return;
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Consensus.Deployments
 			threshold[(int)deployment] = state;
 		}
 
-		private bool ContainsKey(uint256 hash, NBitcoin.BIP9Deployments deployment)
+		private bool ContainsKey(uint256 hash, BIP9Deployments deployment)
 		{
 			if(hash == null)
 				return true;
@@ -170,12 +170,12 @@ namespace Stratis.Bitcoin.Consensus.Deployments
 			return threshold[(int)deployment].HasValue;
 		}
 
-		private bool Condition(ChainedBlock pindex, NBitcoin.BIP9Deployments deployment)
+		private bool Condition(ChainedBlock pindex, BIP9Deployments deployment)
 		{
 			return (((pindex.Header.Version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) && (pindex.Header.Version & this.Mask(deployment)) != 0);
 		}
 
-		public uint Mask(NBitcoin.BIP9Deployments deployment)
+		public uint Mask(BIP9Deployments deployment)
 		{
 			return ((uint)1) << this._Consensus.BIP9Deployments[deployment].Bit;
 		}

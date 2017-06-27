@@ -1,7 +1,5 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Logging;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
