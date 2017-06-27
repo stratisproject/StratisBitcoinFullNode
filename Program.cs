@@ -35,11 +35,7 @@ namespace Breeze.Daemon
             Logs.Configure(Logs.GetLoggerFactory(args));
 
             // get the api uri 
-            var apiUri = args.SingleOrDefault(arg => arg.StartsWith("apiuri"));
-            if (!string.IsNullOrEmpty(apiUri))
-            {
-                apiUri = apiUri.Replace("apiuri=", string.Empty);
-            }
+            var apiUri = args.GetValueOf("apiuri");
 
             if (args.Contains("stratis"))
             {
