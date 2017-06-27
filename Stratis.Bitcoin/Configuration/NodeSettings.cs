@@ -64,8 +64,8 @@ namespace Stratis.Bitcoin.Configuration
 
 			nodeSettings.ProtocolVersion = protocolVersion;
 
-			nodeSettings.ConfigurationFile = args.Where(a => a.StartsWith("-conf=")).Select(a => a.Substring("-conf=".Length).Replace("\"", "")).FirstOrDefault();
-			nodeSettings.DataDir = args.Where(a => a.StartsWith("-datadir=")).Select(a => a.Substring("-datadir=".Length).Replace("\"", "")).FirstOrDefault();
+		    nodeSettings.ConfigurationFile = args.GetValueOf("-conf");
+			nodeSettings.DataDir = args.GetValueOf("-datadir");
 			if (nodeSettings.DataDir != null && nodeSettings.ConfigurationFile != null)
 			{
 				var isRelativePath = Path.GetFullPath(nodeSettings.ConfigurationFile).Length > nodeSettings.ConfigurationFile.Length;
