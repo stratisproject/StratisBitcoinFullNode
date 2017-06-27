@@ -10,8 +10,8 @@ namespace Stratis.Bitcoin.Configuration
 		}
 		public NodeServerEndpoint(IPEndPoint endpoint, bool whitelisted)
 		{
-			Endpoint = endpoint;
-			Whitelisted = whitelisted;
+            this.Endpoint = endpoint;
+            this.Whitelisted = whitelisted;
 		}
 		public IPEndPoint Endpoint
 		{

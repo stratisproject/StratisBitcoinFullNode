@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Tests
         /// </remarks>
         public PeriodicTaskTest() : base()
         {
-            iterationCount = 0;
+            this.iterationCount = 0;
         }
 
         [Fact]
@@ -32,8 +32,8 @@ namespace Stratis.Bitcoin.Tests
             periodicTask.Start(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33));
 
             Thread.Sleep(120);            
-            AssertLog(FullNodeLogger, LogLevel.Information, "TestTask starting");
-            AssertLog(FullNodeLogger, LogLevel.Information, "TestTask stopping");
+            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestTask starting");
+            AssertLog(this.FullNodeLogger, LogLevel.Information, "TestTask stopping");
         }
 
         [Fact]
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Tests
             periodicTask.Start(new CancellationTokenSource(80).Token, TimeSpan.FromMilliseconds(33));
 
             Thread.Sleep(100);
-            Assert.Equal(3, iterationCount);
+            Assert.Equal(3, this.iterationCount);
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests
             periodicTask.Start(new CancellationTokenSource(70).Token, TimeSpan.FromMilliseconds(33), true);
 
             Thread.Sleep(100);
-            Assert.Equal(2, iterationCount);
+            Assert.Equal(2, this.iterationCount);
         }
 
         [Fact]
@@ -74,14 +74,14 @@ namespace Stratis.Bitcoin.Tests
 
             periodicTask.RunOnce();
 
-            Assert.Equal(1, iterationCount);
+            Assert.Equal(1, this.iterationCount);
         }
 
         private Task DoExceptionalTask(CancellationToken token)
         {
-            Interlocked.Increment(ref iterationCount);
+            Interlocked.Increment(ref this.iterationCount);
 
-            if (iterationCount == 3)
+            if (this.iterationCount == 3)
             {
                 throw new InvalidOperationException("Cannot run more than 3 times.");
             }
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests
 
         private Task DoTask(CancellationToken token)
         {
-            Interlocked.Increment(ref iterationCount);
+            Interlocked.Increment(ref this.iterationCount);
             return Task.CompletedTask;
         }
     }

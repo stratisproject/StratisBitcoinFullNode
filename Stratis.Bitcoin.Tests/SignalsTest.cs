@@ -16,9 +16,9 @@ namespace Stratis.Bitcoin.Tests
 
         public SignalsTest()
         {
-            blockSignaler = new Mock<ISignaler<Block>>();
-            transactionSignaler = new Mock<ISignaler<Transaction>>();
-            signals = new Signals(blockSignaler.Object, transactionSignaler.Object);
+            this.blockSignaler = new Mock<ISignaler<Block>>();
+            this.transactionSignaler = new Mock<ISignaler<Transaction>>();
+            this.signals = new Signals(this.blockSignaler.Object, this.transactionSignaler.Object);
         }
 
         [Fact]
@@ -26,9 +26,9 @@ namespace Stratis.Bitcoin.Tests
         {
             var block = new Block();
 
-            signals.Signal(block);
+            this.signals.Signal(block);
 
-            blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));            
+            this.blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));            
         }
 
         [Fact]
@@ -36,9 +36,9 @@ namespace Stratis.Bitcoin.Tests
         {
             var transaction = new Transaction();
 
-            signals.Signal(transaction);
-            
-            transactionSignaler.Verify(b => b.Broadcast(transaction), Times.Exactly(1));
+            this.signals.Signal(transaction);
+
+            this.transactionSignaler.Verify(b => b.Broadcast(transaction), Times.Exactly(1));
         }
     }
 }

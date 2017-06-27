@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 		public void CreateJsonSerializerCreatesSerializerWithProvidedSettings()
 		{
 			this.settings.Culture = new System.Globalization.CultureInfo("en-GB");
-			this.formatter = new TestRPCJsonOutputFormatter(settings, charpool);
+			this.formatter = new TestRPCJsonOutputFormatter(this.settings, this.charpool);
 
 			var serializer = this.formatter.CreateJsonSerializer();
 

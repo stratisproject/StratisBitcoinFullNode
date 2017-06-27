@@ -52,13 +52,13 @@ namespace Stratis.Bitcoin.RPC
 		{
 			Guard.NotNull(serializerSettings, nameof(serializerSettings));
 			Guard.NotNull(charPool, nameof(charPool));
-			
-			SerializerSettings = serializerSettings;
+
+            this.SerializerSettings = serializerSettings;
 			this._charPool = new JsonArrayPool<char>(charPool);
-			base.SupportedEncodings.Add(Encoding.UTF8);
-			base.SupportedEncodings.Add(Encoding.Unicode);
-			base.SupportedMediaTypes.Add(ApplicationJson);
-			base.SupportedMediaTypes.Add(TextJson);
+            this.SupportedEncodings.Add(Encoding.UTF8);
+			this.SupportedEncodings.Add(Encoding.Unicode);
+			this.SupportedMediaTypes.Add(ApplicationJson);
+			this.SupportedMediaTypes.Add(TextJson);
 		}
 
 		public static readonly MediaTypeHeaderValue ApplicationJson = MediaTypeHeaderValue.Parse("application/json").CopyAsReadOnly();

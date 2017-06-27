@@ -38,11 +38,11 @@ namespace Stratis.Bitcoin.Consensus
 			var txIn = tx.Inputs[0];
 
 			// First try finding the previous transaction in database
-			var coins = coinView.FetchCoinsAsync(new[] {txIn.PrevOut.Hash}).GetAwaiter().GetResult();
+			var coins = this.coinView.FetchCoinsAsync(new[] {txIn.PrevOut.Hash}).GetAwaiter().GetResult();
 			if (coins == null || coins.UnspentOutputs.Length != 1)
 				ConsensusErrors.ReadTxPrevFailed.Throw();
 
-			var prevBlock = chain.GetBlock(coins.BlockHash);
+			var prevBlock = this.chain.GetBlock(coins.BlockHash);
 			var prevUtxo = coins.UnspentOutputs[0];
 
 			// Verify signature
@@ -600,7 +600,7 @@ namespace Stratis.Bitcoin.Consensus
 			if (coins == null || coins.UnspentOutputs.Length != 1)
 				ConsensusErrors.ReadTxPrevFailed.Throw();
 
-			var prevBlock = chain.GetBlock(coins.BlockHash);
+			var prevBlock = this.chain.GetBlock(coins.BlockHash);
 			var prevUtxo = coins.UnspentOutputs[0];
 
 			//var txPrev = trasnactionStore.Get(prevout.Hash);
@@ -625,7 +625,7 @@ namespace Stratis.Bitcoin.Consensus
 					ConsensusErrors.MinAgeViolation.Throw();
 			}
 
-			var prevBlockStake = stakeChain.Get(pindexPrev.HashBlock);
+			var prevBlockStake = this.stakeChain.Get(pindexPrev.HashBlock);
 			if (prevBlockStake == null)
 				ConsensusErrors.BadStakeBlock.Throw();
 

@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Builder
 			foreach (var featureRegistration in this.Features.FeatureRegistrations)
 				featureRegistration.BuildFeature(this.Services);
 
-			return Services;
+			return this.Services;
 		}
 
 		private void ConfigureServices(IServiceProvider serviceProvider)

@@ -481,7 +481,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 WalletFileModel model = new WalletFileModel
                 {
                     WalletsPath = walletsFolder.FullName,
-                    WalletsFiles = Directory.EnumerateFiles(walletsFolder.FullName, "*.json", SearchOption.TopDirectoryOnly).Select(p => Path.GetFileName(p))
+                    WalletsFiles = Directory.EnumerateFiles(walletsFolder.FullName, $"*.{this.walletManager.GetWalletFileExtension()}", SearchOption.TopDirectoryOnly).Select(p => Path.GetFileName(p))
                 };
 
                 return this.Json(model);

@@ -8,8 +8,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 	{
 		public RpcSettings()
 		{
-			Bind = new List<IPEndPoint>();
-			AllowIp = new List<IPAddress>();
+            this.Bind = new List<IPEndPoint>();
+            this.AllowIp = new List<IPAddress>();
 		}
 
 		public string RpcUser
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
 		public string[] GetUrls()
 		{
-			return Bind.Select(b => "http://" + b + "/").ToArray();
+			return this.Bind.Select(b => "http://" + b + "/").ToArray();
 		}
 	}
 }

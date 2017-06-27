@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Configuration
 
 		public TextFileConfiguration(string[] args)
 		{
-			_Args = new Dictionary<string, List<string>>();
+            this._Args = new Dictionary<string, List<string>>();
 			foreach(var arg in args)
 			{
 				var splitted = arg.Split('=');
@@ -36,17 +36,17 @@ namespace Stratis.Bitcoin.Configuration
 		private void Add(string key, string value)
 		{
 			List<string> list;
-			if(!_Args.TryGetValue(key, out list))
+			if(!this._Args.TryGetValue(key, out list))
 			{
 				list = new List<string>();
-				_Args.Add(key, list);
+                this._Args.Add(key, list);
 			}
 			list.Add(value);
 		}
 
 		public void MergeInto(TextFileConfiguration destination)
 		{
-			foreach(var kv in _Args)
+			foreach(var kv in this._Args)
 			{
 				foreach(var v in kv.Value)
 					destination.Add(kv.Key, v);
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Configuration
 					values = new List<string>();
 					result.Add(key, values);
 				}
-				var value = String.Join("=", split.Skip(1).ToArray());
+				var value = string.Join("=", split.Skip(1).ToArray());
 				values.Add(value);
 			}
 			return new TextFileConfiguration(result);
@@ -91,14 +91,14 @@ namespace Stratis.Bitcoin.Configuration
 		public bool Contains(string key)
 		{
 			List<string> values;
-			return _Args.TryGetValue(key, out values) 
-				|| _Args.TryGetValue($"-{key}", out values);
+			return this._Args.TryGetValue(key, out values) 
+				|| this._Args.TryGetValue($"-{key}", out values);
 		}
 		public string[] GetAll(string key)
 		{
 			List<string> values;
-			if(!_Args.TryGetValue(key, out values))
-				if (!_Args.TryGetValue($"-{key}", out values))
+			if(!this._Args.TryGetValue(key, out values))
+				if (!this._Args.TryGetValue($"-{key}", out values))
 					return new string[0];
 			return values.ToArray();
 		}
@@ -106,8 +106,8 @@ namespace Stratis.Bitcoin.Configuration
 		public T GetOrDefault<T>(string key, T defaultValue)
 		{
 			List<string> values;
-			if(!_Args.TryGetValue(key, out values))
-				if (!_Args.TryGetValue($"-{key}", out values))
+			if(!this._Args.TryGetValue(key, out values))
+				if (!this._Args.TryGetValue($"-{key}", out values))
 					return defaultValue;
 
 			if(values.Count != 1)

@@ -28,16 +28,16 @@ namespace Stratis.Bitcoin.Consensus
         public ConsensusStats(CoinViewStack stack, CoinView coinView, ConsensusLoop consensusLoop, ChainBehavior.ChainState chainState, ConcurrentChain chain, IConnectionManager connectionManager)
         {
             stack = new CoinViewStack(coinView);
-            cache = stack.Find<CachedCoinView>();
-            dbreeze = stack.Find<DBreezeCoinView>();
-            bottom = stack.Bottom;
+            this.cache = stack.Find<CachedCoinView>();
+            this.dbreeze = stack.Find<DBreezeCoinView>();
+            this.bottom = stack.Bottom;
 
             this.consensusLoop = consensusLoop;
-            lookaheadPuller = this.consensusLoop.Puller as LookaheadBlockPuller;
+            this.lookaheadPuller = this.consensusLoop.Puller as LookaheadBlockPuller;
 
-            lastSnapshot = consensusLoop.Validator.PerformanceCounter.Snapshot();
-            lastSnapshot2 = dbreeze?.PerformanceCounter.Snapshot();
-            lastSnapshot3 = cache?.PerformanceCounter.Snapshot();
+            this.lastSnapshot = consensusLoop.Validator.PerformanceCounter.Snapshot();
+            this.lastSnapshot2 = this.dbreeze?.PerformanceCounter.Snapshot();
+            this.lastSnapshot3 = this.cache?.PerformanceCounter.Snapshot();
             this.chainState = chainState;
             this.chain = chain;
             this.connectionManager = connectionManager;
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             get
             {
-                return this.chainState.IsInitialBlockDownload && (DateTimeOffset.UtcNow - lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
+                return this.chainState.IsInitialBlockDownload && (DateTimeOffset.UtcNow - this.lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
             }
         }
 
@@ -55,35 +55,35 @@ namespace Stratis.Bitcoin.Consensus
         {
             StringBuilder benchLogs = new StringBuilder();
 
-            if (lookaheadPuller != null)
+            if (this.lookaheadPuller != null)
             {
                 benchLogs.AppendLine("======Block Puller======");
-                benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + lookaheadPuller.ActualLookahead + " blocks");
-                benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + lookaheadPuller.MedianDownloadCount + " blocks");
+                benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + this.lookaheadPuller.ActualLookahead + " blocks");
+                benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
                 benchLogs.AppendLine("==========================");
             }
-            benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + this.chain.GetBlock(bottom.GetBlockHashAsync().Result).Height);
-            if (cache != null)
+            benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().Result).Height);
+            if (this.cache != null)
             {
-                benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + this.chain.GetBlock(cache.GetBlockHashAsync().Result).Height);
-                benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + cache.CacheEntryCount);
+                benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().Result).Height);
+                benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + this.cache.CacheEntryCount);
             }
 
             var snapshot = this.consensusLoop.Validator.PerformanceCounter.Snapshot();
-            benchLogs.AppendLine((snapshot - lastSnapshot).ToString());
-            lastSnapshot = snapshot;
+            benchLogs.AppendLine((snapshot - this.lastSnapshot).ToString());
+            this.lastSnapshot = snapshot;
 
-            if (dbreeze != null)
+            if (this.dbreeze != null)
             {
-                var snapshot2 = dbreeze.PerformanceCounter.Snapshot();
-                benchLogs.AppendLine((snapshot2 - lastSnapshot2).ToString());
-                lastSnapshot2 = snapshot2;
+                var snapshot2 = this.dbreeze.PerformanceCounter.Snapshot();
+                benchLogs.AppendLine((snapshot2 - this.lastSnapshot2).ToString());
+                this.lastSnapshot2 = snapshot2;
             }
-            if (cache != null)
+            if (this.cache != null)
             {
-                var snapshot3 = cache.PerformanceCounter.Snapshot();
-                benchLogs.AppendLine((snapshot3 - lastSnapshot3).ToString());
-                lastSnapshot3 = snapshot3;
+                var snapshot3 = this.cache.PerformanceCounter.Snapshot();
+                benchLogs.AppendLine((snapshot3 - this.lastSnapshot3).ToString());
+                this.lastSnapshot3 = snapshot3;
             }
             benchLogs.AppendLine(this.connectionManager.GetStats());
             Logs.Bench.LogInformation(benchLogs.ToString());

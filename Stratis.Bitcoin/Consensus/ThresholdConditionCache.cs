@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			Guard.NotNull(consensus, nameof(consensus));
 
-			_Consensus = consensus;
+            this._Consensus = consensus;
 		}
 
 		public ThresholdState[] GetStates(ChainedBlock pindexPrev)
@@ -45,10 +45,10 @@ namespace Stratis.Bitcoin.Consensus
 
 		public ThresholdState GetState(ChainedBlock pindexPrev, BIP9Deployments deployment)
 		{
-			int nPeriod = _Consensus.MinerConfirmationWindow;
-			int nThreshold = _Consensus.RuleChangeActivationThreshold;
-			var nTimeStart = _Consensus.BIP9Deployments[deployment]?.StartTime;
-			var nTimeTimeout = _Consensus.BIP9Deployments[deployment]?.Timeout;
+			int nPeriod = this._Consensus.MinerConfirmationWindow;
+			int nThreshold = this._Consensus.RuleChangeActivationThreshold;
+			var nTimeStart = this._Consensus.BIP9Deployments[deployment]?.StartTime;
+			var nTimeTimeout = this._Consensus.BIP9Deployments[deployment]?.Timeout;
 
 			// A block's state is always the same as that of the first of its period, so it is computed based on a pindexPrev whose height equals a multiple of nPeriod - 1.
 			if(pindexPrev != null)
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Consensus
 			if(hash == null)
 				return ThresholdState.Defined;
 			ThresholdState?[] threshold;
-			if(!cache.TryGetValue(hash, out threshold))
+			if(!this.cache.TryGetValue(hash, out threshold))
 				throw new InvalidOperationException("Should never happen");
 			if(threshold[(int)deployment] == null)
 				throw new InvalidOperationException("Should never happen");
@@ -154,10 +154,10 @@ namespace Stratis.Bitcoin.Consensus
 			if(hash == null)
 				return;
 			ThresholdState?[] threshold;
-			if(!cache.TryGetValue(hash, out threshold))
+			if(!this.cache.TryGetValue(hash, out threshold))
 			{
 				threshold = new ThresholdState?[ArraySize];
-				cache.Add(hash, threshold);
+                this.cache.Add(hash, threshold);
 			}
 			threshold[(int)deployment] = state;
 		}
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Consensus
 			if(hash == null)
 				return true;
 			ThresholdState?[] threshold;
-			if(!cache.TryGetValue(hash, out threshold))
+			if(!this.cache.TryGetValue(hash, out threshold))
 				return false;
 			return threshold[(int)deployment].HasValue;
 		}
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public uint Mask(BIP9Deployments deployment)
 		{
-			return ((uint)1) << _Consensus.BIP9Deployments[deployment].Bit;
+			return ((uint)1) << this._Consensus.BIP9Deployments[deployment].Bit;
 		}
 
 		private void assert(bool v)

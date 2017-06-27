@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin
             return Task.Run(async () =>
             {
                 Exception uncatchException = null;
-                Logs.FullNode.LogInformation(Name + " starting");
+                Logs.FullNode.LogInformation(this.Name + " starting");
                 try
                 {
                     if (delayStart != null)
@@ -74,14 +74,14 @@ namespace Stratis.Bitcoin
 						if(cancellation.IsCancellationRequested)
 							return;
 
-						await loopAsync(cancellation).ConfigureAwait(false);
+						await this.loopAsync(cancellation).ConfigureAwait(false);
 
 						return;
 	                }
 
 	                while (!cancellation.IsCancellationRequested)
 	                {
-		                await loopAsync(cancellation).ConfigureAwait(false);
+		                await this.loopAsync(cancellation).ConfigureAwait(false);
 		                await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
 	                }
                 }
@@ -96,12 +96,12 @@ namespace Stratis.Bitcoin
                 }
                 finally
                 {
-                    Logs.FullNode.LogInformation(Name + " stopping");
+                    Logs.FullNode.LogInformation(this.Name + " stopping");
                 }
 
                 if (uncatchException != null)
                 {
-                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, Name + " threw an unhandled exception");
+                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, this.Name + " threw an unhandled exception");
                 }
             }, cancellation);
         }

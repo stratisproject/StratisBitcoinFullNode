@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests
 
         public SignalObserverTest() : base()
         {
-            observer = new TestBlockSignalObserver();
+            this.observer = new TestBlockSignalObserver();
         }
 
         [Fact]
@@ -27,9 +27,9 @@ namespace Stratis.Bitcoin.Tests
         {
             var exception = new InvalidOperationException("This should not have occurred!");
 
-            observer.OnError(exception);
+            this.observer.OnError(exception);
 
-            AssertLog(FullNodeLogger, LogLevel.Error, exception.ToString());
+            AssertLog(this.FullNodeLogger, LogLevel.Error, exception.ToString());
         }            
 
         private class TestBlockSignalObserver : SignalObserver<Block>

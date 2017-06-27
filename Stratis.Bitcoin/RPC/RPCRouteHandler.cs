@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.RPC
 		{
 			Guard.NotNull(context, nameof(context));
 
-			return inner.GetVirtualPath(context);
+			return this.inner.GetVirtualPath(context);
 		}
 
 		public async Task RouteAsync(RouteContext context)
@@ -55,14 +55,14 @@ namespace Stratis.Bitcoin.RPC
 			ms.Position = 0;
 			var method = (string) req["method"];
 
-			var controllerName = actionDescriptor.ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
+			var controllerName = this.actionDescriptor.ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
 					.FirstOrDefault(w => w.ActionName == method)?.ControllerName ?? string.Empty;
 
 			context.RouteData.Values.Add("action", method);
 			//TODO: Need to be extensible
 			context.RouteData.Values.Add("controller", controllerName);
 			context.RouteData.Values.Add("req", req);
-			await inner.RouteAsync(context);
+			await this.inner.RouteAsync(context);
 		}
 	}
 }
