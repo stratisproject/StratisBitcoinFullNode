@@ -72,11 +72,11 @@ namespace Stratis.Bitcoin.Consensus
 			this.consensusLoop.Initialize();
 
 			this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));
+			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));
 
 			var flags = this.consensusLoop.GetFlags();
 			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-				connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+                this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
 			this.stakeChain?.Load().GetAwaiter().GetResult();
 

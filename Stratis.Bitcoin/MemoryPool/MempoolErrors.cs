@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.MemoryPool
 	{
 		public MempoolErrorException(MempoolValidationState state) : base(state.ErrorMessage)
 		{
-			ValidationState = state;
+            this.ValidationState = state;
 		}
 
 		public MempoolValidationState ValidationState

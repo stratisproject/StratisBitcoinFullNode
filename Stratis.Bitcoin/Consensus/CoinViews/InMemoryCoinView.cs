@@ -25,16 +25,16 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			Guard.NotNull(txIds, nameof(txIds));
 
-			using (lockobj.LockRead())
+			using (this.lockobj.LockRead())
 			{
 				UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
 				for(int i = 0; i < txIds.Length; i++)
 				{
-					result[i] = unspents.TryGet(txIds[i]);
+					result[i] = this.unspents.TryGet(txIds[i]);
 					if(result[i] != null)
 						result[i] = result[i].Clone();
 				}
-				return Task.FromResult(new FetchCoinsResponse(result, blockHash));
+				return Task.FromResult(new FetchCoinsResponse(result, this.blockHash));
 			}
 		}
 
@@ -44,25 +44,25 @@ namespace Stratis.Bitcoin.Consensus
 			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
 			Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
-			using(lockobj.LockWrite())
+			using(this.lockobj.LockWrite())
 			{
-				if(blockHash != null && oldBlockHash != blockHash)
+				if(this.blockHash != null && oldBlockHash != this.blockHash)
 					return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
-				blockHash = nextBlockHash;
+                this.blockHash = nextBlockHash;
 				foreach(var unspent in unspentOutputs)
 				{
 					UnspentOutputs existing;
-					if(unspents.TryGetValue(unspent.TransactionId, out existing))
+					if(this.unspents.TryGetValue(unspent.TransactionId, out existing))
 					{
 						existing.Spend(unspent);
 					}
 					else
 					{
 						existing = unspent.Clone();
-						unspents.Add(unspent.TransactionId, existing);
+                        this.unspents.Add(unspent.TransactionId, existing);
 					}
 					if(existing.IsPrunable)
-						unspents.Remove(unspent.TransactionId);
+                        this.unspents.Remove(unspent.TransactionId);
 				}
 			}
 			return Task.FromResult(true);

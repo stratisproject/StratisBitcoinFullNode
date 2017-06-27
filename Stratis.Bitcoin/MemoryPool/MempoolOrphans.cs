@@ -71,23 +71,23 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public async Task<bool> AlreadyHave(uint256 trxid)
 		{
-			if (this.chain.Tip.HashBlock != hashRecentRejectsChainTip)
+			if (this.chain.Tip.HashBlock != this.hashRecentRejectsChainTip)
 			{
 				await this.MempoolScheduler.WriteAsync(() =>
 				{
-					// If the chain tip has changed previously rejected transactions
-					// might be now valid, e.g. due to a nLockTime'd tx becoming valid,
-					// or a double-spend. Reset the rejects filter and give those
-					// txs a second chance.
-					hashRecentRejectsChainTip = this.chain.Tip.HashBlock;
-					recentRejects.Clear();
+                    // If the chain tip has changed previously rejected transactions
+                    // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
+                    // or a double-spend. Reset the rejects filter and give those
+                    // txs a second chance.
+                    this.hashRecentRejectsChainTip = this.chain.Tip.HashBlock;
+                    this.recentRejects.Clear();
 				});
 			}
 
 			// Use pcoinsTip->HaveCoinsInCache as a quick approximation to exclude
 			// requesting or processing some txs which have already been included in a block
-			return await this.MempoolScheduler.ReadAsync(() => 
-								recentRejects.ContainsKey(trxid) ||
+			return await this.MempoolScheduler.ReadAsync(() =>
+                                this.recentRejects.ContainsKey(trxid) ||
 								this.memPool.Exists(trxid) ||
 								this.mapOrphanTransactions.ContainsKey(trxid));
 		}
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.MemoryPool
 	    {
 			int nEvicted = 0;
 			var nNow = this.dateTimeProvider.GetTime();
-			if (nNextSweep <= nNow)
+			if (this.nNextSweep <= nNow)
 			{
 				// Sweep out expired orphan pool entries:
 				int nErased = 0;
@@ -219,8 +219,8 @@ namespace Stratis.Bitcoin.MemoryPool
 						nMinExpTime = Math.Min(maybeErase.TimeExpire, nMinExpTime);
 					}
 				}
-				// Sweep again 5 minutes after the next entry that expires in order to batch the linear scan.
-				nNextSweep = nMinExpTime + ORPHAN_TX_EXPIRE_INTERVAL;
+                // Sweep again 5 minutes after the next entry that expires in order to batch the linear scan.
+                this.nNextSweep = nMinExpTime + ORPHAN_TX_EXPIRE_INTERVAL;
 				if (nErased > 0)
 					Logging.Logs.Mempool.LogInformation($"Erased {nErased} orphan tx due to expiration");
 			}
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				while (this.mapOrphanTransactions.Count > maxOrphanTx)
 				{
 					// Evict a random orphan:
-					var randomCount = random.Next(this.mapOrphanTransactions.Count);
+					var randomCount = this.random.Next(this.mapOrphanTransactions.Count);
 					var erase = this.mapOrphanTransactions.ElementAt(randomCount).Key;
 					await EraseOrphanTx(erase); // this will split the loop between the concurrent and exclusive scheduler
 					++nEvicted;

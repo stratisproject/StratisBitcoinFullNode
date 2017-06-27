@@ -376,15 +376,15 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private void InnerClear()
 		{
-			mapLinks.Clear();
-			MapTx.Clear();
-			MapNextTx.Clear();
-			totalTxSize = 0;
-			cachedInnerUsage = 0;
-			lastRollingFeeUpdate = this.TimeProvider.GetTime();
-			blockSinceLastRollingFeeBump = false;
-			rollingMinimumFeeRate = 0;
-			++nTransactionsUpdated;
+			this.mapLinks.Clear();
+			this.MapTx.Clear();
+			this.MapNextTx.Clear();
+			this.totalTxSize = 0;
+			this.cachedInnerUsage = 0;
+			this.lastRollingFeeUpdate = this.TimeProvider.GetTime();
+			this.blockSinceLastRollingFeeBump = false;
+            this.rollingMinimumFeeRate = 0;
+			++this.nTransactionsUpdated;
 		}
 
 		public void Clear()
@@ -398,10 +398,10 @@ namespace Stratis.Bitcoin.MemoryPool
 			// candidate for async
 			//AssertLockHeld(cs);
 
-			if (rate.FeePerK.Satoshi > rollingMinimumFeeRate)
+			if (rate.FeePerK.Satoshi > this.rollingMinimumFeeRate)
 			{
-				rollingMinimumFeeRate = rate.FeePerK.Satoshi;
-				blockSinceLastRollingFeeBump = false;
+				this.rollingMinimumFeeRate = rate.FeePerK.Satoshi;
+                this.blockSinceLastRollingFeeBump = false;
 			}
 		}
 
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			if (this.checkFrequency == 0)
 				return;
 
-			if (new Random(int.MaxValue).Next() >= checkFrequency)
+			if (new Random(int.MaxValue).Next() >= this.checkFrequency)
 				return;
 
 			Logging.Logs.Mempool.LogInformation($"Checking mempool with {this.MapTx.Count} transactions and {this.MapNextTx.Count} inputs");
@@ -432,28 +432,28 @@ namespace Stratis.Bitcoin.MemoryPool
 		public FeeRate EstimateFee(int nBlocks)
 		{
 
-			return MinerPolicyEstimator.EstimateFee(nBlocks);
+			return this.MinerPolicyEstimator.EstimateFee(nBlocks);
 		}
 
 		public FeeRate EstimateSmartFee(int nBlocks, out int answerFoundAtBlocks)
 		{
 
-			return MinerPolicyEstimator.EstimateSmartFee(nBlocks, this, out answerFoundAtBlocks);
+			return this.MinerPolicyEstimator.EstimateSmartFee(nBlocks, this, out answerFoundAtBlocks);
 		}
 
 		public double EstimatePriority(int nBlocks)
 		{
 
-			return MinerPolicyEstimator.EstimatePriority(nBlocks);
+			return this.MinerPolicyEstimator.EstimatePriority(nBlocks);
 		}
 
 		public double EstimateSmartPriority(int nBlocks, out int answerFoundAtBlocks)
 		{
 
-			return MinerPolicyEstimator.EstimateSmartPriority(nBlocks, this, out answerFoundAtBlocks);
+			return this.MinerPolicyEstimator.EstimateSmartPriority(nBlocks, this, out answerFoundAtBlocks);
 		}
 
-		public void SetSanityCheck(double dFrequency = 1.0) { checkFrequency = dFrequency * 4294967295.0; }
+		public void SetSanityCheck(double dFrequency = 1.0) { this.checkFrequency = dFrequency * 4294967295.0; }
 
 		// addUnchecked must updated state for all ancestors of a given transaction,
 		// to track size/count of descendant transactions.  First version of
@@ -476,13 +476,13 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Used by main.cpp AcceptToMemoryPool(), which DOES do
 			// all the appropriate checks.
 			//LOCK(cs);
-			MapTx.Add(entry);
-			mapLinks.Add(entry, new TxLinks {Parents = new SetEntries(), Children = new SetEntries()});
+			this.MapTx.Add(entry);
+            this.mapLinks.Add(entry, new TxLinks {Parents = new SetEntries(), Children = new SetEntries()});
 
 			// Update transaction for any feeDelta created by PrioritiseTransaction
 			// TODO: refactor so that the fee delta is calculated before inserting
 			// into mapTx.
-			var pos = mapDeltas.TryGet(hash);
+			var pos = this.mapDeltas.TryGet(hash);
 			if (pos != null)
 			{
 				if (pos.Amount != null)
@@ -491,17 +491,17 @@ namespace Stratis.Bitcoin.MemoryPool
 				}
 			}
 
-			// Update cachedInnerUsage to include contained transaction's usage.
-			// (When we update the entry for in-mempool parents, memory usage will be
-			// further updated.)
-			cachedInnerUsage += entry.DynamicMemoryUsage();
+            // Update cachedInnerUsage to include contained transaction's usage.
+            // (When we update the entry for in-mempool parents, memory usage will be
+            // further updated.)
+            this.cachedInnerUsage += entry.DynamicMemoryUsage();
 
 			var tx = entry.Transaction;
 			HashSet<uint256> setParentTransactions = new HashSet<uint256>();
 			foreach (var txInput in tx.Inputs)
 			{
 
-				MapNextTx.Add(new NextTxPair {OutPoint = txInput.PrevOut, Transaction = tx});
+                this.MapNextTx.Add(new NextTxPair {OutPoint = txInput.PrevOut, Transaction = tx});
 				setParentTransactions.Add(txInput.PrevOut.Hash);
 			}
 			// Don't bother worrying about child transactions of this one.
@@ -514,7 +514,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			// Update ancestors with information about this tx
 			foreach (var phash in setParentTransactions)
 			{
-				var pit = MapTx.TryGet(phash);
+				var pit = this.MapTx.TryGet(phash);
 				if (pit != null)
 					UpdateParent(entry, pit, true);
 			}
@@ -522,12 +522,12 @@ namespace Stratis.Bitcoin.MemoryPool
 			UpdateAncestorsOf(true, entry, setAncestors);
 			UpdateEntryForAncestors(entry, setAncestors);
 
-			nTransactionsUpdated++;
-			totalTxSize += entry.GetTxSize();
+			this.nTransactionsUpdated++;
+            this.totalTxSize += entry.GetTxSize();
 
 			this.MinerPolicyEstimator.ProcessTransaction(entry, validFeeEstimate);
 
-			vTxHashes.Add(entry, tx.GetWitHash());
+            this.vTxHashes.Add(entry, tx.GetWitHash());
 			//entry.vTxHashesIdx = vTxHashes.size() - 1;
 
 			return true;
@@ -572,8 +572,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			Guard.NotNull(entry, nameof(entry));
 
-			Utilities.Guard.Assert(MapTx.ContainsKey(entry.TransactionHash));
-			var it = mapLinks.TryGet(entry);
+			Utilities.Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
+			var it = this.mapLinks.TryGet(entry);
 			Utilities.Guard.Assert(it != null);
 			return it.Parents;
 		}
@@ -582,8 +582,8 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			Guard.NotNull(entry, nameof(entry));
 			
-			Utilities.Guard.Assert(MapTx.ContainsKey(entry.TransactionHash));
-			var it = mapLinks.TryGet(entry);
+			Utilities.Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
+			var it = this.mapLinks.TryGet(entry);
 			Utilities.Guard.Assert(it != null);
 			return it.Children;
 		}
@@ -592,13 +592,13 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			// todo: find how to take a memory size of SetEntries
 			//setEntries s;
-			if (add && mapLinks[entry].Children.Add(child))
+			if (add && this.mapLinks[entry].Children.Add(child))
 			{
-				cachedInnerUsage += child.DynamicMemoryUsage();
+                this.cachedInnerUsage += child.DynamicMemoryUsage();
 			}
-			else if (!add && mapLinks[entry].Children.Remove(child))
+			else if (!add && this.mapLinks[entry].Children.Remove(child))
 			{
-				cachedInnerUsage -= child.DynamicMemoryUsage();
+                this.cachedInnerUsage -= child.DynamicMemoryUsage();
 			}
 		}
 
@@ -606,13 +606,13 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			// todo: find how to take a memory size of SetEntries
 			//SetEntries s;
-			if (add && mapLinks[entry].Parents.Add(parent))
+			if (add && this.mapLinks[entry].Parents.Add(parent))
 			{
-				cachedInnerUsage += parent.DynamicMemoryUsage();
+                this.cachedInnerUsage += parent.DynamicMemoryUsage();
 			}
-			else if (!add && mapLinks[entry].Parents.Remove(parent))
+			else if (!add && this.mapLinks[entry].Parents.Remove(parent))
 			{
-				cachedInnerUsage -= parent.DynamicMemoryUsage();
+                this.cachedInnerUsage -= parent.DynamicMemoryUsage();
 			}
 		}
 
@@ -641,7 +641,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				// iterate mapTx to find parents.
 				foreach (var txInput in tx.Inputs)
 				{
-					var piter = MapTx.TryGet(txInput.PrevOut.Hash);
+					var piter = this.MapTx.TryGet(txInput.PrevOut.Hash);
 					if (piter != null)
 					{
 						parentHashes.Add(piter);
@@ -721,7 +721,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public bool Exists(uint256 hash)
 		{
-			return MapTx.ContainsKey(hash);
+			return this.MapTx.ContainsKey(hash);
 		}
 
 		public long Size
@@ -735,7 +735,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			var origHahs = origTx.GetHash();
 
 			SetEntries txToRemove = new SetEntries();
-			var origit = MapTx.TryGet(origHahs);
+			var origit = this.MapTx.TryGet(origHahs);
 			if (origit != null)
 			{
 				txToRemove.Add(origit);
@@ -748,10 +748,10 @@ namespace Stratis.Bitcoin.MemoryPool
 				// the mempool for any reason.
 				for (int i = 0; i < origTx.Outputs.Count; i++)
 				{
-					var it = MapNextTx.FirstOrDefault(w => w.OutPoint == new OutPoint(origHahs, i));
+					var it = this.MapNextTx.FirstOrDefault(w => w.OutPoint == new OutPoint(origHahs, i));
 					if (it == null)
 						continue;
-					var nextit = MapTx.TryGet(it.Transaction.GetHash());
+					var nextit = this.MapTx.TryGet(it.Transaction.GetHash());
 					Utilities.Guard.Assert(nextit != null);
 					txToRemove.Add(nextit);
 				}
@@ -818,12 +818,12 @@ namespace Stratis.Bitcoin.MemoryPool
 			var hash = it.TransactionHash;
 			foreach (var txin in it.Transaction.Inputs)
 			{
-				MapNextTx.Remove(MapNextTx.FirstOrDefault(w => w.OutPoint == txin.PrevOut));
+                this.MapNextTx.Remove(this.MapNextTx.FirstOrDefault(w => w.OutPoint == txin.PrevOut));
 			}
 			
-			if (vTxHashes.Any())
+			if (this.vTxHashes.Any())
 			{
-				vTxHashes.Remove(it);
+                this.vTxHashes.Remove(it);
 
 				//vTxHashes[it] = std::move(vTxHashes.back());
 				//vTxHashes[it].second->vTxHashesIdx = it->vTxHashesIdx;
@@ -834,13 +834,13 @@ namespace Stratis.Bitcoin.MemoryPool
 			//else
 			//	vTxHashes.clear();
 
-			totalTxSize -= it.GetTxSize();
-			cachedInnerUsage -= it.DynamicMemoryUsage();
-			cachedInnerUsage -= mapLinks[it]?.Parents?.Sum(p => p.DynamicMemoryUsage()) ?? 0 + mapLinks[it]?.Children?.Sum(p => p.DynamicMemoryUsage()) ?? 0;
-			mapLinks.Remove(it);
-			MapTx.Remove(it);
-			nTransactionsUpdated++;
-			MinerPolicyEstimator.RemoveTx(hash);
+			this.totalTxSize -= it.GetTxSize();
+			this.cachedInnerUsage -= it.DynamicMemoryUsage();
+			this.cachedInnerUsage -= this.mapLinks[it]?.Parents?.Sum(p => p.DynamicMemoryUsage()) ?? 0 + this.mapLinks[it]?.Children?.Sum(p => p.DynamicMemoryUsage()) ?? 0;
+			this.mapLinks.Remove(it);
+			this.MapTx.Remove(it);
+			this.nTransactionsUpdated++;
+            this.MinerPolicyEstimator.RemoveTx(hash);
 		}
 
 		// Calculates descendants of entry that are not already in setDescendants, and adds to
@@ -968,8 +968,8 @@ namespace Stratis.Bitcoin.MemoryPool
 					entries.Add(entry);
 			}
 
-			// Before the txs in the new block have been removed from the mempool, update policy estimates
-			MinerPolicyEstimator.ProcessBlock(blockHeight, entries);
+            // Before the txs in the new block have been removed from the mempool, update policy estimates
+            this.MinerPolicyEstimator.ProcessBlock(blockHeight, entries);
 			foreach (var tx in vtx)
 			{
 				uint256 hash = tx.GetHash();
@@ -985,8 +985,8 @@ namespace Stratis.Bitcoin.MemoryPool
 				RemoveConflicts(tx);
 				ClearPrioritisation(tx.GetHash());
 			}
-			lastRollingFeeUpdate = this.TimeProvider.GetTime();
-			blockSinceLastRollingFeeBump = true;
+			this.lastRollingFeeUpdate = this.TimeProvider.GetTime();
+            this.blockSinceLastRollingFeeBump = true;
 		}
 
 		private void RemoveConflicts(Transaction tx)
@@ -995,7 +995,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			//LOCK(cs);
 			foreach (var txInput in tx.Inputs)
 			{
-				var it = MapNextTx.FirstOrDefault(p => p.OutPoint == txInput.PrevOut);
+				var it = this.MapNextTx.FirstOrDefault(p => p.OutPoint == txInput.PrevOut);
 				if (it != null)
 				{
 					var txConflict = it.Transaction;
@@ -1010,8 +1010,8 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		private void ClearPrioritisation(uint256 hash)
 		{
-			//LOCK(cs);
-			mapDeltas.Remove(hash);
+            //LOCK(cs);
+            this.mapDeltas.Remove(hash);
 		}
 
 		public long DynamicMemoryUsage()
@@ -1033,7 +1033,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			//       sizeofHashes*this.vTxHashes.Count +
 			//       cachedInnerUsage;
 			
-			return this.MapTx.Values.Sum(m => m.DynamicMemoryUsage()) + cachedInnerUsage;
+			return this.MapTx.Values.Sum(m => m.DynamicMemoryUsage()) + this.cachedInnerUsage;
 		}
 
 		public void TrimToSize(long sizelimit, List<uint256> pvNoSpendsRemaining = null)
@@ -1051,7 +1051,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				// to have 0 fee). This way, we don't allow txn to enter mempool with feerate
 				// equal to txn which were removed with no block in between.
 				FeeRate removed = new FeeRate(it.ModFeesWithDescendants, (int)it.SizeWithDescendants);
-				removed = new FeeRate(new Money(removed.FeePerK + minReasonableRelayFee.FeePerK));
+				removed = new FeeRate(new Money(removed.FeePerK + this.minReasonableRelayFee.FeePerK));
 
 				trackPackageRemoved(removed);
 				maxFeeRateRemoved = new FeeRate(Math.Max(maxFeeRateRemoved.FeePerK, removed.FeePerK));
@@ -1075,7 +1075,7 @@ namespace Stratis.Bitcoin.MemoryPool
 						{
 							if (this.Exists(txin.PrevOut.Hash))
 								continue;
-							var iter = MapNextTx.FirstOrDefault(p => p.OutPoint == new OutPoint(txin.PrevOut.Hash, 0));
+							var iter = this.MapNextTx.FirstOrDefault(p => p.OutPoint == new OutPoint(txin.PrevOut.Hash, 0));
 							if (iter == null || iter.OutPoint.Hash != txin.PrevOut.Hash)
 								pvNoSpendsRemaining.Add(txin.PrevOut.Hash);
 						}
@@ -1096,11 +1096,11 @@ namespace Stratis.Bitcoin.MemoryPool
 		public FeeRate GetMinFee(long sizelimit)
 		{
 			//LOCK(cs);
-			if (!blockSinceLastRollingFeeBump || rollingMinimumFeeRate == 0)
-				return new FeeRate(new Money((int)rollingMinimumFeeRate));
+			if (!this.blockSinceLastRollingFeeBump || this.rollingMinimumFeeRate == 0)
+				return new FeeRate(new Money((int)this.rollingMinimumFeeRate));
 
 			var time = this.TimeProvider.GetTime();
-			if (time > lastRollingFeeUpdate + 10)
+			if (time > this.lastRollingFeeUpdate + 10)
 			{
 				double halflife = RollingFeeHalflife;
 				if (DynamicMemoryUsage() < sizelimit / 4)
@@ -1108,17 +1108,17 @@ namespace Stratis.Bitcoin.MemoryPool
 				else if (DynamicMemoryUsage() < sizelimit / 2)
 					halflife /= 2;
 
-				rollingMinimumFeeRate = rollingMinimumFeeRate / Math.Pow(2.0, (time - lastRollingFeeUpdate) / halflife);
-				lastRollingFeeUpdate = time;
+				this.rollingMinimumFeeRate = this.rollingMinimumFeeRate / Math.Pow(2.0, (time - this.lastRollingFeeUpdate) / halflife);
+                this.lastRollingFeeUpdate = time;
 
-				if (rollingMinimumFeeRate < (double)minReasonableRelayFee.FeePerK.Satoshi / 2)
+				if (this.rollingMinimumFeeRate < (double)this.minReasonableRelayFee.FeePerK.Satoshi / 2)
 				{
-					rollingMinimumFeeRate = 0;
+                    this.rollingMinimumFeeRate = 0;
 					return new FeeRate(0);
 				}
 			}
 
-			var ret =  Math.Max(rollingMinimumFeeRate, minReasonableRelayFee.FeePerK.Satoshi);
+			var ret =  Math.Max(this.rollingMinimumFeeRate, this.minReasonableRelayFee.FeePerK.Satoshi);
 			return new FeeRate(new Money((int)ret));
 		}
 
@@ -1157,12 +1157,12 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public int GetTransactionsUpdated()
 		{
-			return nTransactionsUpdated;
+			return this.nTransactionsUpdated;
 		}
 
 		public void AddTransactionsUpdated(int n)
 		{
-			nTransactionsUpdated += n;
+            this.nTransactionsUpdated += n;
 		}
 	}
 }

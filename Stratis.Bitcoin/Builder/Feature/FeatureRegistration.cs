@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Builder.Feature
 
 		public IFeatureRegistration UseStartup<TStartup>()
 		{
-			FeatureStartupType = typeof(TStartup);
+            this.FeatureStartupType = typeof(TStartup);
 			return this;
 		}
 
@@ -52,14 +52,14 @@ namespace Stratis.Bitcoin.Builder.Feature
 
 			// features can only be singletons
 			serviceCollection
-				.AddSingleton(FeatureType)
-				.AddSingleton(typeof(IFullNodeFeature), provider => provider.GetService(FeatureType));
+				.AddSingleton(this.FeatureType)
+				.AddSingleton(typeof(IFullNodeFeature), provider => provider.GetService(this.FeatureType));
 
 			foreach (var configureServicesDelegate in this.ConfigureServicesDelegates)
 				configureServicesDelegate(serviceCollection);
 
-			if (FeatureStartupType != null)
-				FeatureStartup(serviceCollection, FeatureStartupType);
+			if (this.FeatureStartupType != null)
+				FeatureStartup(serviceCollection, this.FeatureStartupType);
 		}
 
 		/// <summary>

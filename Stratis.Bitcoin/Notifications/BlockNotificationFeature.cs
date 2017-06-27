@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Notifications
 		public override void Start()
 		{
 			var connectionParameters = this.connectionManager.Parameters;
-			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));			
+			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));			
 			this.blockNotification.Notify(this.cancellationProvider.Cancellation.Token);
 			this.chainState.HighestValidatedPoW = this.chain.Genesis;
 		}

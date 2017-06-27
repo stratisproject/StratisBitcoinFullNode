@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Common.JsonErrors
     {
 	    public ErrorResult(int statusCode, ErrorResponse value) : base(value)
 	    {
-			StatusCode = statusCode;
+			this.StatusCode = statusCode;
 		}
 	}
 }

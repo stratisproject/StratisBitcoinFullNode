@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Utilities
 
         public void Dispose()
         {
-            onLeave();
+            this.onLeave();
         }
 
         #endregion
