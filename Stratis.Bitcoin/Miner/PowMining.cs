@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Miner
 					this.mining = null;
 					return Task.CompletedTask;
 				},
-				cancellationProvider.Cancellation.Token,
+                this.cancellationProvider.Cancellation.Token,
 				repeatEvery: TimeSpans.RunOnce,
 				startAfter: TimeSpans.TenSeconds);
 
@@ -164,10 +164,10 @@ namespace Stratis.Bitcoin.Miner
 		public void IncrementExtraNonce(Block pblock, ChainedBlock pindexPrev, int nExtraNonce)
 		{
 			// Update nExtraNonce
-			if (hashPrevBlock != pblock.Header.HashPrevBlock)
+			if (this.hashPrevBlock != pblock.Header.HashPrevBlock)
 			{
 				nExtraNonce = 0;
-				hashPrevBlock = pblock.Header.HashPrevBlock;
+                this.hashPrevBlock = pblock.Header.HashPrevBlock;
 			}
 			++nExtraNonce;
 			int nHeight = pindexPrev.Height + 1; // Height first in coinbase required for block.version=2

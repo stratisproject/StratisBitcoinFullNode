@@ -52,15 +52,14 @@ namespace Stratis.Bitcoin.Wallet
             this.walletTip = this.chain.GetBlock(this.walletManager.WalletTipHash);
             if (this.walletTip == null)
             {
-                // the wallet tip was not found in the main chain
-                // this can happen if the node crashes unexpecdidely
-                // reo reconver we need to find the first common fork 
+                // the wallet tip was not found in the main chain.
+                // this can happen if the node crashes unexpectedly.
+                // to recover we need to find the first common fork 
                 // with the best chain, as the wallet does not have a  
                 // list of chain headers we use a BlockLocator and persist 
-                // tha tin the wallet, the block locator will help finding 
-                // a common form and bringing the wallet back to a good 
+                // that in the wallet. the block locator will help finding 
+                // a common fork and bringing the wallet back to a good 
                 // state (behind the best chain)
-
                 var locators = this.walletManager.Wallets.First().BlockLocator;
                 BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
                 var fork = this.chain.FindFork(blockLocator);

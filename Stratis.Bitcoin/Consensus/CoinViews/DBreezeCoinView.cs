@@ -27,8 +27,8 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			Guard.NotNull(network, nameof(network));
 			Guard.NotEmpty(folder, nameof(folder));
-			
-			session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
+
+            this.session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
 			this.network = network;
 			this.performanceCounter = new BackendPerformanceCounter();
 		}
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return performanceCounter;
+				return this.performanceCounter;
 			}
 		}
 
@@ -48,19 +48,19 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			var genesis = this.network.GetGenesis();
 
-			var sync = session.Do(() =>
+			var sync = this.session.Do(() =>
 			{
-				session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind", "Stake");
-				session.Transaction.ValuesLazyLoadingIsOn = false;
+				this.session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind", "Stake");
+                this.session.Transaction.ValuesLazyLoadingIsOn = false;
 			});
 
-			var hash = session.Do(() =>
+			var hash = this.session.Do(() =>
 			{
 				if(GetCurrentHash() == null)
 				{
 					SetBlockHash(genesis.GetHash());
-					//Genesis coin is unspendable so do not add the coins
-					session.Transaction.Commit();
+                    //Genesis coin is unspendable so do not add the coins
+                    this.session.Transaction.Commit();
 				}
 			});
 
@@ -69,17 +69,17 @@ namespace Stratis.Bitcoin.Consensus
 
 		public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
-			return session.Do(() =>
+			return this.session.Do(() =>
 			{
-				using(StopWatch.Instance.Start(o => PerformanceCounter.AddQueryTime(o)))
+				using(StopWatch.Instance.Start(o => this.PerformanceCounter.AddQueryTime(o)))
 				{
 					var blockHash = GetCurrentHash();
 					UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
 					int i = 0;
-					PerformanceCounter.AddQueriedEntities(txIds.Length);
+                    this.PerformanceCounter.AddQueriedEntities(txIds.Length);
 					foreach(var input in txIds)
 					{
-						var coin = session.Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
+						var coin = this.session.Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
 						result[i++] = coin == null ? null : new UnspentOutputs(input, coin);
 					}
 					return new FetchCoinsResponse(result, blockHash);
@@ -89,23 +89,23 @@ namespace Stratis.Bitcoin.Consensus
 
 		private uint256 GetCurrentHash()
 		{
-			blockHash = blockHash ?? session.Transaction.Select<byte[], uint256>("BlockHash", BlockHashKey)?.Value;
-			return blockHash;
+            this.blockHash = this.blockHash ?? this.session.Transaction.Select<byte[], uint256>("BlockHash", BlockHashKey)?.Value;
+			return this.blockHash;
 		}
 
 		private void SetBlockHash(uint256 nextBlockHash)
 		{
-			blockHash = nextBlockHash;
-			session.Transaction.Insert<byte[], uint256>("BlockHash", BlockHashKey, nextBlockHash);
+			this.blockHash = nextBlockHash;
+            this.session.Transaction.Insert<byte[], uint256>("BlockHash", BlockHashKey, nextBlockHash);
 		}
 
 		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
-			return session.Do(() =>
+			return this.session.Do(() =>
 			{
 				RewindData rewindData = originalOutputs == null ? null : new RewindData(oldBlockHash);
 				int insertedEntities = 0;
-				using(new StopWatch().Start(o => PerformanceCounter.AddInsertTime(o)))
+				using(new StopWatch().Start(o => this.PerformanceCounter.AddInsertTime(o)))
 				{
 					var current = GetCurrentHash();
 					if(current != oldBlockHash)
@@ -126,9 +126,9 @@ namespace Stratis.Bitcoin.Consensus
 					foreach(var coin in all)
 					{
 						if(coin.IsPrunable)
-							session.Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
+                            this.session.Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
 						else
-							session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+                            this.session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 						if(originalOutputs != null)
 						{
 							TxOut[] original = null;
@@ -151,48 +151,48 @@ namespace Stratis.Bitcoin.Consensus
 					if(rewindData != null)
 					{
 						int nextRewindIndex = GetRewindIndex() + 1;
-						session.Transaction.Insert<int, RewindData>("Rewind", nextRewindIndex, rewindData);
+                        this.session.Transaction.Insert<int, RewindData>("Rewind", nextRewindIndex, rewindData);
 					}
 					insertedEntities += all.Count;
-					session.Transaction.Commit();
+                    this.session.Transaction.Commit();
 				}
-				PerformanceCounter.AddInsertedEntities(insertedEntities);
+                this.PerformanceCounter.AddInsertedEntities(insertedEntities);
 			});
 		}
 
 		private int GetRewindIndex()
 		{
-			session.Transaction.ValuesLazyLoadingIsOn = true;
-			var first = session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
-			session.Transaction.ValuesLazyLoadingIsOn = false;
+            this.session.Transaction.ValuesLazyLoadingIsOn = true;
+			var first = this.session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
+            this.session.Transaction.ValuesLazyLoadingIsOn = false;
 			return first == null ? -1 : first.Key;
 		}
 
 		public override Task<uint256> Rewind()
 		{
-			return session.Do(() =>
+			return this.session.Do(() =>
 			{
 				if(GetRewindIndex() == -1)
 				{
-					session.Transaction.RemoveAllKeys("Coins", true);
-					SetBlockHash(network.GenesisHash);
-					session.Transaction.Commit();
-					return network.GenesisHash;
+                    this.session.Transaction.RemoveAllKeys("Coins", true);
+					SetBlockHash(this.network.GenesisHash);
+                    this.session.Transaction.Commit();
+					return this.network.GenesisHash;
 				}
 				else
 				{
-					var first = session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
-					session.Transaction.RemoveKey("Rewind", first.Key);
+					var first = this.session.Transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
+                    this.session.Transaction.RemoveKey("Rewind", first.Key);
 					SetBlockHash(first.Value.PreviousBlockHash);
 					foreach(var txId in first.Value.TransactionsToRemove)
 					{
-						session.Transaction.RemoveKey("Coins", txId.ToBytes(false));
+                        this.session.Transaction.RemoveKey("Coins", txId.ToBytes(false));
 					}
 					foreach(var coin in first.Value.OutputsToRestore)
 					{
-						session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+                        this.session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 					}
-					session.Transaction.Commit();
+                    this.session.Transaction.Commit();
 					return first.Value.PreviousBlockHash;
 				}
 			});
@@ -200,10 +200,10 @@ namespace Stratis.Bitcoin.Consensus
 
 		public Task PutStake(IEnumerable<StakeItem> stakeEntries)
 		{
-			return session.Do(() =>
+			return this.session.Do(() =>
 			{
 				this.PutStakeInternal(stakeEntries);
-				session.Transaction.Commit();
+                this.session.Transaction.Commit();
 			});
 		}
 
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Consensus
 			{
 				if (!stakeEntry.InStore)
 				{
-					session.Transaction.Insert<byte[], BlockStake>("Stake", stakeEntry.BlockId.ToBytes(false), stakeEntry.BlockStake);
+                    this.session.Transaction.Insert<byte[], BlockStake>("Stake", stakeEntry.BlockId.ToBytes(false), stakeEntry.BlockStake);
 					stakeEntry.InStore = true;
 				}
 			}
@@ -221,11 +221,11 @@ namespace Stratis.Bitcoin.Consensus
 
 		public Task GetStake(IEnumerable<StakeItem> blocklist)
 		{
-			return session.Do(() =>
+			return this.session.Do(() =>
 			{
 				foreach (var blockStake in blocklist)
 				{
-					var stake = session.Transaction.Select<byte[], BlockStake>("Stake", blockStake.BlockId.ToBytes(false));
+					var stake = this.session.Transaction.Select<byte[], BlockStake>("Stake", blockStake.BlockId.ToBytes(false));
 					blockStake.BlockStake = stake.Value;
 					blockStake.InStore = true;
 				}
@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void Dispose()
 		{
-			session.Dispose();
+            this.session.Dispose();
 		}
 	}
 }

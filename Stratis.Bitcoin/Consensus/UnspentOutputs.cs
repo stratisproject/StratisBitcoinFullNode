@@ -19,44 +19,44 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			Guard.NotNull(tx, nameof(tx));
 
-			_Outputs = tx.Outputs.ToArray();
-			_TransactionId = tx.GetHash();
-			_Height = height;
-			_Version = tx.Version;
-			_IsCoinbase = tx.IsCoinBase;
-			_IsCoinstake = tx.IsCoinStake;
-			_Time = tx.Time;
+			this._Outputs = tx.Outputs.ToArray();
+			this._TransactionId = tx.GetHash();
+			this._Height = height;
+			this._Version = tx.Version;
+			this._IsCoinbase = tx.IsCoinBase;
+			this._IsCoinstake = tx.IsCoinStake;
+            this._Time = tx.Time;
 		}
 
 		public UnspentOutputs(uint256 txId, Coins coins)
 		{
-			_TransactionId = txId;
+            this._TransactionId = txId;
 			SetCoins(coins);
 		}
 
 		private void SetCoins(Coins coins)
 		{
-			_IsCoinbase = coins.CoinBase;
-			_IsCoinstake = coins.CoinStake;
-			_Time = coins.Time;
-			_Height = coins.Height;
-			_Version = coins.Version;
-			_Outputs = new TxOut[coins.Outputs.Count];
-			for(uint i = 0; i < _Outputs.Length; i++)
+			this._IsCoinbase = coins.CoinBase;
+			this._IsCoinstake = coins.CoinStake;
+			this._Time = coins.Time;
+			this._Height = coins.Height;
+			this._Version = coins.Version;
+            this._Outputs = new TxOut[coins.Outputs.Count];
+			for(uint i = 0; i < this._Outputs.Length; i++)
 			{
-				_Outputs[i] = coins.TryGetOutput(i);
+                this._Outputs[i] = coins.TryGetOutput(i);
 			}
 		}
 
 		public UnspentOutputs(UnspentOutputs unspent)
 		{
-			_TransactionId = unspent.TransactionId;
-			_IsCoinbase = unspent.IsCoinbase;
-			_IsCoinstake = unspent.IsCoinstake;
-			_Time = unspent.Time;
-			_Height = unspent.Height;
-			_Version = unspent.Version;
-			_Outputs = unspent._Outputs.ToArray();
+			this._TransactionId = unspent.TransactionId;
+			this._IsCoinbase = unspent.IsCoinbase;
+			this._IsCoinstake = unspent.IsCoinstake;
+			this._Time = unspent.Time;
+			this._Height = unspent.Height;
+			this._Version = unspent.Version;
+            this._Outputs = unspent._Outputs.ToArray();
 		}
 
 		internal TxOut[] _Outputs;
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _TransactionId;
+				return this._TransactionId;
 			}
 		}
 
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Version;
+				return this._Version;
 			}
 		}
 
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _IsCoinbase;
+				return this._IsCoinbase;
 			}
 		}
 
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _IsCoinstake;
+				return this._IsCoinstake;
 			}
 		}
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Time;
+				return this._Time;
 			}
 		}
 
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Height;
+				return this._Height;
 			}
 		}
 
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Outputs.All(o => o == null ||
+				return this._Outputs.All(o => o == null ||
 									(o.ScriptPubKey.Length > 0 && o.ScriptPubKey.ToBytes(true)[0] == (byte)OpcodeType.OP_RETURN));
 			}
 		}
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Outputs.All(o => o != null);
+				return this._Outputs.All(o => o != null);
 			}
 		}
 
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Outputs.Count(o => o != null);
+				return this._Outputs.Count(o => o != null);
 			}
 		}
 
@@ -149,27 +149,27 @@ namespace Stratis.Bitcoin.Consensus
 
 		public TxOut TryGetOutput(uint outputIndex)
 		{
-			if(outputIndex >= _Outputs.Length)
+			if(outputIndex >= this._Outputs.Length)
 				return null;
-			return _Outputs[outputIndex];
+			return this._Outputs[outputIndex];
 		}		
 
 		public bool Spend(uint outputIndex)
 		{
-			if(outputIndex >= _Outputs.Length)
+			if(outputIndex >= this._Outputs.Length)
 				return false;
-			if(_Outputs[outputIndex] == null)
+			if(this._Outputs[outputIndex] == null)
 				return false;
-			_Outputs[outputIndex] = null;
+            this._Outputs[outputIndex] = null;
 			return true;
 		}
 
 		public void Spend(UnspentOutputs c)
 		{
-			for(int i = 0; i < _Outputs.Length; i++)
+			for(int i = 0; i < this._Outputs.Length; i++)
 			{
 				if(c._Outputs[i] == null)
-					_Outputs[i] = null;
+                    this._Outputs[i] = null;
 			}
 		}
 
@@ -179,13 +179,13 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			var coins = new Coins()
 			{
-				CoinBase = IsCoinbase,
-				Height = Height,
-				Version = Version,
-				CoinStake = IsCoinstake,
-				Time = Time
+				CoinBase = this.IsCoinbase,
+				Height = this.Height,
+				Version = this.Version,
+				CoinStake = this.IsCoinstake,
+				Time = this.Time
 			};
-			foreach(var output in _Outputs)
+			foreach(var output in this._Outputs)
 			{
 				coins.Outputs.Add(output == null ? Coins.NullTxOut : output);
 			}
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void ReadWrite(BitcoinStream stream)
 		{
-			stream.ReadWrite(ref _TransactionId);
+			stream.ReadWrite(ref this._TransactionId);
 			if(stream.Serializing)
 			{
 				var c = ToCoins();

@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Miner
 				if (this.chain.Tip != this.consensusLoop.Tip)
 					return;
 
-				while (!this.connection.ConnectedNodes.Any() || chainState.IsInitialBlockDownload)
+				while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
 				{
 					this.LastCoinStakeSearchInterval = 0;
 					tryToSync = true;
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Miner
 				{
 					tryToSync = false;
 					if (this.connection.ConnectedNodes.Count() < 3 ||
-					    this.chain.Tip.Header.Time < dateTimeProvider.GetTime() - 10*60)
+					    this.chain.Tip.Header.Time < this.dateTimeProvider.GetTime() - 10*60)
 					{
 						//this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
 						continue;
@@ -378,7 +378,7 @@ namespace Stratis.Bitcoin.Miner
 						var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
 						long nBlockTime = 0;
 
-						var context = new ContextInformation(new BlockResult {Block = block}, network.Consensus);
+						var context = new ContextInformation(new BlockResult {Block = block}, this.network.Consensus);
 						context.SetStake();
 						this.posConsensusValidator.StakeValidator.CheckKernel(context, pindexPrev, block.Header.Bits, txNew.Time - n, prevoutStake, ref nBlockTime);
 

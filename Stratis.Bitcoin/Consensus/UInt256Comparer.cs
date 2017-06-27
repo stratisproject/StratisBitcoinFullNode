@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly UInt256Comparer Comparer = new UInt256Comparer();
 		public int Compare(UnspentOutputs x, UnspentOutputs y)
 		{
-			return Comparer.Compare(x.TransactionId, y.TransactionId);
+			return this.Comparer.Compare(x.TransactionId, y.TransactionId);
 		}
 	}
 }

@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.chain = chain;
 			this.coinView = coinView;
 
-			freeLimiter = new FreeLimiterSection();
+            this.freeLimiter = new FreeLimiterSection();
 			this.PerformanceCounter = new MempoolPerformanceCounter();
 		}
 
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public Task<bool> AcceptToMemoryPool(MempoolValidationState state, Transaction tx)
 		{
-			state.AcceptTime = dateTimeProvider.GetTime();
+			state.AcceptTime = this.dateTimeProvider.GetTime();
 			return AcceptToMemoryPoolWithTime(state, tx);
 		}
 
@@ -346,7 +346,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			{
 				context.State.Fail(MempoolErrors.MinFeeNotMet, $" {context.Fees} < {mempoolRejectFee}").Throw();
 			}
-			else if (nodeArgs.Mempool.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
+			else if (this.nodeArgs.Mempool.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
 					 !TxMempool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
 			{
 				// Require that free transactions have sufficient priority to be mined in the next block.
@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			//if (tx.HasWitness && requireStandard && !IsWitnessStandard(Trx, context.View))
 			//	state.Invalid(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "bad-witness-nonstandard")).Throw();
 
-			context.SigOpsCost = consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
+			context.SigOpsCost = this.consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
 				new ConsensusFlags { ScriptFlags = ScriptVerify.Standard });
 
 			var nValueIn = context.View.GetValueIn(context.Transaction);
@@ -560,10 +560,10 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			// Calculate in-mempool ancestors, up to a limit.
 			context.SetAncestors = new TxMempool.SetEntries();
-			var nLimitAncestors = nodeArgs.Mempool.LimitAncestors;
-			var nLimitAncestorSize = nodeArgs.Mempool.LimitAncestorSize * 1000;
-			var nLimitDescendants = nodeArgs.Mempool.LimitDescendants;
-			var nLimitDescendantSize = nodeArgs.Mempool.LimitDescendantSize * 1000;
+			var nLimitAncestors = this.nodeArgs.Mempool.LimitAncestors;
+			var nLimitAncestorSize = this.nodeArgs.Mempool.LimitAncestorSize * 1000;
+			var nLimitDescendants = this.nodeArgs.Mempool.LimitDescendants;
+			var nLimitDescendantSize = this.nodeArgs.Mempool.LimitDescendantSize * 1000;
 			string errString;
 			if (!this.memPool.CalculateMemPoolAncestors(context.Entry, context.SetAncestors, nLimitAncestors,
 				nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, out errString))

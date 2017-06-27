@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Wallet
         private const int WalletRecoveryAccountsCount = 3;
         private const int WalletCreationAccountsCount = 2;
         private const string WalletFileExtension = "wallet.json";
+        private const int WalletSavetimeIntervalInMinutes = 5;
 
         private readonly CoinType coinType;
         private readonly Network network;
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Wallet
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
 
-        private Dictionary<Script, HdAddress> keysLookup;
+        internal Dictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
         /// Occurs when a transaction is found.
@@ -94,7 +95,7 @@ namespace Stratis.Bitcoin.Wallet
                 this.SaveToFile();
                 this.logger.LogInformation($"Wallets saved to file at {DateTime.Now}.");
                 return Task.CompletedTask;
-            }, this.cancellationToken, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));            
+            }, this.cancellationToken, TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes), TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));            
         }
 
         /// <inheritdoc />
@@ -616,7 +617,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedBlock chainedBlock)
         {
-            this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
+            this.logger.LogTrace($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
 
             // if there is no wallet yet, update the wallet tip hash and do nothing else.
             if (!this.Wallets.Any())
@@ -652,7 +653,7 @@ namespace Stratis.Bitcoin.Wallet
         public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
         {
             var hash = transaction.GetHash();
-            this.logger.LogDebug($"transaction received - hash: {hash}, coin: {this.coinType}");
+            this.logger.LogTrace($"transaction received - hash: {hash}, coin: {this.coinType}");
 
             // check the outputs
             foreach (TxOut utxo in transaction.Outputs)
@@ -907,6 +908,12 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
+        public string GetWalletFileExtension()
+        {
+            return WalletFileExtension;
+        }
+
+        /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock)
         {
             // the block locator will help when the wallet 
@@ -1031,9 +1038,9 @@ namespace Stratis.Bitcoin.Wallet
         /// Loads the keys and transactions we're tracking in memory for faster lookups.
         /// </summary>
         /// <returns></returns>
-        private void LoadKeysLookup()
+        internal void LoadKeysLookup()
         {
-            this.keysLookup = new Dictionary<Script, HdAddress>();
+            var lookup = new Dictionary<Script, HdAddress>();
             foreach (var wallet in this.Wallets)
             {
                 var accounts = wallet.GetAccountsByCoinType(this.coinType);
@@ -1042,12 +1049,13 @@ namespace Stratis.Bitcoin.Wallet
                     var addresses = account.ExternalAddresses.Concat(account.InternalAddresses);
                     foreach (var address in addresses)
                     {
-                        this.keysLookup.Add(address.ScriptPubKey, address);
+                        lookup.Add(address.ScriptPubKey, address);
                         if (address.Pubkey != null)
-                            this.keysLookup.Add(address.Pubkey, address);
+                            lookup.Add(address.Pubkey, address);
                     }
                 }
             }
+            this.keysLookup = lookup;
         }
 
         /// <summary>

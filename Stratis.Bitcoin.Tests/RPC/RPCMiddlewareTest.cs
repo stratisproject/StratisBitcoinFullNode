@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
 		}
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(false);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized("MyUser"))
 				.Returns(false);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}		
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(httpContext).Wait();
+			this.middleware.Invoke(this.httpContext).Wait();
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))

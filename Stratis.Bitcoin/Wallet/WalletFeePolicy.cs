@@ -78,8 +78,8 @@ namespace Stratis.Bitcoin.Wallet
             // prevent user from paying a fee below minRelayTxFee or minTxFee
             nFeeNeeded = Math.Max(nFeeNeeded, this.GetRequiredFee(txBytes));
             // But always obey the maximum
-            if (nFeeNeeded > maxTxFee)
-                nFeeNeeded = maxTxFee;
+            if (nFeeNeeded > this.maxTxFee)
+                nFeeNeeded = this.maxTxFee;
             return nFeeNeeded;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -16,6 +17,14 @@ namespace Stratis.Bitcoin.Utilities
         public static uint ToUint(this Version version)
         {
             return (uint)(version.Major * 1000000u + version.Minor * 10000u + version.Build * 100u + version.Revision);
+        }
+    }
+
+    public static class ArgsExtensions
+    {
+        public static string GetValueOf(this string[] args, string arg)
+        {
+            return args.Where(a => a.StartsWith($"{arg}=")).Select(a => a.Substring($"{arg}=".Length).Replace("\"", "")).FirstOrDefault();
         }
     }
 }

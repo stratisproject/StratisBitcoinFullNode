@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.RPC
 			Exception ex = null;
 			try
 			{
-				await next.Invoke(httpContext);
+				await this.next.Invoke(httpContext);
 			}
 			catch(Exception exx)
 			{
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.RPC
 
 		private bool Authorized(HttpContext httpContext)
 		{
-			if(!authorization.IsAuthorized(httpContext.Connection.RemoteIpAddress))
+			if(!this.authorization.IsAuthorized(httpContext.Connection.RemoteIpAddress))
 				return false;
 			StringValues auth;
 			if(!httpContext.Request.Headers.TryGetValue("Authorization", out auth) || auth.Count != 1)
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.RPC
 			try
 			{
 				var user = Encoders.ASCII.EncodeData(Encoders.Base64.DecodeData(splittedAuth[1]));
-				if(!authorization.IsAuthorized(user))
+				if(!this.authorization.IsAuthorized(user))
 					return false;
 			}
 			catch

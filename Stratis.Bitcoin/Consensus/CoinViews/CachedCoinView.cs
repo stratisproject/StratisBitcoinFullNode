@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Consensus
 			this.PerformanceCounter = new CachePerformanceCounter();
 		}
 
-		public CoinView Inner => inner;
+		public CoinView Inner => this.inner;
 
 		public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
@@ -82,19 +82,19 @@ namespace Stratis.Bitcoin.Consensus
 									 cache.UnspentOutputs.Clone();
 					}
 				}
-				PerformanceCounter.AddMissCount(miss.Count);
-				PerformanceCounter.AddHitCount(txIds.Length - miss.Count);
+				this.PerformanceCounter.AddMissCount(miss.Count);
+                this.PerformanceCounter.AddHitCount(txIds.Length - miss.Count);
 			}
-			var fetchedCoins = await Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
+			var fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
 			using(this.lockobj.LockWrite())
 			{
 				this.flushing.Wait();
 				var innerblockHash = fetchedCoins.BlockHash;
-				if(blockHash == null)
+				if(this.blockHash == null)
 				{
 					Debug.Assert(this.unspents.Count == 0);
 					this.innerBlockHash = innerblockHash;
-					blockHash = innerBlockHash;
+                    this.blockHash = this.innerBlockHash;
 				}
 				for(int i = 0; i < miss.Count; i++)
 				{
@@ -108,13 +108,13 @@ namespace Stratis.Bitcoin.Consensus
 					cache.OriginalOutputs = unspent?._Outputs.ToArray();
 					this.unspents.TryAdd(txIds[index], cache);
 				}
-				result = new FetchCoinsResponse(outputs, blockHash);
+				result = new FetchCoinsResponse(outputs, this.blockHash);
 			}
 
-			if(CacheEntryCount > MaxItems)
+			if(this.CacheEntryCount > this.MaxItems)
 			{
 				Evict();
-				if(CacheEntryCount > MaxItems)
+				if(this.CacheEntryCount > this.MaxItems)
 				{
 
 					await FlushAsync().ConfigureAwait(false);
@@ -135,16 +135,16 @@ namespace Stratis.Bitcoin.Consensus
 			if (this.stakeChainStore != null)
 				await this.stakeChainStore.Flush(true);
 
-			if (innerBlockHash == null)
-				innerBlockHash = await inner.GetBlockHashAsync().ConfigureAwait(false);
+			if (this.innerBlockHash == null)
+                this.innerBlockHash = await this.inner.GetBlockHashAsync().ConfigureAwait(false);
 
 			using(this.lockobj.LockWrite())
 			{
 				WaitOngoingTasks();
-				if(innerBlockHash == null)
+				if(this.innerBlockHash == null)
 					return;
 				var unspent =
-				unspents.Where(u => u.Value.IsDirty)
+                this.unspents.Where(u => u.Value.IsDirty)
 				.ToArray();
 
 				var originalOutputs = unspent.Select(u => u.Value.OriginalOutputs).ToList();
@@ -154,12 +154,12 @@ namespace Stratis.Bitcoin.Consensus
 					u.Value.ExistInInner = true;
 					u.Value.OriginalOutputs = u.Value.UnspentOutputs?._Outputs.ToArray();
 				}
-				this.flushing = Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, innerBlockHash, blockHash);
+				this.flushing = this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.innerBlockHash, this.blockHash);
 
 				//Remove from cache prunable entries as they are being flushed down
 				foreach(var c in unspent.Where(c => c.Value.UnspentOutputs != null && c.Value.UnspentOutputs.IsPrunable))
-					unspents.Remove(c.Key);
-				innerBlockHash = blockHash;
+                    this.unspents.Remove(c.Key);
+                this.innerBlockHash = this.blockHash;
 			}
 			//Can't await inside a lock
 			await this.flushing.ConfigureAwait(false);
@@ -203,9 +203,9 @@ namespace Stratis.Bitcoin.Consensus
 			using(this.lockobj.LockWrite())
 			{
 				WaitOngoingTasks();
-				if(blockHash != null && oldBlockHash != blockHash)
+				if(this.blockHash != null && oldBlockHash != this.blockHash)
 					return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
-				blockHash = nextBlockHash;
+                this.blockHash = nextBlockHash;
 				foreach(var unspent in unspentOutputs)
 				{
 					CacheItem existing;
@@ -237,33 +237,33 @@ namespace Stratis.Bitcoin.Consensus
 		Task rewinding = Task.CompletedTask;
 		public override async Task<uint256> Rewind()
 		{
-			if(innerBlockHash == null)
-				innerBlockHash = await inner.GetBlockHashAsync().ConfigureAwait(false);
+			if(this.innerBlockHash == null)
+                this.innerBlockHash = await this.inner.GetBlockHashAsync().ConfigureAwait(false);
 
 			Task<uint256> rewindinginner = null;
 			using(this.lockobj.LockWrite())
 			{
 				WaitOngoingTasks();
-				if(blockHash == innerBlockHash)
+				if(this.blockHash == this.innerBlockHash)
 					this.unspents.Clear();
 				if(this.unspents.Count != 0)
 				{
 					//More intelligent version can restore without throwing away the cache. (as the rewind data is in the cache)
 					this.unspents.Clear();
-					blockHash = innerBlockHash;
-					return blockHash;
+                    this.blockHash = this.innerBlockHash;
+					return this.blockHash;
 				}
 				else
 				{
-					rewindinginner = inner.Rewind();
+					rewindinginner = this.inner.Rewind();
 					this.rewinding = rewindinginner;
 				}
 			}
 			var h = await rewindinginner.ConfigureAwait(false);
-			using(lockobj.LockWrite())
+			using(this.lockobj.LockWrite())
 			{
-				innerBlockHash = h;
-				blockHash = h;
+				this.innerBlockHash = h;
+                this.blockHash = h;
 			}
 			return h;
 		}
