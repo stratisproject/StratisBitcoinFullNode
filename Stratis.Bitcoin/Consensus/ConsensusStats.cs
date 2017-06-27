@@ -23,9 +23,9 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusLoop consensusLoop;
         private readonly ChainBehavior.ChainState chainState;
         private readonly ConcurrentChain chain;
-        private readonly ConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
 
-        public ConsensusStats(CoinViewStack stack, CoinView coinView, ConsensusLoop consensusLoop, ChainBehavior.ChainState chainState, ConcurrentChain chain, ConnectionManager connectionManager)
+        public ConsensusStats(CoinViewStack stack, CoinView coinView, ConsensusLoop consensusLoop, ChainBehavior.ChainState chainState, ConcurrentChain chain, IConnectionManager connectionManager)
         {
             stack = new CoinViewStack(coinView);
             cache = stack.Find<CachedCoinView>();

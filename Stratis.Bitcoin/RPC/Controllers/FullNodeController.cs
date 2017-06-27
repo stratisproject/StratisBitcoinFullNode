@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
             ChainBehavior.ChainState chainState = null,
             BlockStoreManager blockManager = null,
             MempoolManager mempoolManager = null,
-            Connection.ConnectionManager connectionManager = null)
+            Connection.IConnectionManager connectionManager = null)
             : base(
                   fullNode: fullNode,
                   nodeSettings: nodeSettings,

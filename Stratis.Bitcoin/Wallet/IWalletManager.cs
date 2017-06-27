@@ -183,6 +183,12 @@ namespace Stratis.Bitcoin.Wallet
         void SaveToFile();
 
         /// <summary>
+        /// Gets the extension of the wallet files.
+        /// </summary>
+        /// <returns></returns>
+        string GetWalletFileExtension();
+        
+        /// <summary>
         /// Updates the wallet with the height of the last block synced.
         /// </summary>
         /// <param name="wallet">The wallet to update.</param>

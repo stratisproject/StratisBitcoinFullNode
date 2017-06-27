@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.BlockStore
 	public class BlockStoreManager
 	{
 		private readonly ConcurrentChain chain;
-		private readonly ConnectionManager connection;
+		private readonly IConnectionManager connection;
 		public BlockRepository BlockRepository { get; } // public for testing
 		public BlockStoreLoop BlockStoreLoop { get; } // public for testing
 
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly NodeSettings nodeArgs;
 		public BlockStore.ChainBehavior.ChainState ChainState { get; }
 
-		public BlockStoreManager(ConcurrentChain chain, ConnectionManager connection, BlockRepository blockRepository,
+		public BlockStoreManager(ConcurrentChain chain, IConnectionManager connection, BlockRepository blockRepository,
             IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, BlockStore.ChainBehavior.ChainState chainState, BlockStoreLoop blockStoreLoop)
 		{
 			this.chain = chain;

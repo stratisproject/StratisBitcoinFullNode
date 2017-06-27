@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Miner
 		private readonly ConsensusLoop consensusLoop;
 		private readonly ConcurrentChain chain;
 		private readonly Network network;
-		private readonly ConnectionManager connection;
+		private readonly IConnectionManager connection;
 		private readonly IDateTimeProvider dateTimeProvider;
 		private readonly AssemblerFactory blockAssemblerFactory;
 		private readonly BlockRepository blockRepository;
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Miner
 		public long LastCoinStakeSearchInterval;
 		public long LastCoinStakeSearchTime;
 
-		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, ConnectionManager connection,
+		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, IConnectionManager connection,
 			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
 			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider,
 			NodeSettings settings, CoinView coinView, StakeChain stakeChain, IWalletManager wallet)

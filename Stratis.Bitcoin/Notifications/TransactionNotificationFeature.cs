@@ -10,10 +10,10 @@ namespace Stratis.Bitcoin.Notifications
     /// </summary>
     public class TransactionNotificationFeature : FullNodeFeature
     {
-        private readonly ConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
         private readonly TransactionReceiver transactionBehavior;
 
-        public TransactionNotificationFeature(ConnectionManager connectionManager, TransactionReceiver transactionBehavior)
+        public TransactionNotificationFeature(IConnectionManager connectionManager, TransactionReceiver transactionBehavior)
         {
             this.connectionManager = connectionManager;
             this.transactionBehavior = transactionBehavior;

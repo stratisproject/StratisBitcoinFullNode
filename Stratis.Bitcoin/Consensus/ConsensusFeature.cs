@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly LookaheadBlockPuller blockPuller;
 		private readonly CoinView coinView;
 		private readonly ChainBehavior.ChainState chainState;
-		private readonly ConnectionManager connectionManager;
+		private readonly IConnectionManager connectionManager;
 		private readonly CancellationProvider globalCancellation;
 		private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Consensus
 			LookaheadBlockPuller blockPuller,
 			CoinView coinView,
 			ChainBehavior.ChainState chainState,
-			ConnectionManager connectionManager,
+			IConnectionManager connectionManager,
 			CancellationProvider globalCancellation,
 			Signals signals,
 			ConsensusLoop consensusLoop,

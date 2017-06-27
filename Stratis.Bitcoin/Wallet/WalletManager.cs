@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -11,6 +13,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Transaction = NBitcoin.Transaction;
+using System.Collections.Concurrent;
 
 namespace Stratis.Bitcoin.Wallet
 {
@@ -19,21 +22,24 @@ namespace Stratis.Bitcoin.Wallet
     /// </summary>
     public class WalletManager : IWalletManager
     {
-        public List<Wallet> Wallets { get; }
+        public ConcurrentBag<Wallet> Wallets { get; }
 
         private const int UnusedAddressesBuffer = 20;
         private const int WalletRecoveryAccountsCount = 3;
         private const int WalletCreationAccountsCount = 2;
         private const string WalletFileExtension = "wallet.json";
+        private const int WalletSavetimeIntervalInMinutes = 5;
 
         private readonly CoinType coinType;
         private readonly Network network;
-        private readonly ConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
         private readonly IWalletFeePolicy walletFeePolicy;
         private readonly MempoolValidator mempoolValidator;
+        private readonly CancellationToken cancellationToken;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly ILogger logger;
 
         public uint256 WalletTipHash { get; set; }
@@ -42,18 +48,18 @@ namespace Stratis.Bitcoin.Wallet
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
 
-        private Dictionary<Script, HdAddress> keysLookup;
+        internal Dictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
         /// Occurs when a transaction is found.
         /// </summary>
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
-        public WalletManager(ILoggerFactory loggerFactory, ConnectionManager connectionManager, Network network, ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+        public WalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain,
+            NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, IAsyncLoopFactory asyncLoopFactory, FullNode.CancellationProvider cancellationProvider, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.Wallets = new List<Wallet>();
+            this.Wallets = new ConcurrentBag<Wallet>();
 
             this.connectionManager = connectionManager;
             this.network = network;
@@ -63,10 +69,11 @@ namespace Stratis.Bitcoin.Wallet
             this.dataFolder = dataFolder;
             this.walletFeePolicy = walletFeePolicy;
             this.mempoolValidator = mempoolValidator;
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.cancellationToken = cancellationProvider.Cancellation.Token;
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
-
         }
 
         public void Initialize()
@@ -82,6 +89,13 @@ namespace Stratis.Bitcoin.Wallet
 
             // find the last chain block received by the wallet manager.
             this.WalletTipHash = this.LastReceivedBlockHash();
+
+            // save the wallets file every 5 minutes to help against crashes.
+            this.asyncLoopFactory.Run("wallet persist job", token => {
+                this.SaveToFile();
+                this.logger.LogInformation($"Wallets saved to file at {DateTime.Now}.");
+                return Task.CompletedTask;
+            }, this.cancellationToken, TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes), TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));            
         }
 
         /// <inheritdoc />
@@ -885,13 +899,18 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
         {
-            // update the wallets with the last processed block height
-            foreach (var wallet in this.Wallets)
-            {
-                this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);
+            // update the wallets with the last processed block height                        
+            foreach(var wallet in this.Wallets) { 
+                this.UpdateLastBlockSyncedHeight(wallet, chainedBlock);                
             }
 
             this.WalletTipHash = chainedBlock.HashBlock;
+        }
+
+        /// <inheritdoc />
+        public string GetWalletFileExtension()
+        {
+            return WalletFileExtension;
         }
 
         /// <inheritdoc />
@@ -1019,9 +1038,9 @@ namespace Stratis.Bitcoin.Wallet
         /// Loads the keys and transactions we're tracking in memory for faster lookups.
         /// </summary>
         /// <returns></returns>
-        private void LoadKeysLookup()
+        internal void LoadKeysLookup()
         {
-            this.keysLookup = new Dictionary<Script, HdAddress>();
+            var lookup = new Dictionary<Script, HdAddress>();
             foreach (var wallet in this.Wallets)
             {
                 var accounts = wallet.GetAccountsByCoinType(this.coinType);
@@ -1030,12 +1049,13 @@ namespace Stratis.Bitcoin.Wallet
                     var addresses = account.ExternalAddresses.Concat(account.InternalAddresses);
                     foreach (var address in addresses)
                     {
-                        this.keysLookup.Add(address.ScriptPubKey, address);
+                        lookup.Add(address.ScriptPubKey, address);
                         if (address.Pubkey != null)
-                            this.keysLookup.Add(address.Pubkey, address);
+                            lookup.Add(address.Pubkey, address);
                     }
                 }
             }
+            this.keysLookup = lookup;
         }
 
         /// <summary>

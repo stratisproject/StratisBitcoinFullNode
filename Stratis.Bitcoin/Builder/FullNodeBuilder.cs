@@ -49,8 +49,8 @@ namespace Stratis.Bitcoin.Builder
 			List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
 			: this(configureServicesDelegates, configureDelegates, featuresRegistrationDelegates, features)
 		{
-			this.NodeSettings = nodeSettings ?? NodeSettings.Default();
-			this.Network = nodeSettings.GetNetwork();
+            this.NodeSettings = nodeSettings ?? NodeSettings.Default();
+            this.Network = this.NodeSettings.GetNetwork();
 
 			this.ConfigureServices(service =>
 			{

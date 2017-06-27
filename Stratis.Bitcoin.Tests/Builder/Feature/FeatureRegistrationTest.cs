@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 		public void UseStartupSetsFeatureStartupType()
 		{			
 			var registration = new FeatureRegistration<FeatureRegistrationFullNodeFeature>();
-			Assert.Equal(null, registration.FeatureStartupType);
+			Assert.Null(registration.FeatureStartupType);
 
 			registration.UseStartup<ServiceCollection>();
 

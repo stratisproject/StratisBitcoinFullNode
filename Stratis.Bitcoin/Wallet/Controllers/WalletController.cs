@@ -11,6 +11,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Notifications;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Wallet.Controllers
 {
@@ -28,13 +29,13 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
         private readonly Network network;
 
-        private readonly ConnectionManager connectionManager;
+        private readonly IConnectionManager connectionManager;
 
         private readonly ConcurrentChain chain;
 
         private readonly DataFolder dataFolder;
 
-        public WalletController(IWalletManager walletManager, IWalletSyncManager walletSyncManager, ConnectionManager connectionManager, Network network,
+        public WalletController(IWalletManager walletManager, IWalletSyncManager walletSyncManager, IConnectionManager connectionManager, Network network,
             ConcurrentChain chain, DataFolder dataFolder)
         {
             this.walletManager = walletManager;
@@ -55,9 +56,9 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [Route("mnemonic")]
         [HttpGet]
         public IActionResult GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12)
-        {
+        {            
             try
-            {
+            {                
                 Wordlist wordList;
                 switch (language.ToLowerInvariant())
                 {
@@ -104,6 +105,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpPost]
         public IActionResult Create([FromBody]WalletCreationRequest request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -139,6 +142,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpPost]
         public IActionResult Load([FromBody]WalletLoadRequest request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -178,6 +183,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpPost]
         public IActionResult Recover([FromBody]WalletRecoveryRequest request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -221,6 +228,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpGet]
         public IActionResult GetGeneralInfo([FromQuery] WalletName request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -239,7 +248,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
                     ConnectedNodes = this.connectionManager.ConnectedNodes.Count(),
                     ChainTip = this.chain.Tip.Height,
-                    IsDecrypted = true
+                    IsDecrypted = true                  
                 };
                 return this.Json(model);
 
@@ -259,6 +268,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpGet]
         public IActionResult GetHistory([FromQuery] WalletHistoryRequest request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -268,7 +279,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                WalletHistoryModel model = new WalletHistoryModel { TransactionsHistory = new List<TransactionItemModel>() };
+                WalletHistoryModel model = new WalletHistoryModel();
 
                 // get transactions contained in the wallet
                 var addresses = this.walletManager.GetHistory(request.WalletName);
@@ -324,7 +335,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                             // that makes the fee negative if thats the case ignore the fee
                             if (sentItem.Fee < 0)
                                 sentItem.Fee = 0;
-
+                            
                             model.TransactionsHistory.Add(sentItem);
                         }
                     }
@@ -348,6 +359,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery] WalletBalanceRequest request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -357,7 +370,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
             try
             {
-                WalletBalanceModel model = new WalletBalanceModel { AccountsBalances = new List<AccountBalance>() };
+                WalletBalanceModel model = new WalletBalanceModel();
 
                 var accounts = this.walletManager.GetAccounts(request.WalletName).ToList();
                 foreach (var account in accounts)
@@ -394,6 +407,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpPost]
         public IActionResult BuildTransaction([FromBody] BuildTransactionRequest request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -427,6 +442,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpPost]
         public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -435,9 +452,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
             }
 
             try
-            {
-                var result = this.walletManager.SendTransaction(request.Hex);
-                if (result)
+            {                
+                if (this.walletManager.SendTransaction(request.Hex))
                 {
                     return this.Ok();
                 }
@@ -465,7 +481,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 WalletFileModel model = new WalletFileModel
                 {
                     WalletsPath = walletsFolder.FullName,
-                    WalletsFiles = Directory.EnumerateFiles(walletsFolder.FullName, "*.json", SearchOption.TopDirectoryOnly).Select(p => Path.GetFileName(p))
+                    WalletsFiles = Directory.EnumerateFiles(walletsFolder.FullName, $"*.{this.walletManager.GetWalletFileExtension()}", SearchOption.TopDirectoryOnly).Select(p => Path.GetFileName(p))
                 };
 
                 return this.Json(model);
@@ -484,6 +500,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpPost]
         public IActionResult CreateNewAccount([FromBody]GetUnusedAccountModel request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
@@ -510,6 +528,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         [HttpGet]
         public IActionResult GetUnusedAddress([FromQuery]GetUnusedAddressModel request)
         {
+            Guard.NotNull(request, nameof(request));
+
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {

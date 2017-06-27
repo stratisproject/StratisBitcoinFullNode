@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin
 
 		public IWebHost RPCHost { get; set; }
 
-		public ConnectionManager ConnectionManager { get; set; }
+		public IConnectionManager ConnectionManager { get; set; }
 
 		public MempoolManager MempoolManager { get; set; }
 
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin
 			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
 			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
 
-			this.ConnectionManager = this.Services.ServiceProvider.GetService<ConnectionManager>();
+			this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;

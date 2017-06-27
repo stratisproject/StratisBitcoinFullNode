@@ -9,6 +9,11 @@ namespace Stratis.Bitcoin.Wallet.Models
 {
     public class WalletBalanceModel
     {
+        public WalletBalanceModel()
+        {
+            this.AccountsBalances = new List<AccountBalance>();
+        }
+
         [JsonProperty(PropertyName = "balances")]
         public List<AccountBalance> AccountsBalances { get; set; }
     }

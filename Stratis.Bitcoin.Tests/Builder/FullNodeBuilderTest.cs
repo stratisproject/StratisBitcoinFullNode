@@ -49,8 +49,8 @@ namespace Stratis.Bitcoin.Tests.Builder
 			Assert.Equal(0, this.featureCollectionDelegates.Count);
 			Assert.Equal(0, this.serviceProviderDelegates.Count);
 			Assert.Equal(0, this.serviceCollectionDelegates.Count);
-			Assert.Equal(null, this.fullNodeBuilder.Network);
-			Assert.Equal(null, this.fullNodeBuilder.NodeSettings);
+			Assert.Null(this.fullNodeBuilder.Network);
+			Assert.Null(this.fullNodeBuilder.NodeSettings);
 		}
 
 		[Fact]
@@ -242,5 +242,11 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.NotNull(mempoolManager);
         }
 
+	    [Fact]
+	    public void WhenNodeSettingsIsNullUseDefault()
+	    {
+	        var builder = new FullNodeBuilder(null);
+            Assert.Equal(Network.Main, builder.Network);
+        }
     }
 }
