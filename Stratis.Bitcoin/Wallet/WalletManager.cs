@@ -908,6 +908,12 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
+        public string GetWalletFileExtension()
+        {
+            return WalletFileExtension;
+        }
+
+        /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock)
         {
             // the block locator will help when the wallet 
