@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		public ConsensusErrorException(ConsensusError error) : base(error.Message)
 		{
-			ConsensusError = error;
+            this.ConsensusError = error;
 		}
 
 		public ConsensusError ConsensusError
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Code;
+				return this._Code;
 			}
 		}
 
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Message;
+				return this._Message;
 			}
 		}
 
@@ -50,8 +50,8 @@ namespace Stratis.Bitcoin.Consensus
 			Guard.NotEmpty(code, nameof(code));
 			Guard.NotEmpty(message, nameof(message));
 			
-			_Code = code;
-			_Message = message;
+			this._Code = code;
+            this._Message = message;
 		}
 
 
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Consensus
 			ConsensusError item = obj as ConsensusError;
 			if(item == null)
 				return false;
-			return Code.Equals(item.Code);
+			return this.Code.Equals(item.Code);
 		}
 		public static bool operator ==(ConsensusError a, ConsensusError b)
 		{
@@ -78,12 +78,12 @@ namespace Stratis.Bitcoin.Consensus
 
 		public override int GetHashCode()
 		{
-			return Code.GetHashCode();
+			return this.Code.GetHashCode();
 		}
 
 		public override string ToString()
 		{
-			return _Code + ": " + _Message;
+			return this._Code + ": " + this._Message;
 		}
 	}
 	public static class ConsensusErrors

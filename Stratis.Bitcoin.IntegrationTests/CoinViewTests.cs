@@ -26,6 +26,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus.Deployments;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
 using System;
 using System.Threading;
-using static Stratis.Bitcoin.FullNode;
+using Stratis.Bitcoin.Consensus.Deployments;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -25,11 +25,12 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly CoinView coinView;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly IConnectionManager connectionManager;
-		private readonly CancellationProvider globalCancellation;
+		private readonly FullNode.CancellationProvider globalCancellation;
 		private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
 		private readonly NodeSettings nodeSettings;
-		private readonly StakeChainStore stakeChain;
+	    private readonly NodeDeployments nodeDeployments;
+	    private readonly StakeChainStore stakeChain;
 
 		public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
@@ -40,10 +41,11 @@ namespace Stratis.Bitcoin.Consensus
 			CoinView coinView,
 			ChainBehavior.ChainState chainState,
 			IConnectionManager connectionManager,
-			CancellationProvider globalCancellation,
+			FullNode.CancellationProvider globalCancellation,
 			Signals signals,
 			ConsensusLoop consensusLoop,
 			NodeSettings nodeSettings,
+            NodeDeployments nodeDeployments,
 			StakeChainStore stakeChain = null)
 		{
 			this.dBreezeCoinView = dBreezeCoinView;
@@ -58,7 +60,8 @@ namespace Stratis.Bitcoin.Consensus
 			this.network = network;
 			this.consensusLoop = consensusLoop;
 			this.nodeSettings = nodeSettings;
-			this.stakeChain = stakeChain;
+		    this.nodeDeployments = nodeDeployments;
+		    this.stakeChain = stakeChain;
 		}
 
 		public override void Start()
@@ -72,11 +75,11 @@ namespace Stratis.Bitcoin.Consensus
 			this.consensusLoop.Initialize();
 
 			this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(blockPuller));
+			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));
 
-			var flags = this.consensusLoop.GetFlags();
+			var flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
 			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-				connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+                this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
 			this.stakeChain?.Load().GetAwaiter().GetResult();
 

@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
                 catch (Exception ex)
                 {
-                    Assert.True(ex.Message.Contains("401"));
+                    Assert.Contains("401", ex.Message);
                 }
                 client = oldClient;
 

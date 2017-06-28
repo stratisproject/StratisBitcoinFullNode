@@ -27,9 +27,9 @@ namespace Stratis.Bitcoin.BlockPulling
 		public LookaheadBlockPuller(ConcurrentChain chain, IConnectionManager connectionManager) 
 			: base(chain, connectionManager.ConnectedNodes, connectionManager.NodeSettings.ProtocolVersion)
 		{
-			MaxBufferedSize = BLOCK_SIZE * 10;
-			MinimumLookahead = 4;
-			MaximumLookahead = 2000;
+			this.MaxBufferedSize = BLOCK_SIZE * 10;
+			this.MinimumLookahead = 4;
+            this.MaximumLookahead = 2000;
 		}
 
 		public int MinimumLookahead
@@ -49,11 +49,11 @@ namespace Stratis.Bitcoin.BlockPulling
 		{
 			get
 			{
-				return Math.Min(MaximumLookahead, Math.Max(MinimumLookahead, _ActualLookahead));
+				return Math.Min(this.MaximumLookahead, Math.Max(this.MinimumLookahead, this._ActualLookahead));
 			}
 			private set
 			{
-				_ActualLookahead = Math.Min(MaximumLookahead, Math.Max(MinimumLookahead, value));
+                this._ActualLookahead = Math.Min(this.MaximumLookahead, Math.Max(this.MinimumLookahead, value));
 			}
 		}
 
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public ChainedBlock Location
 		{
-			get { return _Location; }
+			get { return this._Location; }
 		}
 
 		private int _CurrentDownloading = 0;
@@ -89,14 +89,14 @@ namespace Stratis.Bitcoin.BlockPulling
 		{
 			get
 			{
-				return _LookaheadLocation;
+				return this._LookaheadLocation;
 			}
 		}
 
 		public void SetLocation(ChainedBlock tip)
 		{
 			Guard.NotNull(tip, nameof(tip));
-			_Location = tip;
+            this._Location = tip;
 		}
 
 		public void RequestOptions(TransactionOptions transactionOptions)
@@ -116,8 +116,8 @@ namespace Stratis.Bitcoin.BlockPulling
 
 		public Block NextBlock(CancellationToken cancellationToken)
 		{
-			_DownloadedCounts.Add(this.DownloadedBlocks.Count);
-			if(_LookaheadLocation == null)
+            this._DownloadedCounts.Add(this.DownloadedBlocks.Count);
+			if(this._LookaheadLocation == null)
 			{
 				AskBlocks();
 				AskBlocks();
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.BlockPulling
 				//A reorg
 				return null;
 			}
-			if((_LookaheadLocation.Height - _Location.Height) <= ActualLookahead)
+			if((this._LookaheadLocation.Height - this._Location.Height) <= this.ActualLookahead)
 			{
 				CalculateLookahead();
 				AskBlocks();
@@ -158,30 +158,30 @@ namespace Stratis.Bitcoin.BlockPulling
 		// If it reach 14 or above, it will be divided by 1.1.
 		private void CalculateLookahead()
 		{
-			var medianDownloads = (decimal)GetMedian(_DownloadedCounts);
-			_DownloadedCounts.Clear();
-			var expectedDownload = ActualLookahead * 1.1m;
+			var medianDownloads = (decimal)GetMedian(this._DownloadedCounts);
+            this._DownloadedCounts.Clear();
+			var expectedDownload = this.ActualLookahead * 1.1m;
 			decimal tolerance = 0.05m;
 			var margin = expectedDownload * tolerance;
 			if(medianDownloads <= expectedDownload - margin)
-				ActualLookahead = (int)Math.Max(ActualLookahead * 1.1m, ActualLookahead + 1);
+                this.ActualLookahead = (int)Math.Max(this.ActualLookahead * 1.1m, this.ActualLookahead + 1);
 			else if(medianDownloads >= expectedDownload + margin)
-				ActualLookahead = (int)Math.Min(ActualLookahead / 1.1m, ActualLookahead - 1);
+                this.ActualLookahead = (int)Math.Min(this.ActualLookahead / 1.1m, this.ActualLookahead - 1);
 		}
 
 		public decimal MedianDownloadCount
 		{
 			get
 			{
-				if(_DownloadedCounts.Count == 0)
+				if(this._DownloadedCounts.Count == 0)
 					return decimal.One;
-				return GetMedian(_DownloadedCounts);
+				return GetMedian(this._DownloadedCounts);
 			}
 		}
 
 		public Block TryGetLookahead(int count)
 		{
-			var chainedBlock = Chain.GetBlock(_Location.Height + 1 + count);
+			var chainedBlock = this.Chain.GetBlock(this._Location.Height + 1 + count);
 			if(chainedBlock == null)
 				return null;
 			var block = this.DownloadedBlocks.TryGet(chainedBlock.HashBlock);
@@ -216,37 +216,37 @@ namespace Stratis.Bitcoin.BlockPulling
 		public override void PushBlock(int length, Block block, CancellationToken token)
 		{
 			var hash = block.Header.GetHash();
-			var header = Chain.GetBlock(hash);
-			while(_CurrentSize + length >= MaxBufferedSize && header.Height != _Location.Height + 1)
+			var header = this.Chain.GetBlock(hash);
+			while(this._CurrentSize + length >= this.MaxBufferedSize && header.Height != this._Location.Height + 1)
 			{
-				IsFull = true;
-				_Consumed.WaitOne(1000);
+				this.IsFull = true;
+                this._Consumed.WaitOne(1000);
 				token.ThrowIfCancellationRequested();
 			}
-			IsFull = false;
+            this.IsFull = false;
 			this.DownloadedBlocks.TryAdd(hash, new DownloadedBlock { Block = block, Length = length });
-			_CurrentSize += length;
-			_Pushed.Set();
+            this._CurrentSize += length;
+            this._Pushed.Set();
 		}
 
 		private void AskBlocks()
 		{
-			if(_Location == null)
+			if(this._Location == null)
 				throw new InvalidOperationException("SetLocation should have been called");
-			if(_LookaheadLocation == null && !Chain.Contains(_Location))
+			if(this._LookaheadLocation == null && !this.Chain.Contains(this._Location))
 				return;
-			if(_LookaheadLocation != null && !Chain.Contains(_LookaheadLocation))
-				_LookaheadLocation = null;
+			if(this._LookaheadLocation != null && !this.Chain.Contains(this._LookaheadLocation))
+                this._LookaheadLocation = null;
 
 			ChainedBlock[] downloadRequests = null;
 
-			ChainedBlock lookaheadBlock = _LookaheadLocation ?? _Location;
-			ChainedBlock nextLookaheadBlock = Chain.GetBlock(Math.Min(lookaheadBlock.Height + ActualLookahead, Chain.Height));
+			ChainedBlock lookaheadBlock = this._LookaheadLocation ?? this._Location;
+			ChainedBlock nextLookaheadBlock = this.Chain.GetBlock(Math.Min(lookaheadBlock.Height + this.ActualLookahead, this.Chain.Height));
 			if(nextLookaheadBlock == null)
 				return;
 			var fork = nextLookaheadBlock.FindFork(lookaheadBlock);
 
-			_LookaheadLocation = nextLookaheadBlock;
+            this._LookaheadLocation = nextLookaheadBlock;
 
 			downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - fork.Height];
 			if(downloadRequests.Length == 0)
@@ -267,26 +267,26 @@ namespace Stratis.Bitcoin.BlockPulling
 			while(true)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
-				var header = Chain.GetBlock(_Location.Height + 1);
+				var header = this.Chain.GetBlock(this._Location.Height + 1);
 				DownloadedBlock block;
 				if(header != null && this.DownloadedBlocks.TryRemove(header.HashBlock, out block))
 				{
-					if(header.Previous.HashBlock != _Location.HashBlock)
+					if(header.Previous.HashBlock != this._Location.HashBlock)
 					{
 						//A reorg
 						return null;
 					}
-					IsStalling = false;
-					_Location = header;
-					Interlocked.Add(ref _CurrentSize, -block.Length);
-					_Consumed.Set();
+                    this.IsStalling = false;
+                    this._Location = header;
+					Interlocked.Add(ref this._CurrentSize, -block.Length);
+                    this._Consumed.Set();
 					return block.Block;
 				}
 				else
 				{
 					if(header == null)
 					{
-						if(!Chain.Contains(_Location.HashBlock))
+						if(!this.Chain.Contains(this._Location.HashBlock))
 						{
 							//A reorg
 							return null;
@@ -297,9 +297,9 @@ namespace Stratis.Bitcoin.BlockPulling
 						if(!IsDownloading(header.HashBlock))
 							AskBlocks(new ChainedBlock[] { header });
 						OnStalling(header);
-						IsStalling = true;
+                        this.IsStalling = true;
 					}
-					WaitHandle.WaitAny(new[] { _Pushed, cancellationToken.WaitHandle }, waitTime[i]);
+					WaitHandle.WaitAny(new[] { this._Pushed, cancellationToken.WaitHandle }, waitTime[i]);
 				}
 				i = i == waitTime.Length - 1 ? 0 : i + 1;
 			}

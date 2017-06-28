@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public RewindData(uint256 previousBlockHash)
 		{
-			_PreviousBlockHash = previousBlockHash;
+            this._PreviousBlockHash = previousBlockHash;
 		}
 
 
@@ -24,11 +24,11 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _PreviousBlockHash;
+				return this._PreviousBlockHash;
 			}
 			set
 			{
-				_PreviousBlockHash = value;
+                this._PreviousBlockHash = value;
 			}
 		}
 
@@ -37,11 +37,11 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _TransactionsToRemove;
+				return this._TransactionsToRemove;
 			}
 			set
 			{
-				_TransactionsToRemove = value;
+                this._TransactionsToRemove = value;
 			}
 		}
 
@@ -50,19 +50,19 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _OutputsToRestore;
+				return this._OutputsToRestore;
 			}
 			set
 			{
-				_OutputsToRestore = value;
+                this._OutputsToRestore = value;
 			}
 		}
 
 		public void ReadWrite(BitcoinStream stream)
 		{			
-			stream.ReadWrite(ref _PreviousBlockHash);
-			stream.ReadWrite(ref _TransactionsToRemove);
-			stream.ReadWrite(ref _OutputsToRestore);
+			stream.ReadWrite(ref this._PreviousBlockHash);
+			stream.ReadWrite(ref this._TransactionsToRemove);
+			stream.ReadWrite(ref this._OutputsToRestore);
 		}
 	}
 }

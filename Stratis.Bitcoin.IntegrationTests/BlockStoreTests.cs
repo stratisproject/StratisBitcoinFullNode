@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class BlockStoreTests
     {
 
-		//[Fact]
+		// [Fact]
 		public void BlockRepositoryBench()
 		{
 			using (var dir = TestDirectory.Create())

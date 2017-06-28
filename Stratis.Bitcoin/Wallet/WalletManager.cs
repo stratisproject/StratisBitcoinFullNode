@@ -583,9 +583,8 @@ namespace Stratis.Bitcoin.Wallet
             {
                 var state = new MempoolValidationState(false);
                 if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
-                {
                     return false;
-                }
+                this.ProcessTransaction(transaction);
             }
 
             // broadcast to peers
@@ -617,7 +616,7 @@ namespace Stratis.Bitcoin.Wallet
         /// <inheritdoc />
         public void ProcessBlock(Block block, ChainedBlock chainedBlock)
         {
-            this.logger.LogDebug($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
+            this.logger.LogTrace($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
 
             // if there is no wallet yet, update the wallet tip hash and do nothing else.
             if (!this.Wallets.Any())
@@ -653,7 +652,7 @@ namespace Stratis.Bitcoin.Wallet
         public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
         {
             var hash = transaction.GetHash();
-            this.logger.LogDebug($"transaction received - hash: {hash}, coin: {this.coinType}");
+            this.logger.LogTrace($"transaction received - hash: {hash}, coin: {this.coinType}");
 
             // check the outputs
             foreach (TxOut utxo in transaction.Outputs)

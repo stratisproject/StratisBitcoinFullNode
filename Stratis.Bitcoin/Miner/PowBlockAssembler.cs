@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
@@ -28,9 +29,9 @@ namespace Stratis.Bitcoin.Miner
 	{
 		public BlockTemplate()
 		{
-			Block = new Block();
-			VTxFees = new List<Money>();
-			TxSigOpsCost = new List<long>();
+			this.Block = new Block();
+			this.VTxFees = new List<Money>();
+            this.TxSigOpsCost = new List<long>();
 		}
 
 		public Block Block;
@@ -95,7 +96,7 @@ namespace Stratis.Bitcoin.Miner
 			// Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity:
 			this.blockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE - 1000, options.BlockMaxSize));
 			// Whether we need to account for byte usage (in addition to weight usage)
-			this.needSizeAccounting = (blockMaxSize < network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE - 1000);
+			this.needSizeAccounting = (this.blockMaxSize < network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE - 1000);
 
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -147,7 +148,7 @@ namespace Stratis.Bitcoin.Miner
 		public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
 		{
 			long nTimeStart = DateTime.UtcNow.Ticks/TicksPerMicrosecond;
-			pblock = pblocktemplate.Block; // pointer for convenience
+            this.pblock = this.pblocktemplate.Block; // pointer for convenience
 			this.scriptPubKeyIn = scriptPubKeyIn;
 
 			this.CreateCoinbase();
@@ -160,19 +161,19 @@ namespace Stratis.Bitcoin.Miner
 			//if (this.network. chainparams.MineBlocksOnDemand())
 			//	pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
-			medianTimePast = Utils.DateTimeToUnixTime(pindexPrev.GetMedianTimePast());
-			lockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
+			medianTimePast = Utils.DateTimeToUnixTime(this.pindexPrev.GetMedianTimePast());
+            this.lockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
 				? medianTimePast
-				: pblock.Header.Time;
+				: this.pblock.Header.Time;
 
-			// TODO: Implement Witness Code
-			// Decide whether to include witness transactions
-			// This is only needed in case the witness softfork activation is reverted
-			// (which would require a very deep reorganization) or when
-			// -promiscuousmempoolflags is used.
-			// TODO: replace this with a call to main to assess validity of a mempool
-			// transaction (which in most cases can be a no-op).
-			fIncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
+            // TODO: Implement Witness Code
+            // Decide whether to include witness transactions
+            // This is only needed in case the witness softfork activation is reverted
+            // (which would require a very deep reorganization) or when
+            // -promiscuousmempoolflags is used.
+            // TODO: replace this with a call to main to assess validity of a mempool
+            // transaction (which in most cases can be a no-op).
+            this.fIncludeWitness = false; //IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
 
 			// add transactions from the mempool
 			int nPackagesSelected = 0;
@@ -180,17 +181,17 @@ namespace Stratis.Bitcoin.Miner
 			AddTransactions(nPackagesSelected, nDescendantsUpdated);
 
 			long nTime1 = DateTime.UtcNow.Ticks/TicksPerMicrosecond;
-			LastBlockTx = blockTx;
-			LastBlockSize = blockSize;
-			LastBlockWeight = blockWeight;
+			LastBlockTx = this.blockTx;
+			LastBlockSize = this.blockSize;
+			LastBlockWeight = this.blockWeight;
 
 			// TODO: Implement Witness Code
 			// pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
-			pblocktemplate.VTxFees[0] = -fees;
-			coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
-			pblocktemplate.TotalFee = this.fees;
+			this.pblocktemplate.VTxFees[0] = -this.fees;
+			this.coinbase.Outputs[0].Value = this.fees + this.consensusLoop.Validator.GetProofOfWorkReward(this.height);
+            this.pblocktemplate.TotalFee = this.fees;
 
-			var nSerializeSize = pblock.GetSerializedSize();
+			var nSerializeSize = this.pblock.GetSerializedSize();
 			Logs.Mining.LogInformation(
 				$"CreateNewBlock: total size: {nSerializeSize} block weight: {consensusLoop.Validator.GetBlockWeight(pblock)} txs: {blockTx} fees: {fees} sigops {blockSigOpsCost}");
 
@@ -204,15 +205,15 @@ namespace Stratis.Bitcoin.Miner
 
 			//LogPrint(BCLog::BENCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
 
-			return pblocktemplate;
+			return this.pblocktemplate;
 		}
 
 		protected virtual void ComputeBlockVersion()
 		{
 			// compute the block version
 			this.pindexPrev = this.chain.Tip;
-			height = pindexPrev.Height + 1;
-			pblock.Header.Version = ComputeBlockVersion(pindexPrev, this.network.Consensus);
+			this.height = this.pindexPrev.Height + 1;
+            this.pblock.Header.Version = ComputeBlockVersion(this.pindexPrev, this.network.Consensus);
 		}
 
 		protected virtual void CreateCoinbase()
@@ -221,26 +222,26 @@ namespace Stratis.Bitcoin.Miner
 			// set the coin base with zero money 
 			// once we have the fee we can update the amount
 			this.coinbase = new Transaction();
-			coinbase.AddInput(TxIn.CreateCoinbase(this.chain.Height + 1));
-			coinbase.AddOutput(new TxOut(Money.Zero, scriptPubKeyIn));
-			pblock.AddTransaction(coinbase);
-			pblocktemplate.VTxFees.Add(-1); // updated at end
-			pblocktemplate.TxSigOpsCost.Add(-1); // updated at end
+			this.coinbase.AddInput(TxIn.CreateCoinbase(this.chain.Height + 1));
+			this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKeyIn));
+			this.pblock.AddTransaction(this.coinbase);
+			this.pblocktemplate.VTxFees.Add(-1); // updated at end
+            this.pblocktemplate.TxSigOpsCost.Add(-1); // updated at end
 
 		}
 
 		protected virtual void UpdateHeaders()
 		{
 			// Fill in header
-			pblock.Header.HashPrevBlock = pindexPrev.HashBlock;
-			pblock.Header.UpdateTime(dateTimeProvider.GetTimeOffset(), this.network, this.chain.Tip);
-			pblock.Header.Bits = pblock.Header.GetWorkRequired(this.network, this.chain.Tip);
-			pblock.Header.Nonce = 0;
+			this.pblock.Header.HashPrevBlock = this.pindexPrev.HashBlock;
+			this.pblock.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.chain.Tip);
+			this.pblock.Header.Bits = this.pblock.Header.GetWorkRequired(this.network, this.chain.Tip);
+            this.pblock.Header.Nonce = 0;
 		}
 
 		protected virtual void TestBlockValidity()
 		{
-			var context = new ContextInformation(new BlockResult {Block = pblock}, network.Consensus)
+			var context = new ContextInformation(new BlockResult {Block = this.pblock }, this.network.Consensus)
 			{
 				CheckPow = false,
 				CheckMerkleRoot = false,
@@ -253,19 +254,19 @@ namespace Stratis.Bitcoin.Miner
 		// Add a tx to the block 
 		private void AddToBlock(TxMempoolEntry iter)
 	    {
-		    pblock.AddTransaction(iter.Transaction);
+            this.pblock.AddTransaction(iter.Transaction);
 
-		    pblocktemplate.VTxFees.Add(iter.Fee);
-		    pblocktemplate.TxSigOpsCost.Add(iter.SigOpCost);
-		    if (needSizeAccounting)
+		    this.pblocktemplate.VTxFees.Add(iter.Fee);
+            this.pblocktemplate.TxSigOpsCost.Add(iter.SigOpCost);
+		    if (this.needSizeAccounting)
 		    {
-			    blockSize += iter.Transaction.GetSerializedSize();
+                this.blockSize += iter.Transaction.GetSerializedSize();
 		    }
-		    blockWeight += iter.TxWeight;
-		    ++blockTx;
-		    blockSigOpsCost += iter.SigOpCost;
-		    fees += iter.Fee;
-		    inBlock.Add(iter);
+            this.blockWeight += iter.TxWeight;
+		    ++this.blockTx;
+		    this.blockSigOpsCost += iter.SigOpCost;
+		    this.fees += iter.Fee;
+            this.inBlock.Add(iter);
 
 		    //bool fPrintPriority = GetBoolArg("-printpriority", DEFAULT_PRINTPRIORITY);
 		    //if (fPrintPriority)
@@ -283,10 +284,10 @@ namespace Stratis.Bitcoin.Miner
 		{
 			public TxMemPoolModifiedEntry(TxMempoolEntry entry)
 			{
-				iter = entry;
-				SizeWithAncestors = entry.SizeWithAncestors;
-				ModFeesWithAncestors = entry.ModFeesWithAncestors;
-				SigOpCostWithAncestors = entry.SigOpCostWithAncestors;
+				this.iter = entry;
+				this.SizeWithAncestors = entry.SizeWithAncestors;
+				this.ModFeesWithAncestors = entry.ModFeesWithAncestors;
+                this.SigOpCostWithAncestors = entry.SigOpCostWithAncestors;
 			}
 
 			public TxMempoolEntry iter;
@@ -356,10 +357,10 @@ namespace Stratis.Bitcoin.Miner
 
 		    // Start by adding all descendants of previously added txs to mapModifiedTx
 		    // and modifying them for their already included ancestors
-		    UpdatePackagesForAdded(inBlock, mapModifiedTx);
+		    UpdatePackagesForAdded(this.inBlock, mapModifiedTx);
 
 		    var ancestorScoreList =
-			    this.mempoolScheduler.ReadAsync(() => mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
+			    this.mempoolScheduler.ReadAsync(() => this.mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
 
 		    TxMempoolEntry iter;
 
@@ -384,7 +385,7 @@ namespace Stratis.Bitcoin.Miner
 					// cached size/sigops/fee values that are not actually correct.
 
 				    // First try to find a new transaction in mapTx to evaluate.
-				    if (mapModifiedTx.ContainsKey(mi.TransactionHash) || inBlock.Contains(mi) || failedTx.Contains(mi))
+				    if (mapModifiedTx.ContainsKey(mi.TransactionHash) || this.inBlock.Contains(mi) || failedTx.Contains(mi))
 				    {
 					    ancestorScoreList.Remove(mi);
 					    continue;
@@ -427,7 +428,7 @@ namespace Stratis.Bitcoin.Miner
 
 			    // We skip mapTx entries that are inBlock, and mapModifiedTx shouldn't
 			    // contain anything that is inBlock.
-			    Guard.Assert(!inBlock.Contains(iter));
+			    Guard.Assert(!this.inBlock.Contains(iter));
 
 			    var packageSize = iter.SizeWithAncestors;
 			    var packageFees = iter.ModFeesWithAncestors;
@@ -439,7 +440,7 @@ namespace Stratis.Bitcoin.Miner
 				    packageSigOpsCost = modit.SigOpCostWithAncestors;
 			    }
 
-			    if (packageFees < blockMinFeeRate.GetFee((int) packageSize))
+			    if (packageFees < this.blockMinFeeRate.GetFee((int) packageSize))
 			    {
 				    // Everything else we might consider has a lower fee rate
 				    return;
@@ -458,8 +459,8 @@ namespace Stratis.Bitcoin.Miner
 
 				    ++nConsecutiveFailed;
 
-				    if (nConsecutiveFailed > MAX_CONSECUTIVE_FAILURES && blockWeight >
-				        blockMaxWeight - 4000)
+				    if (nConsecutiveFailed > MAX_CONSECUTIVE_FAILURES && this.blockWeight >
+                        this.blockMaxWeight - 4000)
 				    {
 					    // Give up if we're close to full and haven't succeeded in a while
 					    break;
@@ -470,7 +471,7 @@ namespace Stratis.Bitcoin.Miner
 			    TxMempool.SetEntries ancestors = new TxMempool.SetEntries();
 			    long nNoLimit = long.MaxValue;
 			    string dummy;
-			    mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false);
+                this.mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false);
 
 			    OnlyUnconfirmed(ancestors);
 			    ancestors.Add(iter);
@@ -515,7 +516,7 @@ namespace Stratis.Bitcoin.Miner
 		    foreach (var setEntry in testSet.ToList())
 		    {
 				// Only test txs not already in the block
-				if (inBlock.Contains(setEntry))
+				if (this.inBlock.Contains(setEntry))
 				{
 					testSet.Remove(setEntry);
 				}
@@ -526,9 +527,9 @@ namespace Stratis.Bitcoin.Miner
 		private bool TestPackage(long packageSize, long packageSigOpsCost)
 		{
 			// TODO: switch to weight-based accounting for packages instead of vsize-based accounting.
-			if (blockWeight + this.network.Consensus.Option<PowConsensusOptions>().WITNESS_SCALE_FACTOR * packageSize >= blockMaxWeight)
+			if (this.blockWeight + this.network.Consensus.Option<PowConsensusOptions>().WITNESS_SCALE_FACTOR * packageSize >= this.blockMaxWeight)
 				return false;
-			if (blockSigOpsCost + packageSigOpsCost >= this.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SIGOPS_COST)
+			if (this.blockSigOpsCost + packageSigOpsCost >= this.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SIGOPS_COST)
 				return false;
 			return true;
 		}
@@ -540,17 +541,17 @@ namespace Stratis.Bitcoin.Miner
 		// - serialized size (in case -blockmaxsize is in use)
 		private bool TestPackageTransactions(TxMempool.SetEntries package)
 	    {
-			var nPotentialBlockSize = blockSize; // only used with needSizeAccounting
+			var nPotentialBlockSize = this.blockSize; // only used with needSizeAccounting
 		    foreach (var it in package)
 		    {
-				if (!it.Transaction.IsFinal(Utils.UnixTimeToDateTime(lockTimeCutoff), height))
+				if (!it.Transaction.IsFinal(Utils.UnixTimeToDateTime(this.lockTimeCutoff), this.height))
 					return false;
-				if (!fIncludeWitness && it.Transaction.HasWitness)
+				if (!this.fIncludeWitness && it.Transaction.HasWitness)
 					return false;
-				if (needSizeAccounting)
+				if (this.needSizeAccounting)
 				{
 					var nTxSize = it.Transaction.GetSerializedSize();
-					if (nPotentialBlockSize + nTxSize >= blockMaxSize)
+					if (nPotentialBlockSize + nTxSize >= this.blockMaxSize)
 					{
 						return false;
 					}

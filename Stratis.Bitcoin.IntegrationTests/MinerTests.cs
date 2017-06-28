@@ -10,6 +10,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
@@ -114,70 +115,70 @@ namespace Stratis.Bitcoin.IntegrationTests
 				this.blockinfo = new List<Blockinfo>();
 				var lst = blockinfoarr.Cast<long>().ToList();
 				for (int i = 0; i < lst.Count; i += 2)
-					blockinfo.Add(new Blockinfo() { extranonce = (int)lst[i], nonce = (uint)lst[i + 1] });
+                    this.blockinfo.Add(new Blockinfo() { extranonce = (int)lst[i], nonce = (uint)lst[i + 1] });
 
-				// Note that by default, these tests run with size accounting enabled.
-				network = Network.Main;
+                // Note that by default, these tests run with size accounting enabled.
+                this.network = Network.Main;
 				var hex = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
-				scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
-				newBlock = new BlockTemplate();
+				this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
+                this.newBlock = new BlockTemplate();
 
-				entry = new TestMemPoolEntryHelper();
-				chain = new ConcurrentChain(network);
-				network.Consensus.Options = new PowConsensusOptions();
-				cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
-				consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings())));
-				consensus.Initialize();
+			    this.entry = new TestMemPoolEntryHelper();
+			    this.chain = new ConcurrentChain(network);
+			    this.network.Consensus.Options = new PowConsensusOptions();
+			    this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
+			    this.consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings())),new NodeDeployments(this.network));
+			    this.consensus.Initialize();
 
-				entry.Fee(11);
-				entry.Height(11);
+				this.entry.Fee(11);
+                this.entry.Height(11);
 				var date1 = new MemoryPoolTests.DateTimeProviderSet();
 				date1.time = DateTimeProvider.Default.GetTime();
 				date1.timeutc = DateTimeProvider.Default.GetUtcNow();
-				date = date1;
-                mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default())); ;
-                scheduler = new MempoolScheduler();
+				this.date = date1;
+                this.mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default())); ;
+                this.scheduler = new MempoolScheduler();
 
-				// Simple block creation, nothing special yet:
-				newBlock = AssemblerForTest(this).CreateNewBlock(scriptPubKey);
-				chain.SetTip(newBlock.Block.Header);
-				consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                // Simple block creation, nothing special yet:
+                this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
+				this.chain.SetTip(this.newBlock.Block.Header);
+				this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
 				// We can't make transactions until we have inputs
 				// Therefore, load 100 blocks :)
 				this.baseheight = 0;
 				List<Block> blocks = new List<Block>();
-				txFirst = new List<Transaction>();
-				for (int i = 0; i < blockinfo.Count; ++i)
+                this.txFirst = new List<Transaction>();
+				for (int i = 0; i < this.blockinfo.Count; ++i)
 				{
-					var pblock = newBlock.Block.Clone(); // pointer for convenience
-					pblock.Header.HashPrevBlock = chain.Tip.HashBlock;
+					var pblock = this.newBlock.Block.Clone(); // pointer for convenience
+					pblock.Header.HashPrevBlock = this.chain.Tip.HashBlock;
 					pblock.Header.Version = 1;
-					pblock.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
+					pblock.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
 					Transaction txCoinbase = pblock.Transactions[0].Clone();
 					txCoinbase.Inputs.Clear();
 					txCoinbase.Version = 1;
-					txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(blockinfo[i].extranonce), Op.GetPushOp(chain.Height) })));
+					txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.chain.Height) })));
 					// Ignore the (optional) segwit commitment added by CreateNewBlock (as the hardcoded nonces don't account for this)
 					txCoinbase.AddOutput(new TxOut(Money.Zero, new Script()));
 					pblock.Transactions[0] = txCoinbase;
 
-					if (txFirst.Count == 0)
-						this.baseheight = chain.Height;
-					if (txFirst.Count < 4)
-						txFirst.Add(pblock.Transactions[0]);
+					if (this.txFirst.Count == 0)
+						this.baseheight = this.chain.Height;
+					if (this.txFirst.Count < 4)
+                        this.txFirst.Add(pblock.Transactions[0]);
 					pblock.UpdateMerkleRoot();
 
-					pblock.Header.Nonce = blockinfo[i].nonce;
+					pblock.Header.Nonce = this.blockinfo[i].nonce;
 
-					chain.SetTip(pblock.Header);
-					consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                    this.chain.SetTip(pblock.Header);
+					this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 					blocks.Add(pblock);
 				}
 
-				// Just to make sure we can still make simple blocks
-				newBlock = AssemblerForTest(this).CreateNewBlock(scriptPubKey);
-				Assert.NotNull(newBlock);
+                // Just to make sure we can still make simple blocks
+                this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
+				Assert.NotNull(this.newBlock);
 			}
 		}
 

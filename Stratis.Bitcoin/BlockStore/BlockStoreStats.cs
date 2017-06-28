@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.BlockStore
         {
             get
             {
-                return (DateTimeOffset.UtcNow - lastRepositorySnapshot.Taken) > TimeSpan.FromSeconds(10.0);
+                return (DateTimeOffset.UtcNow - this.lastRepositorySnapshot.Taken) > TimeSpan.FromSeconds(10.0);
             }
         }
 

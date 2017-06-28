@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin
     {
         public PeriodicTask(string name, Action<CancellationToken> loop)
         {
-            _Name = name;
+            this._Name = name;
             this._Loop = loop;
         }
 
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin
         {
             get
             {
-                return _Name;
+                return this._Name;
             }
         }
 
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin
             var t = new Thread(() =>
             {
                 Exception uncatchException = null;
-                Logs.FullNode.LogInformation(_Name + " starting");
+                Logs.FullNode.LogInformation(this._Name + " starting");
                 try
                 {
                     if (delayStart)
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin
 
                     while (!cancellation.IsCancellationRequested)
                     {
-                        _Loop(cancellation);
+                        this._Loop(cancellation);
                         cancellation.WaitHandle.WaitOne(refreshRate);
                     }
                 }
@@ -63,23 +63,23 @@ namespace Stratis.Bitcoin
                 }
                 finally
                 {
-                    Logs.FullNode.LogInformation(Name + " stopping");
+                    Logs.FullNode.LogInformation(this.Name + " stopping");
                 }
 
                 if (uncatchException != null)
                 {
-                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, _Name + " threw an unhandled exception");
+                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, this._Name + " threw an unhandled exception");
                 }
             });
             t.IsBackground = true;
-            t.Name = _Name;
+            t.Name = this._Name;
             t.Start();            
             return this;
         }
 
         public void RunOnce()
         {
-            _Loop(CancellationToken.None);
+            this._Loop(CancellationToken.None);
         }
     }
 }

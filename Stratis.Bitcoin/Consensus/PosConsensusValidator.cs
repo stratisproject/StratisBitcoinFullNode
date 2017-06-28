@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Consensus
 					ConsensusErrors.HighHash.Throw();
 			}
 
-			context.NextWorkRequired  = StakeValidator.GetNextTargetRequired(stakeChain, context.BlockResult.ChainedBlock.Previous, context.Consensus,
+			context.NextWorkRequired  = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockResult.ChainedBlock.Previous, context.Consensus,
 				context.Stake.BlockStake.IsProofOfStake());
 		}
 
@@ -296,7 +296,7 @@ namespace Stratis.Bitcoin.Consensus
 			blockStake.HashProof = context.Stake.HashProofOfStake;
 
 			// compute stake modifier
-			this.stakeValidator.ComputeStakeModifier(chain, pindex, blockStake);
+			this.stakeValidator.ComputeStakeModifier(this.chain, pindex, blockStake);
 		}
 
 		public override Money GetProofOfWorkReward(int height)

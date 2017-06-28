@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.MemoryPool
 					if (filterrate != Money.Zero)
 						if (txinfo.FeeRate.FeePerK < filterrate)
 							continue;
-					filterInventoryKnown.TryAdd(hash, hash);
+                    this.filterInventoryKnown.TryAdd(hash, hash);
 				}
 				return ret;
 			});

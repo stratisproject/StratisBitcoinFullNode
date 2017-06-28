@@ -1276,10 +1276,13 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
             Directory.CreateDirectory(dir);
-            File.Create(dir + "/wallet1.json");
-            File.Create(dir + "/wallet2.json");
+            File.Create(dir + "/wallet1.wallet.json");
+            File.Create(dir + "/wallet2.wallet.json");
 
-            var controller = new WalletController(new Mock<IWalletManager>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);            
+            var walletManager = new Mock<IWalletManager>();
+            walletManager.Setup(m => m.GetWalletFileExtension()).Returns("wallet.json");
+
+            var controller = new WalletController(walletManager.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);            
             
             IActionResult result = controller.ListWalletsFiles();
 
@@ -1289,8 +1292,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Assert.NotNull(model);
             Assert.Equal(new DirectoryInfo(dir).FullName, model.WalletsPath);
             Assert.Equal(2, model.WalletsFiles.Count());
-            Assert.EndsWith("wallet1.json", model.WalletsFiles.ElementAt(0));
-            Assert.EndsWith("wallet2.json", model.WalletsFiles.ElementAt(1));
+            Assert.EndsWith("wallet1.wallet.json", model.WalletsFiles.ElementAt(0));
+            Assert.EndsWith("wallet2.wallet.json", model.WalletsFiles.ElementAt(1));
         }
 
         [Fact]

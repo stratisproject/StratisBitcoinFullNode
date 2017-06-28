@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
 using static NBitcoin.Transaction;
 
@@ -145,7 +146,7 @@ namespace Stratis.Bitcoin.Consensus
 			ConsensusFlags flags = context.Flags;
 			UnspentOutputSet view = context.Set;
 
-			PerformanceCounter.AddProcessedBlocks(1);
+            this.PerformanceCounter.AddProcessedBlocks(1);
 			taskScheduler = taskScheduler ?? TaskScheduler.Default;
 			if(flags.EnforceBIP30)
 			{
@@ -161,7 +162,7 @@ namespace Stratis.Bitcoin.Consensus
 			List<Task<bool>> checkInputs = new List<Task<bool>>();
 			for(int i = 0; i < block.Transactions.Count; i++)
 			{
-				PerformanceCounter.AddProcessedTransactions(1);
+                this.PerformanceCounter.AddProcessedTransactions(1);
 				var tx = block.Transactions[i];
                 if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                 {
@@ -200,13 +201,13 @@ namespace Stratis.Bitcoin.Consensus
 					PrecomputedTransactionData txData = new PrecomputedTransactionData(tx);
 					for(int iInput = 0; iInput < tx.Inputs.Count; iInput++)
 					{
-						PerformanceCounter.AddProcessedInputs(1);
+                        this.PerformanceCounter.AddProcessedInputs(1);
 						var input = tx.Inputs[iInput];
 						int iiIntput = iInput;
 						var txout = view.GetOutputFor(input);
 						var checkInput = new Task<bool>(() =>
 						{
-							if(UseConsensusLib)
+							if(this.UseConsensusLib)
 							{
 								Script.BitcoinConsensusError error;
 								return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint)iiIntput, flags.ScriptFlags, out error);
@@ -298,7 +299,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		public virtual Money GetProofOfWorkReward(int nHeight)
 		{
-			int halvings = nHeight / consensusParams.SubsidyHalvingInterval;
+			int halvings = nHeight / this.consensusParams.SubsidyHalvingInterval;
 			// Force block reward to zero when right shift is undefined.
 			if(halvings >= 64)
 				return 0;
@@ -588,7 +589,7 @@ namespace Stratis.Bitcoin.Consensus
 				// For each of the lower bits in count that are 0, do 1 step. Each
 				// corresponds to an inner value that existed before processing the
 				// current leaf, and each needs a hash to combine it.
-				for(level = 0; (count & (((UInt32)1) << level)) == 0; level++)
+				for(level = 0; (count & (((uint)1) << level)) == 0; level++)
 				{
 					if(pbranch != null)
 					{
@@ -621,13 +622,13 @@ namespace Stratis.Bitcoin.Consensus
 			int levell = 0;
 			// As long as bit number level in count is zero, skip it. It means there
 			// is nothing left at this level.
-			while((count & (((UInt32)1) << levell)) == 0)
+			while((count & (((uint)1) << levell)) == 0)
 			{
 				levell++;
 			}
 			uint256 hh = inner[levell];
 			bool matchhh = matchlevel == levell;
-			while(count != (((UInt32)1) << levell))
+			while(count != (((uint)1) << levell))
 			{
 				// If we reach this point, h is an inner value that is not the top.
 				// We combine it with itself (Bitcoin's special rule for odd levels in
@@ -727,9 +728,9 @@ namespace Stratis.Bitcoin.Consensus
 
 			// Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
 			// check for version 2, 3 and 4 upgrades
-			if((header.Version < 2 && nHeight >= consensusParams.BuriedDeployments[BuriedDeployments.BIP34]) ||
-			   (header.Version < 3 && nHeight >= consensusParams.BuriedDeployments[BuriedDeployments.BIP66]) ||
-			   (header.Version < 4 && nHeight >= consensusParams.BuriedDeployments[BuriedDeployments.BIP65]))
+			if((header.Version < 2 && nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP34]) ||
+			   (header.Version < 3 && nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP66]) ||
+			   (header.Version < 4 && nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP65]))
 				ConsensusErrors.BadVersion.Throw();
 		}
 	}

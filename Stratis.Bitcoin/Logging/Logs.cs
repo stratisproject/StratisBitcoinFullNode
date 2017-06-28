@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Logging
 {
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Logging
         {
             // TODO: preload enough args for -conf= or -datadir= to get debug args from there
             // TODO: currently only takes -debug arg
-            var debugArgs = args.Where(a => a.StartsWith("-debug=")).Select(a => a.Substring("-debug=".Length).Replace("\"", "")).FirstOrDefault();
+            var debugArgs = args.GetValueOf("-debug");
 
             var keyToCategory = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -60,11 +61,24 @@ namespace Stratis.Bitcoin.Logging
                 { "fullnode", "Stratis.Bitcoin.FullNode" },
                 { "consensus", "Stratis.Bitcoin.FullNode" },
                 { "mining", "Stratis.Bitcoin.FullNode" },
-	            { "wallet", "Stratis.Bitcoin.Wallet" },
-			};
+                { "wallet", "Stratis.Bitcoin.Wallet" },
+            };
+
+            // get the minimum log level. The default is Information.
+            LogLevel minLogLevel = LogLevel.Information;
+            var logLevelArg = args.GetValueOf("-loglevel");
+            if (!string.IsNullOrEmpty(logLevelArg))
+            {
+                var result = Enum.TryParse(logLevelArg, true, out minLogLevel);
+                if (!result)
+                {
+                    minLogLevel = LogLevel.Information;
+                }
+            }
+            
             var filterSettings = new FilterLoggerSettings();
             // Default level is Information
-            filterSettings.Add("Default", LogLevel.Information);
+            filterSettings.Add("Default", minLogLevel);
             // TODO: Probably should have a way to configure these as well
             filterSettings.Add("System", LogLevel.Warning);
             filterSettings.Add("Microsoft", LogLevel.Warning);
@@ -99,17 +113,15 @@ namespace Stratis.Bitcoin.Logging
             }
 
             // TODO: Additional args
-            //var logipsArgs = args.Where(a => a.StartsWith("-logips=")).Select(a => a.Substring("-logips=".Length).Replace("\"", "")).FirstOrDefault();
-            //var printtoconsoleArgs = args.Where(a => a.StartsWith("-printtoconsole=")).Select(a => a.Substring("-printtoconsole=".Length).Replace("\"", "")).FirstOrDefault();
+            //var logipsArgs = args.GetValueOf("-logips");
+            //var printtoconsoleArgs = args.GetValueOf("-printtoconsole");
 
             ILoggerFactory loggerFactory = new LoggerFactory()
                 .WithFilter(filterSettings);
             loggerFactory.AddDebug(LogLevel.Trace);
             loggerFactory.AddConsole(LogLevel.Trace);
-	        loggerFactory.AddFile("Logs/node-{Date}.json", isJson: true, minimumLevel: LogLevel.Debug,
-		        fileSizeLimitBytes: 10000000);
-
-			return loggerFactory;
+            loggerFactory.AddFile("Logs/node-{Date}.json", isJson: true, minimumLevel: LogLevel.Trace, fileSizeLimitBytes: 5000000);
+            return loggerFactory;
         }
 
         public static ILogger Configuration

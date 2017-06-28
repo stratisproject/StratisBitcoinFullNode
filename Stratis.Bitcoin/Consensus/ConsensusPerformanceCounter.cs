@@ -13,12 +13,12 @@ namespace Stratis.Bitcoin.Consensus
 
 		public ConsensusPerformanceSnapshot(long processedInputs, long processedTransactions, long processedBlocks, long blockFetchingTime, long blockProcessingTime, long utxoFetchingTime)
 		{
-			_TotalProcessedTransactions = processedTransactions;
-			_TotalProcessedInputs = processedInputs;
-			_TotalProcessedBlocks = processedBlocks;
-			_TotalBlockFetchingTime = blockFetchingTime;
-			_TotalBlockValidationTime = blockProcessingTime;
-			_TotalUTXOFetchingTime = utxoFetchingTime;
+			this._TotalProcessedTransactions = processedTransactions;
+			this._TotalProcessedInputs = processedInputs;
+			this._TotalProcessedBlocks = processedBlocks;
+			this._TotalBlockFetchingTime = blockFetchingTime;
+			this._TotalBlockValidationTime = blockProcessingTime;
+            this._TotalUTXOFetchingTime = utxoFetchingTime;
 		}
 
 		private readonly long _TotalBlockFetchingTime;
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_TotalBlockFetchingTime);
+				return TimeSpan.FromTicks(this._TotalBlockFetchingTime);
 			}
 		}
 
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_TotalBlockValidationTime);
+				return TimeSpan.FromTicks(this._TotalBlockValidationTime);
 			}
 		}
 
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_TotalUTXOFetchingTime);
+				return TimeSpan.FromTicks(this._TotalUTXOFetchingTime);
 			}
 		}
 
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _TotalProcessedBlocks;
+				return this._TotalProcessedBlocks;
 			}
 		}
 
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _TotalProcessedTransactions;
+				return this._TotalProcessedTransactions;
 			}
 		}
 
@@ -72,18 +72,18 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _TotalProcessedInputs;
+				return this._TotalProcessedInputs;
 			}
 			set
 			{
-				_TotalProcessedInputs = value;
+                this._TotalProcessedInputs = value;
 			}
 		}
 		public TimeSpan Elapsed
 		{
 			get
 			{
-				return Taken - Start;
+				return this.Taken - this.Start;
 			}
 		}
 
@@ -91,21 +91,21 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedBlocks / TotalBlockValidationTime.TotalSeconds);
+				return (ulong)((double)this.TotalProcessedBlocks / this.TotalBlockValidationTime.TotalSeconds);
 			}
 		}
 		public ulong ProcessedInputsPerSecond
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedInputs / TotalBlockValidationTime.TotalSeconds);
+				return (ulong)((double)this.TotalProcessedInputs / this.TotalBlockValidationTime.TotalSeconds);
 			}
 		}
 		public ulong ProcessedTransactionsPerSecond
 		{
 			get
 			{
-				return (ulong)((double)TotalProcessedTransactions / TotalBlockValidationTime.TotalSeconds);
+				return (ulong)((double)this.TotalProcessedTransactions / this.TotalBlockValidationTime.TotalSeconds);
 			}
 		}
 
@@ -136,33 +136,33 @@ namespace Stratis.Bitcoin.Consensus
 			StringBuilder builder = new StringBuilder();
 
 			builder.AppendLine("====Blk Fetching Speed====");
-			if(TotalProcessedInputs > 0)
-				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (TotalBlockFetchingTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/input");
-			if(TotalProcessedTransactions > 0)
-				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (TotalBlockFetchingTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
-			if(TotalProcessedBlocks > 0)
-				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (TotalBlockFetchingTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/block");
+			if(this.TotalProcessedInputs > 0)
+				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (this.TotalBlockFetchingTime.TotalMilliseconds / this.TotalProcessedInputs).ToString("0.0000") + " ms/input");
+			if(this.TotalProcessedTransactions > 0)
+				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (this.TotalBlockFetchingTime.TotalMilliseconds / this.TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+			if(this.TotalProcessedBlocks > 0)
+				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (this.TotalBlockFetchingTime.TotalMilliseconds / this.TotalProcessedBlocks).ToString("0.0000") + " ms/block");
 			builder.AppendLine("====Validation Speed====");
-			if(TotalProcessedInputs > 0)
-				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
-			if(TotalProcessedTransactions > 0)
-				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
-			if(TotalProcessedBlocks > 0)
-				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (TotalBlockValidationTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
+			if(this.TotalProcessedInputs > 0)
+				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (this.TotalBlockValidationTime.TotalMilliseconds / this.TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			if(this.TotalProcessedTransactions > 0)
+				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (this.TotalBlockValidationTime.TotalMilliseconds / this.TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+			if(this.TotalProcessedBlocks > 0)
+				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (this.TotalBlockValidationTime.TotalMilliseconds / this.TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
 			builder.AppendLine("====UTXO Fetching Speed====");
-			if(TotalProcessedInputs > 0)
-				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (TotalUTXOFetchingTime.TotalMilliseconds / TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
-			if(TotalProcessedTransactions > 0)
-				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (TotalUTXOFetchingTime.TotalMilliseconds / TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
-			if(TotalProcessedBlocks > 0)
-				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (TotalUTXOFetchingTime.TotalMilliseconds / TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
+			if(this.TotalProcessedInputs > 0)
+				builder.AppendLine("Inputs:".PadRight(Logs.ColumnLength) + (this.TotalUTXOFetchingTime.TotalMilliseconds / this.TotalProcessedInputs).ToString("0.0000") + " ms/inputs");
+			if(this.TotalProcessedTransactions > 0)
+				builder.AppendLine("Transactions:".PadRight(Logs.ColumnLength) + (this.TotalUTXOFetchingTime.TotalMilliseconds / this.TotalProcessedTransactions).ToString("0.0000") + " ms/tx");
+			if(this.TotalProcessedBlocks > 0)
+				builder.AppendLine("Blocks:".PadRight(Logs.ColumnLength) + (this.TotalUTXOFetchingTime.TotalMilliseconds / this.TotalProcessedBlocks).ToString("0.0000") + " ms/tx");
 			builder.AppendLine("====Speed breakdown(%)====");
-			var total = _TotalBlockFetchingTime + _TotalUTXOFetchingTime + _TotalBlockValidationTime;
+			var total = this._TotalBlockFetchingTime + this._TotalUTXOFetchingTime + this._TotalBlockValidationTime;
 			if(total > 0)
 			{
-				builder.AppendLine("Blk Fetching:".PadRight(Logs.ColumnLength) + ((decimal)_TotalBlockFetchingTime * 100m / total).ToString("0.00") + " %");
-				builder.AppendLine("Validation:".PadRight(Logs.ColumnLength) + ((decimal)_TotalBlockValidationTime * 100m / total).ToString("0.00") + " %");
-				builder.AppendLine("Utxo Fetching:".PadRight(Logs.ColumnLength) + ((decimal)_TotalUTXOFetchingTime * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Blk Fetching:".PadRight(Logs.ColumnLength) + ((decimal)this._TotalBlockFetchingTime * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Validation:".PadRight(Logs.ColumnLength) + ((decimal)this._TotalBlockValidationTime * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Utxo Fetching:".PadRight(Logs.ColumnLength) + ((decimal)this._TotalUTXOFetchingTime * 100m / total).ToString("0.00") + " %");
 			}
 			builder.AppendLine("==========================");
 			return builder.ToString();
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Consensus
 	{
 		public ConsensusPerformanceCounter()
 		{
-			_Start = DateTime.UtcNow;
+            this._Start = DateTime.UtcNow;
 		}
 
 		long _ProcessedTransactions;
@@ -202,60 +202,60 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _ProcessedTransactions;
+				return this._ProcessedTransactions;
 			}
 		}
 
 		public void AddProcessedTransactions(long count)
 		{
-			Interlocked.Add(ref _ProcessedTransactions, count);
+			Interlocked.Add(ref this._ProcessedTransactions, count);
 		}
 		public void AddProcessedInputs(long count)
 		{
-			Interlocked.Add(ref _ProcessedInputs, count);
+			Interlocked.Add(ref this._ProcessedInputs, count);
 		}
 		public void AddProcessedBlocks(long count)
 		{
-			Interlocked.Add(ref _ProcessedBlocks, count);
+			Interlocked.Add(ref this._ProcessedBlocks, count);
 		}
 
 
 		public void AddUTXOFetchingTime(long count)
 		{
-			Interlocked.Add(ref _UTXOFetchingTime, count);
+			Interlocked.Add(ref this._UTXOFetchingTime, count);
 		}
 		private long _UTXOFetchingTime;
 		public TimeSpan UTXOFetchingTime
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_UTXOFetchingTime);
+				return TimeSpan.FromTicks(this._UTXOFetchingTime);
 			}
 		}
 
 		public void AddBlockProcessingTime(long count)
 		{
-			Interlocked.Add(ref _BlockProcessingTime, count);
+			Interlocked.Add(ref this._BlockProcessingTime, count);
 		}
 		private long _BlockProcessingTime;
 		public TimeSpan BlockProcessingTime
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_BlockFetchingTime);
+				return TimeSpan.FromTicks(this._BlockFetchingTime);
 			}
 		}
 
 		public void AddBlockFetchingTime(long count)
 		{
-			Interlocked.Add(ref _BlockFetchingTime, count);
+			Interlocked.Add(ref this._BlockFetchingTime, count);
 		}
 		private long _BlockFetchingTime;
 		public TimeSpan BlockFetchingTime
 		{
 			get
 			{
-				return TimeSpan.FromTicks(_BlockFetchingTime);
+				return TimeSpan.FromTicks(this._BlockFetchingTime);
 			}
 		}
 
@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _ProcessedInputs;
+				return this._ProcessedInputs;
 			}
 		}
 
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _ProcessedBlocks;
+				return this._ProcessedBlocks;
 			}
 		}
 
@@ -282,9 +282,9 @@ namespace Stratis.Bitcoin.Consensus
 #if !(PORTABLE || NETCORE)
 			Thread.MemoryBarrier();
 #endif
-			var snap = new ConsensusPerformanceSnapshot(ProcessedInputs, ProcessedTransactions, ProcessedBlocks, _BlockFetchingTime, _BlockProcessingTime, _UTXOFetchingTime)
+			var snap = new ConsensusPerformanceSnapshot(this.ProcessedInputs, this.ProcessedTransactions, this.ProcessedBlocks, this._BlockFetchingTime, this._BlockProcessingTime, this._UTXOFetchingTime)
 			{
-				Start = Start,
+				Start = this.Start,
 				Taken = DateTime.UtcNow
 			};
 			return snap;
@@ -295,14 +295,14 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			get
 			{
-				return _Start;
+				return this._Start;
 			}
 		}
 		public TimeSpan Elapsed
 		{
 			get
 			{
-				return DateTime.UtcNow - Start;
+				return DateTime.UtcNow - this.Start;
 			}
 		}
 

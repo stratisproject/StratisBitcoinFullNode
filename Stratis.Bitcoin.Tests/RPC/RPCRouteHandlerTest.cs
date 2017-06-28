@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 					ControllerName = "RPCController"
 				}
 			}, 1);
-			actionDescriptor.Setup(a => a.ActionDescriptors)
+            this.actionDescriptor.Setup(a => a.ActionDescriptors)
 				.Returns(desciptors);			
 
 			var task = this.handler.RouteAsync(context);
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 				.Callback<RouteContext>((r) => { callback = r; })
 				.Returns(Task.FromResult(0));
 			var desciptors = new ActionDescriptorCollection(new List<ControllerActionDescriptor>(), 1);
-			actionDescriptor.Setup(a => a.ActionDescriptors)
+            this.actionDescriptor.Setup(a => a.ActionDescriptors)
 				.Returns(desciptors);
 
 			await this.handler.RouteAsync(context);

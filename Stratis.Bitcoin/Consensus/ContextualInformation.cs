@@ -1,9 +1,6 @@
 ﻿using NBitcoin;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -18,9 +15,9 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			Guard.NotNull(bestBlock, nameof(bestBlock));
 			
-			Header = bestBlock.Header;
-			Height = bestBlock.Height;
-			MedianTimePast = bestBlock.GetMedianTimePast();
+			this.Header = bestBlock.Header;
+			this.Height = bestBlock.Height;
+            this.MedianTimePast = bestBlock.GetMedianTimePast();
 		}
 
 		public BlockHeader Header
@@ -93,8 +90,8 @@ namespace Stratis.Bitcoin.Consensus
 
 		public void SetBestBlock()
 		{
-			BestBlock = new ContextBlockInformation(this.BlockResult.ChainedBlock.Previous, this.Consensus);
-			Time = DateTimeOffset.UtcNow;
+			this.BestBlock = new ContextBlockInformation(this.BlockResult.ChainedBlock.Previous, this.Consensus);
+            this.Time = DateTimeOffset.UtcNow;
 		}
 
 		public void SetStake()
