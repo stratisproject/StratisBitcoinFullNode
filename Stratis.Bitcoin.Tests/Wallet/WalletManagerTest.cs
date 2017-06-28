@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void CheckWalletBalanceEstimationWithConfirmedTransactions()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithConfirmedTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
@@ -141,14 +141,14 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().Spendable);
-            Assert.Equal(40, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetSpendableAmount().UnConfirmedAmount);
         }
 
         [Fact]
         public void CheckWalletBalanceEstimationWithUnConfirmedTransactions()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithUnConfirmedTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
@@ -174,14 +174,14 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10 });
             }
 
-            Assert.Equal(40, firstAccount.GetSpendableAmount().Spendable);
-            Assert.Equal(40, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+            Assert.Equal(40, firstAccount.GetSpendableAmount().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
         }
 
         [Fact]
         public void CheckWalletBalanceEstimationWithSpentTransactions()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithSpentTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
@@ -207,14 +207,14 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails()});
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().Spendable);
-            Assert.Equal(0, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
         }
 
         [Fact]
         public void CheckWalletBalanceEstimationWithSpentAndConfirmedTransactions()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithSpentAndConfirmedTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
@@ -246,14 +246,14 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10});
             }
 
-            Assert.Equal(40, firstAccount.GetSpendableAmount().Spendable);
-            Assert.Equal(40, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+            Assert.Equal(40, firstAccount.GetSpendableAmount().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
         }
 
         [Fact]
         public void CheckWalletBalanceEstimationWithSpentAndUnConfirmedTransactions()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithSpentAndUnConfirmedTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
@@ -285,8 +285,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().Spendable);
-            Assert.Equal(40, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetSpendableAmount().UnConfirmedAmount);
         }
 
         private void AddAddressesToWallet(WalletManager walletManager, int count)

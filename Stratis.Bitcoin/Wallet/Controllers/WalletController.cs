@@ -382,8 +382,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                         CoinType = this.coinType,
                         Name = account.Name,
                         HdPath = account.HdPath,
-                        AmountConfirmed = result.Spendable,
-                        AmountUnconfirmed = result.SpendableWithUnconfirmed - result.Spendable,
+                        AmountConfirmed = result.ConfirmedAmount,
+                        AmountUnconfirmed = result.UnConfirmedAmount,
                     };
 
                     model.AccountsBalances.Add(balance);

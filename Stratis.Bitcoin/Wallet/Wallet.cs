@@ -313,15 +313,15 @@ namespace Stratis.Bitcoin.Wallet
         /// <summary>
         /// Get the accounts total spendable value for both confirmed and unconfirmed UTXO.
         /// </summary>
-        public (Money Spendable, Money SpendableWithUnconfirmed) GetSpendableAmount()
+        public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
         {
             var allTransactions = this.ExternalAddresses.SelectMany(a => a.Transactions)
                 .Concat(this.InternalAddresses.SelectMany(i => i.Transactions)).ToList();
 
-            var spendable = allTransactions.Sum(t => t.SpendableAmount(true));
-            var spendableWithUnconfirmed = allTransactions.Sum(t => t.SpendableAmount(false));
+            var confirmed = allTransactions.Sum(t => t.SpendableAmount(true));
+            var total = allTransactions.Sum(t => t.SpendableAmount(false));
 
-            return (spendable, spendableWithUnconfirmed);
+            return (confirmed, total - confirmed);
         }
 
         /// <summary>
@@ -509,7 +509,7 @@ namespace Stratis.Bitcoin.Wallet
             if (this.IsSpendable())
             {
                 // if the 'confirmedOnly' flag is set check 
-                // that the UTXO has a block height.
+                // that the UTXO is confirmed.
                 if (confirmedOnly && !this.IsConfirmed())
                 {
                     return Money.Zero;
