@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
 using static NBitcoin.Transaction;
 

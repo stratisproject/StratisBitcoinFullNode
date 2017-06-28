@@ -1,11 +1,10 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Logging;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -27,17 +26,19 @@ namespace Stratis.Bitcoin.Consensus
 	}
 	public class ConsensusLoop
 	{
-		public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, StakeChain stakeChain = null)
+		public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, StakeChain stakeChain = null)
 		{
 			Guard.NotNull(validator, nameof(validator));
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(utxoSet, nameof(utxoSet));
 			Guard.NotNull(puller, nameof(puller));
-			
-			this.Validator = validator;
+		    Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
+
+            this.Validator = validator;
 			this.Chain = chain;
 			this.UTXOSet = utxoSet;
 			this.Puller = puller;
+		    this.NodeDeployments = nodeDeployments;
 
 			// chain of stake info can be null if POS is not enabled
 			this.StakeChain = stakeChain;
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Consensus
 		public CoinView UTXOSet { get; }
 		public PowConsensusValidator Validator { get; }
 		public ChainedBlock Tip { get; private set; }
-		public ThresholdConditionCache BIP9 { get; private set; }
+		public NodeDeployments NodeDeployments { get; private set; }
 
 		public void Initialize()
 		{
@@ -64,25 +65,13 @@ namespace Stratis.Bitcoin.Consensus
 				utxoHash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
 			}
 			this.Puller.SetLocation(this.Tip);
-            this.BIP9 = new ThresholdConditionCache(this.Validator.ConsensusParams);
 		}
 
 		public IEnumerable<BlockResult> Execute(CancellationToken cancellationToken)
 		{
 			while(true)
 			{
-				yield return ExecuteNextBlock(cancellationToken);
-			}
-		}
-
-		public virtual ConsensusFlags GetFlags(ChainedBlock block = null)
-		{
-			block = block ?? this.Tip;
-			lock(this.BIP9)
-			{
-				var states = this.BIP9.GetStates(block.Previous);
-				var flags = new ConsensusFlags(block, states, this.Validator.ConsensusParams);
-				return flags;
+				yield return this.ExecuteNextBlock(cancellationToken);
 			}
 		}
 
@@ -149,8 +138,8 @@ namespace Stratis.Bitcoin.Consensus
 
 				// calculate the consensus flags  
 				// and check they are valid
-				context.Flags = this.GetFlags(context.BlockResult.ChainedBlock);
-                this.Validator.ContextualCheckBlock(context);
+				context.Flags = this.NodeDeployments.GetFlags(context.BlockResult.ChainedBlock);
+				this.Validator.ContextualCheckBlock(context);
 
                 // check the block itself
                 this.Validator.CheckBlock(context);
@@ -170,11 +159,11 @@ namespace Stratis.Bitcoin.Consensus
 				context.Set.SetCoins(coins);
 			}
 
-			// attempt to load in to cach the 
-			// next set of UTXO to be validated
-			// the task is not awaited so will not  
-			// stall main validation process
-			TryPrefetchAsync(context.Flags);
+            // attempt to load in to cach the 
+            // next set of UTXO to be validated
+            // the task is not awaited so will not  
+            // stall main validation process
+		    this.TryPrefetchAsync(context.Flags);
 
 			// validate the UTXO set are correctly spent
 			using (this.watch.Start(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))

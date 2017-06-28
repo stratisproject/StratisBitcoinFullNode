@@ -10,6 +10,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Deployments;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
@@ -122,12 +123,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 				this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
                 this.newBlock = new BlockTemplate();
 
-				this.entry = new TestMemPoolEntryHelper();
-				this.chain = new ConcurrentChain(this.network);
-				this.network.Consensus.Options = new PowConsensusOptions();
-				this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock));
-				this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings())));
-                this.consensus.Initialize();
+			    this.entry = new TestMemPoolEntryHelper();
+			    this.chain = new ConcurrentChain(network);
+			    this.network.Consensus.Options = new PowConsensusOptions();
+			    this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
+			    this.consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings())),new NodeDeployments(this.network));
+			    this.consensus.Initialize();
 
 				this.entry.Fee(11);
                 this.entry.Height(11);

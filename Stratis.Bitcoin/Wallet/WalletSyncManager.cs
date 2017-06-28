@@ -24,6 +24,8 @@ namespace Stratis.Bitcoin.Wallet
 
         protected ChainedBlock walletTip;
 
+        public ChainedBlock WalletTip => this.walletTip;
+
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, 
             Network network, BlockStoreCache blockStoreCache, NodeSettings nodeSettings)
         {

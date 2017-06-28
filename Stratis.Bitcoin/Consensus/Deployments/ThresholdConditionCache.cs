@@ -1,12 +1,10 @@
-﻿using NBitcoin;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Consensus
+namespace Stratis.Bitcoin.Consensus.Deployments
 {
 	public class ThresholdConditionCache
 	{
@@ -32,14 +30,14 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			Guard.NotNull(consensus, nameof(consensus));
 
-            this._Consensus = consensus;
+			this._Consensus = consensus;
 		}
 
 		public ThresholdState[] GetStates(ChainedBlock pindexPrev)
 		{
 			return Enum.GetValues(typeof(BIP9Deployments))
 				.OfType<BIP9Deployments>()
-				.Select(b => GetState(pindexPrev, b))
+				.Select(b => this.GetState(pindexPrev, b))
 				.ToArray();
 		}
 
@@ -58,20 +56,20 @@ namespace Stratis.Bitcoin.Consensus
 
 			// Walk backwards in steps of nPeriod to find a pindexPrev whose information is known
 			List<ChainedBlock> vToCompute = new List<ChainedBlock>();
-			while(!ContainsKey(pindexPrev?.HashBlock, deployment))
+			while(!this.ContainsKey(pindexPrev?.HashBlock, deployment))
 			{
 				if(pindexPrev.GetMedianTimePast() < nTimeStart)
 				{
 					// Optimization: don't recompute down further, as we know every earlier block will be before the start time
-					Set(pindexPrev?.HashBlock, deployment, ThresholdState.Defined);
+					this.Set(pindexPrev?.HashBlock, deployment, ThresholdState.Defined);
 					break;
 				}
 				vToCompute.Add(pindexPrev);
 				pindexPrev = pindexPrev.GetAncestor(pindexPrev.Height - nPeriod);
 			}
 			// At this point, cache[pindexPrev] is known
-			assert(ContainsKey(pindexPrev?.HashBlock, deployment));
-			ThresholdState state = Get(pindexPrev?.HashBlock, deployment);
+			this.assert(this.ContainsKey(pindexPrev?.HashBlock, deployment));
+			ThresholdState state = this.Get(pindexPrev?.HashBlock, deployment);
 
 			// Now walk forward and compute the state of descendants of pindexPrev
 			while(vToCompute.Count != 0)
@@ -106,7 +104,7 @@ namespace Stratis.Bitcoin.Consensus
 							int count = 0;
 							for(int i = 0; i < nPeriod; i++)
 							{
-								if(Condition(pindexCount, deployment))
+								if(this.Condition(pindexCount, deployment))
 								{
 									count++;
 								}
@@ -131,7 +129,7 @@ namespace Stratis.Bitcoin.Consensus
 							break;
 						}
 				}
-				Set(pindexPrev?.HashBlock, deployment, state = stateNext);
+				this.Set(pindexPrev?.HashBlock, deployment, state = stateNext);
 			}
 
 			return state;
@@ -157,7 +155,7 @@ namespace Stratis.Bitcoin.Consensus
 			if(!this.cache.TryGetValue(hash, out threshold))
 			{
 				threshold = new ThresholdState?[ArraySize];
-                this.cache.Add(hash, threshold);
+				this.cache.Add(hash, threshold);
 			}
 			threshold[(int)deployment] = state;
 		}
@@ -174,7 +172,7 @@ namespace Stratis.Bitcoin.Consensus
 
 		private bool Condition(ChainedBlock pindex, BIP9Deployments deployment)
 		{
-			return (((pindex.Header.Version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) && (pindex.Header.Version & Mask(deployment)) != 0);
+			return (((pindex.Header.Version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) && (pindex.Header.Version & this.Mask(deployment)) != 0);
 		}
 
 		public uint Mask(BIP9Deployments deployment)
