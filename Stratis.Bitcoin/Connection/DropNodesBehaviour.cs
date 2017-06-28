@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Connection
     {
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connection;
-        private readonly decimal dropTrashold;
+        private readonly decimal dropTreshold;
 
         public DropNodesBehaviour(ConcurrentChain chain, IConnectionManager connectionManager)
         {
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Connection
 
             // 80% of current max connections, the last 20% will only 
             // connect to nodes ahead of the current best chain
-            this.dropTrashold = 0.8M; 
+            this.dropTreshold = 0.8M; 
         }
 
         private void AttachedNodeOnMessageReceived(Node node, IncomingMessage message)
@@ -34,11 +34,11 @@ namespace Stratis.Bitcoin.Connection
             {
                 var nodeGroup = this.connection.DiscoveredNodeGroup ?? this.connection.ConnectNodeGroup;
                 // find how much 20% max nodes 
-                var connectAbove = Math.Round(nodeGroup.MaximumNodeConnection * this.dropTrashold, MidpointRounding.ToEven);
+                var tresholdCount = Math.Round(nodeGroup.MaximumNodeConnection * this.dropTreshold, MidpointRounding.ToEven);
 
-                if (connectAbove < this.connection.ConnectedNodes.Count())
+                if (tresholdCount < this.connection.ConnectedNodes.Count())
                     if (version.StartHeight < this.chain.Height)
-                        this.AttachedNode.DisconnectAsync($"Node too far behind height = {version.StartHeight}");
+                        this.AttachedNode.DisconnectAsync($"Node at height = {version.StartHeight} too far behind current height");
             });
         }
 
