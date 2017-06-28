@@ -311,6 +311,20 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <summary>
+        /// Get the accounts total spendable value for both confirmed and unconfirmed UTXO.
+        /// </summary>
+        public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
+        {
+            var allTransactions = this.ExternalAddresses.SelectMany(a => a.Transactions)
+                .Concat(this.InternalAddresses.SelectMany(i => i.Transactions)).ToList();
+
+            var confirmed = allTransactions.Sum(t => t.SpendableAmount(true));
+            var total = allTransactions.Sum(t => t.SpendableAmount(false));
+
+            return (confirmed, total - confirmed);
+        }
+
+        /// <summary>
         /// Finds the addresses in which a transaction is contained.
         /// </summary>
         /// <remarks>
@@ -488,36 +502,20 @@ namespace Stratis.Bitcoin.Wallet
 
         public Money SpendableAmount(bool confirmedOnly)
         {
-            // if this transaction hasn't been spent
-            if (this.SpendingDetails == null)
-            {            
+            // this method only returns a UTXO that has no spending output.
+            // if a spending output exists (even if its not confirmed) this 
+            // will return as zero balance.
+            
+            if (this.IsSpendable())
+            {
+                // if the 'confirmedOnly' flag is set check 
+                // that the UTXO is confirmed.
                 if (confirmedOnly && !this.IsConfirmed())
                 {
                     return Money.Zero;
                 }
 
                 return this.Amount;
-            }
-
-            // if the transaction and its spending transaction are both confirmed spent or
-            // if the transaction and its spending transaction are unconfirmed spent
-            if (this.IsConfirmed() && this.SpendingDetails.IsSpentConfirmed() || 
-                !this.IsConfirmed() && !this.SpendingDetails.IsSpentConfirmed())
-            {
-                return Money.Zero;
-            }
-            
-            // if the transaction is a confirmed spent but the spending transaction is not yet confirmed
-            if (this.IsConfirmed() && !this.SpendingDetails.IsSpentConfirmed())
-            {
-                if (confirmedOnly)
-                {
-                    return this.Amount;
-                }
-                else
-                {
-                    return Money.Zero;
-                }
             }
 
             return Money.Zero;
