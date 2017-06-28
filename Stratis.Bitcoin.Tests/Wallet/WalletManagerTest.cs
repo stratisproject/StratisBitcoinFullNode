@@ -100,26 +100,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             walletManager.Wallets.Add(CreateWallet("wallet1"));
             walletManager.Wallets.Add(CreateWallet("wallet2"));
             walletManager.Wallets.Add(CreateWallet("wallet3"));
-
-            foreach (var wallet in walletManager.Wallets)
-            {                
-                wallet.AccountsRoot.Add(new AccountRoot
-                {
-                    CoinType = CoinType.Bitcoin,
-                    Accounts = new List<HdAccount>
-                    {
-                        new HdAccount
-                        {
-                            ExternalAddresses = GenerateAddresses(1000),
-                            InternalAddresses = GenerateAddresses(1000)
-                        },
-                        new HdAccount
-                        {
-                            ExternalAddresses = GenerateAddresses(1000),
-                            InternalAddresses = GenerateAddresses(1000)
-                        } }
-                });
-            }
+            this.AddAddressesToWallet(walletManager, 1000);
             
             Parallel.For(0, 5000, new ParallelOptions() { MaxDegreeOfParallelism = 10 }, (int iteration) =>
             {
@@ -129,6 +110,206 @@ namespace Stratis.Bitcoin.Tests.Wallet
             });
             
             Assert.Equal(12000, walletManager.keysLookup.Count);
+        }
+
+        [Fact]
+        public void CheckWalletBalanceEstimationWithConfirmedTransactions()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
+                .Returns(new Mock<ILogger>().Object);
+            Logs.Configure(loggerFactory.Object);
+
+            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
+                {
+                    Cancellation = new System.Threading.CancellationTokenSource()
+                });
+
+            // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
+            walletManager.Wallets.Add(CreateWallet("wallet1"));
+            this.AddAddressesToWallet(walletManager, 1000);
+
+            var firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+
+            // add two unconfirmed transactions
+            for (int i = 1; i < 3; i++)
+            {
+                firstAccount.InternalAddresses.ElementAt(i).Transactions.Add(new TransactionData {Amount = 10});
+                firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
+            }
+
+            Assert.Equal(0, firstAccount.GetSpendableAmount().Spendable);
+            Assert.Equal(40, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+        }
+
+        [Fact]
+        public void CheckWalletBalanceEstimationWithUnConfirmedTransactions()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
+                .Returns(new Mock<ILogger>().Object);
+            Logs.Configure(loggerFactory.Object);
+
+            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
+                {
+                    Cancellation = new System.Threading.CancellationTokenSource()
+                });
+
+            // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
+            walletManager.Wallets.Add(CreateWallet("wallet1"));
+            this.AddAddressesToWallet(walletManager, 1000);
+
+            var firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+
+            // add two confirmed transactions
+            for (int i = 1; i < 3; i++)
+            {
+                firstAccount.InternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10});
+                firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10 });
+            }
+
+            Assert.Equal(40, firstAccount.GetSpendableAmount().Spendable);
+            Assert.Equal(40, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+        }
+
+        [Fact]
+        public void CheckWalletBalanceEstimationWithSpentTransactions()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
+                .Returns(new Mock<ILogger>().Object);
+            Logs.Configure(loggerFactory.Object);
+
+            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
+                {
+                    Cancellation = new System.Threading.CancellationTokenSource()
+                });
+
+            // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
+            walletManager.Wallets.Add(CreateWallet("wallet1"));
+            this.AddAddressesToWallet(walletManager, 1000);
+
+            var firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+
+            // add two spent transactions
+            for (int i = 1; i < 3; i++)
+            {
+                firstAccount.InternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails()});
+                firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails()});
+            }
+
+            Assert.Equal(0, firstAccount.GetSpendableAmount().Spendable);
+            Assert.Equal(0, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+        }
+
+        [Fact]
+        public void CheckWalletBalanceEstimationWithSpentAndConfirmedTransactions()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
+                .Returns(new Mock<ILogger>().Object);
+            Logs.Configure(loggerFactory.Object);
+
+            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
+                {
+                    Cancellation = new System.Threading.CancellationTokenSource()
+                });
+
+            // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
+            walletManager.Wallets.Add(CreateWallet("wallet1"));
+            this.AddAddressesToWallet(walletManager, 1000);
+
+            var firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+
+            // add two spent transactions
+            for (int i = 1; i < 3; i++)
+            {
+                firstAccount.InternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails() });
+                firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails() });
+            }
+
+            for (int i = 3; i < 5; i++)
+            {
+                firstAccount.InternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10});
+                firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10});
+            }
+
+            Assert.Equal(40, firstAccount.GetSpendableAmount().Spendable);
+            Assert.Equal(40, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+        }
+
+        [Fact]
+        public void CheckWalletBalanceEstimationWithSpentAndUnConfirmedTransactions()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
+                .Returns(new Mock<ILogger>().Object);
+            Logs.Configure(loggerFactory.Object);
+
+            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
+                {
+                    Cancellation = new System.Threading.CancellationTokenSource()
+                });
+
+            // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
+            walletManager.Wallets.Add(CreateWallet("wallet1"));
+            this.AddAddressesToWallet(walletManager, 1000);
+
+            var firstAccount = walletManager.Wallets.First().AccountsRoot.First().Accounts.First();
+
+            // add two spent transactions
+            for (int i = 1; i < 3; i++)
+            {
+                firstAccount.InternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails() });
+                firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails() });
+            }
+
+            for (int i = 3; i < 5; i++)
+            {
+                firstAccount.InternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
+                firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
+            }
+
+            Assert.Equal(0, firstAccount.GetSpendableAmount().Spendable);
+            Assert.Equal(40, firstAccount.GetSpendableAmount().SpendableWithUnconfirmed);
+        }
+
+        private void AddAddressesToWallet(WalletManager walletManager, int count)
+        {
+            foreach (var wallet in walletManager.Wallets)
+            {
+                wallet.AccountsRoot.Add(new AccountRoot
+                {
+                    CoinType = CoinType.Bitcoin,
+                    Accounts = new List<HdAccount>
+                    {
+                        new HdAccount
+                        {
+                            ExternalAddresses = GenerateAddresses(count),
+                            InternalAddresses = GenerateAddresses(count)
+                        },
+                        new HdAccount
+                        {
+                            ExternalAddresses = GenerateAddresses(count),
+                            InternalAddresses = GenerateAddresses(count)
+                        } }
+                });
+            }
         }
 
         private List<HdAddress> GenerateAddresses(int count)
@@ -145,7 +326,5 @@ namespace Stratis.Bitcoin.Tests.Wallet
             }
             return addresses;
         }
-
-
     }
 }

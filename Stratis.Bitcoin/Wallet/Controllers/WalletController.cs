@@ -375,16 +375,15 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 var accounts = this.walletManager.GetAccounts(request.WalletName).ToList();
                 foreach (var account in accounts)
                 {
-                    var allTransactions = account.ExternalAddresses.SelectMany(a => a.Transactions)
-                        .Concat(account.InternalAddresses.SelectMany(i => i.Transactions)).ToList();
+                    var result = account.GetSpendableAmount();
 
                     AccountBalance balance = new AccountBalance
                     {
                         CoinType = this.coinType,
                         Name = account.Name,
                         HdPath = account.HdPath,
-                        AmountConfirmed = allTransactions.Sum(t => t.SpendableAmount(true)),
-                        AmountUnconfirmed = allTransactions.Sum(t => t.SpendableAmount(false)) - allTransactions.Sum(t => t.SpendableAmount(true)),
+                        AmountConfirmed = result.Spendable,
+                        AmountUnconfirmed = result.SpendableWithUnconfirmed - result.Spendable,
                     };
 
                     model.AccountsBalances.Add(balance);
