@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 
@@ -88,7 +90,8 @@ namespace Stratis.Bitcoin.BlockStore
                 var newTip = this.chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockstoreResetList);
                 this.StoredBlock = newTip;
-            }
+			    Logs.BlockStore.LogWarning($"BlockStore Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
+			}
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
 			{

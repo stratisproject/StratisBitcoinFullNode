@@ -583,9 +583,8 @@ namespace Stratis.Bitcoin.Wallet
             {
                 var state = new MempoolValidationState(false);
                 if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
-                {
                     return false;
-                }
+                this.ProcessTransaction(transaction);
             }
 
             // broadcast to peers
