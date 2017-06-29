@@ -10,7 +10,8 @@ namespace Stratis.Bitcoin.Utilities
         public static TimeSpan FiveSeconds => TimeSpan.FromSeconds(5);
         public static TimeSpan TenSeconds => TimeSpan.FromSeconds(10);
 		public static TimeSpan RunOnce => TimeSpan.FromSeconds(-1);
-	}
+        public static TimeSpan Minute => TimeSpan.FromMinutes(1);
+    }
 
     public static class VersionExtensions
     {
