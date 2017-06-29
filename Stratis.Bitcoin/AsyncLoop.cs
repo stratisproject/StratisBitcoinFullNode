@@ -105,5 +105,34 @@ namespace Stratis.Bitcoin
                 }
             }, cancellation);
         }
+
+        /// <summary>
+        /// Loop every so often until a condition is met, then execute the action and finish.
+        /// </summary>       
+        public static Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery)
+        {
+            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(nodeCancellationToken);
+            return AsyncLoop.Run(name, token =>
+                {
+                    try
+                    {
+                        // loop until the condition is met, then execute the action and finish.
+                        if (condition())
+                        {
+                            action();
+
+                            linkedTokenSource.Cancel();
+                        }                        
+                    }
+                    catch (Exception e)
+                    {
+                        onException(e);
+                        linkedTokenSource.Cancel();
+                    }
+                    return Task.CompletedTask;
+                },
+                linkedTokenSource.Token,
+                repeatEvery: repeatEvery);
+        }
     }
 }

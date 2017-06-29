@@ -120,6 +120,9 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 DirectoryInfo walletFolder = this.GetWalletFolder();
                 Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic:request.Mnemonic);
 
+                // start syncing the wallet from the creation date
+                this.walletSyncManager.SyncFrom(DateTime.Now);
+
                 return this.Json(mnemonic.ToString());
             }
             catch (InvalidOperationException e)
