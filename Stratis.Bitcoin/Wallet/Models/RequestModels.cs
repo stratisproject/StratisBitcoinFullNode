@@ -7,6 +7,12 @@ using Newtonsoft.Json.Converters;
 
 namespace Stratis.Bitcoin.Wallet.Models
 {
+    public class HashModel
+    {
+        [Required(AllowEmptyStrings = false)]
+        public string Hash { get; set; }
+    }
+
     public class RequestModel
     {
         public override string ToString()

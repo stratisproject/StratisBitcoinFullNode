@@ -551,6 +551,25 @@ namespace Stratis.Bitcoin.Wallet.Controllers
         }
 
         /// <summary>
+        /// Starts sending block to the wallet for synchronisation.
+        /// This is for demo and testing use only.
+        /// </summary>
+        /// <param name="model">The hash of the block from which to start syncing.</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("sync")]
+        public IActionResult Sync([FromBody] HashModel model)
+        {
+            if (!this.ModelState.IsValid)
+            {
+                return this.BadRequest();
+            }
+            var block = this.chain.GetBlock(uint256.Parse(model.Hash));
+            this.walletSyncManager.SyncFrom(block.Height);
+            return this.Ok();
+        }
+
+        /// <summary>
         /// Gets a folder.
         /// </summary>
         /// <returns>The path folder of the folder.</returns>
