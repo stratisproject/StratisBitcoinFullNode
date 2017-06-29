@@ -752,7 +752,7 @@ namespace Stratis.Bitcoin.Wallet
                 }
 
                 // add the Merkle proof now that the transaction is confirmed in a block
-                if (foundTransaction.MerkleProof == null)
+                if (block != null && foundTransaction.MerkleProof == null)
                 {
                     foundTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
                 }
