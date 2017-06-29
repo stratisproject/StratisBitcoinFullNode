@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Wallet.JsonConverters;
 using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Wallet
 {
@@ -13,6 +14,11 @@ namespace Stratis.Bitcoin.Wallet
     /// </summary>
     public class Wallet
     {
+        public Wallet()
+        {
+            this.AccountsRoot = new List<AccountRoot>();
+        }
+
         /// <summary>
         /// The name of this wallet.
         /// </summary>
@@ -65,6 +71,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns></returns>
         public IEnumerable<HdAccount> GetAccountsByCoinType(CoinType coinType)
         {
+            if (this.AccountsRoot == null)
+                return new List<HdAccount>();
+
             return this.AccountsRoot.Where(a => a.CoinType == coinType).SelectMany(a => a.Accounts);
         }
 
@@ -74,10 +83,10 @@ namespace Stratis.Bitcoin.Wallet
         /// <param name="coinType">Type of the coin.</param>
         /// <returns></returns>
         public IEnumerable<TransactionData> GetAllTransactionsByCoinType(CoinType coinType)
-        {
-            List<TransactionData> result = new List<TransactionData>();
+        {            
             var accounts = this.GetAccountsByCoinType(coinType).ToList();
 
+            List<TransactionData> result = new List<TransactionData>();
             foreach (var address in accounts.SelectMany(a => a.ExternalAddresses).Concat(accounts.SelectMany(a => a.InternalAddresses)))
             {
                 result.AddRange(address.Transactions);
@@ -105,6 +114,11 @@ namespace Stratis.Bitcoin.Wallet
     /// </summary>
     public class AccountRoot
     {
+        public AccountRoot()
+        {
+            this.Accounts = new List<HdAccount>();
+        }
+
         /// <summary>
         /// The type of coin, Bitcoin or Stratis.
         /// </summary>
@@ -136,11 +150,12 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns>An unused account</returns>
         public HdAccount GetFirstUnusedAccount()
         {
-            var unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.Any() && !acc.InternalAddresses.Any()).ToList();
-            if (!unusedAccounts.Any())
-            {
+            if (this.Accounts == null)
                 return null;
-            }
+
+            var unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.Any() && !acc.InternalAddresses.Any()).ToList();
+            if (!unusedAccounts.Any())            
+                return null;            
 
             // gets the unused account with the lowest index
             var index = unusedAccounts.Min(a => a.Index);
@@ -155,12 +170,14 @@ namespace Stratis.Bitcoin.Wallet
         /// <exception cref="System.Exception"></exception>
         public HdAccount GetAccountByName(string accountName)
         {
+            if (this.Accounts == null)
+                throw new Exception($"No account with the name {accountName} could be found.");
+
             // get the account
             HdAccount account = this.Accounts.SingleOrDefault(a => a.Name == accountName);
-            if (account == null)
-            {
-                throw new Exception($"No account with name {accountName} could be found.");
-            }
+            if (account == null)            
+                throw new Exception($"No account with the name {accountName} could be found.");
+            
             return account;
         }
     }
@@ -229,9 +246,20 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns>A <see cref="CoinType"/>.</returns>
         public CoinType GetCoinType()
         {
+            if (string.IsNullOrWhiteSpace(this.HdPath))
+                throw new InvalidOperationException($"Empty HdPath on account {Name}");
+
             string[] pathElements = this.HdPath.Split('/');
-            int coinType = int.Parse(pathElements[2].Replace("'", string.Empty));
-            return (CoinType)coinType;
+            if (pathElements.Length < 3)
+                throw new InvalidOperationException($"Could not parse CoinType from HdPath {HdPath} on account {Name}");
+
+            var coinType = 0;
+            if (int.TryParse(pathElements[2].Replace("'", string.Empty), out coinType))
+            {
+                return (CoinType)coinType;
+            }
+
+            throw new InvalidOperationException($"Could not parse CoinType from HdPath {HdPath} on account {Name}");
         }
 
         /// <summary>
@@ -259,6 +287,9 @@ namespace Stratis.Bitcoin.Wallet
         private HdAddress GetFirstUnusedAddress(bool isChange)
         {
             IEnumerable<HdAddress> addresses = isChange ? this.InternalAddresses : this.ExternalAddresses;
+            if (addresses == null)
+                return null;
+
             var unusedAddresses = addresses.Where(acc => !acc.Transactions.Any()).ToList();
             if (!unusedAddresses.Any())
             {
@@ -278,6 +309,9 @@ namespace Stratis.Bitcoin.Wallet
         public HdAddress GetLastUsedAddress(bool isChange)
         {
             IEnumerable<HdAddress> addresses = isChange ? this.InternalAddresses : this.ExternalAddresses;
+            if (addresses == null)
+                return null;
+
             var usedAddresses = addresses.Where(acc => acc.Transactions.Any()).ToList();
             if (!usedAddresses.Any())
             {
@@ -296,9 +330,12 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns></returns>
         public IEnumerable<TransactionData> GetTransactionsById(uint256 id)
         {
-            var addresses = this.ExternalAddresses.Concat(this.InternalAddresses);
-            return addresses.SelectMany(a => a.Transactions.Where(t => t.Id == id));
-        }
+            Guard.NotNull(id, nameof(id));
+
+            IEnumerable<HdAddress> addresses = GetCombinedAddresses();
+
+            return addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.Id == id));
+        }       
 
         /// <summary>
         /// Gets a collection of transactions with spendable outputs.
@@ -306,8 +343,8 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns></returns>
         public IEnumerable<TransactionData> GetSpendableTransactions()
         {
-            var addresses = this.ExternalAddresses.Concat(this.InternalAddresses);
-            return addresses.SelectMany(a => a.Transactions.Where(t => t.IsSpendable()));
+            var addresses = this.GetCombinedAddresses();
+            return addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.IsSpendable()));
         }
 
         /// <summary>
@@ -320,8 +357,26 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns></returns>
         public IEnumerable<HdAddress> FindAddressesForTransaction(Func<TransactionData, bool> predicate)
         {
-            var addresses = this.ExternalAddresses.Concat(this.InternalAddresses);
-            return addresses.Where(a => a.Transactions.Any(predicate));
+            Guard.NotNull(predicate, nameof(predicate));
+
+            var addresses = this.GetCombinedAddresses();
+            return addresses.Where(t=> t.Transactions != null).Where(a => a.Transactions.Any(predicate));
+        }
+
+        private IEnumerable<HdAddress> GetCombinedAddresses()
+        {
+            IEnumerable<HdAddress> addresses = new List<HdAddress>();
+            if (this.ExternalAddresses != null)
+            {
+                addresses = addresses.Concat(this.ExternalAddresses);
+            }
+
+            if (this.InternalAddresses != null)
+            {
+                addresses = addresses.Concat(this.InternalAddresses);
+            }
+
+            return addresses;
         }
     }
 
@@ -387,7 +442,20 @@ namespace Stratis.Bitcoin.Wallet
         /// </returns>
         public bool IsChangeAddress()
         {
-            return int.Parse(this.HdPath.Split('/')[4]) == 1;
+            if (string.IsNullOrWhiteSpace(this.HdPath))
+                return false;
+
+            var hdPathParts = this.HdPath.Split('/');
+            if (hdPathParts.Length < 5)            
+                return false;
+
+            int result = 0;
+            if (int.TryParse(hdPathParts[4], out result))
+            {
+                return result == 1;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -396,6 +464,11 @@ namespace Stratis.Bitcoin.Wallet
         /// <returns></returns>
         public IEnumerable<TransactionData> UnspentTransactions()
         {
+            if (this.Transactions == null)
+            {
+                return new List<TransactionData>();
+            }
+
             return this.Transactions.Where(t => t.IsSpendable());
         }
     }
