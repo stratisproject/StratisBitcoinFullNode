@@ -37,6 +37,13 @@ namespace Stratis.Bitcoin.Wallet.Models
         public int? ChainTip { get; set; }
 
         /// <summary>
+        /// Whether the chain is synced with the network.
+        /// Only when this is true, can the client calculate a download percentage based on <see cref="ChainTip"/> and <see cref="LastBlockSyncedHeight"/>.
+        /// </summary>
+        [JsonProperty(PropertyName = "isChainSynced")]
+        public bool IsChainSynced { get; set; }
+
+        /// <summary>
         /// The total number of nodes that we're connected to.
         /// </summary>
         [JsonProperty(PropertyName = "connectedNodes")]
