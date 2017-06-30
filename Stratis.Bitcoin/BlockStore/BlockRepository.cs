@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 			var sync = this.session.Do(() =>
 			{
-				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Common");
+				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Address", "Common");
 				this.session.Transaction.ValuesLazyLoadingIsOn = true;
 			});
 
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.BlockStore
 			set { this.session.Transaction.ValuesLazyLoadingIsOn = value; }
 		}
 
-		public Task<Transaction> GetTrxAsync(uint256 trxid)
+        public Task<Transaction> GetTrxAsync(uint256 trxid)
 		{
 			Guard.NotNull(trxid, nameof(trxid));
 
@@ -156,28 +156,54 @@ namespace Stratis.Bitcoin.BlockStore
 
 			return this.session.Do(() =>
 			{
-				foreach (var block in blocks)
-				{
-					var blockId = block.GetHash();
+                Dictionary<uint256, Block> blockDict = new Dictionary<uint256, Block>();
+                Dictionary<uint256, uint256> transDict = new Dictionary<uint256, uint256>();
+                Dictionary<uint160, HashSet<uint256>> addrDict = new Dictionary<uint160, HashSet<uint256>>();
 
-					// if the block is already in store don't write it again
-					var item = this.session.Transaction.Select<byte[], Block>("Block", blockId.ToBytes());
+                // Gather blocks
+                foreach (var block in blocks)
+                {
+                    var blockId = block.GetHash();
+                    blockDict[blockId] = block;
+                    // Gaher transactions
+                    if (this.TxIndex)
+                    {
+                        foreach (var transaction in block.Transactions)
+                        {
+                            var trxId = transaction.GetHash();
+                            transDict[trxId] = blockId;
+                            // Gather addresses
+                            foreach (var addr in this.IndexedTransactionAddresses(transaction))
+                            {
+                                HashSet<uint256> list = addrDict.TryGet(addr);
+                                if (list == null)
+                                {
+                                    list = new HashSet<uint256>();
+                                    addrDict[addr] = list;
+                                }
+                                list.Add(trxId);
+                            }
+                        }
+                    }
+                }
+
+                // Sort blocks
+                var blockList = blockDict.ToList();
+                blockList.Sort((pair1, pair2) => (pair1.Key < pair2.Key)?-1:((pair1.Key == pair2.Key)?0:1));
+
+                // Index blocks
+                foreach (KeyValuePair<uint256, Block> kv in blockList)
+                {
+                    var blockId = kv.Key;
+                    var block = kv.Value;
+
+                    // if the block is already in store don't write it again
+                    var item = this.session.Transaction.Select<byte[], Block>("Block", blockId.ToBytes());
                     if (!item.Exists)
                     {
                         this.PerformanceCounter.AddRepositoryMissCount(1);
                         this.PerformanceCounter.AddRepositoryInsertCount(1);
                         this.session.Transaction.Insert<byte[], Block>("Block", blockId.ToBytes(), block);
-
-                        if (this.TxIndex)
-                        {
-                            // index transactions
-                            foreach (var transaction in block.Transactions)
-                            {
-                                var trxId = transaction.GetHash();
-                                this.PerformanceCounter.AddRepositoryInsertCount(1);
-                                this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId);
-                            }
-                        }
                     }
                     else
                     {
@@ -185,12 +211,55 @@ namespace Stratis.Bitcoin.BlockStore
                     }
                 }
 
-				this.SaveBlockHash(nextBlockHash);
+                // Sort transactions
+                var transList = transDict.ToList();
+                transList.Sort((pair1, pair2) => (pair1.Key < pair2.Key) ? -1 : ((pair1.Key == pair2.Key) ? 0 : 1));
+
+                // Index transactions
+                foreach (KeyValuePair<uint256, uint256> kv in transList)
+                {
+                    var trxId = kv.Key;
+                    var blockId = kv.Value;
+
+                    this.PerformanceCounter.AddRepositoryInsertCount(1);
+                    this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId);
+                }
+
+                // Sort addresses
+                var addrList = addrDict.ToList();
+                addrList.Sort((pair1, pair2) => (pair1.Key < pair2.Key) ? -1 : ((pair1.Key == pair2.Key) ? 0 : 1));
+
+                // Index addresses
+                foreach (KeyValuePair<uint160, HashSet<uint256>> kv in addrList)
+                {
+                    var address = kv.Key;
+                    var transactions = kv.Value;
+
+                    this.InsertTransactions(address, transactions);
+                }
+
+                // Commit additions
+                this.SaveBlockHash(nextBlockHash);
 				this.session.Transaction.Commit();
 			});
 		}
 
-		private bool? LoadTxIndex()
+        private IEnumerable<uint160> IndexedTransactionAddresses(Transaction transaction)
+        {
+            // TODO: Add additional addresses
+            foreach (var output in transaction.Outputs)
+            {
+                string[] parts = output.ScriptPubKey.ToString().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 5 && parts[0] == "OP_DUP" && parts[1] == "OP_HASH160" && parts[3] == "OP_EQUALVERIFY" && parts[4] == "OP_CHECKSIG")
+                {
+                    uint160 addr;
+                    if (uint160.TryParse(parts[2], out addr))
+                        yield return addr;
+                }
+            }
+        }
+
+        private bool? LoadTxIndex()
 		{
 			var item = this.session.Transaction.Select<byte[], bool>("Common", TxIndexKey);
 
@@ -293,16 +362,16 @@ namespace Stratis.Bitcoin.BlockStore
 			Guard.NotNull(newlockHash, nameof(newlockHash));
 			Guard.NotNull(hashes, nameof(hashes));
 
-			return this.session.Do(() =>
-			{
-				foreach (var hash in hashes)
-				{
-					// if the block is already in store don't write it again
-					var key = hash.ToBytes();
+            return this.session.Do(() =>
+            {
+                foreach (var hash in hashes)
+                {
+                    // if the block is already in store don't write it again
+                    var key = hash.ToBytes();
 
-					if (this.TxIndex)
-					{
-						var block = this.session.Transaction.Select<byte[], Block>("Block", key);
+                    if (this.TxIndex)
+                    {
+                        var block = this.session.Transaction.Select<byte[], Block>("Block", key);
                         if (block.Exists)
                         {
                             this.PerformanceCounter.AddRepositoryHitCount(1);
@@ -311,21 +380,115 @@ namespace Stratis.Bitcoin.BlockStore
                             {
                                 this.PerformanceCounter.AddRepositoryDeleteCount(1);
                                 this.session.Transaction.RemoveKey<byte[]>("Transaction", transaction.GetHash().ToBytes());
+
+                                // Remove transaction reference from indexed addresses
+                                foreach (var addr in this.IndexedTransactionAddresses(transaction))
+                                {
+                                    if (this.RemoveTransaction(addr, transaction))
+                                        this.PerformanceCounter.AddRepositoryDeleteCount(1);
+                                }
                             }
                         }
-                        else {
+                        else
+                        {
                             this.PerformanceCounter.AddRepositoryMissCount(1);
                         }
-					}
+			        }
 
                     this.PerformanceCounter.AddRepositoryDeleteCount(1);
                     this.session.Transaction.RemoveKey<byte[]>("Block", key);
-				}
+			    }
 
-				this.SaveBlockHash(newlockHash);
-				this.session.Transaction.Commit();
+			    this.SaveBlockHash(newlockHash);
+			    this.session.Transaction.Commit();
 			});
 		}
+
+        private void InsertTransactions(uint160 addr, HashSet<uint256> list)
+        {
+            uint cnt = 0;
+            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Address", addr.ToBytes());
+
+            if (addrRow.Exists)
+            {
+                // Get the number of transaction hashes
+                var bytes = addrRow.GetValuePart(0, sizeof(uint));
+                if (!BitConverter.IsLittleEndian) Array.Reverse(bytes);
+                cnt = BitConverter.ToUInt32(bytes, 0);
+            }
+
+            // Force the value to a power of 2 that will fit all the additional transaction hashes
+            if (addrRow.Value == null || (cnt + list.Count) > addrRow.Value.Length)
+            {
+                uint growCnt = 1;
+                for (; growCnt < (cnt + list.Count); growCnt *= 2) { }
+                uint growSize = sizeof(uint) + growCnt * 32;
+                this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), new byte[] { 0 /* Dummy */}, growSize - 1);
+            }
+
+            // Add the transaction hashes
+            foreach (var trxId in list)
+                this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), trxId.ToBytes(), sizeof(uint) + (cnt++) * 32);
+
+            // Update the number of transaction hashes
+            var cntBytes = BitConverter.GetBytes(cnt);
+            if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
+            this.PerformanceCounter.AddRepositoryInsertCount(1);
+            this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), cntBytes, 0);
+        }
+
+        private bool RemoveTransaction(uint160 addr, Transaction transaction)
+        {
+            var trxid = transaction.GetHash().ToBytes();
+
+            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Address", addr.ToBytes());
+            if (!addrRow.Exists)
+                return false;
+
+            // Storing one-to-many value as count followed by count transaction hashes
+            
+            // Get the number of transactions
+            var cntBytes = addrRow.GetValuePart(0, sizeof(uint));
+            if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
+            uint cnt = BitConverter.ToUInt32(cntBytes, 0);
+
+            // No transactions recorded or left
+            if (cnt == 0) return false;
+
+            // Get all the transactions hashes for easy iteration
+            byte[] listBytes = addrRow.GetValuePart(sizeof(uint), (uint)(cnt * trxid.Length));
+
+            // Traverse in reverse order
+            int i = listBytes.Length - trxid.Length;
+            for (; i >= 0; i -= trxid.Length)
+            {
+                int j = 0;
+                // trxid found?
+                for (; j < trxid.Length; j++)
+                    if (listBytes[i + j] != trxid[j])
+                        break;
+                if (j == trxid.Length)
+                    break;
+            }
+
+            // Transaction was not found
+            if (i < 0) return false;
+
+            // Found the trxid. Now remove it by overwriting the rest of the list with a shifted version
+            var replaceBytes = new byte[listBytes.Length - i];
+            Array.Copy(listBytes, i + trxid.Length, replaceBytes, 0, replaceBytes.Length - trxid.Length);
+
+            // Overwrite the value in the table row
+            this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), replaceBytes, (uint)(i + sizeof(uint)));
+
+            // Update the number of items
+            cnt--;
+            var cntBytes2 = BitConverter.GetBytes(cnt);
+            if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes2);
+            this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), cntBytes2, 0);
+
+            return true;
+        }
 
 		public void Dispose()
 		{
