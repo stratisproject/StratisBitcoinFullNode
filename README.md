@@ -6,30 +6,27 @@ https://stratisplatform.com
 Bitcoin Implementation in C#
 ----------------------------
 
-Stratis is an implementation of the Bitcoin protocol in C# on the [.NET Core](https://dotnet.github.io/) platform.
-The daemon is a full implementation of the Stratis Bitcoin Full Node.
-Stratis Bitcoin is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin) project.
-At some point the code will be forked to support the Stratis Token using [NStratis](https://github.com/stratisproject/NStratis) which is a POS implementation of NBitcoin.
+Stratis is an implementation of the Bitcoin protocol in C# on the [.NET Core](https://dotnet.github.io/) platform.  
+The node can run on the Bitcoin and Stratis networks.  
+Stratis Bitcoin is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin) project.  
 
-[.NET Core](https://dotnet.github.io/) is an open source cross platform framework and enables the development of applications and services on Windows, macOS and Linux.
-Join our community on [slack](https://stratisplatform.slack.com).
+For Proof of Stake support on the Stratis token the node is using [NStratis](https://github.com/stratisproject/NStratis) which is a POS implementation of NBitcoin.  
+
+[.NET Core](https://dotnet.github.io/) is an open source cross platform framework and enables the development of applications and services on Windows, macOS and Linux.  
+Join our community on [slack](https://stratisplatform.slack.com).  
 
 Running a FullNode
 ------------------
 
-Our full node is currently in alpha. To run it on the main bitcoin network:
+Our full node is currently in alpha.  
 
-```
-git clone https://github.com/stratisproject/StratisBitcoinFullNode.git
-dotnet restore
-dotnet run
-```
+To run on the Bitcoin network: ``` Stratis.BitcoinD\dotnet run ```  
+To run on the Stratis network: ``` Stratis.StratisD\dotnet run ```  
 
-What's Next
+See more details [here](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/getting-started.md)
+
+The design
 ----------
-
-We plan to add many more features on top of the Stratis Bitcoin blockchain:
-POS/DPOS, Sidechains, Private/Permissioned blockchain, Compiled Smart Contracts, NTumbleBit/Breeze wallet and more...
 
 **A Modular Approach**
 
@@ -47,16 +44,23 @@ The end goal is to develop a set of [Nuget](https://en.wikipedia.org/wiki/NuGet)
 
 Create a Blockchain in a .NET Core style programming
 ```
- var fullnode = new FullNodeBuilder()
-      .Configure(MainNet)
-      .UseStore()
-      .UseMemPool()
-      .UseWallet()
-      .AddDashboard()
-      .AddRPC()
+  var node = new FullNodeBuilder()
+   .UseNodeSettings(nodeSettings)
+   .UseConsensus()
+   .UseBlockStore()
+   .UseMempool()
+   .AddMining()
+   .AddRPC()
+   .Build();
 
- fullnode.Start()
+  node.Run();
 ```
+
+What's Next
+----------
+
+We plan to add many more features on top of the Stratis Bitcoin blockchain:
+Sidechains, Private/Permissioned blockchain, Compiled Smart Contracts, NTumbleBit/Breeze wallet and more...
 
 Development
 -----------
