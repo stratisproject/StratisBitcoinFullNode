@@ -90,9 +90,11 @@ namespace Stratis.Bitcoin
 
 		public bool IsInitialBlockDownload()
 		{
-			//if (fImporting || fReindex)
-			//	return true;
-			if (this.ConsensusLoop.Tip == null)
+            // if consensus is no present IBD has no meaning
+		    if (this.ConsensusLoop == null)
+		        return false;
+
+            if (this.ConsensusLoop.Tip == null)
 				return true;
 			if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))
 				return true;
