@@ -69,6 +69,7 @@ Up for some blockchain development?
 Check this guides for more info:
 * [Contributing Guide](Documentation/contributing.md)
 * [Coding Style](Documentation/coding-style.md)
+* [Out wiki page](https://stratisplatform.atlassian.net/wiki/spaces/WIKI/overview)
 
 There is a lot to do and we welcome contributers developers and testers who want to get some Blockchain experience.
 You can find tasks at the issues/projects or visit our [C# dev](https://stratisplatform.slack.com/messages/csharp_development/) slack channel.
