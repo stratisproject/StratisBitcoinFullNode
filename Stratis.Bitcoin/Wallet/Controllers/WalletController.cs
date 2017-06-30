@@ -251,7 +251,8 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
                     ConnectedNodes = this.connectionManager.ConnectedNodes.Count(),
                     ChainTip = this.chain.Tip.Height,
-                    IsDecrypted = true                  
+                    IsChainSynced = this.chain.IsDownloaded(),
+                    IsDecrypted = true
                 };
                 return this.Json(model);
 
