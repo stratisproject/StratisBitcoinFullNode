@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                     ConnectedNodes = this.connectionManager.ConnectedNodes.Count(),
                     ChainTip = this.chain.Tip.Height,
                     IsChainSynced = this.chain.IsDownloaded(),
-                IsDecrypted = true                  
+                    IsDecrypted = true
                 };
                 return this.Json(model);
 
