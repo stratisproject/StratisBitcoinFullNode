@@ -19,6 +19,8 @@ namespace Stratis.Bitcoin.BlockStore
 
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 
+        Task<List<uint256>> GetAddrTrxHashesAsync(uint160 addr);
+
 		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
 
 		Task<bool> ExistAsync(uint256 hash);
@@ -119,7 +121,20 @@ namespace Stratis.Bitcoin.BlockStore
             });
 		}
 
-		public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
+        public Task<List<uint256>> GetAddrTrxHashesAsync(uint160 addr)
+        {
+            Guard.NotNull(addr, nameof(addr));
+
+            if (!this.TxIndex)
+                return Task.FromResult(default(List<uint256>));
+
+            return this.session.Do(() =>
+            {
+                return this.GetAddressTransactionHashes(addr.ToBytes()).ToList();
+            });
+        }
+
+        public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
 		{
 			Guard.NotNull(trxid, nameof(trxid));
 
@@ -254,12 +269,13 @@ namespace Stratis.Bitcoin.BlockStore
             // TODO: Add additional addresses
             foreach (var output in transaction.Outputs)
             {
-                string[] parts = output.ScriptPubKey.ToString().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 5 && parts[0] == "OP_DUP" && parts[1] == "OP_HASH160" && parts[3] == "OP_EQUALVERIFY" && parts[4] == "OP_CHECKSIG")
+                var script = output.ScriptPubKey.ToBytes(true);
+                if (script.Length == 25 && script[0] == (byte)OpcodeType.OP_DUP && script[1] == (byte)OpcodeType.OP_HASH160 && 
+                    script[23] == (byte)OpcodeType.OP_EQUALVERIFY && script[24] == (byte)OpcodeType.OP_CHECKSIG)
                 {
-                    uint160 addr;
-                    if (uint160.TryParse(parts[2], out addr))
-                        yield return addr;
+                    var bytes = new byte[20];
+                    Array.Copy(script, 3, bytes, 0, 20);             
+                    yield return new uint160(bytes);
                 }
             }
         }
@@ -409,6 +425,30 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 		}
 
+        private IEnumerable<uint256> GetAddressTransactionHashes(byte[] addr)
+        {
+            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Address", addr);
+            if (addrRow.Exists)
+            {
+                // Get the number of transactions
+                var cntBytes = addrRow.GetValuePart(0, sizeof(uint));
+                if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
+                uint cnt = BitConverter.ToUInt32(cntBytes, 0);
+
+                // Any transactions recorded?
+                if (cnt > 0)
+                {
+                    byte[] listBytes = addrRow.GetValuePart(sizeof(uint), (uint)(cnt * 32));
+                    for (int i = 0; i < cnt; i++)
+                    {
+                        var trxid = new byte[32];
+                        Array.Copy(listBytes, i * 32, trxid, 0, 32);
+                        yield return new uint256(trxid);
+                    }
+                }
+            }
+        }
+
         private void InsertTransactions(uint160 addr, HashSet<uint256> list)
         {
             uint cnt = 0;
@@ -456,43 +496,51 @@ namespace Stratis.Bitcoin.BlockStore
             var cntBytes = addrRow.GetValuePart(0, sizeof(uint));
             if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
             uint cnt = BitConverter.ToUInt32(cntBytes, 0);
+            bool found = false;
 
-            // No transactions recorded or left
-            if (cnt == 0) return false;
-
-            // Get all the transactions hashes for easy iteration
-            byte[] listBytes = addrRow.GetValuePart(sizeof(uint), (uint)(cnt * trxid.Length));
-
-            // Traverse in reverse order
-            int i = listBytes.Length - trxid.Length;
-            for (; i >= 0; i -= trxid.Length)
+            // Any transactions recorded?
+            if (cnt > 0)
             {
-                int j = 0;
-                // trxid found?
-                for (; j < trxid.Length; j++)
-                    if (listBytes[i + j] != trxid[j])
-                        break;
-                if (j == trxid.Length)
-                    break;
+                // Get all the transactions hashes for easy iteration
+                byte[] listBytes = addrRow.GetValuePart(sizeof(uint), (uint)(cnt * trxid.Length));
+
+                // Traverse in reverse order
+                int i = listBytes.Length - trxid.Length;
+                for (; i >= 0 && !found; i -= trxid.Length)
+                {
+                    int j = 0;
+                    // trxid found?
+                    for (; j < trxid.Length; j++)
+                        if (listBytes[i + j] != trxid[j])
+                            break;
+                    found = (j == trxid.Length);
+                }
+
+                // Transaction was not found
+                if (!found) return false;
+
+                // Found the trxid. Now remove it by overwriting the rest of the list with a shifted version
+                var replaceBytes = new byte[listBytes.Length - i];
+                Array.Copy(listBytes, i + trxid.Length, replaceBytes, 0, replaceBytes.Length - trxid.Length);
+
+                // Overwrite the value in the table row
+                this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), replaceBytes, (uint)(i + sizeof(uint)));
+
+                // Update the number of items
+                if (--cnt > 0)
+                {
+                    var cntBytes2 = BitConverter.GetBytes(cnt);
+                    if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes2);
+                    this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), cntBytes2, 0);
+                    return true;
+                }
             }
 
-            // Transaction was not found
-            if (i < 0) return false;
+            // Key is no longer needed
+            if (cnt == 0)
+                this.session.Transaction.RemoveKey<byte[]>("Address", addr.ToBytes());
 
-            // Found the trxid. Now remove it by overwriting the rest of the list with a shifted version
-            var replaceBytes = new byte[listBytes.Length - i];
-            Array.Copy(listBytes, i + trxid.Length, replaceBytes, 0, replaceBytes.Length - trxid.Length);
-
-            // Overwrite the value in the table row
-            this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), replaceBytes, (uint)(i + sizeof(uint)));
-
-            // Update the number of items
-            cnt--;
-            var cntBytes2 = BitConverter.GetBytes(cnt);
-            if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes2);
-            this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), cntBytes2, 0);
-
-            return true;
+            return found;
         }
 
 		public void Dispose()
