@@ -332,8 +332,7 @@ namespace Stratis.Bitcoin.Wallet
         {
             Guard.NotNull(id, nameof(id));
 
-            IEnumerable<HdAddress> addresses = GetCombinedAddresses();
-
+            var addresses = this.GetCombinedAddresses();
             return addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.Id == id));
         }       
 
@@ -368,7 +367,7 @@ namespace Stratis.Bitcoin.Wallet
             IEnumerable<HdAddress> addresses = new List<HdAddress>();
             if (this.ExternalAddresses != null)
             {
-                addresses = addresses.Concat(this.ExternalAddresses);
+                addresses = this.ExternalAddresses;
             }
 
             if (this.InternalAddresses != null)
@@ -443,11 +442,11 @@ namespace Stratis.Bitcoin.Wallet
         public bool IsChangeAddress()
         {
             if (string.IsNullOrWhiteSpace(this.HdPath))
-                return false;
+                throw new InvalidOperationException($"Empty HdPath on address {Address}");
 
             var hdPathParts = this.HdPath.Split('/');
-            if (hdPathParts.Length < 5)            
-                return false;
+            if (hdPathParts.Length < 5)
+                throw new InvalidOperationException($"Could not parse value from HdPath on address {Address}");
 
             int result = 0;
             if (int.TryParse(hdPathParts[4], out result))

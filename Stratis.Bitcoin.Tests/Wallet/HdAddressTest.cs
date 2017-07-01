@@ -50,42 +50,45 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
-        public void IsChangeAddressWithInvalidHdPathReturnsFalse()
+        public void IsChangeAddressWithInvalidHdPathThrowsInvalidOperationException()
         {
-            var address = new HdAddress()
+            Assert.Throws<InvalidOperationException>(() =>
             {
-                HdPath = "0/1/2"
-            };
+                var address = new HdAddress()
+                {
+                    HdPath = "0/1/2"
+                };
 
-            var result = address.IsChangeAddress();
-
-            Assert.False(result);
+                var result = address.IsChangeAddress();
+            });
         }
 
         [Fact]
-        public void IsChangeAddressWithEmptyHdPathReturnsFalse()
+        public void IsChangeAddressWithEmptyHdPathThrowsInvalidOperationException()
         {
-            var address = new HdAddress()
+            Assert.Throws<InvalidOperationException>(() =>
             {
-                HdPath = string.Empty
-            };
+                var address = new HdAddress()
+                {
+                    HdPath = string.Empty
+                };
 
-            var result = address.IsChangeAddress();
-
-            Assert.False(result);
+                var result = address.IsChangeAddress();
+            });
         }
 
         [Fact]
-        public void IsChangeAddressWithNulledHdPathReturnsFalse()
+        public void IsChangeAddressWithNulledHdPathThrowsInvalidOperationException()
         {
-            var address = new HdAddress()
+            Assert.Throws<InvalidOperationException>(() =>
             {
-                HdPath = null
-            };
+                var address = new HdAddress()
+                {
+                    HdPath = null
+                };
 
-            var result = address.IsChangeAddress();
-
-            Assert.False(result);
+                var result = address.IsChangeAddress();
+            });
         }
 
         [Fact]
