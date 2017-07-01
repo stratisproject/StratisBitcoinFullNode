@@ -255,7 +255,8 @@ namespace Stratis.Bitcoin.BlockStore
                     var address = kv.Key;
                     var transactions = kv.Value;
 
-                    this.InsertTransactions(address, transactions);
+                    this.PerformanceCounter.AddRepositoryInsertCount(1);
+                    this.InsertAddressTransactions(address, transactions);
                 }
 
                 // Commit additions
@@ -449,7 +450,7 @@ namespace Stratis.Bitcoin.BlockStore
             }
         }
 
-        private void InsertTransactions(uint160 addr, HashSet<uint256> list)
+        private void InsertAddressTransactions(uint160 addr, HashSet<uint256> list)
         {
             uint cnt = 0;
             var addrRow = this.session.Transaction.Select<byte[], byte[]>("Address", addr.ToBytes());
@@ -463,9 +464,9 @@ namespace Stratis.Bitcoin.BlockStore
             }
 
             // Force the value to a power of 2 that will fit all the additional transaction hashes
-            if (addrRow.Value == null || (cnt + list.Count) > addrRow.Value.Length)
+            if ((cnt + list.Count) >= 2 && (addrRow.Value == null || (sizeof(uint) + (cnt + list.Count) * 32) > addrRow.Value.Length))
             {
-                uint growCnt = 1;
+                uint growCnt = 2;
                 for (; growCnt < (cnt + list.Count); growCnt *= 2) { }
                 uint growSize = sizeof(uint) + growCnt * 32;
                 this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), new byte[] { 0 /* Dummy */}, growSize - 1);
@@ -478,7 +479,7 @@ namespace Stratis.Bitcoin.BlockStore
             // Update the number of transaction hashes
             var cntBytes = BitConverter.GetBytes(cnt);
             if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
-            this.PerformanceCounter.AddRepositoryInsertCount(1);
+            
             this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), cntBytes, 0);
         }
 
@@ -506,7 +507,7 @@ namespace Stratis.Bitcoin.BlockStore
 
                 // Traverse in reverse order
                 int i = listBytes.Length - trxid.Length;
-                for (; i >= 0 && !found; i -= trxid.Length)
+                for (; i >= 0; i -= trxid.Length)
                 {
                     int j = 0;
                     // trxid found?
@@ -514,6 +515,7 @@ namespace Stratis.Bitcoin.BlockStore
                         if (listBytes[i + j] != trxid[j])
                             break;
                     found = (j == trxid.Length);
+                    if (found) break;
                 }
 
                 // Transaction was not found
