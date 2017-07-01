@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
+using DBreeze.Utils;
 
 namespace Stratis.Bitcoin.BlockStore
 {
@@ -150,11 +151,15 @@ namespace Stratis.Bitcoin.BlockStore
 			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
 			Guard.NotNull(blocks, nameof(blocks));
 
-			// dbreeze is faster if sort ascending by key in memory before insert
-			// however we need to find how byte arrays are sorted in dbreeze this link can help 
-			// https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
+            // dbreeze is faster if sort ascending by key in memory before insert
+            // however we need to find how byte arrays are sorted in dbreeze this link can help 
+            // https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
 
-			return this.session.Do(() =>
+            // Use this comparer. We are assuming that DBreeze would use the same comparer for
+            // ordering rows in the file.
+            var byteListComparer = new ByteListComparer();
+
+            return this.session.Do(() =>
 			{
                 Dictionary<uint256, Block> blockDict = new Dictionary<uint256, Block>();
                 Dictionary<uint256, uint256> transDict = new Dictionary<uint256, uint256>();
@@ -187,9 +192,9 @@ namespace Stratis.Bitcoin.BlockStore
                     }
                 }
 
-                // Sort blocks
-                var blockList = blockDict.ToList();
-                blockList.Sort((pair1, pair2) => (pair1.Key < pair2.Key)?-1:((pair1.Key == pair2.Key)?0:1));
+                // Sort blocks. Be consistent in always converting our keys to byte arrays using the ToBytes method.
+                var blockList = blockDict.ToList();      
+                blockList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
 
                 // Index blocks
                 foreach (KeyValuePair<uint256, Block> kv in blockList)
@@ -211,9 +216,9 @@ namespace Stratis.Bitcoin.BlockStore
                     }
                 }
 
-                // Sort transactions
+                // Sort blocks. Be consistent in always converting our keys to byte arrays using the ToBytes method.
                 var transList = transDict.ToList();
-                transList.Sort((pair1, pair2) => (pair1.Key < pair2.Key) ? -1 : ((pair1.Key == pair2.Key) ? 0 : 1));
+                transList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
 
                 // Index transactions
                 foreach (KeyValuePair<uint256, uint256> kv in transList)
@@ -225,9 +230,9 @@ namespace Stratis.Bitcoin.BlockStore
                     this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId);
                 }
 
-                // Sort addresses
+                // Sort blocks. Be consistent in always converting our keys to byte arrays using the ToBytes method.
                 var addrList = addrDict.ToList();
-                addrList.Sort((pair1, pair2) => (pair1.Key < pair2.Key) ? -1 : ((pair1.Key == pair2.Key) ? 0 : 1));
+                addrList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
 
                 // Index addresses
                 foreach (KeyValuePair<uint160, HashSet<uint256>> kv in addrList)
