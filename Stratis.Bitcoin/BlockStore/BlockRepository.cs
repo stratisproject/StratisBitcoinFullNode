@@ -20,7 +20,8 @@ namespace Stratis.Bitcoin.BlockStore
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 
         Task<List<byte[]>> GetTrxOutByAddrAsync(uint160 addr);
-        // Task<List<byte[]>> GetTrxOutNextAsync(byte[] trxOut); // TODO
+
+        Task<List<uint256>> GetTrxOutNextAsync(List<byte[]> trxOutList);
 
 		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
 
@@ -62,7 +63,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 			var sync = this.session.Do(() =>
 			{
-				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Address", "Common");
+				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Address", "Output", "Common");
 				this.session.Transaction.ValuesLazyLoadingIsOn = true;
 			});
 
@@ -135,6 +136,37 @@ namespace Stratis.Bitcoin.BlockStore
             });
         }
 
+        public Task<List<uint256>> GetTrxOutNextAsync(List<byte[]> trxOutList)
+        {
+            Guard.NotNull(trxOutList, nameof(trxOutList));
+
+            if (!this.TxIndex)
+                return Task.FromResult(default(List<uint256>));
+
+            return this.session.Do(() =>
+            {
+                var trxList = new List<uint256>();
+
+                foreach (var trxOut in trxOutList)
+                {
+                    var trxId = this.session.Transaction.Select<byte[], uint256>("Output", trxOut);
+
+                    if (!trxId.Exists)
+                    {
+                        this.PerformanceCounter.AddRepositoryMissCount(1);
+                        trxList.Add(null);
+                    }
+                    else
+                    {
+                        this.PerformanceCounter.AddRepositoryHitCount(1);
+                        trxList.Add(trxId.Value);
+                    }
+                }
+
+                return trxList;
+            });
+        }
+
         public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
 		{
 			Guard.NotNull(trxid, nameof(trxid));
@@ -177,9 +209,10 @@ namespace Stratis.Bitcoin.BlockStore
 
             return this.session.Do(() =>
 			{
-                Dictionary<uint256, Block> blockDict = new Dictionary<uint256, Block>();
-                Dictionary<uint256, uint256> transDict = new Dictionary<uint256, uint256>();
-                Dictionary<uint160, HashSet<byte[]>> addrDict = new Dictionary<uint160, HashSet<byte[]>>();
+                var blockDict = new Dictionary<uint256, Block>();
+                var transDict = new Dictionary<uint256, uint256>();
+                var addrDict = new Dictionary<uint160, HashSet<byte[]>>();
+                var outputDict = new Dictionary<byte[], uint256>();
 
                 // Gather blocks
                 foreach (var block in blocks)
@@ -206,6 +239,13 @@ namespace Stratis.Bitcoin.BlockStore
                                     addrDict[addr] = list;
                                 }
                                 list.Add(value);
+                            }
+
+                            foreach (var input in transaction.Inputs)
+                            {
+                                var key = input.PrevOut.Hash.ToBytes().Concat(input.PrevOut.N.ToBytes());
+                                var value = transaction.GetHash();
+                                outputDict[key] = value;
                             }
                         }
                     }
@@ -235,7 +275,7 @@ namespace Stratis.Bitcoin.BlockStore
                     }
                 }
 
-                // Sort blocks. Be consistent in always converting our keys to byte arrays using the ToBytes method.
+                // Sort transactions. Be consistent in always converting our keys to byte arrays using the ToBytes method.
                 var transList = transDict.ToList();
                 transList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
 
@@ -249,7 +289,7 @@ namespace Stratis.Bitcoin.BlockStore
                     this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId);
                 }
 
-                // Sort blocks. Be consistent in always converting our keys to byte arrays using the ToBytes method.
+                // Sort addresses. Be consistent in always converting our keys to byte arrays using the ToBytes method.
                 var addrList = addrDict.ToList();
                 addrList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
 
@@ -261,6 +301,30 @@ namespace Stratis.Bitcoin.BlockStore
 
                     this.PerformanceCounter.AddRepositoryInsertCount(1);
                     this.RecordTransactionOutputsToAddress(address, transactions);
+                }
+
+                // Sort outputs. In this case the keys are already arrays of bytes
+                var outputList = outputDict.ToList();
+                outputList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key, pair2.Key));
+
+                // Index blocks
+                foreach (KeyValuePair<byte[], uint256> kv in outputList)
+                {
+                    var trxOutputN = kv.Key;
+                    var trxNext = kv.Value.ToBytes();
+
+                    // if the block is already in store don't write it again
+                    var item = this.session.Transaction.Select<byte[], byte[]>("Output", trxOutputN);
+                    if (!item.Exists)
+                    {
+                        this.PerformanceCounter.AddRepositoryMissCount(1);
+                        this.PerformanceCounter.AddRepositoryInsertCount(1);
+                        this.session.Transaction.Insert<byte[], byte[]>("Output", trxOutputN, trxNext);
+                    }
+                    else
+                    {
+                        this.PerformanceCounter.AddRepositoryHitCount(1);
+                    }
                 }
 
                 // Commit additions
@@ -426,6 +490,13 @@ namespace Stratis.Bitcoin.BlockStore
                                     }
 
                                     list.Add(value);
+                                }
+
+                                foreach (var input in transaction.Inputs)
+                                {
+                                    var key2 = input.PrevOut.Hash.ToBytes().Concat(input.PrevOut.N.ToBytes());
+                                    this.PerformanceCounter.AddRepositoryDeleteCount(1);
+                                    this.session.Transaction.RemoveKey<byte[]>("Output", key2);
                                 }
                             }
 
