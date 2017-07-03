@@ -242,10 +242,9 @@ namespace Stratis.Bitcoin.BlockStore
                             var trxId = transaction.GetHash();
                             transDict[trxId] = blockId;
                             // Gather addresses
-                            foreach (var addrN in this.IndexedTransactionOutputs(transaction))
+                            foreach (var (addr, trxOutN) in this.IndexedTransactionOutputs(transaction))
                             {
-                                var addr = (uint160)addrN[0];
-                                var value = new TransactionOutputID(trxId, (uint)addrN[1]).Value;
+                                var value = new TransactionOutputID(trxId, trxOutN).Value;
 
                                 HashSet<byte[]> list = addrDict.TryGet(addr);
                                 if (list == null)
@@ -348,7 +347,7 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 		}
 
-        private IEnumerable<object[]> IndexedTransactionOutputs(Transaction transaction)
+        private IEnumerable<(uint160, uint)> IndexedTransactionOutputs(Transaction transaction)
         {
             for (uint N = 0; N < transaction.Outputs.Count; N++)
             {
@@ -360,7 +359,7 @@ namespace Stratis.Bitcoin.BlockStore
                 {
                     var bytes = new byte[20];
                     Array.Copy(script, 3, bytes, 0, 20);
-                    yield return new object[2] { new uint160(bytes), N }; // Address Hash, TxOutN
+                    yield return (new uint160(bytes), N); // Address Hash, TxOutN
                 }
             }
         }
@@ -492,10 +491,9 @@ namespace Stratis.Bitcoin.BlockStore
                                 this.session.Transaction.RemoveKey<byte[]>("Transaction", trxId.ToBytes());
 
                                 // Remove transaction reference from indexed addresses
-                                foreach (var addrN in this.IndexedTransactionOutputs(transaction))
+                                foreach (var (addr, trxOutN) in this.IndexedTransactionOutputs(transaction))
                                 {
-                                    var addr = (uint160)addrN[0];
-                                    var value = new TransactionOutputID(trxId, (uint)addrN[1]).Value;
+                                    var value = new TransactionOutputID(trxId, trxOutN).Value;
 
                                     HashSet<byte[]> list;
                                     if (!removals.TryGetValue(addr, out list))
