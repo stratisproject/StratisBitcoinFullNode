@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 
-        Task<List<byte[]>> GetTrxOutByAddrAsync(uint160 addr);
+        Task<List<byte[]>> GetTrxOutByAddrAsync(BitcoinAddress addr);
 
         Task<List<uint256>> GetTrxOutNextAsync(List<byte[]> trxOutList);
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 			var sync = this.session.Do(() =>
 			{
-				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Address", "Output", "Common");
+				this.session.Transaction.SynchronizeTables("Block", "Transaction", "Script", "Output", "Common");
 				this.session.Transaction.ValuesLazyLoadingIsOn = true;
 			});
 
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.BlockStore
             });
 		}
 
-        public Task<List<byte[]>> GetTrxOutByAddrAsync(uint160 addr)
+        public Task<List<byte[]>> GetTrxOutByAddrAsync(BitcoinAddress addr)
         {
             Guard.NotNull(addr, nameof(addr));
 
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.BlockStore
 
             return this.session.Do(() =>
             {
-                return this.GetAddressTransactionOutputs(addr.ToBytes()).ToList();
+                return this.GetAddressTransactionOutputs(addr).ToList();
             });
         }
 
@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.BlockStore
 			{
                 var blockDict = new Dictionary<uint256, Block>();
                 var transDict = new Dictionary<uint256, uint256>();
-                var addrDict = new Dictionary<uint160, HashSet<byte[]>>();
+                var addrDict = new Dictionary<byte[], HashSet<byte[]>>();
                 var outputDict = new Dictionary<byte[], uint256>();
 
                 // Gather blocks
@@ -242,15 +242,15 @@ namespace Stratis.Bitcoin.BlockStore
                             var trxId = transaction.GetHash();
                             transDict[trxId] = blockId;
                             // Gather addresses
-                            foreach (var (addr, trxOutN) in this.IndexedTransactionOutputs(transaction))
+                            foreach (var (script, trxOutN) in this.IndexedTransactionOutputs(transaction))
                             {
                                 var value = new TransactionOutputID(trxId, trxOutN).Value;
 
-                                HashSet<byte[]> list = addrDict.TryGet(addr);
+                                HashSet<byte[]> list = addrDict.TryGet(script);
                                 if (list == null)
                                 {
                                     list = new HashSet<byte[]>();
-                                    addrDict[addr] = list;
+                                    addrDict[script] = list;
                                 }
                                 list.Add(value);
                             }
@@ -308,13 +308,13 @@ namespace Stratis.Bitcoin.BlockStore
                 addrList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
 
                 // Index addresses
-                foreach (KeyValuePair<uint160, HashSet<byte[]>> kv in addrList)
+                foreach (KeyValuePair<byte[], HashSet<byte[]>> kv in addrList)
                 {
-                    var address = kv.Key;
+                    var script = kv.Key;
                     var transactions = kv.Value;
 
                     this.PerformanceCounter.AddRepositoryInsertCount(1);
-                    this.RecordTransactionOutputsToAddress(address, transactions);
+                    this.RecordTransactionOutputsToScript(script, transactions);
                 }
 
                 // Sort outputs. In this case the keys are already arrays of bytes
@@ -347,20 +347,19 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 		}
 
-        private IEnumerable<(uint160, uint)> IndexedTransactionOutputs(Transaction transaction)
+        private IEnumerable<(byte[], uint)> IndexedTransactionOutputs(Transaction transaction)
         {
             for (uint N = 0; N < transaction.Outputs.Count; N++)
             {
                 var output = transaction.Outputs[N];
 
                 var script = output.ScriptPubKey.ToBytes(true);
-                if (script.Length == 25 && script[0] == (byte)OpcodeType.OP_DUP && script[1] == (byte)OpcodeType.OP_HASH160 && 
+
+                // P2PKH - "Pay to this bitcoin address". 
+                // TODO: Selecting which scripts to index should be configurable or this condition should be removed
+                if (script.Length == 25 && script[0] == (byte)OpcodeType.OP_DUP && script[1] == (byte)OpcodeType.OP_HASH160 && script[2] == 20 &&
                     script[23] == (byte)OpcodeType.OP_EQUALVERIFY && script[24] == (byte)OpcodeType.OP_CHECKSIG)
-                {
-                    var bytes = new byte[20];
-                    Array.Copy(script, 3, bytes, 0, 20);
-                    yield return (new uint160(bytes), N); // Address Hash, TxOutN
-                }
+                    yield return (script, N);
             }
         }
 
@@ -481,7 +480,7 @@ namespace Stratis.Bitcoin.BlockStore
                         {
                             this.PerformanceCounter.AddRepositoryHitCount(1);
 
-                            var removals = new Dictionary<uint160, HashSet<byte[]>>();
+                            var removals = new Dictionary<byte[], HashSet<byte[]>>();
 
                             foreach (var transaction in block.Value.Transactions)
                             {
@@ -491,15 +490,15 @@ namespace Stratis.Bitcoin.BlockStore
                                 this.session.Transaction.RemoveKey<byte[]>("Transaction", trxId.ToBytes());
 
                                 // Remove transaction reference from indexed addresses
-                                foreach (var (addr, trxOutN) in this.IndexedTransactionOutputs(transaction))
+                                foreach (var (script, trxOutN) in this.IndexedTransactionOutputs(transaction))
                                 {
                                     var value = new TransactionOutputID(trxId, trxOutN).Value;
 
                                     HashSet<byte[]> list;
-                                    if (!removals.TryGetValue(addr, out list))
+                                    if (!removals.TryGetValue(script, out list))
                                     {
                                         list = new HashSet<byte[]>();
-                                        removals[addr] = list;
+                                        removals[script] = list;
                                     }
 
                                     list.Add(value);
@@ -513,9 +512,9 @@ namespace Stratis.Bitcoin.BlockStore
                                 }
                             }
 
-                            foreach (KeyValuePair<uint160, HashSet<byte[]>> kv in removals)
+                            foreach (KeyValuePair<byte[], HashSet<byte[]>> kv in removals)
                                 this.PerformanceCounter.AddRepositoryDeleteCount(
-                                    this.RemoveTransactionOutputsToAddress(kv.Key, kv.Value));
+                                    this.RemoveTransactionOutputsToScript(kv.Key, kv.Value));
                         }
                         else
                         {
@@ -532,9 +531,27 @@ namespace Stratis.Bitcoin.BlockStore
 			});
 		}
 
-        private IEnumerable<byte[]> GetAddressTransactionOutputs(byte[] addr)
+        private IEnumerable<byte[]> GetAddressTransactionOutputs(BitcoinAddress addr)
         {
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Address", addr);
+            var addrBytes = addr.ToBytes();
+
+            Guard.Assert(addrBytes.Length == 20);
+
+            var script = new byte[25];
+            script[0] = (byte)OpcodeType.OP_DUP;
+            script[1] = (byte)OpcodeType.OP_HASH160;
+            script[2] = 20;
+            script.CopyInside(3, addrBytes);
+            script[23] = (byte)OpcodeType.OP_EQUALVERIFY;
+            script[24] = (byte)OpcodeType.OP_CHECKSIG;
+
+            foreach (var output in this.GetScriptTransactionOutputs(script))
+                yield return output;
+        }
+
+        private IEnumerable<byte[]> GetScriptTransactionOutputs(byte[] script)
+        {
+            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Script", script);
             if (addrRow.Exists)
             {
                 // Get the number of transactions
@@ -556,10 +573,10 @@ namespace Stratis.Bitcoin.BlockStore
             }
         }
 
-        private void RecordTransactionOutputsToAddress(uint160 addr, HashSet<byte[]> list)
+        private void RecordTransactionOutputsToScript(byte[] script, HashSet<byte[]> list)
         {
             uint cnt = 0;
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Address", addr.ToBytes());
+            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Script", script);
 
             if (addrRow.Exists)
             {
@@ -576,14 +593,14 @@ namespace Stratis.Bitcoin.BlockStore
                 uint growCnt = 2;
                 for (; growCnt < (cnt + list.Count); growCnt *= 2) { }
                 uint growSize = (uint)(sizeof(uint) + growCnt * TransactionOutputID.Length); 
-                this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), new byte[] { 0 /* Dummy */}, growSize - 1);
+                this.session.Transaction.InsertPart<byte[], byte[]>("Script", script, new byte[] { 0 /* Dummy */}, growSize - 1);
             }
 
             // Add the transaction hashes
             foreach (var trxId in list)
             {
                 Guard.Assert(trxId.Length == TransactionOutputID.Length);
-                this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), trxId,
+                this.session.Transaction.InsertPart<byte[], byte[]>("Script", script, trxId,
                     (uint)(sizeof(uint) + (cnt++) * TransactionOutputID.Length));
             }
 
@@ -591,12 +608,12 @@ namespace Stratis.Bitcoin.BlockStore
             var cntBytes = BitConverter.GetBytes(cnt);
             if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
             
-            this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), cntBytes, 0);
+            this.session.Transaction.InsertPart<byte[], byte[]>("Script", script, cntBytes, 0);
         }
 
-        private int RemoveTransactionOutputsToAddress(uint160 addr, HashSet<byte[]> outputs)
+        private int RemoveTransactionOutputsToScript(byte[] script, HashSet<byte[]> outputs)
         {
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Address", addr.ToBytes());
+            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Script", script);
             if (!addrRow.Exists)
                 return 0;
 
@@ -642,14 +659,14 @@ namespace Stratis.Bitcoin.BlockStore
                     Array.Copy(listBytes, i + TransactionOutputID.Length, replaceBytes, 0, replaceBytes.Length - TransactionOutputID.Length);
 
                     // Overwrite the value in the table row
-                    this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), replaceBytes, (uint)(i + sizeof(uint)));
+                    this.session.Transaction.InsertPart<byte[], byte[]>("Script", script, replaceBytes, (uint)(i + sizeof(uint)));
 
                     // Update the number of items
                     if (--cnt > 0)
                     {
                         var cntBytes2 = BitConverter.GetBytes(cnt);
                         if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes2);
-                        this.session.Transaction.InsertPart<byte[], byte[]>("Address", addr.ToBytes(), cntBytes2, 0);
+                        this.session.Transaction.InsertPart<byte[], byte[]>("Script", script, cntBytes2, 0);
                         continue;
                     }
 
@@ -659,7 +676,7 @@ namespace Stratis.Bitcoin.BlockStore
 
             // Key is no longer needed
             if (cnt == 0)
-                this.session.Transaction.RemoveKey<byte[]>("Address", addr.ToBytes());
+                this.session.Transaction.RemoveKey<byte[]>("Script", script);
 
             return removeCnt;
         }
