@@ -4,6 +4,7 @@ using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Logging;
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Utilities
 		public static void Run(this IFullNode node)
 		{
 			var done = new ManualResetEventSlim(false);
-			using (CancellationTokenSource cts = node.GlobalCancellation.Cancellation)
+			using (CancellationTokenSource cts = new CancellationTokenSource())
 			{
 				Action shutdown = () =>
 				{

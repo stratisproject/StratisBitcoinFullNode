@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.ExceptionServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Internal;
@@ -17,7 +15,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Utilities;
 using System.Reflection;
 using Stratis.Bitcoin.Wallet;
@@ -30,17 +27,12 @@ namespace Stratis.Bitcoin
 		private readonly ILogger logger;
 		private ApplicationLifetime applicationLifetime;
 		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
-		private readonly ManualResetEvent isDisposed;
-		private readonly ManualResetEvent isStarted;
 
 		internal bool Stopped;
 
 		public FullNode()
 		{
 			this.logger = Logs.LoggerFactory.CreateLogger<FullNode>();
-			this.isDisposed = new ManualResetEvent(false);
-			this.isStarted = new ManualResetEvent(false);
-			this.Resources = new List<IDisposable>();
 		}
 
 		public bool IsDisposed { get; private set; }
@@ -50,7 +42,7 @@ namespace Stratis.Bitcoin
 		{
 			get { return this.applicationLifetime; }
 			private set { this.applicationLifetime = (ApplicationLifetime)value; }
-		} // this will replace the cancellation token on the full node
+		} 
 
 		public IFullNodeServiceProvider Services { get; set; }
 
@@ -104,7 +96,7 @@ namespace Stratis.Bitcoin
 			return false;
 		}
 
-		public List<IDisposable> Resources { get; }
+		public List<IDisposable> Resources { get; private set; }
 
 		public ChainBehavior.ChainState ChainBehaviorState { get; private set; }
 
@@ -124,13 +116,6 @@ namespace Stratis.Bitcoin
 
 		public ConcurrentChain Chain { get; set; }
 
-		public CancellationProvider GlobalCancellation { get; private set; }
-
-		public class CancellationProvider
-		{
-			public CancellationTokenSource Cancellation { get; set; }
-		}
-
 		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
@@ -144,7 +129,6 @@ namespace Stratis.Bitcoin
 			this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainBehavior.ChainState>();
 			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
 			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
-			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
 			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
 			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
 
@@ -153,48 +137,41 @@ namespace Stratis.Bitcoin
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
 
-			this.logger.LogInformation("Full node initialized on {0}", this.Network.Name);
+			Logs.FullNode.LogInformation($"Full node initialized on {this.Network.Name}");
 
 			return this;
-		}
-
-		protected void StartFeatures()
-		{
-			this.ApplicationLifetime =
-				this.Services?.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
-			this.fullNodeFeatureExecutor = this.Services?.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
-
-			// Fire IApplicationLifetime.Started
-			this.applicationLifetime?.NotifyStarted();
-
-			//start all registered features
-			this.fullNodeFeatureExecutor?.Start();
-		}
-
-		protected internal void DisposeFeatures()
-		{
-			// Fire IApplicationLifetime.Stopping
-			this.ApplicationLifetime?.StopApplication();
-			// Fire the IHostedService.Stop
-			this.fullNodeFeatureExecutor?.Stop();
-			(this.Services.ServiceProvider as IDisposable)?.Dispose();
-			//(this.Services.ServiceProvider as IDisposable)?.Dispose();
 		}
 
 		public void Start()
 		{
 			if (this.IsDisposed)
-				throw new ObjectDisposedException("FullNode");
+				throw new ObjectDisposedException(nameof(FullNode));
 
-			this.isStarted.Reset();
+		    if (this.Resources != null)
+		        throw new InvalidOperationException("node has already started.");
 
-			// start all the features defined
-			this.StartFeatures();
+		    this.Resources = new List<IDisposable>();
+            this.ApplicationLifetime = this.Services.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
+		    this.fullNodeFeatureExecutor = this.Services.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
 
+		    if (this.ApplicationLifetime == null)
+		        throw new InvalidOperationException($"{nameof(IApplicationLifetime)} must be set.");
+
+            if (this.fullNodeFeatureExecutor == null)
+		        throw new InvalidOperationException($"{nameof(FullNodeFeatureExecutor)} must be set.");
+
+		    Logs.FullNode.LogInformation("Starting node...");
+
+            // start all registered features
+            this.fullNodeFeatureExecutor.Start();
+
+            // start connecting to peers
 			this.ConnectionManager.Start();
-			this.isStarted.Set();
 
-			this.StartPeriodicLog();
+		    // Fire IApplicationLifetime.Started
+		    this.applicationLifetime.NotifyStarted();
+
+            this.StartPeriodicLog();
 		}
 
 		public void Stop()
@@ -204,22 +181,22 @@ namespace Stratis.Bitcoin
 
 			this.Stopped = true;
 
-			// Fire IApplicationLifetime.Stopping
-			this.ApplicationLifetime?.StopApplication();
+		    Logs.FullNode.LogInformation("Closing node pending...");
 
-			if (this.GlobalCancellation != null)
-			{
-				this.GlobalCancellation.Cancellation.Cancel();
+            // Fire IApplicationLifetime.Stopping
+            this.ApplicationLifetime.StopApplication();
 
-				this.ConnectionManager.Dispose();
-				foreach (IDisposable dispo in this.Resources)
-					dispo.Dispose();
+		    this.ConnectionManager.Dispose();
 
-				this.DisposeFeatures();
-			}
+            foreach (IDisposable dispo in this.Resources)
+		        dispo.Dispose();
 
-			// Fire IApplicationLifetime.Stopped
-			this.applicationLifetime?.NotifyStopped();
+            // Fire the NodeFeatureExecutor.Stop
+            this.fullNodeFeatureExecutor.Stop();
+            (this.Services.ServiceProvider as IDisposable)?.Dispose();
+
+            // Fire IApplicationLifetime.Stopped
+            this.applicationLifetime.NotifyStopped();
 		}
 
 		private void StartPeriodicLog()
@@ -276,28 +253,17 @@ namespace Stratis.Bitcoin
 					Logs.Bench.LogInformation(benchLogs.ToString());
 					return Task.CompletedTask;
 				},
-				this.GlobalCancellation.Cancellation.Token,
+				this.applicationLifetime.ApplicationStopping,
 				repeatEvery: TimeSpans.FiveSeconds,
 				startAfter: TimeSpans.FiveSeconds);
 		}
 
-		public void WaitDisposed()
-		{
-			this.isDisposed.WaitOne();
-			this.Dispose();
-		}
-
-#pragma warning disable 649
-		private Exception uncatchedException;
-#pragma warning restore 649
-
 		public void Dispose()
 		{
-			if (this.IsDisposed)
-				return;
-			this.IsDisposed = true;
+		    if (this.IsDisposed)
+		        return;
 
-			Logs.FullNode.LogInformation("Closing node pending...");
+            this.IsDisposed = true;
 
 			if (!this.Stopped)
 			{
@@ -311,21 +277,7 @@ namespace Stratis.Bitcoin
 				}
 			}
 
-			this.isStarted.WaitOne();
-			this.isDisposed.Set();
 			this.HasExited = true;
-		}
-
-		public void ThrowIfUncatchedException()
-		{
-			if (this.uncatchedException != null)
-			{
-				var ex = this.uncatchedException;
-				var aex = this.uncatchedException as AggregateException;
-				if (aex != null)
-					ex = aex.InnerException;
-				ExceptionDispatchInfo.Capture(ex).Throw();
-			}
 		}
 	}
 }

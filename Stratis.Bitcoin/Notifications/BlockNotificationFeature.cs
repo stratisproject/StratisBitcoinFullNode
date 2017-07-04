@@ -14,16 +14,15 @@ namespace Stratis.Bitcoin.Notifications
 	public class BlockNotificationFeature : FullNodeFeature
 	{
 		private readonly BlockNotification blockNotification;
-		private readonly FullNode.CancellationProvider cancellationProvider;
 		private readonly IConnectionManager connectionManager;
 		private readonly LookaheadBlockPuller blockPuller;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly ConcurrentChain chain;
 
-		public BlockNotificationFeature(BlockNotification blockNotification, FullNode.CancellationProvider cancellationProvider, IConnectionManager connectionManager, LookaheadBlockPuller blockPuller, ChainBehavior.ChainState chainState, ConcurrentChain chain)
+		public BlockNotificationFeature(BlockNotification blockNotification, IConnectionManager connectionManager, 
+            LookaheadBlockPuller blockPuller, ChainBehavior.ChainState chainState, ConcurrentChain chain)
 		{
 			this.blockNotification = blockNotification;
-			this.cancellationProvider = cancellationProvider;
 			this.connectionManager = connectionManager;
 			this.blockPuller = blockPuller;
 			this.chainState = chainState;
@@ -34,7 +33,7 @@ namespace Stratis.Bitcoin.Notifications
 		{
 			var connectionParameters = this.connectionManager.Parameters;
 			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));			
-			this.blockNotification.Notify(this.cancellationProvider.Cancellation.Token);
+			this.blockNotification.Notify();
 			this.chainState.HighestValidatedPoW = this.chain.Genesis;
 		}
 	}

@@ -33,7 +33,9 @@ namespace Stratis.Bitcoin.Builder
 	/// </summary>
 	public class BaseFeature : FullNodeFeature
 	{
-		/// <summary>
+	    private readonly IApplicationLifetime applicationLifetime;
+
+	    /// <summary>
 		/// disposable resources that will be disposed when the feature stops
 		/// </summary>
 		private readonly List<IDisposable> disposableResources = new List<IDisposable>();
@@ -43,7 +45,6 @@ namespace Stratis.Bitcoin.Builder
 		private readonly NodeSettings nodeSettings;
 		private readonly DataFolder dataFolder;
 		private readonly Network network;
-		private readonly FullNode.CancellationProvider cancellationProvider;
 		private readonly ConcurrentChain chain;
 		private readonly IConnectionManager connectionManager;
 
@@ -56,26 +57,26 @@ namespace Stratis.Bitcoin.Builder
 			NodeSettings nodeSettings, //node settings
 			DataFolder dataFolder, //data folders
 			Network network, //network (regtest/testnet/default)
-			FullNode.CancellationProvider cancellationProvider, //trigger when to dispose resources because of a global cancellation
+			IApplicationLifetime applicationLifetime, //trigger when to dispose resources because of a global cancellation
 			ConcurrentChain chain,
 			BlockStore.ChainBehavior.ChainState chainState,
 			IConnectionManager connectionManager,
 			ChainRepository chainRepository)
 		{
-			this.chainState = Guard.NotNull(chainState, nameof(chainState));
+		    this.chainState = Guard.NotNull(chainState, nameof(chainState));
 			this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
 			this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
 			this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
 			this.network = Guard.NotNull(network, nameof(network));
-			this.cancellationProvider = Guard.NotNull(cancellationProvider, nameof(cancellationProvider));
+			this.applicationLifetime = Guard.NotNull(applicationLifetime, nameof(applicationLifetime));
 			this.chain = Guard.NotNull(chain, nameof(chain));
 			this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
 		}
 	
 		public override void Start()
 		{
-			StartAddressManager();
-			StartChain();
+			this.StartAddressManager();
+			this.StartChain();
 
 			var connectionParameters = this.connectionManager.Parameters;
 			connectionParameters.IsRelay = this.nodeSettings.Mempool.RelayTxes;
@@ -102,7 +103,7 @@ namespace Stratis.Bitcoin.Builder
 			{
                 this.chainRepository.Save(this.chain);
 			})
-			.Start(this.cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+			.Start(this.applicationLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		private void StartAddressManager()
@@ -130,7 +131,7 @@ namespace Stratis.Bitcoin.Builder
 			{
                 this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
 			})
-		   .Start(this.cancellationProvider.Cancellation.Token, TimeSpan.FromMinutes(5.0), true);
+		   .Start(this.applicationLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		public override void Stop()
@@ -168,7 +169,6 @@ namespace Stratis.Bitcoin.Builder
 					services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
 					services.AddSingleton<BlockStore.ChainBehavior.ChainState>();
 					services.AddSingleton<ChainRepository>();
-					services.AddSingleton(serviceProvider => new FullNode.CancellationProvider() { Cancellation = new CancellationTokenSource() });
 				    services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
 				    services.AddSingleton<NodeDeployments>();
 

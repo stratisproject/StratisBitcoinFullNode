@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
@@ -17,8 +18,6 @@ using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin.Miner
 {
-
-
 	public class PosMinting
 	{
 		// Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
@@ -37,11 +36,12 @@ namespace Stratis.Bitcoin.Miner
 		private readonly BlockRepository blockRepository;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly Signals signals;
-		private readonly FullNode.CancellationProvider cancellationProvider;
-		private readonly NodeSettings settings;
+	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly NodeSettings settings;
 		private readonly CoinView coinView;
 		private readonly StakeChain stakeChain;
-		private readonly WalletManager wallet;
+	    private readonly IAsyncLoopFactory asyncLoopFactory;
+	    private readonly WalletManager wallet;
 		private readonly PosConsensusValidator posConsensusValidator;
 
 		private uint256 hashPrevBlock;
@@ -57,8 +57,8 @@ namespace Stratis.Bitcoin.Miner
 
 		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, IConnectionManager connection,
 			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
-			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider,
-			NodeSettings settings, CoinView coinView, StakeChain stakeChain, IWalletManager wallet)
+			BlockStore.ChainBehavior.ChainState chainState, Signals signals, IApplicationLifetime applicationLifetime,
+			NodeSettings settings, CoinView coinView, StakeChain stakeChain, IWalletManager wallet, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -69,11 +69,12 @@ namespace Stratis.Bitcoin.Miner
 			this.blockRepository = blockRepository;
 			this.chainState = chainState;
 			this.signals = signals;
-			this.cancellationProvider = cancellationProvider;
+		    this.applicationLifetime = applicationLifetime;
 			this.settings = settings;
 			this.coinView = coinView;
 			this.stakeChain = stakeChain;
-			this.wallet = wallet as WalletManager;
+		    this.asyncLoopFactory = asyncLoopFactory;
+		    this.wallet = wallet as WalletManager;
 
 			this.minerSleep = 500; // GetArg("-minersleep", 500);
 			this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
@@ -111,14 +112,14 @@ namespace Stratis.Bitcoin.Miner
 			if (this.mining != null)
 				return this.mining; // already mining
 
-			this.mining = AsyncLoop.Run("PosMining.Mine", token =>
-				{
-					this.GenerateBlocks(walletSecret);
-					return Task.CompletedTask;
-				},
-				this.cancellationProvider.Cancellation.Token,
-				repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
-				startAfter: TimeSpans.TenSeconds);
+			this.mining = this.asyncLoopFactory.Run("PosMining.Mine", token =>
+			{
+				this.GenerateBlocks(walletSecret);
+				return Task.CompletedTask;
+			},
+			this.applicationLifetime.ApplicationStopping,
+			repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
+			startAfter: TimeSpans.TenSeconds);
 
 			return this.mining;
 		}
@@ -139,7 +140,7 @@ namespace Stratis.Bitcoin.Miner
 				{
 					this.LastCoinStakeSearchInterval = 0;
 					tryToSync = true;
-					this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(this.minerSleep));
+                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.applicationLifetime.ApplicationStopping).GetAwaiter().GetResult();
 				}
 
 				if (tryToSync)
@@ -198,9 +199,9 @@ namespace Stratis.Bitcoin.Miner
 				}
 				else
 				{
-					this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(this.minerSleep));
+				    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.applicationLifetime.ApplicationStopping).GetAwaiter().GetResult();
 				}
-			}
+            }
 		}
 
 		private void CheckState(ContextInformation context, ChainedBlock pindexPrev)

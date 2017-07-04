@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -21,13 +22,13 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly BlockStoreLoop blockStoreLoop;
 		private readonly BlockStoreManager blockStoreManager;
 		private readonly BlockStoreSignaled blockStoreSignaled;
-		private readonly FullNode.CancellationProvider cancellationProvider;
+		private readonly IApplicationLifetime applicationLifetime;
 		private readonly IConnectionManager connectionManager;
 		private readonly NodeSettings nodeSettings;
 
 		public BlockStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals signals, BlockRepository blockRepository,  
 			BlockStoreCache blockStoreCache, StoreBlockPuller blockPuller, BlockStoreLoop blockStoreLoop, BlockStoreManager blockStoreManager,
-			BlockStoreSignaled blockStoreSignaled, FullNode.CancellationProvider cancellationProvider, NodeSettings nodeSettings)
+			BlockStoreSignaled blockStoreSignaled, IApplicationLifetime applicationLifetime, NodeSettings nodeSettings)
 		{
 			this.chain = chain;
 			this.signals = signals;
@@ -37,7 +38,7 @@ namespace Stratis.Bitcoin.BlockStore
 			this.blockStoreLoop = blockStoreLoop;
 			this.blockStoreManager = blockStoreManager;
 			this.blockStoreSignaled = blockStoreSignaled;
-			this.cancellationProvider = cancellationProvider;
+			this.applicationLifetime = applicationLifetime;
 			this.connectionManager = connectionManager;
 			this.nodeSettings = nodeSettings;
 		}
@@ -46,12 +47,15 @@ namespace Stratis.Bitcoin.BlockStore
 		{
 			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache));
 			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));
-			this.connectionManager.Parameters.Services = (this.nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
-			this.signals.Blocks.Subscribe(this.blockStoreSignaled);
+
+            // signal to peers that this node can serve blocks
+            this.connectionManager.Parameters.Services = (this.nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+
+            this.signals.Blocks.Subscribe(this.blockStoreSignaled);
 
 			this.blockRepository.Initialize().GetAwaiter().GetResult();
-			this.blockStoreSignaled.RelayWorker(this.cancellationProvider.Cancellation.Token);
-			this.blockStoreLoop.Initialize(this.cancellationProvider.Cancellation).GetAwaiter().GetResult();			
+			this.blockStoreSignaled.RelayWorker();
+			this.blockStoreLoop.Initialize().GetAwaiter().GetResult();			
 		}
 
 		public override void Stop()
