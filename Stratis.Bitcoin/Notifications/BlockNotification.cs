@@ -1,8 +1,8 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Notifications
@@ -14,12 +14,12 @@ namespace Stratis.Bitcoin.Notifications
 	{
 		private readonly ISignals signals;
         private readonly IAsyncLoopFactory asyncLoopFactory;
-	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly INodeLifetime nodeLifetime;
 
 	    private ChainedBlock tip;
 
         public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals, 
-            IAsyncLoopFactory asyncLoopFactory, IApplicationLifetime applicationLifetime)
+            IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime)
 		{
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(puller, nameof(puller));
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Notifications
 			this.Puller = puller;
 			this.signals = signals;
             this.asyncLoopFactory = asyncLoopFactory;
-		    this.applicationLifetime = applicationLifetime;
+		    this.nodeLifetime = nodeLifetime;
 		}
 
 		public ILookaheadBlockPuller Puller { get; }
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Notifications
 				this.reSync = false;
 
 				return Task.CompletedTask;
-			}, this.applicationLifetime.ApplicationStopping);
+			}, this.nodeLifetime.ApplicationStopping);
 		}		
 	}
 }

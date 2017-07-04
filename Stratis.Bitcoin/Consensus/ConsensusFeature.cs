@@ -11,7 +11,8 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
 using System;
 using System.Threading;
-using Microsoft.AspNetCore.Hosting;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Consensus.Deployments;
 
 namespace Stratis.Bitcoin.Consensus
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly CoinView coinView;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly IConnectionManager connectionManager;
-	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly INodeLifetime nodeLifetime;
 	    private readonly Signals signals;
 		private readonly ConsensusLoop consensusLoop;
 		private readonly NodeSettings nodeSettings;
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Consensus
 			CoinView coinView,
 			ChainBehavior.ChainState chainState,
 			IConnectionManager connectionManager,
-            IApplicationLifetime applicationLifetime,
+            INodeLifetime nodeLifetime,
 			Signals signals,
 			ConsensusLoop consensusLoop,
 			NodeSettings nodeSettings,
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Consensus
 			this.coinView = coinView;
 			this.chainState = chainState;
 			this.connectionManager = connectionManager;
-		    this.applicationLifetime = applicationLifetime;
+		    this.nodeLifetime = nodeLifetime;
 		    this.signals = signals;
 			this.network = network;
 			this.consensusLoop = consensusLoop;
@@ -109,7 +110,7 @@ namespace Stratis.Bitcoin.Consensus
 				var stack = new CoinViewStack(this.coinView);
 				var cache = stack.Find<CachedCoinView>();
 				var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager);
-			    var cancellationToken = this.applicationLifetime.ApplicationStopping;
+			    var cancellationToken = this.nodeLifetime.ApplicationStopping;
 
 				ChainedBlock lastTip = this.consensusLoop.Tip;
 				foreach (var block in this.consensusLoop.Execute(cancellationToken))
@@ -162,7 +163,7 @@ namespace Stratis.Bitcoin.Consensus
 			{
 				if (ex is OperationCanceledException)
 				{
-					if (this.applicationLifetime.ApplicationStopping.IsCancellationRequested)
+					if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
 						return;
 				}
 

@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using NBitcoin;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
@@ -19,21 +15,21 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly NodeSettings nodeArgs;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly IConnectionManager connection;
-	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
 
 	    private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeSettings nodeArgs, 
 			BlockStore.ChainBehavior.ChainState chainState, IConnectionManager connection, 
-            IApplicationLifetime applicationLifetime, IAsyncLoopFactory asyncLoopFactory)
+            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.storeLoop = storeLoop;
 			this.chain = chain;
 			this.nodeArgs = nodeArgs;
 			this.chainState = chainState;
 			this.connection = connection;
-		    this.applicationLifetime = applicationLifetime;
+		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
 
 		    this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
@@ -75,7 +71,7 @@ namespace Stratis.Bitcoin.BlockStore
 				foreach (var behaviour in behaviours)
 					await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
             },
-            this.applicationLifetime.ApplicationStopping,
+            this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.FiveSeconds);
 		}

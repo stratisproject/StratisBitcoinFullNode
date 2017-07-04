@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -12,8 +11,8 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Builder.Feature;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Internal;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Consensus.Deployments;
 using ChainBehavior = Stratis.Bitcoin.BlockStore.ChainBehavior;
 
@@ -33,7 +32,7 @@ namespace Stratis.Bitcoin.Builder
 	/// </summary>
 	public class BaseFeature : FullNodeFeature
 	{
-	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly INodeLifetime nodeLifetime;
 
 	    /// <summary>
 		/// disposable resources that will be disposed when the feature stops
@@ -57,7 +56,7 @@ namespace Stratis.Bitcoin.Builder
 			NodeSettings nodeSettings, //node settings
 			DataFolder dataFolder, //data folders
 			Network network, //network (regtest/testnet/default)
-			IApplicationLifetime applicationLifetime, //trigger when to dispose resources because of a global cancellation
+			INodeLifetime nodeLifetime, //trigger when to dispose resources because of a global cancellation
 			ConcurrentChain chain,
 			BlockStore.ChainBehavior.ChainState chainState,
 			IConnectionManager connectionManager,
@@ -68,7 +67,7 @@ namespace Stratis.Bitcoin.Builder
 			this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
 			this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
 			this.network = Guard.NotNull(network, nameof(network));
-			this.applicationLifetime = Guard.NotNull(applicationLifetime, nameof(applicationLifetime));
+			this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 			this.chain = Guard.NotNull(chain, nameof(chain));
 			this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
 		}
@@ -103,7 +102,7 @@ namespace Stratis.Bitcoin.Builder
 			{
                 this.chainRepository.Save(this.chain);
 			})
-			.Start(this.applicationLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
+			.Start(this.nodeLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		private void StartAddressManager()
@@ -131,7 +130,7 @@ namespace Stratis.Bitcoin.Builder
 			{
                 this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
 			})
-		   .Start(this.applicationLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
+		   .Start(this.nodeLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
 		}
 
 		public override void Stop()
@@ -161,7 +160,7 @@ namespace Stratis.Bitcoin.Builder
 				{
 					services.AddSingleton<ILoggerFactory>(Logs.LoggerFactory);
 					services.AddSingleton<DataFolder>();
-					services.AddSingleton<IApplicationLifetime, ApplicationLifetime>();
+					services.AddSingleton<INodeLifetime, NodeLifetime>();
 					services.AddSingleton<FullNodeFeatureExecutor>();
 					services.AddSingleton<Signals>().AddSingleton<ISignals, Signals>(provider => provider.GetService<Signals>());          
 					services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });

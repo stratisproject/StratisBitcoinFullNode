@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
@@ -10,6 +7,8 @@ using Xunit;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.BlockStore;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Tests.Notifications
@@ -30,7 +29,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
 			var chain = new Mock<ConcurrentChain>();
 			var chainState = new Mock<ChainBehavior.ChainState>(new Mock<FullNode>().Object);
 			var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object);
-			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Signals(), new AsyncLoopFactory(), new ApplicationLifetime());
+			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Signals(), new AsyncLoopFactory(), new NodeLifetime());
 
 			var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
 			blockNotificationFeature.Start();

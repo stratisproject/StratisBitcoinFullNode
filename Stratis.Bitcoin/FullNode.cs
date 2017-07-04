@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -17,6 +16,8 @@ using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using System.Reflection;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Wallet;
 
 namespace Stratis.Bitcoin
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin
 	public class FullNode : IFullNode
 	{
 		private readonly ILogger logger;
-		private ApplicationLifetime applicationLifetime;
+		private NodeLifetime nodeLifetime;
 		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
 		internal bool Stopped;
@@ -38,10 +39,10 @@ namespace Stratis.Bitcoin
 		public bool IsDisposed { get; private set; }
 		public bool HasExited { get; private set; }
 
-		public IApplicationLifetime ApplicationLifetime
+		public INodeLifetime NodeLifetime
 		{
-			get { return this.applicationLifetime; }
-			private set { this.applicationLifetime = (ApplicationLifetime)value; }
+			get { return this.nodeLifetime; }
+			private set { this.nodeLifetime = (NodeLifetime)value; }
 		} 
 
 		public IFullNodeServiceProvider Services { get; set; }
@@ -151,11 +152,11 @@ namespace Stratis.Bitcoin
 		        throw new InvalidOperationException("node has already started.");
 
 		    this.Resources = new List<IDisposable>();
-            this.ApplicationLifetime = this.Services.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
+            this.nodeLifetime = this.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
 		    this.fullNodeFeatureExecutor = this.Services.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
 
-		    if (this.ApplicationLifetime == null)
-		        throw new InvalidOperationException($"{nameof(IApplicationLifetime)} must be set.");
+		    if (this.nodeLifetime == null)
+		        throw new InvalidOperationException($"{nameof(INodeLifetime)} must be set.");
 
             if (this.fullNodeFeatureExecutor == null)
 		        throw new InvalidOperationException($"{nameof(FullNodeFeatureExecutor)} must be set.");
@@ -168,8 +169,8 @@ namespace Stratis.Bitcoin
             // start connecting to peers
 			this.ConnectionManager.Start();
 
-		    // Fire IApplicationLifetime.Started
-		    this.applicationLifetime.NotifyStarted();
+		    // Fire INodeLifetime.Started
+		    this.nodeLifetime.NotifyStarted();
 
             this.StartPeriodicLog();
 		}
@@ -183,8 +184,8 @@ namespace Stratis.Bitcoin
 
 		    Logs.FullNode.LogInformation("Closing node pending...");
 
-            // Fire IApplicationLifetime.Stopping
-            this.ApplicationLifetime.StopApplication();
+            // Fire INodeLifetime.Stopping
+            this.nodeLifetime.StopApplication();
 
 		    this.ConnectionManager.Dispose();
 
@@ -195,8 +196,8 @@ namespace Stratis.Bitcoin
             this.fullNodeFeatureExecutor.Stop();
             (this.Services.ServiceProvider as IDisposable)?.Dispose();
 
-            // Fire IApplicationLifetime.Stopped
-            this.applicationLifetime.NotifyStopped();
+            // Fire INodeLifetime.Stopped
+            this.nodeLifetime.NotifyStopped();
 		}
 
 		private void StartPeriodicLog()
@@ -253,7 +254,7 @@ namespace Stratis.Bitcoin
 					Logs.Bench.LogInformation(benchLogs.ToString());
 					return Task.CompletedTask;
 				},
-				this.applicationLifetime.ApplicationStopping,
+				this.nodeLifetime.ApplicationStopping,
 				repeatEvery: TimeSpans.FiveSeconds,
 				startAfter: TimeSpans.FiveSeconds);
 		}

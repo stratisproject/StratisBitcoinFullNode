@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly NodeSettings nodeArgs;
 		private readonly StoreBlockPuller blockPuller;
         private readonly BlockStoreCache blockStoreCache;
-	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
 	    private readonly BlockStoreStats blockStoreStats;
 
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.BlockStore
 			BlockStore.ChainBehavior.ChainState chainState,
 			StoreBlockPuller blockPuller,
             BlockStoreCache cache,
-            IApplicationLifetime applicationLifetime,
+            INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.chain = chain;
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.BlockStore
 			this.blockPuller = blockPuller;
 			this.ChainState = chainState;
             this.blockStoreCache = cache;
-		    this.applicationLifetime = applicationLifetime;
+		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
 
 		    this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
@@ -137,9 +137,9 @@ namespace Stratis.Bitcoin.BlockStore
 			// or downloads missing blocks then writing to store
 			this.asyncLoopFactory.Run("BlockStoreLoop.DownloadBlocks", async token =>
 			{
-				await this.DownloadAndStoreBlocks(this.applicationLifetime.ApplicationStopping);
+				await this.DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping);
 			},
-			this.applicationLifetime.ApplicationStopping,
+			this.nodeLifetime.ApplicationStopping,
 			repeatEvery: TimeSpans.Second,
 			startAfter: TimeSpans.FiveSeconds);
 		}

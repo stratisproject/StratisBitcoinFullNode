@@ -3,10 +3,10 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.Utilities
@@ -65,12 +65,12 @@ namespace Stratis.Bitcoin.Utilities
 
 				cancellationToken.Register(state =>
 				{
-					((IApplicationLifetime)state).StopApplication();
+					((INodeLifetime)state).StopApplication();
 				},
-				node.ApplicationLifetime);
+				node.NodeLifetime);
 
 				var waitForStop = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-				node.ApplicationLifetime.ApplicationStopping.Register(obj =>
+				node.NodeLifetime.ApplicationStopping.Register(obj =>
 				{
 					var tcs = (TaskCompletionSource<object>) obj;
 					tcs.TrySetResult(null);

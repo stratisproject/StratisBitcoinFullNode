@@ -9,10 +9,9 @@ using Stratis.Bitcoin.Wallet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting.Internal;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Xunit;
 using static Stratis.Bitcoin.FullNode;
 
@@ -32,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                                                  dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new ApplicationLifetime());
+                                                  dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             var concurrentChain = new ConcurrentChain(Network.Main);
             ChainedBlock tip = AppendBlock(null, concurrentChain);
@@ -89,7 +88,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new ApplicationLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
             walletManager.Wallets.Add(CreateWallet("wallet1"));
@@ -118,7 +117,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new ApplicationLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
             walletManager.Wallets.Add(CreateWallet("wallet1"));
@@ -148,7 +147,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new ApplicationLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
             walletManager.Wallets.Add(CreateWallet("wallet1"));
@@ -178,7 +177,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new ApplicationLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
             walletManager.Wallets.Add(CreateWallet("wallet1"));
@@ -208,7 +207,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new ApplicationLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
             walletManager.Wallets.Add(CreateWallet("wallet1"));
@@ -244,7 +243,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new ApplicationLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
             walletManager.Wallets.Add(CreateWallet("wallet1"));

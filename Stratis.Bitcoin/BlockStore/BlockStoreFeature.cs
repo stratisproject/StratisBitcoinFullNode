@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
@@ -22,13 +22,13 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly BlockStoreLoop blockStoreLoop;
 		private readonly BlockStoreManager blockStoreManager;
 		private readonly BlockStoreSignaled blockStoreSignaled;
-		private readonly IApplicationLifetime applicationLifetime;
+		private readonly INodeLifetime nodeLifetime;
 		private readonly IConnectionManager connectionManager;
 		private readonly NodeSettings nodeSettings;
 
 		public BlockStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals signals, BlockRepository blockRepository,  
 			BlockStoreCache blockStoreCache, StoreBlockPuller blockPuller, BlockStoreLoop blockStoreLoop, BlockStoreManager blockStoreManager,
-			BlockStoreSignaled blockStoreSignaled, IApplicationLifetime applicationLifetime, NodeSettings nodeSettings)
+			BlockStoreSignaled blockStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings)
 		{
 			this.chain = chain;
 			this.signals = signals;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.BlockStore
 			this.blockStoreLoop = blockStoreLoop;
 			this.blockStoreManager = blockStoreManager;
 			this.blockStoreSignaled = blockStoreSignaled;
-			this.applicationLifetime = applicationLifetime;
+			this.nodeLifetime = nodeLifetime;
 			this.connectionManager = connectionManager;
 			this.nodeSettings = nodeSettings;
 		}

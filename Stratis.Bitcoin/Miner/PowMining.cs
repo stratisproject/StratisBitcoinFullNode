@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -38,14 +39,14 @@ namespace Stratis.Bitcoin.Miner
 		private readonly BlockRepository blockRepository;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly Signals signals;
-	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
 	    private uint256 hashPrevBlock;
 		private Task mining;
 
 		public PowMining(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network,
 			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
-			BlockStore.ChainBehavior.ChainState chainState, Signals signals, IApplicationLifetime applicationLifetime, IAsyncLoopFactory asyncLoopFactory)
+			BlockStore.ChainBehavior.ChainState chainState, Signals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Miner
 			this.blockRepository = blockRepository;
 			this.chainState = chainState;
 			this.signals = signals;
-		    this.applicationLifetime = applicationLifetime;
+		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
 		}
 
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Miner
 				this.mining = null;
 				return Task.CompletedTask;
 			},
-            this.applicationLifetime.ApplicationStopping,
+            this.nodeLifetime.ApplicationStopping,
 			repeatEvery: TimeSpans.RunOnce,
 			startAfter: TimeSpans.TenSeconds);
 
@@ -98,7 +99,7 @@ namespace Stratis.Bitcoin.Miner
 				{
 					if (this.chain.Tip != this.consensusLoop.Tip)
 					{
-					    Task.Delay(TimeSpan.FromMinutes(1), this.applicationLifetime.ApplicationStopping).GetAwaiter().GetResult();
+					    Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
 						continue;
 					}
 

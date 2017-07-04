@@ -5,7 +5,8 @@ using Stratis.Bitcoin.Notifications;
 using Stratis.Bitcoin.Tests.Logging;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting.Internal;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Notifications
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
             chain.Setup(c => c.GetBlock(startBlockId))
                 .Returns((ChainedBlock)null);
 
-            var notification = new BlockNotification(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals(), new AsyncLoopFactory(), new ApplicationLifetime());
+            var notification = new BlockNotification(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals(), new AsyncLoopFactory(), new NodeLifetime());
 
             notification.Notify();
         }
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
                 .Returns(new ChainedBlock(header, 0));
 
             var stub = new Mock<ILookaheadBlockPuller>();
-            var lifetime = new ApplicationLifetime();
+            var lifetime = new NodeLifetime();
             stub.Setup(s => s.NextBlock(lifetime.ApplicationStopping))
                 .Returns((Block)null);
 
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
         [Fact]
         public async Task NotifyWithoutSyncFromRunsWithoutBroadcastingBlocks()
         {
-            var lifetime = new ApplicationLifetime();
+            var lifetime = new NodeLifetime();
             new CancellationTokenSource(100).Token.Register(() => lifetime.StopApplication());
 
             var startBlockId = new uint256(156);
@@ -79,7 +80,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
         [Fact]
         public async Task NotifyWithSyncFromSetBroadcastsOnNextBlock()
         {
-            var lifetime = new ApplicationLifetime();
+            var lifetime = new NodeLifetime();
             new CancellationTokenSource(100).Token.Register(() => lifetime.StopApplication());
 
             var startBlockId = new uint256(156);

@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
+﻿using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
 
@@ -16,16 +12,16 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly MempoolManager manager;
 		private readonly ConcurrentChain chain;
 		private readonly IConnectionManager connection;
-	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
 
 	    public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, IConnectionManager connection, 
-            IApplicationLifetime applicationLifetime, IAsyncLoopFactory asyncLoopFactory)
+            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.manager = manager;
 			this.chain = chain;
 			this.connection = connection;
-		    this.applicationLifetime = applicationLifetime;
+		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
 		    this.RelayWorker();
 		}
@@ -52,7 +48,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				foreach (var behaviour in behaviours)
 					await behaviour.SendTrickle().ConfigureAwait(false);
 			},
-			this.applicationLifetime.ApplicationStopping,
+			this.nodeLifetime.ApplicationStopping,
 			repeatEvery: TimeSpans.TenSeconds,
 			startAfter: TimeSpans.TenSeconds);
 		}

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Miner
 		private readonly BlockRepository blockRepository;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly Signals signals;
-	    private readonly IApplicationLifetime applicationLifetime;
+	    private readonly INodeLifetime nodeLifetime;
 	    private readonly NodeSettings settings;
 		private readonly CoinView coinView;
 		private readonly StakeChain stakeChain;
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Miner
 
 		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, IConnectionManager connection,
 			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
-			BlockStore.ChainBehavior.ChainState chainState, Signals signals, IApplicationLifetime applicationLifetime,
+			BlockStore.ChainBehavior.ChainState chainState, Signals signals, INodeLifetime nodeLifetime,
 			NodeSettings settings, CoinView coinView, StakeChain stakeChain, IWalletManager wallet, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.consensusLoop = consensusLoop;
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Miner
 			this.blockRepository = blockRepository;
 			this.chainState = chainState;
 			this.signals = signals;
-		    this.applicationLifetime = applicationLifetime;
+		    this.nodeLifetime = nodeLifetime;
 			this.settings = settings;
 			this.coinView = coinView;
 			this.stakeChain = stakeChain;
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Miner
 				this.GenerateBlocks(walletSecret);
 				return Task.CompletedTask;
 			},
-			this.applicationLifetime.ApplicationStopping,
+			this.nodeLifetime.ApplicationStopping,
 			repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
 			startAfter: TimeSpans.TenSeconds);
 
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Miner
 				{
 					this.LastCoinStakeSearchInterval = 0;
 					tryToSync = true;
-                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.applicationLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
 				}
 
 				if (tryToSync)
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Miner
 				}
 				else
 				{
-				    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.applicationLifetime.ApplicationStopping).GetAwaiter().GetResult();
+				    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
 				}
             }
 		}

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -14,7 +13,7 @@ using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Transaction = NBitcoin.Transaction;
 using System.Collections.Concurrent;
-using Microsoft.AspNetCore.Hosting;
+using Stratis.Bitcoin.Common.Hosting;
 
 namespace Stratis.Bitcoin.Wallet
 {
@@ -40,7 +39,7 @@ namespace Stratis.Bitcoin.Wallet
         private readonly IWalletFeePolicy walletFeePolicy;
         private readonly MempoolValidator mempoolValidator;
         private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly IApplicationLifetime applicationLifetime;
+        private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
 
         public uint256 WalletTipHash { get; set; }
@@ -58,7 +57,7 @@ namespace Stratis.Bitcoin.Wallet
 
         public WalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain,
             NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, IAsyncLoopFactory asyncLoopFactory, 
-            IApplicationLifetime applicationLifetime, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+            INodeLifetime nodeLifetime, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new ConcurrentBag<Wallet>();
@@ -72,7 +71,7 @@ namespace Stratis.Bitcoin.Wallet
             this.walletFeePolicy = walletFeePolicy;
             this.mempoolValidator = mempoolValidator;
             this.asyncLoopFactory = asyncLoopFactory;
-            this.applicationLifetime = applicationLifetime;
+            this.nodeLifetime = nodeLifetime;
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
@@ -99,7 +98,7 @@ namespace Stratis.Bitcoin.Wallet
                 this.logger.LogInformation($"Wallets saved to file at {DateTime.Now}.");
                 return Task.CompletedTask;
             }, 
-            this.applicationLifetime.ApplicationStopping,
+            this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes), 
             startAfter:  TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));            
         }
