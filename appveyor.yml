@@ -1,0 +1,17 @@
+image: Visual Studio 2017
+
+init:
+  - git config --global core.autocrlf true
+branches:
+  only:
+    - master
+before_build:
+  - dotnet --info
+  - appveyor-retry dotnet restore -v Minimal
+build_script:
+  - dotnet build
+test_script:
+  - dotnet test Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests.csproj
+clone_depth: 1
+test: on
+deploy: off

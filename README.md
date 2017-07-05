@@ -15,6 +15,11 @@ For Proof of Stake support on the Stratis token the node is using [NStratis](htt
 [.NET Core](https://dotnet.github.io/) is an open source cross platform framework and enables the development of applications and services on Windows, macOS and Linux.  
 Join our community on [slack](https://stratisplatform.slack.com).  
 
+Build Status
+------------------
+
+[![AppVeyor build status](https://img.shields.io/appveyor/ci/detroitpro/stratisbitcoinfullnode/feature/test_branch.svg?label=appveyor&style=flat-square)](https://ci.appveyor.com/project/detroitpro/stratisbitcoinfullnode)
+
 Running a FullNode
 ------------------
 
