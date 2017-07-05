@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
 
@@ -15,13 +12,18 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly MempoolManager manager;
 		private readonly ConcurrentChain chain;
 		private readonly IConnectionManager connection;
+	    private readonly INodeLifetime nodeLifetime;
+	    private readonly IAsyncLoopFactory asyncLoopFactory;
 
-		public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, IConnectionManager connection, FullNode.CancellationProvider cancellationProvider)
+	    public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, IConnectionManager connection, 
+            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.manager = manager;
 			this.chain = chain;
 			this.connection = connection;
-			this.RelayWorker(cancellationProvider.Cancellation.Token);
+		    this.nodeLifetime = nodeLifetime;
+		    this.asyncLoopFactory = asyncLoopFactory;
+		    this.RelayWorker();
 		}
 
 		protected override void OnNextCore(Block value)
@@ -33,9 +35,9 @@ namespace Stratis.Bitcoin.MemoryPool
 			task.GetAwaiter().GetResult();
 		}
 
-		private void RelayWorker(CancellationToken cancellationToken)
+		private void RelayWorker()
 		{
-			AsyncLoop.Run("MemoryPool.RelayWorker", async token =>
+			this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
 			{
 				var nodes = this.connection.ConnectedNodes;
 				if (!nodes.Any())
@@ -46,7 +48,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				foreach (var behaviour in behaviours)
 					await behaviour.SendTrickle().ConfigureAwait(false);
 			},
-			cancellationToken,
+			this.nodeLifetime.ApplicationStopping,
 			repeatEvery: TimeSpans.TenSeconds,
 			startAfter: TimeSpans.TenSeconds);
 		}

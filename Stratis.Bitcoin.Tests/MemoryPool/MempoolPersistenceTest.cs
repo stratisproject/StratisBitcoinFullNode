@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
         public void LoadNoFileTest()
         {
             string fileName = "mempool.dat";
-            NodeSettings settings = CreateSettings("LoadBadFileTest");
+            NodeSettings settings = CreateSettings("LoadNoFileTest");
             MempoolPersistence persistence = new MempoolPersistence(settings);
             string fullFilePath = Path.Combine(settings.DataDir, fileName);
 

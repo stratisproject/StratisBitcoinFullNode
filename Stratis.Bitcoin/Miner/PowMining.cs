@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -37,13 +39,14 @@ namespace Stratis.Bitcoin.Miner
 		private readonly BlockRepository blockRepository;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly Signals signals;
-		private readonly FullNode.CancellationProvider cancellationProvider;
-		private uint256 hashPrevBlock;
+	    private readonly INodeLifetime nodeLifetime;
+	    private readonly IAsyncLoopFactory asyncLoopFactory;
+	    private uint256 hashPrevBlock;
 		private Task mining;
 
 		public PowMining(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network,
 			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
-			BlockStore.ChainBehavior.ChainState chainState, Signals signals, FullNode.CancellationProvider cancellationProvider)
+			BlockStore.ChainBehavior.ChainState chainState, Signals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -53,7 +56,8 @@ namespace Stratis.Bitcoin.Miner
 			this.blockRepository = blockRepository;
 			this.chainState = chainState;
 			this.signals = signals;
-			this.cancellationProvider = cancellationProvider;
+		    this.nodeLifetime = nodeLifetime;
+		    this.asyncLoopFactory = asyncLoopFactory;
 		}
 
 		public Task Mine(Script reserveScript)
@@ -61,15 +65,15 @@ namespace Stratis.Bitcoin.Miner
 			if (this.mining != null)
 				return this.mining; // already mining
 
-			this.mining = AsyncLoop.Run("PowMining.Mine", token =>
-				{
-					this.GenerateBlocks(new ReserveScript {reserveSfullNodecript = reserveScript}, int.MaxValue, int.MaxValue);
-					this.mining = null;
-					return Task.CompletedTask;
-				},
-                this.cancellationProvider.Cancellation.Token,
-				repeatEvery: TimeSpans.RunOnce,
-				startAfter: TimeSpans.TenSeconds);
+			this.mining = this.asyncLoopFactory.Run("PowMining.Mine", token =>
+			{
+				this.GenerateBlocks(new ReserveScript {reserveSfullNodecript = reserveScript}, int.MaxValue, int.MaxValue);
+				this.mining = null;
+				return Task.CompletedTask;
+			},
+            this.nodeLifetime.ApplicationStopping,
+			repeatEvery: TimeSpans.RunOnce,
+			startAfter: TimeSpans.TenSeconds);
 
 			return this.mining;
 		}
@@ -95,7 +99,7 @@ namespace Stratis.Bitcoin.Miner
 				{
 					if (this.chain.Tip != this.consensusLoop.Tip)
 					{
-						this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMinutes(1));
+					    Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
 						continue;
 					}
 

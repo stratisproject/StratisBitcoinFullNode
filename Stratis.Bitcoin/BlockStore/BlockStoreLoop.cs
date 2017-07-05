@@ -7,20 +7,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
-using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockStore
 {
-	public class BlockPair
-	{
-		public Block Block;
-		public ChainedBlock ChainedBlock;
-	}
-
 	public class BlockStoreLoop
 	{
 		private readonly ConcurrentChain chain;
@@ -28,16 +21,22 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly NodeSettings nodeArgs;
 		private readonly StoreBlockPuller blockPuller;
         private readonly BlockStoreCache blockStoreCache;
-        private readonly BlockStoreStats blockStoreStats;
+	    private readonly INodeLifetime nodeLifetime;
+	    private readonly IAsyncLoopFactory asyncLoopFactory;
+	    private readonly BlockStoreStats blockStoreStats;
 
         public BlockStore.ChainBehavior.ChainState ChainState { get; }
-
 		public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
+	    public ChainedBlock StoredBlock { get; private set; }
 
-		public BlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, NodeSettings nodeArgs,
+        public BlockStoreLoop(ConcurrentChain chain, 
+            BlockRepository blockRepository, 
+            NodeSettings nodeArgs,
 			BlockStore.ChainBehavior.ChainState chainState,
 			StoreBlockPuller blockPuller,
-            BlockStoreCache cache)
+            BlockStoreCache cache,
+            INodeLifetime nodeLifetime,
+            IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.chain = chain;
 			this.BlockRepository = blockRepository;
@@ -45,19 +44,27 @@ namespace Stratis.Bitcoin.BlockStore
 			this.blockPuller = blockPuller;
 			this.ChainState = chainState;
             this.blockStoreCache = cache;
+		    this.nodeLifetime = nodeLifetime;
+		    this.asyncLoopFactory = asyncLoopFactory;
 
-            this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
+		    this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache);
         }
 
-		// downaloading 5mb is not much in case the store need to catchup
-		private uint insertsizebyte = 1000000 * 5; // Block.MAX_BLOCK_SIZE 
+        public class BlockPair
+	    {
+	        public Block Block;
+	        public ChainedBlock ChainedBlock;
+	    }
+
+        // downaloading 5mb is not much in case the store need to catchup
+        private uint insertsizebyte = 1000000 * 5; // Block.MAX_BLOCK_SIZE 
 		private int batchtriggersize = 5;
 		private int batchdownloadsize = 1000;
 		private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
 		private readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
-        public async Task Initialize(CancellationTokenSource tokenSource)
+        public async Task Initialize()
 		{
 			if (this.nodeArgs.Store.ReIndex)
 				throw new NotImplementedException();
@@ -102,7 +109,7 @@ namespace Stratis.Bitcoin.BlockStore
 			}
 
 			this.ChainState.HighestPersistedBlock = this.StoredBlock;
-			this.Loop(tokenSource.Token);
+			this.StartLoop();
 		}
 
 		public void AddToPending(Block block)
@@ -123,17 +130,16 @@ namespace Stratis.Bitcoin.BlockStore
 			return this.DownloadAndStoreBlocks(CancellationToken.None, true);
 		}
 
-		public ChainedBlock StoredBlock { get; private set; }
 
-		public void Loop(CancellationToken cancellationToken)
+		public void StartLoop()
 		{
 			// A loop that writes pending blocks to store 
 			// or downloads missing blocks then writing to store
-			AsyncLoop.Run("BlockStoreLoop.DownloadBlocks", async token =>
+			this.asyncLoopFactory.Run("BlockStoreLoop.DownloadBlocks", async token =>
 			{
-				await DownloadAndStoreBlocks(cancellationToken);
+				await this.DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping);
 			},
-			cancellationToken,
+			this.nodeLifetime.ApplicationStopping,
 			repeatEvery: TimeSpans.Second,
 			startAfter: TimeSpans.FiveSeconds);
 		}
