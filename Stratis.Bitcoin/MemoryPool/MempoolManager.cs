@@ -15,8 +15,9 @@ namespace Stratis.Bitcoin.MemoryPool
 	public class MempoolManager
 	{
 		private IMempoolPersistence mempoolPersistence;
+	    private readonly ILogger mempoolLogger;
 
-		public MempoolScheduler MempoolScheduler { get; }
+        public MempoolScheduler MempoolScheduler { get; }
 		public MempoolValidator Validator { get; } // public for testing
 		public MempoolOrphans Orphans { get; } // public for testing
 		private readonly TxMempool memPool;
@@ -25,8 +26,15 @@ namespace Stratis.Bitcoin.MemoryPool
 		public NodeSettings NodeArgs { get; set; }
 
 
-		public MempoolManager(MempoolScheduler mempoolScheduler, TxMempool memPool,
-			MempoolValidator validator, MempoolOrphans orphans, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, IMempoolPersistence mempoolPersistence)
+		public MempoolManager(
+            MempoolScheduler mempoolScheduler, 
+            TxMempool memPool,
+			MempoolValidator validator, 
+            MempoolOrphans orphans, 
+            IDateTimeProvider dateTimeProvider, 
+            NodeSettings nodeArgs, 
+            IMempoolPersistence mempoolPersistence,
+            ILoggerFactory loggerFactory)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
@@ -35,9 +43,10 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.Orphans = orphans;
 			this.Validator = validator;
 			this.mempoolPersistence = mempoolPersistence;
-		}
+		    this.mempoolLogger = loggerFactory.CreateLogger("Stratis.Bitcoin.MemoryPool");
+        }
 
-		public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
+        public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
 
 		public Task<List<uint256>> GetMempoolAsync()
 		{
@@ -61,12 +70,12 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
 			{
-				Logging.Logs.Mempool.LogInformation("Loading Memory Pool...");
+			    this.mempoolLogger.LogInformation("Loading Memory Pool...");
 				IEnumerable<MempoolPersistenceEntry> entries = this.mempoolPersistence.Load(fileName);
 				int i = 0;
 				if (entries != null)
 				{
-					Logging.Logs.Mempool.LogInformation($"...loaded {entries.Count()} cached entries.");
+				    this.mempoolLogger.LogInformation($"...loaded {entries.Count()} cached entries.");
 					foreach (MempoolPersistenceEntry entry in entries)
 					{
 						Transaction trx = entry.Tx;
@@ -81,11 +90,11 @@ namespace Stratis.Bitcoin.MemoryPool
 							}
 						}
 					}
-					Logging.Logs.Mempool.LogInformation($"...{i} entries accepted.");
+				    this.mempoolLogger.LogInformation($"...{i} entries accepted.");
 				}
 				else
 				{
-					Logging.Logs.Mempool.LogInformation($"...Unable to load memory pool cache from {fileName}.");
+				    this.mempoolLogger.LogInformation($"...Unable to load memory pool cache from {fileName}.");
 				}
 
 			}

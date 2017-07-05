@@ -25,10 +25,11 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly INodeLifetime nodeLifetime;
 		private readonly IConnectionManager connectionManager;
 		private readonly NodeSettings nodeSettings;
+	    private readonly ILogger storeLogger;
 
-		public BlockStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals signals, BlockRepository blockRepository,  
+        public BlockStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals signals, BlockRepository blockRepository,  
 			BlockStoreCache blockStoreCache, StoreBlockPuller blockPuller, BlockStoreLoop blockStoreLoop, BlockStoreManager blockStoreManager,
-			BlockStoreSignaled blockStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings)
+			BlockStoreSignaled blockStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory)
 		{
 			this.chain = chain;
 			this.signals = signals;
@@ -41,11 +42,12 @@ namespace Stratis.Bitcoin.BlockStore
 			this.nodeLifetime = nodeLifetime;
 			this.connectionManager = connectionManager;
 			this.nodeSettings = nodeSettings;
+		    this.storeLogger = loggerFactory.CreateLogger("Stratis.Bitcoin.BlockStore");
 		}
 
 		public override void Start()
 		{
-			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache));
+			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.storeLogger));
 			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));
 
             // signal to peers that this node can serve blocks
@@ -60,7 +62,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override void Stop()
 		{
-			Logs.BlockStore.LogInformation("Flushing BlockStore...");
+		    this.storeLogger.LogInformation("Flushing BlockStore...");
 			this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
 
 			this.blockStoreCache.Dispose();

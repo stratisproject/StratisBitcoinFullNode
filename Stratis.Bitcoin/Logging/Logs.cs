@@ -1,37 +1,21 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Logging
 {
-    public class Logs
+    public static class LogsExtention
     {
-        public static void Configure(ILoggerFactory factory)
-        {
-            LoggerFactory = factory;
-
-            // These match namespace; classes can also use CreateLogger<T>, which will inherit
-            Configuration = factory.CreateLogger("Stratis.Bitcoin.Configuration");
-            RPC = factory.CreateLogger("Stratis.Bitcoin.RPC");
-            FullNode = factory.CreateLogger("Stratis.Bitcoin.FullNode");
-            ConnectionManager = factory.CreateLogger("Stratis.Bitcoin.Connection");
-            Bench = factory.CreateLogger("Stratis.Bitcoin.FullNode.ConsensusStats");
-            Mempool = factory.CreateLogger("Stratis.Bitcoin.MemoryPool");
-            BlockStore = factory.CreateLogger("Stratis.Bitcoin.BlockStore");
-            Consensus = factory.CreateLogger("Stratis.Bitcoin.Consensus");
-            EstimateFee = factory.CreateLogger("Stratis.Bitcoin.Fee");
-            Mining = factory.CreateLogger("Stratis.Bitcoin.Mining");
-            Notifications = factory.CreateLogger("Stratis.Bitcoin.Notifications");
-        }
-
-        public static ILoggerFactory GetLoggerFactory(string[] args)
+        public static void AddFilters(this ILoggerFactory loggerFactory, LogSettings settings)
         {
             // TODO: preload enough args for -conf= or -datadir= to get debug args from there
             // TODO: currently only takes -debug arg
-            var debugArgs = args.GetValueOf("-debug");
 
             var keyToCategory = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -64,30 +48,19 @@ namespace Stratis.Bitcoin.Logging
                 { "wallet", "Stratis.Bitcoin.Wallet" },
             };
 
-            // get the minimum log level. The default is Information.
-            LogLevel minLogLevel = LogLevel.Information;
-            var logLevelArg = args.GetValueOf("-loglevel");
-            if (!string.IsNullOrEmpty(logLevelArg))
-            {
-                var result = Enum.TryParse(logLevelArg, true, out minLogLevel);
-                if (!result)
-                {
-                    minLogLevel = LogLevel.Information;
-                }
-            }
             
             var filterSettings = new FilterLoggerSettings();
             // Default level is Information
-            filterSettings.Add("Default", minLogLevel);
+            filterSettings.Add("Default", settings.LogLevel);
             // TODO: Probably should have a way to configure these as well
             filterSettings.Add("System", LogLevel.Warning);
             filterSettings.Add("Microsoft", LogLevel.Warning);
             // Disable aspnet core logs (retained from ASP.NET config)
             filterSettings.Add("Microsoft.AspNetCore", LogLevel.Error);
 
-            if (!string.IsNullOrWhiteSpace(debugArgs))
+            if (settings.DebugArgs.Any())
             {
-                if (debugArgs.Trim() == "1")
+                if (settings.DebugArgs[0] == "1")
                 {
                     // Increase all logging to Trace
                     filterSettings.Add("Stratis.Bitcoin", LogLevel.Trace);
@@ -95,8 +68,7 @@ namespace Stratis.Bitcoin.Logging
                 else
                 {
                     // Increase selected categories to Trace
-                    var categoryKeys = debugArgs.Split(',');
-                    foreach (var key in categoryKeys)
+                    foreach (var key in settings.DebugArgs)
                     {
                         string category;
                         if (keyToCategory.TryGetValue(key.Trim(), out category))
@@ -116,73 +88,17 @@ namespace Stratis.Bitcoin.Logging
             //var logipsArgs = args.GetValueOf("-logips");
             //var printtoconsoleArgs = args.GetValueOf("-printtoconsole");
 
-            ILoggerFactory loggerFactory = new LoggerFactory()
-                .WithFilter(filterSettings);
-            loggerFactory.AddDebug(LogLevel.Trace);
-            loggerFactory.AddConsole(LogLevel.Trace);
-            loggerFactory.AddFile("Logs/node-{Date}.json", isJson: true, minimumLevel: LogLevel.Trace, fileSizeLimitBytes: 5000000);
-            return loggerFactory;
+            loggerFactory.WithFilter(filterSettings);
         }
 
-        public static ILogger Configuration
+        public static void AddPath(this ILoggerFactory loggerFactory, DataFolder dataFolder)
         {
-            get; private set;
+            loggerFactory.AddFile(
+                Path.Combine(dataFolder.LogPath, "node-{Date}.json"), 
+                isJson: true, 
+                minimumLevel: LogLevel.Trace, 
+                fileSizeLimitBytes: 5000000);
         }
-
-        public static ILogger RPC
-        {
-            get; private set;
-        }
-
-        public static ILogger FullNode
-        {
-            get; private set;
-        }
-
-        public static ILogger ConnectionManager
-        {
-            get; private set;
-        }
-
-        public static ILogger Bench
-        {
-            get; private set;
-        }
-
-        public static ILogger Mempool
-        {
-            get; set;
-        }
-        public static ILogger BlockStore
-        {
-            get; private set;
-        }
-
-        public static ILogger EstimateFee
-        {
-            get; private set;
-        }
-
-        public static ILoggerFactory LoggerFactory
-        {
-            get; private set;
-        }
-
-        public static ILogger Consensus
-        {
-            get; set;
-        }
-
-        public static ILogger Mining
-        {
-            get; set;
-        }
-
-        public static ILogger Notifications
-        {
-            get; set;
-        }
-
 
         public const int ColumnLength = 16;
     }

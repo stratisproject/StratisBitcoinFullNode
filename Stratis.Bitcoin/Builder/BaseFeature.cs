@@ -158,8 +158,8 @@ namespace Stratis.Bitcoin.Builder
 				.AddFeature<BaseFeature>()
 				.FeatureServices(services =>
 				{
-					services.AddSingleton<ILoggerFactory>(Logs.LoggerFactory);
-					services.AddSingleton<DataFolder>();
+					services.AddSingleton(fullNodeBuilder.NodeSettings.LoggerFactory);
+					services.AddSingleton(fullNodeBuilder.NodeSettings.DataFolder);
 					services.AddSingleton<INodeLifetime, NodeLifetime>();
 					services.AddSingleton<FullNodeFeatureExecutor>();
 					services.AddSingleton<Signals>().AddSingleton<ISignals, Signals>(provider => provider.GetService<Signals>());          

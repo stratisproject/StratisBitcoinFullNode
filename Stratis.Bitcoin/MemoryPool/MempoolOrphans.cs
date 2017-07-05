@@ -37,8 +37,16 @@ namespace Stratis.Bitcoin.MemoryPool
 	    private readonly Random random = new Random();
 		private uint256 hashRecentRejectsChainTip;
 
-		public MempoolOrphans(MempoolScheduler mempoolScheduler, TxMempool memPool, ConcurrentChain chain, Signals signals, 
-			MempoolValidator validator, PowConsensusValidator consensusValidator, CoinView coinView, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs)
+		public MempoolOrphans(
+            MempoolScheduler mempoolScheduler, 
+            TxMempool memPool, 
+            ConcurrentChain chain, 
+            Signals signals, 
+			MempoolValidator validator, 
+            PowConsensusValidator consensusValidator, 
+            CoinView coinView, 
+            IDateTimeProvider dateTimeProvider, 
+            NodeSettings nodeArgs)
 		{
 			this.MempoolScheduler = mempoolScheduler;
 			this.memPool = memPool;
