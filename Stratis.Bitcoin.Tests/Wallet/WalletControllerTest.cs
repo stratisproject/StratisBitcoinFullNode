@@ -516,7 +516,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 Mnemonic = "mnemonic"
             });
 
-
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -537,7 +536,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 Network = WalletHelpers.GetNetwork("mainnet")
             };
             var mockWalletWrapper = new Mock<IWalletManager>();
-            mockWalletWrapper.Setup(w => w.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Returns(wallet);
+            mockWalletWrapper.Setup(w => w.LoadWallet(It.IsAny<string>())).Returns(wallet);
             string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletSuccessfullyReturnsWalletModel");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
@@ -550,7 +549,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 FolderPath = "",
                 Password = ""
             });
-
 
             mockWalletWrapper.VerifyAll();
             OkResult viewResult = Assert.IsType<OkResult>(result);
@@ -590,7 +588,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         public void LoadWalletWithFileNotFoundExceptionandReturnsNotFound()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
-            mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Throws<FileNotFoundException>();
+            mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>())).Throws<FileNotFoundException>();
             string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletWithFileNotFoundExceptionandReturnsNotFound");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
@@ -620,7 +618,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         public void LoadWalletWithSecurityExceptionandReturnsForbidden()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
-            mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Throws<SecurityException>();
+            mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>())).Throws<SecurityException>();
             string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletWithSecurityExceptionandReturnsForbidden");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
@@ -650,7 +648,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         public void LoadWalletWithOtherExceptionandReturnsBadRequest()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
-            mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>(), It.IsAny<string>())).Throws<FormatException>();
+            mockWalletWrapper.Setup(wallet => wallet.LoadWallet(It.IsAny<string>())).Throws<FormatException>();
             string dir = AssureEmptyDir("TestData/WalletControllerTest/LoadWalletWithOtherExceptionandReturnsBadRequest");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 

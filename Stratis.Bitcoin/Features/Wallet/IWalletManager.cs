@@ -37,11 +37,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <summary>
         /// Loads a wallet from a file.
-        /// </summary>
-        /// <param name="password">The user's password.</param>
+        /// </summary>        
         /// <param name="name">The name of the wallet.</param>
         /// <returns>The wallet.</returns>
-        Wallet LoadWallet(string password, string name);
+        Wallet LoadWallet(string name);
 
         /// <summary>
         /// Recovers a wallet.
