@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+    <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
     <ProjectReference Include="..\Breeze.Api\Breeze.Api.csproj" />
     <ProjectReference Include="..\Breeze.Wallet\Breeze.Wallet.csproj" />
   </ItemGroup>
