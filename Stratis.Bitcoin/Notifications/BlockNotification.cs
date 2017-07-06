@@ -1,7 +1,8 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
-using System.Threading;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Notifications
@@ -12,10 +13,13 @@ namespace Stratis.Bitcoin.Notifications
 	public class BlockNotification
 	{
 		private readonly ISignals signals;
-        private ChainedBlock tip;
-        private IAsyncLoopFactory asyncLoopFactory;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+	    private readonly INodeLifetime nodeLifetime;
 
-        public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals, IAsyncLoopFactory asyncLoopFactory)
+	    private ChainedBlock tip;
+
+        public BlockNotification(ConcurrentChain chain, ILookaheadBlockPuller puller, ISignals signals, 
+            IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime)
 		{
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(puller, nameof(puller));
@@ -26,7 +30,8 @@ namespace Stratis.Bitcoin.Notifications
 			this.Puller = puller;
 			this.signals = signals;
             this.asyncLoopFactory = asyncLoopFactory;
-        }
+		    this.nodeLifetime = nodeLifetime;
+		}
 
 		public ILookaheadBlockPuller Puller { get; }
 
@@ -57,8 +62,7 @@ namespace Stratis.Bitcoin.Notifications
 		/// <summary>
 		/// Notifies about blocks, starting from block with hash passed as parameter.
 		/// </summary>
-		/// <param name="cancellationToken">A cancellation token</param>
-		public virtual Task Notify(CancellationToken cancellationToken)
+		public virtual Task Notify()
 		{
 			return this.asyncLoopFactory.Run("block notifier", token =>
 			{
@@ -108,7 +112,7 @@ namespace Stratis.Bitcoin.Notifications
 				this.reSync = false;
 
 				return Task.CompletedTask;
-			}, cancellationToken);
+			}, this.nodeLifetime.ApplicationStopping);
 		}		
 	}
 }

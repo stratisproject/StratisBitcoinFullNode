@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
@@ -18,20 +15,24 @@ namespace Stratis.Bitcoin.BlockStore
 		private readonly NodeSettings nodeArgs;
 		private readonly ChainBehavior.ChainState chainState;
 		private readonly IConnectionManager connection;
+	    private readonly INodeLifetime nodeLifetime;
+	    private readonly IAsyncLoopFactory asyncLoopFactory;
 
-		private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
-
+	    private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeSettings nodeArgs, 
-			BlockStore.ChainBehavior.ChainState chainState, IConnectionManager connection)
+			BlockStore.ChainBehavior.ChainState chainState, IConnectionManager connection, 
+            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.storeLoop = storeLoop;
 			this.chain = chain;
 			this.nodeArgs = nodeArgs;
 			this.chainState = chainState;
 			this.connection = connection;
+		    this.nodeLifetime = nodeLifetime;
+		    this.asyncLoopFactory = asyncLoopFactory;
 
-			this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
+		    this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
 		}
 
 		protected override void OnNextCore(Block value)
@@ -48,9 +49,9 @@ namespace Stratis.Bitcoin.BlockStore
 			this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
 		}
 
-		public void RelayWorker(CancellationToken cancellationToken)
+		public void RelayWorker()
 		{
-            AsyncLoop.Run("BlockStore.RelayWorker", async token =>
+            this.asyncLoopFactory.Run("BlockStore.RelayWorker", async token =>
 			{
 				var blocks = this.blockHashesToAnnounce.Keys.ToList();
 
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.BlockStore
 				foreach (var behaviour in behaviours)
 					await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
             },
-            cancellationToken,
+            this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.FiveSeconds);
 		}
