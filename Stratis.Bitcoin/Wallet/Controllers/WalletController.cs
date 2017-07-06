@@ -287,9 +287,9 @@ namespace Stratis.Bitcoin.Wallet.Controllers
 
                 // get transactions contained in the wallet
                 var addresses = this.walletManager.GetHistory(request.WalletName);
-                foreach (var address in addresses.Where(a => !a.IsChangeAddress()))
-                {
-                    foreach (var transaction in address.Transactions)
+                foreach (var address in addresses)
+                {                    
+                    foreach (var transaction in address.Transactions.Where(t => !address.IsChangeAddress() || (address.IsChangeAddress() && !t.IsSpendable())))
                     {
                         // add incoming fund transaction details
                         TransactionItemModel receivedItem = new TransactionItemModel
