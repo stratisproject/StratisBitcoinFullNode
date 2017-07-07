@@ -5,6 +5,10 @@
     <RootNamespace>NBitcoin</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETSTANDARD1_6;NETCORE;NOSTRNORMALIZE;NOCUSTOMSSLVALIDATION;</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="BitcoinStream.Partial.tt" />
   </ItemGroup>
