@@ -5,4 +5,53 @@
     <RootNamespace>NBitcoin</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="UInt256.cs">
+      <DependentUpon>UInt256.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="BitcoinStream.Partial.cs">
+      <DependentUpon>BitcoinStream.Partial.tt</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="packages.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>packages.config</DependentUpon>
+    </Compile>
+    <Compile Update="PushNuget.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PushNuget.ps1</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="BitcoinStream.Partial.tt">
+      <LastGenOutput>BitcoinStream.Partial.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="packages.config">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>packages.cs</LastGenOutput>
+    </None>
+    <None Update="PushNuget.ps1">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>PushNuget.cs</LastGenOutput>
+    </None>
+    <None Update="UInt256.tt">
+      <LastGenOutput>UInt256.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
 </Project>
