@@ -469,7 +469,8 @@ namespace Stratis.Bitcoin.Wallet
         /// Gets or sets the Merkle proof for this transaction.
         /// </summary>
         [JsonProperty(PropertyName = "merkleProof", NullValueHandling = NullValueHandling.Ignore)]
-        public MerkleProof MerkleProof { get; set; }
+        [JsonConverter(typeof(BitcoinSerializableJsonConverter))]
+        public PartialMerkleTree MerkleProof { get; set; }
 
         /// <summary>
         /// The script pub key for this address.
@@ -546,26 +547,7 @@ namespace Stratis.Bitcoin.Wallet
         [JsonProperty(PropertyName = "amount")]
         [JsonConverter(typeof(MoneyJsonConverter))]
         public Money Amount { get; set; }
-    }
-
-    /// <summary>
-    /// An object representing a Merkle proof
-    /// </summary>
-    public class MerkleProof
-    {
-        /// <summary>
-        /// Gets or sets the merkle root.
-        /// </summary>
-        [JsonProperty(PropertyName = "merkleRoot")]
-        [JsonConverter(typeof(UInt256JsonConverter))]
-        public uint256 MerkleRoot { get; set; }
-
-        /// <summary>
-        /// Gets or sets the merkle path.
-        /// </summary>
-        [JsonProperty(PropertyName = "merklePath", ItemConverterType = typeof(UInt256JsonConverter))]
-        public ICollection<uint256> MerklePath { get; set; }
-    }
+    }	
 
     public class SpendingDetails
     {
