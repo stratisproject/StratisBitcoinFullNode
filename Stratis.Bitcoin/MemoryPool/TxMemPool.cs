@@ -349,19 +349,21 @@ namespace Stratis.Bitcoin.MemoryPool
 		private Dictionary<TxMempoolEntry, uint256> vTxHashes;  //!< All tx witness hashes/entries in mapTx, in random order
 		private IDateTimeProvider TimeProvider { get; }
 
+	    private readonly ILogger logger;
+
 		/** Create a new CTxMemPool.
 		*  minReasonableRelayFee should be a feerate which is, roughly, somewhere
 		*  around what it "costs" to relay a transaction around the network and
 		*  below which we would reasonably say a transaction has 0-effective-fee.
 		*/
-		public TxMempool(FeeRate minReasonableRelayFee, IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator)
+		public TxMempool(FeeRate minReasonableRelayFee, IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory)
 		{
 			this.MapTx = new IndexedTransactionSet();
 			this.mapLinks = new TxlinksMap();
 			this.MapNextTx = new List<NextTxPair>();
 			this.mapDeltas = new Dictionary<uint256, DeltaPair>();
 			this.vTxHashes = new Dictionary<TxMempoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
-
+		    this.logger = loggerFactory.CreateLogger<TxMempool>();
 			this.TimeProvider = dateTimeProvider;
 			this.InnerClear(); //lock free clear
 
@@ -419,7 +421,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			if (new Random(int.MaxValue).Next() >= this.checkFrequency)
 				return;
 
-			Logging.Logs.Mempool.LogInformation($"Checking mempool with {this.MapTx.Count} transactions and {this.MapNextTx.Count} inputs");
+			this.logger.LogInformation($"Checking mempool with {this.MapTx.Count} transactions and {this.MapNextTx.Count} inputs");
 
 			throw new NotImplementedException();
 		}
@@ -1084,7 +1086,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 
 			if (maxFeeRateRemoved > new FeeRate(0))
-				Logs.Mempool.LogInformation($"Removed {nTxnRemoved} txn, rolling minimum fee bumped to {maxFeeRateRemoved}");
+			    this.logger.LogInformation($"Removed {nTxnRemoved} txn, rolling minimum fee bumped to {maxFeeRateRemoved}");
 		}
 
 		/** The minimum fee to get into the mempool, which may itself not be enough

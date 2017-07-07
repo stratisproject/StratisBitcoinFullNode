@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.Configuration
 			this.Mempool = new MempoolSettings();
 			this.Store = new StoreSettings();
             this.Log = new LogSettings();
+		    this.LoggerFactory = new LoggerFactory();
 		}
 
 		public RpcSettings RPC { get; set; }
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.Configuration
 		public MempoolSettings Mempool { get; set; }
 		public StoreSettings Store { get; set; }
 	    public LogSettings Log { get; set; }
-        public DataFolder DataFolder { get; private set; }
+        public DataFolder DataFolder { get; set; }
 	    public ILoggerFactory LoggerFactory { get; private set; }
 
         public bool Testnet { get; set; }
@@ -66,7 +67,6 @@ namespace Stratis.Bitcoin.Configuration
             // the logger factory goes in the settings 
             // with minimal configuration, that's so the 
             // settings can also log out its porgress
-		    nodeSettings.LoggerFactory = new LoggerFactory();
 		    nodeSettings.LoggerFactory.AddDebug(LogLevel.Trace);
 		    nodeSettings.LoggerFactory.AddConsole(LogLevel.Trace);
 
@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.Configuration
 				builder.AppendLine("-whitebind=<ip:port>	Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
 				builder.AppendLine("-externalip=<ip>		Specify your own public address.");
 
-			    defaults.Log.LoggerFactory.CreateLogger<NodeSettings>().LogInformation(builder.ToString());
+			    defaults.LoggerFactory.CreateLogger<NodeSettings>().LogInformation(builder.ToString());
 
                 return true;
 			}

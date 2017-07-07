@@ -9,6 +9,8 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
 {
     public class TxConfirmStats
     {
+        private readonly ILogger logger;
+
         // Sum the total feerate of all tx's in each bucket
         // Track the historical moving average of this total over blocks
         private List<double> avg;
@@ -48,6 +50,11 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
         // For each bucket X, track the number of transactions in the mempool
         // that are unconfirmed for each possible confirmation value Y
         private List<List<int>> unconfTxs; //unconfTxs[Y][X]
+
+        public TxConfirmStats(ILogger logger)
+        {
+            this.logger = logger;
+        }
 
         // Initialize the data structures.  This is called by BlockPolicyEstimator's
         // constructor with default values.
@@ -133,7 +140,7 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
                 blocksAgo = 0;
             if (blocksAgo < 0)
             {
-                Logs.EstimateFee.LogInformation($"Blockpolicy error, blocks ago is negative for mempool tx");
+                this.logger.LogInformation($"Blockpolicy error, blocks ago is negative for mempool tx");
                 return; //This can't happen because we call this with our best seen height, no entries can have higher
             }
 
@@ -142,7 +149,7 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
                 if (this.oldUnconfTxs[bucketIndex] > 0)
                     this.oldUnconfTxs[bucketIndex]--;
                 else
-                    Logs.EstimateFee.LogInformation(
+                    this.logger.LogInformation(
                         $"Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex={bucketIndex} already");
             }
             else
@@ -151,7 +158,7 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
                 if (this.unconfTxs[blockIndex][bucketIndex] > 0)
                     this.unconfTxs[blockIndex][bucketIndex]--;
                 else
-                    Logs.EstimateFee.LogInformation(
+                    this.logger.LogInformation(
                         $"Blockpolicy error, mempool tx removed from blockIndex={blockIndex},bucketIndex={bucketIndex} already");
             }
         }
@@ -272,7 +279,7 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
                     }
             }
 
-            Logs.EstimateFee.LogInformation(
+            this.logger.LogInformation(
                 $"{confTarget}: For conf success {(requireGreater ? $">" : $"<")} {successBreakPoint} need feerate {(requireGreater ? $">" : $"<")}: {median} from buckets {this.buckets[minBucket]} -{this.buckets[maxBucket]}  Cur Bucket stats {100 * nConf / (totalNum + extraNum)}  {nConf}/({totalNum}+{extraNum} mempool)");
 
             return median;

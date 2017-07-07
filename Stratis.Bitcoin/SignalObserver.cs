@@ -18,8 +18,6 @@ namespace Stratis.Bitcoin
         protected override void OnErrorCore(Exception error)
         {
             Guard.NotNull(error, nameof(error));
-
-            Logging.Logs.FullNode.LogError(error.ToString());
         }
 
         protected override void OnCompletedCore()

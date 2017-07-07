@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Stratis.Bitcoin.Tests.Logging;
 using Xunit;
 
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public async Task RunOperationCanceledExceptionThrownBeforeCancellationTokenIsCancelledLogsException()
         {
-            var asyncLoop = new AsyncLoop("TestLoop", async token =>
+            var asyncLoop = new AsyncLoop("TestLoop", this.FullNodeLogger.Object, async token =>
             {
                 await DoOperationCanceledExceptionTask(token);
             });
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public async Task RunWithoutCancellationTokenRunsUntilExceptionOccurs()
         {
-            var asyncLoop = new AsyncLoop("TestLoop", async token =>
+            var asyncLoop = new AsyncLoop("TestLoop", this.FullNodeLogger.Object, async token =>
             {
                 await DoExceptionalTask(token);
             });
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public async Task RunWithCancellationTokenRunsUntilExceptionOccurs()
         {
-            var asyncLoop = new AsyncLoop("TestLoop", async token =>
+            var asyncLoop = new AsyncLoop("TestLoop", this.FullNodeLogger.Object, async token =>
             {
                 await DoExceptionalTask(token);
             });
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public async Task RunLogsStartAndStop()
         {
-            var asyncLoop = new AsyncLoop("TestLoop", async token =>
+            var asyncLoop = new AsyncLoop("TestLoop", this.FullNodeLogger.Object, async token =>
             {
                 await DoTask(token);
             });
@@ -81,7 +82,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public async Task RunWithoutDelayRunsTaskUntilCancelled()
         {
-            var asyncLoop = new AsyncLoop("TestLoop", async token =>
+            var asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
             {
                 await DoTask(token);
             });
@@ -94,7 +95,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public async Task RunWithDelayRunsTaskUntilCancelled()
         {
-            var asyncLoop = new AsyncLoop("TestLoop", async token =>
+            var asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
             {
                 await DoTask(token);
             });

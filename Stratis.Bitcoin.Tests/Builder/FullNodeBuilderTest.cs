@@ -35,8 +35,6 @@ namespace Stratis.Bitcoin.Tests.Builder
 			this.featureCollectionDelegates = new List<Action<IFeatureCollection>>();
 			this.featureCollection = new FeatureCollection();
 
-			Logs.Configure(new LoggerFactory());
-
 			this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 		}
 
@@ -109,13 +107,15 @@ namespace Stratis.Bitcoin.Tests.Builder
 		{
 			var nodeSettings = new NodeSettings();
 			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
+		    nodeSettings.DataFolder = new DataFolder(nodeSettings);
 
-			this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
+            this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
 			this.fullNodeBuilder.ConfigureServices(e =>
 			{
 				e.AddSingleton<FullNode>();
-			});
+			    e.AddSingleton(nodeSettings.LoggerFactory);
+            });
 
 			this.fullNodeBuilder.ConfigureFeature(e =>
 			{
@@ -142,7 +142,8 @@ namespace Stratis.Bitcoin.Tests.Builder
 			this.fullNodeBuilder.ConfigureServices(e =>
 			{
 				e.AddSingleton(nodeSettings);
-				e.AddSingleton(nodeSettings.GetNetwork());
+			    e.AddSingleton(nodeSettings.LoggerFactory);
+                e.AddSingleton(nodeSettings.GetNetwork());
 				e.AddSingleton<FullNode>();
 			});
 
@@ -189,7 +190,8 @@ namespace Stratis.Bitcoin.Tests.Builder
 				this.fullNodeBuilder.ConfigureServices(e =>
 				{
 					e.AddSingleton(nodeSettings);
-					e.AddSingleton(nodeSettings.GetNetwork());
+				    e.AddSingleton(nodeSettings.LoggerFactory);
+                    e.AddSingleton(nodeSettings.GetNetwork());
 					e.AddSingleton<FullNode>();
 				});
 

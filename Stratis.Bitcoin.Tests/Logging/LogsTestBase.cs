@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.RPC;
 
 namespace Stratis.Bitcoin.Tests.Logging
 {
@@ -30,9 +31,7 @@ namespace Stratis.Bitcoin.Tests.Logging
                .Returns(this.fullNodeLogger.Object)
                .Verifiable();
             this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC"))
-               .Returns(this.rpcLogger.Object)
-               .Verifiable();
-            Logs.Configure(this.loggerFactory.Object);
+                .Returns(this.rpcLogger.Object);
         }
 
         public Mock<ILoggerFactory> LoggerFactory
@@ -69,6 +68,15 @@ namespace Stratis.Bitcoin.Tests.Logging
         }
 
         protected void AssertLog(Mock<ILogger> logger, LogLevel logLevel, string message)
+        {
+            logger.Verify(f => f.Log<Object>(logLevel,
+                It.IsAny<EventId>(),
+                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
+                null,
+                It.IsAny<Func<object, Exception, string>>()));
+        }
+
+        protected void AssertLog(Mock<ILogger<RPCMiddleware>> logger, LogLevel logLevel, string message)
         {
             logger.Verify(f => f.Log<Object>(logLevel,
                 It.IsAny<EventId>(),

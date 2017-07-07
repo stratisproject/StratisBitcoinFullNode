@@ -17,8 +17,6 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
         [Fact]
         public async Task CanCall()
         {
-			Logs.Configure(new LoggerFactory());
-
 			string dir = AssureEmptyDir("Stratis.Bitcoin.Tests/TestData/GetRawMempoolActionTest/CanCall");
             IFullNode fullNode = this.BuildServicedNode(dir);
             MempoolController controller = fullNode.Services.ServiceProvider.GetService<MempoolController>();

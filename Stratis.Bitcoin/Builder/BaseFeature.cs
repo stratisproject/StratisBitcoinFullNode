@@ -51,8 +51,9 @@ namespace Stratis.Bitcoin.Builder
 		private PeriodicTask flushAddressManagerTask;
 
 		private AddressManager addressManager;
+	    private readonly ILogger logger;
 
-		public BaseFeature(
+        public BaseFeature(
 			NodeSettings nodeSettings, //node settings
 			DataFolder dataFolder, //data folders
 			Network network, //network (regtest/testnet/default)
@@ -60,7 +61,8 @@ namespace Stratis.Bitcoin.Builder
 			ConcurrentChain chain,
 			BlockStore.ChainBehavior.ChainState chainState,
 			IConnectionManager connectionManager,
-			ChainRepository chainRepository)
+			ChainRepository chainRepository,
+            ILoggerFactory loggerFactory)
 		{
 		    this.chainState = Guard.NotNull(chainState, nameof(chainState));
 			this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -70,7 +72,8 @@ namespace Stratis.Bitcoin.Builder
 			this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 			this.chain = Guard.NotNull(chain, nameof(chain));
 			this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
-		}
+		    this.logger = loggerFactory.CreateLogger<BaseFeature>();
+        }
 	
 		public override void Start()
 		{
@@ -90,15 +93,15 @@ namespace Stratis.Bitcoin.Builder
 		{
 			if (!Directory.Exists(this.dataFolder.ChainPath))
 			{
-				Logs.FullNode.LogInformation("Creating " + this.dataFolder.ChainPath);
+				this.logger.LogInformation("Creating " + this.dataFolder.ChainPath);
 				Directory.CreateDirectory(this.dataFolder.ChainPath);
 			}
 
-			Logs.FullNode.LogInformation("Loading chain");
+		    this.logger.LogInformation("Loading chain");
             this.chainRepository.Load(this.chain).GetAwaiter().GetResult();
 
-			Logs.FullNode.LogInformation("Chain loaded at height " + this.chain.Height);
-            this.flushChainTask = new PeriodicTask("FlushChain", (cancellation) =>
+		    this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
+            this.flushChainTask = new PeriodicTask("FlushChain", this.logger, (cancellation) =>
 			{
                 this.chainRepository.Save(this.chain);
 			})
@@ -109,24 +112,24 @@ namespace Stratis.Bitcoin.Builder
 		{
 			if (!File.Exists(this.dataFolder.AddrManFile))
 			{
-				Logs.FullNode.LogInformation($"Creating {dataFolder.AddrManFile}");
+			    this.logger.LogInformation($"Creating {dataFolder.AddrManFile}");
 				this.addressManager = new AddressManager();
                 this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
-				Logs.FullNode.LogInformation("Created");
+			    this.logger.LogInformation("Created");
 			}
 			else
 			{
-				Logs.FullNode.LogInformation($"Loading  {dataFolder.AddrManFile}");
+			    this.logger.LogInformation($"Loading  {dataFolder.AddrManFile}");
                 this.addressManager = AddressManager.LoadPeerFile(this.dataFolder.AddrManFile);
-				Logs.FullNode.LogInformation("Loaded");
+			    this.logger.LogInformation("Loaded");
 			}
 
 			if (this.addressManager.Count == 0)
 			{
-				Logs.FullNode.LogInformation("AddressManager is empty, discovering peers...");
+			    this.logger.LogInformation("AddressManager is empty, discovering peers...");
 			}
 
-            this.flushAddressManagerTask = new PeriodicTask("FlushAddressManager", (cancellation) =>
+            this.flushAddressManagerTask = new PeriodicTask("FlushAddressManager", this.logger, (cancellation) =>
 			{
                 this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
 			})
@@ -135,10 +138,10 @@ namespace Stratis.Bitcoin.Builder
 
 		public override void Stop()
 		{
-			Logs.FullNode.LogInformation("FlushAddressManager stopped");
+		    this.logger.LogInformation("FlushAddressManager stopped");
             this.flushAddressManagerTask?.RunOnce();
 
-			Logs.FullNode.LogInformation("FlushChain stopped");
+		    this.logger.LogInformation("FlushChain stopped");
             this.flushChainTask?.RunOnce();
 
 			foreach (var disposable in this.disposableResources)

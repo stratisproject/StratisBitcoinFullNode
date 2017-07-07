@@ -16,10 +16,17 @@ namespace Stratis.Bitcoin.Miner
 	{
 		private readonly StakeChain stakeChain;
 
-		public PosBlockAssembler(ConsensusLoop consensusLoop, Network network, ConcurrentChain chain,
-			MempoolScheduler mempoolScheduler, TxMempool mempool,
-			IDateTimeProvider dateTimeProvider, StakeChain stakeChain, AssemblerOptions options = null)
-			: base(consensusLoop, network, chain, mempoolScheduler, mempool, dateTimeProvider, options)
+		public PosBlockAssembler(
+            ConsensusLoop consensusLoop, 
+            Network network, 
+            ConcurrentChain chain,
+			MempoolScheduler mempoolScheduler, 
+            TxMempool mempool,
+			IDateTimeProvider dateTimeProvider, 
+            StakeChain stakeChain,
+            ILogger logger,
+            AssemblerOptions options = null)
+			: base(consensusLoop, network, chain, mempoolScheduler, mempool, dateTimeProvider, logger, options)
 		{
 			this.stakeChain = stakeChain;
 		}

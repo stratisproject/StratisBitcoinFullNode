@@ -43,8 +43,9 @@ namespace Stratis.Bitcoin.Miner
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
 	    private readonly WalletManager wallet;
 		private readonly PosConsensusValidator posConsensusValidator;
+	    private readonly ILogger logger;
 
-		private uint256 hashPrevBlock;
+        private uint256 hashPrevBlock;
 		private Task mining;
 		private readonly long lastCoinStakeSearchTime;
 		private Money reserveBalance;
@@ -55,10 +56,22 @@ namespace Stratis.Bitcoin.Miner
 		public long LastCoinStakeSearchInterval;
 		public long LastCoinStakeSearchTime;
 
-		public PosMinting(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network, IConnectionManager connection,
-			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
-			BlockStore.ChainBehavior.ChainState chainState, Signals signals, INodeLifetime nodeLifetime,
-			NodeSettings settings, CoinView coinView, StakeChain stakeChain, IWalletManager wallet, IAsyncLoopFactory asyncLoopFactory)
+		public PosMinting(
+            ConsensusLoop consensusLoop, 
+            ConcurrentChain chain, 
+            Network network, 
+            IConnectionManager connection,
+			IDateTimeProvider dateTimeProvider, 
+            AssemblerFactory blockAssemblerFactory, 
+            BlockRepository blockRepository,
+			BlockStore.ChainBehavior.ChainState chainState, 
+            Signals signals, INodeLifetime nodeLifetime,
+			NodeSettings settings, 
+            CoinView coinView, 
+            StakeChain stakeChain, 
+            IWalletManager wallet, 
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory)
 		{
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -75,8 +88,9 @@ namespace Stratis.Bitcoin.Miner
 			this.stakeChain = stakeChain;
 		    this.asyncLoopFactory = asyncLoopFactory;
 		    this.wallet = wallet as WalletManager;
+		    this.logger = loggerFactory.CreateLogger<PosMinting>();
 
-			this.minerSleep = 500; // GetArg("-minersleep", 500);
+            this.minerSleep = 500; // GetArg("-minersleep", 500);
 			this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
 			this.reserveBalance = 0; // TOOD:settings.ReserveBalance 
 			this.minimumInputValue = 0;
@@ -239,9 +253,9 @@ namespace Stratis.Bitcoin.Miner
 			this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
 			this.signals.Blocks.Broadcast(block);
 
-			Logs.Mining.LogInformation($"==================================================================");
-			Logs.Mining.LogInformation($"Found new POS block hash={context.BlockResult.ChainedBlock.HashBlock} height={context.BlockResult.ChainedBlock.Height}");
-			Logs.Mining.LogInformation($"==================================================================");
+			this.logger.LogInformation($"==================================================================");
+		    this.logger.LogInformation($"Found new POS block hash={context.BlockResult.ChainedBlock.HashBlock} height={context.BlockResult.ChainedBlock.Height}");
+		    this.logger.LogInformation($"==================================================================");
 
 			// wait for peers to get the block
 			Thread.Sleep(1000);
@@ -355,7 +369,7 @@ namespace Stratis.Bitcoin.Miner
 			if (!setCoins.Any())
 				return false;
 
-		    Logs.Mining.LogInformation($"Node staking with amount {new Money(setCoins.Sum(s => s.TxOut.Value))}"); //replace this with staking weight
+		    this.logger.LogInformation($"Node staking with amount {new Money(setCoins.Sum(s => s.TxOut.Value))}"); //replace this with staking weight
 
             long nCredit = 0;
 			Script scriptPubKeyKernel = null;

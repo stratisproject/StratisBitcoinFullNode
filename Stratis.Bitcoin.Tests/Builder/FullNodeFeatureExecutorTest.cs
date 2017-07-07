@@ -33,9 +33,7 @@ namespace Stratis.Bitcoin.Tests.Builder
 			this.fullNodeServiceProvider.Setup(f => f.Features)
 				.Returns(new List<IFullNodeFeature>() { this.feature.Object, this.feature2.Object });
 
-		    Logs.Configure(new LoggerFactory());
-
-            this.executor = new FullNodeFeatureExecutor(this.fullNode.Object);
+            this.executor = new FullNodeFeatureExecutor(this.fullNode.Object, new LoggerFactory());
 		}
 
 		[Fact]

@@ -22,14 +22,14 @@ namespace Stratis.Bitcoin.Utilities
 				{
 					if (!cts.IsCancellationRequested)
 					{
-						Logs.FullNode.LogInformation("Application is shutting down...");
+					    Console.WriteLine("Application is shutting down...");
 						try
 						{
 							cts.Cancel();
 						}
 						catch (ObjectDisposedException exception)
 						{
-							Logs.FullNode.LogError(exception.Message);
+						    Console.WriteLine(exception.Message);
 						}
 					}
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Stratis.Bitcoin.Tests.Logging;
 using Xunit;
 
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public void StartLogsStartAndStop()
         {
-            var periodicTask = new PeriodicTask("TestTask", async token =>
+            var periodicTask = new PeriodicTask("TestTask", this.FullNodeLogger.Object, async token =>
             {
                 await DoTask(token);
             });
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public void StartWithoutDelayRunsTaskUntilCancelled()
         {
-            var periodicTask = new PeriodicTask("TestTask", async token =>
+            var periodicTask = new PeriodicTask("TestTask", NullLogger.Instance, async token =>
             {
                 await DoTask(token);
             });
@@ -53,7 +54,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public void StartWithDelayUsesIntervalForDelayRunsTaskUntilCancelled()
         {
-            var periodicTask = new PeriodicTask("TestTask", async token =>
+            var periodicTask = new PeriodicTask("TestTask", NullLogger.Instance, async token =>
             {
                 await DoTask(token);
             });
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Tests
         [Fact]
         public void RunOnceDoesOneExecutionCycle()
         {
-            var periodicTask = new PeriodicTask("TestTask", async token =>
+            var periodicTask = new PeriodicTask("TestTask", NullLogger.Instance, async token =>
             {
                 await DoTask(token);
             });

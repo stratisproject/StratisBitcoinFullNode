@@ -14,24 +14,24 @@ namespace Stratis.Bitcoin.RPC.Controllers
     {
         public ConnectionManagerController(IConnectionManager connectionManager) : base(connectionManager: connectionManager)
         {
-            Guard.NotNull(this._ConnectionManager, nameof(_ConnectionManager));
+            Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
         }
 
         [ActionName("addnode")]
         public bool AddNode(string endpointStr, string command)
         {
-            Guard.NotNull(this._ConnectionManager, nameof(_ConnectionManager));
-            IPEndPoint endpoint = NodeSettings.ConvertToEndpoint(endpointStr, this._ConnectionManager.Network.DefaultPort);
+            Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
+            IPEndPoint endpoint = NodeSettings.ConvertToEndpoint(endpointStr, this.ConnectionManager.Network.DefaultPort);
             switch (command)
             {
                 case "add":
-                    this._ConnectionManager.AddNodeAddress(endpoint);
+                    this.ConnectionManager.AddNodeAddress(endpoint);
                     break;
                 case "remove":
-                    this._ConnectionManager.RemoveNodeAddress(endpoint);
+                    this.ConnectionManager.RemoveNodeAddress(endpoint);
                     break;
                 case "onetry":
-                    this._ConnectionManager.Connect(endpoint);
+                    this.ConnectionManager.Connect(endpoint);
                     break;
                 default:
                     throw new ArgumentException("command");

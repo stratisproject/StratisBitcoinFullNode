@@ -9,13 +9,15 @@ namespace Stratis.Bitcoin.BlockStore
     {
         private BlockRepository repository;
         private BlockStoreCache cache;
+        private readonly ILogger logger;
         private BlockStoreRepositoryPerformanceSnapshot lastRepositorySnapshot;
         private BlockStoreCachePerformanceSnapshot lastCacheSnapshot;
 
-        public BlockStoreStats(BlockRepository blockRepository, BlockStoreCache blockStoreCache)
+        public BlockStoreStats(BlockRepository blockRepository, BlockStoreCache blockStoreCache, ILogger logger)
         {
             this.repository = blockRepository;
             this.cache = blockStoreCache;
+            this.logger = logger;
             this.lastRepositorySnapshot = this.repository?.PerformanceCounter.Snapshot();
             this.lastCacheSnapshot = this.cache?.PerformanceCounter.Snapshot();
         }
@@ -46,7 +48,7 @@ namespace Stratis.Bitcoin.BlockStore
                 this.lastCacheSnapshot = snapshot;                
             }
 
-            Logs.BlockStore.LogInformation(performanceLogBuilder.ToString());
+            this.logger.LogInformation(performanceLogBuilder.ToString());
         }       
     }
 }

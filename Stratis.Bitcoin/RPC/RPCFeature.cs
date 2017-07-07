@@ -15,10 +15,13 @@ namespace Stratis.Bitcoin.RPC
     {
         private readonly FullNode fullNode;
         private readonly NodeSettings nodeSettings;
-        public RPCFeature(FullNode fullNode, NodeSettings nodeSettings)
+        private readonly ILogger logger;
+
+        public RPCFeature(FullNode fullNode, NodeSettings nodeSettings, ILoggerFactory loggerFactory)
         {
             this.fullNode = fullNode;
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            this.logger = loggerFactory.CreateLogger<RPCFeature>();
         }
 
         public override void Start()
@@ -28,22 +31,22 @@ namespace Stratis.Bitcoin.RPC
                 // TODO: The web host wants to create IServiceProvider, so build (but not start) 
                 // earlier, if you want to use dependency injection elsewhere
                 this.fullNode.RPCHost = new WebHostBuilder()
-                .UseLoggerFactory(Logs.LoggerFactory)
+                .UseLoggerFactory(this.nodeSettings.LoggerFactory)
                 .UseKestrel()
                 .ForFullNode(this.fullNode)
                 .UseUrls(this.nodeSettings.RPC.GetUrls())
                 .UseIISIntegration()
                 .UseStartup<RPC.Startup>()
                 .Build();
-                // TODO: use .ConfigureServices() to configure non-ASP.NET services
-                // TODO: grab RPCHost.Services to use as IServiceProvider elsewhere
+
+                // TODO: bring the services injection logic from the Breeze.api
                 this.fullNode.RPCHost.Start();
                 this.fullNode.Resources.Add(this.fullNode.RPCHost);
-                Logs.RPC.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.nodeSettings.RPC.GetUrls()));
+                this.logger.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.nodeSettings.RPC.GetUrls()));
             }
             else
             {
-                Logs.RPC.LogWarning("RPC Server is off based on configuration.");
+                this.logger.LogWarning("RPC Server is off based on configuration.");
             }
         }
     }

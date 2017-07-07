@@ -84,10 +84,12 @@ namespace Stratis.Bitcoin.MemoryPool
         public const string defaultFilename = "mempool.dat";
 
         private readonly string dataDir;
+        private readonly ILogger mempoolLogger;
 
-        public MempoolPersistence(NodeSettings settings)
+        public MempoolPersistence(NodeSettings settings, ILoggerFactory loggerFactory)
         {
             this.dataDir = settings?.DataDir;
+            this.mempoolLogger = loggerFactory.CreateLogger<MempoolPersistence>();
         }
 
         public MemPoolSaveResult Save(TxMempool memPool, string fileName = null)
@@ -126,7 +128,7 @@ namespace Stratis.Bitcoin.MemoryPool
                 }
                 catch (Exception ex)
                 {
-                    Logs.Mempool.LogError(ex.Message);
+                    this.mempoolLogger.LogError(ex.Message);
                     throw;
                 }
             }
@@ -163,7 +165,7 @@ namespace Stratis.Bitcoin.MemoryPool
             }
             catch (Exception ex)
             {
-                Logs.Mempool.LogError(ex.Message);
+                this.mempoolLogger.LogError(ex.Message);
                 throw;
             }
         }
@@ -182,14 +184,14 @@ namespace Stratis.Bitcoin.MemoryPool
                 bitcoinReader.ReadWrite(ref version);
                 if (version != MEMPOOL_DUMP_VERSION)
                 {
-                    Logs.Mempool.LogWarning($"Memorypool data is wrong version ({version}) aborting...");
+                    this.mempoolLogger.LogWarning($"Memorypool data is wrong version ({version}) aborting...");
                     return null;
                 }
                 bitcoinReader.ReadWrite(ref numEntries);
             }
             catch
             {
-                Logs.Mempool.LogWarning($"Memorypool data is corrupt at header, aborting...");
+                this.mempoolLogger.LogWarning($"Memorypool data is corrupt at header, aborting...");
                 return null;
             }
 
@@ -202,7 +204,7 @@ namespace Stratis.Bitcoin.MemoryPool
                 }
                 catch
                 {
-                    Logs.Mempool.LogWarning($"Memorypool data is corrupt at item {i + 1}, aborting...");
+                    this.mempoolLogger.LogWarning($"Memorypool data is corrupt at item {i + 1}, aborting...");
                     return null;
                 }
 

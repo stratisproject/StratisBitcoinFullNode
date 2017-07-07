@@ -66,7 +66,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
 		{
-			Logs.Configure(new LoggerFactory().AddConsole(LogLevel.Trace, false));
 			return new NodeContext(name, network, clean);
 		}
 

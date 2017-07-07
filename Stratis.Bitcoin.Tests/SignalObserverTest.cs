@@ -22,7 +22,8 @@ namespace Stratis.Bitcoin.Tests
             this.observer = new TestBlockSignalObserver();
         }
 
-        [Fact]
+        // the log was removed from the observer
+        //[Fact]
         public void SignalObserverLogsSignalOnError()
         {
             var exception = new InvalidOperationException("This should not have occurred!");
