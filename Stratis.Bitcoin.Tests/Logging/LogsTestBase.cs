@@ -15,6 +15,7 @@ namespace Stratis.Bitcoin.Tests.Logging
         private Mock<ILogger> fullNodeLogger;
         private Mock<ILoggerFactory> loggerFactory;
         private Mock<ILogger> rpcLogger;
+        private Mock<ILogger> logger;
 
         /// <remarks>
         /// This class is not able to work concurrently because logs is a static class.
@@ -24,14 +25,16 @@ namespace Stratis.Bitcoin.Tests.Logging
         {
             this.fullNodeLogger = new Mock<ILogger>();
             this.rpcLogger = new Mock<ILogger>();
+            this.logger = new Mock<ILogger>();
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-               .Returns(new Mock<ILogger>().Object);
+               .Returns(this.logger.Object);
             this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.FullNode"))
                .Returns(this.fullNodeLogger.Object)
                .Verifiable();
             this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC"))
-                .Returns(this.rpcLogger.Object);
+                .Returns(this.rpcLogger.Object)
+                 .Verifiable();
         }
 
         public Mock<ILoggerFactory> LoggerFactory
@@ -55,6 +58,14 @@ namespace Stratis.Bitcoin.Tests.Logging
             get
             {
                 return this.rpcLogger;
+            }
+        }
+
+        public Mock<ILogger> Logger
+        {
+            get
+            {
+                return this.logger;
             }
         }
 

@@ -17,6 +17,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
+
     public class RPCMiddlewareTest : LogsTestBase
     {
 		private Mock<IRPCAuthorization> authorization;
@@ -203,7 +204,8 @@ namespace Stratis.Bitcoin.Tests.RPC
 				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -32603,\r\n    \"message\": \"Internal error\"\r\n  }\r\n}";
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status500InternalServerError, this.httpContext.Response.StatusCode);
-			}
+                base.AssertLog(this.Logger, LogLevel.Error, "Internal error while calling RPC Method");
+            }
 		}
 
 		[Fact]
@@ -222,8 +224,9 @@ namespace Stratis.Bitcoin.Tests.RPC
 				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -32603,\r\n    \"message\": \"Internal error\"\r\n  }\r\n}";
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
-			}
-		}
+                base.AssertLog<InvalidOperationException>(this.Logger, LogLevel.Error, "Operation not valid.", "Internal error while calling RPC Method");
+            }
+        }
 
 		private void SetupValidAuthorization()
 		{
