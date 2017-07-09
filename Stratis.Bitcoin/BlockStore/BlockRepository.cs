@@ -19,10 +19,6 @@ namespace Stratis.Bitcoin.BlockStore
 
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 
-        Task<List<byte[]>> GetTrxOutByAddrAsync(BitcoinAddress addr);
-
-        Task<List<uint256>> GetTrxOutNextAsync(List<byte[]> trxOutList);
-
 		Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
 
 		Task<bool> ExistAsync(uint256 hash);
@@ -32,41 +28,16 @@ namespace Stratis.Bitcoin.BlockStore
 		Task SetBlockHash(uint256 nextBlockHash);
 
 		Task SetTxIndex(bool txIndex);
-	}
+    }
 
     public class BlockRepository : IBlockRepository
     {
-        private readonly DBreezeSingleThreadSession session;
-        private readonly Network network;
-        private static readonly byte[] BlockHashKey = new byte[0];
-        private static readonly byte[] TxIndexKey = new byte[1];
+        protected readonly DBreezeSingleThreadSession session;
+        protected readonly Network network;
+        protected HashSet<string> tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
+        protected static readonly byte[] BlockHashKey = new byte[0];
+        protected static readonly byte[] TxIndexKey = new byte[1];
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
-
-        public class TransactionOutputID
-        {
-            public const int Length = 36;
-            public byte[] Value { get; }
-
-            public TransactionOutputID(uint256 transactionHash, uint txOutN)
-            {
-                this.Value = transactionHash.ToBytes().Concat(txOutN.ToBytes());
-            }
-        }
-
-        public class ScriptTemplate:Dictionary<int, byte>
-        {
-            public int ScriptLength { get; }
-
-            public ScriptTemplate(int scriptLength)
-            {
-                this.ScriptLength = scriptLength;
-            }
-
-            public bool Matches(byte[] script)
-            {
-                return (script.Length == this.ScriptLength && this.All(o => script[o.Key] == o.Value));
-            }
-        }
 
         public BlockRepository(Network network, DataFolder dataFolder)
             : this(network, dataFolder.BlockPath)
@@ -78,7 +49,7 @@ namespace Stratis.Bitcoin.BlockStore
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
 
-            this.session = new DBreezeSingleThreadSession("DBreeze BlockRepository", folder);
+            this.session = new DBreezeSingleThreadSession($"DBreeze {this.GetType().Name}", folder);
             this.network = network;
             this.PerformanceCounter = new BlockStoreRepositoryPerformanceCounter();
         }
@@ -89,7 +60,7 @@ namespace Stratis.Bitcoin.BlockStore
 
             var sync = this.session.Do(() =>
             {
-                this.session.Transaction.SynchronizeTables("Block", "Transaction", "Script", "Output", "Common");
+                this.session.Transaction.SynchronizeTables(this.tableNames.ToList());
                 this.session.Transaction.ValuesLazyLoadingIsOn = true;
             });
 
@@ -149,54 +120,6 @@ namespace Stratis.Bitcoin.BlockStore
             });
         }
 
-        public Task<List<byte[]>> GetTrxOutByAddrAsync(BitcoinAddress addr)
-        {
-            Guard.NotNull(addr, nameof(addr));
-
-            if (!this.TxIndex)
-                return Task.FromResult(default(List<byte[]>));
-
-            return this.session.Do(() =>
-            {
-                return this.GetAddressTransactionOutputs(addr).ToList();
-            });
-        }
-
-        public Task<List<uint256>> GetTrxOutNextAsync(List<byte[]> trxOutList)
-        {
-            Guard.NotNull(trxOutList, nameof(trxOutList));
-
-            if (!this.TxIndex)
-                return Task.FromResult(default(List<uint256>));
-
-            return this.session.Do(() =>
-            {
-                var trxList = new List<uint256>();
-
-                foreach (var trxOut in trxOutList)
-                {
-                    if (trxOut != null)
-                    {
-                        Guard.Assert(trxOut.Length == TransactionOutputID.Length);
-
-                        var trxId = this.session.Transaction.Select<byte[], uint256>("Output", trxOut);
-
-                        if (trxId.Exists)
-                        {
-                            this.PerformanceCounter.AddRepositoryHitCount(1);
-                            trxList.Add(trxId.Value);
-                            continue;
-                        }
-                    }
-
-                    this.PerformanceCounter.AddRepositoryMissCount(1);
-                    trxList.Add(null);
-                }
-
-                return trxList;
-            });
-        }
-
         public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
         {
             Guard.NotNull(trxid, nameof(trxid));
@@ -224,6 +147,67 @@ namespace Stratis.Bitcoin.BlockStore
         public uint256 BlockHash { get; private set; }
         public bool TxIndex { get; private set; }
 
+        virtual protected void OnInsertBlocks(List<Block> blocks)
+        {
+            var transactions = new List<(Transaction, Block)>();
+
+            var byteListComparer = new ByteListComparer();
+
+            var blockDict = new Dictionary<uint256, Block>();
+
+            // Gather blocks
+            foreach (var block in blocks)
+            {
+                var blockId = block.GetHash();
+                blockDict[blockId] = block;
+            }
+
+            // Sort blocks. Be consistent in always converting our keys to byte arrays using the ToBytes method.
+            var blockList = blockDict.ToList();
+            blockList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
+
+            // Index blocks
+            foreach (KeyValuePair<uint256, Block> kv in blockList)
+            {
+                var blockId = kv.Key;
+                var block = kv.Value;
+
+                // if the block is already in store don't write it again
+                var item = this.session.Transaction.Select<byte[], Block>("Block", blockId.ToBytes());
+                if (!item.Exists)
+                {
+                    this.PerformanceCounter.AddRepositoryMissCount(1);
+                    this.PerformanceCounter.AddRepositoryInsertCount(1);
+                    this.session.Transaction.Insert<byte[], Block>("Block", blockId.ToBytes(), block);
+
+                    if (this.TxIndex)
+                        foreach (var transaction in block.Transactions)
+                            transactions.Add((transaction, block));
+                }
+                else
+                {
+                    this.PerformanceCounter.AddRepositoryHitCount(1);
+                }
+            }
+
+            if (this.TxIndex)
+                OnInsertTransactions(transactions);
+        }
+
+        virtual protected void OnInsertTransactions(List<(Transaction, Block)> transactions)
+        {        
+            var byteListComparer = new ByteListComparer();
+
+            transactions.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Item1.GetHash().ToBytes(), pair2.Item1.GetHash().ToBytes()));
+            
+            // Index transactions
+            foreach (var (transaction, block) in transactions)
+            {
+                this.PerformanceCounter.AddRepositoryInsertCount(1);
+                this.session.Transaction.Insert<byte[], uint256>("Transaction", transaction.GetHash().ToBytes(), block.GetHash());
+            }
+        }
+
         public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
         {
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -233,156 +217,14 @@ namespace Stratis.Bitcoin.BlockStore
             // however we need to find how byte arrays are sorted in dbreeze this link can help 
             // https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
 
-            // Use this comparer. We are assuming that DBreeze would use the same comparer for
-            // ordering rows in the file.
-            var byteListComparer = new ByteListComparer();
-
             return this.session.Do(() =>
             {
-                var blockDict = new Dictionary<uint256, Block>();
-                var transDict = new Dictionary<uint256, uint256>();
-                var scriptDict = new Dictionary<ScriptId, HashSet<byte[]>>();
-                var outputDict = new Dictionary<byte[], uint256>();
-
-                var P2PKH = new ScriptTemplate(25)
-                                {
-                                    {0, (byte)OpcodeType.OP_DUP },
-                                    {1, (byte)OpcodeType.OP_HASH160 },
-                                    {2, (byte)20 },
-                                    {23, (byte)OpcodeType.OP_EQUALVERIFY },
-                                    {24, (byte)OpcodeType.OP_CHECKSIG }
-                                };
-
-                var scriptTemplates = new List<ScriptTemplate> { P2PKH };
-
-                // Gather blocks
-                foreach (var block in blocks)
-                {
-                    var blockId = block.GetHash();
-                    blockDict[blockId] = block;
-                    // Gaher transactions
-                    if (this.TxIndex)
-                    {
-                        foreach (var transaction in block.Transactions)
-                        {
-                            var trxId = transaction.GetHash();
-                            transDict[trxId] = blockId;
-                            // Gather scripts
-                            foreach ((ScriptId scriptId, uint trxOutN) in this.IndexedTransactionOutputs(transaction, scriptTemplates))
-                            {
-                                var value = new TransactionOutputID(trxId, trxOutN).Value;
-
-                                HashSet<byte[]> list = scriptDict.TryGet(scriptId);
-                                if (list == null)
-                                {
-                                    list = new HashSet<byte[]>();
-                                    scriptDict[scriptId] = list;
-                                }
-                                list.Add(value);
-                            }
-
-                            foreach (var input in transaction.Inputs)
-                            {
-                                var key = new TransactionOutputID(input.PrevOut.Hash, input.PrevOut.N).Value;
-                                var value = transaction.GetHash();
-                                outputDict[key] = value;
-                            }
-                        }
-                    }
-                }
-
-                // Sort blocks. Be consistent in always converting our keys to byte arrays using the ToBytes method.
-                var blockList = blockDict.ToList();
-                blockList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
-
-                // Index blocks
-                foreach (KeyValuePair<uint256, Block> kv in blockList)
-                {
-                    var blockId = kv.Key;
-                    var block = kv.Value;
-
-                    // if the block is already in store don't write it again
-                    var item = this.session.Transaction.Select<byte[], Block>("Block", blockId.ToBytes());
-                    if (!item.Exists)
-                    {
-                        this.PerformanceCounter.AddRepositoryMissCount(1);
-                        this.PerformanceCounter.AddRepositoryInsertCount(1);
-                        this.session.Transaction.Insert<byte[], Block>("Block", blockId.ToBytes(), block);
-                    }
-                    else
-                    {
-                        this.PerformanceCounter.AddRepositoryHitCount(1);
-                    }
-                }
-
-                // Sort transactions. Be consistent in always converting our keys to byte arrays using the ToBytes method.
-                var transList = transDict.ToList();
-                transList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
-
-                // Index transactions
-                foreach (KeyValuePair<uint256, uint256> kv in transList)
-                {
-                    var trxId = kv.Key;
-                    var blockId = kv.Value;
-
-                    this.PerformanceCounter.AddRepositoryInsertCount(1);
-                    this.session.Transaction.Insert<byte[], uint256>("Transaction", trxId.ToBytes(), blockId);
-                }
-
-                // Sort scripts. Be consistent in always converting our keys to byte arrays using the ToBytes method.
-                var scriptList = scriptDict.ToList();
-                scriptList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
-
-                // Index scripts
-                foreach (KeyValuePair<ScriptId, HashSet<byte[]>> kv in scriptList)
-                {
-                    var scriptId = kv.Key;
-                    var transactions = kv.Value;
-
-                    this.PerformanceCounter.AddRepositoryInsertCount(1);
-                    this.RecordTransactionOutputsToScript(scriptId, transactions);
-                }
-
-                // Sort outputs. In this case the keys are already arrays of bytes
-                var outputList = outputDict.ToList();
-                outputList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key, pair2.Key));
-
-                // Index blocks
-                foreach (KeyValuePair<byte[], uint256> kv in outputList)
-                {
-                    var trxOutputN = kv.Key;
-                    var trxNext = kv.Value.ToBytes();
-
-                    // if the block is already in store don't write it again
-                    var item = this.session.Transaction.Select<byte[], byte[]>("Output", trxOutputN);
-                    if (!item.Exists)
-                    {
-                        this.PerformanceCounter.AddRepositoryMissCount(1);
-                        this.PerformanceCounter.AddRepositoryInsertCount(1);
-                        this.session.Transaction.Insert<byte[], byte[]>("Output", trxOutputN, trxNext);
-                    }
-                    else
-                    {
-                        this.PerformanceCounter.AddRepositoryHitCount(1);
-                    }
-                }
+                this.OnInsertBlocks(blocks);
 
                 // Commit additions
                 this.SaveBlockHash(nextBlockHash);
                 this.session.Transaction.Commit();
             });
-        }
-
-        private IEnumerable<(ScriptId, uint)> IndexedTransactionOutputs(Transaction transaction, List<ScriptTemplate> scriptTemplates) 
-        {
-            for (uint N = 0; N<transaction.Outputs.Count; N++)
-            {
-                var output = transaction.Outputs[N];
-                
-                foreach (var t in scriptTemplates)
-                    if (t.Matches(output.ScriptPubKey.ToBytes(true)))
-                        yield return (output.ScriptPubKey.Hash, N);
-            }
         }
 
         private bool? LoadTxIndex()
@@ -483,226 +325,71 @@ namespace Stratis.Bitcoin.BlockStore
             });
 		}
 
-		public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
+        protected virtual void OnDeleteTransactions(List<Transaction> transactions)
+        {
+            foreach (var transaction in transactions)
+            {
+                this.PerformanceCounter.AddRepositoryDeleteCount(1);
+                this.session.Transaction.RemoveKey<byte[]>("Transaction", transaction.GetHash().ToBytes());
+            }
+        }
+
+        protected virtual void OnDeleteBlocks(List<Block> blocks)
+        {
+            if (this.TxIndex)
+            {
+                var transactions = new List<Transaction>();
+
+                foreach (var block in blocks)
+                    foreach (var transaction in block.Transactions)
+                        transactions.Add(transaction);
+
+                OnDeleteTransactions(transactions);
+            }
+
+            foreach (var block in blocks)
+            {
+                this.PerformanceCounter.AddRepositoryDeleteCount(1);
+                this.session.Transaction.RemoveKey<byte[]>("Block", block.GetHash().ToBytes());
+            }
+
+        }
+        
+        private List<Block> GetBlocksFromHashes(List<uint256> hashes)
+        {
+            var blocks = new List<Block>();
+
+            foreach (var hash in hashes)
+            {
+                var key = hash.ToBytes();
+
+                var block = this.session.Transaction.Select<byte[], Block>("Block", key);
+                if (block.Exists)
+                {
+                    this.PerformanceCounter.AddRepositoryHitCount(1);
+                    blocks.Add(block.Value);
+                }
+                else
+                {
+                    this.PerformanceCounter.AddRepositoryMissCount(1);
+                }
+            }
+
+            return blocks;
+        }
+        
+        public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
 		{
 			Guard.NotNull(newlockHash, nameof(newlockHash));
 			Guard.NotNull(hashes, nameof(hashes));
 
             return this.session.Do(() =>
             {
-                foreach (var hash in hashes)
-                {
-                    // if the block is already in store don't write it again
-                    var key = hash.ToBytes();
-
-                    if (this.TxIndex)
-                    {
-                        var P2PKH = new ScriptTemplate(25)
-                                {
-                                    {0, (byte)OpcodeType.OP_DUP },
-                                    {1, (byte)OpcodeType.OP_HASH160 },
-                                    {2, (byte)20 },
-                                    {23, (byte)OpcodeType.OP_EQUALVERIFY },
-                                    {24, (byte)OpcodeType.OP_CHECKSIG }
-                                };
-
-                        var scriptTemplates = new List<ScriptTemplate> { P2PKH };
-
-                        var block = this.session.Transaction.Select<byte[], Block>("Block", key);
-                        if (block.Exists)
-                        {
-                            this.PerformanceCounter.AddRepositoryHitCount(1);
-
-                            var removals = new Dictionary<ScriptId, HashSet<byte[]>>();
-
-                            foreach (var transaction in block.Value.Transactions)
-                            {
-                                var trxId = transaction.GetHash();
-
-                                this.PerformanceCounter.AddRepositoryDeleteCount(1);
-                                this.session.Transaction.RemoveKey<byte[]>("Transaction", trxId.ToBytes());
-
-                                // Remove transaction reference from indexed addresses
-                                foreach ((ScriptId scriptId, uint trxOutN) in this.IndexedTransactionOutputs(transaction, scriptTemplates))
-                                {
-                                    var value = new TransactionOutputID(trxId, trxOutN).Value;
-
-                                    HashSet<byte[]> list;
-                                    if (!removals.TryGetValue(scriptId, out list))
-                                    {
-                                        list = new HashSet<byte[]>();
-                                        removals[scriptId] = list;
-                                    }
-
-                                    list.Add(value);
-                                }
-
-                                foreach (var input in transaction.Inputs)
-                                {
-                                    var key2 = new TransactionOutputID(input.PrevOut.Hash, input.PrevOut.N).Value;
-                                    this.PerformanceCounter.AddRepositoryDeleteCount(1);
-                                    this.session.Transaction.RemoveKey<byte[]>("Output", key2);
-                                }
-                            }
-
-                            foreach (KeyValuePair<ScriptId, HashSet<byte[]>> kv in removals)
-                                this.PerformanceCounter.AddRepositoryDeleteCount(
-                                    this.RemoveTransactionOutputsToScript(kv.Key, kv.Value));
-                        }
-                        else
-                        {
-                            this.PerformanceCounter.AddRepositoryMissCount(1);
-                        }
-			        }
-
-                    this.PerformanceCounter.AddRepositoryDeleteCount(1);
-                    this.session.Transaction.RemoveKey<byte[]>("Block", key);
-			    }
-
+                this.OnDeleteBlocks(GetBlocksFromHashes(hashes));
 			    this.SaveBlockHash(newlockHash);
 			    this.session.Transaction.Commit();
 			});
 		}
-
-        private IEnumerable<byte[]> GetAddressTransactionOutputs(BitcoinAddress addr)
-        {
-            foreach (var output in this.GetScriptTransactionOutputs(addr.ScriptPubKey.Hash))
-                yield return output;
-        }
-
-        private IEnumerable<byte[]> GetScriptTransactionOutputs(ScriptId script)
-        {
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Script", script.ToBytes());
-            if (addrRow.Exists)
-            {
-                // Get the number of transactions
-                var cntBytes = addrRow.GetValuePart(0, sizeof(uint));
-                if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
-                uint cnt = BitConverter.ToUInt32(cntBytes, 0);
-
-                // Any transactions recorded?
-                if (cnt > 0)
-                {
-                    byte[] listBytes = addrRow.GetValuePart(sizeof(uint), (uint)(cnt * TransactionOutputID.Length));
-                    for (int i = 0; i < cnt; i++)
-                    {
-                        var trxOutN = new byte[TransactionOutputID.Length];
-                        Array.Copy(listBytes, i * TransactionOutputID.Length, trxOutN, 0, TransactionOutputID.Length);
-                        yield return trxOutN;
-                    }
-                }
-            }
-        }
-
-        private void RecordTransactionOutputsToScript(ScriptId script, HashSet<byte[]> list)
-        {
-            uint cnt = 0;
-            var scriptKey = script.ToBytes();
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Script", scriptKey);
-
-            if (addrRow.Exists)
-            {
-                // Get the number of transaction hashes
-                var bytes = addrRow.GetValuePart(0, sizeof(uint));
-                if (!BitConverter.IsLittleEndian) Array.Reverse(bytes);
-                cnt = BitConverter.ToUInt32(bytes, 0);
-            }
-
-            // Force the value's size to a power of 2 that will fit all the additional transaction hashes
-            if ((cnt + list.Count) >= 2 && (addrRow.Value == null || 
-                (sizeof(uint) + (cnt + list.Count) * TransactionOutputID.Length) > addrRow.Value.Length))
-            {
-                uint growCnt = 2;
-                for (; growCnt < (cnt + list.Count); growCnt *= 2) { }
-                uint growSize = (uint)(sizeof(uint) + growCnt * TransactionOutputID.Length); 
-                this.session.Transaction.InsertPart<byte[], byte[]>("Script", scriptKey, new byte[] { 0 /* Dummy */}, growSize - 1);
-            }
-
-            // Add the transaction hashes
-            foreach (var trxId in list)
-            {
-                Guard.Assert(trxId.Length == TransactionOutputID.Length);
-                this.session.Transaction.InsertPart<byte[], byte[]>("Script", scriptKey, trxId,
-                    (uint)(sizeof(uint) + (cnt++) * TransactionOutputID.Length));
-            }
-
-            // Update the number of transaction hashes
-            var cntBytes = BitConverter.GetBytes(cnt);
-            if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
-            
-            this.session.Transaction.InsertPart<byte[], byte[]>("Script", scriptKey, cntBytes, 0);
-        }
-
-        private int RemoveTransactionOutputsToScript(ScriptId script, HashSet<byte[]> outputs)
-        {
-            var scriptKey = script.ToBytes();
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>("Script", scriptKey);
-            if (!addrRow.Exists)
-                return 0;
-
-            // Storing one-to-many value as count followed by count transaction hashes
-            
-            // Get the number of transactions
-            var cntBytes = addrRow.GetValuePart(0, sizeof(uint));
-            if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes);
-            uint cnt = BitConverter.ToUInt32(cntBytes, 0);
-
-            int removeCnt = 0;
-
-            // Any transactions recorded?
-            foreach (var output in outputs)
-            {
-                Guard.Assert(output.Length == TransactionOutputID.Length);
-
-                if (cnt > 0)
-                {
-                    // Get all the transactions hashes for easy iteration
-                    byte[] listBytes = addrRow.GetValuePart(sizeof(uint), (uint)(cnt * TransactionOutputID.Length));
-
-                    // Traverse in reverse order
-                    bool found = false;
-
-                    int i = listBytes.Length - TransactionOutputID.Length;
-                    for (; i >= 0; i -= TransactionOutputID.Length)
-                    {
-                        int j = 0;
-                        // trxid found?
-                        for (; j < TransactionOutputID.Length; j++)
-                            if (listBytes[i + j] != output[j])
-                                break;
-                        found = (j == TransactionOutputID.Length);
-                        if (found) break;
-                    }
-
-                    // Transaction was not found
-                    if (!found) continue;
-
-                    // Found the trxid. Now remove it by overwriting the rest of the list with a shifted version
-                    var replaceBytes = new byte[listBytes.Length - i];
-                    Array.Copy(listBytes, i + TransactionOutputID.Length, replaceBytes, 0, replaceBytes.Length - TransactionOutputID.Length);
-
-                    // Overwrite the value in the table row
-                    this.session.Transaction.InsertPart<byte[], byte[]>("Script", scriptKey, replaceBytes, (uint)(i + sizeof(uint)));
-
-                    // Update the number of items
-                    if (--cnt > 0)
-                    {
-                        var cntBytes2 = BitConverter.GetBytes(cnt);
-                        if (!BitConverter.IsLittleEndian) Array.Reverse(cntBytes2);
-                        this.session.Transaction.InsertPart<byte[], byte[]>("Script", scriptKey, cntBytes2, 0);
-                        continue;
-                    }
-
-                    removeCnt++;
-                }
-            }
-
-            // Key is no longer needed
-            if (cnt == 0)
-                this.session.Transaction.RemoveKey<byte[]>("Script", scriptKey);
-
-            return removeCnt;
-        }
 
 		public void Dispose()
 		{
