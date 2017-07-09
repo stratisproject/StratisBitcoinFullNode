@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
-        public void SpendableAmountConfirmedOnlyGivenBeingConfirmedAndSpentUnconfirmedReturnsAmount()
+        public void SpendableAmountConfirmedOnlyGivenBeingConfirmedAndSpentUnconfirmedReturnsZero()
         {
             var transaction = new TransactionData()
             {
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             var result = transaction.SpendableAmount(true);
 
-            Assert.Equal(15, result);
+            Assert.Equal(Money.Zero, result);
         }
 
         [Fact]
@@ -166,6 +166,21 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var result = transaction.SpendableAmount(true);
 
             Assert.Equal(Money.Zero, result);
+        }
+
+        [Fact]
+        public void SpendableAmountConfirmedOnlyGivenSpendableAndConfirmedReturnsAmount()
+        {
+            var transaction = new TransactionData()
+            {
+                SpendingDetails = null,
+                Amount = new Money(15),
+                BlockHeight = 15
+            };
+
+            var result = transaction.SpendableAmount(true);
+
+            Assert.Equal(new Money(15), result);
         }
     }
 }
