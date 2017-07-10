@@ -19,7 +19,13 @@ namespace Stratis.Bitcoin.Notifications
         private readonly TransactionNotificationProgress notifiedTransactions;
         private readonly ILogger logger;
 
-        public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILogger logger)
+	    public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILoggerFactory loggerFactory)
+			: this(transactionNotification, notifiedTransactions, loggerFactory.CreateLogger(typeof(TransactionReceiver).FullName))
+	    {
+		    
+	    }
+
+		public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILogger logger)
         {
             this.transactionNotification = transactionNotification;
             this.notifiedTransactions = notifiedTransactions;
