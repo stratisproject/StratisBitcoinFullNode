@@ -25,16 +25,8 @@ using static Stratis.Bitcoin.FullNode;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {
-    public class WalletManagerTest : TestBase
+    public class WalletManagerTest : LogsTestBase
     {
-        public WalletManagerTest()
-        {
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-               .Returns(new Mock<ILogger>().Object);
-            Logs.Configure(loggerFactory.Object);
-        }
-
         /// <summary>
         /// This is more of an integration test to verify fields are filled correctly. This is what I could confirm.
         /// </summary>
@@ -53,11 +45,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             block.Header.Nonce = nonce;
             chain.SetTip(block.Header);
 
-            var walletManager = new WalletManager(Logs.LoggerFactory, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
-                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
-                                                 {
-                                                     Cancellation = new System.Threading.CancellationTokenSource()
-                                                 });
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
+                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             var password = "test";
 
@@ -169,11 +158,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             block.Header.Nonce = nonce;
             chain.SetTip(block.Header);
 
-            var walletManager = new WalletManager(Logs.LoggerFactory, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
-                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
-                                                 {
-                                                     Cancellation = new System.Threading.CancellationTokenSource()
-                                                 });
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
+                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             var password = "test";
             var passphrase = "this is my magic passphrase";
@@ -283,11 +269,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             block.Header.Nonce = nonce;
             chain.SetTip(block.Header);
 
-            var walletManager = new WalletManager(Logs.LoggerFactory, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
-                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
-                                                 {
-                                                     Cancellation = new System.Threading.CancellationTokenSource()
-                                                 });
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
+                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             var password = "test";
 
@@ -347,11 +330,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Directory.CreateDirectory(dir);
             File.WriteAllText(Path.Combine(dataFolder.WalletPath, "testWallet.wallet.json"), JsonConvert.SerializeObject(wallet, Formatting.Indented, new ByteArrayConverter()));
 
-            var walletManager = new WalletManager(Logs.LoggerFactory, It.IsAny<ConnectionManager>(), Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                                                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
-                                                {
-                                                    Cancellation = new System.Threading.CancellationTokenSource()
-                                                });
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                                                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             var result = walletManager.LoadWallet("testWallet");
 
@@ -371,11 +351,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
                string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadWalletWithNonExistingWalletThrowsFileNotFoundException");
                var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-               var walletManager = new WalletManager(Logs.LoggerFactory, It.IsAny<ConnectionManager>(), Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                                                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
-                                                {
-                                                    Cancellation = new System.Threading.CancellationTokenSource()
-                                                });
+               var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                                                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
                walletManager.LoadWallet("testWallet");
            });
@@ -393,15 +370,12 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             ConcurrentChain chain = PrepareChainWithBlock();
             // prepare an existing wallet through this manager and delete the file from disk. Return the created wallet object and mnemonic.
-            var deletedWallet = CreateWalletOnDiskAndDeleteWallet(dataFolder, password, passphrase, walletName, chain);
+            var deletedWallet = this.CreateWalletOnDiskAndDeleteWallet(dataFolder, password, passphrase, walletName, chain);
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/{walletName}.wallet.json")));
 
             // create a fresh manager.
-            var walletManager = new WalletManager(Logs.LoggerFactory, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
-                                                                        dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
-                                                                        {
-                                                                            Cancellation = new System.Threading.CancellationTokenSource()
-                                                                        });
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
+                                                                        dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // try to recover it.
             var recoveredWallet = walletManager.RecoverWallet(password, walletName, deletedWallet.mnemonic.ToString(), DateTime.Now.AddDays(1), passphrase);
@@ -490,15 +464,12 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             ConcurrentChain chain = PrepareChainWithBlock();
             // prepare an existing wallet through this manager and delete the file from disk. Return the created wallet object and mnemonic.
-            var deletedWallet = CreateWalletOnDiskAndDeleteWallet(dataFolder, password, password, walletName, chain);
+            var deletedWallet = this.CreateWalletOnDiskAndDeleteWallet(dataFolder, password, password, walletName, chain);
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/{walletName}.wallet.json")));
 
             // create a fresh manager.
-            var walletManager = new WalletManager(Logs.LoggerFactory, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
-                                                                        dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
-                                                                        {
-                                                                            Cancellation = new System.Threading.CancellationTokenSource()
-                                                                        });
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
+                                                                        dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // try to recover it.
             var recoveredWallet = walletManager.RecoverWallet(password, walletName, deletedWallet.mnemonic.ToString(), DateTime.Now.AddDays(1), password);
@@ -839,13 +810,10 @@ namespace Stratis.Bitcoin.Tests.Wallet
             return chain;
         }
 
-        private static (Mnemonic mnemonic, Bitcoin.Wallet.Wallet wallet) CreateWalletOnDiskAndDeleteWallet(DataFolder dataFolder, string password, string passphrase, string walletName, ConcurrentChain chain)
+        private (Mnemonic mnemonic, Bitcoin.Wallet.Wallet wallet) CreateWalletOnDiskAndDeleteWallet(DataFolder dataFolder, string password, string passphrase, string walletName, ConcurrentChain chain)
         {
-            var walletManager = new WalletManager(Logs.LoggerFactory, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
-                                                             dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new CancellationProvider()
-                                                             {
-                                                                 Cancellation = new System.Threading.CancellationTokenSource()
-                                                             });
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
+                                                             dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
 
             // create the wallet
