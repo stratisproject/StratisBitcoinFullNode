@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Logging
             loggerFactory.WithFilter(filterSettings);
         }
 
-        public static void AddPath(this ILoggerFactory loggerFactory, DataFolder dataFolder)
+        public static void AddFile(this ILoggerFactory loggerFactory, DataFolder dataFolder)
         {
             loggerFactory.AddFile(
                 Path.Combine(dataFolder.LogPath, "node-{Date}.json"), 

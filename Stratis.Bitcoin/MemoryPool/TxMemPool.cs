@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.MapNextTx = new List<NextTxPair>();
 			this.mapDeltas = new Dictionary<uint256, DeltaPair>();
 			this.vTxHashes = new Dictionary<TxMempoolEntry, uint256>(); //!< All tx witness hashes/entries in mapTx, in random order
-		    this.logger = loggerFactory.CreateLogger<TxMempool>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 			this.TimeProvider = dateTimeProvider;
 			this.InnerClear(); //lock free clear
 

@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.mapOrphanTransactionsByPrev = new Dictionary<OutPoint, List<OrphanTx>>(); // OutPoint already correctly implements equality compare
 			this.recentRejects = new Dictionary<uint256, uint256>();
 			this.hashRecentRejectsChainTip = uint256.Zero;
-		    this.mempoolLogger = loggerFactory.CreateLogger<MempoolOrphans>();
+		    this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public class OrphanTx

@@ -29,10 +29,10 @@ namespace Stratis.Bitcoin.Tests.Logging
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                .Returns(this.logger.Object);
-            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.FullNode"))
+            this.loggerFactory.Setup(l => l.CreateLogger(typeof(FullNode).FullName))
                .Returns(this.fullNodeLogger.Object)
                .Verifiable();
-            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC"))
+            this.loggerFactory.Setup(l => l.CreateLogger(typeof(RPCFeature).FullName))
                 .Returns(this.rpcLogger.Object)
                  .Verifiable();
         }
@@ -78,6 +78,15 @@ namespace Stratis.Bitcoin.Tests.Logging
                 It.IsAny<Func<object, Exception, string>>()));
         }
 
+        protected void AssertLog<T>(Mock<ILogger<FullNode>> logger, LogLevel logLevel, string exceptionMessage, string message) where T : Exception
+        {
+            logger.Verify(f => f.Log<Object>(logLevel,
+                It.IsAny<EventId>(),
+                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
+                It.Is<T>(t => t.Message.Equals(exceptionMessage)),
+                It.IsAny<Func<object, Exception, string>>()));
+        }
+
         protected void AssertLog(Mock<ILogger> logger, LogLevel logLevel, string message)
         {
             logger.Verify(f => f.Log<Object>(logLevel,
@@ -95,5 +104,15 @@ namespace Stratis.Bitcoin.Tests.Logging
                 null,
                 It.IsAny<Func<object, Exception, string>>()));
         }
+
+        protected void AssertLog(Mock<ILogger<FullNode>> logger, LogLevel logLevel, string message)
+        {
+            logger.Verify(f => f.Log<Object>(logLevel,
+                It.IsAny<EventId>(),
+                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
+                null,
+                It.IsAny<Func<object, Exception, string>>()));
+        }
+
     }
 }

@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Connection
 			this.nodeSettings = nodeSettings;
 			this.connectionManagerSettings = nodeSettings.ConnectionManager;
 			this.parameters = parameters;
-		    this.logger = loggerFactory.CreateLogger<ConnectionManager>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 		}
 
 		public void Start()

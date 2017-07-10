@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.BlockStore
             this.blockStoreCache = cache;
 		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
-		    this.storeLogger = loggerFactory.CreateLogger("Stratis.Bitcoin.BlockStore");
+		    this.storeLogger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache, this.storeLogger);

@@ -37,25 +37,37 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly Dictionary<uint256, uint256> inventoryTxToSend;
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
-		public MempoolBehavior(
+	    public MempoolBehavior(
+	        MempoolValidator validator,
+	        MempoolManager manager,
+	        MempoolOrphans orphans,
+	        IConnectionManager connectionManager,
+	        BlockStore.ChainBehavior.ChainState chainState,
+	        Signals signals,
+	        ILogger logger)
+	    {
+	        this.validator = validator;
+	        this.manager = manager;
+	        this.orphans = orphans;
+	        this.connectionManager = connectionManager;
+	        this.chainState = chainState;
+	        this.signals = signals;
+	        this.logger = logger;
+
+	        this.inventoryTxToSend = new Dictionary<uint256, uint256>();
+	        this.filterInventoryKnown = new Dictionary<uint256, uint256>();
+	    }
+
+        public MempoolBehavior(
             MempoolValidator validator, 
             MempoolManager manager, 
             MempoolOrphans orphans, 
 			IConnectionManager connectionManager, 
             BlockStore.ChainBehavior.ChainState chainState, 
             Signals signals, 
-            ILogger logger)
+            ILoggerFactory loggerFactory)
+            :this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
 		{
-			this.validator = validator;
-			this.manager = manager;
-			this.orphans = orphans;
-			this.connectionManager = connectionManager;
-			this.chainState = chainState;
-			this.signals = signals;
-		    this.logger = logger;
-
-		    this.inventoryTxToSend = new Dictionary<uint256, uint256>();
-			this.filterInventoryKnown = new Dictionary<uint256, uint256>();
 		}
 
 		protected override void AttachCore()

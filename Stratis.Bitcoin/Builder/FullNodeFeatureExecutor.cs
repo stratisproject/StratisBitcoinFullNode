@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Builder
 			Guard.NotNull(fullNode, nameof(fullNode));
 
 			this.node = fullNode;
-		    this.logger = loggerFactory.CreateLogger<FullNodeFeatureExecutor>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 		}
 
 		public void Start()

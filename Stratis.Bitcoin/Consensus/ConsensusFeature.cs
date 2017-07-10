@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Consensus
 			this.nodeSettings = nodeSettings;
 		    this.nodeDeployments = nodeDeployments;
 		    this.stakeChain = stakeChain;
-		    this.logger = loggerFactory.CreateLogger<ConsensusFeature>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
 		public override void Start()

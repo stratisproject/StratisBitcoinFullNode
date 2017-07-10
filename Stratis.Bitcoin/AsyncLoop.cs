@@ -46,20 +46,6 @@ namespace Stratis.Bitcoin
             return this.StartAsync(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
         }
 
-        public static Task Run(string name, ILogger logger, Func<CancellationToken, Task> loop, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
-        {
-            return new AsyncLoop(name, logger, loop).Run(repeatEvery, startAfter);
-        }
-
-        public static Task Run(string name, ILogger logger, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
-        {
-            Guard.NotNull(cancellation, nameof(cancellation));
-            Guard.NotEmpty(name, nameof(name));
-            Guard.NotNull(loop, nameof(loop));
-
-            return new AsyncLoop(name, logger, loop).Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
-        }
-
         private Task StartAsync(CancellationToken cancellation, TimeSpan refreshRate, TimeSpan? delayStart = null)
         {
             return Task.Run(async () =>
@@ -106,35 +92,6 @@ namespace Stratis.Bitcoin
                     this.logger.LogCritical(new EventId(0), uncatchException, this.Name + " threw an unhandled exception");
                 }
             }, cancellation);
-        }
-
-        /// <summary>
-        /// Loop every so often until a condition is met, then execute the action and finish.
-        /// </summary>       
-        public static Task RunUntil(string name, ILogger logger, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery)
-        {
-            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(nodeCancellationToken);
-            return AsyncLoop.Run(name, logger, token =>
-                {
-                    try
-                    {
-                        // loop until the condition is met, then execute the action and finish.
-                        if (condition())
-                        {
-                            action();
-
-                            linkedTokenSource.Cancel();
-                        }                        
-                    }
-                    catch (Exception e)
-                    {
-                        onException(e);
-                        linkedTokenSource.Cancel();
-                    }
-                    return Task.CompletedTask;
-                },
-                linkedTokenSource.Token,
-                repeatEvery: repeatEvery);
         }
     }
 }

@@ -112,13 +112,15 @@ namespace Stratis.Bitcoin
 
 		public ConcurrentChain Chain { get; set; }
 
-		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+        public IAsyncLoopFactory AsyncLoopFactory { get; set; }
+
+        public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
 			this.Services = serviceProvider;
 
-		    this.logger = this.Services.ServiceProvider.GetService<ILoggerFactory>().CreateLogger<FullNode>();
+		    this.logger = this.Services.ServiceProvider.GetService<ILoggerFactory>().CreateLogger(this.GetType().FullName);
 
             this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
 			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
@@ -134,8 +136,9 @@ namespace Stratis.Bitcoin
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
+		    this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
-		    this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
+            this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
 			return this;
 		}
@@ -199,7 +202,7 @@ namespace Stratis.Bitcoin
 
 		private void StartPeriodicLog()
 		{
-			AsyncLoop.Run("PeriodicLog", this.logger, (cancellation) =>
+			this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
 				{
 					// TODO: move stats to each of its components
 					StringBuilder benchLogs = new StringBuilder();

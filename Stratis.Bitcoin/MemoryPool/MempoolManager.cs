@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.Orphans = orphans;
 			this.Validator = validator;
 			this.mempoolPersistence = mempoolPersistence;
-		    this.mempoolLogger = loggerFactory.CreateLogger("Stratis.Bitcoin.MemoryPool");
+		    this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;

@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Builder
 			this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 			this.chain = Guard.NotNull(chain, nameof(chain));
 			this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
-		    this.logger = loggerFactory.CreateLogger<BaseFeature>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 	
 		public override void Start()
@@ -85,7 +85,8 @@ namespace Stratis.Bitcoin.Builder
 			connectionParameters.TemplateBehaviors.Add(new ChainBehavior(this.chain, this.chainState));
 			connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
 
-			this.disposableResources.Add(this.chainRepository);
+		    this.disposableResources.Add(this.nodeSettings.LoggerFactory);
+            this.disposableResources.Add(this.chainRepository);
 			this.disposableResources.Add(this.connectionManager);
 		}
 

@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.MemoryPool
         public MempoolPersistence(NodeSettings settings, ILoggerFactory loggerFactory)
         {
             this.dataDir = settings?.DataDir;
-            this.mempoolLogger = loggerFactory.CreateLogger<MempoolPersistence>();
+            this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public MemPoolSaveResult Save(TxMempool memPool, string fileName = null)

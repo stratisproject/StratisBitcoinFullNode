@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
             ConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
             : base(chainState: chainState, consensusLoop: consensusLoop, chain: chain)
         {
-            this.logger = loggerFactory.CreateLogger<ConsensusController>();
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         [ActionName("getbestblockhash")]

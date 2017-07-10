@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Miner
 			this.signals = signals;
 		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
-		    this.logger = loggerFactory.CreateLogger<PowMining>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public Task Mine(Script reserveScript)

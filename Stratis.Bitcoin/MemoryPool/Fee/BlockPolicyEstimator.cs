@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
             this.nBestSeenHeight = 0;
             this.trackedTxs = 0;
             this.untrackedTxs = 0;
-            this.logger = loggerFactory.CreateLogger<BlockPolicyEstimator>();
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minTrackedFee = minRelayFee < new FeeRate(new Money(MIN_FEERATE))
                 ? new FeeRate(new Money(MIN_FEERATE))

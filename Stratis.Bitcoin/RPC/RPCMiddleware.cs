@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.RPC
 
 			this.next = next;
 			this.authorization = authorization;
-            this.logger = loggerFactory.CreateLogger<RPCMiddleware>();
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
 		public async Task Invoke(HttpContext httpContext)

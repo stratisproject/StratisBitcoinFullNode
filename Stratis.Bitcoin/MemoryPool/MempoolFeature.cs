@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.mempoolSignaled = mempoolSignaled;
 			this.mempoolBehavior = mempoolBehavior;
 			this.mempoolManager = mempoolManager;
-		    this.mempoolLogger = loggerFactory.CreateLogger("Stratis.Bitcoin.MemoryPool");
+		    this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
 		}
 
 		public override void Start()

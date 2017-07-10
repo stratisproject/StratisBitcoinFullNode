@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin
 
         public AsyncLoopFactory(ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger("Stratis.Bitcoin.FullNode");
+            this.logger = loggerFactory.CreateLogger(typeof(FullNode).FullName);
         }
 
         public IAsyncLoop Create(string name, Func<CancellationToken, Task> loop)
@@ -43,5 +43,35 @@ namespace Stratis.Bitcoin
 
             return new AsyncLoop(name, this.logger, loop).Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
         }
+
+        /// <summary>
+        /// Loop every so often until a condition is met, then execute the action and finish.
+        /// </summary>       
+        public Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery)
+        {
+            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(nodeCancellationToken);
+            return this.Run(name, token =>
+                {
+                    try
+                    {
+                        // loop until the condition is met, then execute the action and finish.
+                        if (condition())
+                        {
+                            action();
+
+                            linkedTokenSource.Cancel();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        onException(e);
+                        linkedTokenSource.Cancel();
+                    }
+                    return Task.CompletedTask;
+                },
+                linkedTokenSource.Token,
+                repeatEvery: repeatEvery);
+        }
+
     }
 }

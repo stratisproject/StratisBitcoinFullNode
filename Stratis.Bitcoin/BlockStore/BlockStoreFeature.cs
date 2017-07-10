@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.BlockStore
 			this.nodeLifetime = nodeLifetime;
 			this.connectionManager = connectionManager;
 			this.nodeSettings = nodeSettings;
-		    this.storeLogger = loggerFactory.CreateLogger("Stratis.Bitcoin.BlockStore");
+		    this.storeLogger = loggerFactory.CreateLogger(this.GetType().FullName);
 		}
 
 		public override void Start()

@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Miner
 			this.stakeChain = stakeChain;
 		    this.asyncLoopFactory = asyncLoopFactory;
 		    this.wallet = wallet as WalletManager;
-		    this.logger = loggerFactory.CreateLogger<PosMinting>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
 			this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp

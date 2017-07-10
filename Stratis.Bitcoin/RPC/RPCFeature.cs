@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.RPC
         {
             this.fullNode = fullNode;
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
-            this.logger = loggerFactory.CreateLogger<RPCFeature>();
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public override void Start()

@@ -18,7 +18,9 @@ namespace Stratis.Bitcoin.Configuration
 
 		const int DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
 
-		public NodeSettings()
+	    public ILogger Logger { get; private set; }
+
+	    public NodeSettings()
 		{
 			this.Cache = new CacheSettings();
 			this.ConnectionManager = new ConnectionManagerSettings();
@@ -66,11 +68,11 @@ namespace Stratis.Bitcoin.Configuration
 
             // the logger factory goes in the settings 
             // with minimal configuration, that's so the 
-            // settings can also log out its porgress
+            // settings can also log out its progress
 		    nodeSettings.LoggerFactory.AddDebug(LogLevel.Trace);
 		    nodeSettings.LoggerFactory.AddConsole(LogLevel.Trace);
 
-            var logger = nodeSettings.LoggerFactory.CreateLogger<NodeSettings>();
+		    nodeSettings.Logger = nodeSettings.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
             if (innernetwork != null)
 				nodeSettings.Network = innernetwork;
@@ -104,23 +106,32 @@ namespace Stratis.Bitcoin.Configuration
 			nodeSettings.Network = nodeSettings.GetNetwork();
 			if (nodeSettings.DataDir == null)
 			{
-				nodeSettings.DataDir = GetDefaultDataDir(logger, Path.Combine("StratisNode", nodeSettings.Name), nodeSettings.Network);
+				nodeSettings.SetDefaultDataDir(Path.Combine("StratisNode", nodeSettings.Name), nodeSettings.Network);
 			}
 
-			if (nodeSettings.ConfigurationFile == null)
+		    if (!Directory.Exists(nodeSettings.DataDir))
+		        throw new ConfigurationException("Data directory does not exists");
+
+            if (nodeSettings.ConfigurationFile == null)
 			{
-				nodeSettings.ConfigurationFile = nodeSettings.GetDefaultConfigurationFile(logger);
+				nodeSettings.ConfigurationFile = nodeSettings.GetDefaultConfigurationFile();
 			}
 
 		    var consoleConfig = new TextFileConfiguration(args);
 		    var config = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
 		    consoleConfig.MergeInto(config);
 
-		    logger.LogInformation("Data directory set to " + nodeSettings.DataDir);
-		    logger.LogInformation("Configuration file set to " + nodeSettings.ConfigurationFile);
+		    nodeSettings.DataFolder = new DataFolder(nodeSettings);
+		    if (!Directory.Exists(nodeSettings.DataFolder.CoinViewPath))
+		        Directory.CreateDirectory(nodeSettings.DataFolder.CoinViewPath);
 
-			if (!Directory.Exists(nodeSettings.DataDir))
-				throw new ConfigurationException("Data directory does not exists");
+            // set the configuration filter and file path
+		    nodeSettings.Log.Load(config);
+            nodeSettings.LoggerFactory.AddFilters(nodeSettings.Log);
+		    nodeSettings.LoggerFactory.AddFile(nodeSettings.DataFolder);
+
+            nodeSettings.Logger.LogInformation("Data directory set to " + nodeSettings.DataDir);
+		    nodeSettings.Logger.LogInformation("Configuration file set to " + nodeSettings.ConfigurationFile);
 
             nodeSettings.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.RegTest || nodeSettings.Testnet));
 			nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DEFAULT_MAX_TIP_AGE);
@@ -169,7 +180,7 @@ namespace Stratis.Bitcoin.Configuration
 					nodeSettings.RPC.Bind.Add(new IPEndPoint(IPAddress.Parse("::1"), defaultPort));
 					nodeSettings.RPC.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), defaultPort));
 					if (config.Contains("rpcbind"))
-					    logger.LogWarning("WARNING: option -rpcbind was ignored because -rpcallowip was not specified, refusing to allow everyone to connect");
+					    nodeSettings.Logger.LogWarning("WARNING: option -rpcbind was ignored because -rpcallowip was not specified, refusing to allow everyone to connect");
 				}
 
 				if (nodeSettings.RPC.Bind.Count == 0)
@@ -246,13 +257,6 @@ namespace Stratis.Bitcoin.Configuration
 			nodeSettings.Mempool.Load(config);
 			nodeSettings.Store.Load(config);
 
-		    nodeSettings.DataFolder = new DataFolder(nodeSettings);
-			if (!Directory.Exists(nodeSettings.DataFolder.CoinViewPath))
-				Directory.CreateDirectory(nodeSettings.DataFolder.CoinViewPath);
-
-            nodeSettings.LoggerFactory.AddFilters(nodeSettings.Log);
-		    nodeSettings.LoggerFactory.AddPath(nodeSettings.DataFolder);
-
             return nodeSettings;
 		}
 
@@ -287,13 +291,13 @@ namespace Stratis.Bitcoin.Configuration
 			return new IPEndPoint(IPAddress.Parse(str), portOut);
 		}
 
-		private string GetDefaultConfigurationFile(ILogger logger)
+		private string GetDefaultConfigurationFile()
 		{
 			var config = Path.Combine(this.DataDir, $"{this.Name}.conf");
-		    logger.LogInformation("Configuration file set to " + config);
+		    this.Logger.LogInformation("Configuration file set to " + config);
 			if (!File.Exists(config))
 			{
-			    logger.LogInformation("Creating configuration file");
+			    Logger.LogInformation("Creating configuration file");
 
 				StringBuilder builder = new StringBuilder();
 				builder.AppendLine("####RPC Settings####");
@@ -318,13 +322,13 @@ namespace Stratis.Bitcoin.Configuration
 				Network.Main;
 		}
 
-		private static string GetDefaultDataDir(ILogger logger, string appName, Network network)
+		private void SetDefaultDataDir(string appName, Network network)
 		{
 			string directory = null;
 			var home = Environment.GetEnvironmentVariable("HOME");
 			if (!string.IsNullOrEmpty(home))
 			{
-			    logger.LogInformation("Using HOME environment variable for initializing application data");
+			    this.Logger.LogInformation("Using HOME environment variable for initializing application data");
 				directory = home;
 				directory = Path.Combine(directory, "." + appName.ToLowerInvariant());
 			}
@@ -333,7 +337,7 @@ namespace Stratis.Bitcoin.Configuration
 				var localAppData = Environment.GetEnvironmentVariable("APPDATA");
 				if (!string.IsNullOrEmpty(localAppData))
 				{
-				    logger.LogInformation("Using APPDATA environment variable for initializing application data");
+				    this.Logger.LogInformation("Using APPDATA environment variable for initializing application data");
 					directory = localAppData;
 					directory = Path.Combine(directory, appName);
 				}
@@ -349,10 +353,10 @@ namespace Stratis.Bitcoin.Configuration
 			directory = Path.Combine(directory, network.Name);
 			if (!Directory.Exists(directory))
 			{
-			    logger.LogInformation("Creating data directory");
+			    this.Logger.LogInformation("Creating data directory");
 				Directory.CreateDirectory(directory);
 			}
-			return directory;
+			this.DataDir = directory;
 		}
 
 		public static bool PrintHelp(string[] args, Network mainNet)
@@ -387,7 +391,7 @@ namespace Stratis.Bitcoin.Configuration
 				builder.AppendLine("-whitebind=<ip:port>	Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
 				builder.AppendLine("-externalip=<ip>		Specify your own public address.");
 
-			    defaults.LoggerFactory.CreateLogger<NodeSettings>().LogInformation(builder.ToString());
+			    defaults.Logger.LogInformation(builder.ToString());
 
                 return true;
 			}

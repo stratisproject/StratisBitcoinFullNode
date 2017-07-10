@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Miner
 		    this.mempool = mempool;
 		    this.dateTimeProvider = dateTimeProvider;
 		    this.stakeChain = stakeChain;
-	        this.logger = loggerFactory.CreateLogger<PowAssemblerFactory>();
+	        this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
 	    public override BlockAssembler Create(AssemblerOptions options = null)
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Miner
 			this.mempool = mempool;
 			this.dateTimeProvider = dateTimeProvider;
 			this.stakeChain = stakeChain;
-		    this.logger = loggerFactory.CreateLogger<PowAssemblerFactory>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
         }
 

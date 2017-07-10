@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.nodeArgs = nodeArgs;
 			this.chain = chain;
 			this.coinView = coinView;
-		    this.logger = loggerFactory.CreateLogger<MempoolValidator>();
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.freeLimiter = new FreeLimiterSection();
 			this.PerformanceCounter = new MempoolPerformanceCounter();
 		}
