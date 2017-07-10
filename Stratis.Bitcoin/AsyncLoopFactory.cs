@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin
 {
@@ -17,18 +18,21 @@ namespace Stratis.Bitcoin
 
     public class AsyncLoopFactory : IAsyncLoopFactory
     {
-        public AsyncLoopFactory()
+        private readonly ILogger logger;
+
+        public AsyncLoopFactory(ILoggerFactory loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(typeof(FullNode).FullName);
         }
 
         public IAsyncLoop Create(string name, Func<CancellationToken, Task> loop)
         {
-            return new AsyncLoop(name, loop);
+            return new AsyncLoop(name, this.logger, loop);
         }
 
         public Task Run(string name, Func<CancellationToken, Task> loop, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
         {
-            return new AsyncLoop(name, loop).Run(repeatEvery, startAfter);
+            return new AsyncLoop(name, this.logger, loop).Run(repeatEvery, startAfter);
         }
 
         public Task Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
@@ -37,7 +41,37 @@ namespace Stratis.Bitcoin
             Guard.NotEmpty(name, nameof(name));
             Guard.NotNull(loop, nameof(loop));
 
-            return new AsyncLoop(name, loop).Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
+            return new AsyncLoop(name, this.logger, loop).Run(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
         }
+
+        /// <summary>
+        /// Loop every so often until a condition is met, then execute the action and finish.
+        /// </summary>       
+        public Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery)
+        {
+            var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(nodeCancellationToken);
+            return this.Run(name, token =>
+                {
+                    try
+                    {
+                        // loop until the condition is met, then execute the action and finish.
+                        if (condition())
+                        {
+                            action();
+
+                            linkedTokenSource.Cancel();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        onException(e);
+                        linkedTokenSource.Cancel();
+                    }
+                    return Task.CompletedTask;
+                },
+                linkedTokenSource.Token,
+                repeatEvery: repeatEvery);
+        }
+
     }
 }

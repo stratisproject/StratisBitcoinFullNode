@@ -51,6 +51,7 @@ namespace Stratis.Bitcoin.Connection
 		private readonly Network network;
 		private readonly NodeConnectionParameters parameters;
 		private readonly NodeSettings nodeSettings;
+        private readonly ILogger logger;
 
 		public Network Network { get { return this.network; } }
 		public NodeConnectionParameters Parameters { get { return this.parameters; } }
@@ -61,12 +62,13 @@ namespace Stratis.Bitcoin.Connection
 		public NodesGroup AddNodeNodeGroup { get; private set; }
 		public NodesGroup DiscoveredNodeGroup { get; set; }
 
-		public ConnectionManager(Network network, NodeConnectionParameters parameters, NodeSettings nodeSettings)
+		public ConnectionManager(Network network, NodeConnectionParameters parameters, NodeSettings nodeSettings, ILoggerFactory loggerFactory)
 		{
 			this.network = network;
 			this.nodeSettings = nodeSettings;
 			this.connectionManagerSettings = nodeSettings.ConnectionManager;
 			this.parameters = parameters;
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 		}
 
 		public void Start()
@@ -76,7 +78,7 @@ namespace Stratis.Bitcoin.Connection
 			if (this.connectionManagerSettings.Connect.Count == 0)
 			{
 				NodeConnectionParameters cloneParameters = this.parameters.Clone();
-				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
+				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.logger));
 				this.DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, this.discoveredNodeRequiredService);
 				this.DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
 				this.DiscoveredNodeGroup.Connect();
@@ -84,7 +86,7 @@ namespace Stratis.Bitcoin.Connection
 			else
 			{
 				NodeConnectionParameters cloneParameters = this.parameters.Clone();
-				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
+				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.logger));
 				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
 				var addrman = new AddressManager();
 				addrman.Add(this.connectionManagerSettings.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
@@ -100,7 +102,7 @@ namespace Stratis.Bitcoin.Connection
 
 			{
 				NodeConnectionParameters cloneParameters = this.parameters.Clone();
-				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this));
+				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.logger));
 				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
 				var addrman = new AddressManager();
 				addrman.Add(this.connectionManagerSettings.AddNode.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
@@ -123,7 +125,7 @@ namespace Stratis.Bitcoin.Connection
 				server.LocalEndpoint = listen.Endpoint;
 				server.ExternalEndpoint = this.connectionManagerSettings.ExternalEndpoint;
 				this.Servers.Add(server);
-				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this)
+				cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this, this.logger)
 				{
 					Whitelisted = listen.Whitelisted
 				});
@@ -134,7 +136,7 @@ namespace Stratis.Bitcoin.Connection
 					logs.Append(" (whitelisted)");
 				logs.AppendLine();
 			}
-			Logs.ConnectionManager.LogInformation(logs.ToString());
+		    this.logger.LogInformation(logs.ToString());
 		}
 
 		public void AddDiscoveredNodesRequirement(NodeServices services)
@@ -170,7 +172,7 @@ namespace Stratis.Bitcoin.Connection
 																	.FirstOrDefault(b => b.Puller.GetType() == typeof(LookaheadBlockPuller));
 						PerformanceSnapshot diff = newSnapshot - lastSnapshot;
 						diffTotal = new PerformanceSnapshot(diff.TotalReadenBytes + diffTotal.TotalReadenBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken };
-						builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(Logs.ColumnLength * 2) + "R:" + ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diff.WrittenBytesPerSecond));
+						builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(LogsExtention.ColumnLength * 2) + "R:" + ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diff.WrittenBytesPerSecond));
 						if (behavior != null)
 						{
 							builder.Append("\tQualityScore: " + behavior.QualityScore + (behavior.QualityScore < 10 ? "\t" : "") + "\tPendingBlocks: " + behavior.PendingDownloads.Count);
@@ -180,7 +182,7 @@ namespace Stratis.Bitcoin.Connection
 					this.downloads.AddOrReplace(node, newSnapshot);
 				}
 				builder.AppendLine("=================");
-				builder.AppendLine("Total".PadRight(Logs.ColumnLength * 2) + "R:" + ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diffTotal.WrittenBytesPerSecond));
+				builder.AppendLine("Total".PadRight(LogsExtention.ColumnLength * 2) + "R:" + ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diffTotal.WrittenBytesPerSecond));
 				builder.AppendLine("==========================");
 
 				//TODO: Hack, we should just clean nodes that are not connect anymore
@@ -199,9 +201,9 @@ namespace Stratis.Bitcoin.Connection
 				ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
 				BlockStore.ChainBehavior chainBehavior = node.Behavior<BlockStore.ChainBehavior>();
 				builder.AppendLine(
-					"Node:" + (node.RemoteInfo() + ", ").PadRight(Logs.ColumnLength + 15) +
-					(" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(Logs.ColumnLength + 7) +
-					(" agent " + node.PeerVersion.UserAgent + ", ").PadRight(Logs.ColumnLength + 2) +
+					"Node:" + (node.RemoteInfo() + ", ").PadRight(LogsExtention.ColumnLength + 15) +
+					(" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LogsExtention.ColumnLength + 7) +
+					(" agent " + node.PeerVersion.UserAgent + ", ").PadRight(LogsExtention.ColumnLength + 2) +
 					" height=" + chainBehavior.PendingTip.Height);
 			}
 			return builder.ToString();
@@ -284,7 +286,7 @@ namespace Stratis.Bitcoin.Connection
 		public Node Connect(IPEndPoint endpoint)
 		{
 			NodeConnectionParameters cloneParameters = this.parameters.Clone();
-			cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this)
+			cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.logger)
 			{
 				OneTry = true
 			});

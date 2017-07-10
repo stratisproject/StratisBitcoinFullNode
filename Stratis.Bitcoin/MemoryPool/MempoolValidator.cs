@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly CoinView coinView;
 		private readonly TxMempool memPool;
 		private readonly PowConsensusValidator consensusValidator;
+	    private readonly ILogger logger;
 		public MempoolPerformanceCounter PerformanceCounter { get; }
 		public PowConsensusOptions ConsensusOptions => this.consensusValidator.ConsensusOptions;
 		public static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
@@ -48,9 +49,15 @@ namespace Stratis.Bitcoin.MemoryPool
 			public long LastTime;
 		}
 
-		public MempoolValidator(TxMempool memPool, MempoolScheduler mempoolScheduler,
-			PowConsensusValidator consensusValidator, IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs,
-			ConcurrentChain chain, CoinView coinView)
+		public MempoolValidator(
+            TxMempool memPool, 
+            MempoolScheduler mempoolScheduler,
+			PowConsensusValidator consensusValidator, 
+            IDateTimeProvider dateTimeProvider, 
+            NodeSettings nodeArgs,
+			ConcurrentChain chain, 
+            CoinView coinView,
+            ILoggerFactory loggerFactory)
 		{
 			this.memPool = memPool;
 			this.mempoolScheduler = mempoolScheduler;
@@ -59,7 +66,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			this.nodeArgs = nodeArgs;
 			this.chain = chain;
 			this.coinView = coinView;
-
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.freeLimiter = new FreeLimiterSection();
 			this.PerformanceCounter = new MempoolPerformanceCounter();
 		}
@@ -132,15 +139,14 @@ namespace Stratis.Bitcoin.MemoryPool
 			
 				// Remove conflicting transactions from the mempool
 				foreach (var it in context.AllConflicting)
-					Logging.Logs.Mempool.LogInformation(
-						$"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
+				    this.logger.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
 				
 				this.memPool.RemoveStaged(context.AllConflicting, false);
 
 				// This transaction should only count for fee estimation if
 				// the node is not behind and it is not dependent on any other
 				// transactions in the mempool
-				bool validForFeeEstimation = IsCurrentForFeeEstimation() && this.memPool.HasNoInputsOf(tx);
+				bool validForFeeEstimation = this.IsCurrentForFeeEstimation() && this.memPool.HasNoInputsOf(tx);
 
 				// Store transaction in memory
 				this.memPool.AddUnchecked(context.TransactionHash, context.Entry, context.SetAncestors, validForFeeEstimation);
@@ -163,9 +169,6 @@ namespace Stratis.Bitcoin.MemoryPool
 				this.PerformanceCounter.SetMempoolDynamicSize(state.MempoolDynamicSize);
 				this.PerformanceCounter.AddHitCount(1);
 			});
-
-			//	GetMainSignals().SyncTransaction(tx, NULL, CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK);
-
 		}
 
 		// Check for conflicts with in-memory transactions
@@ -550,7 +553,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				if (this.freeLimiter.FreeCount + context.EntrySize >= this.nodeArgs.Mempool.LimitFreeRelay * 10 * 1000)
 					context.State.Fail(new MempoolError(MempoolErrors.RejectInsufficientfee, "rate limited free transaction")).Throw();
 
-				Logging.Logs.Mempool.LogInformation(
+				this.logger.LogInformation(
 					$"Rate limit dFreeCount: {this.freeLimiter.FreeCount} => {this.freeLimiter.FreeCount + context.EntrySize}");
 				this.freeLimiter.FreeCount += context.EntrySize;
 			}
@@ -590,7 +593,7 @@ namespace Stratis.Bitcoin.MemoryPool
 		{
 			int expired = this.memPool.Expire(this.dateTimeProvider.GetTime() - age);
 			if (expired != 0)
-				Logging.Logs.Mempool.LogInformation($"Expired {expired} transactions from the memory pool");
+				this.logger.LogInformation($"Expired {expired} transactions from the memory pool");
 
 			List<uint256> vNoSpendsRemaining = new List<uint256>();
 			this.memPool.TrimToSize(limit, vNoSpendsRemaining);

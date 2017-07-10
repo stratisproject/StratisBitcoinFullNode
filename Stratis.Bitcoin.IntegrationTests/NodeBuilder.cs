@@ -60,9 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		}
 
 		public void Start(string dataDir)
-		{
-			Logs.Configure(new LoggerFactory());
-			
+		{			
 			var args = NodeSettings.FromArguments(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
 
 			var node = BuildFullNode(args);

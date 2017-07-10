@@ -1,12 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Filters;
 using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Stratis.Bitcoin.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
@@ -17,17 +13,18 @@ namespace Stratis.Bitcoin.RPC
 {
 	public class RPCMiddleware
 	{
-		RequestDelegate next;
-		IRPCAuthorization authorization;
-
-		public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization)
+	    private readonly RequestDelegate next;
+	    private readonly IRPCAuthorization authorization;
+	    private readonly ILogger logger;
+        public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory)
 		{
 			Guard.NotNull(next, nameof(next));
 			Guard.NotNull(authorization, nameof(authorization));
 
 			this.next = next;
 			this.authorization = authorization;
-		}
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
 
 		public async Task Invoke(HttpContext httpContext)
 		{
@@ -62,7 +59,7 @@ namespace Stratis.Bitcoin.RPC
 			else if(httpContext.Response?.StatusCode == 500 || ex != null)
 			{
 				JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, "Internal error");
-				Logs.RPC.LogError(new EventId(0), ex, "Internal error while calling RPC Method");
+				this.logger.LogError(new EventId(0), ex, "Internal error while calling RPC Method");
 				await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
 			}
 		}

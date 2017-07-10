@@ -98,17 +98,19 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
         private int nBestSeenHeight;
 
         private readonly NodeSettings nodeArgs;
+        private readonly ILogger logger;
 
         private int trackedTxs;
         private int untrackedTxs;
 
-        public BlockPolicyEstimator(FeeRate minRelayFee, NodeSettings nodeArgs)
+        public BlockPolicyEstimator(FeeRate minRelayFee, NodeSettings nodeArgs, ILoggerFactory loggerFactory)
         {
             this.mapMemPoolTxs = new Dictionary<uint256, TxStatsInfo>();
             this.nodeArgs = nodeArgs;
             this.nBestSeenHeight = 0;
             this.trackedTxs = 0;
             this.untrackedTxs = 0;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minTrackedFee = minRelayFee < new FeeRate(new Money(MIN_FEERATE))
                 ? new FeeRate(new Money(MIN_FEERATE))
@@ -119,7 +121,7 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
                 bucketBoundary *= FEE_SPACING)
                 vfeelist.Add(bucketBoundary);
             vfeelist.Add(INF_FEERATE);
-            this.feeStats = new TxConfirmStats();
+            this.feeStats = new TxConfirmStats(this.logger);
             this.feeStats.Initialize(vfeelist, MAX_BLOCK_CONFIRMS, DEFAULT_DECAY);
         }
 
@@ -168,7 +170,7 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
             {
                 // This can't happen because we don't process transactions from a block with a height
                 // lower than our greatest seen height
-                Logs.EstimateFee.LogInformation($"Blockpolicy error Transaction had negative blocksToConfirm");
+                this.logger.LogInformation($"Blockpolicy error Transaction had negative blocksToConfirm");
                 return false;
             }
 
@@ -186,7 +188,7 @@ namespace Stratis.Bitcoin.MemoryPool.Fee
             var hash = entry.TransactionHash;
             if (this.mapMemPoolTxs.ContainsKey(hash))
             {
-                Logs.EstimateFee.LogInformation($"Blockpolicy error mempool tx {hash} already being tracked");
+                this.logger.LogInformation($"Blockpolicy error mempool tx {hash} already being tracked");
                 return;
             }
 

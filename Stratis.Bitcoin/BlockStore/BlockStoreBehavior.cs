@@ -19,20 +19,21 @@ namespace Stratis.Bitcoin.BlockStore
 	{
 		bool CanRespondeToGetDataPayload { get; set; }
 		bool CanRespondToGetBlocksPayload { get; set; }
-
 		Task AnnounceBlocks(List<uint256> blockHashesToAnnounce);
 	}
 
 	public class BlockStoreBehavior : NodeBehavior
 	{
-		// Maximum number of headers to announce when relaying blocks with headers message.
+        // TODO: move this to the options
+	    // Maximum number of headers to announce when relaying blocks with headers message.
 		const int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
 		private readonly ConcurrentChain chain;
 		private readonly IBlockRepository blockRepository;
 		private readonly IBlockStoreCache blockStoreCache;
+	    private readonly ILogger logger;
 
-		public bool CanRespondToGetBlocksPayload { get; set; }
+        public bool CanRespondToGetBlocksPayload { get; set; }
 
 		public bool CanRespondeToGetDataPayload { get; set; }
 
@@ -40,22 +41,24 @@ namespace Stratis.Bitcoin.BlockStore
 		public bool PreferHeaders; // public for testing
 		private bool preferHeaderAndIDs;
 
-		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository, BlockStoreCache blockStoreCache)
-			: this(chain, blockRepository as IBlockRepository, blockStoreCache as IBlockStoreCache)
+		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository, BlockStoreCache blockStoreCache, ILogger logger)
+			: this(chain, blockRepository as IBlockRepository, blockStoreCache as IBlockStoreCache, logger)
 		{
 		}
 
-		public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache)
+		public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILogger logger)
 		{
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(blockRepository, nameof(blockRepository));
 			Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
+		    Guard.NotNull(blockStoreCache, nameof(logger));
 
-			this.chain = chain;
+            this.chain = chain;
 			this.blockRepository = blockRepository;
 			this.blockStoreCache = blockStoreCache;
+		    this.logger = logger;
 
-			this.CanRespondToGetBlocksPayload = false;
+            this.CanRespondToGetBlocksPayload = false;
 			this.CanRespondeToGetDataPayload = true;
 
 			this.PreferHeaders = false;
@@ -88,7 +91,7 @@ namespace Stratis.Bitcoin.BlockStore
 			}
 			catch (Exception ex)
 			{
-				Logging.Logs.BlockStore.LogError(ex.ToString());
+				this.logger.LogError(ex.ToString());
 
 				// while in dev catch any unhandled exceptions
 				Debugger.Break();
@@ -244,12 +247,12 @@ namespace Stratis.Bitcoin.BlockStore
 				{
 					if (headers.Count > 1)
 					{
-						Logging.Logs.BlockStore.LogInformation(
+					    this.logger.LogInformation(
 							$"{headers.Count} headers, range ({headers.First()}, {headers.Last()}), to peer={node.RemoteSocketEndpoint}");
 					}
 					else
 					{
-						Logging.Logs.BlockStore.LogInformation(
+					    this.logger.LogInformation(
 							$"sending header ({headers.First()}), to peer={node.RemoteSocketEndpoint}");
 					}
 
@@ -277,12 +280,11 @@ namespace Stratis.Bitcoin.BlockStore
 						if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
 						{
 							inventoryBlockToSend.Add(hashToAnnounce);
-							Logging.Logs.BlockStore.LogInformation($"sending inv peer={node.RemoteSocketEndpoint} hash={hashToAnnounce}");
+						    this.logger.LogInformation($"sending inv peer={node.RemoteSocketEndpoint} hash={hashToAnnounce}");
 						}
 					}
 				}
 			}
-
 
 			if (inventoryBlockToSend.Any())
 			{
@@ -294,7 +296,7 @@ namespace Stratis.Bitcoin.BlockStore
 
 		public override object Clone()
 		{
-			return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache)
+			return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.logger)
 			{
 				CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
 				CanRespondeToGetDataPayload = this.CanRespondeToGetDataPayload

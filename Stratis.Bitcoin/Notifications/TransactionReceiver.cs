@@ -17,11 +17,13 @@ namespace Stratis.Bitcoin.Notifications
     {
         private readonly TransactionNotification transactionNotification;
         private readonly TransactionNotificationProgress notifiedTransactions;
+        private readonly ILogger logger;
 
-        public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions)
+        public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILogger logger)
         {
             this.transactionNotification = transactionNotification;
             this.notifiedTransactions = notifiedTransactions;
+            this.logger = logger;
         }
 
         protected override void AttachCore()
@@ -51,7 +53,7 @@ namespace Stratis.Bitcoin.Notifications
             }
             catch (Exception ex)
             {
-                Logging.Logs.Notifications.LogError(ex.ToString());
+                this.logger.LogError(ex.ToString());
 
                 // while in dev catch any unhandled exceptions
                 Debugger.Break();
@@ -114,7 +116,7 @@ namespace Stratis.Bitcoin.Notifications
 
         public override object Clone()
         {
-            return new TransactionReceiver(this.transactionNotification, this.notifiedTransactions);
+            return new TransactionReceiver(this.transactionNotification, this.notifiedTransactions, this.logger);
         }
     }
 }

@@ -18,17 +18,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class FeeTests
 	{
-
-        public FeeTests()
-        {
-            Logs.Configure(new LoggerFactory());
-        }
-
         [Fact]
         public void BlockPolicyEstimates()
 	    {
 			var dateTimeSet = new MemoryPoolTests.DateTimeProviderSet();
-            TxMempool mpool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+	        var settings = NodeSettings.Default();
+	        TxMempool mpool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default,
+	            new BlockPolicyEstimator(new FeeRate(1000), settings, settings.LoggerFactory), settings.LoggerFactory);
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
 			Money basefee = new Money(2000);
 			Money deltaFee = new Money(100);

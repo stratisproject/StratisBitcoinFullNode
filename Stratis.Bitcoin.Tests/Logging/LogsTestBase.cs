@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.RPC;
 
 namespace Stratis.Bitcoin.Tests.Logging
 {
@@ -14,6 +15,7 @@ namespace Stratis.Bitcoin.Tests.Logging
         private Mock<ILogger> fullNodeLogger;
         private Mock<ILoggerFactory> loggerFactory;
         private Mock<ILogger> rpcLogger;
+        private Mock<ILogger> logger;
 
         /// <remarks>
         /// This class is not able to work concurrently because logs is a static class.
@@ -23,16 +25,16 @@ namespace Stratis.Bitcoin.Tests.Logging
         {
             this.fullNodeLogger = new Mock<ILogger>();
             this.rpcLogger = new Mock<ILogger>();
+            this.logger = new Mock<ILogger>();
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-               .Returns(new Mock<ILogger>().Object);
-            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.FullNode"))
+               .Returns(this.logger.Object);
+            this.loggerFactory.Setup(l => l.CreateLogger(typeof(FullNode).FullName))
                .Returns(this.fullNodeLogger.Object)
                .Verifiable();
-            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC"))
-               .Returns(this.rpcLogger.Object)
-               .Verifiable();
-            Logs.Configure(this.loggerFactory.Object);
+            this.loggerFactory.Setup(l => l.CreateLogger(typeof(RPCFeature).FullName))
+                .Returns(this.rpcLogger.Object)
+                 .Verifiable();
         }
 
         public Mock<ILoggerFactory> LoggerFactory
@@ -59,7 +61,24 @@ namespace Stratis.Bitcoin.Tests.Logging
             }
         }
 
+        public Mock<ILogger> Logger
+        {
+            get
+            {
+                return this.logger;
+            }
+        }
+
         protected void AssertLog<T>(Mock<ILogger> logger, LogLevel logLevel, string exceptionMessage, string message) where T : Exception
+        {
+            logger.Verify(f => f.Log<Object>(logLevel,
+                It.IsAny<EventId>(),
+                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
+                It.Is<T>(t => t.Message.Equals(exceptionMessage)),
+                It.IsAny<Func<object, Exception, string>>()));
+        }
+
+        protected void AssertLog<T>(Mock<ILogger<FullNode>> logger, LogLevel logLevel, string exceptionMessage, string message) where T : Exception
         {
             logger.Verify(f => f.Log<Object>(logLevel,
                 It.IsAny<EventId>(),
@@ -76,5 +95,24 @@ namespace Stratis.Bitcoin.Tests.Logging
                 null,
                 It.IsAny<Func<object, Exception, string>>()));
         }
+
+        protected void AssertLog(Mock<ILogger<RPCMiddleware>> logger, LogLevel logLevel, string message)
+        {
+            logger.Verify(f => f.Log<Object>(logLevel,
+                It.IsAny<EventId>(),
+                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
+                null,
+                It.IsAny<Func<object, Exception, string>>()));
+        }
+
+        protected void AssertLog(Mock<ILogger<FullNode>> logger, LogLevel logLevel, string message)
+        {
+            logger.Verify(f => f.Log<Object>(logLevel,
+                It.IsAny<EventId>(),
+                It.Is<object>(l => ((FormattedLogValues)l)[0].Value.ToString().EndsWith(message)),
+                null,
+                It.IsAny<Func<object, Exception, string>>()));
+        }
+
     }
 }

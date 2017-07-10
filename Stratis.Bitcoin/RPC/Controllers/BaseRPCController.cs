@@ -13,16 +13,16 @@ namespace Stratis.Bitcoin.RPC.Controllers
 {
     public abstract class BaseRPCController : Controller
     {
-        protected IFullNode _FullNode;
-        protected NodeSettings _Settings;
-        protected Network _Network;
-        protected PowConsensusValidator _ConsensusValidator;
-        protected ConsensusLoop _ConsensusLoop;
-        protected ChainBase _Chain;
-        protected ChainBehavior.ChainState _ChainState;
-        protected BlockStoreManager _BlockManager;
-        protected MempoolManager _MempoolManager;
-        protected Connection.IConnectionManager _ConnectionManager;
+        protected IFullNode FullNode;
+        protected NodeSettings Settings;
+        protected Network Network;
+        protected PowConsensusValidator ConsensusValidator;
+        protected ConsensusLoop ConsensusLoop;
+        protected ChainBase Chain;
+        protected ChainBehavior.ChainState ChainState;
+        protected BlockStoreManager BlockManager;
+        protected MempoolManager MempoolManager;
+        protected Connection.IConnectionManager ConnectionManager;
 
         public BaseRPCController(
             IFullNode fullNode = null,
@@ -36,16 +36,16 @@ namespace Stratis.Bitcoin.RPC.Controllers
             MempoolManager mempoolManager = null,
             Connection.IConnectionManager connectionManager = null)
         {
-            this._FullNode = fullNode;
-            this._Settings = nodeSettings;
-            this._Network = network;
-            this._ConsensusValidator = consensusValidator;
-            this._ConsensusLoop = consensusLoop;
-            this._Chain = chain;
-            this._ChainState = chainState;
-            this._BlockManager = blockManager;
-            this._MempoolManager = mempoolManager;
-            this._ConnectionManager = connectionManager;
+            this.FullNode = fullNode;
+            this.Settings = nodeSettings;
+            this.Network = network;
+            this.ConsensusValidator = consensusValidator;
+            this.ConsensusLoop = consensusLoop;
+            this.Chain = chain;
+            this.ChainState = chainState;
+            this.BlockManager = blockManager;
+            this.MempoolManager = mempoolManager;
+            this.ConnectionManager = connectionManager;
         }
 
     }

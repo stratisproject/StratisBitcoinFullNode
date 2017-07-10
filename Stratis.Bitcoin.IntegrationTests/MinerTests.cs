@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		    options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
 		    options.BlockMinFeeRate = blockMinFeeRate;
 
-		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.scheduler, testContext.mempool, testContext.date, options);
+		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.scheduler, testContext.mempool, testContext.date, NullLogger.Instance, options);
 	    }
 		public class Blockinfo
 		{
@@ -110,8 +111,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			public TestContext()
 			{
-				Logs.Configure(new LoggerFactory());
-
 				this.blockinfo = new List<Blockinfo>();
 				var lst = blockinfoarr.Cast<long>().ToList();
 				for (int i = 0; i < lst.Count; i += 2)
@@ -127,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			    this.chain = new ConcurrentChain(network);
 			    this.network.Consensus.Options = new PowConsensusOptions();
 			    this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
-			    this.consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings())),new NodeDeployments(this.network));
+			    this.consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory())),new NodeDeployments(this.network));
 			    this.consensus.Initialize();
 
 				this.entry.Fee(11);
@@ -136,7 +135,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				date1.time = DateTimeProvider.Default.GetTime();
 				date1.timeutc = DateTimeProvider.Default.GetUtcNow();
 				this.date = date1;
-                this.mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default())); ;
+                this.mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default(), new LoggerFactory()), new LoggerFactory()); ;
                 this.scheduler = new MempoolScheduler();
 
                 // Simple block creation, nothing special yet:

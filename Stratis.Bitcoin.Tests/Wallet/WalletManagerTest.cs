@@ -28,7 +28,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                .Returns(new Mock<ILogger>().Object);
-            Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                                                   dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -85,7 +84,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                 .Returns(new Mock<ILogger>().Object);
-            Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -114,7 +112,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                 .Returns(new Mock<ILogger>().Object);
-            Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -144,7 +141,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                 .Returns(new Mock<ILogger>().Object);
-            Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -174,7 +170,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                 .Returns(new Mock<ILogger>().Object);
-            Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -204,7 +199,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                 .Returns(new Mock<ILogger>().Object);
-            Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -240,7 +234,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                 .Returns(new Mock<ILogger>().Object);
-            Logs.Configure(loggerFactory.Object);
 
             var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());

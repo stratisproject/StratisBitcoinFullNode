@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.MemoryPool;
@@ -22,10 +23,17 @@ namespace Stratis.Bitcoin.Miner
 		protected readonly TxMempool mempool;
 		protected readonly IDateTimeProvider dateTimeProvider;
 		protected readonly StakeChain stakeChain;
+	    private readonly ILogger logger;
 
-	    public PowAssemblerFactory(ConsensusLoop consensusLoop, Network network, ConcurrentChain chain,
-		    MempoolScheduler mempoolScheduler, TxMempool mempool,
-		    IDateTimeProvider dateTimeProvider, StakeChain stakeChain = null)
+        public PowAssemblerFactory(
+            ConsensusLoop consensusLoop, 
+            Network network, 
+            ConcurrentChain chain,
+		    MempoolScheduler mempoolScheduler, 
+            TxMempool mempool,
+		    IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
+            StakeChain stakeChain = null)
 	    {
 		    this.consensusLoop = consensusLoop;
 		    this.network = network;
@@ -34,11 +42,12 @@ namespace Stratis.Bitcoin.Miner
 		    this.mempool = mempool;
 		    this.dateTimeProvider = dateTimeProvider;
 		    this.stakeChain = stakeChain;
-	    }
+	        this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
 
 	    public override BlockAssembler Create(AssemblerOptions options = null)
 	    {
-		    return new PowBlockAssembler(this.consensusLoop, this.network, this.chain, this.mempoolScheduler, this.mempool, this.dateTimeProvider, options);
+		    return new PowBlockAssembler(this.consensusLoop, this.network, this.chain, this.mempoolScheduler, this.mempool, this.dateTimeProvider, this.logger, options);
 	    }
 	}
 
@@ -51,10 +60,17 @@ namespace Stratis.Bitcoin.Miner
 		protected readonly TxMempool mempool;
 		protected readonly IDateTimeProvider dateTimeProvider;
 		protected readonly StakeChain stakeChain;
+	    private readonly ILogger logger;
 
-		public PosAssemblerFactory(ConsensusLoop consensusLoop, Network network, ConcurrentChain chain,
-			MempoolScheduler mempoolScheduler, TxMempool mempool,
-			IDateTimeProvider dateTimeProvider, StakeChain stakeChain = null)
+        public PosAssemblerFactory(
+            ConsensusLoop consensusLoop, 
+            Network network, 
+            ConcurrentChain chain,
+			MempoolScheduler mempoolScheduler, 
+            TxMempool mempool,
+			IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
+            StakeChain stakeChain = null)
 		{
 			this.consensusLoop = consensusLoop;
 			this.network = network;
@@ -63,12 +79,14 @@ namespace Stratis.Bitcoin.Miner
 			this.mempool = mempool;
 			this.dateTimeProvider = dateTimeProvider;
 			this.stakeChain = stakeChain;
-		}
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-		public override BlockAssembler Create(AssemblerOptions options = null)
+        }
+
+        public override BlockAssembler Create(AssemblerOptions options = null)
 		{
 			return new PosBlockAssembler(this.consensusLoop, this.network, this.chain, this.mempoolScheduler, this.mempool,
-				this.dateTimeProvider, this.stakeChain, options);
+				this.dateTimeProvider, this.stakeChain, this.logger, options);
 		}
 
 	}

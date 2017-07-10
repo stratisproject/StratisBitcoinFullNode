@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 			this.blockRepository = new Mock<Bitcoin.BlockStore.IBlockRepository>();
 			this.blockCache = new Mock<IBlockStoreCache>();
 
-			this.behavior = new BlockStoreBehavior(this.chain, this.blockRepository.Object, this.blockCache.Object);
+			this.behavior = new BlockStoreBehavior(this.chain, this.blockRepository.Object, this.blockCache.Object, NullLogger.Instance);
 		}
 
 		[Fact]

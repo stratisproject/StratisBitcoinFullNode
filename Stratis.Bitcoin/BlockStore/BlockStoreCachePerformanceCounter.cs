@@ -201,16 +201,16 @@ namespace Stratis.Bitcoin.BlockStore
 			StringBuilder builder = new StringBuilder();
 
 			builder.AppendLine("====BlockStore Cache Stats(%)====");			
-			builder.AppendLine("Hit Count:".PadRight(Logs.ColumnLength) + this.TotalCacheHitCount);			
-			builder.AppendLine("Miss Count:".PadRight(Logs.ColumnLength) + this.TotalCacheMissCount);
-			builder.AppendLine("Remove Count:".PadRight(Logs.ColumnLength) + this.TotalCacheRemoveCount);
-			builder.AppendLine("Set Count:".PadRight(Logs.ColumnLength) + this.TotalCacheSetCount);
+			builder.AppendLine("Hit Count:".PadRight(LogsExtention.ColumnLength) + this.TotalCacheHitCount);			
+			builder.AppendLine("Miss Count:".PadRight(LogsExtention.ColumnLength) + this.TotalCacheMissCount);
+			builder.AppendLine("Remove Count:".PadRight(LogsExtention.ColumnLength) + this.TotalCacheRemoveCount);
+			builder.AppendLine("Set Count:".PadRight(LogsExtention.ColumnLength) + this.TotalCacheSetCount);
 
 			var total = this.TotalCacheMissCount + this.TotalCacheHitCount;
 			if (this.TotalCacheHitCount > 0 || this.TotalCacheMissCount > 0)
 			{
-				builder.AppendLine("Hit:".PadRight(Logs.ColumnLength) + ((decimal)this.TotalCacheHitCount * 100m / total).ToString("0.00") + " %");
-				builder.AppendLine("Miss:".PadRight(Logs.ColumnLength) + ((decimal)this.TotalCacheMissCount * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Hit:".PadRight(LogsExtention.ColumnLength) + ((decimal)this.TotalCacheHitCount * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Miss:".PadRight(LogsExtention.ColumnLength) + ((decimal)this.TotalCacheMissCount * 100m / total).ToString("0.00") + " %");
 			}			
 			builder.AppendLine("=================================");
 

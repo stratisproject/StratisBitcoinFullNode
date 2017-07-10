@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.response.Body = new MemoryStream();
 			this.featureCollection = new FeatureCollection();
 
-			this.middleware = new RPCMiddleware(this.delegateContext.Object, this.authorization.Object);
+            this.middleware = new RPCMiddleware(this.delegateContext.Object, this.authorization.Object, this.LoggerFactory.Object);
 		}
 
 		[Fact]
@@ -203,8 +203,8 @@ namespace Stratis.Bitcoin.Tests.RPC
 				var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status500InternalServerError, this.httpContext.Response.StatusCode);
-				base.AssertLog(this.RPCLogger, LogLevel.Error, "Internal error while calling RPC Method");
-			}
+                base.AssertLog(this.Logger, LogLevel.Error, "Internal error while calling RPC Method");
+            }
 		}
 
 		[Fact]
@@ -223,9 +223,9 @@ namespace Stratis.Bitcoin.Tests.RPC
 				var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
-				base.AssertLog<InvalidOperationException>(this.RPCLogger, LogLevel.Error, "Operation not valid.", "Internal error while calling RPC Method");
-			}
-		}
+                base.AssertLog<InvalidOperationException>(this.Logger, LogLevel.Error, "Operation not valid.", "Internal error while calling RPC Method");
+            }
+        }
 
 		private void SetupValidAuthorization()
 		{

@@ -13,13 +13,13 @@ namespace Stratis.Bitcoin.RPC.Controllers
     {
         public MempoolController(MempoolManager mempoolManager) : base(mempoolManager: mempoolManager)
         {
-            Guard.NotNull(this._MempoolManager, nameof(_MempoolManager));
+            Guard.NotNull(this.MempoolManager, nameof(this.MempoolManager));
         }
 
         [ActionName("getrawmempool")]
         public Task<List<uint256>> GetRawMempool()
         {
-            return this._MempoolManager.GetMempoolAsync();
+            return this.MempoolManager.GetMempoolAsync();
         }
     }
 }

@@ -100,13 +100,13 @@ namespace Stratis.Bitcoin.Consensus
 		{
 			StringBuilder builder = new StringBuilder();
 			if(this.TotalInsertedEntities > 0)
-				builder.AppendLine("Insert speed:".PadRight(Logs.ColumnLength) + (this.TotalInsertTime.TotalMilliseconds / this.TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
-			builder.AppendLine("Insert time:".PadRight(Logs.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalInsertTime));
-			builder.AppendLine("Inserted UTXO:".PadRight(Logs.ColumnLength) + this.TotalInsertedEntities);
+				builder.AppendLine("Insert speed:".PadRight(LogsExtention.ColumnLength) + (this.TotalInsertTime.TotalMilliseconds / this.TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
+			builder.AppendLine("Insert time:".PadRight(LogsExtention.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalInsertTime));
+			builder.AppendLine("Inserted UTXO:".PadRight(LogsExtention.ColumnLength) + this.TotalInsertedEntities);
 			if(this.TotalQueriedEntities > 0)
-				builder.AppendLine("Query speed:".PadRight(Logs.ColumnLength) + (this.TotalQueryTime.TotalMilliseconds / this.TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
-			builder.AppendLine("Query time:".PadRight(Logs.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalQueryTime));
-			builder.AppendLine("Queried UTXO:".PadRight(Logs.ColumnLength) + this.TotalQueriedEntities);
+				builder.AppendLine("Query speed:".PadRight(LogsExtention.ColumnLength) + (this.TotalQueryTime.TotalMilliseconds / this.TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
+			builder.AppendLine("Query time:".PadRight(LogsExtention.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalQueryTime));
+			builder.AppendLine("Queried UTXO:".PadRight(LogsExtention.ColumnLength) + this.TotalQueriedEntities);
 			return builder.ToString();
 		}
 	}

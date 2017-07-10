@@ -43,10 +43,20 @@ namespace Stratis.Bitcoin.Miner
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
 	    private uint256 hashPrevBlock;
 		private Task mining;
+	    private readonly ILogger logger;
 
-		public PowMining(ConsensusLoop consensusLoop, ConcurrentChain chain, Network network,
-			IDateTimeProvider dateTimeProvider, AssemblerFactory blockAssemblerFactory, BlockRepository blockRepository,
-			BlockStore.ChainBehavior.ChainState chainState, Signals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+        public PowMining(
+            ConsensusLoop consensusLoop, 
+            ConcurrentChain chain, 
+            Network network,
+			IDateTimeProvider dateTimeProvider, 
+            AssemblerFactory blockAssemblerFactory, 
+            BlockRepository blockRepository,
+			BlockStore.ChainBehavior.ChainState chainState, 
+            Signals signals, 
+            INodeLifetime nodeLifetime, 
+            IAsyncLoopFactory asyncLoopFactory,
+		    ILoggerFactory loggerFactory)
 		{
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
@@ -58,9 +68,10 @@ namespace Stratis.Bitcoin.Miner
 			this.signals = signals;
 		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
-		}
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
 
-		public Task Mine(Script reserveScript)
+        public Task Mine(Script reserveScript)
 		{
 			if (this.mining != null)
 				return this.mining; // already mining
@@ -140,7 +151,7 @@ namespace Stratis.Bitcoin.Miner
 					this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
 					this.signals.Blocks.Broadcast(pblock);
 
-					Logs.Mining.LogInformation($"Mined new {(BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW")} block: {blockResult.ChainedBlock.HashBlock}");
+					this.logger.LogInformation($"Mined new {(BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW")} block: {blockResult.ChainedBlock.HashBlock}");
 
 					++nHeight;
 					blocks.Add(pblock.GetHash());

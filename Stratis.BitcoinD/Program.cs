@@ -19,15 +19,10 @@ namespace Stratis.BitcoinD
 	{
 		public static void Main(string[] args)
 		{
-			Logs.Configure(Logs.GetLoggerFactory(args));
-
 			if (NodeSettings.PrintHelp(args, Network.Main))
 				return;
 			
 			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
-
-			if (!Checks.VerifyAccess(nodeSettings))
-				return;
 
 			var node = new FullNodeBuilder()
 				.UseNodeSettings(nodeSettings)
