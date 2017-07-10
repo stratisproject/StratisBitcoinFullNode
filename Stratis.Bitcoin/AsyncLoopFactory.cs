@@ -14,6 +14,8 @@ namespace Stratis.Bitcoin
 
         Task Run(string name, Func<CancellationToken, Task> loop, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
         Task Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+
+	    Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery);
     }
 
     public class AsyncLoopFactory : IAsyncLoopFactory
