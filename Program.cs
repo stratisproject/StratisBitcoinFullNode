@@ -31,9 +31,6 @@ namespace Breeze.Daemon
         {
             IFullNodeBuilder fullNodeBuilder = null;
 
-            // configure logging
-            Logs.Configure(Logs.GetLoggerFactory(args));
-
             // get the api uri 
             var apiUri = args.GetValueOf("apiuri");
 
