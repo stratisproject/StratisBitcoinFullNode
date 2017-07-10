@@ -17,9 +17,8 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {
-
-    public class RPCMiddlewareTest : LogsTestBase
-    {
+	public class RPCMiddlewareTest : LogsTestBase
+	{
 		private Mock<IRPCAuthorization> authorization;
 		private Mock<RequestDelegate> delegateContext;
 		private DefaultHttpContext httpContext;
@@ -131,11 +130,11 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.middleware.Invoke(this.httpContext).Wait();
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
-		}		
+		}
 
 		[Fact]
 		public void InvokeThrowsArgumentExceptionWritesArgumentError()
-		{			
+		{
 			this.delegateContext.Setup(d => d(It.IsAny<DefaultHttpContext>()))
 				.Throws(new ArgumentException("Name is required."));
 			this.SetupValidAuthorization();
@@ -146,7 +145,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
-				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -1,\r\n    \"message\": \"Argument error: Name is required.\"\r\n  }\r\n}";
+				var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -1,{0}    \"message\": \"Argument error: Name is required.\"{0}  }}{0}}}", Environment.NewLine);
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
 			}
@@ -165,7 +164,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
-				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -1,\r\n    \"message\": \"Argument error: Int x is invalid format.\"\r\n  }\r\n}";
+				var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -1,{0}    \"message\": \"Argument error: Int x is invalid format.\"{0}  }}{0}}}", Environment.NewLine);
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
 			}
@@ -183,7 +182,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
-				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -32601,\r\n    \"message\": \"Method not found\"\r\n  }\r\n}";
+				var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32601,{0}    \"message\": \"Method not found\"{0}  }}{0}}}", Environment.NewLine);
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status404NotFound, this.httpContext.Response.StatusCode);
 			}
@@ -201,7 +200,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
-				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -32603,\r\n    \"message\": \"Internal error\"\r\n  }\r\n}";
+				var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status500InternalServerError, this.httpContext.Response.StatusCode);
                 base.AssertLog(this.Logger, LogLevel.Error, "Internal error while calling RPC Method");
@@ -221,7 +220,7 @@ namespace Stratis.Bitcoin.Tests.RPC
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
 			{
-				var expected = "{\r\n  \"result\": null,\r\n  \"error\": {\r\n    \"code\": -32603,\r\n    \"message\": \"Internal error\"\r\n  }\r\n}";
+				var expected = string.Format("{{{0}  \"result\": null,{0}  \"error\": {{{0}    \"code\": -32603,{0}    \"message\": \"Internal error\"{0}  }}{0}}}", Environment.NewLine);
 				Assert.Equal(expected, reader.ReadToEnd());
 				Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
                 base.AssertLog<InvalidOperationException>(this.Logger, LogLevel.Error, "Operation not valid.", "Internal error while calling RPC Method");

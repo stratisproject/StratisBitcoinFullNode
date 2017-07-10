@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests
                 await DoOperationCanceledExceptionTask(token);
             });
 
-            await asyncLoop.Run(new CancellationTokenSource(80).Token, TimeSpan.FromMilliseconds(33));
+            await asyncLoop.Run(new CancellationTokenSource(800).Token, TimeSpan.FromMilliseconds(300));
 
             AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
             AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Tests
                 await DoExceptionalTask(token);
             });
 
-            await asyncLoop.Run(TimeSpan.FromMilliseconds(33));
+            await asyncLoop.Run(TimeSpan.FromMilliseconds(330));
 
             AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
             AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Tests
                 await DoExceptionalTask(token);
             });
 
-            await asyncLoop.Run(new CancellationTokenSource(150).Token, TimeSpan.FromMilliseconds(33));
+            await asyncLoop.Run(new CancellationTokenSource(1500).Token, TimeSpan.FromMilliseconds(330));
 
             AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
             AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Tests
                 await DoTask(token);
             });
 
-            await asyncLoop.Run(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33));
+            await asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(330));
 
             AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
             AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Tests
                 await DoTask(token);
             });
 
-            await asyncLoop.Run(new CancellationTokenSource(90).Token, TimeSpan.FromMilliseconds(33));
+            await asyncLoop.Run(new CancellationTokenSource(900).Token, TimeSpan.FromMilliseconds(330));
 
             Assert.Equal(3, this.iterationCount);
         }
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Tests
                 await DoTask(token);
             });
 
-            await asyncLoop.Run(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33), TimeSpan.FromMilliseconds(40));
+            await asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(330), TimeSpan.FromMilliseconds(400));
 
             Assert.Equal(2, this.iterationCount);
         }

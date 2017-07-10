@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Tests
                 await DoTask(token);
             });
 
-            periodicTask.Start(new CancellationTokenSource(80).Token, TimeSpan.FromMilliseconds(33));
+            periodicTask.Start(new CancellationTokenSource(800).Token, TimeSpan.FromMilliseconds(300));
 
-            Thread.Sleep(100);
+            Thread.Sleep(1000);
             Assert.Equal(3, this.iterationCount);
         }
 
@@ -59,9 +59,9 @@ namespace Stratis.Bitcoin.Tests
                 await DoTask(token);
             });
 
-            periodicTask.Start(new CancellationTokenSource(70).Token, TimeSpan.FromMilliseconds(33), true);
+            periodicTask.Start(new CancellationTokenSource(800).Token, TimeSpan.FromMilliseconds(300), true);
 
-            Thread.Sleep(100);
+            Thread.Sleep(1000);
             Assert.Equal(2, this.iterationCount);
         }
 
