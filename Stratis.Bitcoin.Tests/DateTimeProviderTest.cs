@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Tests
         {
             var result = DateTimeProvider.Default.GetTimeOffset();
 
-            Assert.Equal(DateTimeOffset.UtcNow, result);
+            Assert.Equal(DateTimeOffset.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
         }
 
         [Fact]
