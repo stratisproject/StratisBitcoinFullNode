@@ -736,7 +736,7 @@ namespace Stratis.Bitcoin.Wallet
                 // add the Merkle proof to the (non-spending) transaction
                 if (block != null)
                 {
-                    newTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
+                    newTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
                 }
 
                 addressTransactions.Add(newTransaction);
@@ -759,7 +759,7 @@ namespace Stratis.Bitcoin.Wallet
                 // add the Merkle proof now that the transaction is confirmed in a block
                 if (block != null && foundTransaction.MerkleProof == null)
                 {
-                    foundTransaction.MerkleProof = this.CreateMerkleProof(block, transactionHash);
+                    foundTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
                 }
             }
 
@@ -828,17 +828,6 @@ namespace Stratis.Bitcoin.Wallet
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
                 }
             }
-        }
-
-        private MerkleProof CreateMerkleProof(Block block, uint256 transactionHash)
-        {
-            MerkleBlock merkleBlock = new MerkleBlock(block, new[] { transactionHash });
-
-            return new MerkleProof
-            {
-                MerkleRoot = block.Header.HashMerkleRoot,
-                MerklePath = merkleBlock.PartialMerkleTree.Hashes
-            };
         }
 
         private void OnTransactionFound(object sender, TransactionFoundEventArgs a)
