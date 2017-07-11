@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Miner;
+using Stratis.Bitcoin.Wallet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +26,10 @@ namespace Stratis.Bitcoin.RPC
                 s.AddSingleton(fullNode.BlockStoreManager);
                 s.AddSingleton(fullNode.MempoolManager);
                 s.AddSingleton(fullNode.ConnectionManager);
+                s.AddSingleton(fullNode.Services.ServiceProvider.GetService<IWalletManager>());
+                var pow = fullNode.Services.ServiceProvider.GetService<PowMining>();
+                if(pow != null)
+                    s.AddSingleton(pow);
             });
             return hostBuilder;
         }

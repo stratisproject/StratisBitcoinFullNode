@@ -51,17 +51,36 @@ namespace Stratis.Bitcoin.RPC
 				JObject response = CreateError(RPCErrorCode.RPC_MISC_ERROR, "Argument error: " + ex.Message);
 				await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
 			}
+			else if(ex is RPCServerException)
+			{
+				var rpcEx = (RPCServerException)ex;
+				JObject response = CreateError(rpcEx.ErrorCode, ex.Message);
+				await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
+			}
 			else if(httpContext.Response?.StatusCode == 404)
 			{
 				JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found");
 				await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
 			}
+            else if(IsDependencyFailure(ex))
+            {
+                JObject response = CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, ex.Message);
+                await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
+            }
 			else if(httpContext.Response?.StatusCode == 500 || ex != null)
 			{
 				JObject response = CreateError(RPCErrorCode.RPC_INTERNAL_ERROR, "Internal error");
 				this.logger.LogError(new EventId(0), ex, "Internal error while calling RPC Method");
 				await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
 			}
+		}
+
+		private bool IsDependencyFailure(Exception ex)
+		{
+			var invalidOp = ex as InvalidOperationException;
+			if(invalidOp == null)
+				return false;
+			return invalidOp.Source.Equals("Microsoft.Extensions.DependencyInjection.Abstractions", StringComparison.Ordinal);
 		}
 
 		private bool Authorized(HttpContext httpContext)

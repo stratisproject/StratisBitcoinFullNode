@@ -17,6 +17,14 @@ namespace Stratis.Bitcoin.Miner
 {
 	public class ReserveScript
 	{
+		public ReserveScript()
+		{
+
+		}
+		public ReserveScript(Script reserveSfullNodecript)
+		{
+			this.reserveSfullNodecript = reserveSfullNodecript;
+		}
 		public Script reserveSfullNodecript { get; set; }
 	}
 

@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Miner;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
@@ -76,10 +77,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 				.UseConsensus()
 				.UseBlockStore()
 				.UseMempool()
+                .AddMining()
 				.UseWallet()
 				.AddRPC()
 				.Build();
-
+            node.WalletManager.CreateWallet("blabla", "test");
 			return node;
 		}
 

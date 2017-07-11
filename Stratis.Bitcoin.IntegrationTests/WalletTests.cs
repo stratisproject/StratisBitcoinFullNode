@@ -78,6 +78,19 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
+        public void CanMineBlocks()
+        {
+            using(NodeBuilder builder = NodeBuilder.Create())
+            {
+                var stratisNodeSync = builder.CreateStratisNode();
+                builder.StartAll();
+                var rpc = stratisNodeSync.CreateRPCClient();
+                rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
+                Assert.Equal(10, rpc.GetBlockCount());
+            }
+        }
+
+        [Fact]
         public void WalletCanReorg()
         {
             // this test has 4 parts:
