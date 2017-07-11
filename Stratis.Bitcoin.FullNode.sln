@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.14
+VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331FD3-D493-46A9-928B-B786FC6F3103}"
 	ProjectSection(SolutionItems) = preProject
@@ -23,6 +23,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.StratisD", "Stratis.StratisD\Stratis.StratisD.csproj", "{34C17104-704E-4790-B398-D1F73CBEE31E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Common", "Stratis.Bitcoin.Common\Stratis.Bitcoin.Common.csproj", "{2D21A110-D7DE-474A-A684-A954D2C86C25}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "External", "External", "{1B9A916F-DDAC-4675-B424-EDEDC1A58231}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBitcoin", "NStratis\NBitcoin\NBitcoin.csproj", "{6FAD74ED-D0FD-4167-9B25-54B14AF2D628}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HashLib", "NStratis\Hashing\HashLib\HashLib.csproj", "{28C55453-3698-4A34-AEDF-6325E8330604}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,8 +60,20 @@ Global
 		{2D21A110-D7DE-474A-A684-A954D2C86C25}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D21A110-D7DE-474A-A684-A954D2C86C25}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D21A110-D7DE-474A-A684-A954D2C86C25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FAD74ED-D0FD-4167-9B25-54B14AF2D628}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FAD74ED-D0FD-4167-9B25-54B14AF2D628}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FAD74ED-D0FD-4167-9B25-54B14AF2D628}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FAD74ED-D0FD-4167-9B25-54B14AF2D628}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28C55453-3698-4A34-AEDF-6325E8330604}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28C55453-3698-4A34-AEDF-6325E8330604}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28C55453-3698-4A34-AEDF-6325E8330604}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28C55453-3698-4A34-AEDF-6325E8330604}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6FAD74ED-D0FD-4167-9B25-54B14AF2D628} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
+		{28C55453-3698-4A34-AEDF-6325E8330604} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 	EndGlobalSection
 EndGlobal
