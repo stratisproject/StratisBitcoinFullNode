@@ -403,7 +403,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 // for some reason we generate one extra. Why?
                 Assert.Equal(3, recoveredAccountRoot.Accounts.Count);
                 Assert.Equal(2, expectedAccountRoot.Accounts.Count);
-                
+
                 for (var j = 0; j < expectedAccountRoot.Accounts.Count; j++)
                 {
                     var expectedAccount = expectedAccountRoot.Accounts.ElementAt(j);
@@ -424,7 +424,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                         Assert.Equal(expectedAddress.Address, recoveredAddress.Address);
                         Assert.Equal(expectedAddress.Pubkey, recoveredAddress.Pubkey);
                         Assert.Equal(expectedAddress.HdPath, recoveredAddress.HdPath);
-                        Assert.Equal(expectedAddress.BlocksScanned,recoveredAddress.BlocksScanned);
+                        Assert.Equal(expectedAddress.BlocksScanned, recoveredAddress.BlocksScanned);
                         Assert.Equal(0, expectedAddress.Transactions.Count);
                         Assert.Equal(expectedAddress.Transactions.Count, recoveredAddress.Transactions.Count);
                     }
@@ -459,7 +459,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             string dir = AssureEmptyDir("TestData/WalletManagerTest/RecoverWalletOnlyWithPasswordWalletRecoversWallet");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var password = "test";            
+            var password = "test";
             var walletName = "mywallet";
 
             ConcurrentChain chain = PrepareChainWithBlock();
@@ -552,11 +552,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadKeysLookupInParallelDoesNotThrowInvalidOperationException");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
 
-            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
@@ -576,15 +573,84 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
+        public void GetUnusedAccountUsingWalletNameWithExistingAccountReturnsUnusedAccountIfExistsOnWallet()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithExistingAccountReturnsUnusedAccountIfExistsOnWallet");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+              dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("testWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount() { Name = "unused" });
+            walletManager.Wallets.Add(wallet);
+
+            var result = walletManager.GetUnusedAccount("testWallet", "password");
+
+            Assert.Equal("unused", result.Name);
+            Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/testWallet.wallet.json")));
+        }
+
+        [Fact]
+        public void GetUnusedAccountUsingWalletNameWithoutUnusedAccountsCreatesAccountAndSavesWallet()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithoutUnusedAccountsCreatesAccountAndSavesWallet");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+              dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("testWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).Accounts.Clear();
+            walletManager.Wallets.Add(wallet);
+
+            var result = walletManager.GetUnusedAccount("testWallet", "password");
+
+            Assert.Equal("account 0", result.Name);
+            Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/testWallet.wallet.json")));
+        }
+
+        [Fact]
+        public void GetUnusedAccountUsingWalletWithExistingAccountReturnsUnusedAccountIfExistsOnWallet()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithExistingAccountReturnsUnusedAccountIfExistsOnWallet");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+              dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("testWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount() { Name = "unused" });
+            walletManager.Wallets.Add(wallet);
+
+            var result = walletManager.GetUnusedAccount(wallet, "password");
+
+            Assert.Equal("unused", result.Name);
+            Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/testWallet.wallet.json")));
+        }
+
+        [Fact]
+        public void GetUnusedAccountUsingWalletWithoutUnusedAccountsCreatesAccountAndSavesWallet()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithoutUnusedAccountsCreatesAccountAndSavesWallet");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+              dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("testWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).Accounts.Clear();
+            walletManager.Wallets.Add(wallet);
+
+            var result = walletManager.GetUnusedAccount(wallet, "password");
+
+            Assert.Equal("account 0", result.Name);
+            Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/testWallet.wallet.json")));
+        }        
+
+        [Fact]
         public void CheckWalletBalanceEstimationWithConfirmedTransactions()
         {
             string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithConfirmedTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
 
-            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
@@ -609,11 +675,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithUnConfirmedTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
 
-            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
@@ -638,11 +701,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithSpentTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
 
-            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
@@ -667,11 +727,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithSpentAndConfirmedTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
 
-            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
@@ -702,11 +759,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             string dir = AssureEmptyDir("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithSpentAndUnConfirmedTransactions");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
 
-            var walletManager = new WalletManager(loggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
             // generate 3 wallet with 2 accounts containing 1000 external and 100 internal addresses each.
@@ -740,6 +794,24 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 AccountsRoot = new List<AccountRoot>(),
                 BlockLocator = null
             };
+        }
+
+        private Bitcoin.Wallet.Wallet GenerateBlankWallet(string name, string password)
+        {
+            Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+            ExtKey extendedKey = mnemonic.DeriveExtKey(password);
+
+            Bitcoin.Wallet.Wallet walletFile = new Bitcoin.Wallet.Wallet
+            {
+                Name = name,
+                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, Network.Main).ToWif(),
+                ChainCode = extendedKey.ChainCode,
+                CreationTime = DateTimeOffset.Now,
+                Network = Network.Main,
+                AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
+            };
+
+            return walletFile;
         }
 
         private ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)

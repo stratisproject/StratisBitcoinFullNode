@@ -208,8 +208,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 		public HdAccount GetUnusedAccount(string walletName, string password)
 		{
             Guard.NotEmpty(walletName, nameof(walletName));
+            Guard.NotEmpty(password, nameof(password));
 
-			Wallet wallet = this.GetWalletByName(walletName);
+            Wallet wallet = this.GetWalletByName(walletName);
 
 			return this.GetUnusedAccount(wallet, password);
 		}
@@ -217,11 +218,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public HdAccount GetUnusedAccount(Wallet wallet, string password)
 		{
-			// get the accounts root for this type of coin
-			var accountsRoot = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
+            Guard.NotNull(wallet, nameof(wallet));
+            Guard.NotEmpty(password, nameof(password));
 
-			// check if an unused account exists
-			if (accountsRoot.Accounts.Any())
+            // get the accounts root for this type of coin
+            var accountsRoot = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
+
+            // check if an unused account exists
+            if (accountsRoot.Accounts.Any())
 			{
 				// gets an unused account
 				var firstUnusedAccount = accountsRoot.GetFirstUnusedAccount();
