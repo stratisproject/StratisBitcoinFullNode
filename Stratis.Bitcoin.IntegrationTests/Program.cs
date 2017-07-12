@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static void Main(string[] args)
         {
-            new WalletTests().CanMineBlocks();
+            new WalletTests().CanSendToAddress();
         }
     }
 }

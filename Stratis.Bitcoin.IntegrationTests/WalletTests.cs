@@ -91,6 +91,21 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
+        public void CanSendToAddress()
+        {
+            using(NodeBuilder builder = NodeBuilder.Create())
+            {
+                var stratisNodeSync = builder.CreateStratisNode();
+                builder.StartAll();
+                var rpc = stratisNodeSync.CreateRPCClient();
+                rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 101);
+                var address = new Key().PubKey.GetAddress(rpc.Network);
+                var tx = rpc.SendToAddress(address, Money.Coins(1.0m));
+                Assert.NotNull(tx);
+            }
+        }
+
+        [Fact]
         public void WalletCanReorg()
         {
             // this test has 4 parts:

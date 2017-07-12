@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Miner;
+using Stratis.Bitcoin.RPC.ModelBinders;
 using Stratis.Bitcoin.Wallet;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,11 @@ namespace Stratis.Bitcoin.RPC
         {
             hostBuilder.ConfigureServices(s =>
             {
+                s.AddMvcCore(o =>
+                {
+                    o.ModelBinderProviders.Insert(0, new DestinationModelBinder());
+                    o.ModelBinderProviders.Insert(0, new MoneyModelBinder());
+                });
                 s.AddSingleton(fullNode);
                 s.AddSingleton(fullNode as Builder.IFullNode);
                 s.AddSingleton(fullNode.Network);
