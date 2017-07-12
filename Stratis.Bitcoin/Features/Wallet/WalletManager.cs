@@ -246,8 +246,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public HdAccount CreateNewAccount(Wallet wallet, string password)
 		{
-			// get the accounts for this type of coin
-			var accounts = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts.ToList();
+            Guard.NotNull(wallet, nameof(wallet));
+            Guard.NotEmpty(password, nameof(password));
+
+            // get the accounts for this type of coin
+            var accounts = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts.ToList();
 
 			int newAccountIndex = 0;
 			if (accounts.Any())
@@ -315,6 +318,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public IEnumerable<HdAddress> GetHistory(string walletName)
 		{
+            Guard.NotEmpty(walletName, nameof(walletName));
+
 			Wallet wallet = this.GetWalletByName(walletName);
 
 			return this.GetHistory(wallet);

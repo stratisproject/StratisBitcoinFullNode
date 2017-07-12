@@ -573,6 +573,18 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
+        public void GetUnusedAccountUsingNameForNonExistinAccountThrowsWalletException()
+        {
+            Assert.Throws<WalletException>(() =>
+            {
+                var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                  new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+
+                walletManager.GetUnusedAccount("nonexisting", "password");
+            });
+        }
+
+        [Fact]
         public void GetUnusedAccountUsingWalletNameWithExistingAccountReturnsUnusedAccountIfExistsOnWallet()
         {
             var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithExistingAccountReturnsUnusedAccountIfExistsOnWallet");
@@ -642,7 +654,164 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             Assert.Equal("account 0", result.Name);
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/testWallet.wallet.json")));
-        }        
+        }
+
+        [Fact]
+        public void CreateNewAccountGivenNoAccountsExistingInWalletCreatesNewAccount()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithoutUnusedAccountsCreatesAccountAndSavesWallet");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+              dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("testWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).Accounts.Clear();
+
+            var result = walletManager.CreateNewAccount(wallet, "password");
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.Count);
+            var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
+            var expectedExtendedPubKey = extKey.Derive(new KeyPath($"m/44'/0'/0'")).Neuter().ToString(wallet.Network);
+            Assert.Equal($"account 0", result.Name);
+            Assert.Equal(0, result.Index);
+            Assert.Equal($"m/44'/0'/0'", result.HdPath);
+            Assert.Equal(expectedExtendedPubKey, result.ExtendedPubKey);
+            Assert.Equal(0, result.InternalAddresses.Count);
+            Assert.Equal(0, result.ExternalAddresses.Count);
+        }
+
+        [Fact]
+        public void CreateNewAccountGivenExistingAccountInWalletCreatesNewAccount()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithoutUnusedAccountsCreatesAccountAndSavesWallet");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+              dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("testWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount() { Name = "unused" });
+
+            var result = walletManager.CreateNewAccount(wallet, "password");
+
+            Assert.Equal(2, wallet.AccountsRoot.ElementAt(0).Accounts.Count);
+            var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
+            var expectedExtendedPubKey = extKey.Derive(new KeyPath($"m/44'/0'/1'")).Neuter().ToString(wallet.Network);
+            Assert.Equal($"account 1", result.Name);
+            Assert.Equal(1, result.Index);
+            Assert.Equal($"m/44'/0'/1'", result.HdPath);
+            Assert.Equal(expectedExtendedPubKey, result.ExtendedPubKey);
+            Assert.Equal(0, result.InternalAddresses.Count);
+            Assert.Equal(0, result.ExternalAddresses.Count);
+        }
+
+        [Fact]
+        public void GetUnusedAddressUsingNameWithWalletWithoutAccountOfGivenNameThrowsException()
+        {
+            Assert.Throws<Exception>(() =>
+            {
+                var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+               new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                var wallet = GenerateBlankWallet("testWallet", "password");
+                walletManager.Wallets.Add(wallet);
+
+                var result = walletManager.GetUnusedAddress("testWallet", "unexistingAccount");
+            });
+        }
+
+        [Fact]
+        public void GetUnusedAddressUsingNameForNonExistinAccountThrowsWalletException()
+        {
+            Assert.Throws<WalletException>(() =>
+            {
+                var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                  new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+
+                walletManager.GetUnusedAddress("nonexisting", "account");
+            });
+        }
+
+        [Fact]
+        public void GetUnusedAddressWithWalletHavingUnusedAddressReturnsAddress()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/CheckWalletBalanceEstimationWithConfirmedTransactions");
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                  dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("myWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "myAccount",
+                ExternalAddresses = new List<HdAddress>()
+                {
+                    new HdAddress() {
+                        Index = 0,
+                        Address = "myUsedAddress",
+                        Transactions = new List<TransactionData>()
+                        {
+                            new TransactionData()
+                        }
+                    },
+                     new HdAddress() {
+                        Index = 1,
+                        Address = "myUnusedAddress",
+                        Transactions = new List<TransactionData>()
+                    }
+                },
+                InternalAddresses = null
+            });
+            walletManager.Wallets.Add(wallet);
+
+            var result = walletManager.GetUnusedAddress("myWallet", "myAccount");
+
+            Assert.Equal("myUnusedAddress", result.Address);
+        }
+
+        [Fact]
+        public void GetUnusedAddressWithoutWalletHavingUnusedAddressCreatesAddressAndSavesWallet()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAddressWithoutWalletHavingUnusedAddressCreatesAddressAndSavesWallet");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                  dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("myWallet", "password");
+            var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
+            var accountExtendedPubKey = extKey.Derive(new KeyPath($"m/44'/0'/0'")).Neuter().ToString(wallet.Network);
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "myAccount",
+                HdPath = "m/44'/0'/0'",
+                ExternalAddresses = new List<HdAddress>()
+                {
+                    new HdAddress() {
+                        Index = 0,
+                        Address = "myUsedAddress",
+                        ScriptPubKey = new Script(),
+                        Transactions = new List<TransactionData>()
+                        {
+                            new TransactionData()
+                        },
+                    }
+                },
+                InternalAddresses = new List<HdAddress>(),
+                ExtendedPubKey = accountExtendedPubKey
+            });
+            walletManager.Wallets.Add(wallet);
+
+            var result = walletManager.GetUnusedAddress("myWallet", "myAccount");
+
+            KeyPath keyPath = new KeyPath($"0/1");
+            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtendedPubKey).Derive(keyPath);
+            var pubKey = extPubKey.PubKey;
+            BitcoinPubKeyAddress address = pubKey.GetAddress(wallet.Network);
+            Assert.Equal(1, result.Index);
+            Assert.Equal("m/44'/0'/0'/0/1", result.HdPath);
+            Assert.Equal(address.ToString(), result.Address);
+            Assert.Equal(pubKey.ScriptPubKey, result.Pubkey);
+            Assert.Equal(address.ScriptPubKey, result.ScriptPubKey);
+            Assert.Equal(0, result.Transactions.Count);
+            Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/myWallet.wallet.json")));
+        }
 
         [Fact]
         public void CheckWalletBalanceEstimationWithConfirmedTransactions()
