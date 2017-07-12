@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Wallet.Notifications;
+using Stratis.Bitcoin.RPC.Controllers;
 
 namespace Stratis.Bitcoin.Wallet
 {
@@ -57,6 +58,7 @@ namespace Stratis.Bitcoin.Wallet
                         services.AddSingleton<IWalletManager, WalletManager>();
                         services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
                         services.AddSingleton<WalletController>();
+                        services.AddSingleton<WalletRPCController>();
                     });
             });
 
