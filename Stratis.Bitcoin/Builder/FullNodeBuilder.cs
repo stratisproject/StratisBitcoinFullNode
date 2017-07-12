@@ -9,175 +9,227 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Builder
 {
-	public class NodeBuilderException : Exception
-	{
-		public NodeBuilderException(string message) : base(message)
-		{
-		}
-	}
+    /// <summary>
+    /// Exception thrown by FullNodeBuilder.Build.
+    /// </summary>
+    /// <seealso cref="FullNodeBuilder.Build"/>
+    public class NodeBuilderException : Exception
+    {
+        /// <summary>
+        /// Initializes a new instance of the class with a specified error message.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        public NodeBuilderException(string message) : base(message)
+        {
+        }
+    }
 
-	public class FullNodeBuilder : IFullNodeBuilder
-	{
-		private readonly List<Action<IServiceProvider>> configureDelegates;
-		private readonly List<Action<IServiceCollection>> configureServicesDelegates;
-		private readonly List<Action<IFeatureCollection>> featuresRegistrationDelegates;
+    /// <summary>
+    /// Full node builder allows constructing a full node using specific components.
+    /// </summary>
+    public class FullNodeBuilder : IFullNodeBuilder
+    {
+        /// <summary>List of delegates that configure the service providers.</summary>
+        private readonly List<Action<IServiceProvider>> configureDelegates;
 
-		private bool fullNodeBuilt;
+        /// <summary>List of delegates that add services to the builder.</summary>
+        private readonly List<Action<IServiceCollection>> configureServicesDelegates;
 
-		public FullNodeBuilder() :
-			this(new List<Action<IServiceCollection>>(),
-				new List<Action<IServiceProvider>>(),
-				new List<Action<IFeatureCollection>>(),
-				new FeatureCollection())
-		{
-		}
+        /// <summary>List of delegates that add features to the collection.</summary>
+        private readonly List<Action<IFeatureCollection>> featuresRegistrationDelegates;
 
-		/// <summary>
-		/// Accepts a NodeSettings instance and register required services
-		/// </summary>
-		/// <param name="nodeSettings">The node settings.</param>
-		public FullNodeBuilder(NodeSettings nodeSettings)
-			: this(nodeSettings, new List<Action<IServiceCollection>>(),
-				new List<Action<IServiceProvider>>(),
-				new List<Action<IFeatureCollection>>(),
-				new FeatureCollection())
-		{
+        /// <summary>true if the Build method has been called already (whether it succeeded or not), false otherwise.</summary>
+        private bool fullNodeBuilt;
 
-		}
+        /// <summary>Collection of features available to and/or used by the node.</summary>
+        public IFeatureCollection Features { get; }
 
-		internal FullNodeBuilder(NodeSettings nodeSettings, List<Action<IServiceCollection>> configureServicesDelegates, List<Action<IServiceProvider>> configureDelegates,
-			List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
-			: this(configureServicesDelegates, configureDelegates, featuresRegistrationDelegates, features)
-		{
+        /// <summary>User defined node settings.</summary>
+        public NodeSettings NodeSettings { get; set; }
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/default.</summary>
+        public Network Network { get; set; }
+
+        /// <summary>Collection of DI services.</summary>
+        public IServiceCollection Services { get; private set; }
+
+
+        /// <summary>
+        /// Initializes a default instance of the object and registers required services.
+        /// </summary>
+        public FullNodeBuilder() :
+            this(new List<Action<IServiceCollection>>(),
+                new List<Action<IServiceProvider>>(),
+                new List<Action<IFeatureCollection>>(),
+                new FeatureCollection())
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object using specific NodeSettings instance and registers required services.
+        /// </summary>
+        /// <param name="nodeSettings">User defined node settings.</param>
+        public FullNodeBuilder(NodeSettings nodeSettings)
+            : this(nodeSettings, new List<Action<IServiceCollection>>(),
+                new List<Action<IServiceProvider>>(),
+                new List<Action<IFeatureCollection>>(),
+                new FeatureCollection())
+        {
+
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object using specific NodeSettings instance and configuration delegates and registers required services.
+        /// </summary>
+        /// <param name="nodeSettings">User defined node settings.</param>
+        /// <param name="configureServicesDelegates">List of delegates that add services to the builder.</param>
+        /// <param name="configureDelegates">List of delegates that configure the service providers.</param>
+        /// <param name="featuresRegistrationDelegates">List of delegates that add features to the collection.</param>
+        /// <param name="features">Collection of features to be available to and/or used by the node.</param>
+        internal FullNodeBuilder(NodeSettings nodeSettings, List<Action<IServiceCollection>> configureServicesDelegates, List<Action<IServiceProvider>> configureDelegates,
+            List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
+            : this(configureServicesDelegates, configureDelegates, featuresRegistrationDelegates, features)
+        {
             this.NodeSettings = nodeSettings ?? NodeSettings.Default();
             this.Network = this.NodeSettings.GetNetwork();
 
-			this.ConfigureServices(service =>
-			{
-				service.AddSingleton(this.NodeSettings);
-				service.AddSingleton(this.Network);
-			});
+            this.ConfigureServices(service =>
+            {
+                service.AddSingleton(this.NodeSettings);
+                service.AddSingleton(this.Network);
+            });
 
-			this.UseBaseFeature();
-		}
+            this.UseBaseFeature();
+        }
 
-		internal FullNodeBuilder(List<Action<IServiceCollection>> configureServicesDelegates, List<Action<IServiceProvider>> configureDelegates, 
-			List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
-		{
-			Guard.NotNull(configureServicesDelegates, nameof(configureServicesDelegates));
-			Guard.NotNull(configureDelegates, nameof(configureDelegates));
-			Guard.NotNull(featuresRegistrationDelegates, nameof(featuresRegistrationDelegates));
-			Guard.NotNull(features, nameof(features));
 
-			this.configureServicesDelegates = configureServicesDelegates;
-			this.configureDelegates = configureDelegates;
-			this.featuresRegistrationDelegates = featuresRegistrationDelegates;
-			this.Features = features;
-		}				
+        /// <summary>
+        /// Initializes an instance of the object using specific configuration delegates.
+        /// </summary>
+        /// <param name="configureServicesDelegates">List of delegates that add services to the builder.</param>
+        /// <param name="configureDelegates">List of delegates that configure the service providers.</param>
+        /// <param name="featuresRegistrationDelegates">List of delegates that add features to the collection.</param>
+        /// <param name="features">Collection of features to be available to and/or used by the node.</param>
+        internal FullNodeBuilder(List<Action<IServiceCollection>> configureServicesDelegates, List<Action<IServiceProvider>> configureDelegates,
+            List<Action<IFeatureCollection>> featuresRegistrationDelegates, IFeatureCollection features)
+        {
+            Guard.NotNull(configureServicesDelegates, nameof(configureServicesDelegates));
+            Guard.NotNull(configureDelegates, nameof(configureDelegates));
+            Guard.NotNull(featuresRegistrationDelegates, nameof(featuresRegistrationDelegates));
+            Guard.NotNull(features, nameof(features));
 
-		public IFeatureCollection Features { get; }
+            this.configureServicesDelegates = configureServicesDelegates;
+            this.configureDelegates = configureDelegates;
+            this.featuresRegistrationDelegates = featuresRegistrationDelegates;
+            this.Features = features;
+        }
 
-		public NodeSettings NodeSettings { get; set; }
+        /// <summary>
+        /// Adds services to the builder. 
+        /// </summary>
+        /// <param name="configureServices">A method that adds services to the builder.</param>
+        /// <returns>Interface to allow fluent code.</returns>
+        public IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices)
+        {
+            Guard.NotNull(configureServices, nameof(configureServices));
 
-		public Network Network { get; set; }
+            this.configureServicesDelegates.Add(configureServices);
+            return this;
+        }
 
-		public IServiceCollection Services { get; private set; }
+        /// <summary>
+        /// Adds features to the builder. 
+        /// </summary>
+        /// <param name="configureFeatures">A method that adds features to the collection.</param>
+        /// <returns>Interface to allow fluent code.</returns>
+        public IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures)
+        {
+            Guard.NotNull(configureFeatures, nameof(configureFeatures));
 
-		/// <summary>
-		/// Adds services to the builder. 
-		/// </summary>
-		/// <param name="configureServices">A method that adds services to the builder</param>
-		/// <returns>An IFullNodebuilder</returns>
-		public IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices)
-		{
-			Guard.NotNull(configureServices, nameof(configureServices));
+            this.featuresRegistrationDelegates.Add(configureFeatures);
+            return this;
+        }
 
-			this.configureServicesDelegates.Add(configureServices);
-			return this;
-		}
+        /// <summary>
+        /// Add configurations for the service provider.
+        /// </summary>
+        /// <param name="configure">A method that configures the service provider.</param>
+        /// <returns>Interface to allow fluent code.</returns>
+        public IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure)
+        {
+            Guard.NotNull(configure, nameof(configure));
 
-		/// <summary>
-		/// Adds features to the builder. 
-		/// </summary>
-		/// <param name="configureFeatures">A method that adds features to the collection</param>
-		/// <returns>An IFullNodebuilder</returns>
-		public IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures)
-		{
-			Guard.NotNull(configureFeatures, nameof(configureFeatures));
+            this.configureDelegates.Add(configure);
+            return this;
+        }
 
-			this.featuresRegistrationDelegates.Add(configureFeatures);
-			return this;
-		}
+        /// <summary>
+        /// Constructs the full node with the required features, services, and settings.
+        /// </summary>
+        /// <returns>Initialized full node.</returns>
+        public IFullNode Build()
+        {
+            if (this.fullNodeBuilt)
+                throw new InvalidOperationException("full node already built");
+            this.fullNodeBuilt = true;
 
-		/// <summary>
-		/// Add configurations for the service provider.
-		/// </summary>
-		/// <param name="configure">A method that configures the service provider.</param>
-		/// <returns>An IFullNodebuilder</returns>
-		public IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure)
-		{
-			Guard.NotNull(configure, nameof(configure));
+            this.Services = this.BuildServices();
 
-			this.configureDelegates.Add(configure);
-			return this;
-		}
+            var fullNodeServiceProvider = this.Services.BuildServiceProvider();
+            this.ConfigureServices(fullNodeServiceProvider);
 
-		public IFullNode Build()
-		{
-			if (this.fullNodeBuilt)
-				throw new InvalidOperationException("full node already built");
-			this.fullNodeBuilt = true;
+            //obtain the nodeSettings from the service (it's set used FullNodeBuilder.UseNodeSettings)
+            var nodeSettings = fullNodeServiceProvider.GetService<NodeSettings>();
+            if (nodeSettings == null)
+                throw new NodeBuilderException("NodeSettings not specified");
 
-			this.Services = this.BuildServices();
+            var network = fullNodeServiceProvider.GetService<Network>();
+            if (network == null)
+                throw new NodeBuilderException("Network not specified");
 
-			var fullNodeServiceProvider = this.Services.BuildServiceProvider();
-			this.ConfigureServices(fullNodeServiceProvider);
+            var fullNode = fullNodeServiceProvider.GetService<FullNode>();
+            if (fullNode == null)
+                throw new InvalidOperationException("Fullnode not registered with provider");
 
-			//obtain the nodeSettings from the service (it's set used FullNodeBuilder.UseNodeSettings)
-			var nodeSettings = fullNodeServiceProvider.GetService<NodeSettings>();
-			if (nodeSettings == null)
-				throw new NodeBuilderException("NodeSettings not specified");
+            fullNode.Initialize(new FullNodeServiceProvider(
+                fullNodeServiceProvider,
+                this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList()));
 
-			var network = fullNodeServiceProvider.GetService<Network>();
-			if (network == null)
-				throw new NodeBuilderException("Network not specified");
+            return fullNode;
+        }
 
-			var fullNode = fullNodeServiceProvider.GetService<FullNode>();
-			if (fullNode == null)
-				throw new InvalidOperationException("Fullnode not registered with provider");
+        /// <summary>
+        /// Constructs and configures services ands features to be used by the node.
+        /// </summary>
+        /// <returns>Collection of registered services.</returns>
+        private IServiceCollection BuildServices()
+        {
+            this.Services = new ServiceCollection();
 
-			fullNode.Initialize(new FullNodeServiceProvider(
-				fullNodeServiceProvider,
-				this.Features.FeatureRegistrations.Select(s => s.FeatureType).ToList()));
+            // register services before features 
+            // as some of the features may depend on independent services
+            foreach (var configureServices in this.configureServicesDelegates)
+                configureServices(this.Services);
 
-			return fullNode;
-		}
+            // configure features
+            foreach (var configureFeature in this.featuresRegistrationDelegates)
+                configureFeature(this.Features);
 
-		private IServiceCollection BuildServices()
-		{
-			this.Services = new ServiceCollection();
+            // configure features startup
+            foreach (var featureRegistration in this.Features.FeatureRegistrations)
+                featureRegistration.BuildFeature(this.Services);
 
-			// register services before features 
-			// as some of the features may depend on independent services
-			foreach (var configureServices in this.configureServicesDelegates)
-				configureServices(this.Services);
+            return this.Services;
+        }
 
-			// configure features
-			foreach (var configureFeature in this.featuresRegistrationDelegates)
-				configureFeature(this.Features);
-
-			// configure features startup
-			foreach (var featureRegistration in this.Features.FeatureRegistrations)
-				featureRegistration.BuildFeature(this.Services);
-
-			return this.Services;
-		}
-
-		private void ConfigureServices(IServiceProvider serviceProvider)
-		{
-			// configure registered services
-			foreach (var configure in this.configureDelegates)
-				configure(serviceProvider);
-		}
-	}
+        /// <summary>
+        /// Configure registered services.
+        /// </summary>
+        /// <param name="serviceProvider"></param>
+        private void ConfigureServices(IServiceProvider serviceProvider)
+        {
+            foreach (var configure in this.configureDelegates)
+                configure(serviceProvider);
+        }
+    }
 }
