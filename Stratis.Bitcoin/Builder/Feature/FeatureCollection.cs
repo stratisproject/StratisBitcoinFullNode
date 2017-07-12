@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Builder.Feature
     /// </summary>
     public interface IFeatureCollection
     {
-        /// <summary>Obtains the list of features already registered in the collection.</summary>
+        /// <summary>List of features already registered in the collection.</summary>
         List<IFeatureRegistration> FeatureRegistrations { get; }
 
         /// <summary>Adds a new feature to the collection provided that the feature of the same type has not been added already.</summary>
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Builder.Feature
             this.featureRegistrations = new List<IFeatureRegistration>();
         }
 
-        /// <summary>Obtains the list of features already registered in the collection.</summary>
+        /// <summary>List of features already registered in the collection.</summary>
         public List<IFeatureRegistration> FeatureRegistrations
         {
             get
