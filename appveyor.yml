@@ -13,7 +13,7 @@ skip_tags: true
 branches:
   # whitelist
   only:
-    - master
+    - nstratis-submodule
 
 #---------------------------------#
 #    environment configuration    #
@@ -35,6 +35,11 @@ init:
 before_build:
 - ps: |
       Write-Host "[$env:configuration] STARTED dotnet restore" -foregroundcolor "magenta"
+      
+      # Initialize dependencies
+      git submodule init
+      git submodule update
+
       dotnet restore -v m
       Write-Host "[$env:configuration] FINISHED dotnet restore" -foregroundcolor "magenta"
       if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode) }
