@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Stratis.StratisD
 {
@@ -57,7 +58,7 @@ namespace Stratis.StratisD
 				// get the address to mine to
 				var addres = mine.Replace("mine=", string.Empty);
 				var pubkey = BitcoinAddress.Create(addres, node.Network);
-				node.Services.ServiceProvider.Service<PowMining>().Mine(pubkey.ScriptPubKey);
+				node.Services.ServiceProvider.GetService<PowMining>().Mine(pubkey.ScriptPubKey);
 			}
 		}
 
@@ -68,7 +69,7 @@ namespace Stratis.StratisD
 			var mine = args.FirstOrDefault(a => a.Contains("mine="));
 			if (mine != null)
 			{
-				node.Services.ServiceProvider.Service<PosMinting>().Mine(new PosMinting.WalletSecret() {WalletPassword = ""});
+				node.Services.ServiceProvider.GetService<PosMinting>().Mine(new PosMinting.WalletSecret() {WalletPassword = ""});
 			}
 		}
 
