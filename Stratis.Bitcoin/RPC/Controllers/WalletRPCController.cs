@@ -37,10 +37,17 @@ namespace Stratis.Bitcoin.RPC.Controllers
             get; set;
         }
 
+
+        [ActionName("sendtoaddress")]
+        public uint256 SendToAddress(BitcoinAddress bitcoinAddress, Money amount)
+        {
+            return uint256.Zero;
+        }
+
         [ActionName("generate")]
         public List<uint256> Generate(int nBlock)
         {
-            var mining = serviceProvider.GetRequiredService<PowMining>();
+            var mining = this.serviceProvider.GetRequiredService<PowMining>();
             var wallet = GetWallet();
             var address = this.WalletManager.GetUnusedAddress(wallet.WalletName, wallet.Account.Name);
             return mining.GenerateBlocks(new ReserveScript(address.Pubkey), (ulong)nBlock, int.MaxValue);
