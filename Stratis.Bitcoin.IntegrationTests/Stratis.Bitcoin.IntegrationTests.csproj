@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net462|AnyCPU'">
+    <OutputType>exe</OutputType>
+  </PropertyGroup>
+
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFrameworks>net462;netcoreapp1.1</TargetFrameworks>
     <AssemblyName>Stratis.Bitcoin.IntegrationTests</AssemblyName>    
     <PackageId>Stratis.Bitcoin.IntegrationTests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -14,7 +18,8 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>    
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+	  <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

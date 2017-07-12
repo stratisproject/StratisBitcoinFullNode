@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Consensus
 			public TxOut[] OriginalOutputs;
 		}
 
-		private readonly ReaderWriterLock lockobj;
+		private readonly Stratis.Bitcoin.Utilities.ReaderWriterLock lockobj;
 		private readonly Dictionary<uint256, CacheItem> unspents;
 		private uint256 blockHash;
 		private uint256 innerBlockHash;
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Consensus
 			this.inner = inner;
 			this.stakeChainStore = stakeChainStore;
 			this.MaxItems = 100000;
-			this.lockobj = new ReaderWriterLock();
+			this.lockobj = new Stratis.Bitcoin.Utilities.ReaderWriterLock();
 			this.unspents = new Dictionary<uint256, CacheItem>();
 			this.PerformanceCounter =  new CachePerformanceCounter();
 		}
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Consensus
 			this.inner = inner;
 			this.stakeChainStore = stakeChainStore;
 			this.MaxItems = 100000;
-			this.lockobj = new ReaderWriterLock();
+			this.lockobj = new Stratis.Bitcoin.Utilities.ReaderWriterLock();
 			this.unspents = new Dictionary<uint256, CacheItem>();
 			this.PerformanceCounter = new CachePerformanceCounter();
 		}
