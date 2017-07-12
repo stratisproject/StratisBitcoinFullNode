@@ -7,37 +7,53 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Builder
 {
-	public interface IFullNodeServiceProvider
-	{
-		IEnumerable<IFullNodeFeature> Features { get; }
-		IServiceProvider ServiceProvider { get; }
-	}
+    /// <summary>
+    /// Provider of access to services and features registered with the full node.
+    /// </summary>
+    public interface IFullNodeServiceProvider
+    {
+        /// <summary>List of registered features.</summary>
+        IEnumerable<IFullNodeFeature> Features { get; }
 
-	public class FullNodeServiceProvider : IFullNodeServiceProvider
-	{
-		private readonly List<Type> featureTypes;
+        /// <summary>Provider to registered services.</summary>
+        IServiceProvider ServiceProvider { get; }
+    }
 
-		public FullNodeServiceProvider(IServiceProvider serviceProvider, List<Type> featureTypes)
-		{
-			Guard.NotNull(serviceProvider, nameof(serviceProvider));
-			Guard.NotNull(featureTypes, nameof(featureTypes));
+    /// <summary>
+    /// Provider of access to services and features registered with the full node.
+    /// </summary>
+    public class FullNodeServiceProvider : IFullNodeServiceProvider
+    {
+        /// <summary>List of registered feature types.</summary>
+        private readonly List<Type> featureTypes;
 
-			this.ServiceProvider = serviceProvider;
-			this.featureTypes = featureTypes;
-		}
+        /// <summary>List of registered features.</summary>
+        public IEnumerable<IFullNodeFeature> Features
+        {
+            get
+            {
+                // features are enumerated in the same order 
+                // they where registered with the provider
+                foreach (var featureDescriptor in this.featureTypes)
+                    yield return this.ServiceProvider.GetService(featureDescriptor) as IFullNodeFeature;
+            }
+        }
 
-		public IServiceProvider ServiceProvider { get; }
+        /// <summary>Provider to registered services.</summary>
+        public IServiceProvider ServiceProvider { get; }
 
-		public IEnumerable<IFullNodeFeature> Features
-		{
-			get
-			{
-				// features are enumerated in the same order 
-				// they where registered with the provider
+        /// <summary>
+        /// Initializes a new instance of the object with service provider and list of registered feature types.
+        /// </summary>
+        /// <param name="serviceProvider">Provider to registered services.</param>
+        /// <param name="featureTypes">List of registered feature types.</param>
+        public FullNodeServiceProvider(IServiceProvider serviceProvider, List<Type> featureTypes)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider));
+            Guard.NotNull(featureTypes, nameof(featureTypes));
 
-				foreach (var featureDescriptor in this.featureTypes)
-					yield return this.ServiceProvider.GetService(featureDescriptor) as IFullNodeFeature;
-			}
-		}
-	}
+            this.ServiceProvider = serviceProvider;
+            this.featureTypes = featureTypes;
+        }
+    }
 }
