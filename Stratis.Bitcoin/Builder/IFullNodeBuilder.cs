@@ -6,20 +6,45 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Builder
 {
-	public interface IFullNodeBuilder
-	{
-		NodeSettings NodeSettings { get; }
+    /// <summary>
+    /// Full node builder allows constructing a full node using specific components.
+    /// </summary>
+    public interface IFullNodeBuilder
+    {
+        /// <summary>User defined node settings.</summary>
+        NodeSettings NodeSettings { get; }
 
-		Network Network { get; }
+        /// <summary>Specification of the network the node runs on - regtest/testnet/default.</summary>
+        Network Network { get; }
 
-		IServiceCollection Services { get; }
+        /// <summary>Collection of DI services.</summary>
+        IServiceCollection Services { get; }
 
-		IFullNode Build();
+        /// <summary>
+        /// Constructs the full node with the required features, services, and settings.
+        /// </summary>
+        /// <returns>Initialized full node.</returns>
+        IFullNode Build();
 
-		IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures);
+        /// <summary>
+        /// Adds features to the builder. 
+        /// </summary>
+        /// <param name="configureFeatures">A method that adds features to the collection.</param>
+        /// <returns>Interface to allow fluent code.</returns>
+        IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures);
 
-		IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices);
+        /// <summary>
+        /// Adds services to the builder. 
+        /// </summary>
+        /// <param name="configureServices">A method that adds services to the builder.</param>
+        /// <returns>Interface to allow fluent code.</returns>
+        IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices);
 
-		IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure);
-	}
+        /// <summary>
+        /// Add configurations for the service provider.
+        /// </summary>
+        /// <param name="configure">A method that configures the service provider.</param>
+        /// <returns>Interface to allow fluent code.</returns>
+        IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure);
+    }
 }
