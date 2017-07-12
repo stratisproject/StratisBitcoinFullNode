@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Builder
         /// Adds features to the builder. 
         /// </summary>
         /// <param name="configureFeatures">A method that adds features to the collection.</param>
-        /// <returns>Interface to allow fluent code.</returns>
+        /// <returns>Full node builder interface to allow fluent code.</returns>
         public IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures)
         {
             Guard.NotNull(configureFeatures, nameof(configureFeatures));
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Builder
         /// Adds services to the builder. 
         /// </summary>
         /// <param name="configureServices">A method that adds services to the builder.</param>
-        /// <returns>Interface to allow fluent code.</returns>
+        /// <returns>Full node builder interface to allow fluent code.</returns>
         public IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices)
         {
             Guard.NotNull(configureServices, nameof(configureServices));
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Builder
         /// Add configurations for the service provider.
         /// </summary>
         /// <param name="configure">A method that configures the service provider.</param>
-        /// <returns>Interface to allow fluent code.</returns>
+        /// <returns>Full node builder interface to allow fluent code.</returns>
         public IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure)
         {
             Guard.NotNull(configure, nameof(configure));
