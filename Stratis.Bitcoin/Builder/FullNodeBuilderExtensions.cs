@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Builder
         /// <typeparam name="T">The type of service object to get.</typeparam>
         /// <param name="serviceProvider">The System.IServiceProvider to retrieve the service object from.</param>
         /// <returns>A service object of type T or null if there is no such service.</returns>
-        /// <remarks>This extension method probably does not belong to this class/file.</remarks>
+        /// <remarks>TODO: This extension method probably does not belong to this class/file.</remarks>
         public static T Service<T>(this IServiceProvider serviceProvider)
         {
             return (T)serviceProvider.GetService<T>();
