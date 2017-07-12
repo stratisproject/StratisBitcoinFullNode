@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Stratis Bitcoin FullNode</Description>
     <AssemblyTitle>Stratis.Bitcoin</AssemblyTitle>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFrameworks>net462;netstandard1.6</TargetFrameworks>
     <AssemblyName>Stratis.Bitcoin</AssemblyName>
     <PackageId>Stratis.Bitcoin</PackageId>
     <PackageTargetFallback>$(PackageTargetFallback);netcore50</PackageTargetFallback>
@@ -47,6 +47,9 @@
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>
+	<PropertyGroup Condition=" '$(TargetFramework)' == 'net462' ">
+		<DefineConstants>$(DefineConstants);NOASSEMBLYCONTEXT</DefineConstants>
+	</PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;1705;IDE0008;</NoWarn>

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFrameworks>net462;netcoreapp1.1</TargetFrameworks>
     <AssemblyName>Stratis.Bitcoin.Tests</AssemblyName>
     <PackageId>Stratis.Bitcoin.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
