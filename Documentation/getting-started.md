@@ -13,10 +13,13 @@ Getting started
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
 ```
 
-3. Checkout the master branch
+3. Checkout the master branch and initialize dependencies
 ```
 cd StratisBitcoinFullNode
 git checkout master
+
+git submodule init
+git submodule update
 ```
 
 4. Restore the project packages  

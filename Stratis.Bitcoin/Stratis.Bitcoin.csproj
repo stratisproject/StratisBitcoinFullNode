@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Stratis Bitcoin FullNode</Description>
     <AssemblyTitle>Stratis.Bitcoin</AssemblyTitle>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFrameworks>netstandard1.6</TargetFrameworks>
     <AssemblyName>Stratis.Bitcoin</AssemblyName>
     <PackageId>Stratis.Bitcoin</PackageId>
     <PackageTargetFallback>$(PackageTargetFallback);netcore50</PackageTargetFallback>
@@ -21,7 +21,6 @@
   <ItemGroup>
     <PackageReference Include="DBreeze" Version="1.85.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.2" />
-    <PackageReference Include="NStratis" Version="3.0.2.23" />
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="1.0.1" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="1.1.2" />
@@ -41,12 +40,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Common\Stratis.Bitcoin.Common.csproj" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>
+	<PropertyGroup Condition=" '$(TargetFramework)' == 'net462' ">
+		<DefineConstants>$(DefineConstants);NOASSEMBLYCONTEXT</DefineConstants>
+	</PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;1705;IDE0008;</NoWarn>

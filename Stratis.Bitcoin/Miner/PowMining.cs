@@ -17,6 +17,14 @@ namespace Stratis.Bitcoin.Miner
 {
 	public class ReserveScript
 	{
+		public ReserveScript()
+		{
+
+		}
+		public ReserveScript(Script reserveSfullNodecript)
+		{
+			this.reserveSfullNodecript = reserveSfullNodecript;
+		}
 		public Script reserveSfullNodecript { get; set; }
 	}
 
@@ -159,6 +167,7 @@ namespace Stratis.Bitcoin.Miner
 					// ensure the block is written to disk
 					ulong retry = 0;
 					while (++retry < maxTries &&
+                           nHeight != nHeight &&
 					       !this.blockRepository.ExistAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
 						Thread.Sleep(100);
 

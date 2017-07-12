@@ -1051,6 +1051,11 @@ namespace Stratis.Bitcoin.Wallet
             this.keysLookup = lookup;
         }
 
+        public string[] GetWallets()
+        {
+            return this.Wallets.Select(w => w.Name).ToArray();
+        }
+
         /// <summary>
         /// Gets a wallet given its name.
         /// </summary>

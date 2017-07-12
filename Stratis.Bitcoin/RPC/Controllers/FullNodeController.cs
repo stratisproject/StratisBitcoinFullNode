@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.RPC.Models;
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.BlockStore;
@@ -71,6 +72,13 @@ namespace Stratis.Bitcoin.RPC.Controllers
             }
             else
                 return new TransactionBriefModel(trx);
+        }
+
+        [ActionName("getblockcount")]
+        public int GetBlockCount()
+        {
+            var consensusLoop = this.FullNode.Services.ServiceProvider.GetRequiredService<ConsensusLoop>();
+            return consensusLoop.Tip.Height;
         }
 
         [ActionName("getinfo")]
