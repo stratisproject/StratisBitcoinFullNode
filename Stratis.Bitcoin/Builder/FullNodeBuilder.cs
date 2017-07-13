@@ -44,10 +44,10 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>Collection of features available to and/or used by the node.</summary>
         public IFeatureCollection Features { get; }
 
-        /// <summary>User defined node settings.</summary>
+        /// <inheritdoc />
         public NodeSettings NodeSettings { get; set; }
 
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        /// <inheritdoc />
         public Network Network { get; set; }
 
         /// <summary>Collection of DI services.</summary>
@@ -124,11 +124,7 @@ namespace Stratis.Bitcoin.Builder
             this.Features = features;
         }
 
-        /// <summary>
-        /// Adds features to the builder. 
-        /// </summary>
-        /// <param name="configureFeatures">A method that adds features to the collection.</param>
-        /// <returns>Full node builder interface to allow fluent code.</returns>
+        /// <inheritdoc />
         public IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures)
         {
             Guard.NotNull(configureFeatures, nameof(configureFeatures));
@@ -137,11 +133,7 @@ namespace Stratis.Bitcoin.Builder
             return this;
         }
 
-        /// <summary>
-        /// Adds services to the builder. 
-        /// </summary>
-        /// <param name="configureServices">A method that adds services to the builder.</param>
-        /// <returns>Full node builder interface to allow fluent code.</returns>
+        /// <inheritdoc />
         public IFullNodeBuilder ConfigureServices(Action<IServiceCollection> configureServices)
         {
             Guard.NotNull(configureServices, nameof(configureServices));
@@ -150,11 +142,7 @@ namespace Stratis.Bitcoin.Builder
             return this;
         }
 
-        /// <summary>
-        /// Add configurations for the service provider.
-        /// </summary>
-        /// <param name="configure">A method that configures the service provider.</param>
-        /// <returns>Full node builder interface to allow fluent code.</returns>
+        /// <inheritdoc />
         public IFullNodeBuilder ConfigureServiceProvider(Action<IServiceProvider> configure)
         {
             Guard.NotNull(configure, nameof(configure));
@@ -163,10 +151,7 @@ namespace Stratis.Bitcoin.Builder
             return this;
         }
 
-        /// <summary>
-        /// Constructs the full node with the required features, services, and settings.
-        /// </summary>
-        /// <returns>Initialized full node.</returns>
+        /// <inheritdoc />
         public IFullNode Build()
         {
             if (this.fullNodeBuilt)

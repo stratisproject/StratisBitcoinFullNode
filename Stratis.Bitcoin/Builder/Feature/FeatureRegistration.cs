@@ -59,20 +59,13 @@ namespace Stratis.Bitcoin.Builder.Feature
             this.FeatureType = typeof(TImplementation);
         }
 
-        /// <summary>
-        /// Type of the feature startup class. If it implements ConfigureServices method, 
-        /// it is invoked to configure the feature's services.
-        /// </summary>
+        /// <inheritdoc />
         public Type FeatureStartupType { get; private set; }
 
-        /// <summary>Type of the feature class.</summary>
+        /// <inheritdoc />
         public Type FeatureType { get; private set; }
 
-        /// <summary>
-        /// Initializes feature registration DI services and calls configuration delegates of each service
-        /// and the startup type.
-        /// </summary>
-        /// <param name="serviceCollection">Collection of feature registration's DI services.</param>
+        /// <inheritdoc />
         public void BuildFeature(IServiceCollection serviceCollection)
         {
             Guard.NotNull(serviceCollection, nameof(serviceCollection));
@@ -89,11 +82,7 @@ namespace Stratis.Bitcoin.Builder.Feature
                 FeatureStartup(serviceCollection, this.FeatureStartupType);
         }
 
-        /// <summary>
-        /// Initializes the list of delegates to configure DI services of the feature registration.
-        /// </summary>
-        /// <param name="configureServices">List of delegates to configure DI services of the feature registration.</param>
-        /// <returns>This interface to allow fluent code.</returns>
+        /// <inheritdoc />
         public IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
         {
             Guard.NotNull(configureServices, nameof(configureServices));
@@ -103,11 +92,7 @@ namespace Stratis.Bitcoin.Builder.Feature
             return this;
         }
 
-        /// <summary>
-        /// Sets the specific startup type to be used by the feature registration.
-        /// </summary>
-        /// <typeparam name="TStartup">Type of feature startup class to use.</typeparam>
-        /// <returns>This interface to allow fluent code.</returns>
+        /// <inheritdoc />
         public IFeatureRegistration UseStartup<TStartup>()
         {
             this.FeatureStartupType = typeof(TStartup);

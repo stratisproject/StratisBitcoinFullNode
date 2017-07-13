@@ -109,9 +109,7 @@ namespace Stratis.Bitcoin.Builder
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        /// <summary>
-        /// Triggered when the FullNode host has fully started.
-        /// </summary>
+        /// <inheritdoc />
         public override void Start()
         {
             this.StartAddressManager();
@@ -183,10 +181,7 @@ namespace Stratis.Bitcoin.Builder
            .Start(this.nodeLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
         }
 
-        /// <summary>
-        /// Triggered when the FullNode is performing a graceful shutdown.
-        /// Requests may still be in flight. Shutdown will block until this event completes.
-        /// </summary>
+        /// <inheritdoc />
         public override void Stop()
         {
             this.logger.LogInformation("FlushAddressManager stopped");

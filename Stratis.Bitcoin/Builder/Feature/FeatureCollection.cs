@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Builder.Feature
             this.featureRegistrations = new List<IFeatureRegistration>();
         }
 
-        /// <summary>List of features already registered in the collection.</summary>
+        /// <inheritdoc />
         public List<IFeatureRegistration> FeatureRegistrations
         {
             get
@@ -43,9 +43,7 @@ namespace Stratis.Bitcoin.Builder.Feature
             }
         }
 
-        /// <summary>Adds a new feature to the collection provided that the feature of the same type has not been added already.</summary>
-        /// <typeparam name="TImplementation">Type of the feature to be added to the collection.</typeparam>
-        /// <returns>Representation of the registered feature.</returns>
+        /// <inheritdoc />
         public IFeatureRegistration AddFeature<TImplementation>() where TImplementation : class, IFullNodeFeature
         {
             if (this.featureRegistrations.Any(f => f.FeatureType == typeof(TImplementation)))

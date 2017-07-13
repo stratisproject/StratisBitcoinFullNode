@@ -29,15 +29,10 @@
     /// </summary>
     public abstract class FullNodeFeature : IFullNodeFeature
     {
-        /// <summary>
-        /// Triggered when the FullNode host has fully started.
-        /// </summary>
+        /// <inheritdoc />
         public abstract void Start();
 
-        /// <summary>
-        /// Triggered when the FullNode is performing a graceful shutdown.
-        /// Requests may still be in flight. Shutdown will block until this event completes.
-        /// </summary>
+        /// <inheritdoc />
         public virtual void Stop()
         {
         }
