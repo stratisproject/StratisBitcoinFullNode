@@ -418,10 +418,11 @@ namespace Stratis.Bitcoin.Wallet.Controllers
                 var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
             }
-
+            var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+            
             try
             {
-                var transactionResult = this.walletManager.BuildTransaction(new WalletAccountReference(request.WalletName, request.AccountName), request.Password, request.DestinationAddress, request.Amount, FeeParser.Parse(request.FeeType), request.AllowUnconfirmed ? 0 : 1);
+                var transactionResult = this.walletManager.BuildTransaction(new WalletAccountReference(request.WalletName, request.AccountName), request.Password, destination, request.Amount, FeeParser.Parse(request.FeeType), request.AllowUnconfirmed ? 0 : 1);
                 var model = new WalletBuildTransactionModel
                 {
                     Hex = transactionResult.hex,

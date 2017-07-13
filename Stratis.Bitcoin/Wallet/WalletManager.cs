@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, string destinationAddress, Money amount, FeeType feeType, int minConfirmations)
+        public (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
             if (amount == Money.Zero)
             {
@@ -471,17 +471,6 @@ namespace Stratis.Bitcoin.Wallet
             // get the wallet and the account
             Wallet wallet = this.GetWalletByName(accountReference.WalletName);
             HdAccount account = this.GetAccounts(wallet).GetAccountByName(accountReference.AccountName);
-
-            // get script destination address
-            Script destinationScript = null;
-            try
-            {
-                destinationScript = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new BitcoinPubKeyAddress(destinationAddress, wallet.Network));
-            }
-            catch
-            {
-                throw new WalletException("Invalid address.");
-            }
 
             // get a list of transactions outputs that have not been spent
             var spendableTransactions = account.GetSpendableTransactions().ToList();
