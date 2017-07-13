@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
     {
         private readonly ILogger logger;
 
-        public ConsensusController(ILoggerFactory loggerFactory, ChainBehavior.ChainState chainState = null,
+        public ConsensusController(ILoggerFactory loggerFactory, ChainState chainState = null,
             ConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
             : base(chainState: chainState, consensusLoop: consensusLoop, chain: chain)
         {

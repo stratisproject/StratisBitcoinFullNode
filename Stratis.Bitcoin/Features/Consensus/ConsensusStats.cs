@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private BackendPerformanceSnapshot lastSnapshot2;
         private CachePerformanceSnapshot lastSnapshot3;
         private readonly ConsensusLoop consensusLoop;
-        private readonly ChainBehavior.ChainState chainState;
+        private readonly ChainState chainState;
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             CoinViewStack stack, 
             CoinView coinView, 
             ConsensusLoop consensusLoop, 
-            ChainBehavior.ChainState chainState, 
+            ChainState chainState, 
             ConcurrentChain chain, 
             IConnectionManager connectionManager,
             ILogger logger)

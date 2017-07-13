@@ -26,14 +26,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 	    private readonly BlockStoreStats blockStoreStats;
 	    private readonly ILogger storeLogger;
 
-        public ChainBehavior.ChainState ChainState { get; }
+        public ChainState ChainState { get; }
 		public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 	    public ChainedBlock StoredBlock { get; private set; }
 
         public BlockStoreLoop(ConcurrentChain chain, 
             BlockRepository blockRepository, 
             NodeSettings nodeArgs,
-			ChainBehavior.ChainState chainState,
+			ChainState chainState,
 			StoreBlockPuller blockPuller,
             BlockStoreCache cache,
             INodeLifetime nodeLifetime,

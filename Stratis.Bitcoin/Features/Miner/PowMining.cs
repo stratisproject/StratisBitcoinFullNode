@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Miner
 		private readonly IDateTimeProvider dateTimeProvider;
 		private readonly AssemblerFactory blockAssemblerFactory;
 		private readonly BlockRepository blockRepository;
-		private readonly ChainBehavior.ChainState chainState;
+		private readonly ChainState chainState;
 		private readonly Signals.Signals signals;
 	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Miner
 			IDateTimeProvider dateTimeProvider, 
             AssemblerFactory blockAssemblerFactory, 
             BlockRepository blockRepository,
-			ChainBehavior.ChainState chainState, 
+			ChainState chainState, 
             Signals.Signals signals, 
             INodeLifetime nodeLifetime, 
             IAsyncLoopFactory asyncLoopFactory,

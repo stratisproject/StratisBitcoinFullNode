@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Base
         private readonly List<IDisposable> disposableResources = new List<IDisposable>();
 
         /// <summary>Information about node's chain.</summary>
-        private readonly ChainBehavior.ChainState chainState;
+        private readonly ChainState chainState;
 
         /// <summary>Access to the database of blocks.</summary>
         private readonly ChainRepository chainRepository;
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Base
             Network network,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
-            ChainBehavior.ChainState chainState,
+            ChainState chainState,
             IConnectionManager connectionManager,
             ChainRepository chainRepository,
             ILoggerFactory loggerFactory)
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Base
 
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.nodeSettings.Mempool.RelayTxes;
-            connectionParameters.TemplateBehaviors.Add(new ChainBehavior(this.chain, this.chainState));
+            connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
 
             this.disposableResources.Add(this.nodeSettings.LoggerFactory);
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
                     services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network));
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
-                    services.AddSingleton<ChainBehavior.ChainState>();
+                    services.AddSingleton<ChainState>();
                     services.AddSingleton<ChainRepository>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();

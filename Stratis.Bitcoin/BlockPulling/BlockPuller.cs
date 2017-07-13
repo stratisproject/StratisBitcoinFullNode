@@ -6,8 +6,8 @@ using NBitcoin;
 using System.Collections.Concurrent;
 using NBitcoin.Protocol.Behaviors;
 using System.Threading;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
-using ChainBehavior = Stratis.Bitcoin.Base.ChainBehavior;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.BlockPulling
             public ICollection<uint256> PendingDownloads => this.pendingDownloads.Values;
 
             private readonly BlockPuller puller;
-            public ChainBehavior ChainBehavior { get; private set; }
+            public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }
 
             public BlockPuller Puller => this.puller;
 
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.BlockPulling
             protected override void AttachCore()
             {
                 this.AttachedNode.MessageReceived += Node_MessageReceived;
-                this.ChainBehavior = this.AttachedNode.Behaviors.Find<ChainBehavior>();
+                this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
                 AssignPendingVector();
             }
 
@@ -263,13 +263,13 @@ namespace Stratis.Bitcoin.BlockPulling
                 return;
 
             // Be careful to not ask block to a node that do not have it 
-            // (we can check the ChainBehavior.PendingTip to know where the node is standing)
+            // (we can check the ChainHeadersBehavior.PendingTip to know where the node is standing)
             var selectnodes = new List<BlockPullerBehavior>();
             foreach (BlockPullerBehavior behavior in innernodes)
             {
                 // filter nodes that are still behind using the 
                 // pending tip in the chain behaviour
-                if (behavior.ChainBehavior?.PendingTip?.Height >= minHight)
+                if (behavior.ChainHeadersBehavior?.PendingTip?.Height >= minHight)
                     selectnodes.Add(behavior);
             }
             innernodes = selectnodes.ToArray();

@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Network network = null,
             PowConsensusValidator consensusValidator = null,
             ConcurrentChain chain = null,
-            ChainBehavior.ChainState chainState = null,
+            ChainState chainState = null,
             BlockStoreManager blockManager = null,
             MempoolManager mempoolManager = null,
             Connection.IConnectionManager connectionManager = null)

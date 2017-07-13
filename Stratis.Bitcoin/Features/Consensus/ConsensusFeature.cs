@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 		private readonly PowConsensusValidator consensusValidator;
 		private readonly LookaheadBlockPuller blockPuller;
 		private readonly CoinView coinView;
-		private readonly ChainBehavior.ChainState chainState;
+		private readonly ChainState chainState;
 		private readonly IConnectionManager connectionManager;
 	    private readonly INodeLifetime nodeLifetime;
 	    private readonly Signals.Signals signals;
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 			ConcurrentChain chain,
 			LookaheadBlockPuller blockPuller,
 			CoinView coinView,
-			ChainBehavior.ChainState chainState,
+			ChainState chainState,
 			IConnectionManager connectionManager,
             INodeLifetime nodeLifetime,
 			Signals.Signals signals,
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
 						//Set the PoW chain back to ConsensusLoop.Tip
 						this.chain.SetTip(this.consensusLoop.Tip);
-                        //Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
+                        //Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed
 					    this.logger.LogError("Marking block as invalid");
 						this.chainState.MarkBlockInvalid(block.Block.GetHash());
 					}

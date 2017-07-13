@@ -7,9 +7,9 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
-using ChainBehavior = Stratis.Bitcoin.Base.ChainBehavior;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			var headers = new List<BlockHeader>();
 			var inventoryBlockToSend = new List<uint256>();
 
-			var chainBehavior = node.Behavior<ChainBehavior>();
+			var chainBehavior = node.Behavior<ChainHeadersBehavior>();
 			ChainedBlock bestIndex = null;
 			if (!revertToInv)
 			{

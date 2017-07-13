@@ -7,9 +7,9 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
-using ChainBehavior = Stratis.Bitcoin.Base.ChainBehavior;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 		private readonly MempoolManager manager;
 		private readonly MempoolOrphans orphans;
 		private readonly IConnectionManager connectionManager;
-		private readonly ChainBehavior.ChainState chainState;
+		private readonly ChainState chainState;
 		private readonly Signals.Signals signals;
 	    private readonly ILogger logger;
 
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 	        MempoolManager manager,
 	        MempoolOrphans orphans,
 	        IConnectionManager connectionManager,
-	        ChainBehavior.ChainState chainState,
+	        ChainState chainState,
 	        Signals.Signals signals,
 	        ILogger logger)
 	    {
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolManager manager, 
             MempoolOrphans orphans, 
 			IConnectionManager connectionManager, 
-            ChainBehavior.ChainState chainState, 
+            ChainState chainState, 
             Signals.Signals signals, 
             ILoggerFactory loggerFactory)
             :this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))

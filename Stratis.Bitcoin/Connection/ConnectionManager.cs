@@ -8,12 +8,12 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
-using ChainBehavior = Stratis.Bitcoin.Base.ChainBehavior;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -200,12 +200,12 @@ namespace Stratis.Bitcoin.Connection
 			foreach (Node node in this.ConnectedNodes)
 			{
 				ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
-				ChainBehavior chainBehavior = node.Behavior<ChainBehavior>();
+				ChainHeadersBehavior chainHeadersBehavior = node.Behavior<ChainHeadersBehavior>();
 				builder.AppendLine(
 					"Node:" + (node.RemoteInfo() + ", ").PadRight(LogsExtension.ColumnLength + 15) +
 					(" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LogsExtension.ColumnLength + 7) +
 					(" agent " + node.PeerVersion.UserAgent + ", ").PadRight(LogsExtension.ColumnLength + 2) +
-					" height=" + chainBehavior.PendingTip.Height);
+					" height=" + chainHeadersBehavior.PendingTip.Height);
 			}
 			return builder.ToString();
 		}

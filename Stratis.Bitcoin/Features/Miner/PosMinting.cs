@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Miner
 		private readonly IDateTimeProvider dateTimeProvider;
 		private readonly AssemblerFactory blockAssemblerFactory;
 		private readonly BlockRepository blockRepository;
-		private readonly ChainBehavior.ChainState chainState;
+		private readonly ChainState chainState;
 		private readonly Signals.Signals signals;
 	    private readonly INodeLifetime nodeLifetime;
 	    private readonly NodeSettings settings;
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Miner
 			IDateTimeProvider dateTimeProvider, 
             AssemblerFactory blockAssemblerFactory, 
             BlockRepository blockRepository,
-			ChainBehavior.ChainState chainState, 
+			ChainState chainState, 
             Signals.Signals signals, INodeLifetime nodeLifetime,
 			NodeSettings settings, 
             CoinView coinView, 
@@ -262,13 +262,13 @@ namespace Stratis.Bitcoin.Features.Miner
 
 			// ask peers for thier headers
 			foreach (var node in this.connection.ConnectedNodes)
-				node.Behavior<ChainBehavior>().TrySync();
+				node.Behavior<ChainHeadersBehavior>().TrySync();
 
 			// wait for all peers to accept the block
 			var retry = 0;
 			foreach (var node in this.connection.ConnectedNodes)
 			{
-				var chainBehaviour = node.Behavior<ChainBehavior>();
+				var chainBehaviour = node.Behavior<ChainHeadersBehavior>();
 				while (++retry < 100 && chainBehaviour.PendingTip != this.chain.Tip)
 					Thread.Sleep(1000);
 			}

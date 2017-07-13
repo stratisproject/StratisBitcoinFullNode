@@ -14,10 +14,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 		private readonly IDateTimeProvider dateTimeProvider;
 		private readonly NodeSettings nodeArgs;
-		public ChainBehavior.ChainState ChainState { get; }
+		public ChainState ChainState { get; }
 
 		public BlockStoreManager(ConcurrentChain chain, IConnectionManager connection, BlockRepository blockRepository,
-            IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, ChainBehavior.ChainState chainState, BlockStoreLoop blockStoreLoop)
+            IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, ChainState chainState, BlockStoreLoop blockStoreLoop)
 		{
 			this.chain = chain;
 			this.connection = connection;

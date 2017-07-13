@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private readonly BlockStoreLoop storeLoop;
 		private readonly ConcurrentChain chain;
 		private readonly NodeSettings nodeArgs;
-		private readonly ChainBehavior.ChainState chainState;
+		private readonly ChainState chainState;
 		private readonly IConnectionManager connection;
 	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 	    private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeSettings nodeArgs, 
-			ChainBehavior.ChainState chainState, IConnectionManager connection, 
+			ChainState chainState, IConnectionManager connection, 
             INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
 		{
 			this.storeLoop = storeLoop;

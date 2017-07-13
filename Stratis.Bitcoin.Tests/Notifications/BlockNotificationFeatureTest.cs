@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
                 .Returns(new NodeConnectionParameters());
             
 			var chain = new Mock<ConcurrentChain>();
-			var chainState = new Mock<ChainBehavior.ChainState>(new Mock<FullNode>().Object);
+			var chainState = new Mock<ChainState>(new Mock<FullNode>().Object);
 			var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object);
 			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 

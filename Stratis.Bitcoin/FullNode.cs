@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin
 
 		public List<IDisposable> Resources { get; private set; }
 
-		public ChainBehavior.ChainState ChainBehaviorState { get; private set; }
+		public ChainState ChainBehaviorState { get; private set; }
 
 		public Signals.Signals Signals { get; set; }
 
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin
 			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
 			this.Network = this.Services.ServiceProvider.GetService<Network>();
 			this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
-			this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainBehavior.ChainState>();
+			this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainState>();
 			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
 			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
 			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();

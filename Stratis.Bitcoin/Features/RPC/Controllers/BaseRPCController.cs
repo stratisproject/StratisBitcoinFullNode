@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         protected PowConsensusValidator ConsensusValidator;
         protected ConsensusLoop ConsensusLoop;
         protected ChainBase Chain;
-        protected ChainBehavior.ChainState ChainState;
+        protected ChainState ChainState;
         protected BlockStoreManager BlockManager;
         protected MempoolManager MempoolManager;
         protected Connection.IConnectionManager ConnectionManager;
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             PowConsensusValidator consensusValidator = null,
             ConsensusLoop consensusLoop = null,
             ConcurrentChain chain = null,
-            ChainBehavior.ChainState chainState = null,
+            ChainState chainState = null,
             BlockStoreManager blockManager = null,
             MempoolManager mempoolManager = null,
             Connection.IConnectionManager connectionManager = null)
