@@ -67,15 +67,15 @@ namespace Stratis.Bitcoin.Consensus
             if (this.lookaheadPuller != null)
             {
                 benchLogs.AppendLine("======Block Puller======");
-                benchLogs.AppendLine("Lookahead:".PadRight(LogsExtention.ColumnLength) + this.lookaheadPuller.ActualLookahead + " blocks");
-                benchLogs.AppendLine("Downloaded:".PadRight(LogsExtention.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
+                benchLogs.AppendLine("Lookahead:".PadRight(LogsExtension.ColumnLength) + this.lookaheadPuller.ActualLookahead + " blocks");
+                benchLogs.AppendLine("Downloaded:".PadRight(LogsExtension.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
                 benchLogs.AppendLine("==========================");
             }
-            benchLogs.AppendLine("Persistent Tip:".PadRight(LogsExtention.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().Result).Height);
+            benchLogs.AppendLine("Persistent Tip:".PadRight(LogsExtension.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().Result).Height);
             if (this.cache != null)
             {
-                benchLogs.AppendLine("Cache Tip".PadRight(LogsExtention.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().Result).Height);
-                benchLogs.AppendLine("Cache entries".PadRight(LogsExtention.ColumnLength) + this.cache.CacheEntryCount);
+                benchLogs.AppendLine("Cache Tip".PadRight(LogsExtension.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().Result).Height);
+                benchLogs.AppendLine("Cache entries".PadRight(LogsExtension.ColumnLength) + this.cache.CacheEntryCount);
             }
 
             var snapshot = this.consensusLoop.Validator.PerformanceCounter.Snapshot();

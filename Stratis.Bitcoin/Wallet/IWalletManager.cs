@@ -187,6 +187,12 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         /// <returns></returns>
         string GetWalletFileExtension();
+
+        /// <summary>
+        /// Get all the wallets name
+        /// </summary>
+        /// <returns></returns>
+        string[] GetWallets();
         
         /// <summary>
         /// Updates the wallet with the height of the last block synced.

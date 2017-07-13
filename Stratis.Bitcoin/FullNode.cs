@@ -209,23 +209,23 @@ namespace Stratis.Bitcoin
 
 					benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
 					                     this.ConnectionManager.Parameters.UserAgent);
-					benchLogs.AppendLine("Headers.Height: ".PadRight(LogsExtention.ColumnLength + 3) +
+					benchLogs.AppendLine("Headers.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 					                     this.Chain.Tip.Height.ToString().PadRight(8) +
-					                     " Headers.Hash: ".PadRight(LogsExtention.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+					                     " Headers.Hash: ".PadRight(LogsExtension.ColumnLength + 3) + this.Chain.Tip.HashBlock);
 
 					if (this.ConsensusLoop != null)
 					{
-						benchLogs.AppendLine("Consensus.Height: ".PadRight(LogsExtention.ColumnLength + 3) +
+						benchLogs.AppendLine("Consensus.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) +
-						                     " Consensus.Hash: ".PadRight(LogsExtention.ColumnLength + 3) +
+						                     " Consensus.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
 					}
 
 					if (this.ChainBehaviorState.HighestPersistedBlock != null)
 					{
-						benchLogs.AppendLine("Store.Height: ".PadRight(LogsExtention.ColumnLength + 3) +
+						benchLogs.AppendLine("Store.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) +
-						                     " Store.Hash: ".PadRight(LogsExtention.ColumnLength + 3) +
+						                     " Store.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 					}
 
@@ -235,9 +235,9 @@ namespace Stratis.Bitcoin
 					    var block = this.Chain.GetBlock(height);
 					    var hashBlock = block == null ? uint256.Zero : block.HashBlock;
 
-                        benchLogs.AppendLine("Wallet.Height: ".PadRight(LogsExtention.ColumnLength + 3) +
+                        benchLogs.AppendLine("Wallet.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     height.ToString().PadRight(8) +
-											 " Wallet.Hash: ".PadRight(LogsExtention.ColumnLength + 3) +
+											 " Wallet.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
                                              hashBlock);
 					}
 
