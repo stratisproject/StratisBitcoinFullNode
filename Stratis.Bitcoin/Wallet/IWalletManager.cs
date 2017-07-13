@@ -98,10 +98,9 @@ namespace Stratis.Bitcoin.Wallet
         /// <summary>
         /// Gets an address that contains no transaction.
         /// </summary>
-        /// <param name="walletName">The name of the wallet in which this address is contained.</param>
-        /// <param name="accountName">The name of the account in which this address is contained.</param>
+        /// <param name="accountReference">The name of the wallet and account</param>
         /// <returns>An unused address or a newly created address, in Base58 format.</returns>
-        HdAddress GetUnusedAddress(string walletName, string accountName);
+        HdAddress GetUnusedAddress(WalletAccountReference accountReference);
 
         /// <summary>
         /// Gets a collection of addresses containing transactions for this coin.
@@ -134,15 +133,14 @@ namespace Stratis.Bitcoin.Wallet
         /// <summary>
         /// Builds a transaction to be sent to the network.
         /// </summary>
-        /// <param name="walletName">The name of the wallet in which this address is contained.</param>
-        /// <param name="accountName">The name of the account in which this address is contained.</param>
+        /// <param name="accountReference">The name of the wallet and account</param>
         /// <param name="password">The password used to decrypt the private key.</param>
-        /// <param name="destinationAddress">The destination address to send the funds to.</param>
+        /// <param name="destinationScript">The destination to send the funds to.</param>
         /// <param name="amount">The amount of funds to be sent.</param>
         /// <param name="feeType">The type of fee to be included.</param>
         /// <param name="minConfirmations">The minimum number of confirmations we require for unspent outputs to be included.</param>
         /// <returns></returns>
-        (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, FeeType feeType, int minConfirmations);
+        (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations);
 
         /// <summary>
         /// Remove all the thransactions in the wallet that are above this block height
@@ -187,6 +185,12 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         /// <returns></returns>
         string GetWalletFileExtension();
+
+        /// <summary>
+        /// Get all the wallets name
+        /// </summary>
+        /// <returns></returns>
+        string[] GetWallets();
         
         /// <summary>
         /// Updates the wallet with the height of the last block synced.

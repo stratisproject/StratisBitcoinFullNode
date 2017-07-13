@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Logging
 {
-    public static class LogsExtention
+    public static class LogsExtension
     {
         public static void AddFilters(this ILoggerFactory loggerFactory, LogSettings settings)
         {

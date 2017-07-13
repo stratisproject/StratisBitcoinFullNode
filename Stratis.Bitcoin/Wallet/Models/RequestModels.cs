@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using NBitcoin;
+using Stratis.Bitcoin.Wallet.Validations;
 
 namespace Stratis.Bitcoin.Wallet.Models
 {
@@ -99,6 +101,7 @@ namespace Stratis.Bitcoin.Wallet.Models
         public string Password { get; set; }
 
         [Required(ErrorMessage = "A destination address is required.")]
+        [IsBitcoinAddress()]
         public string DestinationAddress { get; set; }
 
         [Required(ErrorMessage = "An amount is required.")]

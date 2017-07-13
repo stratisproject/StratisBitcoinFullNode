@@ -256,12 +256,12 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public HdAddress GetUnusedAddress(string walletName, string accountName)
+        public HdAddress GetUnusedAddress(WalletAccountReference accountReference)
         {
-            Wallet wallet = this.GetWalletByName(walletName);
+            Wallet wallet = this.GetWalletByName(accountReference.WalletName);
 
             // get the account
-            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).GetAccountByName(accountName);
+            HdAccount account =  GetAccounts(wallet).GetAccountByName(accountReference.AccountName);
 
             // validate address creation
             if (account.ExternalAddresses.Any())
@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, FeeType feeType, int minConfirmations)
+        public (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
             if (amount == Money.Zero)
             {
@@ -469,19 +469,8 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             // get the wallet and the account
-            Wallet wallet = this.GetWalletByName(walletName);
-            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).GetAccountByName(accountName);
-
-            // get script destination address
-            Script destinationScript = null;
-            try
-            {
-                destinationScript = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new BitcoinPubKeyAddress(destinationAddress, wallet.Network));
-            }
-            catch
-            {
-                throw new WalletException("Invalid address.");
-            }
+            Wallet wallet = this.GetWalletByName(accountReference.WalletName);
+            HdAccount account = this.GetAccounts(wallet).GetAccountByName(accountReference.AccountName);
 
             // get a list of transactions outputs that have not been spent
             var spendableTransactions = account.GetSpendableTransactions().ToList();
@@ -537,6 +526,11 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             return (tx.ToHex(), tx.GetHash(), calculationResult.fee);
+        }
+
+        private AccountRoot GetAccounts(Wallet wallet)
+        {
+            return wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
         }
 
         /// <summary>
@@ -1049,6 +1043,11 @@ namespace Stratis.Bitcoin.Wallet
                 }
             }
             this.keysLookup = lookup;
+        }
+
+        public string[] GetWallets()
+        {
+            return this.Wallets.Select(w => w.Name).ToArray();
         }
 
         /// <summary>

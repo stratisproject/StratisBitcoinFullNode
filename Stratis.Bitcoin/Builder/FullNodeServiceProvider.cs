@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>List of registered feature types.</summary>
         private readonly List<Type> featureTypes;
 
-        /// <summary>List of registered features.</summary>
+        /// <inheritdoc />
         public IEnumerable<IFullNodeFeature> Features
         {
             get
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Builder
             }
         }
 
-        /// <summary>Provider to registered services.</summary>
+        /// <inheritdoc />
         public IServiceProvider ServiceProvider { get; }
 
         /// <summary>

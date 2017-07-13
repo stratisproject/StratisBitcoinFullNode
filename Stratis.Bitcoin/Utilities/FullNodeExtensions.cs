@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Reflection;
+#if !NOASSEMBLYCONTEXT
 using System.Runtime.Loader;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -35,10 +37,11 @@ namespace Stratis.Bitcoin.Utilities
 
 					done.Wait();
 				};
-
-				var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
+#if !NOASSEMBLYCONTEXT
+                var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
 				assemblyLoadContext.Unloading += context => shutdown();
-				Console.CancelKeyPress += (sender, eventArgs) =>
+#endif
+                Console.CancelKeyPress += (sender, eventArgs) =>
 				{
 					shutdown();
 					// Don't terminate the process immediately, wait for the Main thread to exit gracefully.

@@ -47,9 +47,7 @@ namespace Stratis.Bitcoin.Builder
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        /// <summary>
-        /// Starts all registered features of the associated full node.
-        /// </summary>
+        /// <inheritdoc />
         public void Start()
         {
             try
@@ -63,9 +61,7 @@ namespace Stratis.Bitcoin.Builder
             }
         }
 
-        /// <summary>
-        /// Stops all registered features of the associated full node.
-        /// </summary>
+        /// <inheritdoc />
         public void Stop()
         {
             try

@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>Locations of important folders and files on disk.</summary>
         private readonly DataFolder dataFolder;
 
-        /// <summary>Specification of the network the node runs on - regtest/testnet/default.</summary>
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
         /// <summary>Thread safe chain of block headers from genesis.</summary>
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Builder
         /// </summary>
         /// <param name="nodeSettings">User defined node settings.</param>
         /// <param name="dataFolder">Locations of important folders and files on disk.</param>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/default.</param>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
         /// <param name="chain">Thread safe chain of block headers from genesis.</param>
         /// <param name="chainState">Information about node's chain.</param>
@@ -109,9 +109,7 @@ namespace Stratis.Bitcoin.Builder
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        /// <summary>
-        /// Triggered when the FullNode host has fully started.
-        /// </summary>
+        /// <inheritdoc />
         public override void Start()
         {
             this.StartAddressManager();
@@ -183,10 +181,7 @@ namespace Stratis.Bitcoin.Builder
            .Start(this.nodeLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
         }
 
-        /// <summary>
-        /// Triggered when the FullNode is performing a graceful shutdown.
-        /// Requests may still be in flight. Shutdown will block until this event completes.
-        /// </summary>
+        /// <inheritdoc />
         public override void Stop()
         {
             this.logger.LogInformation("FlushAddressManager stopped");
