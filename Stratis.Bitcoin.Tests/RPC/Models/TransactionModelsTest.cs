@@ -1,14 +1,13 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.RPC.Models;
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
-using Stratis.Bitcoin.RPC;
 using System.IO;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Features.RPC.Models;
 
 namespace Stratis.Bitcoin.Tests.RPC.Models
 {

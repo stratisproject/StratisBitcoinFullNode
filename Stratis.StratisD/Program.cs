@@ -5,13 +5,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Logging;
-using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 

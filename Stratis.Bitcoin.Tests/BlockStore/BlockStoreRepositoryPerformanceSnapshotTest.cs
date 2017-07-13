@@ -1,7 +1,7 @@
-﻿using Stratis.Bitcoin.BlockStore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Stratis.Bitcoin.Features.BlockStore;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockStore

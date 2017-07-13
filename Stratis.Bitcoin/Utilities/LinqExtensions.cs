@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
-namespace System.Linq
+namespace Stratis.Bitcoin.Utilities
 {
     public static class LinqExtensions
     {

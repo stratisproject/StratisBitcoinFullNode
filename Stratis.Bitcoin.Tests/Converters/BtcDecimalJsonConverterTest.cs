@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.RPC.Converters;
+using Stratis.Bitcoin.Features.RPC.Converters;
 using Xunit;
 using Xunit.Abstractions;
 

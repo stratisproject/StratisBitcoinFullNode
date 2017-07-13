@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Moq;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.RPC;
+using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC

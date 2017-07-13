@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.RPC.Controllers;
-using Stratis.Bitcoin.RPC.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Features.RPC.Models;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.RPC.Controller
