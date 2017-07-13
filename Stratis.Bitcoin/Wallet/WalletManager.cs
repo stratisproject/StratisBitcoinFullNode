@@ -256,12 +256,12 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public HdAddress GetUnusedAddress(string walletName, string accountName)
+        public HdAddress GetUnusedAddress(WalletAccountReference accountReference)
         {
-            Wallet wallet = this.GetWalletByName(walletName);
+            Wallet wallet = this.GetWalletByName(accountReference.WalletName);
 
             // get the account
-            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).GetAccountByName(accountName);
+            HdAccount account =  GetAccounts(wallet).GetAccountByName(accountReference.AccountName);
 
             // validate address creation
             if (account.ExternalAddresses.Any())
@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Wallet
         }
 
         /// <inheritdoc />
-        public (string hex, uint256 transactionId, Money fee) BuildTransaction(string walletName, string accountName, string password, string destinationAddress, Money amount, FeeType feeType, int minConfirmations)
+        public (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, string destinationAddress, Money amount, FeeType feeType, int minConfirmations)
         {
             if (amount == Money.Zero)
             {
@@ -469,8 +469,8 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             // get the wallet and the account
-            Wallet wallet = this.GetWalletByName(walletName);
-            HdAccount account = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).GetAccountByName(accountName);
+            Wallet wallet = this.GetWalletByName(accountReference.WalletName);
+            HdAccount account = this.GetAccounts(wallet).GetAccountByName(accountReference.AccountName);
 
             // get script destination address
             Script destinationScript = null;
@@ -537,6 +537,11 @@ namespace Stratis.Bitcoin.Wallet
             }
 
             return (tx.ToHex(), tx.GetHash(), calculationResult.fee);
+        }
+
+        private AccountRoot GetAccounts(Wallet wallet)
+        {
+            return wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
         }
 
         /// <summary>
