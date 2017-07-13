@@ -1181,7 +1181,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
             var key = new Key();
-            mockWalletWrapper.Setup(m => m.BuildTransaction(new WalletAccountReference("myWallet", "Account 1"), "test", key.PubKey.GetAddress(Network.Main).ToString(), new Money(150000), FeeType.High, 0))
+            mockWalletWrapper.Setup(m => m.BuildTransaction(new WalletAccountReference("myWallet", "Account 1"), "test", key.PubKey.GetAddress(Network.Main).ScriptPubKey, new Money(150000), FeeType.High, 0))
                 .Returns(("hexString", new uint256(15), new Money(150)));
 
 
@@ -1211,7 +1211,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
             var key = new Key();
-            mockWalletWrapper.Setup(m => m.BuildTransaction(new WalletAccountReference("myWallet", "Account 1"), "test", key.PubKey.GetAddress(Network.Main).ToString(), new Money(150000), FeeType.High, 1))
+            mockWalletWrapper.Setup(m => m.BuildTransaction(new WalletAccountReference("myWallet", "Account 1"), "test", key.PubKey.GetAddress(Network.Main).ScriptPubKey, new Money(150000), FeeType.High, 1))
                 .Returns(("hexString", new uint256(15), new Money(150)));
 
             var controller = new WalletController(mockWalletWrapper.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>());
@@ -1262,7 +1262,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
             var key = new Key();
-            mockWalletWrapper.Setup(m => m.BuildTransaction(new WalletAccountReference("myWallet", "Account 1"), "test", key.PubKey.GetAddress(Network.Main).ToString(), new Money(150000), FeeType.High, 1))
+            mockWalletWrapper.Setup(m => m.BuildTransaction(new WalletAccountReference("myWallet", "Account 1"), "test", key.PubKey.GetAddress(Network.Main).ScriptPubKey, new Money(150000), FeeType.High, 1))
                 .Throws(new InvalidOperationException("Issue building transaction."));
 
             var controller = new WalletController(mockWalletWrapper.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>());

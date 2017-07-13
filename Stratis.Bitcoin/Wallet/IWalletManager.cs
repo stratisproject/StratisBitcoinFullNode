@@ -135,12 +135,12 @@ namespace Stratis.Bitcoin.Wallet
         /// </summary>
         /// <param name="accountReference">The name of the wallet and account</param>
         /// <param name="password">The password used to decrypt the private key.</param>
-        /// <param name="destinationAddress">The destination address to send the funds to.</param>
+        /// <param name="destinationScript">The destination to send the funds to.</param>
         /// <param name="amount">The amount of funds to be sent.</param>
         /// <param name="feeType">The type of fee to be included.</param>
         /// <param name="minConfirmations">The minimum number of confirmations we require for unspent outputs to be included.</param>
         /// <returns></returns>
-        (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, string destinationAddress, Money amount, FeeType feeType, int minConfirmations);
+        (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations);
 
         /// <summary>
         /// Remove all the thransactions in the wallet that are above this block height

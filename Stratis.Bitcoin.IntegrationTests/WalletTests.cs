@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // send coins to the receiver
                 var sendto = stratisReceiver.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var trx = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.Address, Money.COIN * 100, FeeType.Medium, 101);
+                var trx = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101);
 
                 // broadcast to the other node
                 stratisSender.FullNode.WalletManager.SendTransaction(trx.hex);
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // ====================
                 // send coins to the receiver
                 var sendto = stratisReceiver.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var transaction1 = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.Address, Money.COIN * 100, FeeType.Medium, 101);
+                var transaction1 = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101);
 
                 // broadcast to the other node
                 stratisSender.FullNode.WalletManager.SendTransaction(transaction1.hex);
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // send more coins to the wallet
                 sendto = stratisReceiver.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var transaction2 = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.Address, Money.COIN * 10, FeeType.Medium, 101);
+                var transaction2 = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 101);
                 stratisSender.FullNode.WalletManager.SendTransaction(transaction2.hex);
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
