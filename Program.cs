@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Threading;
 using Breeze.Api;
-using Breeze.TumbleBit;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -11,14 +9,13 @@ using Stratis.Bitcoin.Logging;
 using Breeze.Wallet;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockStore;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.Miner;
-using Stratis.Bitcoin.Notifications;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Wallet;
-using Stratis.Bitcoin.WatchOnlyWallet;
 
 namespace Breeze.Daemon
 {
