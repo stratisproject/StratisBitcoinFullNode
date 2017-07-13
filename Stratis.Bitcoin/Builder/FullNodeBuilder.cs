@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>User defined node settings.</summary>
         public NodeSettings NodeSettings { get; set; }
 
-        /// <summary>Specification of the network the node runs on - regtest/testnet/default.</summary>
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; set; }
 
         /// <summary>Collection of DI services.</summary>

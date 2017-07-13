@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.Builder
         
         /// <summary>Access to DI services and features registered for the full node.</summary>
         IFullNodeServiceProvider Services { get; }
-        
-        /// <summary>Specification of the network the node runs on - regtest/testnet/default.</summary>
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         NBitcoin.Network Network { get; }
 
         /// <summary>Software version of the full node.</summary>

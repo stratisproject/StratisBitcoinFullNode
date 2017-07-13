@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.Builder.Feature
         void BuildFeature(IServiceCollection serviceCollection);
 
         /// <summary>
-        /// Initializes the list of delagates to configure DI services of the feature registration.
+        /// Initializes the list of delegates to configure DI services of the feature registration.
         /// </summary>
-        /// <param name="configureServices">List of deleages to configure DI services of the feature registration.</param>
+        /// <param name="configureServices">List of delegates to configure DI services of the feature registration.</param>
         /// <returns>This interface to allow fluent code.</returns>
         IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices);
 
@@ -90,9 +90,9 @@ namespace Stratis.Bitcoin.Builder.Feature
         }
 
         /// <summary>
-        /// Initializes the list of delagates to configure DI services of the feature registration.
+        /// Initializes the list of delegates to configure DI services of the feature registration.
         /// </summary>
-        /// <param name="configureServices">List of deleages to configure DI services of the feature registration.</param>
+        /// <param name="configureServices">List of delegates to configure DI services of the feature registration.</param>
         /// <returns>This interface to allow fluent code.</returns>
         public IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
         {
