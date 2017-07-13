@@ -4,7 +4,6 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.RPC.Controllers;
 using Microsoft.Extensions.Logging;
 using System;
@@ -16,9 +15,11 @@ namespace Stratis.Bitcoin.RPC
         private readonly FullNode fullNode;
         private readonly NodeSettings nodeSettings;
         private readonly ILogger logger;
+        private readonly IFullNodeBuilder fullNodeBuilder;
 
-        public RPCFeature(FullNode fullNode, NodeSettings nodeSettings, ILoggerFactory loggerFactory)
+        public RPCFeature(IFullNodeBuilder fullNodeBuilder, FullNode fullNode, NodeSettings nodeSettings, ILoggerFactory loggerFactory)
         {
+            this.fullNodeBuilder = fullNodeBuilder;
             this.fullNode = fullNode;
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.RPC
         public override void Start()
         {
             if (this.nodeSettings.RPC != null)
-            {
+            {                
                 // TODO: The web host wants to create IServiceProvider, so build (but not start) 
                 // earlier, if you want to use dependency injection elsewhere
                 this.fullNode.RPCHost = new WebHostBuilder()
@@ -36,10 +37,29 @@ namespace Stratis.Bitcoin.RPC
                 .ForFullNode(this.fullNode)
                 .UseUrls(this.nodeSettings.RPC.GetUrls())
                 .UseIISIntegration()
+                .ConfigureServices(collection =>
+                {
+                    if (this.fullNodeBuilder != null && this.fullNodeBuilder.Services != null && this.fullNode != null)
+                    {
+                        // copies all the services defined for the full node to the Api.
+                        // also copies over singleton instances already defined
+                        foreach (var service in this.fullNodeBuilder.Services)
+                        {
+                            var obj = this.fullNode.Services.ServiceProvider.GetService(service.ServiceType);
+                            if (obj != null && service.Lifetime == ServiceLifetime.Singleton && service.ImplementationInstance == null)
+                            {
+                                collection.AddSingleton(service.ServiceType, obj);
+                            }
+                            else
+                            {
+                                collection.Add(service);
+                            }
+                        }
+                    }
+                })
                 .UseStartup<RPC.Startup>()
                 .Build();
 
-                // TODO: bring the services injection logic from the Breeze.api
                 this.fullNode.RPCHost.Start();
                 this.fullNode.Resources.Add(this.fullNode.RPCHost);
                 this.logger.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.nodeSettings.RPC.GetUrls()));
@@ -58,7 +78,8 @@ namespace Stratis.Bitcoin.RPC
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
-                .AddFeature<RPCFeature>();
+                .AddFeature<RPCFeature>()
+                .FeatureServices(services => services.AddSingleton(fullNodeBuilder));
             });
 
             fullNodeBuilder.ConfigureServices(service =>

@@ -7,72 +7,111 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Builder.Feature
 {
-	public interface IFeatureRegistration
-	{
-		Type FeatureStartupType { get; }
-		Type FeatureType { get; }
+    /// <summary>
+    /// Defines methods for a representation of registered features of the FullNode.
+    /// </summary>
+    public interface IFeatureRegistration
+    {
+        /// <summary>
+        /// Type of the feature startup class. If it implements ConfigureServices method, 
+        /// it is invoked to configure the feature's services.
+        /// </summary>
+        Type FeatureStartupType { get; }
 
-		void BuildFeature(IServiceCollection serviceCollection);
-		IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices);
-		IFeatureRegistration UseStartup<TStartup>();
-	}
+        /// <summary>Type of the feature class.</summary>
+        Type FeatureType { get; }
 
-	public class FeatureRegistration<TImplementation> : IFeatureRegistration where TImplementation : class, IFullNodeFeature
-	{
-		public readonly List<Action<IServiceCollection>> ConfigureServicesDelegates;
+        /// <summary>
+        /// Initializes feature registration DI services and calls configuration delegates of each service
+        /// and the startup type.
+        /// </summary>
+        /// <param name="serviceCollection">Collection of feature registration's DI services.</param>
+        void BuildFeature(IServiceCollection serviceCollection);
 
-		public FeatureRegistration()
-		{		
-			this.ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
-			this.FeatureType = typeof(TImplementation);
-		}	
+        /// <summary>
+        /// Initializes the list of delegates to configure DI services of the feature registration.
+        /// </summary>
+        /// <param name="configureServices">List of delegates to configure DI services of the feature registration.</param>
+        /// <returns>This interface to allow fluent code.</returns>
+        IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices);
 
-		public Type FeatureType { get; private set; }
+        /// <summary>
+        /// Sets the specific startup type to be used by the feature registration.
+        /// </summary>
+        /// <typeparam name="TStartup">Type of feature startup class to use.</typeparam>
+        /// <returns>This interface to allow fluent code.</returns>
+        IFeatureRegistration UseStartup<TStartup>();
+    }
 
-		public Type FeatureStartupType { get; private set; }
+    /// <summary>
+    /// Default implementation of a representation of a registered feature of the FullNode.
+    /// </summary>
+    /// <typeparam name="TImplementation">Type of the registered feature class.</typeparam>
+    public class FeatureRegistration<TImplementation> : IFeatureRegistration where TImplementation : class, IFullNodeFeature
+    {
+        /// <summary>List of delegates to configure services of the feature.</summary>
+        public readonly List<Action<IServiceCollection>> ConfigureServicesDelegates;
 
-		public IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
-		{
-			Guard.NotNull(configureServices, nameof(configureServices));
+        /// <summary>Initializes the instance of the object.</summary>
+        public FeatureRegistration()
+        {
+            this.ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
+            this.FeatureType = typeof(TImplementation);
+        }
 
-			this.ConfigureServicesDelegates.Add(configureServices);
+        /// <inheritdoc />
+        public Type FeatureStartupType { get; private set; }
 
-			return this;
-		}
+        /// <inheritdoc />
+        public Type FeatureType { get; private set; }
 
-		public IFeatureRegistration UseStartup<TStartup>()
-		{
+        /// <inheritdoc />
+        public void BuildFeature(IServiceCollection serviceCollection)
+        {
+            Guard.NotNull(serviceCollection, nameof(serviceCollection));
+
+            // features can only be singletons
+            serviceCollection
+                .AddSingleton(this.FeatureType)
+                .AddSingleton(typeof(IFullNodeFeature), provider => provider.GetService(this.FeatureType));
+
+            foreach (var configureServicesDelegate in this.ConfigureServicesDelegates)
+                configureServicesDelegate(serviceCollection);
+
+            if (this.FeatureStartupType != null)
+                FeatureStartup(serviceCollection, this.FeatureStartupType);
+        }
+
+        /// <inheritdoc />
+        public IFeatureRegistration FeatureServices(Action<IServiceCollection> configureServices)
+        {
+            Guard.NotNull(configureServices, nameof(configureServices));
+
+            this.ConfigureServicesDelegates.Add(configureServices);
+
+            return this;
+        }
+
+        /// <inheritdoc />
+        public IFeatureRegistration UseStartup<TStartup>()
+        {
             this.FeatureStartupType = typeof(TStartup);
-			return this;
-		}
+            return this;
+        }
 
-		public void BuildFeature(IServiceCollection serviceCollection)
-		{
-			Guard.NotNull(serviceCollection, nameof(serviceCollection));
-
-			// features can only be singletons
-			serviceCollection
-				.AddSingleton(this.FeatureType)
-				.AddSingleton(typeof(IFullNodeFeature), provider => provider.GetService(this.FeatureType));
-
-			foreach (var configureServicesDelegate in this.ConfigureServicesDelegates)
-				configureServicesDelegate(serviceCollection);
-
-			if (this.FeatureStartupType != null)
-				FeatureStartup(serviceCollection, this.FeatureStartupType);
-		}
-
-		/// <summary>
-		///     A feature can use specified method to configure its services
-		///     The specified method needs to have the following signature to be invoked
-		///     void ConfigureServices(IServiceCollection serviceCollection)
-		/// </summary>
-		private void FeatureStartup(IServiceCollection serviceCollection, Type startupType)
-		{
-			var method = startupType.GetMethod("ConfigureServices");
-			var parameters = method?.GetParameters();
-			if (method != null && method.IsStatic && (parameters?.Length == 1) && (parameters.First().ParameterType == typeof(IServiceCollection)))
-				method.Invoke(null, new object[] { serviceCollection });
-		}
-	}
+        /// <summary>
+        /// A feature can use specified method to configure its services.
+        /// The specified method needs to have the following signature to be invoked:
+        /// <c>void ConfigureServices(IServiceCollection serviceCollection)</c>.
+        /// </summary>
+        /// <param name="serviceCollection">Collection of service descriptors to be passed to the ConfigureServices method of the feature registration startup class.</param>
+        /// <param name="startupType">Type of the feature registration startup class. If it implements ConfigureServices method, it is invoked to configure the feature's services.</param>
+        private void FeatureStartup(IServiceCollection serviceCollection, Type startupType)
+        {
+            var method = startupType.GetMethod("ConfigureServices");
+            var parameters = method?.GetParameters();
+            if ((method != null) && method.IsStatic && (parameters?.Length == 1) && (parameters.First().ParameterType == typeof(IServiceCollection)))
+                method.Invoke(null, new object[] { serviceCollection });
+        }
+    }
 }

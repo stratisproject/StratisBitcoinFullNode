@@ -21,22 +21,8 @@ namespace Stratis.Bitcoin.RPC
                     o.ModelBinderProviders.Insert(0, new DestinationModelBinder());
                     o.ModelBinderProviders.Insert(0, new MoneyModelBinder());
                 });
-                s.AddSingleton(fullNode);
-                s.AddSingleton(fullNode as Builder.IFullNode);
-                s.AddSingleton(fullNode.Network);
-                s.AddSingleton(fullNode.Settings);
-                s.AddSingleton(fullNode.ConsensusLoop);
-                s.AddSingleton(fullNode.ConsensusLoop?.Validator);
-                s.AddSingleton(fullNode.Chain);
-                s.AddSingleton(fullNode.ChainBehaviorState);
-                s.AddSingleton(fullNode.BlockStoreManager);
-                s.AddSingleton(fullNode.MempoolManager);
-                s.AddSingleton(fullNode.ConnectionManager);
-                s.AddSingleton(fullNode.Services.ServiceProvider.GetService<IWalletManager>());
-                var pow = fullNode.Services.ServiceProvider.GetService<PowMining>();
-                if(pow != null)
-                    s.AddSingleton(pow);
             });
+
             return hostBuilder;
         }
     }

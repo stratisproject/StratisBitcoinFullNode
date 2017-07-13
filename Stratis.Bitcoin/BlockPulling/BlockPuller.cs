@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             int[] scores = innernodes.Select(n => n.QualityScore == MaxQualityScore ? MaxQualityScore * 2 : n.QualityScore).ToArray();
             var totalScore = scores.Sum();
-            GetDataPayload[] getDatas = this.Nodes.Select(n => new GetDataPayload()).ToArray();
+            GetDataPayload[] getDatas = innernodes.Select(n => new GetDataPayload()).ToArray();
             foreach (InventoryVector inv in vectors)
             {
                 int index = GetNodeIndex(scores, totalScore);

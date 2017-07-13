@@ -325,12 +325,12 @@ namespace Stratis.Bitcoin.BlockStore
             });
 		}
 
-        protected virtual void OnDeleteTransactions(List<Transaction> transactions)
+        protected virtual void OnDeleteTransactions(List<(Transaction, Block)> transactions)
         {
             foreach (var transaction in transactions)
             {
                 this.PerformanceCounter.AddRepositoryDeleteCount(1);
-                this.session.Transaction.RemoveKey<byte[]>("Transaction", transaction.GetHash().ToBytes());
+                this.session.Transaction.RemoveKey<byte[]>("Transaction", transaction.Item1.GetHash().ToBytes());
             }
         }
 
@@ -338,11 +338,11 @@ namespace Stratis.Bitcoin.BlockStore
         {
             if (this.TxIndex)
             {
-                var transactions = new List<Transaction>();
+                var transactions = new List<(Transaction, Block)>();
 
                 foreach (var block in blocks)
                     foreach (var transaction in block.Transactions)
-                        transactions.Add(transaction);
+                        transactions.Add((transaction, block));
 
                 OnDeleteTransactions(transactions);
             }
