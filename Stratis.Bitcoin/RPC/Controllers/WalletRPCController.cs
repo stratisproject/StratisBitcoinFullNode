@@ -12,18 +12,6 @@ namespace Stratis.Bitcoin.RPC.Controllers
 {
     public class WalletRPCController : BaseRPCController
     {
-        public class UsedWallet
-        {
-            public string WalletName
-            {
-                get; set;
-            }
-            public HdAccount Account
-            {
-                get;
-                set;
-            }
-        }
         public WalletRPCController(IServiceProvider serviceProvider, IWalletManager walletManager)
         {
             this.WalletManager = walletManager;
@@ -41,6 +29,7 @@ namespace Stratis.Bitcoin.RPC.Controllers
         [ActionName("sendtoaddress")]
         public uint256 SendToAddress(BitcoinAddress bitcoinAddress, Money amount)
         {
+            var account = GetAccount();
             return uint256.Zero;
         }
 
@@ -48,32 +37,20 @@ namespace Stratis.Bitcoin.RPC.Controllers
         public List<uint256> Generate(int nBlock)
         {
             var mining = this.serviceProvider.GetRequiredService<PowMining>();
-            var wallet = GetWallet();
-            var address = this.WalletManager.GetUnusedAddress(wallet.WalletName, wallet.Account.Name);
+            var account = GetAccount();
+            var address = this.WalletManager.GetUnusedAddress(account);
             return mining.GenerateBlocks(new ReserveScript(address.Pubkey), (ulong)nBlock, int.MaxValue);
         }
 
-        private UsedWallet GetWallet()
+
+        private WalletAccountReference GetAccount()
         {
+            //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
             var w = this.WalletManager.GetWallets().FirstOrDefault();
             if(w == null)
                 throw new RPCServerException(NBitcoin.RPC.RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
             var account = this.WalletManager.GetAccounts(w).FirstOrDefault();
-            return new UsedWallet()
-            {
-                Account = account,
-                WalletName = w
-            };
-        }
-
-        private string GetAccountName()
-        {
-            return this.WalletManager.GetAccounts(GetWalletName()).FirstOrDefault().Name;
-        }
-
-        private string GetWalletName()
-        {
-            return this.WalletManager.GetWallets().FirstOrDefault();
+            return new WalletAccountReference(w, account.Name);
         }
     }
 }
