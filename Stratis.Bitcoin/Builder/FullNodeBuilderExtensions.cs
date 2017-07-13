@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Builder

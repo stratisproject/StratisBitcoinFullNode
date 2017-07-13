@@ -2,8 +2,8 @@ using System;
 using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Logging;
+using ChainBehavior = Stratis.Bitcoin.Base.ChainBehavior;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -52,10 +52,10 @@ namespace Stratis.Bitcoin.Connection
 		{
 			this.AttachedNode.StateChanged += AttachedNode_StateChanged;
 			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
-			this._ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
+			this._ChainBehavior = this.AttachedNode.Behaviors.Find<ChainBehavior>();
 		}
 
-		BlockStore.ChainBehavior _ChainBehavior;
+		ChainBehavior _ChainBehavior;
 		private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
 			if(this._ChainBehavior.InvalidHeaderReceived && !this.Whitelisted)

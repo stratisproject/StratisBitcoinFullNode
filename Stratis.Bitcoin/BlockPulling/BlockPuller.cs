@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using NBitcoin.Protocol.Behaviors;
 using System.Threading;
 using Stratis.Bitcoin.Connection;
+using ChainBehavior = Stratis.Bitcoin.Base.ChainBehavior;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.BlockPulling
             public ICollection<uint256> PendingDownloads => this.pendingDownloads.Values;
 
             private readonly BlockPuller puller;
-            public BlockStore.ChainBehavior ChainBehavior { get; private set; }
+            public ChainBehavior ChainBehavior { get; private set; }
 
             public BlockPuller Puller => this.puller;
 
@@ -122,7 +123,7 @@ namespace Stratis.Bitcoin.BlockPulling
             protected override void AttachCore()
             {
                 this.AttachedNode.MessageReceived += Node_MessageReceived;
-                this.ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
+                this.ChainBehavior = this.AttachedNode.Behaviors.Find<ChainBehavior>();
                 AssignPendingVector();
             }
 

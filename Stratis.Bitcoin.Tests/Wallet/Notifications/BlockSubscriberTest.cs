@@ -1,10 +1,11 @@
 ﻿using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Wallet;
-using Stratis.Bitcoin.Wallet.Notifications;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Notifications;
+using Stratis.Bitcoin.Signals;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet.Notifications

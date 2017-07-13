@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.BlockPulling;
 using System;
 using System.Collections.Generic;

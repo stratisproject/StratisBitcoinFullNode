@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.RPC;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Tests.Logging;
 using Xunit;
 

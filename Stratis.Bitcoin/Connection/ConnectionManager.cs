@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using ChainBehavior = Stratis.Bitcoin.Base.ChainBehavior;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -199,7 +200,7 @@ namespace Stratis.Bitcoin.Connection
 			foreach (Node node in this.ConnectedNodes)
 			{
 				ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
-				BlockStore.ChainBehavior chainBehavior = node.Behavior<BlockStore.ChainBehavior>();
+				ChainBehavior chainBehavior = node.Behavior<ChainBehavior>();
 				builder.AppendLine(
 					"Node:" + (node.RemoteInfo() + ", ").PadRight(LogsExtension.ColumnLength + 15) +
 					(" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LogsExtension.ColumnLength + 7) +

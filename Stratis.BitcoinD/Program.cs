@@ -5,12 +5,13 @@ using Stratis.Bitcoin.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.BlockStore;
-using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.RPC;
-using Stratis.Bitcoin.Miner;
 using NBitcoin;
+using Stratis.Bitcoin;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.BitcoinD

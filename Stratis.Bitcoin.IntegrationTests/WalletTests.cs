@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Wallet;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
