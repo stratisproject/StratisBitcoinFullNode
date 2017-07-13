@@ -16,14 +16,22 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly MempoolSignaled mempoolSignaled;
 		private readonly MempoolBehavior mempoolBehavior;
 		private readonly MempoolManager mempoolManager;
+	    private readonly ILogger mempoolLogger;
 
-		public MempoolFeature(IConnectionManager connectionManager, Signals signals, MempoolSignaled mempoolSignaled, MempoolBehavior mempoolBehavior, MempoolManager mempoolManager)
+        public MempoolFeature(
+            IConnectionManager connectionManager, 
+            Signals signals, 
+            MempoolSignaled mempoolSignaled, 
+            MempoolBehavior mempoolBehavior, 
+            MempoolManager mempoolManager,
+            ILoggerFactory loggerFactory)
 		{
 			this.signals = signals;
 			this.connectionManager = connectionManager;
 			this.mempoolSignaled = mempoolSignaled;
 			this.mempoolBehavior = mempoolBehavior;
 			this.mempoolManager = mempoolManager;
+		    this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
 		}
 
 		public override void Start()
@@ -39,16 +47,16 @@ namespace Stratis.Bitcoin.MemoryPool
         {
             if (this.mempoolManager != null)
             {
-                Logs.Mempool.LogInformation("Saving Memory Pool...");
+                this.mempoolLogger.LogInformation("Saving Memory Pool...");
 
                 MemPoolSaveResult result = this.mempoolManager.SavePool();
                 if (result.Succeeded)
                 {
-                    Logs.Mempool.LogInformation($"...Memory Pool Saved {result.TrxSaved} transactions");
+                    this.mempoolLogger.LogInformation($"...Memory Pool Saved {result.TrxSaved} transactions");
                 }
                 else
                 {
-                    Logs.Mempool.LogWarning("...Memory Pool Not Saved!");
+                    this.mempoolLogger.LogWarning("...Memory Pool Not Saved!");
                 }
             }
         }

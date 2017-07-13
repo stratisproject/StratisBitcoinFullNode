@@ -28,26 +28,46 @@ namespace Stratis.Bitcoin.MemoryPool
 		private readonly IConnectionManager connectionManager;
 		private readonly BlockStore.ChainBehavior.ChainState chainState;
 		private readonly Signals signals;
+	    private readonly ILogger logger;
 
-		public long LastMempoolReq { get; private set; }
+	    public long LastMempoolReq { get; private set; }
 		public long NextInvSend { get; set; }
 
 		// state that is local to the behaviour
 		private readonly Dictionary<uint256, uint256> inventoryTxToSend;
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
-		public MempoolBehavior(MempoolValidator validator, MempoolManager manager, MempoolOrphans orphans, 
-			IConnectionManager connectionManager, BlockStore.ChainBehavior.ChainState chainState, Signals signals)
-		{
-			this.validator = validator;
-			this.manager = manager;
-			this.orphans = orphans;
-			this.connectionManager = connectionManager;
-			this.chainState = chainState;
-			this.signals = signals;
+	    public MempoolBehavior(
+	        MempoolValidator validator,
+	        MempoolManager manager,
+	        MempoolOrphans orphans,
+	        IConnectionManager connectionManager,
+	        BlockStore.ChainBehavior.ChainState chainState,
+	        Signals signals,
+	        ILogger logger)
+	    {
+	        this.validator = validator;
+	        this.manager = manager;
+	        this.orphans = orphans;
+	        this.connectionManager = connectionManager;
+	        this.chainState = chainState;
+	        this.signals = signals;
+	        this.logger = logger;
 
-			this.inventoryTxToSend = new Dictionary<uint256, uint256>();
-			this.filterInventoryKnown = new Dictionary<uint256, uint256>();
+	        this.inventoryTxToSend = new Dictionary<uint256, uint256>();
+	        this.filterInventoryKnown = new Dictionary<uint256, uint256>();
+	    }
+
+        public MempoolBehavior(
+            MempoolValidator validator, 
+            MempoolManager manager, 
+            MempoolOrphans orphans, 
+			IConnectionManager connectionManager, 
+            BlockStore.ChainBehavior.ChainState chainState, 
+            Signals signals, 
+            ILoggerFactory loggerFactory)
+            :this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
+		{
 		}
 
 		protected override void AttachCore()
@@ -81,7 +101,7 @@ namespace Stratis.Bitcoin.MemoryPool
 			}
 			catch (Exception ex)
 			{
-				Logging.Logs.Mempool.LogError(ex.ToString());
+				this.logger.LogError(ex.ToString());
 
 				// while in dev catch any unhandled exceptions
 				Debugger.Break();
@@ -137,8 +157,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				//inv.type |= nFetchFlags;
 
 				if (blocksOnly)
-					Logging.Logs.Mempool.LogInformation(
-						$"transaction ({inv.Hash}) inv sent in violation of protocol peer={node.RemoteSocketEndpoint}");
+				    this.logger.LogInformation($"transaction ({inv.Hash}) inv sent in violation of protocol peer={node.RemoteSocketEndpoint}");
 
 				if (await this.orphans.AlreadyHave(inv.Hash))
 					continue;
@@ -193,8 +212,7 @@ namespace Stratis.Bitcoin.MemoryPool
 				var mmsize = state.MempoolSize;
 				var memdyn = state.MempoolDynamicSize;
 
-				Logging.Logs.Mempool.LogInformation(
-					$"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
+			    this.logger.LogInformation($"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
 
 				await this.orphans.ProcessesOrphans(this, trx);
 			}
@@ -214,7 +232,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 			if (state.IsInvalid)
 			{
-				Logging.Logs.Mempool.LogInformation($"{trxHash} from peer={node.Peer.Endpoint} was not accepted: {state}");
+			    this.logger.LogInformation($"{trxHash} from peer={node.Peer.Endpoint} was not accepted: {state}");
 			}
 		}
 
@@ -365,7 +383,7 @@ namespace Stratis.Bitcoin.MemoryPool
 
 		public override object Clone()
 		{
-			return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState, this.signals);
+			return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState, this.signals, this.logger);
 		}
 	}
 }

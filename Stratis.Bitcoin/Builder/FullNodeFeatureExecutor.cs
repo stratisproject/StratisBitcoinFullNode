@@ -18,23 +18,25 @@ namespace Stratis.Bitcoin.Builder
 	public class FullNodeFeatureExecutor : IFullNodeFeatureExecutor
 	{
 		private readonly IFullNode node;
+	    private readonly ILogger logger;
 
-		public FullNodeFeatureExecutor(IFullNode fullNode)
+		public FullNodeFeatureExecutor(IFullNode fullNode, ILoggerFactory loggerFactory)
 		{
 			Guard.NotNull(fullNode, nameof(fullNode));
 
 			this.node = fullNode;
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 		}
 
 		public void Start()
 		{
 			try
 			{
-				Execute(service => service.Start());
+				this.Execute(service => service.Start());
 			}
 			catch (Exception ex)
 			{
-				Logging.Logs.FullNode.LogError("An error occurred starting the application", ex);
+			    this.logger.LogError("An error occurred starting the application", ex);
 				throw;
 			}
 		}
@@ -47,7 +49,7 @@ namespace Stratis.Bitcoin.Builder
 			}
 			catch (Exception ex)
 			{
-				Logging.Logs.FullNode.LogError("An error occurred stopping the application", ex);
+			    this.logger.LogError("An error occurred stopping the application", ex);
 				throw;
 			}
 		}

@@ -57,7 +57,9 @@ namespace Stratis.Bitcoin.Miner
 		protected readonly MempoolScheduler mempoolScheduler;
 		protected readonly TxMempool mempool;
 		protected readonly IDateTimeProvider dateTimeProvider;
-		protected readonly AssemblerOptions options;
+	    private readonly ILogger logger;
+
+	    protected readonly AssemblerOptions options;
 		// The constructed block template
 		protected readonly BlockTemplate pblocktemplate;
 		// A convenience pointer that always refers to the CBlock in pblocktemplate
@@ -85,9 +87,15 @@ namespace Stratis.Bitcoin.Miner
 		protected ChainedBlock pindexPrev;
 		protected Script scriptPubKeyIn;
 
-		public PowBlockAssembler(ConsensusLoop consensusLoop, Network network, ConcurrentChain chain,
-			MempoolScheduler mempoolScheduler, TxMempool mempool,
-			IDateTimeProvider dateTimeProvider, AssemblerOptions options = null)
+		public PowBlockAssembler(
+            ConsensusLoop consensusLoop, 
+            Network network, 
+            ConcurrentChain chain,
+			MempoolScheduler mempoolScheduler, 
+            TxMempool mempool,
+			IDateTimeProvider dateTimeProvider, 
+            ILogger logger,
+            AssemblerOptions options = null)
 		{
 			options = options ?? new AssemblerOptions();
 			this.blockMinFeeRate = options.BlockMinFeeRate;
@@ -103,7 +111,8 @@ namespace Stratis.Bitcoin.Miner
 			this.mempoolScheduler = mempoolScheduler;
 			this.mempool = mempool;
 			this.dateTimeProvider = dateTimeProvider;
-			this.options = options;
+		    this.logger = logger;
+		    this.options = options;
 			this.network = network;
 
 			this.inBlock = new TxMempool.SetEntries();
@@ -192,7 +201,7 @@ namespace Stratis.Bitcoin.Miner
             this.pblocktemplate.TotalFee = this.fees;
 
 			var nSerializeSize = this.pblock.GetSerializedSize();
-			Logs.Mining.LogInformation(
+			this.logger.LogInformation(
 				$"CreateNewBlock: total size: {nSerializeSize} block weight: {consensusLoop.Validator.GetBlockWeight(pblock)} txs: {blockTx} fees: {fees} sigops {blockSigOpsCost}");
 
 			this.UpdateHeaders();

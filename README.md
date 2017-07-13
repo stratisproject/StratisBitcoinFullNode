@@ -27,16 +27,6 @@ For Proof of Stake support on the Stratis token the node is using [NStratis](htt
 [.NET Core](https://dotnet.github.io/) is an open source cross platform framework and enables the development of applications and services on Windows, macOS and Linux.  
 Join our community on [slack](https://stratisplatform.slack.com).  
 
-Running a FullNode
-------------------
-
-Our full node is currently in alpha.  
-
-To run on the Bitcoin network: ``` Stratis.BitcoinD\dotnet run ```  
-To run on the Stratis network: ``` Stratis.StratisD\dotnet run ```  
-
-See more details [here](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/getting-started.md)
-
 The design
 ----------
 
@@ -73,6 +63,28 @@ What's Next
 
 We plan to add many more features on top of the Stratis Bitcoin blockchain:
 Sidechains, Private/Permissioned blockchain, Compiled Smart Contracts, NTumbleBit/Breeze wallet and more...
+
+Running a FullNode
+------------------
+
+Our full node is currently in alpha.  
+
+```
+git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
+cd StratisBitcoinFullNode
+
+git submodule init
+git submodule update
+
+dotnet restore
+dotnet build
+
+```
+
+To run on the Bitcoin network: ``` Stratis.BitcoinD\dotnet run ```  
+To run on the Stratis network: ``` Stratis.StratisD\dotnet run ```  
+
+See more details [here](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/getting-started.md)
 
 Development
 -----------

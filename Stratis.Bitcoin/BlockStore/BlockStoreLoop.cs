@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.BlockStore
 	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
 	    private readonly BlockStoreStats blockStoreStats;
+	    private readonly ILogger storeLogger;
 
         public BlockStore.ChainBehavior.ChainState ChainState { get; }
 		public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
@@ -36,7 +37,8 @@ namespace Stratis.Bitcoin.BlockStore
 			StoreBlockPuller blockPuller,
             BlockStoreCache cache,
             INodeLifetime nodeLifetime,
-            IAsyncLoopFactory asyncLoopFactory)
+            IAsyncLoopFactory asyncLoopFactory,
+            ILoggerFactory loggerFactory)
 		{
 			this.chain = chain;
 			this.BlockRepository = blockRepository;
@@ -46,9 +48,10 @@ namespace Stratis.Bitcoin.BlockStore
             this.blockStoreCache = cache;
 		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
+		    this.storeLogger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-		    this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache);
+            this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
+            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache, this.storeLogger);
         }
 
         public class BlockPair
@@ -97,7 +100,7 @@ namespace Stratis.Bitcoin.BlockStore
                 var newTip = this.chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockstoreResetList);
                 this.StoredBlock = newTip;
-			    Logs.BlockStore.LogWarning($"BlockStore Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
+			    this.storeLogger.LogWarning($"BlockStore Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
 			}
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)

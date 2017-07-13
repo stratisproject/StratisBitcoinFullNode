@@ -33,8 +33,9 @@ namespace Stratis.Bitcoin.Consensus
 		private readonly NodeSettings nodeSettings;
 	    private readonly NodeDeployments nodeDeployments;
 	    private readonly StakeChainStore stakeChain;
+	    private readonly ILogger logger;
 
-		public ConsensusFeature(
+        public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
 			Network network,
 			PowConsensusValidator consensusValidator,
@@ -48,7 +49,8 @@ namespace Stratis.Bitcoin.Consensus
 			ConsensusLoop consensusLoop,
 			NodeSettings nodeSettings,
             NodeDeployments nodeDeployments,
-			StakeChainStore stakeChain = null)
+			ILoggerFactory loggerFactory,
+            StakeChainStore stakeChain = null)
 		{
 			this.dBreezeCoinView = dBreezeCoinView;
 			this.consensusValidator = consensusValidator;
@@ -64,7 +66,8 @@ namespace Stratis.Bitcoin.Consensus
 			this.nodeSettings = nodeSettings;
 		    this.nodeDeployments = nodeDeployments;
 		    this.stakeChain = stakeChain;
-		}
+		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
 
 		public override void Start()
 		{			
@@ -96,7 +99,7 @@ namespace Stratis.Bitcoin.Consensus
 			var cache = this.coinView as CachedCoinView;
 			if (cache != null)
 			{
-				Logs.Consensus.LogInformation("Flushing Cache CoinView...");
+				this.logger.LogInformation("Flushing Cache CoinView...");
 				cache.FlushAsync().GetAwaiter().GetResult();
 			}
 
@@ -109,7 +112,7 @@ namespace Stratis.Bitcoin.Consensus
 			{
 				var stack = new CoinViewStack(this.coinView);
 				var cache = stack.Find<CachedCoinView>();
-				var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager);
+				var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager, this.logger);
 			    var cancellationToken = this.nodeLifetime.ApplicationStopping;
 
 				ChainedBlock lastTip = this.consensusLoop.Tip;
@@ -117,20 +120,20 @@ namespace Stratis.Bitcoin.Consensus
 				{
 					if (this.consensusLoop.Tip.FindFork(lastTip) != lastTip)
 					{
-						Logs.FullNode.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + this.consensusLoop.Tip.Height + " (" + this.consensusLoop.Tip.HashBlock + ")");
+						this.logger.LogInformation("Reorg detected, rewinding from " + lastTip.Height + " (" + lastTip.HashBlock + ") to " + this.consensusLoop.Tip.Height + " (" + this.consensusLoop.Tip.HashBlock + ")");
 					}
 					lastTip = this.consensusLoop.Tip;
 					cancellationToken.ThrowIfCancellationRequested();
 					if (block.Error != null)
 					{
-						Logs.FullNode.LogError("Block rejected: " + block.Error.Message);
+					    this.logger.LogError("Block rejected: " + block.Error.Message);
 
 						//Pull again
 						this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
 
 						if (block.Error == ConsensusErrors.BadWitnessNonceSize)
 						{
-							Logs.FullNode.LogInformation("You probably need witness information, activating witness requirement for peers.");
+						    this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
 							this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 							this.consensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
 							continue;
@@ -138,8 +141,8 @@ namespace Stratis.Bitcoin.Consensus
 
 						//Set the PoW chain back to ConsensusLoop.Tip
 						this.chain.SetTip(this.consensusLoop.Tip);
-						//Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
-						Logs.FullNode.LogError("Marking block as invalid");
+                        //Since ChainBehavior check PoW, MarkBlockInvalid can't be spammed
+					    this.logger.LogError("Marking block as invalid");
 						this.chainState.MarkBlockInvalid(block.Block.GetHash());
 					}
 
@@ -167,9 +170,9 @@ namespace Stratis.Bitcoin.Consensus
 						return;
 				}
 
-				// TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
-				// thrown so that the node and all the disposables can stop gracefully.
-				Logs.Consensus.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + this.consensusLoop.Tip?.Height + ")");
+                // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
+                // thrown so that the node and all the disposables can stop gracefully.
+			    this.logger.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + this.consensusLoop.Tip?.Height + ")");
 				throw;
 			}
 		}

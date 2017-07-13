@@ -20,8 +20,6 @@ namespace Stratis.StratisD
 	{
         public static void Main(string[] args)
 		{
-			Logs.Configure(Logs.GetLoggerFactory(args));
-
 			if (NodeSettings.PrintHelp(args, Network.StratisMain))
 				return;
 

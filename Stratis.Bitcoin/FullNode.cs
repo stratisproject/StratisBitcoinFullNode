@@ -25,16 +25,11 @@ namespace Stratis.Bitcoin
 
 	public class FullNode : IFullNode
 	{
-		private readonly ILogger logger;
+		private ILogger logger;
 		private NodeLifetime nodeLifetime;
 		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
 		internal bool Stopped;
-
-		public FullNode()
-		{
-			this.logger = Logs.LoggerFactory.CreateLogger<FullNode>();
-		}
 
 		public bool IsDisposed { get; private set; }
 		public bool HasExited { get; private set; }
@@ -117,13 +112,17 @@ namespace Stratis.Bitcoin
 
 		public ConcurrentChain Chain { get; set; }
 
-		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+        public IAsyncLoopFactory AsyncLoopFactory { get; set; }
+
+        public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
 			this.Services = serviceProvider;
 
-			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+		    this.logger = this.Services.ServiceProvider.GetService<ILoggerFactory>().CreateLogger(this.GetType().FullName);
+
+            this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
 			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
 			this.Network = this.Services.ServiceProvider.GetService<Network>();
 			this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
@@ -137,8 +136,9 @@ namespace Stratis.Bitcoin
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
+		    this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
-			Logs.FullNode.LogInformation($"Full node initialized on {this.Network.Name}");
+            this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
 			return this;
 		}
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin
             if (this.fullNodeFeatureExecutor == null)
 		        throw new InvalidOperationException($"{nameof(FullNodeFeatureExecutor)} must be set.");
 
-		    Logs.FullNode.LogInformation("Starting node...");
+		    this.logger.LogInformation("Starting node...");
 
             // start all registered features
             this.fullNodeFeatureExecutor.Start();
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin
 
 			this.Stopped = true;
 
-		    Logs.FullNode.LogInformation("Closing node pending...");
+		    this.logger.LogInformation("Closing node pending...");
 
             // Fire INodeLifetime.Stopping
             this.nodeLifetime.StopApplication();
@@ -202,30 +202,30 @@ namespace Stratis.Bitcoin
 
 		private void StartPeriodicLog()
 		{
-			AsyncLoop.Run("PeriodicLog", (cancellation) =>
+			this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
 				{
 					// TODO: move stats to each of its components
 					StringBuilder benchLogs = new StringBuilder();
 
 					benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
 					                     this.ConnectionManager.Parameters.UserAgent);
-					benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) +
+					benchLogs.AppendLine("Headers.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 					                     this.Chain.Tip.Height.ToString().PadRight(8) +
-					                     " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+					                     " Headers.Hash: ".PadRight(LogsExtension.ColumnLength + 3) + this.Chain.Tip.HashBlock);
 
 					if (this.ConsensusLoop != null)
 					{
-						benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) +
+						benchLogs.AppendLine("Consensus.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) +
-						                     " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) +
+						                     " Consensus.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
 					}
 
 					if (this.ChainBehaviorState.HighestPersistedBlock != null)
 					{
-						benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) +
+						benchLogs.AppendLine("Store.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) +
-						                     " Store.Hash: ".PadRight(Logs.ColumnLength + 3) +
+						                     " Store.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 					}
 
@@ -235,9 +235,9 @@ namespace Stratis.Bitcoin
 					    var block = this.Chain.GetBlock(height);
 					    var hashBlock = block == null ? uint256.Zero : block.HashBlock;
 
-                        benchLogs.AppendLine("Wallet.Height: ".PadRight(Logs.ColumnLength + 3) +
+                        benchLogs.AppendLine("Wallet.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     height.ToString().PadRight(8) +
-											 " Wallet.Hash: ".PadRight(Logs.ColumnLength + 3) +
+											 " Wallet.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
                                              hashBlock);
 					}
 
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin
 
 					benchLogs.AppendLine("======Connection======");
 					benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-					Logs.Bench.LogInformation(benchLogs.ToString());
+					this.logger.LogInformation(benchLogs.ToString());
 					return Task.CompletedTask;
 				},
 				this.nodeLifetime.ApplicationStopping,

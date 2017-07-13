@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Miner;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
@@ -60,9 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		}
 
 		public void Start(string dataDir)
-		{
-			Logs.Configure(new LoggerFactory());
-			
+		{			
 			var args = NodeSettings.FromArguments(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
 
 			var node = BuildFullNode(args);
@@ -78,10 +77,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 				.UseConsensus()
 				.UseBlockStore()
 				.UseMempool()
+                .AddMining()
 				.UseWallet()
 				.AddRPC()
 				.Build();
-
+            var testWalletPath = Path.Combine(node.DataFolder.WalletPath, "test.wallet.json");
+            File.Copy("Data/test.wallet.json", testWalletPath);
+            //node.WalletManager.CreateWallet("blabla", "test");
 			return node;
 		}
 

@@ -24,8 +24,16 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ChainBehavior.ChainState chainState;
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connectionManager;
+        private readonly ILogger logger;
 
-        public ConsensusStats(CoinViewStack stack, CoinView coinView, ConsensusLoop consensusLoop, ChainBehavior.ChainState chainState, ConcurrentChain chain, IConnectionManager connectionManager)
+        public ConsensusStats(
+            CoinViewStack stack, 
+            CoinView coinView, 
+            ConsensusLoop consensusLoop, 
+            ChainBehavior.ChainState chainState, 
+            ConcurrentChain chain, 
+            IConnectionManager connectionManager,
+            ILogger logger)
         {
             stack = new CoinViewStack(coinView);
             this.cache = stack.Find<CachedCoinView>();
@@ -41,6 +49,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chainState = chainState;
             this.chain = chain;
             this.connectionManager = connectionManager;
+            this.logger = logger;
         }
 
         public bool CanLog
@@ -58,15 +67,15 @@ namespace Stratis.Bitcoin.Consensus
             if (this.lookaheadPuller != null)
             {
                 benchLogs.AppendLine("======Block Puller======");
-                benchLogs.AppendLine("Lookahead:".PadRight(Logs.ColumnLength) + this.lookaheadPuller.ActualLookahead + " blocks");
-                benchLogs.AppendLine("Downloaded:".PadRight(Logs.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
+                benchLogs.AppendLine("Lookahead:".PadRight(LogsExtension.ColumnLength) + this.lookaheadPuller.ActualLookahead + " blocks");
+                benchLogs.AppendLine("Downloaded:".PadRight(LogsExtension.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
                 benchLogs.AppendLine("==========================");
             }
-            benchLogs.AppendLine("Persistent Tip:".PadRight(Logs.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().Result).Height);
+            benchLogs.AppendLine("Persistent Tip:".PadRight(LogsExtension.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().Result).Height);
             if (this.cache != null)
             {
-                benchLogs.AppendLine("Cache Tip".PadRight(Logs.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().Result).Height);
-                benchLogs.AppendLine("Cache entries".PadRight(Logs.ColumnLength) + this.cache.CacheEntryCount);
+                benchLogs.AppendLine("Cache Tip".PadRight(LogsExtension.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().Result).Height);
+                benchLogs.AppendLine("Cache entries".PadRight(LogsExtension.ColumnLength) + this.cache.CacheEntryCount);
             }
 
             var snapshot = this.consensusLoop.Validator.PerformanceCounter.Snapshot();
@@ -86,7 +95,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.lastSnapshot3 = snapshot3;
             }
             benchLogs.AppendLine(this.connectionManager.GetStats());
-            Logs.Bench.LogInformation(benchLogs.ToString());
+            this.logger.LogInformation(benchLogs.ToString());
         }
     }
 }

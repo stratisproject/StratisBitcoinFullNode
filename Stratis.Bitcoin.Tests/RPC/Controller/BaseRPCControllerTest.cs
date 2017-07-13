@@ -19,11 +19,6 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
 {
     public abstract class BaseRPCControllerTest : TestBase
     {
-        public BaseRPCControllerTest()
-        {
-            Logs.Configure(new LoggerFactory());
-        }
-
         public IFullNode BuildServicedNode(string dir)
         {
             var nodeSettings = NodeSettings.Default();

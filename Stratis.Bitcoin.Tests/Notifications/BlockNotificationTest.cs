@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Notifications;
 using Stratis.Bitcoin.Tests.Logging;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Common;
 using Stratis.Bitcoin.Common.Hosting;
 using Xunit;
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
             chain.Setup(c => c.GetBlock(startBlockId))
                 .Returns((ChainedBlock)null);
 
-            var notification = new BlockNotification(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals(), new AsyncLoopFactory(), new NodeLifetime());
+            var notification = new BlockNotification(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             notification.Notify();
         }
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
             stub.Setup(s => s.NextBlock(lifetime.ApplicationStopping))
                 .Returns((Block)null);
 
-            var notification = new BlockNotification(chain.Object, stub.Object, new Signals(), new AsyncLoopFactory(), lifetime);
+            var notification = new BlockNotification(chain.Object, stub.Object, new Signals(), new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             notification.Notify();
             notification.SyncFrom(startBlockId);
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
             signals.Setup(s => s.Blocks)
                 .Returns(signalerMock.Object);
 
-            var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(), lifetime);
+            var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             await notification.Notify();
 
@@ -100,7 +101,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
             signals.Setup(s => s.Blocks)
                 .Returns(signalerMock.Object);
             
-            var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(), lifetime);
+            var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             notification.SyncFrom(startBlockId);
             await notification.Notify();            

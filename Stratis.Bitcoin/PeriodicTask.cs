@@ -18,15 +18,18 @@ namespace Stratis.Bitcoin
 
     public class PeriodicTask : IPeriodicTask
     {
-        public PeriodicTask(string name, Action<CancellationToken> loop)
+        public PeriodicTask(string name, ILogger logger, Action<CancellationToken> loop)
         {
             this._Name = name;
+            this.logger = logger;
             this._Loop = loop;
         }
 
         Action<CancellationToken> _Loop;
 
         private readonly string _Name;
+        private readonly ILogger logger;
+
         public string Name
         {
             get
@@ -40,7 +43,7 @@ namespace Stratis.Bitcoin
             var t = new Thread(() =>
             {
                 Exception uncatchException = null;
-                Logs.FullNode.LogInformation(this._Name + " starting");
+                this.logger.LogInformation(this._Name + " starting");
                 try
                 {
                     if (delayStart)
@@ -63,12 +66,12 @@ namespace Stratis.Bitcoin
                 }
                 finally
                 {
-                    Logs.FullNode.LogInformation(this.Name + " stopping");
+                    this.logger.LogInformation(this.Name + " stopping");
                 }
 
                 if (uncatchException != null)
                 {
-                    Logs.FullNode.LogCritical(new EventId(0), uncatchException, this._Name + " threw an unhandled exception");
+                    this.logger.LogCritical(new EventId(0), uncatchException, this._Name + " threw an unhandled exception");
                 }
             });
             t.IsBackground = true;
