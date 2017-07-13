@@ -329,6 +329,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 		public IEnumerable<HdAddress> GetHistory(Wallet wallet)
 		{
 			var accounts = wallet.GetAccountsByCoinType(this.coinType).ToList();
+            if (accounts.Count == 0)
+            {
+                yield break;
+            }
 
 			foreach (var address in accounts.SelectMany(a => a.ExternalAddresses).Concat(accounts.SelectMany(a => a.InternalAddresses)))
 			{
@@ -394,6 +398,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public Wallet GetWallet(string walletName)
 		{
+            Guard.NotEmpty(walletName, nameof(walletName));
+
 			Wallet wallet = this.GetWalletByName(walletName);
 			return wallet;
 		}
@@ -401,6 +407,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public IEnumerable<HdAccount> GetAccounts(string walletName)
 		{
+            Guard.NotEmpty(walletName, nameof(walletName));
+
 			Wallet wallet = this.GetWalletByName(walletName);
 
 			return wallet.GetAccountsByCoinType(this.coinType);
@@ -413,7 +421,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 				return this.chain.Tip.Height;
 			}
 
-			return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight) ?? 0;
+            // todo: use max instead of min?
+			return this.Wallets.Min(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType)?.LastBlockSyncedHeight) ?? 0;
 		}
 
 		/// <summary>
@@ -427,7 +436,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 				return this.chain.Tip.HashBlock;
 			}
 
-			var lastBlockSyncedHash = this.Wallets.Select(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType)).OrderBy(o => o.LastBlockSyncedHeight).FirstOrDefault()?.LastBlockSyncedHash;
+            var lastBlockSyncedHash = this.Wallets.Select(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType))
+                .Where(w => w != null)
+                .OrderBy(o => o.LastBlockSyncedHeight)
+                .FirstOrDefault()?.LastBlockSyncedHash;
 			Guard.Assert(lastBlockSyncedHash != null);
 			return lastBlockSyncedHash;
 		}
