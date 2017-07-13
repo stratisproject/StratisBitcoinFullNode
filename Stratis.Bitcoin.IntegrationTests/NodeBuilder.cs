@@ -81,9 +81,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 				.UseWallet()
 				.AddRPC()
 				.Build();
-            var testWalletPath = Path.Combine(node.DataFolder.WalletPath, "test.wallet.json");
-            File.Copy("Data/test.wallet.json", testWalletPath);
-            //node.WalletManager.CreateWallet("blabla", "test");
+
+			var testWalletPath = Path.Combine(node.DataFolder.WalletPath, "test.wallet.json");
+			if (!File.Exists("Data/test.wallet.json"))
+				File.Copy("Data/test.wallet.json", testWalletPath);
+
 			return node;
 		}
 
