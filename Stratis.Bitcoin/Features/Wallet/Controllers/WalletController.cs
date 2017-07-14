@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 // get the wallet folder 
                 DirectoryInfo walletFolder = this.GetWalletFolder();
-                Wallet wallet = this.walletManager.LoadWallet(request.Name);
+                Wallet wallet = this.walletManager.LoadWallet(request.Password, request.Name);
 
                 return this.Ok();
             }

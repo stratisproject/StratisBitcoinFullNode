@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-            var result = walletManager.LoadWallet("testWallet");
+            var result = walletManager.LoadWallet("password", "testWallet");
 
             Assert.Equal("testWallet", result.Name);
             Assert.Equal(Network.Main, result.Network);
@@ -347,7 +347,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                                                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-               walletManager.LoadWallet("testWallet");
+               walletManager.LoadWallet("password", "testWallet");
            });
         }
 

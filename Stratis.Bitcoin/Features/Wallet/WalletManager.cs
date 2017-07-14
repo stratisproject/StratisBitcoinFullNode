@@ -153,8 +153,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 		}
 
 		/// <inheritdoc />
-		public Wallet LoadWallet(string name)
+		public Wallet LoadWallet(string password, string name)
 		{
+            Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(name, nameof(name));
 
 			var walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.{WalletFileExtension}");
@@ -366,7 +367,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 			for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
 			{
 				// generate new receiving address
-				var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange);
+				var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange, this.network);
 				BitcoinPubKeyAddress address = pubkey.GetAddress(this.network);
 
 				// add address details
@@ -420,8 +421,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 			{
 				return this.chain.Tip.Height;
 			}
-
-            // todo: use max instead of min?
+            
 			return this.Wallets.Min(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType)?.LastBlockSyncedHeight) ?? 0;
 		}
 
@@ -1043,7 +1043,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 			this.Wallets.Add(wallet);
 		}
 
-		private PubKey GenerateAddress(string accountExtPubKey, int index, bool isChange)
+		private PubKey GenerateAddress(string accountExtPubKey, int index, bool isChange, Network network)
 		{
 			int change = isChange ? 1 : 0;
 			KeyPath keyPath = new KeyPath($"{change}/{index}");
