@@ -17,12 +17,14 @@ namespace Stratis.Bitcoin.BlockPulling
         {
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Prepares and invokes download task for a single block.
+        /// </summary>
+        /// <param name="downloadRequest">Description of a block to download.</param>
         public void AskBlock(ChainedBlock downloadRequest)
         {
             base.AskBlocks(new ChainedBlock[] { downloadRequest });
         }
-
 
         /// <summary>
         /// Tries to retrieve a specific downloaded block from the list of downloaded blocks.
