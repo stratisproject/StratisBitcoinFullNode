@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Common;
 using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -112,7 +113,9 @@ namespace Stratis.Bitcoin
 
 		public BlockStoreManager BlockStoreManager { get; set; }
 
-		public ConcurrentChain Chain { get; set; }
+        public IndexStoreManager IndexStoreManager { get; set; }
+
+        public ConcurrentChain Chain { get; set; }
 
         public IAsyncLoopFactory AsyncLoopFactory { get; set; }
 
@@ -136,7 +139,8 @@ namespace Stratis.Bitcoin
 
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
-			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
+            this.IndexStoreManager = this.Services.ServiceProvider.GetService<IndexStoreManager>();
+            this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
 		    this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
@@ -231,7 +235,15 @@ namespace Stratis.Bitcoin
 						                     this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 					}
 
-					if (this.WalletManager != null)
+                    if (this.ChainBehaviorState.HighestIndexedBlock != null)
+                    {
+                        benchLogs.AppendLine("Index.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
+                                             this.ChainBehaviorState.HighestIndexedBlock.Height.ToString().PadRight(8) +
+                                             " Index.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
+                                             this.ChainBehaviorState.HighestIndexedBlock.HashBlock);
+                    }
+
+                    if (this.WalletManager != null)
 					{
 						var height = this.WalletManager.LastBlockHeight();
 					    var block = this.Chain.GetBlock(height);

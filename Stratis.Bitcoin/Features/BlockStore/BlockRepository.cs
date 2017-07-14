@@ -45,16 +45,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         public BlockRepository(Network network, string folder)
+            : this(network, (new DBreezeSingleThreadSession($"DBreeze BlockRepository", folder)))
+        {
+        }
+
+        public BlockRepository(Network network, DBreezeSingleThreadSession session)
         {
             Guard.NotNull(network, nameof(network));
-            Guard.NotEmpty(folder, nameof(folder));
+            Guard.NotNull(session, nameof(session));
 
-            this.session = new DBreezeSingleThreadSession($"DBreeze {this.GetType().Name}", folder);
+            this.session = session;
             this.network = network;
             this.PerformanceCounter = new BlockStoreRepositoryPerformanceCounter();
         }
 
-        public Task Initialize()
+        public virtual Task Initialize()
         {
             var genesis = this.network.GetGenesis();
 

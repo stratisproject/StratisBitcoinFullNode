@@ -8,6 +8,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             PowConsensusValidator consensusValidator = null,
             ConcurrentChain chain = null,
             ChainState chainState = null,
+            IndexStoreManager indexManager = null,
             BlockStoreManager blockManager = null,
             MempoolManager mempoolManager = null,
             Connection.IConnectionManager connectionManager = null)
@@ -39,6 +41,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                   consensusValidator: consensusValidator,
                   chain: chain,
                   chainState: chainState,
+                  indexManager: indexManager,
                   blockManager: blockManager,
                   mempoolManager: mempoolManager,
                   connectionManager: connectionManager)
@@ -55,6 +58,36 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 this.FullNode = null;
             }
             return Task.CompletedTask;
+        }
+
+        [ActionName("createindex")]
+        public async Task<bool>CreateIndex(string name, bool multiValue, string builder, string[] dependancies = null)
+        {
+            if (dependancies?[0] == null)
+                dependancies = null;
+
+            return await this.IndexManager.IndexRepository.CreateIndex(name, multiValue, builder, dependancies);
+        }
+
+        [ActionName("dropindex")]
+        public async Task<bool> DropIndex(string name)
+        {
+            return await this.IndexManager.IndexRepository.DropIndex(name);
+        }
+
+        [ActionName("listindexnames")]
+        public string[] ListIndexNames()
+        {
+            return this.IndexManager.IndexRepository.Indexes.Keys.ToArray();
+        }
+
+        [ActionName("describeindex")]
+        public string[] DescribeIndex(string name)
+        {
+            if (!this.IndexManager.IndexRepository.Indexes.TryGetValue(name, out Index index))
+                return null;
+
+            return new string[] { index.ToString() };
         }
 
         [ActionName("getrawtransaction")]

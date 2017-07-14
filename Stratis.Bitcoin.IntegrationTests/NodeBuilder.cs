@@ -21,6 +21,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
@@ -76,6 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				.UseNodeSettings(args)
 				.UseConsensus()
 				.UseBlockStore()
+                .UseIndexStore()
 				.UseMempool()
                 .AddMining()
 				.UseWallet()

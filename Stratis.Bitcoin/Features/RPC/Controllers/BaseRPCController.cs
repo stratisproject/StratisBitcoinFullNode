@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -18,6 +19,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         protected ConsensusLoop ConsensusLoop;
         protected ChainBase Chain;
         protected ChainState ChainState;
+        protected IndexStoreManager IndexManager;
         protected BlockStoreManager BlockManager;
         protected MempoolManager MempoolManager;
         protected Connection.IConnectionManager ConnectionManager;
@@ -30,6 +32,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             ConsensusLoop consensusLoop = null,
             ConcurrentChain chain = null,
             ChainState chainState = null,
+            IndexStoreManager indexManager = null,
             BlockStoreManager blockManager = null,
             MempoolManager mempoolManager = null,
             Connection.IConnectionManager connectionManager = null)
@@ -42,6 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.Chain = chain;
             this.ChainState = chainState;
             this.BlockManager = blockManager;
+            this.IndexManager = indexManager;
             this.MempoolManager = mempoolManager;
             this.ConnectionManager = connectionManager;
         }
