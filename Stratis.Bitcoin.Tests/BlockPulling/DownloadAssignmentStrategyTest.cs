@@ -1,18 +1,8 @@
-﻿using Moq;
-using NBitcoin;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockStore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Configuration;
-using NBitcoin.Protocol.Behaviors;
 
 namespace Stratis.Bitcoin.Tests.BlockPulling
 {
@@ -27,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         /// <para>
         /// We simulate the following scenario in this test:
         /// <list type="bullet">
-        /// <item>Our node has a chain with 5 blocks and is connected to 3 peer nodes - A, B, C.</item>
+        /// <item>Our node has a chain with 5 blocks and is connected to 4 peer nodes - A, B, C, D.</item>
         /// <item>Node A has a chain with 4 blocks.</item>
         /// <item>Node B has a chain with 20 blocks.</item>
         /// <item>Node C has a chain with 30 blocks.</item>
@@ -37,7 +27,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         /// <para>
         /// We call AskBlocks on the block puller with requests to download blocks 6 to 40
         /// and we check that the node A is not assigned any work and that the node B is not 
-        /// assigned any work for blocks 21 to 40.
+        /// assigned any work for blocks 21 to 40, and C is not assigned any work for blocks 
+        /// 31 to 40.
         /// </para>
         /// </summary>
         [Fact]
