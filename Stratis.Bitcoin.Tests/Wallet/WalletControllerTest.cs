@@ -516,7 +516,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 Mnemonic = "mnemonic"
             });
 
-
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -550,7 +549,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 FolderPath = "",
                 Password = ""
             });
-
 
             mockWalletWrapper.VerifyAll();
             OkResult viewResult = Assert.IsType<OkResult>(result);
