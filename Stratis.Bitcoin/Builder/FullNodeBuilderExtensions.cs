@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Builder
@@ -38,18 +39,6 @@ namespace Stratis.Bitcoin.Builder
         public static IFullNodeBuilder UseDefaultNodeSettings(this IFullNodeBuilder builder)
         {
             return builder.UseNodeSettings(NodeSettings.Default());
-        }
-
-        /// <summary>
-        /// Get service of type T from the System.IServiceProvider.
-        /// </summary>
-        /// <typeparam name="T">The type of service object to get.</typeparam>
-        /// <param name="serviceProvider">The System.IServiceProvider to retrieve the service object from.</param>
-        /// <returns>A service object of type T or null if there is no such service.</returns>
-        /// <remarks>TODO: This extension method probably does not belong to this class/file.</remarks>
-        public static T Service<T>(this IServiceProvider serviceProvider)
-        {
-            return (T)serviceProvider.GetService<T>();
         }
     }
 }

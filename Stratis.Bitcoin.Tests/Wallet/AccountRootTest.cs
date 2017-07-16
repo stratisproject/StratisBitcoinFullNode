@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Stratis.Bitcoin.Features.Wallet;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet
@@ -10,7 +11,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetFirstUnusedAccountWithoutAccountsReturnsNull()
         {
-            var accountRoot = CreateAccountRoot(Bitcoin.Wallet.CoinType.Stratis);
+            var accountRoot = CreateAccountRoot(CoinType.Stratis);
 
             var result = accountRoot.GetFirstUnusedAccount();
 
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetFirstUnusedAccountReturnsAccountWithLowerIndexHavingNoAddresses()
         {
-            var accountRoot = CreateAccountRoot(Bitcoin.Wallet.CoinType.Stratis);
+            var accountRoot = CreateAccountRoot(CoinType.Stratis);
             var unused = CreateAccount("unused1");
             unused.Index = 2;
             accountRoot.Accounts.Add(unused);
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetAccountByNameWithMatchingNameReturnsAccount()
         {
-            var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", Bitcoin.Wallet.CoinType.Stratis);            
+            var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);            
             
             var result = accountRoot.GetAccountByName("Test");
 
@@ -60,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetAccountByNameWithNonMatchingNameThrowsException()
         {            
-            var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", Bitcoin.Wallet.CoinType.Stratis);
+            var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
 
             Assert.Throws<Exception>(() => { accountRoot.GetAccountByName("test"); });           
         }

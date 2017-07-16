@@ -8,14 +8,15 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Logging;
-using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
-using Stratis.Bitcoin.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

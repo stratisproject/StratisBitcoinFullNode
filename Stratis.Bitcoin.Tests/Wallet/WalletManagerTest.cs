@@ -5,13 +5,14 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Tests.Logging;
-using Stratis.Bitcoin.Wallet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Common;
 using Stratis.Bitcoin.Common.Hosting;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 using static Stratis.Bitcoin.FullNode;
 
@@ -49,9 +50,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Assert.True(walletManager.Wallets.All(w => w.BlockLocator != null));
         }
 
-        private Bitcoin.Wallet.Wallet CreateWallet(string name)
+        private Features.Wallet.Wallet CreateWallet(string name)
         {
-            return new Bitcoin.Wallet.Wallet()
+            return new Features.Wallet.Wallet()
             {
                 Name = name,
                 AccountsRoot = new List<AccountRoot>(),

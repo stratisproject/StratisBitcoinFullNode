@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
