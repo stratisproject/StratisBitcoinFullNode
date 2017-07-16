@@ -10,6 +10,9 @@ using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
+    /// <summary>
+    /// Block puller used for fast sync during initial block download (IBD). 
+    /// </summary>
     public interface ILookaheadBlockPuller
     {
         /// <summary>
@@ -26,7 +29,7 @@ namespace Stratis.Bitcoin.BlockPulling
         void SetLocation(ChainedBlock location);
 
         /// <summary>
-        /// Waits for a next block to be available (downloaded).
+        /// Waits for a next block to be available (downloaded) and returns it to the consumer.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to allow the caller to cancel waiting for the next block.</param>
         /// <returns>Next block or null if a reorganization happened on the chain.</returns>
@@ -40,8 +43,46 @@ namespace Stratis.Bitcoin.BlockPulling
     }
 
     /// <summary>
-    /// Puller with ability to  lookahead calculates the next blocks to download
+    /// Puller that is used for fast sync during initial block download (IBD). It implements a strategy of downloading 
+    /// multiple blocks from multiple peers at once, so that IBD is fast enough, but does not consume too many resources.
     /// </summary>
+    /// <remarks>
+    /// The node is aware of the longest chain of block headers, which is stored in this.Chain. This is the chain the puller 
+    /// needs to download. Here is a visualization of the block chain and how the puller sees it:
+    /// <para>
+    /// -------A------B-------------C-----------D---------E--------
+    /// </para>
+    /// <para>
+    /// Each '-' represents a block and letters 'A' to 'E' represent blocks with important positions in the chain from 
+    /// the puller's perspective. The puller can be understood as a producer of the blocks (by requesting them from the peers 
+    /// and downloading them) for the component that uses the puller that consumes the blocks (e.g. validating them).
+    /// </para>
+    /// <para>
+    /// A is a position of a block that we call location. Blocks in front of A were already downloaded and consumed.
+    /// </para>
+    /// <para>
+    /// B is a position of a block A + MinimumLookahead, and E is a position of block A + MaximumLookahead. 
+    /// Blocks between B and E are the blocks that the puller is currently interested in. Blocks after E are currently 
+    /// not considered and will only be interesting later. The lower boundary B prevents the IBD to be too slow, 
+    /// while the upper boundary E prevents the puller from using too many resources.
+    /// </para>
+    /// <para>
+    /// Blocks between A and B are blocks that have been downloaded already, but the consumer did not consume them yet.
+    /// </para>
+    /// <para>
+    /// C is a position of a block A + locationLookahead. Blocks between B and C are currently being requested by the puller, 
+    /// some of them could be already being downloaded.
+    /// </para>
+    /// <para>
+    /// D is a position of a block A + ActualLookahead. ActualLookahead is a number of blocks that the puller wants 
+    /// to be downloading simultaneously. If there is a gap between C and D it means that the puller wants to start 
+    /// downloading these blocks.
+    /// </para>
+    /// <para>
+    /// Blocks between D and E are currently those that the puller does not want to be downloading right now, 
+    /// but should the ActualLookahead be adjusted, they can be requested in the near future.
+    /// </para>
+    /// </remarks>
     public class LookaheadBlockPuller : BlockPuller, ILookaheadBlockPuller
     {
         /// <summary>Maximal size of a block in bytes.</summary>
@@ -60,21 +101,23 @@ namespace Stratis.Bitcoin.BlockPulling
             this.MaximumLookahead = 2000;
         }
 
+        /// <summary>Lower limit for ActualLookahead.</summary>
         public int MinimumLookahead
         {
             get;
             set;
         }
 
+        /// <summary>Upper limit for ActualLookahead.</summary>
         public int MaximumLookahead
         {
             get;
             set;
         }
 
-        /// <summary>Number of blocks the puller wants to download in the nearest future.</summary>
+        /// <summary>Number of blocks the puller wants to be downloading at once.</summary>
         private int actualLookahead;
-        /// <summary>Number of blocks the puller wants to download in the nearest future.</summary>
+        /// <summary>Number of blocks the puller wants to be downloading at once.</summary>
         public int ActualLookahead
         {
             get
@@ -97,12 +140,12 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Current number of bytes that unconsumed blocks are occupying.</summary>
         private long currentSize;
 
-        /// <summary>Maintains the statistics of number of downloaded blocks between two requests to get the next block.</summary>
+        /// <summary>Maintains the statistics of number of downloaded blocks. This is used for calculating new actualLookahead value.</summary>
         private List<int> downloadedCounts = new List<int>();
 
-        /// <summary>Points to a block header that identifies the current position of the puller in the chain.</summary>
+        /// <summary>Points to a block that was consumed last time. The next block returned by the puller to the consumer will be at location + 1.</summary>
         private ChainedBlock location;
-        /// <summary>Points to a block header that identifies the current position of the puller in the chain.</summary>
+        /// <summary>Points to a block that was consumed last time. The next block returned by the puller to the consumer will be at location + 1.</summary>
         public ChainedBlock Location
         {
             get { return this.location; }
@@ -113,7 +156,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Event that signals when a new block is pushed to the list of downloaded blocks.</summary>
         private AutoResetEvent pushed = new AutoResetEvent(false);
 
+        /// <summary>Identifies the last block that is currently being requested/downloaded.</summary>
         private ChainedBlock lookaheadLocation;
+        /// <summary>Identifies the last block that is currently being requested/downloaded.</summary>
         public ChainedBlock LookaheadLocation
         {
             get
@@ -122,7 +167,8 @@ namespace Stratis.Bitcoin.BlockPulling
             }
         }
 
-        /// <summary>?????????????????</summary>
+        /// <summary>Median of a list of past downloadedCounts values. This is used just for logging purposes.</summary>
+        /// <remarks>TODO: There is a race condition that could cause GetMedian method to be called with empty downloadCounts list and throw exception.</remarks>
         public decimal MedianDownloadCount
         {
             get
@@ -176,7 +222,11 @@ namespace Stratis.Bitcoin.BlockPulling
             this.downloadedCounts.Add(this.DownloadedBlocks.Count);
             if (this.lookaheadLocation == null)
             {
-                // TODO: Comment missing here, is this intentional?
+                // Calling twice is intentional here.
+                // lookaheadLocation is null only during initialization
+                // or when reorganisation happens. Calling this twice will 
+                // make sure the initial work of the puller is away from 
+                // the lower boundary.
                 AskBlocks();
                 AskBlocks();
             }
@@ -215,9 +265,6 @@ namespace Stratis.Bitcoin.BlockPulling
             return median;
         }
 
-        // If blocks ActualLookahead is 8:
-        // If the number of downloaded block reach 2 or below, then ActualLookahead will be multiplied by 1.1.
-        // If it reach 14 or above, it will be divided by 1.1.
         /// <summary>
         /// Calculates a new value for this.ActualLookahead to keep it within reasonable range.
         /// <para>This ensures that the puller is requesting enough new blocks quickly enough to 
