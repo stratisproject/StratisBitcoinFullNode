@@ -11,7 +11,10 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Prepares and invokes download tasks from peer nodes for blocks the node is missing.
         /// </summary>
-        /// <param name="downloadRequests">Array of block descriptions that need to be downloaded.</param>
+        /// <param name="downloadRequests">
+        /// Array of block descriptions that need to be downloaded.
+        /// Blocks in the array have to be unique - it is not supported for a single block to be included twice in this array.
+        /// </param>
         void AskBlocks(ChainedBlock[] downloadRequests);
 
         /// <summary>
