@@ -72,7 +72,9 @@ namespace Stratis.Bitcoin.BlockPulling
             set;
         }
 
+        /// <summary>Number of blocks the puller wants to download in the nearest future.</summary>
         private int actualLookahead;
+        /// <summary>Number of blocks the puller wants to download in the nearest future.</summary>
         public int ActualLookahead
         {
             get
@@ -85,12 +87,6 @@ namespace Stratis.Bitcoin.BlockPulling
             }
         }
 
-        /// <summary>Number of blocks downloaded by the puller.</summary>
-        public int DownloadedCount
-        {
-            get { return this.DownloadedBlocks.Count; }
-        }
-
         /// <summary>Maximum number of bytes used by unconsumed blocks that the puller is willing to maintain.</summary>
         public int MaxBufferedSize
         {
@@ -101,6 +97,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Current number of bytes that unconsumed blocks are occupying.</summary>
         private long currentSize;
 
+        /// <summary>Maintains the statistics of number of downloaded blocks between two requests to get the next block.</summary>
         private List<int> downloadedCounts = new List<int>();
 
         /// <summary>Points to a block header that identifies the current position of the puller in the chain.</summary>
@@ -179,6 +176,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.downloadedCounts.Add(this.DownloadedBlocks.Count);
             if (this.lookaheadLocation == null)
             {
+                // TODO: Comment missing here, is this intentional?
                 AskBlocks();
                 AskBlocks();
             }
@@ -220,6 +218,11 @@ namespace Stratis.Bitcoin.BlockPulling
         // If blocks ActualLookahead is 8:
         // If the number of downloaded block reach 2 or below, then ActualLookahead will be multiplied by 1.1.
         // If it reach 14 or above, it will be divided by 1.1.
+        /// <summary>
+        /// Calculates a new value for this.ActualLookahead to keep it within reasonable range.
+        /// <para>This ensures that the puller is requesting enough new blocks quickly enough to 
+        /// keep with the demand, but at the same time not too quickly.</para>
+        /// </summary>
         private void CalculateLookahead()
         {
             decimal medianDownloads = GetMedian(this.downloadedCounts);
@@ -269,6 +272,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Prepares and invokes download tasks from peer nodes for blocks the node is missing.
         /// </summary>
+        /// <remarks>TODO: Comment is missing here about the details of the logic in this method.</remarks>
         private void AskBlocks()
         {
             if (this.location == null)

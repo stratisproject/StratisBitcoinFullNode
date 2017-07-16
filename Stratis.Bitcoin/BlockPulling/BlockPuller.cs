@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>List of block header hashes that the node wants to obtain from its peers.</summary>
         private readonly ConcurrentBag<uint256> pendingInventoryVectors;
         
-        /// <summary>List of downloaded blocks mapped by their header hashes.</summary>
+        /// <summary>List of unprocessed downloaded blocks mapped by their header hashes.</summary>
         protected readonly ConcurrentDictionary<uint256, DownloadedBlock> DownloadedBlocks;
 
         /// <summary>Collection of available network peers.</summary>
