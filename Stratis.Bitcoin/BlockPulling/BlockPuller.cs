@@ -6,63 +6,127 @@ using NBitcoin;
 using System.Collections.Concurrent;
 using NBitcoin.Protocol.Behaviors;
 using System.Threading;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
-    // A puller that download blocks from peers
-    // this must be inherited and the implementing class
-    // needs to handle taking blocks off the queue and stalling
+    /// <summary>
+    /// Base class for pullers that download blocks from peers.
+    /// <para>
+    /// This must be inherited and the implementing class
+    /// needs to handle taking blocks off the queue and stalling.
+    /// </para>
+    /// </summary>
     public abstract class BlockPuller : IBlockPuller
     {
+        /// <summary>Maximal quality score of a peer node based on the node's past experience with the peer node.</summary>
         public const int MaxQualityScore = 150;
+
+        /// <summary>Minimal quality score of a peer node based on the node's past experience with the peer node.</summary>
         public const int MinQualityScore = 1;
 
+        /// <summary>List of relations to peer nodes mapped by block header hashes that the peers are requested to provide.</summary>
         private readonly ConcurrentDictionary<uint256, BlockPullerBehavior> map;
+
+        /// <summary>List of block header hashes that the node wants to obtain from its peers.</summary>
         private readonly ConcurrentBag<uint256> pendingInventoryVectors;
+
+        /// <summary>List of unprocessed downloaded blocks mapped by their header hashes.</summary>
         protected readonly ConcurrentDictionary<uint256, DownloadedBlock> DownloadedBlocks;
 
+        /// <summary>Collection of available network peers.</summary>
         protected readonly IReadOnlyNodesCollection Nodes;
-        protected readonly ConcurrentChain Chain;
-        private Random _Rand = new Random();
 
+        /// <summary>Best chain that the node is aware of.</summary>
+        protected readonly ConcurrentChain Chain;
+
+        /// <summary>Random number generator.</summary>
+        private Random Rand = new Random();
+
+        /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
         private readonly NodeRequirement requirements;
+        /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
         protected virtual NodeRequirement Requirements => this.requirements;
 
+        /// <summary>Description of a block together with its size.</summary>
         public class DownloadedBlock
         {
+            /// <summary>Size of the serialized block in bytes.</summary>
             public int Length;
+
+            /// <summary>Description of a block.</summary>
             public Block Block;
         }
 
+        /// <summary>
+        /// Relation of the node to a network peer node.
+        /// </summary>
         public class BlockPullerBehavior : NodeBehavior
         {
+            /// <summary>
+            /// Token that allows cancellation of async tasks. 
+            /// It is used during component shutdown.
+            /// </summary>
             private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
+            /// <summary>
+            /// Token that allows cancellation of async tasks. 
+            /// It is used during component shutdown.
+            /// </summary>
             public CancellationTokenSource CancellationTokenSource => this.cancellationToken;
 
+            /// <summary>Hash set holding set of block header hashes that are being downloaded.</summary>
+            /// <remarks>Implemented as dictionary due to missing ConcurrentHashSet implementation.</remarks>
             private readonly ConcurrentDictionary<uint256, uint256> pendingDownloads = new ConcurrentDictionary<uint256, uint256>();
+            /// <summary>Set of block header hashes that are being downloaded.</summary>
             public ICollection<uint256> PendingDownloads => this.pendingDownloads.Values;
 
+            /// <summary>Reference to the parent block puller.</summary>
             private readonly BlockPuller puller;
-            public BlockStore.ChainBehavior ChainBehavior { get; private set; }
 
+            /// <summary>Reference to the parent block puller.</summary>
             public BlockPuller Puller => this.puller;
 
+            /// <summary>Reference to a component responsible for keeping the chain up to date.</summary>
+            public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }
+
+
+            /// <summary>
+            /// Initializes a new instance of the object with parent block puller.
+            /// </summary>
+            /// <param name="puller">Reference to the parent block puller.</param>
             public BlockPullerBehavior(BlockPuller puller)
             {
                 this.puller = puller;
-                this.QualityScore = 75;
+                this.QualityScore = MaxQualityScore / 2;
             }
+
+            /// <inheritdoc />
             public override object Clone()
             {
                 return new BlockPullerBehavior(this.puller);
             }
 
+            /// <summary>
+            /// Evaluation of the past experience with this node.
+            /// The higher the score, the better experience we have had with it.
+            /// </summary>
+            /// <seealso cref="MaxQualityScore"/>
+            /// <seealso cref="MinQualityScore"/>
             public int QualityScore
             {
                 get; set;
             }
 
+
+            /// <summary>
+            /// Event handler that is called when the attached node receives a network message.
+            /// <para>
+            /// This handler modifies internal state when an information about a block is received.
+            /// </para>
+            /// </summary>
+            /// <param name="node">Node that received the message.</param>
+            /// <param name="message">Received message.</param>
             private void Node_MessageReceived(Node node, IncomingMessage message)
             {
                 message.Message.IfPayloadIs<BlockPayload>((block) =>
@@ -88,6 +152,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 });
             }
 
+            /// <summary>
+            /// If there are any more blocks the node wants to download, this method assigns and starts 
+            /// a new download task for a specific peer node that this behavior represents.
+            /// </summary>
             internal void AssignPendingVector()
             {
                 if (this.AttachedNode == null || this.AttachedNode.State != NodeState.HandShaked || !this.puller.requirements.Check(this.AttachedNode.PeerVersion))
@@ -99,6 +167,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
             }
 
+            /// <summary>
+            /// Sends a message to the connected peer requesting downloading of a block.
+            /// </summary>
+            /// <param name="block">Hash of the block header to download.</param>
             internal void StartDownload(uint256 block)
             {
                 if (this.puller.map.TryAdd(block, this))
@@ -108,7 +180,11 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
             }
 
-            //Caller should add to the puller map
+            /// <summary>
+            /// Sends a message to the connected peer requesting specific data.
+            /// </summary>
+            /// <param name="getDataPayload">Specification of the data to download - <see cref="GetDataPayload"/>.</param>
+            /// <remarks>Caller is responsible to add the puller to the map if necessary.</remarks>
             internal void StartDownload(GetDataPayload getDataPayload)
             {
                 foreach (InventoryVector inv in getDataPayload.Inventory)
@@ -116,16 +192,22 @@ namespace Stratis.Bitcoin.BlockPulling
                     inv.Type = this.AttachedNode.AddSupportedOptions(inv.Type);
                     this.pendingDownloads.TryAdd(inv.Hash, inv.Hash);
                 }
-                this.AttachedNode.SendMessageAsync(getDataPayload);                
+                this.AttachedNode.SendMessageAsync(getDataPayload);
             }
 
+            /// <summary>
+            /// Connects the puller to the node and the chain so that the puller can start its work.
+            /// </summary>
             protected override void AttachCore()
             {
                 this.AttachedNode.MessageReceived += Node_MessageReceived;
-                this.ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
+                this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
                 AssignPendingVector();
             }
 
+            /// <summary>
+            /// Disconnects the puller from the node and cancels pending operations and download tasks.
+            /// </summary>
             protected override void DetachCore()
             {
                 this.cancellationToken.Cancel();
@@ -139,6 +221,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
             }
 
+            /// <summary>
+            /// Releases the block downloading task from the puller and returns the block to the list of blocks the node wants to download.
+            /// </summary>
+            /// <param name="blockHash">Hash of the block which task should be released.</param>
             internal void Release(uint256 blockHash)
             {
                 BlockPullerBehavior unused;
@@ -150,6 +236,9 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
             }
 
+            /// <summary>
+            /// Releases all pending block download tasks from the puller.
+            /// </summary>
             public void ReleaseAll()
             {
                 foreach (uint256 h in this.PendingDownloads.ToArray())
@@ -157,9 +246,14 @@ namespace Stratis.Bitcoin.BlockPulling
                     Release(h);
                 }
             }
-
         }
 
+        /// <summary>
+        /// Initializes a new instance of the object having a chain of block headers and a list of available nodes. 
+        /// </summary>
+        /// <param name="chain">Chain of block headers.</param>
+        /// <param name="nodes">Network peers of the node.</param>
+        /// <param name="protocolVersion">Version of the protocol that the node supports.</param>
         protected BlockPuller(ConcurrentChain chain, IReadOnlyNodesCollection nodes, ProtocolVersion protocolVersion)
         {
             this.Chain = chain;
@@ -176,15 +270,14 @@ namespace Stratis.Bitcoin.BlockPulling
             };
         }
 
-        /// <summary>
-        /// Psuh a block using the cancellation token belonging to the behaviour that pushed the block
-        /// </summary>
+        /// <inheritdoc />
         public virtual void PushBlock(int length, Block block, CancellationToken token)
         {
             uint256 hash = block.Header.GetHash();
             this.DownloadedBlocks.TryAdd(hash, new DownloadedBlock { Block = block, Length = length });
         }
 
+        /// <inheritdoc />
         public virtual void AskBlocks(ChainedBlock[] downloadRequests)
         {
             BlockPullerBehavior[] nodes = GetNodeBehaviors();
@@ -198,6 +291,11 @@ namespace Stratis.Bitcoin.BlockPulling
             DistributeDownload(vectors, nodes, downloadRequests.Min(d => d.Height));
         }
 
+        /// <summary>
+        /// Constructs relations to peer nodes that meet the requirements.
+        /// </summary>
+        /// <returns>Array of relations to peer nodes that can be asked for blocks.</returns>
+        /// <seealso cref="requirements"/>
         private BlockPullerBehavior[] GetNodeBehaviors()
         {
             return this.Nodes
@@ -207,11 +305,20 @@ namespace Stratis.Bitcoin.BlockPulling
                 .ToArray();
         }
 
+        /// <summary>
+        /// Reassigns the incomplete block downloading tasks among available peer nodes.
+        /// <para>
+        /// When something went wrong when the node wanted to download a block from a peer, 
+        /// the task of obtaining the block might get released from the peer. This function 
+        /// leads to assignment of the incomplete tasks to available peer nodes.
+        /// </para>
+        /// </summary>
         private void AssignPendingVectors()
         {
             BlockPullerBehavior[] innernodes = GetNodeBehaviors();
             if (innernodes.Length == 0)
                 return;
+
             List<InventoryVector> inventoryVectors = new List<InventoryVector>();
             uint256 result;
             while (this.pendingInventoryVectors.TryTake(out result))
@@ -220,7 +327,7 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             Dictionary<int, InventoryVector> vectors = new Dictionary<int, InventoryVector>();
-            var minheight = int.MaxValue;
+            var minHeight = int.MaxValue;
             foreach (InventoryVector vector in inventoryVectors.ToArray())
             {
                 ChainedBlock chainedBlock = this.Chain.GetBlock(vector.Hash);
@@ -229,20 +336,27 @@ namespace Stratis.Bitcoin.BlockPulling
                     inventoryVectors.Remove(vector);
                     continue;
                 }
-                minheight = Math.Min(chainedBlock.Height, minheight);
+                minHeight = Math.Min(chainedBlock.Height, minHeight);
                 vectors.Add(chainedBlock.Height, vector);
             }
             if (inventoryVectors.Any())
             {
-                DistributeDownload(vectors, innernodes, minheight);
+                DistributeDownload(vectors, innernodes, minHeight);
             }
         }
 
+        /// <inheritdoc />
         public bool IsDownloading(uint256 hash)
         {
             return this.map.ContainsKey(hash) || this.pendingInventoryVectors.Contains(hash);
         }
 
+        /// <summary>
+        /// Decreases the quality score of the peer node.
+        /// <para>This function is called when something goes wrong with the peer.</para>
+        /// <para>If the score reaches the minimal value, the tasks assigned for the node are released.</para>
+        /// </summary>
+        /// <param name="chainedBlock">Block the node wanted to download, but something went wrong during the process.</param>
         protected void OnStalling(ChainedBlock chainedBlock)
         {
             BlockPullerBehavior behavior = null;
@@ -264,7 +378,21 @@ namespace Stratis.Bitcoin.BlockPulling
             }
         }
 
-        private void DistributeDownload(Dictionary<int, InventoryVector> vectors, BlockPullerBehavior[] innernodes, int minHight)
+        /// <summary>
+        /// Schedules downloading of one or more blocks that the node is missing from one or more peer nodes.
+        /// <para>
+        /// Node's quality score is being considered as a weight during the random distribution 
+        /// of the download tasks among the nodes.
+        /// </para>
+        /// <para>
+        /// Nodes are only asked for blocks that they should have (according to our information 
+        /// about how long their chains are).
+        /// </para>
+        /// </summary>
+        /// <param name="vectors">Information about blocks to download.</param>
+        /// <param name="innernodes">Available nodes to distribute download tasks among.</param>
+        /// <param name="minHeight">Minimum height of the chain that the target nodes has to have in order to be asked for one or more of the block to be downloaded from them.</param>
+        private void DistributeDownload(Dictionary<int, InventoryVector> vectors, BlockPullerBehavior[] innernodes, int minHeight)
         {
             if (vectors.Count == 0)
                 return;
@@ -274,13 +402,13 @@ namespace Stratis.Bitcoin.BlockPulling
 
             foreach (BlockPullerBehavior behavior in innernodes)
             {
-                if (behavior.ChainBehavior?.PendingTip?.Height >= minHight)
+                if (behavior.ChainHeadersBehavior?.PendingTip?.Height >= minHeight)
                 {
                     DownloadAssignmentStrategy.PeerInformation peerInfo = new DownloadAssignmentStrategy.PeerInformation()
                     {
                         QualityScore = behavior.QualityScore,
                         PeerId = behavior,
-                        ChainHeight = behavior.ChainBehavior.PendingTip.Height
+                        ChainHeight = behavior.ChainHeadersBehavior.PendingTip.Height
                     };
                     peerInformation.Add(peerInfo);
                 }
