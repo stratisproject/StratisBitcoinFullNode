@@ -48,7 +48,13 @@ namespace Stratis.Bitcoin.BlockPulling
     /// </summary>
     /// <remarks>
     /// The node is aware of the longest chain of block headers, which is stored in this.Chain. This is the chain the puller 
-    /// needs to download. Here is a visualization of the block chain and how the puller sees it:
+    /// needs to download. The algorithm works with following values: ActualLookahead, MinimumLookahead, MaximumLookahead,
+    /// location, and lookaheadLocation.
+    /// <para>
+    /// ActualLookahead is a number of blocks that we wish to download at the same time, it varies between MinimumLookahead 
+    /// and MaximumLookahead depending on the consumer's speed and node download speed. Calling AskBlocks() increases 
+    /// lookaheadLocation by ActualLookahead. Here is a visualization of the block chain and how the puller sees it:
+    /// </para>
     /// <para>
     /// -------A------B-------------C-----------D---------E--------
     /// </para>
@@ -70,8 +76,10 @@ namespace Stratis.Bitcoin.BlockPulling
     /// Blocks between A and B are blocks that have been downloaded already, but the consumer did not consume them yet.
     /// </para>
     /// <para>
-    /// C is a position of a block A + locationLookahead. Blocks between B and C are currently being requested by the puller, 
-    /// some of them could be already being downloaded.
+    /// C is a position of a block A + lookaheadLocation. Blocks between B and C are currently being requested by the puller, 
+    /// some of them could be already being downloaded. The block puller makes sure that if lookaheadLocation &lt; ActualLookahead 
+    /// then AskBlocks() is called. During the initialization, or when reorganisation happens, lookaheadLocation is zero/null 
+    /// and AskBlocks() needs to be called two times.
     /// </para>
     /// <para>
     /// D is a position of a block A + ActualLookahead. ActualLookahead is a number of blocks that the puller wants 
