@@ -1,6 +1,6 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.Bitcoin.Wallet.Helpers;
+using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet

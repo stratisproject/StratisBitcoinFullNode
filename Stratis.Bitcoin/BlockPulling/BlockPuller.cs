@@ -6,6 +6,7 @@ using NBitcoin;
 using System.Collections.Concurrent;
 using NBitcoin.Protocol.Behaviors;
 using System.Threading;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.BlockPulling
@@ -82,11 +83,12 @@ namespace Stratis.Bitcoin.BlockPulling
 
             /// <summary>Reference to the parent block puller.</summary>
             private readonly BlockPuller puller;
+
             /// <summary>Reference to the parent block puller.</summary>
             public BlockPuller Puller => this.puller;
 
             /// <summary>Reference to a component responsible for keeping the chain up to date.</summary>
-            public BlockStore.ChainBehavior ChainBehavior { get; private set; }
+            public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }
 
 
             /// <summary>
@@ -199,7 +201,7 @@ namespace Stratis.Bitcoin.BlockPulling
             protected override void AttachCore()
             {
                 this.AttachedNode.MessageReceived += Node_MessageReceived;
-                this.ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
+                this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
                 AssignPendingVector();
             }
 
@@ -387,14 +389,15 @@ namespace Stratis.Bitcoin.BlockPulling
             if (vectors.Length == 0)
                 return;
 
+
             // Be careful not to ask the block from a node that does not have it 
-            // (we can check the ChainBehavior.PendingTip to know where the node is standing).
+            // (we can check the ChainHeadersBehavior.PendingTip to know where the node is standing).
             var selectnodes = new List<BlockPullerBehavior>();
             foreach (BlockPullerBehavior behavior in innernodes)
             {
                 // filter nodes that are still behind using the 
                 // pending tip in the chain behaviour
-                if (behavior.ChainBehavior?.PendingTip?.Height >= minHeight)
+                if (behavior.ChainHeadersBehavior?.PendingTip?.Height >= minHeight)
                     selectnodes.Add(behavior);
             }
             innernodes = selectnodes.ToArray();

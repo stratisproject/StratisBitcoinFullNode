@@ -7,18 +7,20 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
-using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using System.Reflection;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Common;
 using Stratis.Bitcoin.Common.Hosting;
-using Stratis.Bitcoin.Wallet;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin
 {
@@ -94,9 +96,9 @@ namespace Stratis.Bitcoin
 
 		public List<IDisposable> Resources { get; private set; }
 
-		public ChainBehavior.ChainState ChainBehaviorState { get; private set; }
+		public ChainState ChainBehaviorState { get; private set; }
 
-		public Signals Signals { get; set; }
+		public Signals.Signals Signals { get; set; }
 
 		public ConsensusLoop ConsensusLoop { get; set; }
 
@@ -126,11 +128,11 @@ namespace Stratis.Bitcoin
 			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
 			this.Network = this.Services.ServiceProvider.GetService<Network>();
 			this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
-			this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainBehavior.ChainState>();
+			this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainState>();
 			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
 			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
 			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
-			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
+			this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
 
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();

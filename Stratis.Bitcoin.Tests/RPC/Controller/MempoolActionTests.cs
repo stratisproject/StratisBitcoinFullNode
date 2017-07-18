@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.RPC.Controllers;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Logging;
 using Xunit;
 
