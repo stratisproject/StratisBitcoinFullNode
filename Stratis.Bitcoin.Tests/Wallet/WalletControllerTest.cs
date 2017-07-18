@@ -6,10 +6,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Common.JsonErrors;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Wallet;
-using Stratis.Bitcoin.Wallet.Controllers;
-using Stratis.Bitcoin.Wallet.Helpers;
-using Stratis.Bitcoin.Wallet.Models;
 using Xunit;
 using System.Collections.Generic;
 using NBitcoin.Protocol;
@@ -17,6 +13,10 @@ using System.Security;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Tests.Logging;
 using System.Linq;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Helpers;
+using Stratis.Bitcoin.Features.Wallet.Models;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {
@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void RecoverWalletSuccessfullyReturnsWalletModel()
         {
-            Bitcoin.Wallet.Wallet wallet = new Bitcoin.Wallet.Wallet
+            Features.Wallet.Wallet wallet = new Features.Wallet.Wallet
             {
                 Name = "myWallet",
                 Network = WalletHelpers.GetNetwork("mainnet")
@@ -516,7 +516,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 Mnemonic = "mnemonic"
             });
 
-
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -531,7 +530,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void LoadWalletSuccessfullyReturnsWalletModel()
         {
-            Bitcoin.Wallet.Wallet wallet = new Bitcoin.Wallet.Wallet
+            Features.Wallet.Wallet wallet = new Features.Wallet.Wallet
             {
                 Name = "myWallet",
                 Network = WalletHelpers.GetNetwork("mainnet")
@@ -550,7 +549,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 FolderPath = "",
                 Password = ""
             });
-
 
             mockWalletWrapper.VerifyAll();
             OkResult viewResult = Assert.IsType<OkResult>(result);
@@ -678,7 +676,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetGeneralInfoSuccessfullyReturnsWalletGeneralInfoModel()
         {
-            Bitcoin.Wallet.Wallet wallet = new Bitcoin.Wallet.Wallet
+            Features.Wallet.Wallet wallet = new Features.Wallet.Wallet
             {
                 Name = "myWallet",
                 Network = WalletHelpers.GetNetwork("mainnet"),
@@ -726,7 +724,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetGeneralInfoWithModelStateErrorReturnsBadRequest()
         {
-            Bitcoin.Wallet.Wallet wallet = new Bitcoin.Wallet.Wallet
+            Features.Wallet.Wallet wallet = new Features.Wallet.Wallet
             {
                 Name = "myWallet",
             };

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Notifications;
+using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Signals;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Notifications

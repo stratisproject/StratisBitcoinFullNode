@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.MemoryPool.Fee;
-using Stratis.Bitcoin.MemoryPool;
 using Xunit;
 using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

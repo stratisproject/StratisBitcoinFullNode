@@ -2,7 +2,7 @@ using System;
 using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.Connection
@@ -52,13 +52,13 @@ namespace Stratis.Bitcoin.Connection
 		{
 			this.AttachedNode.StateChanged += AttachedNode_StateChanged;
 			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
-			this._ChainBehavior = this.AttachedNode.Behaviors.Find<BlockStore.ChainBehavior>();
+			this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
 		}
 
-		BlockStore.ChainBehavior _ChainBehavior;
+		ChainHeadersBehavior chainHeadersBehavior;
 		private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
-			if(this._ChainBehavior.InvalidHeaderReceived && !this.Whitelisted)
+			if(this.chainHeadersBehavior.InvalidHeaderReceived && !this.Whitelisted)
 			{
 				node.DisconnectAsync("Invalid block received");
 			}

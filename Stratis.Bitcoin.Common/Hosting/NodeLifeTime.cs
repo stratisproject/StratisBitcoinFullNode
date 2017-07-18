@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Common.Hosting
                 {
                     this.stoppingSource.Cancel(false);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             }
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Common.Hosting
             {
                 this.startedSource.Cancel(false);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
             }
         }
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Common.Hosting
             {
                 this.stoppedSource.Cancel(false);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
             }
         }

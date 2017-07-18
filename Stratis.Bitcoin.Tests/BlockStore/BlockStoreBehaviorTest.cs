@@ -1,13 +1,14 @@
 ﻿using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockStore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using Stratis.Bitcoin.Features.BlockStore;
 using Xunit;
+using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
@@ -15,13 +16,13 @@ namespace Stratis.Bitcoin.Tests.BlockStore
     {
 		private BlockStoreBehavior behavior;
 		private Mock<IBlockStoreCache> blockCache;
-		private Mock<Bitcoin.BlockStore.IBlockRepository> blockRepository;
+		private Mock<IBlockRepository> blockRepository;
 		private ConcurrentChain chain;
 
 		public BlockStoreBehaviorTest()
 		{
 			this.chain = new ConcurrentChain();
-			this.blockRepository = new Mock<Bitcoin.BlockStore.IBlockRepository>();
+			this.blockRepository = new Mock<IBlockRepository>();
 			this.blockCache = new Mock<IBlockStoreCache>();
 
 			this.behavior = new BlockStoreBehavior(this.chain, this.blockRepository.Object, this.blockCache.Object, NullLogger.Instance);

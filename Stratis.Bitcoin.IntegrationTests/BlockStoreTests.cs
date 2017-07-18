@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.MemoryPool;
+using Stratis.Bitcoin.Features.BlockStore;
 using Xunit;
+using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -22,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			using (var dir = TestDirectory.Create())
 			{
-				using (var blockRepo = new BlockStore.BlockRepository(Network.Main, dir.FolderName))
+				using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
 				{
 					var lst = new List<Block>();
 					for (int i = 0; i < 30; i++)
@@ -70,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 	    {
 			using (var dir = TestDirectory.Create())
 			{
-				using (var blockRepo = new BlockStore.BlockRepository(Network.Main, dir.FolderName))
+				using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
 				{
 					blockRepo.SetTxIndex(true).Wait();
 
@@ -118,7 +117,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			using (var dir = TestDirectory.Create())
 			{
-				using (var blockRepo = new BlockStore.BlockRepository(Network.Main, dir.FolderName))
+				using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
 				{
                     blockRepo.Initialize().GetAwaiter().GetResult();
 

@@ -26,6 +26,9 @@ configuration:
 - Debug
 - Release
 
+hosts:
+  api.nuget.org: 93.184.221.200
+
 init:
 - ps: dotnet --info
 
@@ -73,8 +76,7 @@ test_script:
       cd $env:APPVEYOR_BUILD_FOLDER
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests.csproj
       Write-Host "[$env:configuration] FINISHED dotnet test" -foregroundcolor "magenta"
-      # tests are failing intermittently so disabling this for now 
-      # if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
+      if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
 
 #---------------------------------#
 #      artifacts configuration    #

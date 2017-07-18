@@ -1,7 +1,6 @@
 ﻿using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Consensus;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -25,8 +24,11 @@ using System.Net;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging.Console;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus.Deployments;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Deployments;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

@@ -1,6 +1,7 @@
-﻿namespace Stratis.Bitcoin.Tests.BlockStore
+﻿using Stratis.Bitcoin.Features.BlockStore;
+
+namespace Stratis.Bitcoin.Tests.BlockStore
 {
-    using Bitcoin.BlockStore;
     using DBreeze;
     using Moq;
     using NBitcoin;
@@ -431,7 +432,7 @@
             }
         }
 
-        private Bitcoin.BlockStore.IBlockRepository SetupRepository(Network main, string dir)
+        private Features.BlockStore.IBlockRepository SetupRepository(Network main, string dir)
         {
             var repository = new BlockRepository(main, dir);
             repository.Initialize().GetAwaiter().GetResult();

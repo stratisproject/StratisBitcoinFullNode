@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using NBitcoin.Protocol;
 
-namespace NBitcoin.Protocol
+namespace Stratis.Bitcoin.Utilities
 {
     public static class ProtocolExtensions
     {
