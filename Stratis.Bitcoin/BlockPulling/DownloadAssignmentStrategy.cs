@@ -20,13 +20,13 @@ namespace Stratis.Bitcoin.BlockPulling
         public class PeerInformation
         {
             /// <summary>Evaluation of the node's past experience with the peer.</summary>
-            public int QualityScore;
+            public int QualityScore { get; set; }
 
             /// <summary>Length of the chain the peer maintains.</summary>
-            public int ChainHeight;
+            public int ChainHeight { get; set; }
 
             /// <summary>Application defined peer identifier.</summary>
-            public object PeerId;
+            public object PeerId { get; set; }
         }
 
         /// <summary>Random number generator.</summary>
@@ -77,13 +77,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>Random index to <paramref name="scores"/> array - i.e. a number from 0 to scores.Length - 1.</returns>
         private static int GetNodeIndex(int[] scores, int totalScore)
         {
-            int pickScore = Rand.Next(totalScore);
+            int selectedScore = Rand.Next(totalScore);
             int current = 0;
             int i = 0;
             foreach (int score in scores)
             {
                 current += score;
-                if (pickScore < current)
+                if (selectedScore < current)
                     return i;
                 i++;
             }

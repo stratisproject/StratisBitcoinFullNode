@@ -390,17 +390,19 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </para>
         /// </summary>
         /// <param name="vectors">Information about blocks to download.</param>
-        /// <param name="innernodes">Available nodes to distribute download tasks among.</param>
+        /// <param name="innerNodes">Available nodes to distribute download tasks among.</param>
         /// <param name="minHeight">Minimum height of the chain that the target nodes has to have in order to be asked for one or more of the block to be downloaded from them.</param>
-        private void DistributeDownload(Dictionary<int, InventoryVector> vectors, BlockPullerBehavior[] innernodes, int minHeight)
+        private void DistributeDownload(Dictionary<int, InventoryVector> vectors, BlockPullerBehavior[] innerNodes, int minHeight)
         {
             if (vectors.Count == 0)
                 return;
 
+            // Prefilter available peers so that we only work with peers that can be assigned any work.
+            // If there is a peer whose chain is so short that it can't provide any blocks we want, it is ignored.
             List<int> requestedBlockHeights = new List<int>();
             List<DownloadAssignmentStrategy.PeerInformation> peerInformation = new List<DownloadAssignmentStrategy.PeerInformation>();
 
-            foreach (BlockPullerBehavior behavior in innernodes)
+            foreach (BlockPullerBehavior behavior in innerNodes)
             {
                 if (behavior.ChainHeadersBehavior?.PendingTip?.Height >= minHeight)
                 {
@@ -414,8 +416,6 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
             }
 
-            Dictionary<DownloadAssignmentStrategy.PeerInformation, List<int>> assignBlocksToPeers = DownloadAssignmentStrategy.AssignBlocksToPeers(requestedBlockHeights, peerInformation);
-
             // There are no available peers with long enough chains.
             if (peerInformation.Count == 0)
             {
@@ -424,8 +424,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 return;
             }
 
+            Dictionary<DownloadAssignmentStrategy.PeerInformation, List<int>> blocksAssignedToPeers = DownloadAssignmentStrategy.AssignBlocksToPeers(requestedBlockHeights, peerInformation);
+
             // Go through the assignments and start download tasks.
-            foreach (KeyValuePair<DownloadAssignmentStrategy.PeerInformation, List<int>> kvp in assignBlocksToPeers)
+            foreach (KeyValuePair<DownloadAssignmentStrategy.PeerInformation, List<int>> kvp in blocksAssignedToPeers)
             {
                 DownloadAssignmentStrategy.PeerInformation peer = kvp.Key;
                 List<int> blockHeightsToDownload = kvp.Value;
