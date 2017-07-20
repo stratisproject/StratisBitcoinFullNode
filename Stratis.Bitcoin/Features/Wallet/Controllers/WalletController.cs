@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             if (sentItem.Fee < 0)
                                 sentItem.Fee = 0;
 
-                            if (!model.TransactionsHistory.Contains(sentItem, new SendTransactionComparer()))
+                            if (!model.TransactionsHistory.Contains(sentItem, new SentTransactionItemModelComparer()))
                             {
                                 model.TransactionsHistory.Add(sentItem);
                             }

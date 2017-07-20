@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
     ///  However not all fields on this model are equal to each other so we only compare the ones we need.
     ///  See: https://github.com/stratisproject/Breeze/issues/175
     /// </remarks>
-    public class SendTransactionComparer : IEqualityComparer<TransactionItemModel>
+    public class SentTransactionItemModelComparer : IEqualityComparer<TransactionItemModel>
     {
         /// <summary>
         ///  Determines whether the specified objects are equal.
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
         /// <returns>true if the specified objects are equal; otherwise, false.</returns>  
         public bool Equals(TransactionItemModel x, TransactionItemModel y)
         {
-            if (x == null && x == null)
+            if (x == null && y == null)
                 return true;
             else if (x == null || y == null)
                 return false;
@@ -41,6 +41,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
 
             foreach (var payment in x.Payments)
             {
+                // Make sure all payments in x have their equivalent in y. 
+                // Because we check the counts are equal there is no need to check from both sides.
                 if (!y.Payments.Any(w => w.Amount == payment.Amount && w.DestinationAddress == payment.DestinationAddress))
                 {
                     return false;
