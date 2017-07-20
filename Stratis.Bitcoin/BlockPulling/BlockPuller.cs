@@ -399,7 +399,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
             // Prefilter available peers so that we only work with peers that can be assigned any work.
             // If there is a peer whose chain is so short that it can't provide any blocks we want, it is ignored.
-            List<int> requestedBlockHeights = new List<int>();
             List<DownloadAssignmentStrategy.PeerInformation> peerInformation = new List<DownloadAssignmentStrategy.PeerInformation>();
 
             foreach (BlockPullerBehavior behavior in innerNodes)
@@ -424,6 +423,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 return;
             }
 
+            List<int> requestedBlockHeights = vectors.Keys.ToList();
             Dictionary<DownloadAssignmentStrategy.PeerInformation, List<int>> blocksAssignedToPeers = DownloadAssignmentStrategy.AssignBlocksToPeers(requestedBlockHeights, peerInformation);
 
             // Go through the assignments and start download tasks.
