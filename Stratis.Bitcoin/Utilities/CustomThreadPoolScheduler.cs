@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Utilities
         #region IDisposable Members
 
         /// <summary>true if the instance of the object has been disposed.</summary>
-        bool disposed;
+        private bool disposed;
         
         /// <summary>
         /// Disposes the object, triggers the cancallation token.
