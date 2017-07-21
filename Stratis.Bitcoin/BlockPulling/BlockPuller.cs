@@ -1,4 +1,4 @@
-﻿using NBitcoin.Protocol;
+using NBitcoin.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,17 +21,17 @@ namespace Stratis.Bitcoin.BlockPulling
     public abstract class BlockPuller : IBlockPuller
     {
         /// <summary>Maximal quality score of a peer node based on the node's past experience with the peer node.</summary>
-        private const int MaxQualityScore = 150;
+        public const int MaxQualityScore = 150;
 
         /// <summary>Minimal quality score of a peer node based on the node's past experience with the peer node.</summary>
-        private const int MinQualityScore = 1;
+        public const int MinQualityScore = 1;
 
         /// <summary>List of relations to peer nodes mapped by block header hashes that the peers are requested to provide.</summary>
         private readonly ConcurrentDictionary<uint256, BlockPullerBehavior> map;
 
         /// <summary>List of block header hashes that the node wants to obtain from its peers.</summary>
         private readonly ConcurrentBag<uint256> pendingInventoryVectors;
-        
+
         /// <summary>List of unprocessed downloaded blocks mapped by their header hashes.</summary>
         protected readonly ConcurrentDictionary<uint256, DownloadedBlock> DownloadedBlocks;
 
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     inv.Type = this.AttachedNode.AddSupportedOptions(inv.Type);
                     this.pendingDownloads.TryAdd(inv.Hash, inv.Hash);
                 }
-                this.AttachedNode.SendMessageAsync(getDataPayload);                
+                this.AttachedNode.SendMessageAsync(getDataPayload);
             }
 
             /// <summary>
@@ -281,7 +281,13 @@ namespace Stratis.Bitcoin.BlockPulling
         public virtual void AskBlocks(ChainedBlock[] downloadRequests)
         {
             BlockPullerBehavior[] nodes = GetNodeBehaviors();
-            InventoryVector[] vectors = downloadRequests.Select(r => new InventoryVector(InventoryType.MSG_BLOCK, r.HashBlock)).ToArray();
+
+            Dictionary<int, InventoryVector> vectors = new Dictionary<int, InventoryVector>();
+            foreach (ChainedBlock request in downloadRequests)
+            {
+                InventoryVector vector = new InventoryVector(InventoryType.MSG_BLOCK, request.HashBlock);
+                vectors.Add(request.Height, vector);
+            }
             DistributeDownload(vectors, nodes, downloadRequests.Min(d => d.Height));
         }
 
@@ -312,27 +318,30 @@ namespace Stratis.Bitcoin.BlockPulling
             BlockPullerBehavior[] innernodes = GetNodeBehaviors();
             if (innernodes.Length == 0)
                 return;
-            List<InventoryVector> vectors = new List<InventoryVector>();
+
+            List<InventoryVector> inventoryVectors = new List<InventoryVector>();
             uint256 result;
             while (this.pendingInventoryVectors.TryTake(out result))
             {
-                vectors.Add(new InventoryVector(InventoryType.MSG_BLOCK, result));
+                inventoryVectors.Add(new InventoryVector(InventoryType.MSG_BLOCK, result));
             }
 
-            var minheight = int.MaxValue;
-            foreach (InventoryVector vector in vectors.ToArray())
+            Dictionary<int, InventoryVector> vectors = new Dictionary<int, InventoryVector>();
+            var minHeight = int.MaxValue;
+            foreach (InventoryVector vector in inventoryVectors.ToArray())
             {
                 ChainedBlock chainedBlock = this.Chain.GetBlock(vector.Hash);
                 if (chainedBlock == null) // reorg might have happened.
                 {
-                    vectors.Remove(vector);
+                    inventoryVectors.Remove(vector);
                     continue;
                 }
-                minheight = Math.Min(chainedBlock.Height, minheight);
+                minHeight = Math.Min(chainedBlock.Height, minHeight);
+                vectors.Add(chainedBlock.Height, vector);
             }
-            if (vectors.Any())
+            if (inventoryVectors.Any())
             {
-                DistributeDownload(vectors.ToArray(), innernodes, minheight);
+                DistributeDownload(vectors, innernodes, minHeight);
             }
         }
 
@@ -381,72 +390,63 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </para>
         /// </summary>
         /// <param name="vectors">Information about blocks to download.</param>
-        /// <param name="innernodes">Available nodes to distribute download tasks among.</param>
+        /// <param name="innerNodes">Available nodes to distribute download tasks among.</param>
         /// <param name="minHeight">Minimum height of the chain that the target nodes has to have in order to be asked for one or more of the block to be downloaded from them.</param>
-        /// <remarks>TODO: This function is suspected to suffer from https://github.com/stratisproject/StratisBitcoinFullNode/issues/233 .</remarks>
-        private void DistributeDownload(InventoryVector[] vectors, BlockPullerBehavior[] innernodes, int minHeight)
+        private void DistributeDownload(Dictionary<int, InventoryVector> vectors, BlockPullerBehavior[] innerNodes, int minHeight)
         {
-            if (vectors.Length == 0)
+            if (vectors.Count == 0)
                 return;
 
+            // Prefilter available peers so that we only work with peers that can be assigned any work.
+            // If there is a peer whose chain is so short that it can't provide any blocks we want, it is ignored.
+            List<PullerDownloadAssignments.PeerInformation> peerInformation = new List<PullerDownloadAssignments.PeerInformation>();
 
-            // Be careful not to ask the block from a node that does not have it 
-            // (we can check the ChainHeadersBehavior.PendingTip to know where the node is standing).
-            var selectnodes = new List<BlockPullerBehavior>();
-            foreach (BlockPullerBehavior behavior in innernodes)
+            foreach (BlockPullerBehavior behavior in innerNodes)
             {
-                // filter nodes that are still behind using the 
-                // pending tip in the chain behaviour
                 if (behavior.ChainHeadersBehavior?.PendingTip?.Height >= minHeight)
-                    selectnodes.Add(behavior);
+                {
+                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation()
+                    {
+                        QualityScore = behavior.QualityScore,
+                        PeerId = behavior,
+                        ChainHeight = behavior.ChainHeadersBehavior.PendingTip.Height
+                    };
+                    peerInformation.Add(peerInfo);
+                }
             }
-            innernodes = selectnodes.ToArray();
 
-            if (innernodes.Length == 0)
+            // There are no available peers with long enough chains.
+            if (peerInformation.Count == 0)
             {
-                foreach (InventoryVector v in vectors)
+                foreach (InventoryVector v in vectors.Values)
                     this.pendingInventoryVectors.Add(v.Hash);
                 return;
             }
 
-            int[] scores = innernodes.Select(n => n.QualityScore == MaxQualityScore ? MaxQualityScore * 2 : n.QualityScore).ToArray();
-            var totalScore = scores.Sum();
-            GetDataPayload[] getDatas = innernodes.Select(n => new GetDataPayload()).ToArray();
-            foreach (InventoryVector inv in vectors)
-            {
-                int index = GetNodeIndex(scores, totalScore);
-                BlockPullerBehavior node = innernodes[index];
-                GetDataPayload getData = getDatas[index];
-                if (this.map.TryAdd(inv.Hash, node))
-                    getData.Inventory.Add(inv);
-            }
-            for (int i = 0; i < innernodes.Length; i++)
-            {
-                if (getDatas[i].Inventory.Count == 0)
-                    continue;
-                innernodes[i].StartDownload(getDatas[i]);
-            }
-        }
+            List<int> requestedBlockHeights = vectors.Keys.ToList();
+            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> blocksAssignedToPeers = PullerDownloadAssignments.AssignBlocksToPeers(requestedBlockHeights, peerInformation);
 
-        /// <summary>
-        /// Choose random index proportional to the score.
-        /// </summary>
-        /// <param name="scores">Array of scores.</param>
-        /// <param name="totalScore">Sum of the values in <paramref name="scores"/>.</param>
-        /// <returns>Random index to <paramref name="scores"/> array - i.e. a number from 0 to scores.Length - 1.</returns>
-        private int GetNodeIndex(int[] scores, int totalScore)
-        {
-            var v = this.Rand.Next(totalScore);
-            var current = 0;
-            int i = 0;
-            foreach (var score in scores)
+            // Go through the assignments and start download tasks.
+            foreach (KeyValuePair<PullerDownloadAssignments.PeerInformation, List<int>> kvp in blocksAssignedToPeers)
             {
-                current += score;
-                if (v < current)
-                    return i;
-                i++;
+                PullerDownloadAssignments.PeerInformation peer = kvp.Key;
+                List<int> blockHeightsToDownload = kvp.Value;
+
+                GetDataPayload getDataPayload = new GetDataPayload();
+                BlockPullerBehavior peerBehavior = (BlockPullerBehavior)peer.PeerId;
+
+                // Create GetDataPayload from the list of block heights this peer has been assigned.
+                foreach (int blockHeight in blockHeightsToDownload)
+                {
+                    InventoryVector inventoryVector = vectors[blockHeight];
+                    if (this.map.TryAdd(inventoryVector.Hash, peerBehavior))
+                        getDataPayload.Inventory.Add(inventoryVector);
+                }
+
+                // If this node was assigned at least one download task, start the task.
+                if (getDataPayload.Inventory.Count > 0)
+                    peerBehavior.StartDownload(getDataPayload);
             }
-            return scores.Length - 1;
         }
     }
 }
