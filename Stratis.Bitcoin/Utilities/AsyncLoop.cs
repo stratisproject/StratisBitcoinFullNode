@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Utilities
         string Name { get; }
 
         /// <summary>
-        /// Starts the application defined task inside the async loop.
+        /// Starts an application defined task inside the async loop.
         /// </summary>
         /// <param name="repeatEvery">Interval between each execution of the task. 
         /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop. 
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Utilities
         Task Run(TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
-        /// Starts the application defined task inside the async loop.
+        /// Starts an application defined task inside the async loop.
         /// </summary>
         /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
         /// <param name="repeatEvery">Interval between each execution of the task. 
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Starts the application defined task inside the async loop.
+        /// Starts an application defined task inside the async loop.
         /// </summary>
         /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
         /// <param name="refreshRate">Interval between each execution of the task. 
