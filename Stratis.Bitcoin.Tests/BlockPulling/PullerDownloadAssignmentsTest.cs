@@ -7,9 +7,9 @@ using Stratis.Bitcoin.BlockPulling;
 namespace Stratis.Bitcoin.Tests.BlockPulling
 {
     /// <summary>
-    /// Tests of DownloadAssignmentStrategy class.
+    /// Tests of PullerDownloadAssignments class.
     /// </summary>
-    public class DownloadAssignmentStrategyTest
+    public class PullerDownloadAssignmentsTest
     {
         /// <summary>
         /// Previous implementation of block puller's strategy could lead to a situation in which the node's 
@@ -43,27 +43,27 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             requiredBlockHeights = requiredBlockHeights.OrderBy(a => rnd.Next()).ToList();
 
             // Initialize node's peers.
-            List<DownloadAssignmentStrategy.PeerInformation> availablePeersInformation = new List<DownloadAssignmentStrategy.PeerInformation>()
+            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>()
             {
-                new DownloadAssignmentStrategy.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "A",
                     QualityScore = 100,
                     ChainHeight = 4
                 },
-                new DownloadAssignmentStrategy.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "B",
                     QualityScore = 100,
                     ChainHeight = 20
                 },
-                new DownloadAssignmentStrategy.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "C",
                     QualityScore = 50,
                     ChainHeight = 30
                 },
-                new DownloadAssignmentStrategy.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "C",
                     QualityScore = 150,
@@ -72,15 +72,15 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             };
 
             // Use the assignment strategy to assign tasks to peers.
-            Dictionary<DownloadAssignmentStrategy.PeerInformation, List<int>> assignments = DownloadAssignmentStrategy.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
+            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
 
 
             // Check the assignment is valid per our requirements.
             int tasksAssigned = 0;
             Assert.Equal(4, assignments.Count);
-            foreach (KeyValuePair<DownloadAssignmentStrategy.PeerInformation, List<int>> kvp in assignments)
+            foreach (KeyValuePair<PullerDownloadAssignments.PeerInformation, List<int>> kvp in assignments)
             {
-                DownloadAssignmentStrategy.PeerInformation peer = kvp.Key;
+                PullerDownloadAssignments.PeerInformation peer = kvp.Key;
                 List<int> assignedBlockHeights = kvp.Value;
                 tasksAssigned += assignedBlockHeights.Count;
 
@@ -95,8 +95,13 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                     case "C":
                     case "D":
                         // Peers B and C should only get tasks to download blocks up to its chain height.
-                        // Peer D can get be assigned anything.
+                        // Peer D can be assigned anything.
                         Assert.True(assignedBlockHeights.Max() <= peer.ChainHeight);
+                        break;
+
+                    default:
+                        // This should never occur.
+                        Assert.True(false, "Invalid peer ID.");
                         break;
                 }
             }

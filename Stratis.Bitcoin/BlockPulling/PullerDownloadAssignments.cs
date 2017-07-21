@@ -12,9 +12,9 @@ namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
     /// Implements a strategy for a block puller that needs to download 
-    /// a set of blocks and from its connected peers.
+    /// a set of blocks from its connected peers.
     /// </summary>
-    public static class DownloadAssignmentStrategy
+    public static class PullerDownloadAssignments
     {
         /// <summary>Information about a connected peer.</summary>
         public class PeerInformation

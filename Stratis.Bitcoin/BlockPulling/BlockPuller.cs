@@ -399,13 +399,13 @@ namespace Stratis.Bitcoin.BlockPulling
 
             // Prefilter available peers so that we only work with peers that can be assigned any work.
             // If there is a peer whose chain is so short that it can't provide any blocks we want, it is ignored.
-            List<DownloadAssignmentStrategy.PeerInformation> peerInformation = new List<DownloadAssignmentStrategy.PeerInformation>();
+            List<PullerDownloadAssignments.PeerInformation> peerInformation = new List<PullerDownloadAssignments.PeerInformation>();
 
             foreach (BlockPullerBehavior behavior in innerNodes)
             {
                 if (behavior.ChainHeadersBehavior?.PendingTip?.Height >= minHeight)
                 {
-                    DownloadAssignmentStrategy.PeerInformation peerInfo = new DownloadAssignmentStrategy.PeerInformation()
+                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation()
                     {
                         QualityScore = behavior.QualityScore,
                         PeerId = behavior,
@@ -424,12 +424,12 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             List<int> requestedBlockHeights = vectors.Keys.ToList();
-            Dictionary<DownloadAssignmentStrategy.PeerInformation, List<int>> blocksAssignedToPeers = DownloadAssignmentStrategy.AssignBlocksToPeers(requestedBlockHeights, peerInformation);
+            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> blocksAssignedToPeers = PullerDownloadAssignments.AssignBlocksToPeers(requestedBlockHeights, peerInformation);
 
             // Go through the assignments and start download tasks.
-            foreach (KeyValuePair<DownloadAssignmentStrategy.PeerInformation, List<int>> kvp in blocksAssignedToPeers)
+            foreach (KeyValuePair<PullerDownloadAssignments.PeerInformation, List<int>> kvp in blocksAssignedToPeers)
             {
-                DownloadAssignmentStrategy.PeerInformation peer = kvp.Key;
+                PullerDownloadAssignments.PeerInformation peer = kvp.Key;
                 List<int> blockHeightsToDownload = kvp.Value;
 
                 GetDataPayload getDataPayload = new GetDataPayload();
