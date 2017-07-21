@@ -7,6 +7,10 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
 {
+    /// <summary>
+    /// TODO: This code is not used anywhere in the code base, it does not seem useful to document it,
+    /// I suggest to remove it from the codebase completely.
+    /// </summary>
     public interface IAsyncDictionary<TKey, TValue>
     {
         Task<int> Count { get; }
