@@ -928,6 +928,96 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Assert.Equal(0, resultingTransactionModel.Fee);
         }
 
+        /// <summary>
+        /// Tests that when a transaction has been sent that has multiple inputs to form the transaction these duplicate spending details do now show up multiple times in the history.
+        /// </summary>
+        [Fact]
+        public void GetHistoryWithDuplicateSpentTransactionsSelectsDistinctsSpentTransactionsForDuplicates()
+        {
+            var mockWalletManager = new Mock<IWalletManager>();
+            mockWalletManager.Setup(w => w.GetHistory("myWallet"))
+                .Returns(new List<HdAddress>() {
+                    new HdAddress() {
+                        HdPath = $"m/44'/0'/0'/1/0",
+                        Transactions = new List<TransactionData>() {
+                             new TransactionData() {
+                                Id = new uint256(13),
+                                Amount = new Money(50),
+                                BlockHeight = 5,
+                                SpendingDetails = new SpendingDetails() {
+                                    TransactionId = new uint256(15),
+                                    BlockHeight = 10,
+                                    Payments = new List<PaymentDetails>() {
+                                       new PaymentDetails() {
+                                           Amount = new Money(80),
+                                           DestinationAddress = "address1"
+                                       }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    new HdAddress() {
+                        HdPath = $"m/44'/0'/0'/1/1",
+                        Transactions = new List<TransactionData>() {
+                            new TransactionData() {
+                                Id = new uint256(14),
+                                Amount = new Money(30),
+                                BlockHeight = 6,
+                                SpendingDetails = new SpendingDetails() {
+                                    TransactionId = new uint256(15),
+                                    BlockHeight = 10,
+                                    Payments = new List<PaymentDetails>() {
+                                       new PaymentDetails() {
+                                           Amount = new Money(80),
+                                           DestinationAddress = "address1"
+                                       }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+            var controller = new WalletController(mockWalletManager.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>());
+            IActionResult result = controller.GetHistory(new WalletHistoryRequest()
+            {
+                WalletName = "myWallet"
+            });
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as WalletHistoryModel;
+
+            Assert.NotNull(model);
+
+            Assert.Equal(3, model.TransactionsHistory.Count);
+
+            TransactionItemModel resultingTransactionModel = model.TransactionsHistory[0];
+            Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);
+            Assert.Equal(new uint256(13), resultingTransactionModel.Id);
+            Assert.Equal(new Money(50), resultingTransactionModel.Amount);
+            Assert.Equal(5, resultingTransactionModel.ConfirmedInBlock);
+            Assert.Equal(0, resultingTransactionModel.Payments.Count);
+
+            resultingTransactionModel = model.TransactionsHistory[1];
+            Assert.Equal(TransactionItemType.Send, resultingTransactionModel.Type);
+            Assert.Equal(new uint256(15), resultingTransactionModel.Id);
+            Assert.Equal(10, resultingTransactionModel.ConfirmedInBlock);
+            Assert.Equal(new Money(80), resultingTransactionModel.Amount);
+
+            Assert.Equal(1, resultingTransactionModel.Payments.Count);
+            PaymentDetailModel resultingPayment = resultingTransactionModel.Payments.ElementAt(0);
+            Assert.Equal("address1", resultingPayment.DestinationAddress);
+            Assert.Equal(new Money(80), resultingPayment.Amount);
+
+            resultingTransactionModel = model.TransactionsHistory[2];
+            Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);
+            Assert.Equal(new uint256(14), resultingTransactionModel.Id);
+            Assert.Equal(new Money(30), resultingTransactionModel.Amount);
+            Assert.Equal(6, resultingTransactionModel.ConfirmedInBlock);
+            Assert.Equal(0, resultingTransactionModel.Payments.Count);
+        }
+
         [Fact]
         public void GetHistoryWithExceptionReturnsBadRequest()
         {
@@ -1021,7 +1111,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             PaymentDetailModel resultingPayment = resultingTransactionModel.Payments.ElementAt(0);
             Assert.Equal(paymentDetails.DestinationAddress, resultingPayment.DestinationAddress);
             Assert.Equal(paymentDetails.Amount, resultingPayment.Amount);
-            
+
             resultingTransactionModel = model.TransactionsHistory[2];
 
             Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);

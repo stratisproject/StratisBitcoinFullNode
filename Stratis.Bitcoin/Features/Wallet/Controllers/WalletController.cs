@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.Wallet.Helpers;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -55,9 +56,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [Route("mnemonic")]
         [HttpGet]
         public IActionResult GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12)
-        {            
+        {
             try
-            {                
+            {
                 Wordlist wordList;
                 switch (language.ToLowerInvariant())
                 {
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 // get the wallet folder 
                 DirectoryInfo walletFolder = this.GetWalletFolder();
-                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic:request.Mnemonic);
+                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: request.Mnemonic);
 
                 // start syncing the wallet from the creation date
                 this.walletSyncManager.SyncFrom(DateTime.Now);
@@ -130,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, "This wallet already exists.", e.ToString());
             }
             catch (NotSupportedException e)
-            {                
+            {
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem creating a wallet.", e.ToString());
             }
         }
@@ -287,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 // get transactions contained in the wallet
                 var addresses = this.walletManager.GetHistory(request.WalletName);
                 foreach (var address in addresses)
-                {                    
+                {
                     foreach (var transaction in address.Transactions.Where(t => !address.IsChangeAddress() || (address.IsChangeAddress() && !t.IsSpendable())))
                     {
                         // add incoming fund transaction details
@@ -338,8 +339,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             // that makes the fee negative if thats the case ignore the fee
                             if (sentItem.Fee < 0)
                                 sentItem.Fee = 0;
-                            
-                            model.TransactionsHistory.Add(sentItem);
+
+                            if (!model.TransactionsHistory.Contains(sentItem, new SentTransactionItemModelComparer()))
+                            {
+                                model.TransactionsHistory.Add(sentItem);
+                            }
                         }
                     }
                 }
@@ -418,7 +422,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
             }
             var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-            
+
             try
             {
                 var transactionResult = this.walletManager.BuildTransaction(new WalletAccountReference(request.WalletName, request.AccountName), request.Password, destination, request.Amount, FeeParser.Parse(request.FeeType), request.AllowUnconfirmed ? 0 : 1);
@@ -455,7 +459,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
 
             try
-            {                
+            {
                 if (this.walletManager.SendTransaction(request.Hex))
                 {
                     return this.Ok();
