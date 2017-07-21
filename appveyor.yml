@@ -26,9 +26,6 @@ configuration:
 - Debug
 - Release
 
-hosts:
-  api.nuget.org: 93.184.221.200
-
 init:
 - ps: dotnet --info
 
