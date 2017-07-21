@@ -18,60 +18,105 @@ namespace Stratis.Bitcoin.Utilities
 
     public class DBreezeSingleThreadSession : IDBreezeSingleThreadSession
     {
-		public DBreezeSingleThreadSession(string threadName, string folder)
+        /// <summary>Access to DBreeze database.</summary>
+        private DBreezeEngine engine;
+
+        /// <summary>
+        /// Scheduler that uses only a single thread to provide ability for exclusive execution of the tasks. 
+        /// This is used as an alternative to lock-based critical section implementation.
+        /// </summary>
+        private CustomThreadPoolTaskScheduler singleThread;
+
+        /// <summary>Database transaction that is used for accessing the database.</summary>
+        /// <remarks>As we access the database in the exclusive thread, a single transaction is enough for all use cases.</remarks>
+        private DBreeze.Transactions.Transaction transaction;
+        /// <summary>Database transaction that is used for accessing the database.</summary>
+        public DBreeze.Transactions.Transaction Transaction
+        {
+            get
+            {
+                return this.transaction;
+            }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// <para>It creates an exclusive scheduler for tasks accessing database and initializes the database engine on disk.</para>
+        /// </summary>
+        /// <param name="threadName">Name of the exclusive thread that will care about tasks accessing the database in exclusive manner.</param>
+        /// <param name="folder">Path to the directory to hold DBreeze database files.</param>
+        public DBreezeSingleThreadSession(string threadName, string folder)
 		{
             Guard.NotEmpty(threadName, nameof(threadName));
             Guard.NotEmpty(folder, nameof(folder));
 
-            this._SingleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
+            this.singleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
 			new Task(() =>
 			{
 				DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
 				DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
-                this._Engine = new DBreezeEngine(folder);
-				this._Transaction = this._Engine.GetTransaction();
-			}).Start(this._SingleThread);
+                this.engine = new DBreezeEngine(folder);
+				this.transaction = this.engine.GetTransaction();
+			}).Start(this.singleThread);
 		}
 
+        /// <summary>
+        /// Serializes object to a binary data format.
+        /// </summary>
+        /// <param name="obj">Object to be serialized.</param>
+        /// <returns>Binary data representing the serialized object.</returns>
 		internal static byte[] NBitcoinSerialize(object obj)
 		{
 			IBitcoinSerializable serializable = obj as IBitcoinSerializable;
 			if(serializable != null)
 				return serializable.ToBytes();
+
 			uint256 u = obj as uint256;
 			if(u != null)
 				return u.ToBytes();
+
 			throw new NotSupportedException();
 		}
 
+        /// <summary>
+        /// Deserializes binary data to an object of specific type.
+        /// </summary>
+        /// <param name="bytes">Binary data representing a serialized object.</param>
+        /// <param name="type">Type of the serialized object.</param>
+        /// <returns>Deserialized object.</returns>
 		internal static object NBitcoinDeserialize(byte[] bytes, Type type)
 		{
-			if(type == typeof(Coins))
+			if (type == typeof(Coins))
 			{
 				Coins coin = new Coins();
 				coin.ReadWrite(bytes);
 				return coin;
 			}
-			if(type == typeof(BlockHeader))
+
+			if (type == typeof(BlockHeader))
 			{
 				BlockHeader header = new BlockHeader();
 				header.ReadWrite(bytes);
 				return header;
 			}
-			if(type == typeof(RewindData))
+
+			if (type == typeof(RewindData))
 			{
 				RewindData rewind = new RewindData();
 				rewind.ReadWrite(bytes);
 				return rewind;
 			}
-			if(type == typeof(uint256))
+
+			if (type == typeof(uint256))
 			{
 				return new uint256(bytes);
 			}
+
 			if (type == typeof(Block))
 			{
 				return new Block(bytes);
 			}
+
 			if (type == typeof(BlockStake))
 			{
 				return new BlockStake(bytes);
@@ -80,43 +125,10 @@ namespace Stratis.Bitcoin.Utilities
 			throw new NotSupportedException();
 		}
 
-		public void Dispose()
-		{
-            this._IsDiposed = true;
-			if(this._SingleThread == null)
-				return;
-			ManualResetEventSlim cleaned = new ManualResetEventSlim();
-			new Task(() =>
-			{
-				if(this.Transaction != null)
-				{
-                    this._Transaction.Dispose();
-					this._Transaction = null;
-				}
-				if(this._Engine != null)
-				{
-                    this._Engine.Dispose();
-					this._Engine = null;
-				}
-                this._SingleThread.Dispose();
-				this._SingleThread = null;
-				cleaned.Set();
-			}).Start(this._SingleThread);
-			cleaned.Wait();
-		}
-
-		private DBreeze.Transactions.Transaction _Transaction;
-		private DBreezeEngine _Engine;
-		private CustomThreadPoolTaskScheduler _SingleThread;
-		bool _IsDiposed;
-		public DBreeze.Transactions.Transaction Transaction
-		{
-			get
-			{
-				return this._Transaction;
-			}
-		}
-
+        /// <summary>
+        /// Executes a caller defined method to be executed using the exclusive task scheduler, which allows the method to access the database safely.
+        /// </summary>
+        /// <param name="act">Method to execute using the exclusive task scheduler that can access the database safely.</param>
 		public Task Do(Action act)
 		{
             Guard.NotNull(act, nameof(act));
@@ -127,16 +139,16 @@ namespace Stratis.Bitcoin.Utilities
 				this.AssertNotDisposed();
 				act();
 			});
-			task.Start(this._SingleThread);
+			task.Start(this.singleThread);
 			return task;
 		}
 
-		private void AssertNotDisposed()
-		{
-			if(this._IsDiposed)
-				throw new ObjectDisposedException("DBreezeSession");
-		}
-
+        /// <summary>
+        /// Executes a caller defined method to be executed using the exclusive task scheduler, which allows the method to access the database safely.
+        /// </summary>
+        /// <typeparam name="T">Return type of the delegated method.</typeparam>
+        /// <param name="act">Method to execute using the exclusive task scheduler that can access the database safely.</param>
+        /// <returns>Return value of the delegated method.</returns>
 		public Task<T> Do<T>(Func<T> act)
 		{
             Guard.NotNull(act, nameof(act));
@@ -147,8 +159,57 @@ namespace Stratis.Bitcoin.Utilities
 				this.AssertNotDisposed();
 				return act();
 			});
-			task.Start(this._SingleThread);
+			task.Start(this.singleThread);
 			return task;
 		}
-	}
+
+        /// <summary>
+        /// Throws exception if the instance of the object has been disposed.
+        /// </summary>
+		private void AssertNotDisposed()
+        {
+            if (this.disposed)
+                throw new ObjectDisposedException("DBreezeSession");
+        }
+
+        #region IDisposable Members
+
+        /// <summary>true if the instance of the object has been disposed.</summary>
+        private bool disposed;
+
+        /// <summary>
+        /// Disposes the object via a special disposing task that is executed with the exclusive scheduler.
+        /// </summary>
+		public void Dispose()
+        {
+            this.disposed = true;
+            if (this.singleThread == null)
+                return;
+
+            ManualResetEventSlim cleaned = new ManualResetEventSlim();
+            new Task(() =>
+            {
+                if (this.Transaction != null)
+                {
+                    this.transaction.Dispose();
+                    this.transaction = null;
+                }
+
+                if (this.engine != null)
+                {
+                    this.engine.Dispose();
+                    this.engine = null;
+                }
+
+                this.singleThread.Dispose();
+                this.singleThread = null;
+
+                cleaned.Set();
+            }).Start(this.singleThread);
+
+            cleaned.Wait();
+        }
+
+        #endregion
+    }
 }
