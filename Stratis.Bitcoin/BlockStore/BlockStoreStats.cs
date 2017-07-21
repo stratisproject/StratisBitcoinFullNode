@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.BlockStore
 
             if (this.repository != null)
             {
-                var snapshot = this.repository.PerformanceCounter.Snapshot();                
+                var snapshot = this.repository.PerformanceCounter.Snapshot();
                 performanceLogBuilder.AppendLine((snapshot - this.lastRepositorySnapshot).ToString());
                 this.lastRepositorySnapshot = snapshot;
             }
@@ -43,10 +43,10 @@ namespace Stratis.Bitcoin.BlockStore
             {
                 var snapshot = this.cache.PerformanceCounter.Snapshot();
                 performanceLogBuilder.AppendLine((snapshot - this.lastCacheSnapshot).ToString());
-                this.lastCacheSnapshot = snapshot;                
+                this.lastCacheSnapshot = snapshot;
             }
 
             Logs.BlockStore.LogInformation(performanceLogBuilder.ToString());
-        }       
+        }
     }
 }

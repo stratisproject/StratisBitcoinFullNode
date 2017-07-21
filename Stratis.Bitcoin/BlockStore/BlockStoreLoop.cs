@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.BlockStore
 
     public sealed class BlockStoreLoop
     {
-        private readonly ConcurrentChain chain;
+        internal readonly ConcurrentChain Chain;
         public BlockRepository BlockRepository { get; } // public for testing
         private readonly NodeSettings nodeArgs;
         internal readonly StoreBlockPuller blockPuller;
@@ -31,12 +31,15 @@ namespace Stratis.Bitcoin.BlockStore
 
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
-        public BlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, NodeSettings nodeArgs,
+        public BlockStoreLoop(
+            ConcurrentChain chain,
+            BlockRepository blockRepository,
+            NodeSettings nodeArgs,
             ChainBehavior.ChainState chainState,
             StoreBlockPuller blockPuller,
             BlockStoreCache cache)
         {
-            this.chain = chain;
+            this.Chain = chain;
             this.BlockRepository = blockRepository;
             this.nodeArgs = nodeArgs;
             this.blockPuller = blockPuller;
@@ -55,12 +58,12 @@ namespace Stratis.Bitcoin.BlockStore
         internal readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
         public ChainedBlock StoredBlock { get; set; }
 
-        public async Task Initialize(CancellationTokenSource tokenSource)
+        public async Task Initialize(CancellationTokenSource cancellationToken)
         {
             if (this.nodeArgs.Store.ReIndex)
                 throw new NotImplementedException();
 
-            this.StoredBlock = this.chain.GetBlock(this.BlockRepository.BlockHash);
+            this.StoredBlock = this.Chain.GetBlock(this.BlockRepository.BlockHash);
             if (this.StoredBlock == null)
             {
                 // the store is out of sync, this can happen if the node crashed 
@@ -72,12 +75,12 @@ namespace Stratis.Bitcoin.BlockStore
                 var resetBlock = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
                 var resetBlockHash = resetBlock.GetHash();
                 // walk back the chain and find the common block
-                while (this.chain.GetBlock(resetBlockHash) == null)
+                while (this.Chain.GetBlock(resetBlockHash) == null)
                 {
                     blockstoreResetList.Add(resetBlockHash);
-                    if (resetBlock.Header.HashPrevBlock == this.chain.Genesis.HashBlock)
+                    if (resetBlock.Header.HashPrevBlock == this.Chain.Genesis.HashBlock)
                     {
-                        resetBlockHash = this.chain.Genesis.HashBlock;
+                        resetBlockHash = this.Chain.Genesis.HashBlock;
                         break;
                     }
                     resetBlock = await this.BlockRepository.GetAsync(resetBlock.Header.HashPrevBlock);
@@ -85,7 +88,7 @@ namespace Stratis.Bitcoin.BlockStore
                     resetBlockHash = resetBlock.GetHash();
                 }
 
-                var newTip = this.chain.GetBlock(resetBlockHash);
+                var newTip = this.Chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockstoreResetList);
                 this.StoredBlock = newTip;
                 Logs.BlockStore.LogWarning($"BlockStore Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
@@ -93,19 +96,20 @@ namespace Stratis.Bitcoin.BlockStore
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
             {
-                if (this.StoredBlock != this.chain.Genesis)
+                if (this.StoredBlock != this.Chain.Genesis)
                     throw new BlockStoreException("You need to rebuild the database using -reindex-chainstate to change -txindex");
                 if (this.nodeArgs.Store.TxIndex)
                     await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
             }
 
             this.ChainState.HighestPersistedBlock = this.StoredBlock;
-            this.Loop(tokenSource.Token);
+
+            Loop(cancellationToken.Token);
         }
 
         public void AddToPending(Block block)
         {
-            var chainedBlock = this.chain.GetBlock(block.GetHash());
+            var chainedBlock = this.Chain.GetBlock(block.GetHash());
             if (chainedBlock == null)
                 return; // reorg
 
@@ -134,7 +138,7 @@ namespace Stratis.Bitcoin.BlockStore
             startAfter: TimeSpans.FiveSeconds);
         }
 
-        public async Task DownloadAndStoreBlocks(CancellationToken token, bool disposemode = false)
+        public async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode = false)
         {
             // TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
             // When in IBD we may need many reads for the block key without fetching the block
@@ -142,42 +146,29 @@ namespace Stratis.Bitcoin.BlockStore
             // a read is normally done when a peer is asking for the entire block (not just the key) 
             // then if LazyLoadingOn = false the read will be faster on the entire block            
 
-            while (!token.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 if (this.StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
                     break;
 
-                var next = this.chain.GetBlock(this.StoredBlock.Height + 1);
-                if (next == null)
+                var nextChainedBlock = this.Chain.GetBlock(this.StoredBlock.Height + 1);
+                if (nextChainedBlock == null)
                     break;
 
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                var reorganise = new BlockStoreLoopStepReorganise(this.chain, token);
-                var result = await reorganise.Execute(this, next, disposemode);
+                var steps = new BlockStoreLoopStepChain(this, nextChainedBlock, cancellationToken, disposeMode);
+                steps.SetNextStep(new BlockStoreLoopStepReorganise());
+                steps.SetNextStep(new BlockStoreLoopStepCheckExists());
+                steps.SetNextStep(new BlockStoreLoopStepTryPending());
+                steps.SetNextStep(new BlockStoreLoopStepTryDownload());
+                var result = await steps.Execute();
+
                 if (result.ShouldBreak)
                     break;
-
-                var checkExists = new BlockStoreLoopStepCheckExists(this.chain, token);
-                var checkExistsResult = await checkExists.Execute(this, next, disposemode);
-                if (checkExistsResult.ShouldContinue)
+                if (result.ShouldContinue)
                     continue;
-
-                var tryPending = new BlockStoreLoopStepTryPending(this.chain, token);
-                var tryPendingResult = await checkExists.Execute(this, next, disposemode);
-                if (tryPendingResult.ShouldBreak)
-                    break;
-                if (tryPendingResult.ShouldContinue)
-                    continue;
-
-                if (disposemode)
-                    break;
-
-                var tryDownload = new BlockStoreLoopStepTryDownload(this.chain, token);
-                var tryDownloadResult = await checkExists.Execute(this, next, disposemode);
-                if (tryDownloadResult.ShouldBreak)
-                    break;
             }
         }
     }

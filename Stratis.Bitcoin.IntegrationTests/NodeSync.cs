@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Stratis.Bitcoin.Connection;
+using System;
 using System.Linq;
-using System.Text;
-using Stratis.Bitcoin.Connection;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests

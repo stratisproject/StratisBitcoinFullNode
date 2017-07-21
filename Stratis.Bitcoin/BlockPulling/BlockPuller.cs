@@ -1,12 +1,11 @@
-﻿using NBitcoin.Protocol;
+﻿using NBitcoin;
+using NBitcoin.Protocol;
+using NBitcoin.Protocol.Behaviors;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using System.Collections.Concurrent;
-using NBitcoin.Protocol.Behaviors;
 using System.Threading;
-using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -116,7 +115,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     inv.Type = this.AttachedNode.AddSupportedOptions(inv.Type);
                     this.pendingDownloads.TryAdd(inv.Hash, inv.Hash);
                 }
-                this.AttachedNode.SendMessageAsync(getDataPayload);                
+                this.AttachedNode.SendMessageAsync(getDataPayload);
             }
 
             protected override void AttachCore()
@@ -177,7 +176,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Psuh a block using the cancellation token belonging to the behaviour that pushed the block
+        /// Push a block using the cancellation token belonging to the behaviour that pushed the block
         /// </summary>
         public virtual void PushBlock(int length, Block block, CancellationToken token)
         {
