@@ -110,28 +110,28 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-        /// <remarks>See warning in <see cref="AsyncLock"/> remark section.</remarks>
+        /// <remarks>See warning in <see cref="AsyncLock"/> remarks section.</remarks>
         public Task ReadAsync(Action func)
         {
             return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
         }
 
         /// <inheritdoc />
-        /// <remarks>See warning in <see cref="AsyncLock"/> remark section.</remarks>
+        /// <remarks>See warning in <see cref="AsyncLock"/> remarks section.</remarks>
         public Task<T> ReadAsync<T>(Func<T> func)
         {
             return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
         }
 
         /// <inheritdoc />
-        /// <remarks>See warning in <see cref="AsyncLock"/> remark section.</remarks>
+        /// <remarks>See warning in <see cref="AsyncLock"/> remarks section.</remarks>
         public Task WriteAsync(Action func)
         {
             return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
         }
 
         /// <inheritdoc />
-        /// <remarks>See warning in <see cref="AsyncLock"/> remark section.</remarks>
+        /// <remarks>See warning in <see cref="AsyncLock"/> remarks section.</remarks>
         public Task<T> WriteAsync<T>(Func<T> func)
         {
             return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
