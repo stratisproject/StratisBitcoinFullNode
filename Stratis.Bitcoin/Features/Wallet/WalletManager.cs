@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 			for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
 			{
 				// generate new receiving address
-				var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange, this.network);
+				var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange);
 				BitcoinPubKeyAddress address = pubkey.GetAddress(this.network);
 
 				// add address details
@@ -447,10 +447,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public List<UnspentInfo> GetSpendableTransactions(int confirmations = 0)
 		{
-			var outs = new List<UnspentInfo>();
-			var accounts = this.Wallets.SelectMany(wallet => wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).Accounts);
+            // todo: pass in wallet name or map to rpc credentials to select one? How would PoS get this info? Maybe pass in WalletAccountReference?
+            var outs = new List<UnspentInfo>();
+            var accounts = this.Wallets.OrderBy(w => w.CreationTime)
+                .ThenBy(w => w.Name)
+                .Select(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType))
+                .Where(a => a != null).SelectMany(a => a.Accounts);
 
-			var currentHeight = this.chain.Tip.Height;
+            var currentHeight = this.chain.Tip.Height;
 
 			// this will take all the spendable coins 
 			// and keep the reference to the HDAddress
@@ -491,11 +495,15 @@ namespace Stratis.Bitcoin.Features.Wallet
 			return outs;
 		}
 
-		/// <inheritdoc />
-		public ISecret GetKeyForAddress(string password, HdAddress address)
+        /// <inheritdoc />        
+        public ISecret GetKeyForAddress(string password, HdAddress address)
 		{
-			// TODO: can we have more then one wallet per coins?
-			var walletTree = this.Wallets.First();
+            // todo: pass in wallet name or map to rpc credentials to select one? How would PoS get this info? Maybe pass in WalletAccountReference?
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotNull(address, nameof(address));
+
+            // TODO: can we have more then one wallet per coins?
+            var walletTree = this.Wallets.First();
 			// get extended private key
 			var privateKey = Key.Parse(walletTree.EncryptedSeed, password, walletTree.Network);
 			var seedExtKey = new ExtKey(privateKey, walletTree.ChainCode);
@@ -507,6 +515,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
+            Guard.NotNull(accountReference, nameof(accountReference));
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotNull(destinationScript, nameof(destinationScript));
+            Guard.NotNull(amount, nameof(amount));
+
             if (amount == Money.Zero)
             {
                 throw new WalletException($"Cannot send transaction with 0 {this.coinType}");
@@ -518,6 +531,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
 			// get a list of transactions outputs that have not been spent
 			var spendableTransactions = account.GetSpendableTransactions().ToList();
+            if (spendableTransactions.Count == 0)
+            {
+                throw new WalletException($"No spendable transactions found on account {account.Name}.");
+            }
 
 			// remove whats under min confirmations
 			var currentHeight = this.chain.Height;
@@ -554,6 +571,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 			// get address to send the change to
 			var changeAddress = account.GetFirstUnusedChangeAddress();
 
+            // no more change addresses left. create a new one.
+            if (changeAddress == null)
+            {
+                // todo: save the wallet file?
+                var accountAddress = CreateAddressesInAccount(account, 1, isChange: true).First();
+                changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
+            }
+
 			// build transaction
 			var builder = new TransactionBuilder();
 			Transaction tx = builder
@@ -571,11 +596,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
 			return (tx.ToHex(), tx.GetHash(), calculationResult.fee);
 		}
-
-        private AccountRoot GetAccounts(Wallet wallet)
-        {
-            return wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
-        }
 
         /// <summary>
         /// Calculates which outputs are to be used in the transaction, as well as the fees that will be charged.
@@ -596,8 +616,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var outputsize = 34; // estimate size of an output
                 var extra = 10; // some extra bytes
                 fee = this.walletFeePolicy.GetMinimumFee(inputCount * inputsize + outputsize * 2 + extra, targetConfirmations);
-
 				transactionsToUse.Add(transaction);
+
+                // when we have enough spendable transactions to pay the amount + fee stop searching for additional spendable transactions.
 				if (transactionsToUse.Sum(t => t.Amount) >= amount + fee)
 				{
 					break;
@@ -1043,7 +1064,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 			this.Wallets.Add(wallet);
 		}
 
-		private PubKey GenerateAddress(string accountExtPubKey, int index, bool isChange, Network network)
+        private AccountRoot GetAccounts(Wallet wallet)
+        {
+            return wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
+        }
+
+        private PubKey GenerateAddress(string accountExtPubKey, int index, bool isChange)
 		{
 			int change = isChange ? 1 : 0;
 			KeyPath keyPath = new KeyPath($"{change}/{index}");
