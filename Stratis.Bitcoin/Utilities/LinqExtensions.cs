@@ -5,9 +5,8 @@ using System.Linq;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Extension methods for collections.
+    /// Extension methods for IEnumerable interface.
     /// </summary>
-    /// <remarks>TODO: Why is this called LinqExtensions? Wouldn't CollectionsExtensions be better?</remarks>
     public static class LinqExtensions
     {
         /// <summary>
