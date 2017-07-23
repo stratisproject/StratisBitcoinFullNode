@@ -1,15 +1,16 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.BlockStore.BlockStoreLoopTests
+namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 {
-    public sealed class BlockStoreLoopStepCheckExistsTest : BlockStoreLoopStepBaseTest
+    public sealed class BlockStoreLoopStepCheckNextChainedBlockExistStepTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void CanExecute_CheckExists()
+        public void CanExecute_CheckNextChainedBlockExistStep()
         {
             var blocks = CreateBlocks(5);
 
@@ -33,8 +34,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.BlockStoreLoopTests
             Assert.Null(blockStoreLoop.StoredBlock);
 
             var nextChainedBlock = block04;
-            var checkExistsStep = new BlockStoreLoopStepCheckExists();
-            checkExistsStep.Execute(blockStoreLoop, nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+            var checkExistsStep = new CheckNextChainedBlockExistStep(blockStoreLoop, new CancellationToken());
+            checkExistsStep.Execute(nextChainedBlock, false).GetAwaiter().GetResult();
 
             Assert.Equal(blockStoreLoop.StoredBlock.Header.GetHash(), block04.Header.GetHash());
             Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block04.Header.GetHash());

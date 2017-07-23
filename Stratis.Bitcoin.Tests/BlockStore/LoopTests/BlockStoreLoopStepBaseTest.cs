@@ -11,24 +11,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Stratis.Bitcoin.Tests.BlockStore.BlockStoreLoopTests
+namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 {
     public class BlockStoreLoopStepBaseTest
     {
         private Mock<ILogger> fullNodeLogger;
         private Mock<ILoggerFactory> loggerFactory;
         private Mock<ILogger> rpcLogger;
-
-        private Mock<IConnectionManager> ConfigureConnectionManager()
-        {
-            ConfigureLogger();
-
-            var connectionManager = new Mock<IConnectionManager>();
-            connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
-            connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.Default());
-            connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
-            return connectionManager;
-        }
 
         private void ConfigureLogger()
         {
@@ -40,6 +29,15 @@ namespace Stratis.Bitcoin.Tests.BlockStore.BlockStoreLoopTests
             this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC")).Returns(this.rpcLogger.Object).Verifiable();
 
             Logs.Configure(this.loggerFactory.Object);
+        }
+
+        private Mock<IConnectionManager> ConfigureConnectionManager()
+        {
+            var connectionManager = new Mock<IConnectionManager>();
+            connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
+            connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.Default());
+            connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
+            return connectionManager;
         }
 
         internal void AppendBlock(ConcurrentChain chain, Block block)
@@ -95,11 +93,18 @@ namespace Stratis.Bitcoin.Tests.BlockStore.BlockStoreLoopTests
             return block;
         }
 
-        internal BlockStoreLoop CreateBlockStoreLoop(ConcurrentChain chain, Stratis.Bitcoin.BlockStore.BlockRepository blockRepository)
+        internal BlockStoreLoop CreateBlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository)
         {
+            ConfigureLogger();
+
             var connectionManager = ConfigureConnectionManager();
             var blockStorePuller = new StoreBlockPuller(chain, connectionManager.Object);
-            var chainState = new Mock<ChainBehavior.ChainState>(new Mock<FullNode>().Object);
+
+            var fullNode = new Mock<FullNode>().Object;
+            fullNode.DateTimeProvider = new DateTimeProvider();
+
+            var chainState = new Mock<ChainBehavior.ChainState>(fullNode);
+            chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
 
             var blockStoreLoop = new BlockStoreLoop(chain, blockRepository, new NodeSettings(), chainState.Object, blockStorePuller, new BlockStoreCache(blockRepository));
             return blockStoreLoop;

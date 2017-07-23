@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.BlockStore.LoopSteps;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -12,10 +13,22 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.BlockStore
 {
-    public class BlockPair
+    public sealed class BlockPair
     {
-        public Block Block;
-        public ChainedBlock ChainedBlock;
+        /// <summary>
+        /// Construct BlockPair with a Block and ChainedBlock instance to ensure that its valid
+        /// </summary>
+        public BlockPair(Block block, ChainedBlock chainedBlock)
+        {
+            Guard.NotNull(block, "block");
+            Guard.NotNull(chainedBlock, "chainedBlock");
+
+            this.Block = block;
+            this.ChainedBlock = chainedBlock;
+        }
+
+        public Block Block { get; private set; }
+        public ChainedBlock ChainedBlock { get; private set; }
     }
 
     public sealed class BlockStoreLoop
@@ -51,9 +64,9 @@ namespace Stratis.Bitcoin.BlockStore
         }
 
         // downaloading 5mb is not much in case the store need to catchup
-        internal uint insertsizebyte = 1000000 * 5; // Block.MAX_BLOCK_SIZE 
-        internal int batchtriggersize = 5;
-        internal int batchdownloadsize = 1000;
+        internal uint InsertBlockSizeThreshold = 1000000 * 5; // Block.MAX_BLOCK_SIZE 
+        internal int PendingStorageBatchThreshold = 5;
+        internal int BatchDownloadSize = 1000;
         private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
         internal readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
         public ChainedBlock StoredBlock { get; set; }
@@ -64,6 +77,7 @@ namespace Stratis.Bitcoin.BlockStore
                 throw new NotImplementedException();
 
             this.StoredBlock = this.Chain.GetBlock(this.BlockRepository.BlockHash);
+
             if (this.StoredBlock == null)
             {
                 // the store is out of sync, this can happen if the node crashed 
@@ -74,6 +88,7 @@ namespace Stratis.Bitcoin.BlockStore
                 var blockstoreResetList = new List<uint256>();
                 var resetBlock = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
                 var resetBlockHash = resetBlock.GetHash();
+
                 // walk back the chain and find the common block
                 while (this.Chain.GetBlock(resetBlockHash) == null)
                 {
@@ -117,7 +132,7 @@ namespace Stratis.Bitcoin.BlockStore
 
             // add to pending blocks
             if (this.StoredBlock.Height < chainedBlock.Height)
-                this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair { Block = block, ChainedBlock = chainedBlock });
+                this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair(block, chainedBlock));
         }
 
         public Task Flush()
@@ -158,11 +173,11 @@ namespace Stratis.Bitcoin.BlockStore
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                var steps = new BlockStoreLoopStepChain(this, nextChainedBlock, cancellationToken, disposeMode);
-                steps.SetNextStep(new BlockStoreLoopStepReorganise());
-                steps.SetNextStep(new BlockStoreLoopStepCheckExists());
-                steps.SetNextStep(new BlockStoreLoopStepTryPending());
-                steps.SetNextStep(new BlockStoreLoopStepTryDownload());
+                var steps = new BlockStoreLoopStepChain(nextChainedBlock, disposeMode);
+                steps.SetNextStep(new ReorganiseBlockRepositoryStep(this, cancellationToken));
+                steps.SetNextStep(new CheckNextChainedBlockExistStep(this, cancellationToken));
+                steps.SetNextStep(new ProcessPendingStorageStep(this, cancellationToken));
+                steps.SetNextStep(new DownloadBlockStep(this, cancellationToken));
                 var result = await steps.Execute();
 
                 if (result.ShouldBreak)

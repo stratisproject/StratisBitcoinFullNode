@@ -1,10 +1,11 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.BlockStore.BlockStoreLoopTests
+namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 {
     public sealed class BlockStoreLoopStepReorganiseTest : BlockStoreLoopStepBaseTest
     {
@@ -46,8 +47,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.BlockStoreLoopTests
 
             //Reorganise (delete) blocks from the block repository that is not found
             var nextChainedBlock = block10;
-            var reorganiseStep = new BlockStoreLoopStepReorganise();
-            reorganiseStep.Execute(blockStoreLoop, nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+            var reorganiseStep = new ReorganiseBlockRepositoryStep(blockStoreLoop, new CancellationToken());
+            reorganiseStep.Execute(nextChainedBlock, false).GetAwaiter().GetResult();
 
             Assert.Equal(blockStoreLoop.StoredBlock.Header.GetHash(), block10.Previous.Header.GetHash());
             Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());
