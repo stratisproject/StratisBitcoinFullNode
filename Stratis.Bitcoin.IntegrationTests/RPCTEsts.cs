@@ -54,5 +54,32 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        [Fact]
+        public void CanGetGenesisFromRPC()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                RPCClient rpc = builder.CreateStratisNode().CreateRPCClient();
+                builder.StartAll();
+                RPCResponse response = rpc.SendCommand(RPCOperations.getblockhash, 0);
+                string actualGenesis = (string)response.Result;
+                Assert.Equal(Network.RegTest.GetGenesis().GetHash().ToString(), actualGenesis);
+                Assert.Equal(Network.RegTest.GetGenesis().GetHash(), rpc.GetBestBlockHash());
+            }
+        }
+
+        [Fact]
+        public void CanGetBlockFromRPC()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                RPCClient rpc = builder.CreateStratisNode().CreateRPCClient();
+                builder.StartAll();
+                BlockHeader response = rpc.GetBlockHeader(0);
+
+                // TODO: This assertion is currently failing
+                Assert.Equal(Network.RegTest.GenesisHash, response.GetHash());
+            }
+        }
     }
 }

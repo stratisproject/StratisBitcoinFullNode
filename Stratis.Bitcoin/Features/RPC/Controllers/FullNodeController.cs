@@ -110,6 +110,17 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return model;
         }
 
+        [ActionName("getblockheader")]
+        public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
+        {
+            if (!isJsonFormat)
+            {
+                throw new NotImplementedException();
+            }
+
+            return new BlockHeaderModel(this.Chain?.GetBlock(uint256.Parse(hash))?.Header);
+        }
+
         private async Task<ChainedBlock> GetTransactionBlock(uint256 trxid)
         {
             ChainedBlock block = null;
