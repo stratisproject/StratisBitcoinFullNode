@@ -65,21 +65,23 @@ namespace Stratis.Bitcoin.BlockStore
         internal abstract Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode);
     }
 
-    internal sealed class BlockStoreLoopStepResult
+    internal class BlockStoreLoopStepResult
     {
-        private BlockStoreLoopStepResult() { }
+        internal BlockStoreLoopStepResult() { }
 
         internal bool ShouldBreak { get; private set; }
         internal bool ShouldContinue { get; private set; }
 
-        internal static BlockStoreLoopStepResult Break()
+        internal BlockStoreLoopStepResult Break()
         {
-            return new BlockStoreLoopStepResult() { ShouldBreak = true };
+            this.ShouldBreak = true;
+            return this;
         }
 
-        internal static BlockStoreLoopStepResult Continue()
+        internal BlockStoreLoopStepResult Continue()
         {
-            return new BlockStoreLoopStepResult() { ShouldContinue = true };
+            this.ShouldContinue = true;
+            return this;
         }
 
         internal static BlockStoreLoopStepResult Next()

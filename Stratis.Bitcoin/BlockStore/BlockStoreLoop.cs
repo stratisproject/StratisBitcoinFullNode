@@ -13,65 +13,46 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.BlockStore
 {
-    public sealed class BlockPair
-    {
-        /// <summary>
-        /// Construct BlockPair with a Block and ChainedBlock instance to ensure that its valid
-        /// </summary>
-        public BlockPair(Block block, ChainedBlock chainedBlock)
-        {
-            Guard.NotNull(block, "block");
-            Guard.NotNull(chainedBlock, "chainedBlock");
-
-            this.Block = block;
-            this.ChainedBlock = chainedBlock;
-        }
-
-        public Block Block { get; private set; }
-        public ChainedBlock ChainedBlock { get; private set; }
-    }
-
     public sealed class BlockStoreLoop
     {
+        internal readonly int BatchDownloadSize = 1000; //should be configurable
+        public BlockRepository BlockRepository { get; }
+        internal readonly StoreBlockPuller StoreBlockPuller;
         internal readonly ConcurrentChain Chain;
-        public BlockRepository BlockRepository { get; } // public for testing
-        private readonly NodeSettings nodeArgs;
-        internal readonly StoreBlockPuller blockPuller;
-        private readonly BlockStoreCache blockStoreCache;
-        private readonly BlockStoreStats blockStoreStats;
-
         public ChainBehavior.ChainState ChainState { get; }
-
+        internal readonly uint InsertBlockSizeThreshold = 1000000 * 5; //should be configurable // Block.MAX_BLOCK_SIZE // downaloading 5mb is not much in case the store need to catchup
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
-
-        public BlockStoreLoop(
-            ConcurrentChain chain,
-            BlockRepository blockRepository,
-            NodeSettings nodeArgs,
-            ChainBehavior.ChainState chainState,
-            StoreBlockPuller blockPuller,
-            BlockStoreCache cache)
-        {
-            this.Chain = chain;
-            this.BlockRepository = blockRepository;
-            this.nodeArgs = nodeArgs;
-            this.blockPuller = blockPuller;
-            this.ChainState = chainState;
-            this.blockStoreCache = cache;
-
-            this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache);
-        }
-
-        // downaloading 5mb is not much in case the store need to catchup
-        internal uint InsertBlockSizeThreshold = 1000000 * 5; // Block.MAX_BLOCK_SIZE 
-        internal int PendingStorageBatchThreshold = 5;
-        internal int BatchDownloadSize = 1000;
-        private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
-        internal readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
+        internal readonly int PendingStorageBatchThreshold = 5; //should be configurable
+        internal readonly TimeSpan PushIntervalIBD = TimeSpan.FromMilliseconds(100); //should be configurable
         public ChainedBlock StoredBlock { get; set; }
 
-        public async Task Initialize(CancellationTokenSource cancellationToken)
+        private readonly NodeSettings nodeArgs;
+        private readonly BlockStoreCache blockStoreCache;
+        private readonly BlockStoreStats blockStoreStats;
+        private readonly TimeSpan pushInterval = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// Public constructor for unit testing
+        /// </summary>
+        public BlockStoreLoop(
+            BlockStoreCache blockStoreCache,
+            BlockRepository blockRepository,
+            ChainBehavior.ChainState chainState,
+            ConcurrentChain chain,
+            NodeSettings nodeArgs,
+            StoreBlockPuller storeBlockPuller)
+        {
+            this.BlockRepository = blockRepository;
+            this.blockStoreCache = blockStoreCache;
+            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache);
+            this.Chain = chain;
+            this.ChainState = chainState;
+            this.nodeArgs = nodeArgs;
+            this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
+            this.StoreBlockPuller = storeBlockPuller;
+        }
+
+        internal async Task Initialize(CancellationTokenSource cancellationToken)
         {
             if (this.nodeArgs.Store.ReIndex)
                 throw new NotImplementedException();
@@ -122,7 +103,7 @@ namespace Stratis.Bitcoin.BlockStore
             Loop(cancellationToken.Token);
         }
 
-        public void AddToPending(Block block)
+        internal void AddToPending(Block block)
         {
             var chainedBlock = this.Chain.GetBlock(block.GetHash());
             if (chainedBlock == null)
@@ -135,25 +116,26 @@ namespace Stratis.Bitcoin.BlockStore
                 this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair(block, chainedBlock));
         }
 
-        public Task Flush()
+        internal Task Flush()
         {
             return DownloadAndStoreBlocks(CancellationToken.None, true);
         }
 
-        public void Loop(CancellationToken cancellationToken)
+        /// <summary>
+        /// A loop that:
+        ///     1: Write pending blocks to store 
+        ///     2: Download missing blocks and write to store
+        /// </summary>
+        internal void Loop(CancellationToken cancellationToken)
         {
-            // A loop that writes pending blocks to store 
-            // or downloads missing blocks then writing to store
-            AsyncLoop.Run("BlockStoreLoop.DownloadBlocks", async token =>
-            {
-                await DownloadAndStoreBlocks(cancellationToken);
-            },
-            cancellationToken,
-            repeatEvery: TimeSpans.Second,
-            startAfter: TimeSpans.FiveSeconds);
+            AsyncLoop.Run("BlockStoreLoop.DownloadAndStoreBlocks",
+                async token => { await DownloadAndStoreBlocks(cancellationToken); },
+                cancellationToken,
+                repeatEvery: TimeSpans.Second,
+                startAfter: TimeSpans.FiveSeconds);
         }
 
-        public async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode = false)
+        private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode = false)
         {
             // TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
             // When in IBD we may need many reads for the block key without fetching the block

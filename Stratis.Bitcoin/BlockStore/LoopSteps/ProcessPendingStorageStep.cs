@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
             {
                 // SKip(0) returns an enumerator which doesn't re-count the collection
                 if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold)
-                    return BlockStoreLoopStepResult.Break();
+                    return new BlockStoreLoopStepResult().Break();
             }
 
             // Remove the BlockPair from PendingStorage and return for further processing
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
                     break;
             }
 
-            return BlockStoreLoopStepResult.Continue();
+            return new BlockStoreLoopStepResult().Continue();
         }
 
         private async Task<BlockStoreLoopStepResult> PushPendingBlocksToRepository(ChainedBlock previousChainedBlock, bool breakExecution)
@@ -77,14 +77,14 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
                 this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
 
                 if (breakExecution)
-                    return BlockStoreLoopStepResult.Break();
+                    return new BlockStoreLoopStepResult().Break();
 
                 this.pendingBlockPairsToStore.Clear();
                 this.pendingStorageBatchSize = 0;
 
                 // this can be tweaked if insert is effecting the consensus speed
                 if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload)
-                    await Task.Delay(this.BlockStoreLoop.pushIntervalIBD, this.CancellationToken);
+                    await Task.Delay(this.BlockStoreLoop.PushIntervalIBD, this.CancellationToken);
             }
 
             return BlockStoreLoopStepResult.Next();

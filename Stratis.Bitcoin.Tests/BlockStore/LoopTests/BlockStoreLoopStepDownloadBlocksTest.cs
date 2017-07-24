@@ -12,37 +12,46 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         [Fact]
         public void CanExecute_DownloadBlocks()
         {
-            // Create 15 blocks
-            var blocks = CreateBlocks(15);
+            // Create 10 blocks
+            var blocks = CreateBlocks(10);
 
             // The repository has 5 blocks stored
-            var blockRepository = new BlockRepository(Network.TestNet, "test");
-            blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks).GetAwaiter().GetResult();
+            using (var blockRepository = new BlockRepository(Network.TestNet, "test"))
+            {
+                blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
-            // The chain has 10 blocks appended
-            var chain = new ConcurrentChain(Network.TestNet);
-            AppendBlock(chain, blocks[0]);
-            AppendBlock(chain, blocks[1]);
-            AppendBlock(chain, blocks[2]);
-            AppendBlock(chain, blocks[3]);
-            AppendBlock(chain, blocks[4]);
-            AppendBlock(chain, blocks[5]);
-            AppendBlock(chain, blocks[6]);
-            AppendBlock(chain, blocks[7]);
-            AppendBlock(chain, blocks[8]);
-            AppendBlock(chain, blocks[9]);
+                // The chain has 10 blocks appended
+                var chain = new ConcurrentChain(Network.TestNet);
+                AppendBlock(chain, blocks[0]);
+                AppendBlock(chain, blocks[1]);
+                AppendBlock(chain, blocks[2]);
+                AppendBlock(chain, blocks[3]);
+                AppendBlock(chain, blocks[4]);
+                AppendBlock(chain, blocks[5]);
+                AppendBlock(chain, blocks[6]);
+                AppendBlock(chain, blocks[7]);
+                AppendBlock(chain, blocks[8]);
+                AppendBlock(chain, blocks[9]);
 
-            // Create block store loop
-            var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
+                // Create block store loop
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
 
-            //Start processing pending blocks from block 5
-            var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
+                // Push blocks 5 - 9 to the downloaded blocks collection
+                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[5].GetSerializedSize(), blocks[5], new CancellationToken());
+                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[6].GetSerializedSize(), blocks[6], new CancellationToken());
+                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[7].GetSerializedSize(), blocks[7], new CancellationToken());
+                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[8].GetSerializedSize(), blocks[8], new CancellationToken());
+                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[9].GetSerializedSize(), blocks[9], new CancellationToken());
 
-            var processPendingStorageStep = new ProcessPendingStorageStep(blockStoreLoop, new CancellationToken());
-            processPendingStorageStep.Execute(nextChainedBlock, false).GetAwaiter().GetResult();
+                //Start processing blocks to download from block 5
+                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
 
-            Assert.Equal(blocks[9].GetHash(), blockStoreLoop.BlockRepository.BlockHash);
-            Assert.Equal(blocks[9].GetHash(), blockStoreLoop.StoredBlock.HashBlock);
+                var step = new DownloadBlockStep(blockStoreLoop, new CancellationToken());
+                step.Execute(nextChainedBlock, false).GetAwaiter().GetResult();
+
+                Assert.Equal(blocks[9].GetHash(), blockStoreLoop.BlockRepository.BlockHash);
+                Assert.Equal(blocks[9].GetHash(), blockStoreLoop.StoredBlock.HashBlock);
+            }
         }
     }
 }

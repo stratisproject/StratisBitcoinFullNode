@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             var chainState = new Mock<ChainBehavior.ChainState>(fullNode);
             chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
 
-            var blockStoreLoop = new BlockStoreLoop(chain, blockRepository, new NodeSettings(), chainState.Object, blockStorePuller, new BlockStoreCache(blockRepository));
+            var blockStoreLoop = new BlockStoreLoop(new BlockStoreCache(blockRepository), blockRepository, chainState.Object, chain, new NodeSettings(), blockStorePuller);
             return blockStoreLoop;
         }
     }

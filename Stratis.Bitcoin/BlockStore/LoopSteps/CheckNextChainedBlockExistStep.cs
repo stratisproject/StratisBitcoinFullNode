@@ -15,12 +15,12 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
         {
             if (await this.BlockStoreLoop.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
             {
-                // Next block is in storage update StoredBlock 
+                // Next block is in storage, update StoredBlock 
                 await this.BlockStoreLoop.BlockRepository.SetBlockHash(nextChainedBlock.HashBlock);
                 this.BlockStoreLoop.StoredBlock = nextChainedBlock;
                 this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
 
-                return BlockStoreLoopStepResult.Continue();
+                return new BlockStoreLoopStepResult().Continue();
             }
 
             return BlockStoreLoopStepResult.Next();
