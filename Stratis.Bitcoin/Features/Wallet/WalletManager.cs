@@ -631,6 +631,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public bool SendTransaction(string transactionHex)
 		{
+            Guard.NotEmpty(transactionHex, nameof(transactionHex));
+
 			// TODO move this to a behavior to a dedicated interface
 			// parse transaction
 			Transaction transaction = Transaction.Parse(transactionHex);
@@ -680,6 +682,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public void ProcessBlock(Block block, ChainedBlock chainedBlock)
 		{
+            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(chainedBlock, nameof(chainedBlock));
+
 			this.logger.LogTrace($"block notification - height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
 
 			// if there is no wallet yet, update the wallet tip hash and do nothing else.
@@ -715,15 +720,22 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
 		{
+            Guard.NotNull(transaction, nameof(transaction));
+
 			var hash = transaction.GetHash();
 			this.logger.LogTrace($"transaction received - hash: {hash}, coin: {this.coinType}");
 
+            // load the keys for lookup if they are not loaded yet.
+            if (this.keysLookup == null)
+            {
+                this.LoadKeysLookup();
+            }
+
 			// check the outputs
 			foreach (TxOut utxo in transaction.Outputs)
-			{
-				HdAddress pubKey;
+			{				
 				// check if the outputs contain one of our addresses
-				if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out pubKey))
+				if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
 				{
 					this.AddTransactionToWallet(hash, transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
 				}

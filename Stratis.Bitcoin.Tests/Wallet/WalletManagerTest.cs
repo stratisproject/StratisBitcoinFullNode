@@ -1652,7 +1652,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
                 walletManager.BuildTransaction(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             });
-        }      
+        }
 
         [Fact]
         public void BuildTransactionNoChangeAdressesLeftCreatesNewChangeAddress()
@@ -1660,7 +1660,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var wallet = GenerateBlankWallet("myWallet1", "password");
             var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
             var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
-            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");            
+            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
 
             var address = new HdAddress()
             {
@@ -1726,6 +1726,476 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Assert.Equal(result.GetHash(), transactionResult.transactionId);
             Assert.Equal(new Money(5000), transactionResult.fee);
         }
+
+        [Fact]
+        public void ProcessTransactionWithValidTransactionLoadsTransactionsIntoWalletIfMatching()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/LoadWalletWithExistingWalletLoadsWalletOntoManager");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var wallet = GenerateBlankWallet("myWallet1", "password");
+            var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            var changeKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+
+            var spendingAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var destinationAddress = new HdAddress()
+            {
+                Index = 1,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/1",
+                Address = destinationKeys.Address.ToString(),
+                Pubkey = destinationKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = destinationKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var changeAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/1/0",
+                Address = changeKeys.Address.ToString(),
+                Pubkey = changeKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = changeKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            //Generate a spendable transaction
+            var chainInfo = CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+            TransactionData spendingTransaction = CreateTransactionDataFromFirstBlock(chainInfo);
+            spendingAddress.Transactions.Add(spendingTransaction);
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new List<HdAddress>() { changeAddress }
+            });
+
+            // setup a payment to yourself
+            var transaction = SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(5000));
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
+                .Returns(new Money(5000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chainInfo.chain, NodeSettings.Default(),
+                  dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            walletManager.Wallets.Add(wallet);
+
+            walletManager.ProcessTransaction(transaction);
+
+            var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
+            Assert.Equal(1, spendingAddress.Transactions.Count);
+            Assert.Equal(transaction.GetHash(), spentAddressResult.Transactions.ElementAt(0).SpendingDetails.TransactionId);
+            Assert.Equal(transaction.Outputs[1].Value, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.ElementAt(0).Amount);
+            Assert.Equal(transaction.Outputs[1].ScriptPubKey, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.ElementAt(0).DestinationScriptPubKey);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.Count);
+            var destinationAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.ElementAt(0);
+            Assert.Equal(transaction.GetHash(), destinationAddressResult.Id);
+            Assert.Equal(transaction.Outputs[1].Value, destinationAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[1].ScriptPubKey, destinationAddressResult.ScriptPubKey);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Count);
+            var changeAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.ElementAt(0);
+            Assert.Equal(transaction.GetHash(), changeAddressResult.Id);
+            Assert.Equal(transaction.Outputs[0].Value, changeAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
+        }
+
+        [Fact]
+        public void ProcessTransactionWithEmptyScriptInTransactionDoesNotAddTransactionToWallet()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/LoadWalletWithExistingWalletLoadsWalletOntoManager");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var wallet = GenerateBlankWallet("myWallet1", "password");
+            var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            var changeKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+
+            var spendingAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var destinationAddress = new HdAddress()
+            {
+                Index = 1,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/1",
+                Address = destinationKeys.Address.ToString(),
+                Pubkey = destinationKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = destinationKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var changeAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/1/0",
+                Address = changeKeys.Address.ToString(),
+                Pubkey = changeKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = changeKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            //Generate a spendable transaction
+            var chainInfo = CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+            TransactionData spendingTransaction = CreateTransactionDataFromFirstBlock(chainInfo);
+            spendingAddress.Transactions.Add(spendingTransaction);
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new List<HdAddress>() { changeAddress }
+            });
+
+            // setup a payment to yourself
+            var transaction = SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(5000));
+            transaction.Outputs.ElementAt(1).Value = Money.Zero;
+            transaction.Outputs.ElementAt(1).ScriptPubKey = Script.Empty;
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
+                .Returns(new Money(5000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chainInfo.chain, NodeSettings.Default(),
+                  dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            walletManager.Wallets.Add(wallet);
+
+            walletManager.ProcessTransaction(transaction);
+
+            var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
+            Assert.Equal(1, spendingAddress.Transactions.Count);
+            Assert.Equal(transaction.GetHash(), spentAddressResult.Transactions.ElementAt(0).SpendingDetails.TransactionId);
+            Assert.Equal(0, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.Count);
+
+            Assert.Equal(0, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.Count);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Count);
+            var changeAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.ElementAt(0);
+            Assert.Equal(transaction.GetHash(), changeAddressResult.Id);
+            Assert.Equal(transaction.Outputs[0].Value, changeAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
+        }
+
+        [Fact]
+        public void ProcessTransactionWithDestinationToChangeAddressDoesNotAddTransactionAsPayment()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/LoadWalletWithExistingWalletLoadsWalletOntoManager");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var wallet = GenerateBlankWallet("myWallet1", "password");
+            var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            var changeKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/1");
+
+            var spendingAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var changeAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/1/0",
+                Address = changeKeys.Address.ToString(),
+                Pubkey = changeKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = changeKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var destinationChangeAddress = new HdAddress()
+            {
+                Index = 1,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/1/1",
+                Address = destinationKeys.Address.ToString(),
+                Pubkey = destinationKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = destinationKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            //Generate a spendable transaction
+            var chainInfo = CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+            TransactionData spendingTransaction = CreateTransactionDataFromFirstBlock(chainInfo);
+            spendingAddress.Transactions.Add(spendingTransaction);
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress>() { spendingAddress },
+                InternalAddresses = new List<HdAddress>() { changeAddress, destinationChangeAddress }
+            });
+
+            // setup a payment to yourself
+            var transaction = SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(5000));
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
+                .Returns(new Money(5000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chainInfo.chain, NodeSettings.Default(),
+                  dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            walletManager.Wallets.Add(wallet);
+
+            walletManager.ProcessTransaction(transaction);
+
+            var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
+            Assert.Equal(1, spendingAddress.Transactions.Count);
+            Assert.Equal(transaction.GetHash(), spentAddressResult.Transactions.ElementAt(0).SpendingDetails.TransactionId);
+            Assert.Equal(0, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.Count);
+            Assert.Equal(1, spentAddressResult.Transactions.ElementAt(0).BlockHeight);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Count);
+            var destinationAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.ElementAt(0);
+            Assert.Null(destinationAddressResult.BlockHeight);
+            Assert.Equal(transaction.GetHash(), destinationAddressResult.Id);
+            Assert.Equal(transaction.Outputs[0].Value, destinationAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[0].ScriptPubKey, destinationAddressResult.ScriptPubKey);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Transactions.Count);
+            var changeAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Transactions.ElementAt(0);
+            Assert.Null(destinationAddressResult.BlockHeight);
+            Assert.Equal(transaction.GetHash(), changeAddressResult.Id);
+            Assert.Equal(transaction.Outputs[1].Value, changeAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[1].ScriptPubKey, changeAddressResult.ScriptPubKey);
+        }
+
+        [Fact]
+        public void ProcessTransactionWithBlockHeightSetsBlockHeightOnTransactionData()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/LoadWalletWithExistingWalletLoadsWalletOntoManager");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var wallet = GenerateBlankWallet("myWallet1", "password");
+            var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            var changeKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+
+            var spendingAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var destinationAddress = new HdAddress()
+            {
+                Index = 1,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/1",
+                Address = destinationKeys.Address.ToString(),
+                Pubkey = destinationKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = destinationKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var changeAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/1/0",
+                Address = changeKeys.Address.ToString(),
+                Pubkey = changeKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = changeKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            //Generate a spendable transaction
+            var chainInfo = CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+            TransactionData spendingTransaction = CreateTransactionDataFromFirstBlock(chainInfo);
+            spendingAddress.Transactions.Add(spendingTransaction);
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new List<HdAddress>() { changeAddress }
+            });
+
+            // setup a payment to yourself
+            var transaction = SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(5000));
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
+                .Returns(new Money(5000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chainInfo.chain, NodeSettings.Default(),
+                  dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            walletManager.Wallets.Add(wallet);
+
+            var block = AppendTransactionInNewBlockToChain(chainInfo.chain, transaction);
+
+            var blockHeight = chainInfo.chain.GetBlock(block.GetHash()).Height;
+            walletManager.ProcessTransaction(transaction, blockHeight);
+
+            var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
+            Assert.Equal(1, spendingAddress.Transactions.Count);
+            Assert.Equal(transaction.GetHash(), spentAddressResult.Transactions.ElementAt(0).SpendingDetails.TransactionId);
+            Assert.Equal(transaction.Outputs[1].Value, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.ElementAt(0).Amount);
+            Assert.Equal(transaction.Outputs[1].ScriptPubKey, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.ElementAt(0).DestinationScriptPubKey);
+            Assert.Equal(blockHeight - 1, spentAddressResult.Transactions.ElementAt(0).BlockHeight);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.Count);
+            var destinationAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.ElementAt(0);
+            Assert.Equal(blockHeight, destinationAddressResult.BlockHeight);
+            Assert.Equal(transaction.GetHash(), destinationAddressResult.Id);
+            Assert.Equal(transaction.Outputs[1].Value, destinationAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[1].ScriptPubKey, destinationAddressResult.ScriptPubKey);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Count);
+            var changeAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.ElementAt(0);
+            Assert.Equal(blockHeight, destinationAddressResult.BlockHeight);
+            Assert.Equal(transaction.GetHash(), changeAddressResult.Id);
+            Assert.Equal(transaction.Outputs[0].Value, changeAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
+        }
+
+        [Fact]
+        public void ProcessTransactionWithBlockSetsBlockHash()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/LoadWalletWithExistingWalletLoadsWalletOntoManager");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+
+            var wallet = GenerateBlankWallet("myWallet1", "password");
+            var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            var changeKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+
+            var spendingAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var destinationAddress = new HdAddress()
+            {
+                Index = 1,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/0/1",
+                Address = destinationKeys.Address.ToString(),
+                Pubkey = destinationKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = destinationKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var changeAddress = new HdAddress()
+            {
+                Index = 0,
+                BlocksScanned = new SortedList<int, int>(),
+                HdPath = $"m/44'/0'/0'/1/0",
+                Address = changeKeys.Address.ToString(),
+                Pubkey = changeKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = changeKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            //Generate a spendable transaction
+            var chainInfo = CreateChainAndCreateFirstBlockWithPaymentToAddress(wallet.Network, spendingAddress);
+            TransactionData spendingTransaction = CreateTransactionDataFromFirstBlock(chainInfo);
+            spendingAddress.Transactions.Add(spendingTransaction);
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new List<HdAddress>() { changeAddress }
+            });
+
+            // setup a payment to yourself
+            var transaction = SetupValidTransaction(wallet, "password", spendingAddress, destinationKeys.PubKey, changeAddress, new Money(7500), new Money(5000));
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
+                .Returns(new Money(5000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chainInfo.chain, NodeSettings.Default(),
+                  dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            walletManager.Wallets.Add(wallet);
+
+            var block = AppendTransactionInNewBlockToChain(chainInfo.chain, transaction);
+            
+            walletManager.ProcessTransaction(transaction, block: block);
+
+            var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
+            Assert.Equal(1, spendingAddress.Transactions.Count);
+            Assert.Equal(transaction.GetHash(), spentAddressResult.Transactions.ElementAt(0).SpendingDetails.TransactionId);
+            Assert.Equal(transaction.Outputs[1].Value, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.ElementAt(0).Amount);
+            Assert.Equal(transaction.Outputs[1].ScriptPubKey, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.ElementAt(0).DestinationScriptPubKey);
+            Assert.Equal(chainInfo.block.GetHash(), spentAddressResult.Transactions.ElementAt(0).BlockHash);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.Count);
+            var destinationAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.ElementAt(0);
+            Assert.Equal(block.GetHash(), destinationAddressResult.BlockHash);
+            Assert.Equal(transaction.GetHash(), destinationAddressResult.Id);
+            Assert.Equal(transaction.Outputs[1].Value, destinationAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[1].ScriptPubKey, destinationAddressResult.ScriptPubKey);
+
+            Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Count);
+            var changeAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.ElementAt(0);
+            Assert.Equal(block.GetHash(), destinationAddressResult.BlockHash);
+            Assert.Equal(transaction.GetHash(), changeAddressResult.Id);
+            Assert.Equal(transaction.Outputs[0].Value, changeAddressResult.Amount);
+            Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
+        }       
 
         [Fact]
         public void CheckWalletBalanceEstimationWithConfirmedTransactions()
@@ -1900,6 +2370,45 @@ namespace Stratis.Bitcoin.Tests.Wallet
             };
 
             return (walletFile, extendedKey);
+        }
+
+        private Block AppendTransactionInNewBlockToChain(ConcurrentChain chain, Transaction transaction)
+        {
+            ChainedBlock last = null;
+            var nonce = RandomUtils.GetUInt32();
+            var block = new Block();
+            block.AddTransaction(transaction);
+            block.UpdateMerkleRoot();
+            block.Header.HashPrevBlock = chain.Tip.HashBlock;
+            block.Header.Nonce = nonce;
+            if (!chain.TrySetTip(block.Header, out last))
+                throw new InvalidOperationException("Previous not existing");
+
+            return block;
+        }
+
+        private Transaction SetupValidTransaction(Features.Wallet.Wallet wallet, string password, HdAddress spendingAddress, PubKey destinationPubKey, HdAddress changeAddress, Money amount, Money fee)
+        {
+            var spendingTransaction = spendingAddress.Transactions.ElementAt(0);
+            Coin coin = new Coin(spendingTransaction.Id, (uint)spendingTransaction.Index, spendingTransaction.Amount, spendingTransaction.ScriptPubKey);
+
+            var privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
+
+            var builder = new TransactionBuilder();
+            Transaction tx = builder
+                .AddCoins(new List<Coin> { coin })
+                .AddKeys(new ExtKey(privateKey, wallet.ChainCode).Derive(new KeyPath(spendingAddress.HdPath)).GetWif(wallet.Network))
+                .Send(destinationPubKey.ScriptPubKey, amount)
+                .SetChange(changeAddress.ScriptPubKey)
+                .SendFees(fee)
+                .BuildTransaction(true);
+
+            if (!builder.Verify(tx))
+            {
+                throw new WalletException("Could not build transaction, please make sure you entered the correct data.");
+            }
+
+            return tx;
         }
 
         private ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
