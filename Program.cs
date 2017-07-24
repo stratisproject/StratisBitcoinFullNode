@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 using Breeze.Api;
-using Breeze.TumbleBit;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Logging;
 using Breeze.Wallet;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -18,7 +13,6 @@ using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Notifications;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Wallet;
-using Stratis.Bitcoin.WatchOnlyWallet;
 
 namespace Breeze.Daemon
 {
@@ -91,17 +85,7 @@ namespace Breeze.Daemon
                         .UseApi();
                 }
             }
-
-            // TODO: Add this when TB is enabled
-            //// add the tumbler's settings
-            //var tumblerAddress = args.SingleOrDefault(arg => arg.StartsWith("-tumbler-uri="));
-            //if (!string.IsNullOrEmpty(tumblerAddress))
-            //{
-            //    tumblerAddress = tumblerAddress.Replace("-tumbler-uri=", string.Empty);
-            //    fullNodeBuilder.UseTumbleBit(new Uri(tumblerAddress));
-            //    fullNodeBuilder.UseWatchOnlyWallet();
-            //}
-
+            
             var node = fullNodeBuilder.Build();
 
             //start Full Node - this will also start the API
