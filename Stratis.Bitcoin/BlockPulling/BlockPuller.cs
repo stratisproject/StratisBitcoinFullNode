@@ -183,8 +183,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Constructs relations to peer nodes that meet the requirements.
         /// </summary>
         /// <returns>Array of relations to peer nodes that can be asked for blocks.</returns>
-        /// <seealso cref="requirements"/>
         /// <remarks>TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/246</remarks>
+        /// <seealso cref="requirements"/>
         private BlockPullerBehavior[] GetNodeBehaviors()
         {
             return this.Nodes
@@ -397,8 +397,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="peer">Peer to be assigned the new task.</param>
         /// <param name="blockHash">Hash of the block to download from <paramref name="peer"/>.</param>
-        /// <remarks>The caller of this method is responsible for holding <see cref="lockObject"/>.</remarks>
         /// <returns><c>true</c> if the block was assigned to the peer, <c>false</c> in case the block has already been assigned to someone.</returns>
+        /// <remarks>The caller of this method is responsible for holding <see cref="lockObject"/>.</remarks>
         internal bool AssignDownloadTaskToPeer(BlockPullerBehavior peer, uint256 blockHash)
         {
             bool res = false;
@@ -415,8 +415,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="peer">Peer to be assigned the new task.</param>
         /// <param name="blockHash">Hash of the block to download from <paramref name="peer"/>.</param>
-        /// <remarks>The caller of this method is responsible for holding <see cref="lockObject"/>.</remarks>
         /// <returns><c>true</c> if the block was assigned to the peer, <c>false</c> in case the block has already been assigned to someone.</returns>
+        /// <remarks>The caller of this method is responsible for holding <see cref="lockObject"/>.</remarks>
         private bool AssignDownloadTaskToPeerLocked(BlockPullerBehavior peer, uint256 blockHash)
         {
             bool res = false;
