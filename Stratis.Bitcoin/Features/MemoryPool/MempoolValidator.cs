@@ -14,8 +14,18 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-	public class MempoolValidator
-	{
+    public interface IMempoolValidator
+    {
+        PowConsensusOptions ConsensusOptions { get; }
+        MempoolPerformanceCounter PerformanceCounter { get; }
+
+        Task<bool> AcceptToMemoryPool(MempoolValidationState state, Transaction tx);
+        Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx);
+        Task SanityCheck();
+    }
+
+    public class MempoolValidator : IMempoolValidator
+    {
 		public const bool DefaultRelaypriority = true;
 		public const int DefaultMaxMempoolSize = 300; // Default for -maxmempool, maximum megabytes of mempool memory usage 
 		public const int DefaultMinRelayTxFee = 1000; // Default for -minrelaytxfee, minimum relay fee for transactions 

@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
         private readonly IWalletFeePolicy walletFeePolicy;
-        private readonly MempoolValidator mempoolValidator;
+        private readonly IMempoolValidator mempoolValidator;
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public WalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain,
             NodeSettings settings, DataFolder dataFolder, IWalletFeePolicy walletFeePolicy, IAsyncLoopFactory asyncLoopFactory, 
-            INodeLifetime nodeLifetime, MempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+            INodeLifetime nodeLifetime, IMempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
