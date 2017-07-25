@@ -204,7 +204,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         private void AssignPendingVectors()
         {
-
             BlockPullerBehavior[] innernodes = GetNodeBehaviors();
             if (innernodes.Length == 0)
                 return;
