@@ -34,11 +34,14 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             Assert.Null(blockStoreLoop.StoredBlock);
 
             var nextChainedBlock = block04;
-            var checkExistsStep = new CheckNextChainedBlockExistStep(blockStoreLoop, new CancellationToken());
-            checkExistsStep.Execute(nextChainedBlock, false).GetAwaiter().GetResult();
+            var checkExistsStep = new CheckNextChainedBlockExistStep(blockStoreLoop);
+            checkExistsStep.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
             Assert.Equal(blockStoreLoop.StoredBlock.Header.GetHash(), block04.Header.GetHash());
             Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block04.Header.GetHash());
+
+            blockRepository.Dispose();
+            blockRepository = null;
         }
     }
 }

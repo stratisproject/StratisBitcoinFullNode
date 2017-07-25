@@ -47,11 +47,14 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
             //Reorganise (delete) blocks from the block repository that is not found
             var nextChainedBlock = block10;
-            var reorganiseStep = new ReorganiseBlockRepositoryStep(blockStoreLoop, new CancellationToken());
-            reorganiseStep.Execute(nextChainedBlock, false).GetAwaiter().GetResult();
+            var reorganiseStep = new ReorganiseBlockRepositoryStep(blockStoreLoop);
+            reorganiseStep.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
             Assert.Equal(blockStoreLoop.StoredBlock.Header.GetHash(), block10.Previous.Header.GetHash());
             Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());
+
+            blockRepository.Dispose();
+            blockRepository = null;
         }
     }
 }

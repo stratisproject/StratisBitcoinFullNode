@@ -45,17 +45,14 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             //Start processing pending blocks from block 5
             var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
 
-            var processPendingStorageStep = new ProcessPendingStorageStep(blockStoreLoop, new CancellationToken());
-            processPendingStorageStep.Execute(nextChainedBlock, false).GetAwaiter().GetResult();
+            var processPendingStorageStep = new ProcessPendingStorageStep(blockStoreLoop);
+            processPendingStorageStep.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
             Assert.Equal(blocks[9].GetHash(), blockStoreLoop.BlockRepository.BlockHash);
             Assert.Equal(blocks[9].GetHash(), blockStoreLoop.StoredBlock.HashBlock);
-        }
 
-        private void AddToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
-        {
-            var chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
-            blockStoreLoop.PendingStorage.TryAdd(block.GetHash(), new BlockPair(block, chainedBlock));
+            blockRepository.Dispose();
+            blockRepository = null;
         }
     }
 }

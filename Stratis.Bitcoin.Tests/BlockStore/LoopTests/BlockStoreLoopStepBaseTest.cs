@@ -109,5 +109,11 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             var blockStoreLoop = new BlockStoreLoop(new BlockStoreCache(blockRepository), blockRepository, chainState.Object, chain, new NodeSettings(), blockStorePuller);
             return blockStoreLoop;
         }
+
+        internal void AddToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
+        {
+            var chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
+            blockStoreLoop.PendingStorage.TryAdd(block.GetHash(), new BlockPair(block, chainedBlock));
+        }
     }
 }

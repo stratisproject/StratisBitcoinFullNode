@@ -7,12 +7,12 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
 {
     internal sealed class ReorganiseBlockRepositoryStep : BlockStoreLoopStep
     {
-        internal ReorganiseBlockRepositoryStep(BlockStoreLoop blockStoreLoop, CancellationToken cancellationToken)
-            : base(blockStoreLoop, cancellationToken)
+        internal ReorganiseBlockRepositoryStep(BlockStoreLoop blockStoreLoop)
+            : base(blockStoreLoop)
         {
         }
 
-        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode)
+        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             if (this.BlockStoreLoop.StoredBlock.HashBlock != nextChainedBlock.Header.HashPrevBlock)
             {
@@ -20,27 +20,31 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
                     return new BlockStoreLoopStepResult().Break();
 
                 var blocksToDelete = new List<uint256>();
-                var delete = this.BlockStoreLoop.StoredBlock;
+                var blockToDelete = this.BlockStoreLoop.StoredBlock;
 
                 //The chained block does not exist on the chain
                 //Add blocks to delete to the blocksToDelete collection by walking back the chain until the last chained block is found
-                while (this.BlockStoreLoop.Chain.GetBlock(delete.HashBlock) == null)
+                while (this.BlockStoreLoop.Chain.GetBlock(blockToDelete.HashBlock) == null)
                 {
-                    blocksToDelete.Add(delete.HashBlock);
-                    delete = delete.Previous;
+                    blocksToDelete.Add(blockToDelete.HashBlock);
+                    blockToDelete = blockToDelete.Previous;
                 }
 
-                //Delete the un-persisted blocks from the repository
-                await this.BlockStoreLoop.BlockRepository.DeleteAsync(delete.HashBlock, blocksToDelete);
+                //Delete blocks from the repository
+                await this.BlockStoreLoop.BlockRepository.DeleteAsync(blockToDelete.HashBlock, blocksToDelete);
 
                 //Set the last stored block to the last found chained block
-                this.BlockStoreLoop.StoredBlock = delete;
+                this.BlockStoreLoop.StoredBlock = blockToDelete;
                 this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
+
+                blocksToDelete.Clear();
+                blocksToDelete = null;
+                blockToDelete = null;
 
                 return new BlockStoreLoopStepResult().Break();
             }
 
-            return BlockStoreLoopStepResult.Next();
+            return new BlockStoreLoopStepResult().Next();
         }
     }
 }

@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
 
     internal sealed class DownloadBlockStep : BlockStoreLoopStep
     {
-        internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, CancellationToken cancellationToken)
-            : base(blockStoreLoop, cancellationToken)
+        internal DownloadBlockStep(BlockStoreLoop blockStoreLoop)
+            : base(blockStoreLoop)
         {
         }
 
@@ -23,10 +23,13 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
         private int stallCount = 0;
         private List<BlockPair> blockPairsToStore = new List<BlockPair>();
 
-        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode)
+        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             if (disposeMode)
+            {
+                Cleanup();
                 return new BlockStoreLoopStepResult().Break();
+            }
 
             var chainedBlockStackToDownload = new Queue<ChainedBlock>(new[] { nextChainedBlock });
 
@@ -34,7 +37,7 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
 
             var canDownload = true;
 
-            while (!this.CancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 if (canDownload)
                 {
@@ -46,12 +49,17 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
                         break;
                 }
 
-                var downloadResult = await DownloadBlocks(chainedBlockStackToDownload);
+                var downloadResult = await DownloadBlocks(chainedBlockStackToDownload, cancellationToken);
                 if (downloadResult.ShouldBreak)
                     break;
             }
 
-            return BlockStoreLoopStepResult.Next();
+            chainedBlockStackToDownload.Clear();
+            chainedBlockStackToDownload = null;
+
+            Cleanup();
+
+            return new BlockStoreLoopStepResult().Next();
         }
 
         private async Task<DownloadBlockStepResult> AskAndEnqueueBlocksToDownload(Queue<ChainedBlock> chainedBlockStackToDownload, ChainedBlock nextChainedBlock, bool canDownload)
@@ -101,7 +109,7 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
             return false;
         }
 
-        private async Task<BlockStoreLoopStepResult> DownloadBlocks(Queue<ChainedBlock> chainedBlocksToDownload)
+        private async Task<BlockStoreLoopStepResult> DownloadBlocks(Queue<ChainedBlock> chainedBlocksToDownload, CancellationToken cancellationToken)
         {
             BlockPuller.DownloadedBlock downloadedBlock;
 
@@ -124,7 +132,6 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
                     this.insertBlockSize = 0;
 
                     this.blockPairsToStore.Clear();
-                    this.blockPairsToStore = null;
 
                     if (!chainedBlocksToDownload.Any())
                         return new BlockStoreLoopStepResult().Break();
@@ -137,12 +144,21 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
                     return new BlockStoreLoopStepResult().Break();
 
                 // Waiting for blocks so sleep 100 ms
-                await Task.Delay(100, this.CancellationToken);
+                await Task.Delay(100, cancellationToken);
 
                 this.stallCount++;
             }
 
-            return BlockStoreLoopStepResult.Next();
+            return new BlockStoreLoopStepResult().Next();
+        }
+
+        private void Cleanup()
+        {
+            if (this.blockPairsToStore != null)
+            {
+                this.blockPairsToStore.Clear();
+                this.blockPairsToStore = null;
+            }
         }
     }
 

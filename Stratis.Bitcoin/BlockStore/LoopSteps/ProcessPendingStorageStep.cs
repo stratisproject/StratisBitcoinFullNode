@@ -13,92 +13,99 @@ namespace Stratis.Bitcoin.BlockStore.LoopSteps
     /// </summary>
     internal sealed class ProcessPendingStorageStep : BlockStoreLoopStep
     {
-        internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop, CancellationToken cancellationToken)
-            : base(blockStoreLoop, cancellationToken)
+        private BlockPair pendingBlockPairToStore;
+
+        internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop)
+            : base(blockStoreLoop)
         {
         }
 
-        private List<BlockPair> pendingBlockPairsToStore = new List<BlockPair>();
-        private int pendingStorageBatchSize = 0;
-        private BlockPair pendingBlockPairToStore;
-
-        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode)
+        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
-            // If in IBD and batch count is not yet reached then wait
-            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
-            {
-                // SKip(0) returns an enumerator which doesn't re-count the collection
-                if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold)
-                    return new BlockStoreLoopStepResult().Break();
-            }
-
             // Remove the BlockPair from PendingStorage and return for further processing
             // If the next chained block does not exist, continue with execution
             if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
-                return BlockStoreLoopStepResult.Next();
+                return new BlockStoreLoopStepResult().Next();
 
-            this.pendingBlockPairsToStore.Add(this.pendingBlockPairToStore);
-            this.pendingStorageBatchSize = this.pendingBlockPairToStore.Block.GetSerializedSize();
-
-            while (!this.CancellationToken.IsCancellationRequested)
+            // If in IBD and batch count is not yet reached then wait
+            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
             {
-                var previousChainedBlock = nextChainedBlock;
+                if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold) // Skip(0) returns an enumerator which doesn't re-count the collection
+                    return new BlockStoreLoopStepResult().Break();
+            }
+
+            var pendingBlockPairsToStore = new List<BlockPair>();
+            pendingBlockPairsToStore.Add(this.pendingBlockPairToStore);
+            var pendingStorageBatchSize = this.pendingBlockPairToStore.Block.GetSerializedSize();
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var inputChainedBlock = nextChainedBlock;
                 nextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(nextChainedBlock.Height + 1);
 
-                var breakExecution = ShouldBreakExecution(previousChainedBlock, nextChainedBlock);
+                var breakExecution = ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
 
                 if (!breakExecution && !this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
                     breakExecution = true;
 
-                if (breakExecution && this.pendingBlockPairsToStore.Count() == 0)
-                    break;
+                if (breakExecution)
+                {
+                    if (!pendingBlockPairsToStore.Any())
+                        break;
+                }
+                else
+                {
+                    pendingBlockPairsToStore.Add(this.pendingBlockPairToStore);
+                    pendingStorageBatchSize += this.pendingBlockPairToStore.Block.GetSerializedSize(); // TODO: add the size to the result coming from the signaler	
+                }
 
-                this.pendingBlockPairsToStore.Add(this.pendingBlockPairToStore);
+                if (pendingStorageBatchSize > this.BlockStoreLoop.InsertBlockSizeThreshold || breakExecution)
+                {
+                    var result = await PushPendingBlocksToRepository(pendingStorageBatchSize, pendingBlockPairsToStore, nextChainedBlock, cancellationToken, breakExecution);
+                    if (result.ShouldBreak)
+                        break;
 
-                var result = await PushPendingBlocksToRepository(previousChainedBlock, breakExecution);
-                if (result.ShouldBreak)
-                    break;
+                    pendingBlockPairsToStore.Clear();
+                    pendingStorageBatchSize = 0;
+
+                    if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload) // this can be tweaked if insert is effecting the consensus speed
+                        await Task.Delay(this.BlockStoreLoop.PushIntervalIBD, cancellationToken);
+                }
             }
+
+            pendingBlockPairsToStore.Clear();
+            pendingBlockPairsToStore = null;
+
+            this.pendingBlockPairToStore = null;
 
             return new BlockStoreLoopStepResult().Continue();
         }
 
-        private async Task<BlockStoreLoopStepResult> PushPendingBlocksToRepository(ChainedBlock previousChainedBlock, bool breakExecution)
+        /// <summary>
+        /// Store missing blocks and remove them from pending blocks
+        /// </summary>
+        private async Task<BlockStoreLoopStepResult> PushPendingBlocksToRepository(int pendingStorageBatchSize, List<BlockPair> pendingBlockPairsToStore, ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool breakExecution)
         {
-            // TODO: add the size to the result coming from the signaler	
-            this.pendingStorageBatchSize += this.pendingBlockPairToStore.Block.GetSerializedSize();
+            await this.BlockStoreLoop.BlockRepository.PutAsync(nextChainedBlock.HashBlock, pendingBlockPairsToStore.Select(b => b.Block).ToList());
 
-            if (this.pendingStorageBatchSize > this.BlockStoreLoop.InsertBlockSizeThreshold || breakExecution)
-            {
-                // Store missing blocks and remove them from pending blocks
-                await this.BlockStoreLoop.BlockRepository.PutAsync(previousChainedBlock.HashBlock, this.pendingBlockPairsToStore.Select(b => b.Block).ToList());
+            this.BlockStoreLoop.StoredBlock = nextChainedBlock;
+            this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
 
-                this.BlockStoreLoop.StoredBlock = previousChainedBlock;
-                this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
+            if (breakExecution)
+                return new BlockStoreLoopStepResult().Break();
 
-                if (breakExecution)
-                    return new BlockStoreLoopStepResult().Break();
-
-                this.pendingBlockPairsToStore.Clear();
-                this.pendingStorageBatchSize = 0;
-
-                // this can be tweaked if insert is effecting the consensus speed
-                if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload)
-                    await Task.Delay(this.BlockStoreLoop.PushIntervalIBD, this.CancellationToken);
-            }
-
-            return BlockStoreLoopStepResult.Next();
+            return new BlockStoreLoopStepResult().Next();
         }
 
         /// <summary>
         /// Break execution if at the tip or block is already in store or pending insertion
         /// </summary>
-        private bool ShouldBreakExecution(ChainedBlock previousChainedBlock, ChainedBlock nextChainedBlock)
+        private bool ShouldBreakExecution(ChainedBlock inputChainedBlock, ChainedBlock nextChainedBlock)
         {
             if (nextChainedBlock == null)
                 return true;
 
-            if (nextChainedBlock.Header.HashPrevBlock != previousChainedBlock.HashBlock)
+            if (nextChainedBlock.Header.HashPrevBlock != inputChainedBlock.HashBlock)
                 return true;
 
             if (nextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)

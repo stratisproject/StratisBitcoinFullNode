@@ -46,8 +46,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 //Start processing blocks to download from block 5
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
 
-                var step = new DownloadBlockStep(blockStoreLoop, new CancellationToken());
-                step.Execute(nextChainedBlock, false).GetAwaiter().GetResult();
+                var step = new DownloadBlockStep(blockStoreLoop);
+                step.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[9].GetHash(), blockStoreLoop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[9].GetHash(), blockStoreLoop.StoredBlock.HashBlock);

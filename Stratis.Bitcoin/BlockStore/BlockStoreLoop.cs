@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.BlockStore
         internal readonly StoreBlockPuller StoreBlockPuller;
         internal readonly ConcurrentChain Chain;
         public ChainBehavior.ChainState ChainState { get; }
-        internal readonly uint InsertBlockSizeThreshold = 1000000 * 5; //should be configurable // Block.MAX_BLOCK_SIZE // downaloading 5mb is not much in case the store need to catchup
+        internal readonly uint InsertBlockSizeThreshold = 1024; //should be configurable // Block.MAX_BLOCK_SIZE // downaloading 5mb is not much in case the store need to catchup
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
         internal readonly int PendingStorageBatchThreshold = 5; //should be configurable
         internal readonly TimeSpan PushIntervalIBD = TimeSpan.FromMilliseconds(100); //should be configurable
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.BlockStore
             AsyncLoop.Run("BlockStoreLoop.DownloadAndStoreBlocks",
                 async token => { await DownloadAndStoreBlocks(cancellationToken); },
                 cancellationToken,
-                repeatEvery: TimeSpans.Second,
+                repeatEvery: TimeSpans.Mls100,
                 startAfter: TimeSpans.FiveSeconds);
         }
 
@@ -142,6 +142,12 @@ namespace Stratis.Bitcoin.BlockStore
             // So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
             // a read is normally done when a peer is asking for the entire block (not just the key) 
             // then if LazyLoadingOn = false the read will be faster on the entire block            
+
+            var steps = new BlockStoreLoopStepChain(disposeMode);
+            steps.SetNextStep(new ReorganiseBlockRepositoryStep(this));
+            steps.SetNextStep(new CheckNextChainedBlockExistStep(this));
+            steps.SetNextStep(new ProcessPendingStorageStep(this));
+            steps.SetNextStep(new DownloadBlockStep(this));
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -155,18 +161,14 @@ namespace Stratis.Bitcoin.BlockStore
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                var steps = new BlockStoreLoopStepChain(nextChainedBlock, disposeMode);
-                steps.SetNextStep(new ReorganiseBlockRepositoryStep(this, cancellationToken));
-                steps.SetNextStep(new CheckNextChainedBlockExistStep(this, cancellationToken));
-                steps.SetNextStep(new ProcessPendingStorageStep(this, cancellationToken));
-                steps.SetNextStep(new DownloadBlockStep(this, cancellationToken));
-                var result = await steps.Execute();
-
+                var result = await steps.Execute(nextChainedBlock, cancellationToken);
                 if (result.ShouldBreak)
                     break;
                 if (result.ShouldContinue)
                     continue;
             }
+
+            steps = null;
         }
     }
 }

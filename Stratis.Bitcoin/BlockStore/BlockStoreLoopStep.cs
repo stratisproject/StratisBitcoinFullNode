@@ -9,12 +9,10 @@ namespace Stratis.Bitcoin.BlockStore
     internal sealed class BlockStoreLoopStepChain
     {
         private List<BlockStoreLoopStep> steps = new List<BlockStoreLoopStep>();
-        private ChainedBlock nextChainedBlock;
         private bool disposeMode;
 
-        public BlockStoreLoopStepChain(ChainedBlock nextChainedBlock, bool disposeMode)
+        public BlockStoreLoopStepChain(bool disposeMode)
         {
-            this.nextChainedBlock = nextChainedBlock;
             this.disposeMode = disposeMode;
         }
 
@@ -23,13 +21,13 @@ namespace Stratis.Bitcoin.BlockStore
             this.steps.Add(step);
         }
 
-        internal async Task<BlockStoreLoopStepResult> Execute()
+        internal async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken)
         {
-            BlockStoreLoopStepResult result = null;
+            var result = new BlockStoreLoopStepResult().Next();
 
             foreach (var step in this.steps)
             {
-                var stepResult = await step.Execute(this.nextChainedBlock, this.disposeMode);
+                var stepResult = await step.Execute(nextChainedBlock, cancellationToken, this.disposeMode);
 
                 if (stepResult.ShouldBreak)
                 {
@@ -37,7 +35,7 @@ namespace Stratis.Bitcoin.BlockStore
                     break;
                 }
 
-                if (result.ShouldContinue)
+                if (stepResult.ShouldContinue)
                 {
                     result = stepResult;
                     break;
@@ -50,19 +48,16 @@ namespace Stratis.Bitcoin.BlockStore
 
     internal abstract class BlockStoreLoopStep
     {
-        protected BlockStoreLoopStep(BlockStoreLoop blockStoreLoop, CancellationToken cancellationToken)
+        protected BlockStoreLoopStep(BlockStoreLoop blockStoreLoop)
         {
             Guard.NotNull(blockStoreLoop, "blockStoreLoop");
-            Guard.NotNull(cancellationToken, "cancellationToken");
 
             this.BlockStoreLoop = blockStoreLoop;
-            this.CancellationToken = cancellationToken;
         }
 
         internal BlockStoreLoop BlockStoreLoop;
-        internal CancellationToken CancellationToken;
 
-        internal abstract Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode);
+        internal abstract Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode);
     }
 
     internal class BlockStoreLoopStepResult
@@ -84,9 +79,9 @@ namespace Stratis.Bitcoin.BlockStore
             return this;
         }
 
-        internal static BlockStoreLoopStepResult Next()
+        internal BlockStoreLoopStepResult Next()
         {
-            return new BlockStoreLoopStepResult();
+            return this;
         }
     }
 }
