@@ -668,11 +668,18 @@ namespace Stratis.Bitcoin.Features.Wallet
 		/// <inheritdoc />
 		public void RemoveBlocks(ChainedBlock fork)
 		{
+            Guard.NotNull(fork, nameof(fork));
+
+            if (this.keysLookup == null)
+            {
+                this.LoadKeysLookup();
+            }
+
 			var allAddresses = this.keysLookup.Values;
 			foreach (var address in allAddresses)
 			{
-				var toremove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
-				foreach (var transactionData in toremove)
+				var toRemove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
+				foreach (var transactionData in toRemove)
 					address.Transactions.Remove(transactionData);
 			}
 
@@ -960,9 +967,16 @@ namespace Stratis.Bitcoin.Features.Wallet
 			File.WriteAllText(walletfile, JsonConvert.SerializeObject(wallet, Formatting.Indented));
 		}
 
-		/// <inheritdoc />
-		public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
+        /// <inheritdoc />
+        public string GetWalletFileExtension()
+        {
+            return WalletFileExtension;
+        }
+
+        /// <inheritdoc />
+        public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
 		{
+            Guard.NotNull(chainedBlock, nameof(chainedBlock));
 			// update the wallets with the last processed block height                        
 			foreach (var wallet in this.Wallets)
 			{
@@ -970,17 +984,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 			}
 
 			this.WalletTipHash = chainedBlock.HashBlock;
-		}
-
-		/// <inheritdoc />
-		public string GetWalletFileExtension()
-		{
-			return WalletFileExtension;
-		}
+		}	
 
 		/// <inheritdoc />
 		public void UpdateLastBlockSyncedHeight(Wallet wallet, ChainedBlock chainedBlock)
 		{
+            Guard.NotNull(wallet, nameof(wallet));
+            Guard.NotNull(chainedBlock, nameof(chainedBlock));
+
 			// the block locator will help when the wallet 
 			// needs to rewind this will be used to find the fork 
 			wallet.BlockLocator = chainedBlock.GetLocator().Blocks;
