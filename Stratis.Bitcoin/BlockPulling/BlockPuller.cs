@@ -47,7 +47,11 @@ namespace Stratis.Bitcoin.BlockPulling
     /// <see cref="map"/>. Unsatified requests go to <see cref="pendingInventoryVectors"/>, which happens 
     /// when the puller find out that neither of its peers can be asked for certain block. It also happens 
     /// when something goes wrong (e.g. the peer disconnects) and the downloading request to a peer is not 
-    /// completed. Such requests need to be reassigned later.
+    /// completed. Such requests need to be reassigned later. Note that it is possible for a peer 
+    /// to be operating well, but slowly, which can cause its quality score to go down and its work 
+    /// to be taken from it. However, this reassignment of the work does not mean the node is stopped 
+    /// in its current task and it is still possible that it will deliver the blocks it was asked for.
+    /// Such late blocks deliveries are currently ignored and wasted.
     /// </para>
     /// <para><see cref="pendingDownloads"/> is an inverse mapping to <see cref="map"/>. Each connected 
     /// peer node has its list of assigned tasks here and there is an equivalence between tasks in both structures.</para>
