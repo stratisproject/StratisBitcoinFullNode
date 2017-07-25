@@ -65,7 +65,7 @@ it must contain `<returns>`. The order of the tags is `<summary>`, `<param>`, `<
 
 ### Fibonacci 
 
-The following code violates **XMLDOC.SUMMARY-2**, **INLINE-3** and **INTENT** rules:
+The following code violates **XMLDOC.SUMMARY-2**, **INLINE-3**, **INTENT**, and **ADD-VALUE** rules:
 
 ```
 /// <summary>
@@ -110,7 +110,8 @@ If a less known, or custom, algorithm was used, remarks (not summary) section co
 
 This parameter description is valuable mostly because of the documented limits of the implementation. 
 
-The inline comment `// Calculates previous element + current element` is completely unnecessary as it adds nothing to the reader.
+The inline comment `// Calculates previous element + current element` is completely unnecessary as it adds nothing to the reader, 
+so it violates **ADD-VALUE** rule.
 
 
 ### Name
