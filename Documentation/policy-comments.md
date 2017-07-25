@@ -1,6 +1,6 @@
 # Code Commenting Policy and Guidelines
 
-**TLDR**: Go to [Rules](#Rules) section and follow hard rules, try to follow soft rules where possible.
+**TLDR**: Go to [Rules](#rules) section and follow hard rules, try to follow soft rules where possible.
 
 This document describes the policy on comments within source code files. The policy is enforced during code reviews.
 No new code should be accepted to the code base if it does not comply this policy.
