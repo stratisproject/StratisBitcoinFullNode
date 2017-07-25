@@ -144,10 +144,10 @@ Variants 3 and 4 are the best as they add additional context that might be impor
 Variants 2, 3, and 4 should be accepted, but variant 1 should not be accepted for violating **ADD-VALUE** rule.
 
 
-### Locks
+### Contracts
 
-When you work with shared resources in multithreaded environment, you want to document all contracts so that the reviewer can check 
-that the code is correct.
+Documenting contracts between parts of codes, classes, methods etc. is crucial to prevent introducing bugs to a sensitive code 
+and to allow reviewers to check the correctness of the code. Let's take a look at the example using locks in a multithreaded environment. 
 
 ```
 /// <summary>
@@ -161,7 +161,7 @@ private bool AssignDownloadTaskToPeerLocked(BlockPullerBehavior peer, uint256 bl
 ...
 ```
 
-We also use "Locked" suffix to the method name, but that is a matter of the code style. From comments point of view, the remarks section 
-is very important for everyone who wants to call the method. However, for someone who only wants to understand the code flow, 
+As you can see we also use "Locked" suffix to the method name here, but that is a matter of the code style. From comments point of view, 
+the remarks section is very important for everyone who wants to call the method. However, for someone who only wants to understand the code flow, 
 it is not as important and thus the contract description is not a part of the summary.
 
