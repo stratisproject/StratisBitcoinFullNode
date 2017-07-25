@@ -95,9 +95,9 @@ namespace Stratis.Bitcoin.Logging
         {
             loggerFactory.AddFile(
                 Path.Combine(dataFolder.LogPath, "node-{Date}.json"), 
-                isJson: false, 
+                isJson: true, 
                 minimumLevel: LogLevel.Trace, 
-                fileSizeLimitBytes: 50000000);
+                fileSizeLimitBytes: 5000000);
         }
 
         public const int ColumnLength = 16;
