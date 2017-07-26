@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
+using System.Collections.Generic;
+using Stratis.Bitcoin.Features.RPC.Models;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
@@ -35,5 +37,13 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             }
             return true;
         }
+
+        [ActionName("getpeerinfo")]
+        public List<PeerInfoModel> GetPeerInfo()
+        {
+            List<PeerInfoModel> peerList = new List<PeerInfoModel>();
+            return peerList;
+        }
+
     }
 }
