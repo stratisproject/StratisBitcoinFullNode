@@ -198,9 +198,9 @@ namespace Stratis.Bitcoin.Base
 
 
     /// <summary>
-    /// Provides base feature extensions to full node builder.
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    internal static class BaseFeatureBuilderExtension
+    public static partial class IFullNodeBuilderExtensions
     {
         /// <summary>
         /// Makes the full node use all the required features - <see cref="BaseFeature"/>.

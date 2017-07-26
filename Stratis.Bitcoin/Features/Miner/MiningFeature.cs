@@ -15,8 +15,11 @@ namespace Stratis.Bitcoin.Features.Miner
 		}
 	}
 
-	public static class MiningFeatureExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder)
 		{
 			fullNodeBuilder.ConfigureFeature(features =>
