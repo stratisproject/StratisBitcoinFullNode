@@ -1,15 +1,17 @@
-using System;
-using System.Threading;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Notifications;
 using Stratis.Bitcoin.Tests.Logging;
 using Xunit;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.BlockStore;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Tests.Notifications
 {
@@ -18,11 +20,6 @@ namespace Stratis.Bitcoin.Tests.Notifications
 		[Fact]
 		public void BlockNotificationFeatureCallsNotifyOnStart()
 		{
-			var cancellationProvider = new FullNode.CancellationProvider
-			{
-				Cancellation = new CancellationTokenSource()
-			};
-
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectedNodes)
                 .Returns(new NodesCollection());
@@ -32,14 +29,14 @@ namespace Stratis.Bitcoin.Tests.Notifications
                 .Returns(new NodeConnectionParameters());
             
 			var chain = new Mock<ConcurrentChain>();
-			var chainState = new Mock<ChainBehavior.ChainState>(new Mock<FullNode>().Object);
+			var chainState = new Mock<ChainState>(new Mock<FullNode>().Object);
 			var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object);
-			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Signals(), new AsyncLoopFactory());
+			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
-			var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, cancellationProvider, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
+			var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
 			blockNotificationFeature.Start();
 
-			blockNotification.Verify(notif => notif.Notify(cancellationProvider.Cancellation.Token), Times.Once);
+			blockNotification.Verify(notif => notif.Notify(), Times.Once);
 		}
 	}
 }

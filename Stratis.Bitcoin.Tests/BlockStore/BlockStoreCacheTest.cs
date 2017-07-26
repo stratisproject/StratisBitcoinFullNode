@@ -1,25 +1,26 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using Microsoft.Extensions.Primitives;
+using Stratis.Bitcoin.Features.BlockStore;
+using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
     public class BlockStoreCacheTest
     {
-		private Mock<Bitcoin.BlockStore.IBlockRepository> blockRepository;
+		private Mock<IBlockRepository> blockRepository;
 		private BlockStoreCache blockStoreCache;
 		private Mock<IMemoryCache> cache;
 
 		public BlockStoreCacheTest()
 		{
-			this.blockRepository = new Mock<Bitcoin.BlockStore.IBlockRepository>();
+			this.blockRepository = new Mock<IBlockRepository>();
 			this.cache = new Mock<IMemoryCache>();
 
 			this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, this.cache.Object);

@@ -1,56 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.ExceptionServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Logging;
-using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.Miner;
 using Stratis.Bitcoin.Utilities;
 using System.Reflection;
-using Stratis.Bitcoin.Wallet;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin
 {
 
 	public class FullNode : IFullNode
 	{
-		private readonly ILogger logger;
-		private ApplicationLifetime applicationLifetime;
+		private ILogger logger;
+		private NodeLifetime nodeLifetime;
 		private FullNodeFeatureExecutor fullNodeFeatureExecutor;
-		private readonly ManualResetEvent isDisposed;
-		private readonly ManualResetEvent isStarted;
 
 		internal bool Stopped;
-
-		public FullNode()
-		{
-			this.logger = Logs.LoggerFactory.CreateLogger<FullNode>();
-			this.isDisposed = new ManualResetEvent(false);
-			this.isStarted = new ManualResetEvent(false);
-			this.Resources = new List<IDisposable>();
-		}
 
 		public bool IsDisposed { get; private set; }
 		public bool HasExited { get; private set; }
 
-		public IApplicationLifetime ApplicationLifetime
+		public INodeLifetime NodeLifetime
 		{
-			get { return this.applicationLifetime; }
-			private set { this.applicationLifetime = (ApplicationLifetime)value; }
-		} // this will replace the cancellation token on the full node
+			get { return this.nodeLifetime; }
+			private set { this.nodeLifetime = (NodeLifetime)value; }
+		} 
 
 		public IFullNodeServiceProvider Services { get; set; }
 
@@ -104,11 +94,11 @@ namespace Stratis.Bitcoin
 			return false;
 		}
 
-		public List<IDisposable> Resources { get; }
+		public List<IDisposable> Resources { get; private set; }
 
-		public ChainBehavior.ChainState ChainBehaviorState { get; private set; }
+		public ChainState ChainBehaviorState { get; private set; }
 
-		public Signals Signals { get; set; }
+		public Signals.Signals Signals { get; set; }
 
 		public ConsensusLoop ConsensusLoop { get; set; }
 
@@ -124,77 +114,67 @@ namespace Stratis.Bitcoin
 
 		public ConcurrentChain Chain { get; set; }
 
-		public CancellationProvider GlobalCancellation { get; private set; }
+        public IAsyncLoopFactory AsyncLoopFactory { get; set; }
 
-		public class CancellationProvider
-		{
-			public CancellationTokenSource Cancellation { get; set; }
-		}
-
-		public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
+        public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
 		{
 			Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
 			this.Services = serviceProvider;
 
-			this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
+		    this.logger = this.Services.ServiceProvider.GetService<ILoggerFactory>().CreateLogger(this.GetType().FullName);
+
+            this.DataFolder = this.Services.ServiceProvider.GetService<DataFolder>();
 			this.DateTimeProvider = this.Services.ServiceProvider.GetService<IDateTimeProvider>();
 			this.Network = this.Services.ServiceProvider.GetService<Network>();
 			this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
-			this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainBehavior.ChainState>();
+			this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainState>();
 			this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
 			this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
-			this.GlobalCancellation = this.Services.ServiceProvider.GetService<CancellationProvider>();
 			this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
-			this.Signals = this.Services.ServiceProvider.GetService<Signals>();
+			this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
 
 			this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
+		    this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
-			this.logger.LogInformation("Full node initialized on {0}", this.Network.Name);
+            this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
 			return this;
-		}
-
-		protected void StartFeatures()
-		{
-			this.ApplicationLifetime =
-				this.Services?.ServiceProvider.GetRequiredService<IApplicationLifetime>() as ApplicationLifetime;
-			this.fullNodeFeatureExecutor = this.Services?.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
-
-			// Fire IApplicationLifetime.Started
-			this.applicationLifetime?.NotifyStarted();
-
-			//start all registered features
-			this.fullNodeFeatureExecutor?.Start();
-		}
-
-		protected internal void DisposeFeatures()
-		{
-			// Fire IApplicationLifetime.Stopping
-			this.ApplicationLifetime?.StopApplication();
-			// Fire the IHostedService.Stop
-			this.fullNodeFeatureExecutor?.Stop();
-			(this.Services.ServiceProvider as IDisposable)?.Dispose();
-			//(this.Services.ServiceProvider as IDisposable)?.Dispose();
 		}
 
 		public void Start()
 		{
 			if (this.IsDisposed)
-				throw new ObjectDisposedException("FullNode");
+				throw new ObjectDisposedException(nameof(FullNode));
 
-			this.isStarted.Reset();
+		    if (this.Resources != null)
+		        throw new InvalidOperationException("node has already started.");
 
-			// start all the features defined
-			this.StartFeatures();
+		    this.Resources = new List<IDisposable>();
+            this.nodeLifetime = this.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
+		    this.fullNodeFeatureExecutor = this.Services.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
 
+		    if (this.nodeLifetime == null)
+		        throw new InvalidOperationException($"{nameof(INodeLifetime)} must be set.");
+
+            if (this.fullNodeFeatureExecutor == null)
+		        throw new InvalidOperationException($"{nameof(FullNodeFeatureExecutor)} must be set.");
+
+		    this.logger.LogInformation("Starting node...");
+
+            // start all registered features
+            this.fullNodeFeatureExecutor.Start();
+
+            // start connecting to peers
 			this.ConnectionManager.Start();
-			this.isStarted.Set();
 
-			this.StartPeriodicLog();
+		    // Fire INodeLifetime.Started
+		    this.nodeLifetime.NotifyStarted();
+
+            this.StartPeriodicLog();
 		}
 
 		public void Stop()
@@ -204,50 +184,50 @@ namespace Stratis.Bitcoin
 
 			this.Stopped = true;
 
-			// Fire IApplicationLifetime.Stopping
-			this.ApplicationLifetime?.StopApplication();
+		    this.logger.LogInformation("Closing node pending...");
 
-			if (this.GlobalCancellation != null)
-			{
-				this.GlobalCancellation.Cancellation.Cancel();
+            // Fire INodeLifetime.Stopping
+            this.nodeLifetime.StopApplication();
 
-				this.ConnectionManager.Dispose();
-				foreach (IDisposable dispo in this.Resources)
-					dispo.Dispose();
+		    this.ConnectionManager.Dispose();
 
-				this.DisposeFeatures();
-			}
+            foreach (IDisposable dispo in this.Resources)
+		        dispo.Dispose();
 
-			// Fire IApplicationLifetime.Stopped
-			this.applicationLifetime?.NotifyStopped();
+            // Fire the NodeFeatureExecutor.Stop
+            this.fullNodeFeatureExecutor.Stop();
+            (this.Services.ServiceProvider as IDisposable)?.Dispose();
+
+            // Fire INodeLifetime.Stopped
+            this.nodeLifetime.NotifyStopped();
 		}
 
 		private void StartPeriodicLog()
 		{
-			AsyncLoop.Run("PeriodicLog", (cancellation) =>
+			this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
 				{
 					// TODO: move stats to each of its components
 					StringBuilder benchLogs = new StringBuilder();
 
 					benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
 					                     this.ConnectionManager.Parameters.UserAgent);
-					benchLogs.AppendLine("Headers.Height: ".PadRight(Logs.ColumnLength + 3) +
+					benchLogs.AppendLine("Headers.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 					                     this.Chain.Tip.Height.ToString().PadRight(8) +
-					                     " Headers.Hash: ".PadRight(Logs.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+					                     " Headers.Hash: ".PadRight(LogsExtension.ColumnLength + 3) + this.Chain.Tip.HashBlock);
 
 					if (this.ConsensusLoop != null)
 					{
-						benchLogs.AppendLine("Consensus.Height: ".PadRight(Logs.ColumnLength + 3) +
+						benchLogs.AppendLine("Consensus.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) +
-						                     " Consensus.Hash: ".PadRight(Logs.ColumnLength + 3) +
+						                     " Consensus.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
 					}
 
 					if (this.ChainBehaviorState.HighestPersistedBlock != null)
 					{
-						benchLogs.AppendLine("Store.Height: ".PadRight(Logs.ColumnLength + 3) +
+						benchLogs.AppendLine("Store.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) +
-						                     " Store.Hash: ".PadRight(Logs.ColumnLength + 3) +
+						                     " Store.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 					}
 
@@ -257,9 +237,9 @@ namespace Stratis.Bitcoin
 					    var block = this.Chain.GetBlock(height);
 					    var hashBlock = block == null ? uint256.Zero : block.HashBlock;
 
-                        benchLogs.AppendLine("Wallet.Height: ".PadRight(Logs.ColumnLength + 3) +
+                        benchLogs.AppendLine("Wallet.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
 						                     height.ToString().PadRight(8) +
-											 " Wallet.Hash: ".PadRight(Logs.ColumnLength + 3) +
+											 " Wallet.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
                                              hashBlock);
 					}
 
@@ -273,31 +253,20 @@ namespace Stratis.Bitcoin
 
 					benchLogs.AppendLine("======Connection======");
 					benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-					Logs.Bench.LogInformation(benchLogs.ToString());
+					this.logger.LogInformation(benchLogs.ToString());
 					return Task.CompletedTask;
 				},
-				this.GlobalCancellation.Cancellation.Token,
+				this.nodeLifetime.ApplicationStopping,
 				repeatEvery: TimeSpans.FiveSeconds,
 				startAfter: TimeSpans.FiveSeconds);
 		}
 
-		public void WaitDisposed()
-		{
-			this.isDisposed.WaitOne();
-			this.Dispose();
-		}
-
-#pragma warning disable 649
-		private Exception uncatchedException;
-#pragma warning restore 649
-
 		public void Dispose()
 		{
-			if (this.IsDisposed)
-				return;
-			this.IsDisposed = true;
+		    if (this.IsDisposed)
+		        return;
 
-			Logs.FullNode.LogInformation("Closing node pending...");
+            this.IsDisposed = true;
 
 			if (!this.Stopped)
 			{
@@ -311,21 +280,7 @@ namespace Stratis.Bitcoin
 				}
 			}
 
-			this.isStarted.WaitOne();
-			this.isDisposed.Set();
 			this.HasExited = true;
-		}
-
-		public void ThrowIfUncatchedException()
-		{
-			if (this.uncatchedException != null)
-			{
-				var ex = this.uncatchedException;
-				var aex = this.uncatchedException as AggregateException;
-				if (aex != null)
-					ex = aex.InnerException;
-				ExceptionDispatchInfo.Capture(ex).Throw();
-			}
 		}
 	}
 }

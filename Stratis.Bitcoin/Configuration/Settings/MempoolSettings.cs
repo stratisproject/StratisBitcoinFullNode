@@ -1,4 +1,4 @@
-﻿using Stratis.Bitcoin.MemoryPool;
+﻿using Stratis.Bitcoin.Features.MemoryPool;
 
 namespace Stratis.Bitcoin.Configuration.Settings
 {

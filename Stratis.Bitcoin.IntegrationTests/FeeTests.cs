@@ -5,30 +5,26 @@ using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.MemoryPool.Fee;
-using Stratis.Bitcoin.MemoryPool;
 using Xunit;
 using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class FeeTests
 	{
-
-        public FeeTests()
-        {
-            Logs.Configure(new LoggerFactory());
-        }
-
         [Fact]
         public void BlockPolicyEstimates()
 	    {
 			var dateTimeSet = new MemoryPoolTests.DateTimeProviderSet();
-            TxMempool mpool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default()));
+	        var settings = NodeSettings.Default();
+	        TxMempool mpool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default,
+	            new BlockPolicyEstimator(new FeeRate(1000), settings, settings.LoggerFactory), settings.LoggerFactory);
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
 			Money basefee = new Money(2000);
 			Money deltaFee = new Money(100);

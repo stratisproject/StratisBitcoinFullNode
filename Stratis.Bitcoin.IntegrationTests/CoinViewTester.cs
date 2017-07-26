@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Consensus;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

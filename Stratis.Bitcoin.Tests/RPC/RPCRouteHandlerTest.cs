@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Routing;
 using Moq;
-using Stratis.Bitcoin.RPC;
 using Xunit;
 using Microsoft.AspNetCore.Http.Features;
 using System.IO;
@@ -14,6 +13,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Stratis.Bitcoin.Features.RPC;
 
 namespace Stratis.Bitcoin.Tests.RPC
 {

@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Stratis.Bitcoin.RPC;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Stratis.Bitcoin.Features.RPC;
 
 namespace Stratis.Bitcoin.Tests.RPC.Models
 {

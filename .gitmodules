@@ -1,0 +1,3 @@
+[submodule "NStratis"]
+	path = NStratis
+	url = https://github.com/stratisproject/NStratis/

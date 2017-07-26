@@ -1,3 +1,15 @@
+| Windows | Linux | OS X
+| :---- | :------ | :---- |
+[![Windows build status][1]][2] | [![Linux build status][3]][4] | [![OS X build status][5]][6] | 
+
+[1]: https://ci.appveyor.com/api/projects/status/451tv98n7xvxm5ol/branch/master?svg=true
+[2]: https://ci.appveyor.com/project/stratis/stratisbitcoinfullnode
+[3]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode.svg?branch=master
+[4]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode
+[5]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode.svg?branch=master
+[6]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode
+
+
 Stratis Bitcoin
 ===============
 
@@ -14,16 +26,6 @@ For Proof of Stake support on the Stratis token the node is using [NStratis](htt
 
 [.NET Core](https://dotnet.github.io/) is an open source cross platform framework and enables the development of applications and services on Windows, macOS and Linux.  
 Join our community on [slack](https://stratisplatform.slack.com).  
-
-Running a FullNode
-------------------
-
-Our full node is currently in alpha.  
-
-To run on the Bitcoin network: ``` Stratis.BitcoinD\dotnet run ```  
-To run on the Stratis network: ``` Stratis.StratisD\dotnet run ```  
-
-See more details [here](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/getting-started.md)
 
 The design
 ----------
@@ -62,6 +64,28 @@ What's Next
 We plan to add many more features on top of the Stratis Bitcoin blockchain:
 Sidechains, Private/Permissioned blockchain, Compiled Smart Contracts, NTumbleBit/Breeze wallet and more...
 
+Running a FullNode
+------------------
+
+Our full node is currently in alpha.  
+
+```
+git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
+cd StratisBitcoinFullNode
+
+git submodule init
+git submodule update
+
+dotnet restore
+dotnet build
+
+```
+
+To run on the Bitcoin network: ``` Stratis.BitcoinD\dotnet run ```  
+To run on the Stratis network: ``` Stratis.StratisD\dotnet run ```  
+
+See more details [here](https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/getting-started.md)
+
 Development
 -----------
 Up for some blockchain development?
@@ -77,4 +101,15 @@ You can find tasks at the issues/projects or visit our [C# dev](https://stratisp
 Testing
 -------
 * [Testing Guidelines](Documentation/testing-guidelines.md)
+
+CI build
+-----------
+
+We use [AppVeyor](https://www.appveyor.com/) for our CI build and to create nuget packages.
+Every time someone pushes to the master branch or create a pull request on it, a build is triggered and new nuget packages are created.
+
+To skip a build, for example if you've made very minor changes, include the text **[skip ci]** or **[ci skip]** in your commits' comment (with the squared brackets).
+
+If you want get the :sparkles: latest :sparkles: (and unstable :bomb:) version of the nuget packages here: [Stratis.Bitcoin](https://ci.appveyor.com/api/projects/stratis/stratisbitcoinfullnode/artifacts/nuget/Stratis.Bitcoin.1.0.2-alpha.nupkg?job=Configuration%3A%20Release) and [Stratis.Bitcoin.Common](https://ci.appveyor.com/api/projects/stratis/stratisbitcoinfullnode/artifacts/nuget/Stratis.Bitcoin.Common.1.0.0.nupkg?job=Configuration%3A%20Release).
+
 

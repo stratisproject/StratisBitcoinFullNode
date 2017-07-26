@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Reflection;
+#if !NOASSEMBLYCONTEXT
 using System.Runtime.Loader;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.Utilities
@@ -15,29 +18,30 @@ namespace Stratis.Bitcoin.Utilities
 		public static void Run(this IFullNode node)
 		{
 			var done = new ManualResetEventSlim(false);
-			using (CancellationTokenSource cts = node.GlobalCancellation.Cancellation)
+			using (CancellationTokenSource cts = new CancellationTokenSource())
 			{
 				Action shutdown = () =>
 				{
 					if (!cts.IsCancellationRequested)
 					{
-						Logs.FullNode.LogInformation("Application is shutting down...");
+					    Console.WriteLine("Application is shutting down...");
 						try
 						{
 							cts.Cancel();
 						}
 						catch (ObjectDisposedException exception)
 						{
-							Logs.FullNode.LogError(exception.Message);
+						    Console.WriteLine(exception.Message);
 						}
 					}
 
 					done.Wait();
 				};
-
-				var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
+#if !NOASSEMBLYCONTEXT
+                var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(FullNode).GetTypeInfo().Assembly);
 				assemblyLoadContext.Unloading += context => shutdown();
-				Console.CancelKeyPress += (sender, eventArgs) =>
+#endif
+                Console.CancelKeyPress += (sender, eventArgs) =>
 				{
 					shutdown();
 					// Don't terminate the process immediately, wait for the Main thread to exit gracefully.
@@ -64,12 +68,12 @@ namespace Stratis.Bitcoin.Utilities
 
 				cancellationToken.Register(state =>
 				{
-					((IApplicationLifetime)state).StopApplication();
+					((INodeLifetime)state).StopApplication();
 				},
-				node.ApplicationLifetime);
+				node.NodeLifetime);
 
 				var waitForStop = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-				node.ApplicationLifetime.ApplicationStopping.Register(obj =>
+				node.NodeLifetime.ApplicationStopping.Register(obj =>
 				{
 					var tcs = (TaskCompletionSource<object>) obj;
 					tcs.TrySetResult(null);

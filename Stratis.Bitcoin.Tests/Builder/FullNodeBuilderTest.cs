@@ -1,20 +1,21 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.MemoryPool;
-using Stratis.Bitcoin.RPC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Logging;
 using Xunit;
 
@@ -34,8 +35,6 @@ namespace Stratis.Bitcoin.Tests.Builder
 			this.serviceProviderDelegates = new List<Action<IServiceProvider>>();
 			this.featureCollectionDelegates = new List<Action<IFeatureCollection>>();
 			this.featureCollection = new FeatureCollection();
-
-			Logs.Configure(new LoggerFactory());
 
 			this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 		}
@@ -109,13 +108,15 @@ namespace Stratis.Bitcoin.Tests.Builder
 		{
 			var nodeSettings = new NodeSettings();
 			nodeSettings.DataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
+		    nodeSettings.DataFolder = new DataFolder(nodeSettings);
 
-			this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
+            this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
 			this.fullNodeBuilder.ConfigureServices(e =>
 			{
 				e.AddSingleton<FullNode>();
-			});
+			    e.AddSingleton(nodeSettings.LoggerFactory);
+            });
 
 			this.fullNodeBuilder.ConfigureFeature(e =>
 			{
@@ -142,7 +143,8 @@ namespace Stratis.Bitcoin.Tests.Builder
 			this.fullNodeBuilder.ConfigureServices(e =>
 			{
 				e.AddSingleton(nodeSettings);
-				e.AddSingleton(nodeSettings.GetNetwork());
+			    e.AddSingleton(nodeSettings.LoggerFactory);
+                e.AddSingleton(nodeSettings.GetNetwork());
 				e.AddSingleton<FullNode>();
 			});
 
@@ -189,7 +191,8 @@ namespace Stratis.Bitcoin.Tests.Builder
 				this.fullNodeBuilder.ConfigureServices(e =>
 				{
 					e.AddSingleton(nodeSettings);
-					e.AddSingleton(nodeSettings.GetNetwork());
+				    e.AddSingleton(nodeSettings.LoggerFactory);
+                    e.AddSingleton(nodeSettings.GetNetwork());
 					e.AddSingleton<FullNode>();
 				});
 
@@ -226,7 +229,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             var consensusLoop = serviceProvider.GetService<ConsensusLoop>();
             var consensus = serviceProvider.GetService<PowConsensusValidator>();
             var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
-            var chainState = serviceProvider.GetService<ChainBehavior.ChainState>();
+            var chainState = serviceProvider.GetService<ChainState>();
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
             var connectionManager = serviceProvider.GetService<ConnectionManager>();

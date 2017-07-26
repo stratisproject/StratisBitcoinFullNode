@@ -17,14 +17,15 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.MemoryPool;
 using Stratis.Bitcoin.Logging;
-using Stratis.Bitcoin.RPC;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Wallet;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -60,9 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		}
 
 		public void Start(string dataDir)
-		{
-			Logs.Configure(new LoggerFactory());
-			
+		{			
 			var args = NodeSettings.FromArguments(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
 
 			var node = BuildFullNode(args);
@@ -78,9 +77,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 				.UseConsensus()
 				.UseBlockStore()
 				.UseMempool()
+                .AddMining()
 				.UseWallet()
 				.AddRPC()
 				.Build();
+
+			var testWalletPath = Path.Combine(node.DataFolder.WalletPath, "test.wallet.json");
+			if (!File.Exists(testWalletPath))
+				File.Copy("Data/test.wallet.json", testWalletPath);
 
 			return node;
 		}

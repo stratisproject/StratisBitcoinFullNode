@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
-using Stratis.Bitcoin.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -37,11 +37,11 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
-                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[5].GetSerializedSize(), blocks[5], new CancellationToken());
-                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[6].GetSerializedSize(), blocks[6], new CancellationToken());
-                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[7].GetSerializedSize(), blocks[7], new CancellationToken());
-                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[8].GetSerializedSize(), blocks[8], new CancellationToken());
-                blockStoreLoop.StoreBlockPuller.PushBlock(blocks[9].GetSerializedSize(), blocks[9], new CancellationToken());
+                blockStoreLoop.BlockPuller.PushBlock(blocks[5].GetSerializedSize(), blocks[5], new CancellationToken());
+                blockStoreLoop.BlockPuller.PushBlock(blocks[6].GetSerializedSize(), blocks[6], new CancellationToken());
+                blockStoreLoop.BlockPuller.PushBlock(blocks[7].GetSerializedSize(), blocks[7], new CancellationToken());
+                blockStoreLoop.BlockPuller.PushBlock(blocks[8].GetSerializedSize(), blocks[8], new CancellationToken());
+                blockStoreLoop.BlockPuller.PushBlock(blocks[9].GetSerializedSize(), blocks[9], new CancellationToken());
 
                 //Start processing blocks to download from block 5
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());

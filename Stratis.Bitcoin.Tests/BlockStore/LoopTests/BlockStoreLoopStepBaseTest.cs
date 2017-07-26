@@ -2,11 +2,14 @@
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,8 +30,6 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
             this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.FullNode")).Returns(this.fullNodeLogger.Object).Verifiable();
             this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC")).Returns(this.rpcLogger.Object).Verifiable();
-
-            Logs.Configure(this.loggerFactory.Object);
         }
 
         private Mock<IConnectionManager> ConfigureConnectionManager()
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         {
             var block = new Block();
 
-            for (int j = 0; j < 3000; j++)
+            for (int j = 0; j < 100; j++)
             {
                 var trx = new Transaction();
 
@@ -98,15 +99,29 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             ConfigureLogger();
 
             var connectionManager = ConfigureConnectionManager();
-            var blockStorePuller = new StoreBlockPuller(chain, connectionManager.Object);
+            var blockPuller = new StoreBlockPuller(chain, connectionManager.Object);
 
             var fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
 
-            var chainState = new Mock<ChainBehavior.ChainState>(fullNode);
+            var chainState = new Mock<ChainState>(fullNode);
             chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
 
-            var blockStoreLoop = new BlockStoreLoop(new BlockStoreCache(blockRepository), blockRepository, chainState.Object, chain, new NodeSettings(), blockStorePuller);
+            var asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+
+            var nodeLifeTime = new Mock<INodeLifetime>().Object;
+
+            var blockStoreLoop = new BlockStoreLoop(
+                asyncLoopFactory,
+                blockPuller,
+                blockRepository,
+                null,
+                chain,
+                chainState.Object,
+                NodeSettings.FromArguments(new string[] { }),
+                nodeLifeTime,
+                this.loggerFactory.Object);
+
             return blockStoreLoop;
         }
 

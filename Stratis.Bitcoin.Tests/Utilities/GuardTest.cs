@@ -1,8 +1,8 @@
 ﻿using System;
-using Xunit;
 using Stratis.Bitcoin.Utilities;
+using Xunit;
 
-namespace Stratis.Bitcoin.Tests
+namespace Stratis.Bitcoin.Tests.Utilities
 {
     public class GuardTest
     {
