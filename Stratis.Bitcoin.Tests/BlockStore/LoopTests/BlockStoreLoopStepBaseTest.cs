@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             var blocks = new List<Block>();
             for (int i = 0; i < amount; i++)
             {
-                var block = CreateBlock(i);
+                Block block = CreateBlock(i);
                 block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : Network.Main.GenesisHash;
                 blocks.Add(block);
             }
@@ -99,18 +99,18 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         {
             ConfigureLogger();
 
-            var connectionManager = ConfigureConnectionManager();
+            Mock<IConnectionManager> connectionManager = ConfigureConnectionManager();
             var blockPuller = new StoreBlockPuller(chain, connectionManager.Object);
 
-            var fullNode = new Mock<FullNode>().Object;
+            FullNode fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
 
             var chainState = new Mock<ChainState>(fullNode);
             chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
 
-            var asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
 
-            var nodeLifeTime = new Mock<INodeLifetime>().Object;
+            INodeLifetime nodeLifeTime = new Mock<INodeLifetime>().Object;
 
             var blockStoreLoop = new BlockStoreLoop(
                 asyncLoopFactory,
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
         internal void AddToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
         {
-            var chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
+            ChainedBlock chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
             blockStoreLoop.PendingStorage.TryAdd(block.GetHash(), new BlockPair(block, chainedBlock));
         }
 

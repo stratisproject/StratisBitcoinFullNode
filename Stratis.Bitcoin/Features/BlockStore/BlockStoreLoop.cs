@@ -79,8 +79,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // a common block header is found and set the block store tip to that
 
                 var blockstoreResetList = new List<uint256>();
-                var resetBlock = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
-                var resetBlockHash = resetBlock.GetHash();
+                Block resetBlock = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
+                uint256 resetBlockHash = resetBlock.GetHash();
                 // walk back the chain and find the common block
                 while (this.Chain.GetBlock(resetBlockHash) == null)
                 {
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     resetBlockHash = resetBlock.GetHash();
                 }
 
-                var newTip = this.Chain.GetBlock(resetBlockHash);
+                ChainedBlock newTip = this.Chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockstoreResetList);
                 this.StoredBlock = newTip;
                 this.storeLogger.LogWarning($"BlockStore Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public void AddToPending(Block block)
         {
-            var chainedBlock = this.Chain.GetBlock(block.GetHash());
+            ChainedBlock chainedBlock = this.Chain.GetBlock(block.GetHash());
             if (chainedBlock == null)
                 return; // reorg
 
@@ -167,14 +167,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
                     break;
 
-                var nextChainedBlock = this.Chain.GetBlock(this.StoredBlock.Height + 1);
+                ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoredBlock.Height + 1);
                 if (nextChainedBlock == null)
                     break;
 
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                var result = await steps.Execute(nextChainedBlock, cancellationToken);
+                BlockStoreLoopStepResult result = await steps.Execute(nextChainedBlock, cancellationToken);
                 if (result.ShouldBreak)
                     break;
                 if (result.ShouldContinue)

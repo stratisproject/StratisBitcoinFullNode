@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -13,10 +14,10 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         public void CanExecute_TryPending()
         {
             // Create 15 blocks
-            var blocks = CreateBlocks(15);
+            List<Block> blocks = CreateBlocks(15);
 
             // The repository has 5 blocks stored
-            var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTests"));
+            var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_TryPending"));
             blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
             // The chain has 10 blocks appended
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             AppendBlock(chain, blocks[9]);
 
             // Create block store loop
-            var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
+            BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
 
             // Add chained blocks 5 - 9 to PendingStorage
             AddToPendingStorage(blockStoreLoop, blocks[5]);
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             AddToPendingStorage(blockStoreLoop, blocks[9]);
 
             //Start processing pending blocks from block 5
-            var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
+            ChainedBlock nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
 
             var processPendingStorageStep = new ProcessPendingStorageStep(blockStoreLoop);
             processPendingStorageStep.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();

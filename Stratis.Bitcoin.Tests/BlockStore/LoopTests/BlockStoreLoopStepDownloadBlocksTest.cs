@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -13,10 +14,10 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         public void CanExecute_DownloadBlocks()
         {
             // Create 10 blocks
-            var blocks = CreateBlocks(10);
+            List<Block> blocks = CreateBlocks(10);
 
             // The repository has 5 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTests")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_DownloadBlocks")))
             {
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlock(chain, blocks[9]);
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
+                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
                 blockStoreLoop.BlockPuller.PushBlock(blocks[5].GetSerializedSize(), blocks[5], new CancellationToken());
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 blockStoreLoop.BlockPuller.PushBlock(blocks[9].GetSerializedSize(), blocks[9], new CancellationToken());
 
                 //Start processing blocks to download from block 5
-                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
+                ChainedBlock nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
 
                 var step = new DownloadBlockStep(blockStoreLoop);
                 step.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
