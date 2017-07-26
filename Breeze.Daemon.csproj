@@ -15,7 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
     <ProjectReference Include="..\Breeze.Api\Breeze.Api.csproj" />
-    <ProjectReference Include="..\Breeze.TumbleBit.Client\Breeze.TumbleBit.Client.csproj" />
     <ProjectReference Include="..\Breeze.Wallet\Breeze.Wallet.csproj" />
   </ItemGroup>
 
@@ -25,7 +24,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <RuntimeIdentifiers>win10-x64;osx.10.10-x64;ubuntu.14.04-x64;ubuntu.16.04-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win7-x86;win7-x64;win10-x86;win10-x64;osx.10.10-x64;osx.10.11-x64;osx.10.12-x64;ubuntu.14.04-x64;ubuntu.16.04-x64</RuntimeIdentifiers>
   </PropertyGroup>
   
 </Project>
