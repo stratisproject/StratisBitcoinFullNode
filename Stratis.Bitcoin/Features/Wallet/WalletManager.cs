@@ -960,9 +960,20 @@ namespace Stratis.Bitcoin.Features.Wallet
 			return Directory.EnumerateFiles(defaultFolderPath, $"*.{WalletFileExtension}", SearchOption.TopDirectoryOnly);
 		}
 
-		/// <inheritdoc />
-		public void SaveToFile(Wallet wallet)
+        /// <inheritdoc />
+		public void SaveToFile()
+        {
+            foreach (var wallet in this.Wallets)
+            {
+                this.SaveToFile(wallet);
+            }
+        }
+
+        /// <inheritdoc />
+        public void SaveToFile(Wallet wallet)
 		{
+            Guard.NotNull(wallet, nameof(wallet));
+
 			var walletfile = Path.Combine(this.dataFolder.WalletPath, $"{wallet.Name}.{WalletFileExtension}");
 			File.WriteAllText(walletfile, JsonConvert.SerializeObject(wallet, Formatting.Indented));
 		}
@@ -1002,16 +1013,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 				accountRoot.LastBlockSyncedHeight = chainedBlock.Height;
 				accountRoot.LastBlockSyncedHash = chainedBlock.HashBlock;
 			}
-		}
-
-		/// <inheritdoc />
-		public void SaveToFile()
-		{
-			foreach (var wallet in this.Wallets)
-			{
-				this.SaveToFile(wallet);
-			}
-		}
+		}		
 
 		/// <inheritdoc />
 		public void Dispose()
