@@ -1,13 +1,12 @@
+﻿using NBitcoin;
 using NBitcoin.Protocol;
+using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.Base;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using System.Collections.Concurrent;
-using NBitcoin.Protocol.Behaviors;
 using System.Threading;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -78,6 +77,7 @@ namespace Stratis.Bitcoin.BlockPulling
             /// <summary>Hash set holding set of block header hashes that are being downloaded.</summary>
             /// <remarks>Implemented as dictionary due to missing ConcurrentHashSet implementation.</remarks>
             private readonly ConcurrentDictionary<uint256, uint256> pendingDownloads = new ConcurrentDictionary<uint256, uint256>();
+
             /// <summary>Set of block header hashes that are being downloaded.</summary>
             public ICollection<uint256> PendingDownloads => this.pendingDownloads.Values;
 
@@ -89,7 +89,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
             /// <summary>Reference to a component responsible for keeping the chain up to date.</summary>
             public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }
-
 
             /// <summary>
             /// Initializes a new instance of the object with parent block puller.

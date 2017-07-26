@@ -64,31 +64,31 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		    this.storeLogger.LogInformation("Flushing BlockStore...");
 			this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
 
-			this.blockStoreCache.Dispose();
-			this.blockRepository.Dispose();
-		}
+            this.blockStoreCache.Dispose();
+            this.blockRepository.Dispose();
+        }
     }
 
-	public static class BlockStoreBuilderExtension
-	{
-		public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
-		{          
+    public static class BlockStoreBuilderExtension
+    {
+        public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
+        {
             fullNodeBuilder.ConfigureFeature(features =>
-			{
-				features
-				.AddFeature<BlockStoreFeature>()
-				.FeatureServices(services =>
-					{
-						services.AddSingleton<BlockRepository>();
-						services.AddSingleton<BlockStoreCache>();
-						services.AddSingleton<StoreBlockPuller>();
-						services.AddSingleton<BlockStoreLoop>();
-						services.AddSingleton<BlockStoreManager>();
-						services.AddSingleton<BlockStoreSignaled>();
-					});
-			});
+            {
+                features
+                .AddFeature<BlockStoreFeature>()
+                .FeatureServices(services =>
+                    {
+                        services.AddSingleton<BlockRepository>();
+                        services.AddSingleton<BlockStoreCache>();
+                        services.AddSingleton<StoreBlockPuller>();
+                        services.AddSingleton<BlockStoreLoop>();
+                        services.AddSingleton<BlockStoreManager>();
+                        services.AddSingleton<BlockStoreSignaled>();
+                    });
+            });
 
-			return fullNodeBuilder;
-		}
-	}
+            return fullNodeBuilder;
+        }
+    }
 }

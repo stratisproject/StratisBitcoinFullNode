@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Utilities
         Task Run(string name, Func<CancellationToken, Task> loop, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
         Task Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
-	    Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery);
+        Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery);
     }
 
     public class AsyncLoopFactory : IAsyncLoopFactory
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Utilities
         public Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery)
         {
             var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(nodeCancellationToken);
-            return this.Run(name, token =>
+            return Run(name, token =>
                 {
                     try
                     {
@@ -71,6 +71,5 @@ namespace Stratis.Bitcoin.Utilities
                 linkedTokenSource.Token,
                 repeatEvery: repeatEvery);
         }
-
     }
 }
