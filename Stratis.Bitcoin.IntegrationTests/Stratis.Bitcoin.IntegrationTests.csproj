@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp1.1</TargetFrameworks>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.IntegrationTests</AssemblyName>    
     <PackageId>Stratis.Bitcoin.IntegrationTests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -19,7 +19,7 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-	  <GenerateProgramFile>false</GenerateProgramFile>
+    <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
