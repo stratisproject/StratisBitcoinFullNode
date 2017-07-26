@@ -92,6 +92,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             }
 
             block.UpdateMerkleRoot();
+
             return block;
         }
 

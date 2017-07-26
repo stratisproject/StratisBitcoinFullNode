@@ -52,6 +52,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
                 Assert.Equal(blocks[9].GetHash(), blockStoreLoop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[9].GetHash(), blockStoreLoop.StoredBlock.HashBlock);
+
+                chain = null;
             }
         }
     }

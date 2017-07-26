@@ -16,33 +16,34 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             List<Block> blocks = CreateBlocks(5);
 
             // The BlockRepository has 5 blocks stored
-            var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_CheckExists"));
-            blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_CheckExists")))
+            {
+                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
-            // The BlockRepository has 4 blocks appended
-            var chain = new ConcurrentChain(Network.Main);
-            AppendBlock(chain, blocks[0]);
-            AppendBlock(chain, blocks[1]);
-            AppendBlock(chain, blocks[2]);
-            AppendBlock(chain, blocks[3]);
+                // The BlockRepository has 4 blocks appended
+                var chain = new ConcurrentChain(Network.Main);
+                AppendBlock(chain, blocks[0]);
+                AppendBlock(chain, blocks[1]);
+                AppendBlock(chain, blocks[2]);
+                AppendBlock(chain, blocks[3]);
 
-            // Create the last chained block without appending to the chain
-            ChainedBlock block03 = chain.GetBlock(blocks[3].GetHash());
-            var block04 = new ChainedBlock(blocks[4].Header, blocks[4].Header.GetHash(), block03);
+                // Create the last chained block without appending to the chain
+                ChainedBlock block03 = chain.GetBlock(blocks[3].GetHash());
+                var block04 = new ChainedBlock(blocks[4].Header, blocks[4].Header.GetHash(), block03);
 
-            BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
+                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
 
-            Assert.Null(blockStoreLoop.StoredBlock);
+                Assert.Null(blockStoreLoop.StoredBlock);
 
-            ChainedBlock nextChainedBlock = block04;
-            var checkExistsStep = new CheckNextChainedBlockExistStep(blockStoreLoop);
-            checkExistsStep.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                ChainedBlock nextChainedBlock = block04;
+                var checkExistsStep = new CheckNextChainedBlockExistStep(blockStoreLoop);
+                checkExistsStep.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
-            Assert.Equal(blockStoreLoop.StoredBlock.Header.GetHash(), block04.Header.GetHash());
-            Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block04.Header.GetHash());
+                Assert.Equal(blockStoreLoop.StoredBlock.Header.GetHash(), block04.Header.GetHash());
+                Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block04.Header.GetHash());
 
-            blockRepository.Dispose();
-            blockRepository = null;
+                chain = null;
+            }
         }
     }
 }
