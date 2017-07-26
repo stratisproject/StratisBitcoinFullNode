@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             for (int i = 0; i < amount; i++)
             {
                 var block = CreateBlock(i);
-                block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : Network.TestNet.GenesisHash;
+                block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : Network.Main.GenesisHash;
                 blocks.Add(block);
             }
 
@@ -129,6 +130,11 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         {
             var chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
             blockStoreLoop.PendingStorage.TryAdd(block.GetHash(), new BlockPair(block, chainedBlock));
+        }
+
+        internal string TestDirectory
+        {
+            get { return Path.Combine("TestData"); }
         }
     }
 }
