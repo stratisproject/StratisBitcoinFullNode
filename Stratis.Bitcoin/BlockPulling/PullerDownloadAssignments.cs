@@ -55,6 +55,9 @@ namespace Stratis.Bitcoin.BlockPulling
                 // Only consider peers that have the chain long enough to be able to provide block at blockHeight height.
                 List<PeerInformation> filteredPeers = availablePeersInformation.Where(p => p.ChainHeight >= blockHeight).ToList();
 
+                if (filteredPeers.Count == 0)
+                    continue;
+
                 int[] scores = filteredPeers.Select(n => n.QualityScore == BlockPuller.MaxQualityScore ? BlockPuller.MaxQualityScore * 2 : n.QualityScore).ToArray();
                 int totalScore = scores.Sum();
 

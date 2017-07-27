@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletFeePolicy : IWalletFeePolicy
     {
         private readonly BlockPolicyEstimator blockPolicyEstimator;
-        private readonly MempoolValidator mempoolValidator;
+        private readonly IMempoolValidator mempoolValidator;
         private readonly TxMempool mempool;
 
         private readonly Money maxTxFee;
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         private readonly FeeRate minRelayTxFee;
 
-        public WalletFeePolicy(BlockPolicyEstimator blockPolicyEstimator, MempoolValidator mempoolValidator, TxMempool mempool, Network network)
+        public WalletFeePolicy(BlockPolicyEstimator blockPolicyEstimator, IMempoolValidator mempoolValidator, TxMempool mempool, Network network)
         {
             this.blockPolicyEstimator = blockPolicyEstimator;
             this.mempoolValidator = mempoolValidator;

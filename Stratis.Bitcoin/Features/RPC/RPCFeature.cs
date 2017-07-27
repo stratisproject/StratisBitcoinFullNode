@@ -71,7 +71,10 @@ namespace Stratis.Bitcoin.Features.RPC
         }
     }
 
-    public static class RPCBuilderExtension
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
     {
         public static IFullNodeBuilder AddRPC(this IFullNodeBuilder fullNodeBuilder)
         {
