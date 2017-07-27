@@ -26,13 +26,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             // Remove the BlockPair from PendingStorage and return for further processing
             // If the next chained block does not exist, continue with execution
             if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
-                return new BlockStoreLoopStepResult().Next();
+                return BlockStoreLoopStepResult.Next();
 
             // If in IBD and batch count is not yet reached then wait
             if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
             {
                 if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold) // Skip(0) returns an enumerator which doesn't re-count the collection
-                    return new BlockStoreLoopStepResult().Break();
+                    return BlockStoreLoopStepResult.Break();
             }
 
             var pendingBlockPairsToStore = new List<BlockPair>();
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             this.pendingBlockPairToStore = null;
 
-            return new BlockStoreLoopStepResult().Continue();
+            return BlockStoreLoopStepResult.Continue();
         }
 
         /// <summary>
@@ -96,9 +96,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
 
             if (breakExecution)
-                return new BlockStoreLoopStepResult().Break();
+                return BlockStoreLoopStepResult.Break();
 
-            return new BlockStoreLoopStepResult().Next();
+            return BlockStoreLoopStepResult.Next();
         }
 
         /// <summary>

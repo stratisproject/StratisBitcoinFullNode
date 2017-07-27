@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (this.BlockStoreLoop.StoredBlock.HashBlock != nextChainedBlock.Header.HashPrevBlock)
             {
                 if (disposeMode)
-                    return new BlockStoreLoopStepResult().Break();
+                    return BlockStoreLoopStepResult.Break();
 
                 var blocksToDelete = new List<uint256>();
                 var blockToDelete = this.BlockStoreLoop.StoredBlock;
@@ -37,14 +37,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 this.BlockStoreLoop.StoredBlock = blockToDelete;
                 this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
 
-                blocksToDelete.Clear();
-                blocksToDelete = null;
-                blockToDelete = null;
-
-                return new BlockStoreLoopStepResult().Break();
+                return BlockStoreLoopStepResult.Break();
             }
 
-            return new BlockStoreLoopStepResult().Next();
+            return BlockStoreLoopStepResult.Next();
         }
     }
 }

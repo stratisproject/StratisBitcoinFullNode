@@ -42,11 +42,14 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             return connectionManager;
         }
 
-        internal void AppendBlock(ConcurrentChain chain, Block block)
+        internal void AppendBlocks(ConcurrentChain chain, IEnumerable<Block> blocks)
         {
-            if (chain.Tip != null)
-                block.Header.HashPrevBlock = chain.Tip.HashBlock;
-            chain.SetTip(block.Header);
+            foreach (var block in blocks)
+            {
+                if (chain.Tip != null)
+                    block.Header.HashPrevBlock = chain.Tip.HashBlock;
+                chain.SetTip(block.Header);
+            }
         }
 
         internal List<Block> CreateBlocks(int amount)
@@ -55,7 +58,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             for (int i = 0; i < amount; i++)
             {
                 Block block = CreateBlock(i);
-                block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : Network.Main.GenesisHash;
+                block.Header.HashPrevBlock = blocks.LastOrDefault()?.GetHash() ?? Network.Main.GenesisHash;
                 blocks.Add(block);
             }
 
@@ -73,20 +76,10 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 block.AddTransaction(new Transaction());
 
                 trx.AddInput(new TxIn(Script.Empty));
-                trx.AddOutput(Money.COIN + j + blockNumber, new Script(Guid.NewGuid().ToByteArray()
-                    .Concat(Guid.NewGuid().ToByteArray())
-                    .Concat(Guid.NewGuid().ToByteArray())
-                    .Concat(Guid.NewGuid().ToByteArray())
-                    .Concat(Guid.NewGuid().ToByteArray())
-                    .Concat(Guid.NewGuid().ToByteArray())));
+                trx.AddOutput(Money.COIN + j + blockNumber, new Script(Enumerable.Range(1, 5).SelectMany(index => Guid.NewGuid().ToByteArray())));
 
                 trx.AddInput(new TxIn(Script.Empty));
-                trx.AddOutput(Money.COIN + j + blockNumber + 1, new Script(Guid.NewGuid().ToByteArray()
-                    .Concat(Guid.NewGuid().ToByteArray())
-                    .Concat(Guid.NewGuid().ToByteArray())
-                    .Concat(Guid.NewGuid().ToByteArray())
-                    .Concat(Guid.NewGuid().ToByteArray())
-                    .Concat(Guid.NewGuid().ToByteArray())));
+                trx.AddOutput(Money.COIN + j + blockNumber + 1, new Script(Enumerable.Range(1, 5).SelectMany(index => Guid.NewGuid().ToByteArray())));
 
                 block.AddTransaction(trx);
             }
@@ -96,7 +89,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             return block;
         }
 
-        internal BlockStoreLoop CreateBlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository)
+        internal BlockStoreLoop CreateBlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, string testFolder)
         {
             ConfigureLogger();
 
@@ -120,7 +113,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 null,
                 chain,
                 chainState.Object,
-                NodeSettings.FromArguments(new string[] { }),
+                NodeSettings.FromArguments(new string[] { string.Format("-datadir={0}", testFolder) }),
                 nodeLifeTime,
                 this.loggerFactory.Object);
 

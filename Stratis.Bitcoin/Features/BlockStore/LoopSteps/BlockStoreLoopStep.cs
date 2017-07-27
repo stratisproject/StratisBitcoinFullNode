@@ -6,36 +6,24 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
-    internal sealed class BlockStoreLoopStepChain
+    internal sealed class BlockStoreStepChain
     {
         private List<BlockStoreLoopStep> steps = new List<BlockStoreLoopStep>();
-        private bool disposeMode;
-
-        public BlockStoreLoopStepChain(bool disposeMode)
-        {
-            this.disposeMode = disposeMode;
-        }
 
         internal void SetNextStep(BlockStoreLoopStep step)
         {
             this.steps.Add(step);
         }
 
-        internal async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken)
+        internal async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode, CancellationToken cancellationToken)
         {
-            var result = new BlockStoreLoopStepResult().Next();
+            var result = BlockStoreLoopStepResult.Next();
 
             foreach (var step in this.steps)
             {
-                var stepResult = await step.Execute(nextChainedBlock, cancellationToken, this.disposeMode);
+                var stepResult = await step.Execute(nextChainedBlock, cancellationToken, disposeMode);
 
-                if (stepResult.ShouldBreak)
-                {
-                    result = stepResult;
-                    break;
-                }
-
-                if (stepResult.ShouldContinue)
+                if (stepResult.ShouldBreak || stepResult.ShouldContinue)
                 {
                     result = stepResult;
                     break;
@@ -60,28 +48,31 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         internal abstract Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode);
     }
 
-    internal class BlockStoreLoopStepResult
+    internal sealed class BlockStoreLoopStepResult
     {
         internal BlockStoreLoopStepResult() { }
 
         internal bool ShouldBreak { get; private set; }
         internal bool ShouldContinue { get; private set; }
 
-        internal BlockStoreLoopStepResult Break()
+        internal static BlockStoreLoopStepResult Break()
         {
-            this.ShouldBreak = true;
-            return this;
+            var result = new BlockStoreLoopStepResult();
+            result.ShouldBreak = true;
+            return result;
         }
 
-        internal BlockStoreLoopStepResult Continue()
+        internal static BlockStoreLoopStepResult Continue()
         {
-            this.ShouldContinue = true;
-            return this;
+            var result = new BlockStoreLoopStepResult();
+            result.ShouldContinue = true;
+            return result;
         }
 
-        internal BlockStoreLoopStepResult Next()
+        internal static BlockStoreLoopStepResult Next()
         {
-            return this;
+            var result = new BlockStoreLoopStepResult();
+            return result;
         }
     }
 }

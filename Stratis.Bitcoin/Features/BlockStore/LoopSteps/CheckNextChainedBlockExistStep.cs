@@ -23,10 +23,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 this.BlockStoreLoop.StoredBlock = nextChainedBlock;
                 this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
 
-                return new BlockStoreLoopStepResult().Continue();
+                return BlockStoreLoopStepResult.Continue();
             }
 
-            return new BlockStoreLoopStepResult().Next();
+            return BlockStoreLoopStepResult.Next();
         }
     }
 }

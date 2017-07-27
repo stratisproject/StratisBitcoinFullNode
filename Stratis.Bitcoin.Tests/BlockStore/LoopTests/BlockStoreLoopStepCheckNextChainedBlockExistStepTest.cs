@@ -20,18 +20,16 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
-                // The BlockRepository has 4 blocks appended
                 var chain = new ConcurrentChain(Network.Main);
-                AppendBlock(chain, blocks[0]);
-                AppendBlock(chain, blocks[1]);
-                AppendBlock(chain, blocks[2]);
-                AppendBlock(chain, blocks[3]);
+
+                // The chain has 4 blocks appended
+                AppendBlocks(chain, blocks.Take(4));
 
                 // Create the last chained block without appending to the chain
                 ChainedBlock block03 = chain.GetBlock(blocks[3].GetHash());
                 var block04 = new ChainedBlock(blocks[4].Header, blocks[4].Header.GetHash(), block03);
 
-                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
+                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\LoopTest_CheckExists");
 
                 Assert.Null(blockStoreLoop.StoredBlock);
 

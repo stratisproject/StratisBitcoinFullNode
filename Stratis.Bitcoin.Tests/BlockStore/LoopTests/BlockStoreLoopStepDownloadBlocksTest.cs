@@ -21,21 +21,13 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             {
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
-                // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(Network.Main);
-                AppendBlock(chain, blocks[0]);
-                AppendBlock(chain, blocks[1]);
-                AppendBlock(chain, blocks[2]);
-                AppendBlock(chain, blocks[3]);
-                AppendBlock(chain, blocks[4]);
-                AppendBlock(chain, blocks[5]);
-                AppendBlock(chain, blocks[6]);
-                AppendBlock(chain, blocks[7]);
-                AppendBlock(chain, blocks[8]);
-                AppendBlock(chain, blocks[9]);
+
+                // The chain has 10 blocks appended
+                AppendBlocks(chain, blocks.Take(10));
 
                 // Create block store loop
-                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository);
+                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\LoopTest_DownloadBlocks");
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
                 blockStoreLoop.BlockPuller.PushBlock(blocks[5].GetSerializedSize(), blocks[5], new CancellationToken());

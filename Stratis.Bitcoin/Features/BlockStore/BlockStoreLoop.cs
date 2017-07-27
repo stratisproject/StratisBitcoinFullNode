@@ -26,6 +26,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly BlockStoreStats blockStoreStats;
         private readonly ILogger storeLogger;
+        private BlockStoreStepChain stepChain;
 
         public ChainState ChainState { get; }
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
@@ -111,6 +112,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.ChainState.HighestPersistedBlock = this.StoredBlock;
 
+            this.stepChain = new BlockStoreStepChain();
+            this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this));
+            this.stepChain.SetNextStep(new CheckNextChainedBlockExistStep(this));
+            this.stepChain.SetNextStep(new ProcessPendingStorageStep(this));
+            this.stepChain.SetNextStep(new DownloadBlockStep(this));
+
             StartLoop();
         }
 
@@ -156,12 +163,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // a read is normally done when a peer is asking for the entire block (not just the key) 
             // then if LazyLoadingOn = false the read will be faster on the entire block            
 
-            var steps = new BlockStoreLoopStepChain(disposeMode);
-            steps.SetNextStep(new ReorganiseBlockRepositoryStep(this));
-            steps.SetNextStep(new CheckNextChainedBlockExistStep(this));
-            steps.SetNextStep(new ProcessPendingStorageStep(this));
-            steps.SetNextStep(new DownloadBlockStep(this));
-
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (this.StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
@@ -174,14 +175,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                BlockStoreLoopStepResult result = await steps.Execute(nextChainedBlock, cancellationToken);
+                BlockStoreLoopStepResult result = await this.stepChain.Execute(nextChainedBlock, disposeMode, cancellationToken);
                 if (result.ShouldBreak)
                     break;
                 if (result.ShouldContinue)
                     continue;
             }
-
-            steps = null;
         }
     }
 }
