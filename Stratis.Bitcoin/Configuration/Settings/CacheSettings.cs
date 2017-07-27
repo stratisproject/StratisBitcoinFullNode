@@ -5,9 +5,7 @@
     /// </summary>
     public class CacheSettings
     {
-        /// <summary>
-        /// Maximum number of items in <see cref="Features.Consensus.CoinViews.CachedCoinView"/>.
-        /// </summary>
+        /// <summary>Maximum number of items in <see cref="Features.Consensus.CoinViews.CachedCoinView"/>.</summary>
         public int MaxItems
         {
             get; set;

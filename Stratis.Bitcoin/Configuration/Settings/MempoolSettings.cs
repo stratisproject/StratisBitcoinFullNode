@@ -9,11 +9,11 @@ namespace Stratis.Bitcoin.Configuration.Settings
     {
         /// <summary>Default value for "blocksonly" option.</summary>
         /// <seealso cref="RelayTxes"/>
-        const bool DEFAULT_BLOCKSONLY = false;
+        const bool DefaultBlocksOnly = false;
 
         // Default value for "whitelistrelay" option.
-        /// <seealso cref="Whitelistrelay"/>
-        const bool DEFAULT_WHITELISTRELAY = true;
+        /// <seealso cref="WhiteListRelay"/>
+        const bool DefaultWhiteListRelay = true;
 
         /// <summary>Maximal size of the transaction memory pool in megabytes.</summary>
         public int MaxMempool { get; set; }
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         public bool RelayTxes { get; set; }
 
         /// <summary><c>true</c> to accept relayed transactions received from whitelisted peers even when not relaying transactions.</summary>
-        public bool Whitelistrelay { get; set; }
+        public bool WhiteListRelay { get; set; }
 
         /// <summary>
         /// Loads the mempool settings from the application configuration.
@@ -67,8 +67,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
             this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
             this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DEFAULT_MAX_ORPHAN_TRANSACTIONS);
-            this.RelayTxes = !config.GetOrDefault("blocksonly", DEFAULT_BLOCKSONLY);
-            this.Whitelistrelay = config.GetOrDefault("whitelistrelay", DEFAULT_WHITELISTRELAY);
+            this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly);
+            this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
         }
     }
 }

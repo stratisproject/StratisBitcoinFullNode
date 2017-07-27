@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Configuration
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
 
         /// <summary>Default value for Maximum tip age in seconds to consider node in initial block download.</summary>
-        public const int DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
+        public const int DefaultMaxTipAge = 24 * 60 * 60;
 
         /// <summary>Factory to create instance logger.</summary>
         public ILoggerFactory LoggerFactory { get; private set; }
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.Logger.LogInformation("Configuration file set to " + nodeSettings.ConfigurationFile);
 
             nodeSettings.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.RegTest || nodeSettings.Testnet));
-            nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DEFAULT_MAX_TIP_AGE);
+            nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
             nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:5000"));
 
             nodeSettings.RPC = config.GetOrDefault<bool>("server", false) ? new RpcSettings() : null;
@@ -469,7 +469,7 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-testnet                  Use the testnet chain.");
                 builder.AppendLine($"-regtest                  Use the regtestnet chain.");
                 builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {defaults.RequireStandard}.");
-                builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {DEFAULT_MAX_TIP_AGE}.");
+                builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {DefaultMaxTipAge}.");
                 builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default {defaults.RPC != null}.");
                 builder.AppendLine($"-rpcuser=<string>         Username for JSON-RPC connections");
                 builder.AppendLine($"-rpcpassword=<string>     Password for JSON-RPC connections");
