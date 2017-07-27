@@ -448,7 +448,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         public List<UnspentInfo> GetSpendableTransactions(int confirmations = 0)
         {
             // todo: pass in wallet name or map to rpc credentials to select one? How would PoS get this info? Maybe pass in WalletAccountReference?
-            var outs = new List<UnspentInfo>();
+
+            // because the wallets are in a concurrentbag the order is not guaranteed.
+            // we order the wallets before use to guarantee ordering.
             var accounts = this.Wallets.OrderBy(w => w.CreationTime)
                 .ThenBy(w => w.Name)
                 .Select(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType))
@@ -461,6 +463,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // so later the private key can be calculated 
             // for the given unspent outputs 
 
+            var outs = new List<UnspentInfo>();
             foreach (var account in accounts)
             {
                 foreach (var externalAddress in account.ExternalAddresses)
@@ -575,7 +578,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (changeAddress == null)
             {
                 // todo: save the wallet file?
-                var accountAddress = CreateAddressesInAccount(account, 1, isChange: true).First();
+                var accountAddress = CreateAddressesInAccount(account, 1, isChange: true).Single();
                 changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
             }
 

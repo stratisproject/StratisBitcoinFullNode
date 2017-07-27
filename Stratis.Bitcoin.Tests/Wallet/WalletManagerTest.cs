@@ -1170,7 +1170,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetSpendableTransactionsWithChainOfHeightZeroReturnsNoTransactions()
         {
-            var chain = GenerateChainWithHeight(0);
+            var chain = GenerateChainWithHeight(0, Network.Main);
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                     new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var wallet = GenerateBlankWallet("myWallet", "password");
@@ -1193,7 +1193,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetSpendableTransactionsReturnsTransactionsGivenBlockHeight()
         {
-            var chain = GenerateChainWithHeight(10);
+            var chain = GenerateChainWithHeight(10, Network.Main);
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                     new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var wallet = GenerateBlankWallet("myWallet1", "password");
@@ -1285,7 +1285,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetSpendableTransactionsWithSpentTransactionsReturnsSpendableTransactionsGivenBlockHeight()
         {
-            var chain = GenerateChainWithHeight(10);
+            var chain = GenerateChainWithHeight(10, Network.Main);
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                     new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var wallet = GenerateBlankWallet("myWallet1", "password");
@@ -1330,7 +1330,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetSpendableTransactionsWithoutWalletsReturnsEmptyList()
         {
-            var chain = GenerateChainWithHeight(10);
+            var chain = GenerateChainWithHeight(10, Network.Main);
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                     new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
@@ -1342,7 +1342,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetSpendableTransactionsWithoutWalletsOfWalletManagerCoinTypeReturnsEmptyList()
         {
-            var chain = GenerateChainWithHeight(10);
+            var chain = GenerateChainWithHeight(10, Network.Main);
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                     new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
@@ -1363,7 +1363,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetSpendableTransactionsWithOnlySpentTransactionsReturnsEmptyList()
         {
-            var chain = GenerateChainWithHeight(10);
+            var chain = GenerateChainWithHeight(10, Network.Main);
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                     new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var wallet = GenerateBlankWallet("myWallet1", "password");
@@ -1467,7 +1467,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             Assert.Throws<WalletException>(() =>
             {
-                var chain = GenerateChainWithHeight(2);
+                var chain = GenerateChainWithHeight(2, Network.Main);
                 var wallet = GenerateBlankWallet("myWallet1", "password");
                 wallet.AccountsRoot.ElementAt(0).Accounts.Add(
                     new HdAccount()
@@ -3318,9 +3318,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
             return (addressPubKey, address);
         }
 
-        private static ConcurrentChain GenerateChainWithHeight(int blockAmount)
+        private static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
         {
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(network);
             var nonce = RandomUtils.GetUInt32();
             var prevBlockHash = chain.Genesis.HashBlock;
             for (var i = 0; i < blockAmount; i++)
