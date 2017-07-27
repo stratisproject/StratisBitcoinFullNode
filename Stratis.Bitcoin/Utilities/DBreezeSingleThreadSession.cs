@@ -8,14 +8,30 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.Bitcoin.Utilities
 {
+    /// <summary>
+    /// Exclusive session executed in a single thread to access the DBreeze database.
+    /// </summary>
     public interface IDBreezeSingleThreadSession : IDisposable
     {
+        /// <summary>Database transaction that is used for accessing the database.</summary>
         DBreeze.Transactions.Transaction Transaction { get; }
 
+        /// <summary>
+        /// Executes a caller defined method to be executed using the exclusive task scheduler, which allows the method to access the database safely.
+        /// </summary>
+        /// <param name="act">Method to execute using the exclusive task scheduler that can access the database safely.</param>
         Task Do(Action act);
+
+        /// <summary>
+        /// Executes a caller defined method to be executed using the exclusive task scheduler, which allows the method to access the database safely.
+        /// </summary>
+        /// <typeparam name="T">Return type of the delegated method.</typeparam>
+        /// <param name="act">Method to execute using the exclusive task scheduler that can access the database safely.</param>
+        /// <returns>Return value of the delegated method.</returns>
         Task<T> Do<T>(Func<T> act);
     }
 
+    /// <inheritdoc />
     public class DBreezeSingleThreadSession : IDBreezeSingleThreadSession
     {
         /// <summary>Access to DBreeze database.</summary>
@@ -23,14 +39,17 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>
         /// Scheduler that uses only a single thread to provide ability for exclusive execution of the tasks. 
-        /// This is used as an alternative to lock-based critical section implementation.
         /// </summary>
+        /// <remarks>
+        /// This is used as an alternative to lock-based critical section implementation, but allegedly DBreeze 
+        /// does require a dedicated thread to access it and does not (did not?) support multithreading access.
+        /// </remarks>
         private CustomThreadPoolTaskScheduler singleThread;
 
         /// <summary>Database transaction that is used for accessing the database.</summary>
         /// <remarks>As we access the database in the exclusive thread, a single transaction is enough for all use cases.</remarks>
         private DBreeze.Transactions.Transaction transaction;
-        /// <summary>Database transaction that is used for accessing the database.</summary>
+        /// <inheritdoc />
         public DBreeze.Transactions.Transaction Transaction
         {
             get
@@ -125,10 +144,7 @@ namespace Stratis.Bitcoin.Utilities
 			throw new NotSupportedException();
 		}
 
-        /// <summary>
-        /// Executes a caller defined method to be executed using the exclusive task scheduler, which allows the method to access the database safely.
-        /// </summary>
-        /// <param name="act">Method to execute using the exclusive task scheduler that can access the database safely.</param>
+        /// <inheritdoc />
 		public Task Do(Action act)
 		{
             Guard.NotNull(act, nameof(act));
@@ -143,12 +159,7 @@ namespace Stratis.Bitcoin.Utilities
 			return task;
 		}
 
-        /// <summary>
-        /// Executes a caller defined method to be executed using the exclusive task scheduler, which allows the method to access the database safely.
-        /// </summary>
-        /// <typeparam name="T">Return type of the delegated method.</typeparam>
-        /// <param name="act">Method to execute using the exclusive task scheduler that can access the database safely.</param>
-        /// <returns>Return value of the delegated method.</returns>
+        /// <inheritdoc />
 		public Task<T> Do<T>(Func<T> act)
 		{
             Guard.NotNull(act, nameof(act));

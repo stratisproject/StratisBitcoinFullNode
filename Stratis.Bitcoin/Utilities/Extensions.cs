@@ -9,8 +9,7 @@ namespace Stratis.Bitcoin.Utilities
     public static class TimeSpans
     {
         /// <summary>Time span of 100 milliseconds.</summary>
-        /// <remarks>TODO: Usually milliseconds are shorted to "ms", not "mls", so I suggest renaming this to "Ms100".</remarks>
-        public static TimeSpan Mls100 => TimeSpan.FromMilliseconds(100);
+        public static TimeSpan Ms100 => TimeSpan.FromMilliseconds(100);
 
         /// <summary>Time span of 1 second.</summary>
         public static TimeSpan Second => TimeSpan.FromSeconds(1);

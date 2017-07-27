@@ -62,6 +62,13 @@ namespace Stratis.Bitcoin.Utilities
     /// tasks to run simultaneously, but the exclusivity of exclusive scheduler is respected, so it is 
     /// used as a reader lock.
     /// </para>
+    /// </summary>
+    /// <remarks>
+    /// From the TaskFactory.StartNew() remarks:
+    /// Calling StartNew is functionally equivalent to creating a Task using one of its constructors 
+    /// and then calling <see cref="Task.Start()">Start</see> to schedule it for execution. However, 
+    /// unless creation and scheduling must be separated, StartNew is the recommended approach for both 
+    /// simplicity and performance.
     /// <para>
     /// WARNING: One has to be very careful using this class as the exclusivity of the exclusive scheduler 
     /// only guarantees to actually run one task at the time, but if the task awaits, it is not considered 
@@ -71,13 +78,6 @@ namespace Stratis.Bitcoin.Utilities
     /// mechanism, one needs to first break up the asynchronous code to synchronous pieces and only then 
     /// schedule the synchronous parts.
     /// </para>
-    /// </summary>
-    /// <remarks>
-    /// From the TaskFactory.StartNew() remarks:
-    /// Calling StartNew is functionally equivalent to creating a Task using one of its constructors 
-    /// and then calling <see cref="Task.Start()">Start</see> to schedule it for execution. However, 
-    /// unless creation and scheduling must be separated, StartNew is the recommended approach for both 
-    /// simplicity and performance.
     /// </remarks>
     public class AsyncLock : IAsyncLock
     {
@@ -114,7 +114,6 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-        /// <remarks>See warning in <see cref="AsyncLock"/> remarks section.</remarks>
         public Task ReadAsync(Action func)
         {
             return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
