@@ -8,7 +8,7 @@ The general rules:
 1. We use [Allman style](http://en.wikipedia.org/wiki/Indent_style#Allman_style) braces, where each brace begins on a new line. A single line statement block can go without braces, one line statments are allowed (without braces) if it makes readbility better. 
 2. We use four spaces of indentation (no tabs).
 3. We use `camelCase` for internal and private fields and use `readonly` where possible. When used static fields, `readonly` should come after `static` (i.e. `static readonly` not `readonly static`).
-4. We always use `this.` to easily distinguish instance and methods arguments. 
+4. We always use `this.` to easily distinguish instance members.  
 5. We always specify the visibility, even if it's the default (i.e.
    `private string foo` not `string foo`). Visibility should be the first modifier (i.e. 
    `public abstract` not `abstract public`).

@@ -6,9 +6,9 @@ using Stratis.Bitcoin.Configuration;
 namespace Stratis.Bitcoin.Builder
 {
     /// <summary>
-    /// Extension methods for FullNodeBuilder class.
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static class FullNodeBuilderExtensions
+    public static partial class IFullNodeBuilderExtensions
     {
         /// <summary>
         /// Makes the full node builder use specific node settings.
