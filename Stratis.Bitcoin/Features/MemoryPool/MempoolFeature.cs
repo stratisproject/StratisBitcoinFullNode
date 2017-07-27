@@ -61,8 +61,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
     }
 
-	public static class MempoolBuilderExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
 		{
 			fullNodeBuilder.ConfigureFeature(features =>

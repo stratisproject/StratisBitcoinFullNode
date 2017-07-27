@@ -24,7 +24,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private readonly INodeLifetime nodeLifetime;
 		private readonly IConnectionManager connectionManager;
 		private readonly NodeSettings nodeSettings;
-	    private readonly ILogger storeLogger;
+        private readonly ILogger storeLogger;
+        private readonly ILoggerFactory loggerFactory;
 
         public BlockStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals.Signals signals, BlockRepository blockRepository,  
 			BlockStoreCache blockStoreCache, StoreBlockPuller blockPuller, BlockStoreLoop blockStoreLoop, BlockStoreManager blockStoreManager,
@@ -42,12 +43,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			this.connectionManager = connectionManager;
 			this.nodeSettings = nodeSettings;
 		    this.storeLogger = loggerFactory.CreateLogger(this.GetType().FullName);
-		}
+            this.loggerFactory = loggerFactory;
+        }
 
 		public override void Start()
 		{
 			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.storeLogger));
-			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));
+			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             // signal to peers that this node can serve blocks
             this.connectionManager.Parameters.Services = (this.nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
@@ -69,8 +71,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		}
     }
 
-	public static class BlockStoreBuilderExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
 		{          
             fullNodeBuilder.ConfigureFeature(features =>

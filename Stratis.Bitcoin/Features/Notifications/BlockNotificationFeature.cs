@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
@@ -32,14 +33,17 @@ namespace Stratis.Bitcoin.Features.Notifications
 		public override void Start()
 		{
 			var connectionParameters = this.connectionManager.Parameters;
-			connectionParameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));			
+			connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, new LoggerFactory()));
 			this.blockNotification.Notify();
 			this.chainState.HighestValidatedPoW = this.chain.Genesis;
 		}
 	}
 
-	public static class BlockNotificationFeatureExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder UseBlockNotification(this IFullNodeBuilder fullNodeBuilder)
 		{
 			fullNodeBuilder.ConfigureFeature(features =>

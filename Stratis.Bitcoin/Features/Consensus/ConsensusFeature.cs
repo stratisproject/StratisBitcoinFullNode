@@ -32,7 +32,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 		private readonly NodeSettings nodeSettings;
 	    private readonly NodeDeployments nodeDeployments;
 	    private readonly StakeChainStore stakeChain;
-	    private readonly ILogger logger;
+        private readonly ILogger logger;
+        private readonly ILoggerFactory loggerFactory;
 
         public ConsensusFeature(
 			DBreezeCoinView dBreezeCoinView,
@@ -66,6 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 		    this.nodeDeployments = nodeDeployments;
 		    this.stakeChain = stakeChain;
 		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.loggerFactory = loggerFactory;
         }
 
 		public override void Start()
@@ -79,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 			this.consensusLoop.Initialize();
 
 			this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPuller.BlockPullerBehavior(this.blockPuller));
+			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
 			var flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
 			if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
@@ -177,8 +179,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 		}
 	}
 
-	public static class ConsensusFeatureExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder UseConsensus(this IFullNodeBuilder fullNodeBuilder)
 		{
 			fullNodeBuilder.ConfigureFeature(features =>
