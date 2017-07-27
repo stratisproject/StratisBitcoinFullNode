@@ -119,6 +119,7 @@ namespace Stratis.Bitcoin.Features.Miner
 		public class WalletSecret
 		{
 			public string WalletPassword;
+            public string WalletName;
 		}
 
 		public Task Mine(WalletSecret walletSecret)
@@ -176,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Miner
 				var pindexPrev = this.consensusLoop.Tip;
 
 				var stakeTxes = new List<StakeTx>();
-				var spendable = this.wallet.GetSpendableTransactions(1);
+				var spendable = this.wallet.GetSpendableTransactions(walletSecret.WalletName, 1);
 
 				var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.Transactions.Select(t => t.Id)).ToArray()).GetAwaiter().GetResult();
 
@@ -411,12 +412,12 @@ namespace Stratis.Bitcoin.Features.Miner
 							if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
 							{
 								var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-								key = this.wallet.GetKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
+								key = this.wallet.GetKeyForAddress(coin.Secret.WalletName, coin.Secret.WalletPassword, coin.Address).PrivateKey;
 							}
 							else if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
 							{
 								var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-								key = this.wallet.GetKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
+								key = this.wallet.GetKeyForAddress(coin.Secret.WalletName, coin.Secret.WalletPassword, coin.Address).PrivateKey;
 							}
 							else
 							{

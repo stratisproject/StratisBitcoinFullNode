@@ -1182,7 +1182,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions(confirmations: 0);
+            var result = walletManager.GetSpendableTransactions("myWallet", confirmations: 0);
 
             Assert.Equal(0, result.Count);
         }
@@ -1236,46 +1236,25 @@ namespace Stratis.Bitcoin.Tests.Wallet
             walletManager.Wallets.Add(wallet2);
             walletManager.Wallets.Add(wallet3);
 
-            var result = walletManager.GetSpendableTransactions(confirmations: 1);
+            var result = walletManager.GetSpendableTransactions("myWallet3", confirmations: 1);
 
-            Assert.Equal(8, result.Count);
+            Assert.Equal(4, result.Count);         
             var info = result[0];
-            Assert.Equal("First expectation", info.Account.Name);
-            Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(1, info.Transactions.ElementAt(0).BlockHeight);
-            info = result[1];
-            Assert.Equal("First expectation", info.Account.Name);
-            Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(9, info.Transactions.ElementAt(0).BlockHeight);
-            info = result[2];
-            Assert.Equal("First expectation", info.Account.Name);
-            Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(2, info.Transactions.ElementAt(0).BlockHeight);
-            info = result[3];
-            Assert.Equal("First expectation", info.Account.Name);
-            Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(9, info.Transactions.ElementAt(0).BlockHeight);
-
-            info = result[4];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Address, info.Address.Address);
             Assert.Equal(1, info.Transactions.Count);
             Assert.Equal(5, info.Transactions.ElementAt(0).BlockHeight);
-            info = result[5];
+            info = result[1];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Address, info.Address.Address);
             Assert.Equal(1, info.Transactions.Count);
             Assert.Equal(9, info.Transactions.ElementAt(0).BlockHeight);
-            info = result[6];
+            info = result[2];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Address, info.Address.Address);
             Assert.Equal(1, info.Transactions.Count);
             Assert.Equal(6, info.Transactions.ElementAt(0).BlockHeight);
-            info = result[7];
+            info = result[3];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Address, info.Address.Address);
             Assert.Equal(1, info.Transactions.Count);
@@ -1298,7 +1277,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions(confirmations: 1);
+            var result = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
 
             Assert.Equal(4, result.Count);
             var info = result[0];
@@ -1328,15 +1307,16 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
-        public void GetSpendableTransactionsWithoutWalletsReturnsEmptyList()
+        public void GetSpendableTransactionsWithoutWalletsThrowsWalletException()
         {
-            var chain = GenerateChainWithHeight(10, Network.Main);
-            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
-                    new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            Assert.Throws<WalletException>(() =>
+            {
+                var chain = GenerateChainWithHeight(10, Network.Main);
+                var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
+                        new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-            var result = walletManager.GetSpendableTransactions(confirmations: 1);
-
-            Assert.Equal(0, result.Count);
+                walletManager.GetSpendableTransactions("myWallet", confirmations: 1);               
+            });
         }
 
         [Fact]
@@ -1355,7 +1335,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             });
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions(confirmations: 1);
+            var result = walletManager.GetSpendableTransactions("myWallet2", confirmations: 1);
 
             Assert.Equal(0, result.Count);
         }
@@ -1376,20 +1356,20 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions(confirmations: 1);
+            var result = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
 
             Assert.Equal(0, result.Count);
         }
 
         [Fact]
-        public void GetKeyForAddressWithoutWalletsThrowsInvalidOperationException()
+        public void GetKeyForAddressWithoutWalletsThrowsWalletException()
         {
-            Assert.Throws<InvalidOperationException>(() =>
+            Assert.Throws<WalletException>(() =>
             {
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                        new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-                walletManager.GetKeyForAddress("password", new HdAddress());
+                walletManager.GetKeyForAddress("myWallet", "password", new HdAddress());
             });
         }
 
@@ -1417,9 +1397,37 @@ namespace Stratis.Bitcoin.Tests.Wallet
             });
             walletManager.Wallets.Add(data.wallet);
 
-            var result = walletManager.GetKeyForAddress("password", address);
+            var result = walletManager.GetKeyForAddress("myWallet", "password", address);
 
             Assert.Equal(data.key.Derive(new KeyPath("m/44'/0'/0'/0/0")).GetWif(data.wallet.Network), result);
+        }
+
+        [Fact]
+        public void GetKeyForAddressWitoutAddressOnWalletThrowsWalletException()
+        {
+            Assert.Throws<WalletException>(() =>
+            {
+                var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                          new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                var data = GenerateBlankWalletWithExtKey("myWallet", "password");
+
+                var address = new HdAddress
+                {
+                    Index = 0,
+                    HdPath = "m/44'/0'/0'/0/0",
+                };
+
+                data.wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+                {
+                    Index = 0,
+                    ExternalAddresses = new List<HdAddress>(),
+                    InternalAddresses = new List<HdAddress>(),
+                    Name = "savings account"
+                });
+                walletManager.Wallets.Add(data.wallet);
+
+                walletManager.GetKeyForAddress("myWallet", "password", address);
+            });
         }
 
         [Fact]
