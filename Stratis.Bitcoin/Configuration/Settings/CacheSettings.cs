@@ -1,10 +1,16 @@
 ﻿namespace Stratis.Bitcoin.Configuration.Settings
 {
-	public class CacheSettings
-	{
-		public int MaxItems
-		{
-			get; set;
-		} = 100000;
-	}
+    /// <summary>
+    /// Configuration of cache limits.
+    /// </summary>
+    public class CacheSettings
+    {
+        /// <summary>
+        /// Maximum number of items in <see cref="Features.Consensus.CoinViews.CachedCoinView"/>.
+        /// </summary>
+        public int MaxItems
+        {
+            get; set;
+        } = 100000;
+    }
 }
