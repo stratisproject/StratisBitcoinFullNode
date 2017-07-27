@@ -39,8 +39,11 @@ namespace Stratis.Bitcoin.Features.Notifications
 		}
 	}
 
-	public static class BlockNotificationFeatureExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder UseBlockNotification(this IFullNodeBuilder fullNodeBuilder)
 		{
 			fullNodeBuilder.ConfigureFeature(features =>

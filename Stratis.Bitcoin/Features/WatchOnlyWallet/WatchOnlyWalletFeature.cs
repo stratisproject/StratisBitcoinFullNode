@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.WatchOnlyWallet.Notifications;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
+    /// <inheritdoc />
     public class WatchOnlyWalletFeature : FullNodeFeature
     {
         private readonly IWatchOnlyWalletManager walletManager;
@@ -21,6 +22,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             this.signals = signals;
         }
 
+        /// <inheritdoc />
         public override void Start()
         {
             // subscribe to receiving blocks and transactions
@@ -30,6 +32,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             this.walletManager.Initialize();
         }
 
+        /// <inheritdoc />
         public override void Stop()
         {
             this.blockSubscriberdDisposable.Dispose();
@@ -39,8 +42,16 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         }
     }
 
-    public static class WatchOnlyWalletFeatureExtension
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
     {
+        /// <summary>
+        /// Adds a watch only wallet component to the node being initialized.
+        /// </summary>
+        /// <param name="fullNodeBuilder">The object used to build the current node.</param>
+        /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder UseWatchOnlyWallet(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>

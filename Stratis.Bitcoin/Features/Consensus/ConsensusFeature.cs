@@ -179,8 +179,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 		}
 	}
 
-	public static class ConsensusFeatureExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder UseConsensus(this IFullNodeBuilder fullNodeBuilder)
 		{
 			fullNodeBuilder.ConfigureFeature(features =>

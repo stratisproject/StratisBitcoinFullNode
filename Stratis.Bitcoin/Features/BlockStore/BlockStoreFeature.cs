@@ -71,8 +71,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		}
     }
 
-	public static class BlockStoreBuilderExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
 		{          
             fullNodeBuilder.ConfigureFeature(features =>
