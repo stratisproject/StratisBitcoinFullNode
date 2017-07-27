@@ -445,17 +445,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public List<UnspentInfo> GetSpendableTransactions(int confirmations = 0)
+        public List<UnspentInfo> GetSpendableTransactions(string walletName, int confirmations = 0)
         {
-            // todo: pass in wallet name or map to rpc credentials to select one? How would PoS get this info? Maybe pass in WalletAccountReference?
+            Guard.NotEmpty(walletName, nameof(walletName));
 
-            // because the wallets are in a concurrentbag the order is not guaranteed.
-            // we order the wallets before use to guarantee ordering.
-            var accounts = this.Wallets.OrderBy(w => w.CreationTime)
-                .ThenBy(w => w.Name)
-                .Select(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType))
-                .Where(a => a != null).SelectMany(a => a.Accounts);
-
+            var accounts = this.GetAccounts(walletName);
             var currentHeight = this.chain.Tip.Height;
 
             // this will take all the spendable coins 
@@ -497,21 +491,28 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return outs;
         }
-
+        
         /// <inheritdoc />        
-        public ISecret GetKeyForAddress(string password, HdAddress address)
+        public ISecret GetKeyForAddress(string walletName, string password, HdAddress address)
         {
-            // todo: pass in wallet name or map to rpc credentials to select one? How would PoS get this info? Maybe pass in WalletAccountReference?
+            Guard.NotEmpty(walletName, nameof(walletName));
             Guard.NotEmpty(password, nameof(password));
             Guard.NotNull(address, nameof(address));
 
-            // TODO: can we have more then one wallet per coins?
-            var walletTree = this.Wallets.First();
+            var wallet = this.GetWalletByName(walletName);
+            
+            // check if the wallet contains the address.
+            if (!wallet.AccountsRoot.Any(r =>  r.Accounts.Any(a => a.ExternalAddresses.Any(i => i.Address == address.Address) ||
+                                                                   a.InternalAddresses.Any(i => i.Address == address.Address))))
+            {
+                throw new WalletException("Address not found on wallet.");
+            }
+
             // get extended private key
-            var privateKey = Key.Parse(walletTree.EncryptedSeed, password, walletTree.Network);
-            var seedExtKey = new ExtKey(privateKey, walletTree.ChainCode);
+            var privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
+            var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
             ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
-            BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(walletTree.Network);
+            BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
             return addressPrivateKey;
         }
 

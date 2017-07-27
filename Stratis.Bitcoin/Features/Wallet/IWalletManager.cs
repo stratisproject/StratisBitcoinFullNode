@@ -23,7 +23,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// List all spendable transactions from all accounts
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
-        List<UnspentInfo> GetSpendableTransactions(int confirmations = 0);
+        List<UnspentInfo> GetSpendableTransactions(string walletName, int confirmations = 0);
+
+        /// <summary>
+        /// Gets the private key for the given address.
+        /// </summary>
+        /// <param name="password">The password used to encrypt sensitive info.</param>
+        /// <param name="name">The name of the wallet.</param>
+        /// <param name="address">The address to get the private key for.</param>
+        /// <returns></returns>
+        ISecret GetKeyForAddress(string walletName, string password, HdAddress address);
 
         /// <summary>
         /// Creates a wallet and persist it as a file on the local system.
