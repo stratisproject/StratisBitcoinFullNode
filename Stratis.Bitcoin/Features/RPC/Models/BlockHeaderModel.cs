@@ -1,78 +1,84 @@
 ﻿using NBitcoin;
 using NBitcoin.DataEncoders;
-using Newtonsoft.Json;
-using System;
 
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
+#pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
+
+    /// <summary>
+    /// Data structure for RPC block headers
+    /// 
+    /// <see cref="https://bitcoin.org/en/developer-reference#getblockheader"/>
+    /// </summary>
     public class BlockHeaderModel
     {
+        /// <summary>
+        /// Constructs a RPC BlockHeaderModel from a block header object
+        /// </summary>
+        /// <param name="blockHeader">the block header</param>
         public BlockHeaderModel(BlockHeader blockHeader)
         {           
             if (blockHeader != null)
             {
                 this.version = (uint)blockHeader.Version;
-                this.nonce = (int)blockHeader.Nonce;
-                byte[] bytes = BitConverter.GetBytes(blockHeader.Bits.ToCompact());
-                string encodedBits = Encoders.Hex.EncodeData(bytes);
-                this.bits = encodedBits;
                 this.previousblockhash = blockHeader.HashPrevBlock.ToString();
-                this.time = blockHeader.Time;
                 this.merkleroot = blockHeader.HashMerkleRoot.ToString();
-
-                //TODO: Populate these fields
-                // hash
-                // confirmations
-                // height
-                // mediantime
-                // difficulty
-                // chainwork
-                // nextblockhash
-                
+                this.time = blockHeader.Time;
+                byte[] bytes = this.GetBytes(blockHeader.Bits.ToCompact());
+                string encodedBytes = Encoders.Hex.EncodeData(bytes);
+                this.bits = encodedBytes;
+                this.nonce = (int)blockHeader.Nonce;
             }
         }
 
-        [JsonProperty(Order = 3)]
+        /// <summary>
+        /// The blocks version number
+        /// </summary>
         public uint version { get; set; }
 
-        [JsonProperty(Order = 4)]
+        /// <summary>
+        /// The merkle root for this block encoded as hex in RPC byte order
+        /// </summary>
         public string merkleroot { get; set; }
 
-        [JsonProperty(Order = 6)]
+        /// <summary>
+        /// The nonce thich was successful at turning this particular block
+        /// into one that could be added to the best block chain
+        /// </summary>
         public int nonce { get; set; }
 
-        [JsonProperty(Order = 7)]
+        /// <summary>
+        /// The target threshhold this blocks header had to pass
+        /// </summary>
         public string bits { get; set; }
 
-        [JsonProperty(Order = 10)]
+        /// <summary>
+        /// The hash of the header of the previous block,
+        /// encoded as hex in RPC byte order
+        /// </summary>
         public string previousblockhash { get; set; }
 
-        #region TODO:
-
-        [JsonProperty(Order = 0)]
-        public string hash { get; set; }
-
-        [JsonProperty(Order = 1)]
-        public int confirmations { get; set; }
-
-        [JsonProperty(Order = 2)]
-        public int height { get; set; }
-
-        [JsonProperty(Order = 5)]
-        public uint mediantime { get; set; }
-
-        [JsonProperty(Order = 8)]
-        public double difficulty { get; set; }
-
-        [JsonProperty(Order = 9)]
-        public string chainwork { get; set; }
-
-        [JsonProperty(Order = 11)]
-        public string nextblockhash { get; set; }
-
-        [JsonProperty(Order = 12)]
+        /// <summary>
+        /// The block time in seconds since epoch (Jan 1 1970 GMT)
+        /// </summary>
         public uint time { get; set; }
 
-        #endregion
+        /// <summary>
+        /// Convert compact of miner challenge to byte format
+        /// serialized for transmission via RPC
+        /// <seealso cref="Target"/>
+        /// </summary>
+        /// <param name="compact">compact representation of challenge</param>
+        /// <returns>byte representation of challenge</returns>
+        private byte[] GetBytes(uint compact)
+        {
+            return new byte[]
+            {
+                (byte)(compact >> 24),
+                (byte)(compact >> 16),
+                (byte)(compact >> 8),
+                (byte)(compact)
+            };
+        }
     }
 }

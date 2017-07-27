@@ -13,12 +13,16 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
     public class FullNodeController : BaseRPCController
     {
+        private readonly ILogger logger;
+
         public FullNodeController(
+            ILoggerFactory loggerFactory,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
@@ -37,7 +41,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                   chainState: chainState,
                   blockManager: blockManager,
                   mempoolManager: mempoolManager,
-                  connectionManager: connectionManager) { }
+                  connectionManager: connectionManager)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
 
         [ActionName("stop")]
         public Task Stop()
@@ -110,11 +117,22 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return model;
         }
 
+        /// <summary>
+        /// Implements getblockheader RPC call
+        /// </summary>
+        /// <param name="hash">hash of block</param>
+        /// <param name="isJsonFormat">indicates whether to provide data in Json or binary format</param>
+        /// <returns>The block header rpc format</returns>
         [ActionName("getblockheader")]
         public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
         {
+            Guard.NotNull(this.Chain, nameof(this.Chain));
+
+            this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
+
             if (!isJsonFormat)
             {
+                this.logger.LogError("Binary serialization is not supported for RPC {0}", nameof(GetBlockHeader));
                 throw new NotImplementedException();
             }
 

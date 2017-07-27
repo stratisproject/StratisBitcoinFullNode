@@ -54,6 +54,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Tests RPC getbestblockhash
+        /// </summary>
         [Fact]
         public void CanGetGenesisFromRPC()
         {
@@ -68,17 +71,32 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Tests RPC getblockheader
+        /// </summary>
         [Fact]
-        public void CanGetBlockFromRPC()
+        public void CanGetBlockHeaderFromRPC()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                RPCClient rpc = builder.CreateStratisNode().CreateRPCClient();
+                CoreNode node = builder.CreateStratisNode();
+                RPCClient rpc = node.CreateRPCClient();
                 builder.StartAll();
-                BlockHeader response = rpc.GetBlockHeader(0);
 
-                // TODO: This assertion is currently failing
-                Assert.Equal(Network.RegTest.GenesisHash, response.GetHash());
+                uint256 hash = rpc.GetBlockHash(0);
+                BlockHeader expectedHeader = node.FullNode.Chain?.GetBlock(hash)?.Header;
+                BlockHeader actualHeader = rpc.GetBlockHeader(0);
+
+                // Assert block header fields match
+                Assert.Equal(expectedHeader.Version, actualHeader.Version);
+                Assert.Equal(expectedHeader.HashPrevBlock, actualHeader.HashPrevBlock);
+                Assert.Equal(expectedHeader.HashMerkleRoot, actualHeader.HashMerkleRoot);
+                Assert.Equal(expectedHeader.Time, actualHeader.Time);
+                Assert.Equal(expectedHeader.Bits.ToCompact(), actualHeader.Bits.ToCompact());
+                Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
+
+                // Assert header hash matches genesis hash
+                Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
             }
         }
     }
