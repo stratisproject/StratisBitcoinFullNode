@@ -13,12 +13,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     {
 	    private readonly TxMempool memPool;
 		private readonly AsyncLock mempoolScheduler;
-	    private readonly MempoolValidator mempoolValidator;
+	    private readonly IMempoolValidator mempoolValidator;
 
 	    public UnspentOutputSet Set { get; private set; }
 	    public CoinView Inner { get; }
 
-		public MempoolCoinView(CoinView inner, TxMempool memPool, AsyncLock mempoolScheduler, MempoolValidator mempoolValidator)
+		public MempoolCoinView(CoinView inner, TxMempool memPool, AsyncLock mempoolScheduler, IMempoolValidator mempoolValidator)
 		{
 			this.Inner = inner;
 			this.memPool = memPool;

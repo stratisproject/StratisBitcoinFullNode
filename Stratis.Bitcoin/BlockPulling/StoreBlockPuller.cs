@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -12,8 +13,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="nodes">Network peers of the node.</param>
-        public StoreBlockPuller(ConcurrentChain chain, Connection.IConnectionManager nodes)
-            : base(chain, nodes.ConnectedNodes, nodes.NodeSettings.ProtocolVersion)
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
+        public StoreBlockPuller(ConcurrentChain chain, Connection.IConnectionManager nodes, ILoggerFactory loggerFactory)
+            : base(chain, nodes.ConnectedNodes, nodes.NodeSettings.ProtocolVersion, loggerFactory)
         {
         }
 
@@ -34,10 +36,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>true if the function succeeds, false otherwise.</returns>
         public bool TryGetBlock(ChainedBlock chainedBlock, out DownloadedBlock block)
         {
-            if (this.DownloadedBlocks.TryRemove(chainedBlock.HashBlock, out block))
-            {
+            if (TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
                 return true;
-            }
 
             this.OnStalling(chainedBlock);
             return false;
