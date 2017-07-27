@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             ConfigureLogger();
 
             Mock<IConnectionManager> connectionManager = ConfigureConnectionManager();
-            var blockPuller = new StoreBlockPuller(chain, connectionManager.Object);
+            var blockPuller = new StoreBlockPuller(chain, connectionManager.Object, this.loggerFactory.Object);
 
             FullNode fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
