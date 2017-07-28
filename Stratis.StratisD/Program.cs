@@ -37,7 +37,7 @@ namespace Stratis.StratisD
 
             Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith(t =>
             {
-                TryStartPowMiner(args, node);
+                //TryStartPowMiner(args, node);
                 //TryStartPosMiner(args, node);
             });
 
