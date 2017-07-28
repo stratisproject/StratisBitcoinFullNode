@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <param name="config">Application configuration.</param>
         public void Load(TextFileConfiguration config)
         {
-            this.DebugArgs = config.GetOrDefault("-debug", string.Empty).Split(',').ToList();
+            this.DebugArgs = config.GetOrDefault("-debug", string.Empty).Split(',').Where(s => !string.IsNullOrEmpty(s)).ToList();
 
             // Get the minimum log level. The default is Information.
             LogLevel minLogLevel = LogLevel.Information;

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 	    private readonly ILogger mempoolLogger;
 
         public MempoolScheduler MempoolScheduler { get; }
-		public MempoolValidator Validator { get; } // public for testing
+		public IMempoolValidator Validator { get; } // public for testing
 		public MempoolOrphans Orphans { get; } // public for testing
 		private readonly TxMempool memPool;
 
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 		public MempoolManager(
             MempoolScheduler mempoolScheduler, 
             TxMempool memPool,
-			MempoolValidator validator, 
+			IMempoolValidator validator, 
             MempoolOrphans orphans, 
             IDateTimeProvider dateTimeProvider, 
             NodeSettings nodeArgs, 

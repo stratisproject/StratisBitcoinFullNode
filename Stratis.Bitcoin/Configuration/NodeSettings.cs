@@ -1,4 +1,4 @@
-﻿using NBitcoin;
+using NBitcoin;
 using System;
 using System.IO;
 using System.Linq;
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.DataDir = args.GetValueOf("-datadir");
             if (nodeSettings.DataDir != null && nodeSettings.ConfigurationFile != null)
             {
-                var isRelativePath = Path.GetFullPath(nodeSettings.ConfigurationFile).Length > nodeSettings.ConfigurationFile.Length;
+                bool isRelativePath = Path.GetFullPath(nodeSettings.ConfigurationFile).Length > nodeSettings.ConfigurationFile.Length;
                 if (isRelativePath)
                 {
                     nodeSettings.ConfigurationFile = Path.Combine(nodeSettings.DataDir, nodeSettings.ConfigurationFile);
