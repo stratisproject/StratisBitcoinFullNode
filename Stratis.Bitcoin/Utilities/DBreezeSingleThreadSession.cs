@@ -19,16 +19,16 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Executes a caller defined method to be executed using the exclusive task scheduler, which allows the method to access the database safely.
         /// </summary>
-        /// <param name="act">Method to execute using the exclusive task scheduler that can access the database safely.</param>
-        Task Do(Action act);
+        /// <param name="action">Method to execute using the exclusive task scheduler that can access the database safely.</param>
+        Task Execute(Action action);
 
         /// <summary>
         /// Executes a caller defined method to be executed using the exclusive task scheduler, which allows the method to access the database safely.
         /// </summary>
         /// <typeparam name="T">Return type of the delegated method.</typeparam>
-        /// <param name="act">Method to execute using the exclusive task scheduler that can access the database safely.</param>
+        /// <param name="action">Method to execute using the exclusive task scheduler that can access the database safely.</param>
         /// <returns>Return value of the delegated method.</returns>
-        Task<T> Do<T>(Func<T> act);
+        Task<T> Execute<T>(Func<T> action);
     }
 
     /// <inheritdoc />
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Utilities
 		}
 
         /// <inheritdoc />
-		public Task Do(Action act)
+		public Task Execute(Action act)
 		{
             Guard.NotNull(act, nameof(act));
 
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Utilities
 		}
 
         /// <inheritdoc />
-		public Task<T> Do<T>(Func<T> act)
+		public Task<T> Execute<T>(Func<T> act)
 		{
             Guard.NotNull(act, nameof(act));
 
