@@ -150,7 +150,11 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Current number of bytes that unconsumed blocks are occupying.</summary>
         private long currentSize;
 
+        /// <summary>Lock object to protect access to <see cref="downloadedCounts"/>.</summary>
+        private object downloadedCountsLock = new object();
+
         /// <summary>Maintains the statistics of number of downloaded blocks. This is used for calculating new actualLookahead value.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="downloadedCountsLock"/>.</remarks>
         private List<int> downloadedCounts = new List<int>();
 
         /// <summary>Points to a block that was consumed last time. The next block returned by the puller to the consumer will be at location + 1.</summary>
@@ -178,14 +182,16 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>Median of a list of past downloadedCounts values. This is used just for logging purposes.</summary>
-        /// <remarks>TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/245. </remarks>
         public decimal MedianDownloadCount
         {
             get
             {
-                if (this.downloadedCounts.Count == 0)
-                    return decimal.One;
-                return (decimal)GetMedian(this.downloadedCounts);
+                lock (this.downloadedCountsLock)
+                {
+                    if (this.downloadedCounts.Count == 0)
+                        return decimal.One;
+                    return (decimal)GetMedian(this.downloadedCounts);
+                }
             }
         }
 
@@ -229,7 +235,11 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public Block NextBlock(CancellationToken cancellationToken)
         {
-            this.downloadedCounts.Add(this.DownloadedBlocksCount);
+            lock (this.downloadedCountsLock)
+            {
+                this.downloadedCounts.Add(this.DownloadedBlocksCount);
+            }
+
             if (this.lookaheadLocation == null)
             {
                 // Calling twice is intentional here.
@@ -282,8 +292,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         private void CalculateLookahead()
         {
-            decimal medianDownloads = GetMedian(this.downloadedCounts);
-            this.downloadedCounts.Clear();
+            decimal medianDownloads = 0;
+            lock (this.downloadedCountsLock)
+            {
+                medianDownloads = GetMedian(this.downloadedCounts);
+                this.downloadedCounts.Clear();
+            }
+
             var expectedDownload = this.ActualLookahead * 1.1m;
             decimal tolerance = 0.05m;
             var margin = expectedDownload * tolerance;
