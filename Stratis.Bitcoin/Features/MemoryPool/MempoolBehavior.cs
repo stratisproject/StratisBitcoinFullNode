@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
 			bool blocksOnly = !this.manager.NodeArgs.Mempool.RelayTxes;
 			// Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
-			if (node.Behavior<ConnectionManagerBehavior>().Whitelisted && this.manager.NodeArgs.Mempool.Whitelistrelay)
+			if (node.Behavior<ConnectionManagerBehavior>().Whitelisted && this.manager.NodeArgs.Mempool.WhiteListRelay)
 				blocksOnly = false;
 
 			//uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
