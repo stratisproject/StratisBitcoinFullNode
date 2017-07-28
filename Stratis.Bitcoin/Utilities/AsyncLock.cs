@@ -85,13 +85,6 @@ namespace Stratis.Bitcoin.Utilities
         /// <remarks>TODO: Why is this public? No one outside seems to be using this.</remarks>
         public CancellationTokenSource Cancellation { get; private set; }
 
-        /// <summary>Provider of exclusive and concurrent scheduler.</summary>
-        /// <remarks>
-        /// Reference is kept for performance counter. 
-        /// <para>TODO: It seems that this is not used anywhere. What performance counter?</para>
-        /// </remarks>
-        private readonly ConcurrentExclusiveSchedulerPair schedulerPair;
-
         /// <summary>Task factory that runs tasks using the concurrent scheduler. Serves as a reader lock.</summary>
         private readonly TaskFactory concurrentFactory;
 
@@ -108,9 +101,9 @@ namespace Stratis.Bitcoin.Utilities
             this.Cancellation = cancellation ?? new CancellationTokenSource();
             int defaultMaxConcurrencyLevel = Environment.ProcessorCount; 
             int defaultMaxItemsPerTask = maxItemsPerTask; 
-            this.schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, defaultMaxConcurrencyLevel, defaultMaxItemsPerTask);
-            this.concurrentFactory = new TaskFactory(this.schedulerPair.ConcurrentScheduler);
-            this.exclusiveFactory = new TaskFactory(this.schedulerPair.ExclusiveScheduler);
+            var schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, defaultMaxConcurrencyLevel, defaultMaxItemsPerTask);
+            this.concurrentFactory = new TaskFactory(schedulerPair.ConcurrentScheduler);
+            this.exclusiveFactory = new TaskFactory(schedulerPair.ExclusiveScheduler);
         }
 
         /// <inheritdoc />
