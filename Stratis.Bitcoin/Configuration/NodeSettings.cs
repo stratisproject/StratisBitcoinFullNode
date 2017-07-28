@@ -125,11 +125,10 @@ namespace Stratis.Bitcoin.Configuration
 
             NodeSettings nodeSettings = new NodeSettings { Name = name };
 
-            // the logger factory goes in the settings 
-            // with minimal configuration, that's so the 
-            // settings can also log out its progress
-            nodeSettings.LoggerFactory.AddDebug(LogLevel.Trace);
-            nodeSettings.LoggerFactory.AddConsole(LogLevel.Trace);
+            // The logger factory goes in the settings with minimal configuration, 
+            // that's so the settings can also log out its progress.
+            nodeSettings.LoggerFactory.AddDebug();
+            nodeSettings.LoggerFactory.AddConsole();
 
             nodeSettings.Logger = nodeSettings.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
