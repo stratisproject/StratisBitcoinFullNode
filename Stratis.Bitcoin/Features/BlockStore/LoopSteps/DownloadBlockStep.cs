@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     // Continuously download blocks until a stop condition is found.
     // There are two operations:
     //      Find blocks to download by asking them from the BlockPuller
-    //      Collecting downloaded blocks and persisting them as a batch to the BlockRepository
+    //      Download blocks and persisting them as a batch to the BlockRepository
 
     internal sealed class DownloadBlockStep : BlockStoreLoopStep
     {
@@ -25,10 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (disposeMode)
                 return BlockStoreLoopStepResult.Break();
 
-            var downloadStack = new Queue<ChainedBlock>(new[] { nextChainedBlock });
-            var store = new List<BlockPair>();
-            int insertBlockSize = 0;
-            int stallCount = 0;
+            var stepContext = new DownloadBlockStepContext(nextChainedBlock);
 
             this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
 
@@ -44,7 +41,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     var breakExecution = await ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
                     if (breakExecution)
                     {
-                        if (!downloadStack.Any())
+                        if (!stepContext.DownloadStack.Any())
                             return BlockStoreLoopStepResult.Break();
 
                         canDownload = false;
@@ -52,14 +49,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     else
                     {
                         this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
-                        downloadStack.Enqueue(nextChainedBlock);
+                        stepContext.DownloadStack.Enqueue(nextChainedBlock);
 
-                        if (downloadStack.Count == this.BlockStoreLoop.BatchDownloadSize)
+                        if (stepContext.DownloadStack.Count == this.BlockStoreLoop.BatchDownloadSize)
                             canDownload = false;
                     }
                 }
 
-                var downloadResult = await DownloadBlocks(insertBlockSize, stallCount, store, downloadStack, cancellationToken);
+                var downloadResult = await DownloadBlocks(stepContext, cancellationToken);
                 if (downloadResult.ShouldBreak)
                     break;
             }
@@ -87,47 +84,63 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             return false;
         }
 
-        private async Task<BlockStoreLoopStepResult> DownloadBlocks(int insertBlockSize, int stallCount, List<BlockPair> store, Queue<ChainedBlock> chainedBlocksToDownload, CancellationToken cancellationToken)
+        private async Task<BlockStoreLoopStepResult> DownloadBlocks(DownloadBlockStepContext stepContext, CancellationToken cancellationToken)
         {
             BlockPuller.DownloadedBlock downloadedBlock;
 
-            if (this.BlockStoreLoop.BlockPuller.TryGetBlock(chainedBlocksToDownload.Peek(), out downloadedBlock))
+            if (this.BlockStoreLoop.BlockPuller.TryGetBlock(stepContext.DownloadStack.Peek(), out downloadedBlock))
             {
-                var chainedBlockToDownload = chainedBlocksToDownload.Dequeue();
-                store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToDownload));
+                var chainedBlockToDownload = stepContext.DownloadStack.Dequeue();
+                stepContext.Store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToDownload));
 
-                insertBlockSize += downloadedBlock.Length;
-                stallCount = 0;
+                stepContext.InsertBlockSize += downloadedBlock.Length;
+                stepContext.StallCount = 0;
 
                 // Can we push the download blocks to the block repository
                 // This might go above the max insert size
-                if (insertBlockSize > this.BlockStoreLoop.InsertBlockSizeThreshold || !chainedBlocksToDownload.Any())
+                if (stepContext.InsertBlockSize > this.BlockStoreLoop.InsertBlockSizeThreshold || !stepContext.DownloadStack.Any())
                 {
-                    await this.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, store.Select(t => t.Block).ToList());
+                    await this.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, stepContext.Store.Select(t => t.Block).ToList());
 
                     this.BlockStoreLoop.StoredBlock = chainedBlockToDownload;
                     this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
-                    insertBlockSize = 0;
+                    stepContext.InsertBlockSize = 0;
 
-                    store.Clear();
+                    stepContext.Store.Clear();
 
-                    if (!chainedBlocksToDownload.Any())
+                    if (!stepContext.DownloadStack.Any())
                         return BlockStoreLoopStepResult.Break();
                 }
             }
             else
             {
                 // If a block is stalled or lost to the downloader this will make that sure the loop starts again after a threshold
-                if (stallCount > 10000)
+                if (stepContext.StallCount > 10000)
                     return BlockStoreLoopStepResult.Break();
 
                 // Waiting for blocks so sleep 100 ms
                 await Task.Delay(100, cancellationToken);
 
-                stallCount++;
+                stepContext.StallCount++;
             }
 
             return BlockStoreLoopStepResult.Next();
+        }
+    }
+
+    internal sealed class DownloadBlockStepContext
+    {
+        internal Queue<ChainedBlock> DownloadStack;
+        internal List<BlockPair> Store;
+        internal int InsertBlockSize;
+        internal int StallCount;
+
+        internal DownloadBlockStepContext(ChainedBlock nextChainedBlock)
+        {
+            this.DownloadStack = new Queue<ChainedBlock>(new[] { nextChainedBlock });
+            this.Store = new List<BlockPair>();
+            this.InsertBlockSize = 0;
+            this.StallCount = 0;
         }
     }
 }
