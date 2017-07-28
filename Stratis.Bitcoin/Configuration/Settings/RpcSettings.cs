@@ -4,40 +4,55 @@ using System.Net;
 
 namespace Stratis.Bitcoin.Configuration.Settings
 {
-	public class RpcSettings
-	{
-		public RpcSettings()
-		{
+    /// <summary>
+    /// Configuration related to RPC interface.
+    /// </summary>
+    public class RpcSettings
+    {
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        public RpcSettings()
+        {
             this.Bind = new List<IPEndPoint>();
             this.AllowIp = new List<IPAddress>();
-		}
+        }
 
-		public string RpcUser
-		{
-			get; set;
-		}
-		public string RpcPassword
-		{
-			get; set;
-		}
+        /// <summary>User name for RPC authorization.</summary>
+        public string RpcUser
+        {
+            get; set;
+        }
 
-		public int RPCPort
-		{
-			get; set;
-		}
-		public List<IPEndPoint> Bind
-		{
-			get; set;
-		}
+        /// <summary>Password for RPC authorization.</summary>
+        public string RpcPassword
+        {
+            get; set;
+        }
 
-		public List<IPAddress> AllowIp
-		{
-			get; set;
-		}
+        /// <summary>TCP port for RPC interface.</summary>
+        public int RPCPort
+        {
+            get; set;
+        }
 
-		public string[] GetUrls()
-		{
-			return this.Bind.Select(b => "http://" + b + "/").ToArray();
-		}
-	}
+        /// <summary>List of network endpoints that the node will listen and provide RPC on.</summary>
+        public List<IPEndPoint> Bind
+        {
+            get; set;
+        }
+
+        /// <summary>List of IP addresses that are allowed to connect to RPC interfaces.</summary>
+        public List<IPAddress> AllowIp
+        {
+            get; set;
+        }
+
+        /// <summary>Obtains a list of HTTP URLs to RPC interfaces.</summary>
+        /// <returns>List of HTTP URLs to RPC interfaces.</returns>
+        public string[] GetUrls()
+        {
+            return this.Bind.Select(b => "http://" + b + "/").ToArray();
+        }
+    }
 }
