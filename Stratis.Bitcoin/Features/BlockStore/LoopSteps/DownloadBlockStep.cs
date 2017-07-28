@@ -20,19 +20,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
         }
 
-        private int insertBlockSize = 0;
-        private int stallCount = 0;
-        private List<BlockPair> blockPairsToStore = new List<BlockPair>();
-
         internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             if (disposeMode)
-            {
-                Cleanup();
                 return BlockStoreLoopStepResult.Break();
-            }
 
-            var chainedBlockStackToDownload = new Queue<ChainedBlock>(new[] { nextChainedBlock });
+            var downloadStack = new Queue<ChainedBlock>(new[] { nextChainedBlock });
+            var store = new List<BlockPair>();
+            int insertBlockSize = 0;
+            int stallCount = 0;
 
             this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
 
@@ -48,7 +44,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     var breakExecution = await ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
                     if (breakExecution)
                     {
-                        if (!chainedBlockStackToDownload.Any())
+                        if (!downloadStack.Any())
                             return BlockStoreLoopStepResult.Break();
 
                         canDownload = false;
@@ -56,22 +52,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     else
                     {
                         this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
-                        chainedBlockStackToDownload.Enqueue(nextChainedBlock);
+                        downloadStack.Enqueue(nextChainedBlock);
 
-                        if (chainedBlockStackToDownload.Count == this.BlockStoreLoop.BatchDownloadSize)
+                        if (downloadStack.Count == this.BlockStoreLoop.BatchDownloadSize)
                             canDownload = false;
                     }
                 }
 
-                var downloadResult = await DownloadBlocks(chainedBlockStackToDownload, cancellationToken);
+                var downloadResult = await DownloadBlocks(insertBlockSize, stallCount, store, downloadStack, cancellationToken);
                 if (downloadResult.ShouldBreak)
                     break;
             }
-
-            chainedBlockStackToDownload.Clear();
-            chainedBlockStackToDownload = null;
-
-            Cleanup();
 
             return BlockStoreLoopStepResult.Next();
         }
@@ -96,29 +87,29 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             return false;
         }
 
-        private async Task<BlockStoreLoopStepResult> DownloadBlocks(Queue<ChainedBlock> chainedBlocksToDownload, CancellationToken cancellationToken)
+        private async Task<BlockStoreLoopStepResult> DownloadBlocks(int insertBlockSize, int stallCount, List<BlockPair> store, Queue<ChainedBlock> chainedBlocksToDownload, CancellationToken cancellationToken)
         {
             BlockPuller.DownloadedBlock downloadedBlock;
 
             if (this.BlockStoreLoop.BlockPuller.TryGetBlock(chainedBlocksToDownload.Peek(), out downloadedBlock))
             {
                 var chainedBlockToDownload = chainedBlocksToDownload.Dequeue();
-                this.blockPairsToStore.Add(new BlockPair(downloadedBlock.Block, chainedBlockToDownload));
+                store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToDownload));
 
-                this.insertBlockSize += downloadedBlock.Length;
-                this.stallCount = 0;
+                insertBlockSize += downloadedBlock.Length;
+                stallCount = 0;
 
                 // Can we push the download blocks to the block repository
                 // This might go above the max insert size
-                if (this.insertBlockSize > this.BlockStoreLoop.InsertBlockSizeThreshold || !chainedBlocksToDownload.Any())
+                if (insertBlockSize > this.BlockStoreLoop.InsertBlockSizeThreshold || !chainedBlocksToDownload.Any())
                 {
-                    await this.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, this.blockPairsToStore.Select(t => t.Block).ToList());
+                    await this.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, store.Select(t => t.Block).ToList());
 
                     this.BlockStoreLoop.StoredBlock = chainedBlockToDownload;
                     this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
-                    this.insertBlockSize = 0;
+                    insertBlockSize = 0;
 
-                    this.blockPairsToStore.Clear();
+                    store.Clear();
 
                     if (!chainedBlocksToDownload.Any())
                         return BlockStoreLoopStepResult.Break();
@@ -127,25 +118,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             else
             {
                 // If a block is stalled or lost to the downloader this will make that sure the loop starts again after a threshold
-                if (this.stallCount > 10000)
+                if (stallCount > 10000)
                     return BlockStoreLoopStepResult.Break();
 
                 // Waiting for blocks so sleep 100 ms
                 await Task.Delay(100, cancellationToken);
 
-                this.stallCount++;
+                stallCount++;
             }
 
             return BlockStoreLoopStepResult.Next();
-        }
-
-        private void Cleanup()
-        {
-            if (this.blockPairsToStore != null)
-            {
-                this.blockPairsToStore.Clear();
-                this.blockPairsToStore = null;
-            }
         }
     }
 }
