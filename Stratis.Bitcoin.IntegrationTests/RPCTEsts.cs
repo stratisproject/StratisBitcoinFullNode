@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(expectedHeader.HashPrevBlock, actualHeader.HashPrevBlock);
                 Assert.Equal(expectedHeader.HashMerkleRoot, actualHeader.HashMerkleRoot);
                 Assert.Equal(expectedHeader.Time, actualHeader.Time);
-                Assert.Equal(expectedHeader.Bits.ToCompact(), actualHeader.Bits.ToCompact());
+                Assert.Equal(expectedHeader.Bits, actualHeader.Bits);
                 Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
 
                 // Assert header hash matches genesis hash

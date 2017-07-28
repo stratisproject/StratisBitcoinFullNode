@@ -19,17 +19,14 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         {
             Guard.NotNull(blockHeader, nameof(blockHeader));
 
-            if (blockHeader != null)
-            {
-                this.Version = (uint)blockHeader.Version;
-                this.PreviousBlockHash = blockHeader.HashPrevBlock.ToString();
-                this.MerkleRoot = blockHeader.HashMerkleRoot.ToString();
-                this.Time = blockHeader.Time;
-                byte[] bytes = this.GetBytes(blockHeader.Bits.ToCompact());
-                string encodedBytes = Encoders.Hex.EncodeData(bytes);
-                this.Bits = encodedBytes;
-                this.Nonce = (int)blockHeader.Nonce;
-            }
+            this.Version = (uint)blockHeader.Version;
+            this.PreviousBlockHash = blockHeader.HashPrevBlock.ToString();
+            this.MerkleRoot = blockHeader.HashMerkleRoot.ToString();
+            this.Time = blockHeader.Time;
+            byte[] bytes = this.GetBytes(blockHeader.Bits.ToCompact());
+            string encodedBytes = Encoders.Hex.EncodeData(bytes);
+            this.Bits = encodedBytes;
+            this.Nonce = (int)blockHeader.Nonce;
         }
 
         /// <summary>
