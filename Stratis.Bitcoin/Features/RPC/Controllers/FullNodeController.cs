@@ -118,15 +118,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Implements getblockheader RPC call
+        /// Implements getblockheader RPC call.
         /// </summary>
-        /// <param name="hash">hash of block</param>
-        /// <param name="isJsonFormat">indicates whether to provide data in Json or binary format</param>
-        /// <returns>The block header rpc format</returns>
+        /// <param name="hash">Hash of block.</param>
+        /// <param name="isJsonFormat">Indicates whether to provide data in Json or binary format.</param>
+        /// <returns>The block header rpc format.</returns>
         [ActionName("getblockheader")]
         public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
         {
-            Guard.NotNull(this.Chain, nameof(this.Chain));
+            Guard.NotNull(hash, nameof(hash));
 
             this.logger.LogDebug("RPC GetBlockHeader {0}", hash);
 
@@ -136,7 +136,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 throw new NotImplementedException();
             }
 
-            return new BlockHeaderModel(this.Chain?.GetBlock(uint256.Parse(hash))?.Header);
+            BlockHeaderModel model = null;
+            if (this.Chain != null)
+            {
+                model = new BlockHeaderModel(this.Chain.GetBlock(uint256.Parse(hash))?.Header);
+            }
+            return model;
         }
 
         private async Task<ChainedBlock> GetTransactionBlock(uint256 trxid)

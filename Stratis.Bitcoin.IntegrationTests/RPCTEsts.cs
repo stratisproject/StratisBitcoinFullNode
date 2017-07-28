@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Tests RPC getbestblockhash
+        /// Tests RPC getbestblockhash.
         /// </summary>
         [Fact]
         public void CanGetGenesisFromRPC()
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Tests RPC getblockheader
+        /// Tests RPC getblockheader.
         /// </summary>
         [Fact]
         public void CanGetBlockHeaderFromRPC()

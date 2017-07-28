@@ -1,75 +1,82 @@
 ﻿using NBitcoin;
 using NBitcoin.DataEncoders;
+using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
-#pragma warning disable IDE1006 // Naming Styles (ignore lowercase)
-
     /// <summary>
-    /// Data structure for RPC block headers
-    /// 
+    /// Data structure for RPC block headers.
     /// <see cref="https://bitcoin.org/en/developer-reference#getblockheader"/>
     /// </summary>
     public class BlockHeaderModel
     {
         /// <summary>
-        /// Constructs a RPC BlockHeaderModel from a block header object
+        /// Constructs a RPC BlockHeaderModel from a block header object.
         /// </summary>
-        /// <param name="blockHeader">the block header</param>
+        /// <param name="blockHeader">The block header.</param>
         public BlockHeaderModel(BlockHeader blockHeader)
-        {           
+        {
+            Guard.NotNull(blockHeader, nameof(blockHeader));
+
             if (blockHeader != null)
             {
-                this.version = (uint)blockHeader.Version;
-                this.previousblockhash = blockHeader.HashPrevBlock.ToString();
-                this.merkleroot = blockHeader.HashMerkleRoot.ToString();
-                this.time = blockHeader.Time;
+                this.Version = (uint)blockHeader.Version;
+                this.PreviousBlockHash = blockHeader.HashPrevBlock.ToString();
+                this.MerkleRoot = blockHeader.HashMerkleRoot.ToString();
+                this.Time = blockHeader.Time;
                 byte[] bytes = this.GetBytes(blockHeader.Bits.ToCompact());
                 string encodedBytes = Encoders.Hex.EncodeData(bytes);
-                this.bits = encodedBytes;
-                this.nonce = (int)blockHeader.Nonce;
+                this.Bits = encodedBytes;
+                this.Nonce = (int)blockHeader.Nonce;
             }
         }
 
         /// <summary>
-        /// The blocks version number
+        /// The blocks version number.
         /// </summary>
-        public uint version { get; set; }
+        [JsonProperty(PropertyName = "version")]
+        public uint Version { get; private set; }
 
         /// <summary>
-        /// The merkle root for this block encoded as hex in RPC byte order
+        /// The merkle root for this block encoded as hex in RPC byte order.
         /// </summary>
-        public string merkleroot { get; set; }
+        [JsonProperty(PropertyName = "merkleroot")]
+        public string MerkleRoot { get; private set; }
 
         /// <summary>
-        /// The nonce thich was successful at turning this particular block
-        /// into one that could be added to the best block chain
+        /// The nonce which was successful at turning this particular block
+        /// into one that could be added to the best block chain.
         /// </summary>
-        public int nonce { get; set; }
+        [JsonProperty(PropertyName = "nonce")]
+        public int Nonce { get; private set; }
 
         /// <summary>
-        /// The target threshhold this blocks header had to pass
+        /// The target threshold this block's header had to pass.
         /// </summary>
-        public string bits { get; set; }
+        [JsonProperty(PropertyName = "bits")]
+        public string Bits { get; private set; }
 
         /// <summary>
         /// The hash of the header of the previous block,
-        /// encoded as hex in RPC byte order
+        /// encoded as hex in RPC byte order.
         /// </summary>
-        public string previousblockhash { get; set; }
+        [JsonProperty(PropertyName = "previousblockhash")]
+        public string PreviousBlockHash { get; private set; }
 
         /// <summary>
-        /// The block time in seconds since epoch (Jan 1 1970 GMT)
+        /// The block time in seconds since epoch (Jan 1 1970 GMT).
         /// </summary>
-        public uint time { get; set; }
+        [JsonProperty(PropertyName = "time")]
+        public uint Time { get; private set; }
 
         /// <summary>
-        /// Convert compact of miner challenge to byte format
-        /// serialized for transmission via RPC
+        /// Convert compact of miner challenge to byte format,
+        /// serialized for transmission via RPC.
+        /// </summary>
+        /// <param name="compact">Compact representation of challenge.</param>
+        /// <returns>Byte representation of challenge.</returns>
         /// <seealso cref="Target"/>
-        /// </summary>
-        /// <param name="compact">compact representation of challenge</param>
-        /// <returns>byte representation of challenge</returns>
         private byte[] GetBytes(uint compact)
         {
             return new byte[]
