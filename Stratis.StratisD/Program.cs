@@ -63,18 +63,28 @@ namespace Stratis.StratisD
 			}
 		}
 
-		private static void TryStartPosMiner(string[] args, IFullNode node)
-		{
-			// mining can be called from either RPC or on start
-			// to manage the on strat we need to get an address to the mining code
-			var mine = args.FirstOrDefault(a => a.Contains("mine="));
-			if (mine != null)
-			{
-				node.Services.ServiceProvider.GetService<PosMinting>().Mine(new PosMinting.WalletSecret() {WalletPassword = ""});
-			}
-		}
+        private static void TryStartPosMiner(string[] args, IFullNode node)
+        {
+            // mining can be called from either RPC or on start
+            // to manage the on strat we need to get an address to the mining code
+            var mine = args.FirstOrDefault(a => a.Contains("mine="));
+            var walletNameArg = args.FirstOrDefault(a => a.Contains("walletname="));
+            var walletPasswordArg = args.FirstOrDefault(a => a.Contains("walletpassword="));
 
-		private static Network InitStratisTest()
+            if (mine != null && walletNameArg != null && walletPasswordArg != null)
+            {
+                var walletName = walletNameArg.Replace("walletname=", string.Empty);
+                var walletPassword = walletPasswordArg.Replace("walletpassword=", string.Empty);
+
+                node.Services.ServiceProvider.GetService<PosMinting>().Mine(new PosMinting.WalletSecret()
+                {
+                    WalletPassword = walletPassword,
+                    WalletName = walletName
+                });
+            }
+        }
+
+        private static Network InitStratisTest()
 		{
 			Block.BlockSignature = true;
 			Transaction.TimeStamp = true;
