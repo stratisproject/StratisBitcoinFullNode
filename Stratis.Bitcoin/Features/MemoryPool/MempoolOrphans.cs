@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 		public const int ORPHAN_TX_EXPIRE_INTERVAL = 5 * 60;
 
 		public MempoolScheduler MempoolScheduler { get; }
-		public MempoolValidator Validator { get; } // public for testing
+		public IMempoolValidator Validator { get; } // public for testing
 		private readonly TxMempool memPool;
 		private readonly ConcurrentChain chain;
 	    private readonly Signals.Signals signals;
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             TxMempool memPool, 
             ConcurrentChain chain, 
             Signals.Signals signals, 
-			MempoolValidator validator, 
+			IMempoolValidator validator, 
             PowConsensusValidator consensusValidator, 
             CoinView coinView, 
             IDateTimeProvider dateTimeProvider, 

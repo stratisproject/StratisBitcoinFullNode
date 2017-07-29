@@ -61,8 +61,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
     }
 
-	public static class MempoolBuilderExtension
-	{
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
+    public static partial class IFullNodeBuilderExtensions
+    {
 		public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
 		{
 			fullNodeBuilder.ConfigureFeature(features =>
@@ -75,7 +78,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 						services.AddSingleton<TxMempool>();
 					    services.AddSingleton<BlockPolicyEstimator>();
                         services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
-						services.AddSingleton<MempoolValidator>();
+						services.AddSingleton<IMempoolValidator, MempoolValidator>();
 						services.AddSingleton<MempoolOrphans>();
 						services.AddSingleton<MempoolManager>();
 						services.AddSingleton<MempoolBehavior>();

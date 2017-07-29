@@ -107,5 +107,67 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             }
             Assert.Equal(requiredBlockHeights.Count, tasksAssigned);
         }
+
+        /// <summary>
+        /// Very similar test to AssignBlocksToPeersWithNodesWithDifferentChainsCorrectlyDistributesDownloadTasks
+        /// except that this one uses randomized initialization and much larger sample.
+        /// </summary>
+        [Fact]
+        public void AssignBlocksToPeersLargeSampleCorrectlyDistributesDownloadTasks()
+        {
+            Random rnd = new Random();
+
+            int iterationCount = 1000;
+            for (int iteration = 0; iteration < iterationCount; iteration++)
+            {
+                // Choose scenario for this iteration.
+                int ourBlockCount = rnd.Next(1000);
+                int bestChainBlockCount = ourBlockCount + rnd.Next(1000);
+                int availablePeerCount = rnd.Next(100) + 1;
+
+                List<int> requiredBlockHeights = new List<int>();
+                for (int i = ourBlockCount + 1; i <= bestChainBlockCount; i++)
+                    requiredBlockHeights.Add(i);
+
+                requiredBlockHeights = requiredBlockHeights.OrderBy(a => rnd.Next()).ToList();
+
+                // Initialize node's peers.
+                int maxPeerChainLength = 0;
+                List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>();
+                for (int peerIndex = 0; peerIndex < availablePeerCount; peerIndex++)
+                {
+                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation()
+                    {
+                        ChainHeight = rnd.Next(bestChainBlockCount) + 1,
+                        PeerId = peerIndex,
+                        QualityScore = rnd.Next(BlockPuller.MaxQualityScore) + 1
+                    };
+                    availablePeersInformation.Add(peerInfo);
+                    maxPeerChainLength = Math.Max(maxPeerChainLength, peerInfo.ChainHeight);
+                }
+
+                // Use the assignment strategy to assign tasks to peers.
+                Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
+
+                // Check the assignment is valid per our requirements.
+                int tasksAssigned = 0;
+                Assert.Equal(availablePeersInformation.Count, assignments.Count);
+                foreach (KeyValuePair<PullerDownloadAssignments.PeerInformation, List<int>> kvp in assignments)
+                {
+                    PullerDownloadAssignments.PeerInformation peer = kvp.Key;
+                    List<int> assignedBlockHeights = kvp.Value;
+                    tasksAssigned += assignedBlockHeights.Count;
+
+                    // Peers with shorter chain should not get any work
+                    // other peers should not get any work exceeding their knowledge.
+                    if (peer.ChainHeight <= ourBlockCount) Assert.Equal(0, assignedBlockHeights.Count);
+                    else if (assignedBlockHeights.Count > 0) Assert.True(assignedBlockHeights.Max() <= peer.ChainHeight);
+                }
+
+                // Check that all tasks that could be assigned were assigned.
+                int taskShouldAssign = requiredBlockHeights.Where(r => r <= maxPeerChainLength).Count();
+                Assert.Equal(taskShouldAssign, tasksAssigned);
+            }
+        }
     }
 }

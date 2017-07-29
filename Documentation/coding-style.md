@@ -5,10 +5,10 @@ For non code files (xml etc) our current best guidance is consistency. When edit
 
 The general rules:
 
-1. We use [Allman style](http://en.wikipedia.org/wiki/Indent_style#Allman_style) braces, where each brace begins on a new line. A single line statement block can go without braces, one line statments are allowed (without braces) if it makes readbility better. 
+1. We use [Allman style](http://en.wikipedia.org/wiki/Indent_style#Allman_style) braces, where each brace begins on a new line. A single line statement block can go without braces, one line statements are allowed (without braces) if it makes readability better. 
 2. We use four spaces of indentation (no tabs).
 3. We use `camelCase` for internal and private fields and use `readonly` where possible. When used static fields, `readonly` should come after `static` (i.e. `static readonly` not `readonly static`).
-4. We always use `this.` to easily distinguish instance and methods arguments. 
+4. We always use `this.` to easily distinguish instance members.  
 5. We always specify the visibility, even if it's the default (i.e.
    `private string foo` not `string foo`). Visibility should be the first modifier (i.e. 
    `public abstract` not `abstract public`).
@@ -20,7 +20,7 @@ The general rules:
    For example avoid `if (someVar == 0)...`, where the dots mark the spurious free spaces.
    Consider enabling "View White Space (Ctrl+E, S)" if using Visual Studio, to aid detection.
 9. If a file happens to differ in style from these guidelines (e.g. private members are named `_member`
-   rather than `member`), change it to the guidline style.
+   rather than `member`), change it to the guideline style.
 10. We only use `var` when it's obvious what the variable type is (i.e. `var stream = new FileStream(...)` not `var stream = OpenStandardInput()`).
 11. We use language keywords instead of BCL types (i.e. `int, string, float` instead of `Int32, String, Single`, etc) for both type references as well as method calls (i.e. `int.Parse` instead of `Int32.Parse`).
 12. We use PascalCasing to name all our constant local variables and fields.

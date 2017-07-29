@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 		//  Limits the impact of low-fee transaction floods. 
 		const int INVENTORY_BROADCAST_MAX = 7*INVENTORY_BROADCAST_INTERVAL;
 
-		private readonly MempoolValidator validator;
+		private readonly IMempoolValidator validator;
 		private readonly MempoolManager manager;
 		private readonly MempoolOrphans orphans;
 		private readonly IConnectionManager connectionManager;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 		private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
 	    public MempoolBehavior(
-	        MempoolValidator validator,
+	        IMempoolValidator validator,
 	        MempoolManager manager,
 	        MempoolOrphans orphans,
 	        IConnectionManager connectionManager,
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 	    }
 
         public MempoolBehavior(
-            MempoolValidator validator, 
+            IMempoolValidator validator, 
             MempoolManager manager, 
             MempoolOrphans orphans, 
 			IConnectionManager connectionManager, 
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
 			bool blocksOnly = !this.manager.NodeArgs.Mempool.RelayTxes;
 			// Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
-			if (node.Behavior<ConnectionManagerBehavior>().Whitelisted && this.manager.NodeArgs.Mempool.Whitelistrelay)
+			if (node.Behavior<ConnectionManagerBehavior>().Whitelisted && this.manager.NodeArgs.Mempool.WhiteListRelay)
 				blocksOnly = false;
 
 			//uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
