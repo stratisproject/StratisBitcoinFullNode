@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var session = new DBreezeSingleThreadSession("session", dir))
             {
-                session.Do(() =>
+                session.Execute(() =>
                 {
                     var toSave = tip;
                     List<ChainedBlock> blocks = new List<ChainedBlock>();
