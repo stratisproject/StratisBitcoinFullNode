@@ -17,7 +17,6 @@ using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests

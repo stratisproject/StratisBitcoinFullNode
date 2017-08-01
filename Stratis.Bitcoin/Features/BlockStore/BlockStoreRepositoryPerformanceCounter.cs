@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading;
-using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.Configuration.Logging;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -196,16 +196,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			StringBuilder builder = new StringBuilder();
 
 			builder.AppendLine("====BlockStore Repository Stats(%)====");
-			builder.AppendLine("Hit Count:".PadRight(LogsExtension.ColumnLength) + this.TotalRepositoryHitCount);
-			builder.AppendLine("Miss Count:".PadRight(LogsExtension.ColumnLength) + this.TotalRepositoryMissCount);
-			builder.AppendLine("Delete Count:".PadRight(LogsExtension.ColumnLength) + this.TotalRepositoryDeleteCount);
-			builder.AppendLine("Insert Count:".PadRight(LogsExtension.ColumnLength) + this.TotalRepositoryInsertCount);
+			builder.AppendLine("Hit Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryHitCount);
+			builder.AppendLine("Miss Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryMissCount);
+			builder.AppendLine("Delete Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryDeleteCount);
+			builder.AppendLine("Insert Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryInsertCount);
 
 			var total = this.TotalRepositoryMissCount + this.TotalRepositoryHitCount;
 			if (this.TotalRepositoryHitCount > 0 || this.TotalRepositoryMissCount > 0)
 			{
-				builder.AppendLine("Hit:".PadRight(LogsExtension.ColumnLength) + ((decimal)this.TotalRepositoryHitCount * 100m / total).ToString("0.00") + " %");
-				builder.AppendLine("Miss:".PadRight(LogsExtension.ColumnLength) + ((decimal)this.TotalRepositoryMissCount * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Hit:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalRepositoryHitCount * 100m / total).ToString("0.00") + " %");
+				builder.AppendLine("Miss:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalRepositoryMissCount * 100m / total).ToString("0.00") + " %");
 			}
 			builder.AppendLine("=================================");
 
