@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ChainState chainState, 
             ConcurrentChain chain, 
             IConnectionManager connectionManager,
-            ILogger logger)
+            ILoggerFactory loggerFactory)
         {
             stack = new CoinViewStack(coinView);
             this.cache = stack.Find<CachedCoinView>();
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainState = chainState;
             this.chain = chain;
             this.connectionManager = connectionManager;
-            this.logger = logger;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public bool CanLog

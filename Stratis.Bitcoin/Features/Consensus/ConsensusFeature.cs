@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 			{
 				var stack = new CoinViewStack(this.coinView);
 				var cache = stack.Find<CachedCoinView>();
-				var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager, this.logger);
+				var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager, this.loggerFactory);
 			    var cancellationToken = this.nodeLifetime.ApplicationStopping;
 
 				ChainedBlock lastTip = this.consensusLoop.Tip;
