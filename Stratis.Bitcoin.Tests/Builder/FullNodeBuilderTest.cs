@@ -16,7 +16,6 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder

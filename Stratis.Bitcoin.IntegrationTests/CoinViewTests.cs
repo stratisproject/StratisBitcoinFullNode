@@ -22,7 +22,6 @@ using Stratis.Bitcoin.Utilities;
 using NBitcoin.RPC;
 using System.Net;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;

@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Common;
 using Stratis.Bitcoin.Common.Hosting;
-using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.Utilities
 {
