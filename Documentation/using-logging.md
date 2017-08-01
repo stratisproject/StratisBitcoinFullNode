@@ -1,6 +1,6 @@
-# Using NLog
+# Using Logging
 
-We've migrated to NLog, but how do you use it now to create logs in the code? There are two things that you need to understand - configuration of logging and logging itself. Starting with the latter, that is the simple part.
+We are using NLog. There are two things that you need to understand - configuration of logging and logging itself. Starting with the latter, that is the simple part.
 
 ## Adding Logging Code
 
@@ -45,8 +45,8 @@ logger = loggerFactory.CreateLogger(typeof(YourClassName).FullName);
 
 ### Using Loggers
 
-Both types of loggers are used in a same way and we are using `Microsoft.Extensions.Logging` and `ILogger` interface, so if you knew how to log before migration to NLog, 
-there is no change for you - use `LogTrace`, `LogDebug`, `LogInformation`, `LogWarning`, `LogError`, and `LogCritical` methods on your logger:
+Both types of loggers are used in a same way via `Microsoft.Extensions.Logging` and `ILogger` interface.
+Use `LogTrace`, `LogDebug`, `LogInformation`, `LogWarning`, `LogError`, and `LogCritical` methods on your logger:
 
 ```
 // Instance logger on trace level:
