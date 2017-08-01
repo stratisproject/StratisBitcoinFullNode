@@ -12,7 +12,7 @@ using NLog.Config;
 using NLog.Targets;
 using System.Text;
 
-namespace Stratis.Bitcoin.Logging
+namespace Stratis.Bitcoin.Configuration.Logging
 {
     /// <summary>
     /// Integration of NLog with Microsoft.Extensions.Logging interfaces.

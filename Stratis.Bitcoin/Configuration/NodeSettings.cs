@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Logging;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 using NLog.Extensions.Logging;
