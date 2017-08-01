@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
     /// <summary>
     /// Integration of NLog with Microsoft.Extensions.Logging interfaces.
     /// </summary>
-    public static class LogsExtension
+    public static class LoggingConfiguration
     {
         /// <summary>Width of a column for pretty console/log outputs.</summary>
         public const int ColumnLength = 16;
@@ -31,10 +31,10 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <summary>
         /// Initializes application logging.
         /// </summary>
-        static LogsExtension()
+        static LoggingConfiguration()
         {
             // If there is no NLog.config file, we need to initialize the configuration ourselves.
-            if (LogManager.Configuration == null) LogManager.Configuration = new LoggingConfiguration();
+            if (LogManager.Configuration == null) LogManager.Configuration = new NLog.Config.LoggingConfiguration();
 
             // Installs handler to be called when NLog's configuration file is changed on disk.
             LogManager.ConfigurationReloaded += NLogConfigurationReloaded;

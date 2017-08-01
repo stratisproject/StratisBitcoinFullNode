@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Connection
 																	.FirstOrDefault(b => b.Puller.GetType() == typeof(LookaheadBlockPuller));
 						PerformanceSnapshot diff = newSnapshot - lastSnapshot;
 						diffTotal = new PerformanceSnapshot(diff.TotalReadenBytes + diffTotal.TotalReadenBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken };
-						builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(LogsExtension.ColumnLength * 2) + "R:" + ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diff.WrittenBytesPerSecond));
+						builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diff.WrittenBytesPerSecond));
 						if (behavior != null)
 						{
 							builder.Append("\tQualityScore: " + behavior.QualityScore + (behavior.QualityScore < 10 ? "\t" : "") + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Connection
 					this.downloads.AddOrReplace(node, newSnapshot);
 				}
 				builder.AppendLine("=================");
-				builder.AppendLine("Total".PadRight(LogsExtension.ColumnLength * 2) + "R:" + ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diffTotal.WrittenBytesPerSecond));
+				builder.AppendLine("Total".PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diffTotal.WrittenBytesPerSecond));
 				builder.AppendLine("==========================");
 
 				//TODO: Hack, we should just clean nodes that are not connect anymore
@@ -202,9 +202,9 @@ namespace Stratis.Bitcoin.Connection
 				ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
 				ChainHeadersBehavior chainHeadersBehavior = node.Behavior<ChainHeadersBehavior>();
 				builder.AppendLine(
-					"Node:" + (node.RemoteInfo() + ", ").PadRight(LogsExtension.ColumnLength + 15) +
-					(" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LogsExtension.ColumnLength + 7) +
-					(" agent " + node.PeerVersion.UserAgent + ", ").PadRight(LogsExtension.ColumnLength + 2) +
+					"Node:" + (node.RemoteInfo() + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
+					(" connected" + " (" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + "),").PadRight(LoggingConfiguration.ColumnLength + 7) +
+					(" agent " + node.PeerVersion.UserAgent + ", ").PadRight(LoggingConfiguration.ColumnLength + 2) +
 					" height=" + chainHeadersBehavior.PendingTip.Height);
 			}
 			return builder.ToString();
