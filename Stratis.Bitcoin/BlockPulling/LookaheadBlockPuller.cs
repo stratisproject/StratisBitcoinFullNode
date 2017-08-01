@@ -258,8 +258,10 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>
         /// Calculates a new value for this.ActualLookahead to keep it within reasonable range.
-        /// <para>This ensures that the puller is requesting enough new blocks quickly enough to 
-        /// keep with the demand, but at the same time not too quickly.</para>
+        /// <para>
+        /// This ensures that the puller is requesting enough new blocks quickly enough to 
+        /// keep with the demand, but at the same time not too quickly.
+        /// </para>
         /// </summary>
         private void CalculateLookahead()
         {
