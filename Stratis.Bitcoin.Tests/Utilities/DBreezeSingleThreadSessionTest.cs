@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoRunsSameThreadAsSessionCreated")))
             {
-                session.Do(() =>
+                session.Execute(() =>
                 {
                     Assert.Equal("TestThread", Thread.CurrentThread.Name);
                 });
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoWithTypeRunsSameThreadAsSessionCreated")))
             {
-                var thread = session.Do<string>(() =>
+                var thread = session.Execute<string>(() =>
                 {
                     return Thread.CurrentThread.Name;
                 });
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoStartsTransaction")))
             {
-                session.Do(() =>
+                session.Execute(() =>
                 {
                     Assert.NotNull(session.Transaction);
                 });
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             using (var session = new DBreezeSingleThreadSession("TestThread", dir))
             {
-                session.Do(() =>
+                session.Execute(() =>
                 {
                     var data2 = new uint256[data.Length];
                     var transaction = session.Transaction;
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoWithTypePerformsTask")))
             {
-                var task = session.Do<string>(() =>
+                var task = session.Execute<string>(() =>
                 {
                     return "TaskResult";
 
