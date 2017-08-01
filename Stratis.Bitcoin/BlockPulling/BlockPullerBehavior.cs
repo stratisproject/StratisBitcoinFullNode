@@ -36,7 +36,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Reference to the parent block puller.</summary>
         private readonly BlockPuller puller;
-
         /// <summary>Reference to the parent block puller.</summary>
         public BlockPuller Puller => this.puller;
 
@@ -51,6 +50,14 @@ namespace Stratis.Bitcoin.BlockPulling
                 return this.puller.GetPendingDownloadsCount(this);
             }
         }
+
+        /// <summary>
+        /// Evaluation of the past experience with this node.
+        /// The higher the score, the better experience we have had with it.
+        /// </summary>
+        /// <seealso cref="MaxQualityScore"/>
+        /// <seealso cref="MinQualityScore"/>
+        public int QualityScore { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the object with parent block puller.
@@ -70,18 +77,6 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             return new BlockPullerBehavior(this.puller, this.loggerFactory);
         }
-
-        /// <summary>
-        /// Evaluation of the past experience with this node.
-        /// The higher the score, the better experience we have had with it.
-        /// </summary>
-        /// <seealso cref="MaxQualityScore"/>
-        /// <seealso cref="MinQualityScore"/>
-        public int QualityScore
-        {
-            get; set;
-        }
-
 
         /// <summary>
         /// Event handler that is called when the attached node receives a network message.

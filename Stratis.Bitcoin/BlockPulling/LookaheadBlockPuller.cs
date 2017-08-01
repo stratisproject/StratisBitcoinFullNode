@@ -112,18 +112,10 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>Lower limit for ActualLookahead.</summary>
-        public int MinimumLookahead
-        {
-            get;
-            set;
-        }
+        public int MinimumLookahead { get; set; }
 
         /// <summary>Upper limit for ActualLookahead.</summary>
-        public int MaximumLookahead
-        {
-            get;
-            set;
-        }
+        public int MaximumLookahead { get; set; }
 
         /// <summary>Number of blocks the puller wants to be downloading at once.</summary>
         private int actualLookahead;
@@ -141,11 +133,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>Maximum number of bytes used by unconsumed blocks that the puller is willing to maintain.</summary>
-        public int MaxBufferedSize
-        {
-            get;
-            set;
-        }
+        public int MaxBufferedSize { get; set; }
         
         /// <summary>Current number of bytes that unconsumed blocks are occupying.</summary>
         private long currentSize;
@@ -160,10 +148,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Points to a block that was consumed last time. The next block returned by the puller to the consumer will be at location + 1.</summary>
         private ChainedBlock location;
         /// <summary>Points to a block that was consumed last time. The next block returned by the puller to the consumer will be at location + 1.</summary>
-        public ChainedBlock Location
-        {
-            get { return this.location; }
-        }
+        public ChainedBlock Location { get { return this.location; } }
 
         /// <summary>Event that signals when a downloaded block is consumed.</summary>
         private AutoResetEvent consumed = new AutoResetEvent(false);
@@ -173,13 +158,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Identifies the last block that is currently being requested/downloaded.</summary>
         private ChainedBlock lookaheadLocation;
         /// <summary>Identifies the last block that is currently being requested/downloaded.</summary>
-        public ChainedBlock LookaheadLocation
-        {
-            get
-            {
-                return this.lookaheadLocation;
-            }
-        }
+        public ChainedBlock LookaheadLocation { get { return this.lookaheadLocation; } }
 
         /// <summary>Median of a list of past downloadedCounts values. This is used just for logging purposes.</summary>
         public decimal MedianDownloadCount
@@ -196,18 +175,10 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>If true, the puller is a bottleneck.</summary>
-        public bool IsStalling
-        {
-            get;
-            internal set;
-        }
+        public bool IsStalling { get; internal set; }
 
         /// <summary>If true, the puller consumer is a bottleneck.</summary>
-        public bool IsFull
-        {
-            get;
-            internal set;
-        }
+        public bool IsFull { get; internal set; }
 
         /// <inheritdoc />
         public void SetLocation(ChainedBlock tip)
