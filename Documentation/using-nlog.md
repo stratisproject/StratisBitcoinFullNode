@@ -9,7 +9,7 @@ You will use a class logger or an instance logger (or even both in the same clas
 
 ### Creating Instance Logger
 
-You always need to pass `ILoggerFactory` to the class constructor and then you can create an instance logger as follows:
+You always need to pass `ILoggerFactory` to the class constructor (or get it from DI) and then you can create an instance logger as follows:
 
 ```
 /// <summary>Instance logger.</summary>
