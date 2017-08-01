@@ -1,6 +1,6 @@
 # Using NLog
 
-We've migrated to NLog, but how do you use it now to create logs in the code? There are two things that you need to understand - configuration of the logging and logging itself. Starting with the latter, that is the simple part.
+We've migrated to NLog, but how do you use it now to create logs in the code? There are two things that you need to understand - configuration of logging and logging itself. Starting with the latter, that is the simple part.
 
 ## Adding Logging Code
 
@@ -19,7 +19,7 @@ this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 ```
 
 And that's it! Note that you don't want to pass ILogger, always pass ILoggerFactory. It is NLog's job to filter which logs do you want to see and which you don't. 
-For more information on that, see [Logging Configuration](#logging-configuration)
+For more information on that, see [Logging Configuration](#logging-configuration) below.
 
 
 ### Creating Class Logger
@@ -64,14 +64,14 @@ logger.LogWarning("Message: {0}", message);
 NLog defines the minimum log level to be logged for every class. If you run the node with default settings, information level is the minimum log level for all classes 
 and all matching logs go to both console and the main log file. The main log file is `node.txt` under `$DATADIR/Logs` directory. This log is rotating, which means 
 that every day there is a new log file and the old one is moved to `node-YYYY-MM-DD.N.txt` using the current time stamp. This means that the log file created on 31st July 2017 
-will go to `node-2017-08-01.1.txt` (not to `node-2017-07-31.1.txt`). Logs from last 7 days are archived, which means that if there are more than 7 old log files, the oldest 
+will go to `node-2017-08-01.1.txt` (not to `node-2017-07-31.1.txt`). Logs from last 7 days are archived. If there are more than 7 old log files, the oldest one 
 will be deleted.
 
 
 ### Debug Option
 
 You can specify `-debug` command line option, which works similarly to how it works in Bitcoin Core. This enables logging of selected or all classes on trace level and this 
-setting is only for the log files, not console. To enable trace level for all classes, you use `-debug=1`. If you want to enable trace level just for some classes, you use `-debug=pattern1,pattern2,...`. 
+setting is only for the main log file, not the console. To enable trace level for all classes, you use `-debug=1`. If you want to enable trace level just for some classes, you use `-debug=pattern1,pattern2,...`. 
 There are several shortcuts preset for most common components. For example `rpc` is a shortcut pattern for `Stratis.Bitcoin.Features.RPC.*`. This means setting `-debug=rpc` is 
 the same as setting `-debug=Stratis.Bitcoin.Features.RPC.*`, which means that all classes under `Stratis.Bitcoin.Features.RPC` namespaces will log on trace level. Similarly, 
 you can use `consensus` as a shortcut for `Stratis.Bitcoin.Features.Consensus.*`. The full list of shortcuts is available in `Stratis.Bitcoin.Logging.LogsExtension.cs`. 
@@ -103,15 +103,16 @@ Here is the very basic `NLog.config` configuration file that you should start wi
 ```
 
 This will create a separated `debug.txt` log file inside `$DATADIR/Logs` directory and will set all classes to log on trace level to this file.
-This file and its rules are completely separated from logging to console and `node.txt`. So `node.txt` can be understand as a production or users' log file,
+This file and its rules are completely separated from logging to console and `node.txt`. So `node.txt` can be understood as a production or users' log file,
 and `debug.txt` is developers' log file. 
 
-`autoReload="true"` setting will make it possible to modify the contents of `NLog.config` without the need to stop the node's process. When you save the changes of the config file, 
-the rules will be automatically applied to the logging configuration.
+`autoReload="true"` setting makes it possible to modify the contents of `NLog.config` without the need to stop the node's process. When you save the changes of the config file, 
+the rules will be automatically applied to the logging configuration inside the running application.
 
 The `null` rule is there to prevent logs to be created before logging is initialized in `NodeSettings` class. This is to prevent creating `debug.txt` outside `$DATADIR` folder. 
 If you need to see logs before the logging is initialized, you can delete this rule from `NLog.config` and you will see the logs in `debug.txt` created in the working directory 
-of the application (but only if the application has write access to that folder).
+of the application (but only if the application has write access to that folder). However, as the logging gets initialized, a new `debug.txt` will be created inside `$DATADIR` folder,
+so you will have 2 separated `debug.txt` files - the first one will contain logs from before the initialization and the second one will contain all logs after the initialization.
 
 You can create whatever rules you want in the config file, just note that the shortcuts that were available for debug option do not work here, so a rule like this
 
@@ -119,7 +120,7 @@ You can create whatever rules you want in the config file, just note that the sh
     <logger name="rpc" minlevel="Trace" writeTo="debugFile" />
 ```
 
-will not work. You will need to define the rule as follows:
+will not work. In `NLog.config`, you need to define this rule as follows:
 
 ```
     <logger name="Stratis.Bitcoin.Features.RPC.*" minlevel="Trace" writeTo="debugFile" />
