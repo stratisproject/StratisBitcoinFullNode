@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             // The BlockRepository has 15 blocks stored
             using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_Reorganise")))
             {
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter();
 
                 var chain = new ConcurrentChain(Network.Main);
 
@@ -34,9 +34,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var block14 = new ChainedBlock(blocks[14].Header, blocks[14].Header.GetHash(), block13);
 
                 BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\LoopTest_Reorganise");
-                blockStoreLoop.StoredBlock = block14;
+                blockStoreLoop.SetStoreTip(block14);
 
-                Assert.Equal(blockStoreLoop.StoredBlock.Header.GetHash(), block14.Header.GetHash());
+                Assert.Equal(blockStoreLoop.StoreTip.Header.GetHash(), block14.Header.GetHash());
                 Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block14.Header.GetHash());
 
                 //Reorganise (delete) blocks from the block repository that is not found
@@ -44,10 +44,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var reorganiseStep = new ReorganiseBlockRepositoryStep(blockStoreLoop);
                 reorganiseStep.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
-                Assert.Equal(blockStoreLoop.StoredBlock.Header.GetHash(), block10.Previous.Header.GetHash());
+                Assert.Equal(blockStoreLoop.StoreTip.Header.GetHash(), block10.Previous.Header.GetHash());
                 Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());
-
-                chain = null;
             }
         }
     }
