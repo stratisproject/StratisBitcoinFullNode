@@ -4,7 +4,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;

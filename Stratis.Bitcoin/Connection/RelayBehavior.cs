@@ -1,8 +1,6 @@
 using System;
-using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.Connection
 {
