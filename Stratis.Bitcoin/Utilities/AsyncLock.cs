@@ -14,10 +14,6 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     public interface IAsyncLock
     {
-        /// <summary>Application defined source of cancellation.</summary>
-        /// <remarks>TODO: Why is this public? No one outside seems to be using this.</remarks>
-        CancellationTokenSource Cancellation { get; }
-
         /// <summary>
         /// Queues concurrent work to the concurrent scheduler.
         /// Delegates calling this method will be done in parallel on the default scheduler.
@@ -82,8 +78,7 @@ namespace Stratis.Bitcoin.Utilities
     public class AsyncLock : IAsyncLock
     {
         /// <inheritdoc />
-        /// <remarks>TODO: Why is this public? No one outside seems to be using this.</remarks>
-        public CancellationTokenSource Cancellation { get; private set; }
+        private CancellationTokenSource cancellation;
 
         /// <summary>Task factory that runs tasks using the concurrent scheduler. Serves as a reader lock.</summary>
         private readonly TaskFactory concurrentFactory;
@@ -98,7 +93,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="maxItemsPerTask">Number of exclusive tasks to process before checking concurrent tasks.</param>
         public AsyncLock(CancellationTokenSource cancellation = null, int maxItemsPerTask = 5)
         {
-            this.Cancellation = cancellation ?? new CancellationTokenSource();
+            this.cancellation = cancellation ?? new CancellationTokenSource();
             int defaultMaxConcurrencyLevel = Environment.ProcessorCount; 
             int defaultMaxItemsPerTask = maxItemsPerTask; 
             var schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, defaultMaxConcurrencyLevel, defaultMaxItemsPerTask);
@@ -109,28 +104,28 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public Task ReadAsync(Action func)
         {
-            return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
+            return this.concurrentFactory.StartNew(func, this.cancellation.Token);
         }
 
         /// <inheritdoc />
         /// <remarks>See warning in <see cref="AsyncLock"/> remarks section.</remarks>
         public Task<T> ReadAsync<T>(Func<T> func)
         {
-            return this.concurrentFactory.StartNew(func, this.Cancellation.Token);
+            return this.concurrentFactory.StartNew(func, this.cancellation.Token);
         }
 
         /// <inheritdoc />
         /// <remarks>See warning in <see cref="AsyncLock"/> remarks section.</remarks>
         public Task WriteAsync(Action func)
         {
-            return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
+            return this.exclusiveFactory.StartNew(func, this.cancellation.Token);
         }
 
         /// <inheritdoc />
         /// <remarks>See warning in <see cref="AsyncLock"/> remarks section.</remarks>
         public Task<T> WriteAsync<T>(Func<T> func)
         {
-            return this.exclusiveFactory.StartNew(func, this.Cancellation.Token);
+            return this.exclusiveFactory.StartNew(func, this.cancellation.Token);
         }
     }
 }

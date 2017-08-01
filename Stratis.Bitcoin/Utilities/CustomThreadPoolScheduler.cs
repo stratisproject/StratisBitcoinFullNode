@@ -30,24 +30,6 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         private CancellationTokenSource cancel = new CancellationTokenSource();
 
-        /// <summary>Event that signals when no tasks are executing and there are no more tasks in the queue to be executed.</summary>
-        /// <remarks>TODO: It seems that this event is used in a broken way. First, it does not signal by default, which probably means 
-        /// that unless a first task is scheduled, it can't signal. Second, it is set in <see cref="Do"/> method if after executing 
-        /// the task there are no more tasks to execute or being executed at the moment. However, assume a case in which no one 
-        /// waits on this event. This means that after first task completes, no one resets the event and even if there later are 
-        /// many tasks being executed or in the queue, this event would still be set until someone would consume it, which would 
-        /// immediately cause the consumer to think that there is no more work to be done.
-        /// <para>
-        /// Moreover, there seem to be no synchronization over the shared resource among multiple threads, 
-        /// so race conditions are possible.
-        /// </para>
-        /// <para>
-        /// As no one is using <see cref="WaitFinished"/> anyway, I suggest to remove both, this event and the method using it 
-        /// from the code.
-        /// </para>
-        /// </remarks>
-        private AutoResetEvent finished = new AutoResetEvent(false);
-
         /// <summary>Number of scheduler threads that are currently not busy and can be used for task execution.</summary>
         private int availableThreads;
         /// <summary>Number of scheduler threads that are currently not busy and can be used for task execution.</summary>
@@ -76,7 +58,7 @@ namespace Stratis.Bitcoin.Utilities
             this.availableThreads = threadCount;
             for (int i = 0; i < threadCount; i++)
             {
-                new Thread(Do)
+                new Thread(TaskExecutorThreadProc)
                 {
                     IsBackground = true,
                     Name = name
@@ -115,7 +97,7 @@ namespace Stratis.Bitcoin.Utilities
         /// Thread procedure that consumes the tasks added to the queue and executes them.
         /// <para>There are <see cref="threadCount"/> number of threads executing this method at the same time.</para>
         /// </summary>
-        void Do()
+        void TaskExecutorThreadProc()
         {
             try
             {
@@ -124,8 +106,6 @@ namespace Stratis.Bitcoin.Utilities
                     Interlocked.Decrement(ref this.availableThreads);
                     TryExecuteTask(task);
                     Interlocked.Increment(ref this.availableThreads);
-                    if (this.RemainingTasks == 0)
-                        this.finished.Set();
                 }
             }
             catch (OperationCanceledException)
@@ -154,25 +134,6 @@ namespace Stratis.Bitcoin.Utilities
         {
             AssertNotDisposed();
             return false;
-        }
-
-        /// <summary>
-        /// Waits until all tasks are finished or the object is disposed.
-        /// </summary>
-        /// <remarks>TODO: This method relies on faulty use of <see cref="finished"/>. No one is using this method. Therefore I'd suggest to remove it from the code.</remarks>
-        public void WaitFinished()
-        {
-            AssertNotDisposed();
-            while (true)
-            {
-                if (this.disposed)
-                    return;
-
-                if (this.RemainingTasks == 0)
-                    return;
-
-                this.finished.WaitOne(1000);
-            }
         }
 
         /// <summary>

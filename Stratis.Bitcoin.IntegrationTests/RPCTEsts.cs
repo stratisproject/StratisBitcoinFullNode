@@ -54,5 +54,50 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Tests RPC getbestblockhash.
+        /// </summary>
+        [Fact]
+        public void CanGetGenesisFromRPC()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                RPCClient rpc = builder.CreateStratisNode().CreateRPCClient();
+                builder.StartAll();
+                RPCResponse response = rpc.SendCommand(RPCOperations.getblockhash, 0);
+                string actualGenesis = (string)response.Result;
+                Assert.Equal(Network.RegTest.GetGenesis().GetHash().ToString(), actualGenesis);
+                Assert.Equal(Network.RegTest.GetGenesis().GetHash(), rpc.GetBestBlockHash());
+            }
+        }
+
+        /// <summary>
+        /// Tests RPC getblockheader.
+        /// </summary>
+        [Fact]
+        public void CanGetBlockHeaderFromRPC()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode node = builder.CreateStratisNode();
+                RPCClient rpc = node.CreateRPCClient();
+                builder.StartAll();
+
+                uint256 hash = rpc.GetBlockHash(0);
+                BlockHeader expectedHeader = node.FullNode.Chain?.GetBlock(hash)?.Header;
+                BlockHeader actualHeader = rpc.GetBlockHeader(0);
+
+                // Assert block header fields match
+                Assert.Equal(expectedHeader.Version, actualHeader.Version);
+                Assert.Equal(expectedHeader.HashPrevBlock, actualHeader.HashPrevBlock);
+                Assert.Equal(expectedHeader.HashMerkleRoot, actualHeader.HashMerkleRoot);
+                Assert.Equal(expectedHeader.Time, actualHeader.Time);
+                Assert.Equal(expectedHeader.Bits, actualHeader.Bits);
+                Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
+
+                // Assert header hash matches genesis hash
+                Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
+            }
+        }
     }
 }
