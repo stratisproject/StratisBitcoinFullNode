@@ -324,8 +324,10 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             if (this.location == null)
                 throw new InvalidOperationException("SetLocation should have been called");
+
             if (this.lookaheadLocation == null && !this.Chain.Contains(this.location))
                 return;
+
             if (this.lookaheadLocation != null && !this.Chain.Contains(this.lookaheadLocation))
                 this.lookaheadLocation = null;
 
@@ -335,6 +337,7 @@ namespace Stratis.Bitcoin.BlockPulling
             ChainedBlock nextLookaheadBlock = this.Chain.GetBlock(Math.Min(lookaheadBlock.Height + this.ActualLookahead, this.Chain.Height));
             if (nextLookaheadBlock == null)
                 return;
+
             ChainedBlock fork = nextLookaheadBlock.FindFork(lookaheadBlock);
 
             this.lookaheadLocation = nextLookaheadBlock;
@@ -342,6 +345,7 @@ namespace Stratis.Bitcoin.BlockPulling
             downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - fork.Height];
             if (downloadRequests.Length == 0)
                 return;
+
             for (int i = 0; i < downloadRequests.Length; i++)
             {
                 downloadRequests[downloadRequests.Length - i - 1] = nextLookaheadBlock;
@@ -395,12 +399,6 @@ namespace Stratis.Bitcoin.BlockPulling
                     }
                     else
                     {
-                        // TODO: Race condition here - as soon as IsDownloading returns false here, 
-                        // another thread can change that (consider BlockPullerBehavior.Node_MessageReceived, 
-                        // just before the newly downloaded block is pushed, the above check for DownloadedBlocks 
-                        // will fail - block not pushed yet - but then IsDownloading here returns false), which 
-                        // will cause this thread to call AskBlocks for a block that was already downloaded. 
-                        // https://github.com/stratisproject/StratisBitcoinFullNode/issues/244
                         if (!IsDownloading(header.HashBlock))
                             AskBlocks(new ChainedBlock[] { header });
 
