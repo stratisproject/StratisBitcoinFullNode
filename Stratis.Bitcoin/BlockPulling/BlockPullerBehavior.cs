@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -57,6 +58,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <seealso cref="MaxQualityScore"/>
         /// <seealso cref="MinQualityScore"/>
+        /// <remarks>
+        /// TODO: Race conditions touching this - https://github.com/stratisproject/StratisBitcoinFullNode/issues/247
+        /// </remarks>
         public int QualityScore { get; set; }
 
         /// <summary>
@@ -93,14 +97,21 @@ namespace Stratis.Bitcoin.BlockPulling
                 block.Object.Header.CacheHashes();
                 this.QualityScore = Math.Min(BlockPuller.MaxQualityScore, this.QualityScore + 1);
 
+                foreach (Transaction tx in block.Object.Transactions)
+                    tx.CacheHashes();
+
                 uint256 blockHash = block.Object.Header.GetHash();
-                if (this.puller.DownloadTaskFinished(this, blockHash))
+                DownloadedBlock downloadedBlock = new DownloadedBlock()
                 {
-                    foreach (Transaction tx in block.Object.Transactions)
-                        tx.CacheHashes();
-                    this.puller.PushBlock((int)message.Length, block.Object, this.cancellationToken.Token);
-                    this.AssignPendingVector();
-                }
+                    Block = block.Object,
+                    Length = (int)message.Length,
+                };
+
+                if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
+                    this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
+
+                // This peer is now available for more work.
+                this.AssignPendingVector();
             });
         }
 

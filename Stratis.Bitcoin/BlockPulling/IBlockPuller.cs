@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using System.Threading;
+using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -18,12 +19,12 @@ namespace Stratis.Bitcoin.BlockPulling
         void AskBlocks(ChainedBlock[] downloadRequests);
 
         /// <summary>
-        /// Push a block to downloaded blocks with ability to cancel the operation using the cancellation token.
+        /// Inject blocks directly to the puller's list of downloaded blocks, which is used for testing.
         /// </summary>
-        /// <param name="length">Length of the serialized block in bytes.</param>
-        /// <param name="block">Block to push.</param>
-        /// <param name="token">Cancellation token to be used by derived classes that allows the caller to cancel the execution of the push operation.</param>
-        void PushBlock(int length, Block block, CancellationToken token);
+        /// <param name="blockHash">Hash of the block to inject.</param>
+        /// <param name="downloadedBlock">Desciption of the inject block as if it was downloaded.</param>
+        /// <param name="cancellationToken">Cancellation token to allow the caller to cancel the execution of the operation.</param>
+        void InjectBlock(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken);
 
         /// <summary>
         /// Check whether a specific block identified by its header hash is currently being downloaded.

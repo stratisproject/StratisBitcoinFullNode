@@ -297,22 +297,23 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <inheritdoc />
         /// <remarks>
-        /// Making this method public allows to push blocks directly to the downloader, 
-        /// which is used for testing and mining.
+        /// This method waits for the block puller to have empty space (see <see cref="MaxBufferedSize"/>)) for a new block.
+        /// This happens if the consumer is not consuming the downloaded blocks quickly enough - relative to how quickly the blocks are downloaded.
+        /// TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/277
         /// </remarks>
-        public override void PushBlock(int length, Block block, CancellationToken token)
+        public override void BlockPushed(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)
         {
-            uint256 hash = block.Header.GetHash();
-            ChainedBlock header = this.Chain.GetBlock(hash);
-            while (this.currentSize + length >= this.MaxBufferedSize && header.Height != this.location.Height + 1)
+            ChainedBlock header = this.Chain.GetBlock(blockHash);
+            // TODO: Race condition here (and also below) on this.currentSize. How about this.location.Height?
+            // https://github.com/stratisproject/StratisBitcoinFullNode/issues/277
+            while ((this.currentSize + downloadedBlock.Length >= this.MaxBufferedSize) && (header.Height != this.location.Height + 1))
             {
                 this.IsFull = true;
                 this.consumed.WaitOne(1000);
-                token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
             }
             this.IsFull = false;
-            AddDownloadedBlock(hash, new DownloadedBlock { Block = block, Length = length });
-            this.currentSize += length;
+            this.currentSize += downloadedBlock.Length;
             this.pushed.Set();
         }
 
