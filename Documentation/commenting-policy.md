@@ -46,14 +46,13 @@ if it violates a soft rule and it can be fixed easily.
 it must contain `<returns>`. The order of the tags is `<summary>`, `<param>`, `<returns>`, `<exception>`, `<remarks>`, `<example>`, `<seealso>`. *(HARD)*
    * **FORMAT** - Use `<para>`, `<see>`, `<seealso>`, `<c>`, `<code>`, `<list>` to make the comment structure better. *(SOFT)*
    * **INHERITDOC** - Use `<inheritdoc />` if the comment already exists on lower level (base class, interface, virtual/abstract method). But feel free to add additional comments if the base comment is not sufficient. *(HARD)*
- * **INLINE** - Use double slash (inline) comments for function body code, variables, and inline comments. *(HARD)*
+ * **INLINE** - Use double slash (inline) comments for function body code, variables, and inline comments. Never use inline comments for what is XML documentation prescribed. *(HARD)*
    * **USE** - Double slash comments are optional and should be used to explain complicated or counter-intuitive segments of the code. *(SOFT)*
-   * **TRIVIAL** - Do not use double slash comments for trivial constructs. *(HARD)*
- * **INTENT** - Try to describe the intent or the big picture rather than what the code does. *(SOFT)*
- * **INTERACTIONS** - Explain the interactions of the code with other parts of the system. This includes contracts and limitations that has to be respected - e.g. code protected by locks. *(SOFT)*
- * **ENUMS** - When a parameter or a return value is enum or if there are any special values, including lower and upper bounds, comment each such special value. The only exceptions are very trivial enums, such days of week, provided that there is no counterintuitive use. *(HARD)*
+   * **TRIVIAL** - Do not use double slash comments for trivial constructs. See [Fibonacci example](#fibonacci) below. *(HARD)*
+ * **BIG-PICTURE** - Try to describe the intent or the big picture rather than what the code does. Explain the interactions of the code with other parts of the system. This includes contracts and limitations that has to be respected - e.g. code protected by locks. *(SOFT)*
+ * **ENUMS** - When a parameter or a return value is an enum or if there are any special values, including lower and upper bounds, comment each such special value. The only exceptions are very trivial enums, such days of week, provided that there is no counter-intuitive use. *(HARD)*
  * **UPDATES** - Keep comments up to date when editing commented code. *(HARD)*
-   * **UNCOMMENTED** - If editing uncommented code, add comments with the change. *(SOFT)*
+   * **UNCOMMENTED** - If editing uncommented code, add comments with the change. In general, leave the code better commented that you found it, if possible. *(SOFT)*
  * **SENTENCES** - Write comments as sentences - with capital letter at the beginning and dot (question mark, exclamation mark) at the end. Omitting verbs is OK. *(SOFT)*
  * **ADD-VALUE** - Every comment should add value, even if the comment is trivial on trivial code (XML documentation comments). *(SOFT)* 
 
@@ -80,7 +79,7 @@ public static int Fib(int n)
 
     while (index++ <= n)
     {
-        // Calculates previous element + current element
+        // Calculates previous element + current element.
         element = previous + current;
         previous = current;
         current = element;
