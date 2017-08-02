@@ -27,10 +27,11 @@ namespace Stratis.Bitcoin.BlockPulling
         void InjectBlock(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Check whether a specific block identified by its header hash is currently being downloaded.
+        /// Check status of the block in the context of the puller.
         /// </summary>
         /// <param name="hash">Hash of the block header.</param>
-        /// <returns>true if the specific block is currently being downloaded, false otherwise.</returns>
-        bool IsDownloading(uint256 hash);
+        /// <param name="IsDownloading">This is set to <c>true</c> if the block with the given hash is currently being downloaded.</param>
+        /// <param name="IsReady">This is set to <c>true</c> if the block with the given hash has been downloaded and is ready to be consumed.</param>
+        void CheckBlockStatus(uint256 hash, out bool IsDownloading, out bool IsReady);
     }
 }

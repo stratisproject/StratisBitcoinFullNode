@@ -375,7 +375,13 @@ namespace Stratis.Bitcoin.BlockPulling
                 cancellationToken.ThrowIfCancellationRequested();
                 ChainedBlock header = this.Chain.GetBlock(this.location.Height + 1);
                 DownloadedBlock block;
-                if (header != null && TryRemoveDownloadedBlock(header.HashBlock, out block))
+
+                bool isDownloading = false;
+                bool isReady = false;
+                if (header != null) CheckBlockStatus(header.HashBlock, out isDownloading, out isReady);
+
+                // If block has been downloaded and is ready to be consumed, then remove it from the list of downloaded blocks and consume it.
+                if (isReady && TryRemoveDownloadedBlock(header.HashBlock, out block))
                 {
                     if (header.Previous.HashBlock != this.location.HashBlock)
                     {
@@ -390,6 +396,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
                 else
                 {
+                    // Otherwise we either have reorg.
                     if (header == null)
                     {
                         if (!this.Chain.Contains(this.location.HashBlock))
@@ -400,8 +407,8 @@ namespace Stratis.Bitcoin.BlockPulling
                     }
                     else
                     {
-                        if (!IsDownloading(header.HashBlock))
-                            AskBlocks(new ChainedBlock[] { header });
+                        // Or the block is still being downloaded or we need to ask for this block to be downloaded.
+                        if (!isDownloading) AskBlocks(new ChainedBlock[] { header });
 
                         OnStalling(header);
                         this.IsStalling = true;
