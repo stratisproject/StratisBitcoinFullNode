@@ -15,14 +15,9 @@ The main motivation is to spend time designing and writing the code and comments
 who will later read the code, try to fix bugs in it, or otherwise use it.
 
 Many people *know* that commenting the code is the right thing to do, yet they still create a lot of uncommented code.
-The list of reasons why one did not comment the code is endless, but most common reasons are:
+Regardless the reasons, not having comments makes it harder for the future reader of the code to understand it. 
 
- * coding without comments is faster and we have deadlines,
- * well written code does not need a comment (code is far better describing what code does than English),
- * we can add comments later.
-
-All these reasons and other excuses why the code is not commented make it harder for the future reader of the code 
-to understand it. Yes, it is true that you should always try to write the code as if you could not write any comment to it. 
+Yes, it is true that you should always try to write the code as if you could not write any comment to it. 
 Having a well defined [code style](./coding-style.md) helps with that. But regardless how good your code is, you still need 
 to add comments. Writing comments captures intent and this is something that raw code can not do. If the code is buggy 
 and there is no comment anywhere, how can you tell that the code is buggy? If you are not the one who wrote it and you have 
@@ -56,10 +51,10 @@ it must contain `<returns>`. The order of the tags is `<summary>`, `<param>`, `<
    * **TRIVIAL** - Do not use double slash comments for trivial constructs. *(HARD)*
  * **INTENT** - Try to describe the intent or the big picture rather than what the code does. *(SOFT)*
  * **INTERACTIONS** - Explain the interactions of the code with other parts of the system. This includes contracts and limitations that has to be respected - e.g. code protected by locks. *(SOFT)*
- * **ENUMS** - When a parameter or a return value is enum or if there are any special values, including lower and upper bounds, comment each such special value.  *(HARD)*
+ * **ENUMS** - When a parameter or a return value is enum or if there are any special values, including lower and upper bounds, comment each such special value. The only exceptions are very trivial enums, such days of week, provided that there is no counterintuitive use. *(HARD)*
  * **UPDATES** - Keep comments up to date when editing commented code. *(HARD)*
    * **UNCOMMENTED** - If editing uncommented code, add comments with the change. *(SOFT)*
- * **SENTENCES** - Try to write comments as sentences - with capital letter at the beginning and dot (question mark, exclamation mark) at the end. Omitting verbs is OK. *(SOFT)*
+ * **SENTENCES** - Write comments as sentences - with capital letter at the beginning and dot (question mark, exclamation mark) at the end. Omitting verbs is OK. *(SOFT)*
  * **ADD-VALUE** - Every comment should add value, even if the comment is trivial on trivial code (XML documentation comments). *(SOFT)* 
 
 
