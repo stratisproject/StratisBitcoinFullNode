@@ -63,7 +63,7 @@ DOs and DON'Ts
 --------------
 
 * **DO** follow our [coding style](./coding-style.md)
-* **DO** follow our [code commenting policy and guidelines](./policy-comments.md)
+* **DO** follow our [code commenting policy and guidelines](./commenting-policy.md)
 * **DO** give priority to the current style of the project or file you're changing even if it diverges from the general guidelines.
 * **DO** include tests when adding new features. When fixing bugs, start with
   adding a test that highlights how the current behavior is broken.
