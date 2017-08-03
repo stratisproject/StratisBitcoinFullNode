@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 
-namespace Breeze.Api.Controllers
+namespace Stratis.Bitcoin.Api.Controllers
 {
     [Route("api/[controller]")]
     public class NodeController : Controller

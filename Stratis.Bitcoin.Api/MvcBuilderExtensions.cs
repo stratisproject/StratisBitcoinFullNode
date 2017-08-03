@@ -3,7 +3,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Breeze.Api
+namespace Stratis.Bitcoin.Api
 {
     public static class MvcBuilderExtensions
     {

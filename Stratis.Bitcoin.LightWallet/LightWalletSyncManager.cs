@@ -8,9 +8,8 @@ using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
-using Stratis.Bitcoin.Signals;
 
-namespace Breeze.Wallet
+namespace Stratis.Bitcoin.LightWallet
 {
     public class LightWalletSyncManager : IWalletSyncManager
     {
@@ -19,7 +18,7 @@ namespace Breeze.Wallet
         private readonly BlockNotification blockNotification;
         private readonly CoinType coinType;
         private readonly ILogger logger;
-        private readonly Signals signals;
+        private readonly Signals.Signals signals;
         private ChainedBlock walletTip;
         private readonly INodeLifetime nodeLifetime;
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -32,7 +31,7 @@ namespace Breeze.Wallet
             ConcurrentChain chain, 
             Network network,
             BlockNotification blockNotification, 
-            Signals signals, 
+            Signals.Signals signals, 
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory)
         {

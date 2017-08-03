@@ -15,7 +15,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Breeze.Api": {
+    "Stratis.Bitcoin.Api": {
       "commandName": "Project",
       "launchUrl": "http://localhost:5000/api/values",
       "environmentVariables": {

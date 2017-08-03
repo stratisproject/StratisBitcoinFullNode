@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin;
 
-namespace Breeze.Api
+namespace Stratis.Bitcoin.Api
 {
     public class Program
     {

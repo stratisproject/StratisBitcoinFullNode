@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Breeze.Api.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin;
+using Stratis.Bitcoin.Api.Models;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Utilities;
 
-namespace Breeze.Api
+namespace Stratis.Bitcoin.Api
 {
     /// <summary>
     /// Provides an Api to the full node

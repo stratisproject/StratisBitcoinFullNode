@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 
-namespace Breeze.Wallet
+namespace Stratis.Bitcoin.LightWallet
 {
     public class LightWalletFeature : FullNodeFeature
     {

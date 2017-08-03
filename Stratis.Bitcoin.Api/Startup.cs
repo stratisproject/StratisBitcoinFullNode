@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Swashbuckle.AspNetCore.Swagger;
 
-namespace Breeze.Api
+namespace Stratis.Bitcoin.Api
 {
     public class Startup
     {
@@ -59,12 +59,12 @@ namespace Breeze.Api
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(setup =>
             {
-                setup.SwaggerDoc("v1", new Info { Title = "Breeze.Api", Version = "v1" });
+                setup.SwaggerDoc("v1", new Info { Title = "Stratis.Bitcoin.Api", Version = "v1" });
 
                 //Set the comments path for the swagger json and ui.
                 var basePath = PlatformServices.Default.Application.ApplicationBasePath;
-                var apiXmlPath = Path.Combine(basePath, "Breeze.Api.xml");
-                var walletXmlPath = Path.Combine(basePath, "Breeze.Wallet.xml");
+                var apiXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.Api.xml");
+                var walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
                 setup.IncludeXmlComments(apiXmlPath);
                 setup.IncludeXmlComments(walletXmlPath);
             });
@@ -86,7 +86,7 @@ namespace Breeze.Api
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Breeze.Api V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
             });
         }
     }
