@@ -37,8 +37,7 @@ before_build:
       Write-Host "[$env:configuration] STARTED dotnet restore" -foregroundcolor "magenta"
       
       # Initialize dependencies
-      git submodule init
-      git submodule update
+      git submodule update --init --recursive
 
       dotnet restore -v m
       Write-Host "[$env:configuration] FINISHED dotnet restore" -foregroundcolor "magenta"
@@ -57,11 +56,19 @@ after_build:
       if($env:configuration -eq 'Release')
       {
         Write-Host "[$env:configuration] STARTED dotnet pack" -foregroundcolor "magenta"
+        
         cd Stratis.Bitcoin
         dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
-        cd ..
-        cd Stratis.Bitcoin.Common
+        
+        cd ../Stratis.Bitcoin.Common
         dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
+
+        cd ../Stratis.Bitcoin.Api
+        dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
+
+        cd ../Stratis.Bitcoin.Features.LightWallet
+        dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
+        
         Write-Host "[$env:configuration] FINISHED dotnet pack" -foregroundcolor "magenta"
       }
 
