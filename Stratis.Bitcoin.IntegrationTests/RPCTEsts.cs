@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using NBitcoin.RPC;
-using Xunit;
+﻿using NBitcoin;
 using NBitcoin.Protocol;
+using NBitcoin.RPC;
+using System;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -55,23 +53,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
-        public void CanGetPeersInfo()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode nodeA = builder.CreateStratisNode();
-                builder.StartAll();
-                RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node node = nodeA.CreateNodeClient())
-                {
-                    node.VersionHandshake();
-                    PeerInfo[] peers = rpc.GetPeersInfo();
-                    Assert.NotEmpty(peers);
-                }
-            }
-        }
-
         /// <summary>
         /// Tests RPC getbestblockhash.
         /// </summary>
@@ -115,6 +96,26 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Assert header hash matches genesis hash
                 Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
+            }
+        }
+
+        /// <summary>
+        /// Tests RPC getpeersinfo
+        /// </summary>
+        [Fact]
+        public void CanGetPeersInfo()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode nodeA = builder.CreateStratisNode();
+                builder.StartAll();
+                RPCClient rpc = nodeA.CreateRPCClient();
+                using (Node nodeB = nodeA.CreateNodeClient())
+                {
+                    nodeB.VersionHandshake();
+                    PeerInfo[] peers = rpc.GetPeersInfo();
+                    Assert.NotEmpty(peers);
+                }
             }
         }
     }
