@@ -69,6 +69,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache, this.storeLogger);
         }
 
+        /// <summary>
+        /// 
+        /// Initialize the BlockStore
+        ///                 
+        /// If StoreTip is null, the store is out of sync.
+        /// This can happen when:
+        ///     1: The node crashed
+        ///     2: The node was not closed down properly
+        ///     
+        /// To recover we walk back the chain until a common block header is found 
+        /// and set the BlockStore's StoreTip to that
+        /// </summary>
         public async Task Initialize()
         {
             if (this.nodeArgs.Store.ReIndex)
@@ -78,16 +90,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.StoreTip == null)
             {
-                // The store is out of sync, this can happen if the node crashed 
-                // or was not closed down properly and bestchain tip is not 
-                // the same as in store tip.
-                // To recover we walk back the chain till a common block header is found and set the block store tip to that
-
                 var blockStoreResetList = new List<uint256>();
                 Block resetBlock = await this.BlockRepository.GetAsync(this.BlockRepository.BlockHash);
                 uint256 resetBlockHash = resetBlock.GetHash();
 
-                // Walk back the chain and find the common block
                 while (this.Chain.GetBlock(resetBlockHash) == null)
                 {
                     blockStoreResetList.Add(resetBlockHash);
@@ -195,6 +201,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         internal void SetStoreTip(ChainedBlock nextChainedBlock)
         {
+            Guard.NotNull(nextChainedBlock, "nextChainedBlock");
+
             this.StoreTip = nextChainedBlock;
             this.ChainState.HighestPersistedBlock = nextChainedBlock;
         }

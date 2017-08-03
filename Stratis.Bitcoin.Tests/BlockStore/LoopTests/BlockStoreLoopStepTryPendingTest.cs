@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             // The repository has 5 blocks stored
             using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_Pending")))
             {
-                blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter();
+                blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 var chain = new ConcurrentChain(Network.Main);
 
