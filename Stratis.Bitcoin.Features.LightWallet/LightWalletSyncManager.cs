@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 
-namespace Stratis.Bitcoin.LightWallet
+namespace Stratis.Bitcoin.Features.LightWallet
 {
     public class LightWalletSyncManager : IWalletSyncManager
     {

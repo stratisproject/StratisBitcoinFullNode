@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Stratis.Bitcoin.Api\Stratis.Bitcoin.Api.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.LightWallet\Stratis.Bitcoin.LightWallet.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.LightWallet\Stratis.Bitcoin.Features.LightWallet.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 

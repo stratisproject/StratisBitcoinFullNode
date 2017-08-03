@@ -34,7 +34,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Api", "Stra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Api.Tests", "Stratis.Bitcoin.Api.Tests\Stratis.Bitcoin.Api.Tests.csproj", "{E538B76A-513F-46D5-9F14-E35E79B484CA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.LightWallet", "Stratis.Bitcoin.LightWallet\Stratis.Bitcoin.LightWallet.csproj", "{B03C69FA-F8AE-4037-B241-821DD00BC0E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.LightWallet", "Stratis.Bitcoin.Features.LightWallet\Stratis.Bitcoin.Features.LightWallet.csproj", "{B03C69FA-F8AE-4037-B241-821DD00BC0E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

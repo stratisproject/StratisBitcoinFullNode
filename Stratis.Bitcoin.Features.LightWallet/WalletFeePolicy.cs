@@ -3,7 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 
-namespace Stratis.Bitcoin.LightWallet
+namespace Stratis.Bitcoin.Features.LightWallet
 {
 
     public class LightWalletFeePolicy : IWalletFeePolicy

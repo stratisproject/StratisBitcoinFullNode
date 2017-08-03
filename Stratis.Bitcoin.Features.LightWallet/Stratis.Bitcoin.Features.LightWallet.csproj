@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.6</TargetFramework>
-    <AssemblyName>Stratis.Bitcoin.LightWallet</AssemblyName>
-    <PackageId>Stratis.Bitcoin.LightWallet</PackageId>
+    <AssemblyName>Stratis.Bitcoin.Features.LightWallet</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Features.LightWallet</PackageId>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
