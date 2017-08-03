@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Logging;
 
 namespace Stratis.Bitcoin.Tests.Logging
 {

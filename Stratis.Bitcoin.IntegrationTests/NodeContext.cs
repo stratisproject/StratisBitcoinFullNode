@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
-using Stratis.Bitcoin.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;

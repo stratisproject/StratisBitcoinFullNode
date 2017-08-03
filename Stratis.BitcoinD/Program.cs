@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;

@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>Path to log files.</summary>
-        /// <seealso cref="Logging.LogsExtension"/>
+        /// <seealso cref="Logging.LoggingConfiguration"/>
         public string LogPath
         {
             get;
