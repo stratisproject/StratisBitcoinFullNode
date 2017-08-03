@@ -64,6 +64,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
  
             this.session.Execute(() =>
             {
+                // Discover and add indexes to dictionary and tables to syncronize
                 foreach (var row in this.session.Transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
                 {
                     if (!row.Exists) continue;
@@ -72,10 +73,15 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     if (index.compiled != null)
                     {
                         this.Indexes.Add(name, index);
-                        if (!this.tableNames.Contains(name))
-                            this.tableNames.Add(name);
+                        if (!this.tableNames.Contains(row.Key))
+                            this.tableNames.Add(row.Key);
                     }
                 }
+
+                // Remove any index tables that are not being used (not transactional)
+                foreach (string indexTable in (this.session as IndexSession).GetIndexTables())
+                    if (!this.session.Transaction.Select<string, string>("Common", indexTable).Exists)
+                        (this.session as IndexSession).DeleteTable(indexTable);
             }).GetAwaiter().GetResult();
         }
 
@@ -89,19 +95,15 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 SetTxIndex(true);
 
                 // Clean-up any invalid indexes
-                var tasks = new List<Task>();
                 foreach (var row in this.session.Transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
                 {
                     var name = row.Key.Substring(indexTablePrefix.Length);
                     if (!this.Indexes.ContainsKey(name))
-                        tasks.Add(DropIndex(name));
+                        DropIndex(name, this.session.Transaction);
                 }
-                Task.WaitAll(tasks.ToArray());
 
-                // Remove any index tables that are not being used (not transactional)
-                foreach (string indexTable in (this.session as IndexSession).GetIndexTables())
-                    if (!this.session.Transaction.Select<string, string>("Common", indexTable).Exists)
-                        (this.session as IndexSession).DeleteTable(indexTable);
+                // One commit per execute
+                this.session.Transaction.Commit();
             }).GetAwaiter().GetResult();
 
             return Task.CompletedTask;
@@ -113,14 +115,25 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
             return this.session.Execute(() =>
             {
-                this.session.Transaction.RemoveAllKeys(IndexTableName(name), true);
-                this.session.Transaction.RemoveKey<string>("Common", IndexTableName(name));
+                DropIndex(name, this.session.Transaction);
+
                 this.session.Transaction.Commit();
-                if (!this.tableNames.Contains(name))
-                    this.tableNames.Remove(name);
 
                 return true;
             });
+        }
+
+        private void DropIndex(string name, DBreeze.Transactions.Transaction transaction)
+        {
+            var indexTableName = IndexTableName(name);
+
+            if (transaction.Select<string, string>("Common", indexTableName).Exists)
+            {
+                transaction.RemoveAllKeys(indexTableName, true);
+                transaction.RemoveKey<string>("Common", indexTableName);
+                if (this.tableNames.Contains(indexTableName))
+                    this.tableNames.Remove(indexTableName);
+            }
         }
 
         public Task<KeyValuePair<string, Index>[]> ListIndexes(Func<KeyValuePair<string, Index>, bool> include = null)

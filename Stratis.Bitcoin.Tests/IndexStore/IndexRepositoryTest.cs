@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
                 var txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
 
                 Assert.Equal(Network.Main.GetGenesis().GetHash(), blockRow.Value);
-                Assert.False(txIndexRow.Value);
+                Assert.True(txIndexRow.Value);
             }
         }
 
