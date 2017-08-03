@@ -31,20 +31,42 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         [JsonProperty(PropertyName = "services")]
         public string Services { get; internal set; }
 
-        /// <summary>        /// The Unix epoch time of the last send from this node.        /// Currently not populatated.        /// </summary>        [JsonProperty(PropertyName = "lastsend")]
+        /// <summary>
+        /// The Unix epoch time of the last send from this node.
+        /// Currently not populatated.
+        /// </summary>
+        [JsonProperty(PropertyName = "lastsend")]
         public int LastSend { get; internal set; }
 
-        /// <summary>        /// The Unix epoch time when we last received data from this node.        /// Currently not populatated.        /// </summary>        [JsonProperty(PropertyName = "lastrecv")]
+        /// <summary>
+        /// The Unix epoch time when we last received data from this node.
+        /// Currently not populatated.
+        /// </summary>
+        [JsonProperty(PropertyName = "lastrecv")]
         public int LastReceive { get; internal set; }
 
-        /// <summary>        /// The total number of bytes we’ve sent to this node.        /// Currently not populated.        /// </summary>        [JsonProperty(PropertyName = "bytessent")]
+        /// <summary>
+        /// The total number of bytes we’ve sent to this node.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "bytessent")]
         public long BytesSent { get; internal set; }
 
-        /// <summary>        /// The total number of bytes we’ve received from this node.        /// Currently not populated.        /// </summary>        [JsonProperty(PropertyName = "bytesrecv")]
+        /// <summary>
+        /// The total number of bytes we’ve received from this node.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "bytesrecv")]
         public long BytesReceived { get; internal set; }
         
-        /// <summary>        /// The connection time in seconds since epoch.        /// Currently not populated.        /// </summary>        [JsonProperty(PropertyName = "conntime")]
-        public int ConnectionTime { get; internal set; }        /// <summary>
+        /// <summary>
+        /// The connection time in seconds since epoch.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "conntime")]
+        public int ConnectionTime { get; internal set; }
+
+        /// <summary>
         /// The time offset in seconds.
         /// </summary>
         [JsonProperty(PropertyName = "timeoffset")]
@@ -74,7 +96,11 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         [JsonProperty(PropertyName = "startingheight")]
         public int StartingHeight { get; internal set; }
             
-        /// <summary>        /// The last header we have in common with this peer.        /// Currently not populated.        /// </summary>        [JsonProperty(PropertyName = "synced_headers")]
+        /// <summary>
+        /// The last header we have in common with this peer.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "synced_headers")]
         public int SynchronizedHeaders { get; internal set; }
 
         /// <summary>
@@ -82,7 +108,8 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         /// Currently not populated.
         /// </summary>
         [JsonProperty(PropertyName = "synced_blocks")]
-        public int SynchronizedBlocks { get; internal set; }
+        public int SynchronizedBlocks { get; internal set; }
+
         /// <summary>
         /// Whether the peer is whitelisted.
         /// </summary>
@@ -94,7 +121,8 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         /// Currently not populated.
         /// </summary>
         [JsonProperty(PropertyName = "inflight")]
-        public uint[] Inflight { get; internal set; }
+        public uint[] Inflight { get; internal set; }
+
         /// <summary>
         /// Number of blocks on peer.
         /// </summary>
