@@ -18,7 +18,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Logging;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.IndexStore;

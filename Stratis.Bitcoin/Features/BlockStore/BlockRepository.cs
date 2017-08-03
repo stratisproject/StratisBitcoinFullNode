@@ -63,13 +63,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             var genesis = this.network.GetGenesis();
 
-            var sync = this.session.Do(() =>
+            var sync = this.session.Execute(() =>
             {
                 this.session.Transaction.SynchronizeTables(this.tableNames.ToList());
                 this.session.Transaction.ValuesLazyLoadingIsOn = true;
             });
 
-            var hash = this.session.Do(() =>
+            var hash = this.session.Execute(() =>
             {
                 if (this.LoadBlockHash() == null)
                 {
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (!this.TxIndex)
                 return Task.FromResult(default(Transaction));
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
                 if (!blockid.Exists)
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (!this.TxIndex)
                 return Task.FromResult(default(uint256));
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
 
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // however we need to find how byte arrays are sorted in dbreeze this link can help 
             // https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 this.OnInsertBlocks(blocks);
 
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 		public Task SetTxIndex(bool txIndex)
 		{
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				this.SaveTxIndex(txIndex);
 				this.session.Transaction.Commit();
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
 
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				this.SaveBlockHash(nextBlockHash);
 				this.session.Transaction.Commit();
@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			Guard.NotNull(hash, nameof(hash));
 
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				var key = hash.ToBytes();                
                 var item = this.session.Transaction.Select<byte[], Block>("Block", key);
@@ -313,7 +313,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			Guard.NotNull(hash, nameof(hash));
 
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				var key = hash.ToBytes();
 				var item = this.session.Transaction.Select<byte[], Block>("Block", key);
@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			Guard.NotNull(newlockHash, nameof(newlockHash));
 			Guard.NotNull(hashes, nameof(hashes));
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 this.OnDeleteBlocks(this.GetBlocksFromHashes(hashes));
 			    this.SaveBlockHash(newlockHash);

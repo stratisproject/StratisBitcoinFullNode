@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Base
         {
             Guard.Assert(chain.Tip == chain.Genesis);
 
-            return this._Session.Do(() =>
+            return this._Session.Execute(() =>
             {
                 ChainedBlock tip = null;
                 bool first = true;
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Base
         {
             Guard.NotNull(chain, nameof(chain));
 
-            return this._Session.Do(() =>
+            return this._Session.Execute(() =>
             {
                 var fork = this._Locator == null ? null : chain.FindFork(this._Locator);
                 var tip = chain.Tip;

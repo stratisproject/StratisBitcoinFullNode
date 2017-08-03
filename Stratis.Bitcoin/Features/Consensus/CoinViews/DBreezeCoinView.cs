@@ -46,13 +46,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 		{
 			var genesis = this.network.GetGenesis();
 
-			var sync = this.session.Do(() =>
+			var sync = this.session.Execute(() =>
 			{
 				this.session.Transaction.SynchronizeTables("Coins", "BlockHash", "Rewind", "Stake");
                 this.session.Transaction.ValuesLazyLoadingIsOn = false;
 			});
 
-			var hash = this.session.Do(() =>
+			var hash = this.session.Execute(() =>
 			{
 				if(this.GetCurrentHash() == null)
 				{
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
 		public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
 		{
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				using(StopWatch.Instance.Start(o => this.PerformanceCounter.AddQueryTime(o)))
 				{
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
 		public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
 		{
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				RewindData rewindData = originalOutputs == null ? null : new RewindData(oldBlockHash);
 				int insertedEntities = 0;
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
 		public override Task<uint256> Rewind()
 		{
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				if(this.GetRewindIndex() == -1)
 				{
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
 		public Task PutStake(IEnumerable<StakeItem> stakeEntries)
 		{
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				this.PutStakeInternal(stakeEntries);
                 this.session.Transaction.Commit();
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
 		public Task GetStake(IEnumerable<StakeItem> blocklist)
 		{
-			return this.session.Do(() =>
+			return this.session.Execute(() =>
 			{
 				foreach (var blockStake in blocklist)
 				{
