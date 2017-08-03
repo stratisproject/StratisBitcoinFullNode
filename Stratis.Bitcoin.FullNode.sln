@@ -30,11 +30,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBitcoin", "NStratis\NBitco
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HashLib", "NStratis\Hashing\HashLib\HashLib.csproj", "{28C55453-3698-4A34-AEDF-6325E8330604}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Breeze.Api", "Stratis.Bitcoin.Api\Breeze.Api.csproj", "{271D6C48-40C0-4229-8A26-985320E29A34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Api", "Stratis.Bitcoin.Api\Stratis.Bitcoin.Api.csproj", "{271D6C48-40C0-4229-8A26-985320E29A34}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Breeze.Api.Tests", "Stratis.Bitcoin.Api.Tests\Breeze.Api.Tests.csproj", "{E538B76A-513F-46D5-9F14-E35E79B484CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Api.Tests", "Stratis.Bitcoin.Api.Tests\Stratis.Bitcoin.Api.Tests.csproj", "{E538B76A-513F-46D5-9F14-E35E79B484CA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Breeze.Wallet", "Stratis.Bitcoin.LightWallet\Breeze.Wallet.csproj", "{B03C69FA-F8AE-4037-B241-821DD00BC0E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.LightWallet", "Stratis.Bitcoin.LightWallet\Stratis.Bitcoin.LightWallet.csproj", "{B03C69FA-F8AE-4037-B241-821DD00BC0E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

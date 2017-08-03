@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stratis.Bitcoin.Api\Breeze.Api.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.LightWallet\Breeze.Wallet.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Api\Stratis.Bitcoin.Api.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.LightWallet\Stratis.Bitcoin.LightWallet.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 
