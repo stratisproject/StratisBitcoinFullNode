@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -1184,7 +1183,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             var result = walletManager.GetSpendableTransactions("myWallet", confirmations: 0);
 
-            Assert.Equal(0, result.Count);
+            Assert.Equal(1, result.Count);
+            Assert.Equal(0, result.First().Items.Count);
         }
 
         /// <summary>
@@ -1236,29 +1236,27 @@ namespace Stratis.Bitcoin.Tests.Wallet
             walletManager.Wallets.Add(wallet2);
             walletManager.Wallets.Add(wallet3);
 
-            var result = walletManager.GetSpendableTransactions("myWallet3", confirmations: 1);
+            var resultRef = walletManager.GetSpendableTransactions("myWallet3", confirmations: 1);
+            Assert.Equal(1, resultRef.Count);
 
-            Assert.Equal(4, result.Count);         
+            var result = resultRef[0].Items;
+            Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(5, info.Transactions.ElementAt(0).BlockHeight);
+            Assert.Equal(5, info.Transaction.BlockHeight);
             info = result[1];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(9, info.Transactions.ElementAt(0).BlockHeight);
+            Assert.Equal(9, info.Transaction.BlockHeight);
             info = result[2];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(6, info.Transactions.ElementAt(0).BlockHeight);
+            Assert.Equal(6, info.Transaction.BlockHeight);
             info = result[3];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(9, info.Transactions.ElementAt(0).BlockHeight);
+            Assert.Equal(9, info.Transaction.BlockHeight);
         }
 
         [Fact]
@@ -1277,33 +1275,31 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
+            var resultRef = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
+            Assert.Equal(1, resultRef.Count);
 
+            var result = resultRef[0].Items;
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("First expectation", info.Account.Name);
             Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(1, info.Transactions.ElementAt(0).BlockHeight);
-            Assert.Null(info.Transactions.ElementAt(0).SpendingDetails);
+            Assert.Equal(1, info.Transaction.BlockHeight);
+            Assert.Null(info.Transaction.SpendingDetails);
             info = result[1];
             Assert.Equal("First expectation", info.Account.Name);
             Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(9, info.Transactions.ElementAt(0).BlockHeight);
-            Assert.Null(info.Transactions.ElementAt(0).SpendingDetails);
+            Assert.Equal(9, info.Transaction.BlockHeight);
+            Assert.Null(info.Transaction.SpendingDetails);
             info = result[2];
             Assert.Equal("First expectation", info.Account.Name);
             Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(2, info.Transactions.ElementAt(0).BlockHeight);
-            Assert.Null(info.Transactions.ElementAt(0).SpendingDetails);
+            Assert.Equal(2, info.Transaction.BlockHeight);
+            Assert.Null(info.Transaction.SpendingDetails);
             info = result[3];
             Assert.Equal("First expectation", info.Account.Name);
             Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Address, info.Address.Address);
-            Assert.Equal(1, info.Transactions.Count);
-            Assert.Equal(9, info.Transactions.ElementAt(0).BlockHeight);
-            Assert.Null(info.Transactions.ElementAt(0).SpendingDetails);
+            Assert.Equal(9, info.Transaction.BlockHeight);
+            Assert.Null(info.Transaction.SpendingDetails);
         }
 
         [Fact]
@@ -1358,7 +1354,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             var result = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
 
-            Assert.Equal(0, result.Count);
+            Assert.Equal(1, result.Count);
+            Assert.Equal(0, result.First().Items.Count);
         }
 
         [Fact]

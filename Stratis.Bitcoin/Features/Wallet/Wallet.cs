@@ -376,7 +376,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return addresses.Where(t=> t.Transactions != null).Where(a => a.Transactions.Any(predicate));
         }
 
-        private IEnumerable<HdAddress> GetCombinedAddresses()
+        /// <summary>
+        /// Return both the external and internal (change) address from an account.
+        /// </summary>
+        /// <returns>All addresses that belong to this account.</returns>
+        public IEnumerable<HdAddress> GetCombinedAddresses()
         {
             IEnumerable<HdAddress> addresses = new List<HdAddress>();
             if (this.ExternalAddresses != null)
