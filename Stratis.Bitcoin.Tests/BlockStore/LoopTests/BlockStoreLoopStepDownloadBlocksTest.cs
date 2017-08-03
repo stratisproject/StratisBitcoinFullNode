@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Xunit;
+using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 {
@@ -30,11 +31,11 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\LoopTest_Download");
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
-                blockStoreLoop.BlockPuller.PushBlock(blocks[5].GetSerializedSize(), blocks[5], new CancellationToken());
-                blockStoreLoop.BlockPuller.PushBlock(blocks[6].GetSerializedSize(), blocks[6], new CancellationToken());
-                blockStoreLoop.BlockPuller.PushBlock(blocks[7].GetSerializedSize(), blocks[7], new CancellationToken());
-                blockStoreLoop.BlockPuller.PushBlock(blocks[8].GetSerializedSize(), blocks[8], new CancellationToken());
-                blockStoreLoop.BlockPuller.PushBlock(blocks[9].GetSerializedSize(), blocks[9], new CancellationToken());
+                blockStoreLoop.BlockPuller.InjectBlock(blocks[5].GetHash(), new DownloadedBlock() { Length = blocks[5].GetSerializedSize(), Block = blocks[5] }, new CancellationToken());
+                blockStoreLoop.BlockPuller.InjectBlock(blocks[6].GetHash(), new DownloadedBlock() { Length = blocks[6].GetSerializedSize(), Block = blocks[6] }, new CancellationToken());
+                blockStoreLoop.BlockPuller.InjectBlock(blocks[7].GetHash(), new DownloadedBlock() { Length = blocks[7].GetSerializedSize(), Block = blocks[7] }, new CancellationToken());
+                blockStoreLoop.BlockPuller.InjectBlock(blocks[8].GetHash(), new DownloadedBlock() { Length = blocks[8].GetSerializedSize(), Block = blocks[8] }, new CancellationToken());
+                blockStoreLoop.BlockPuller.InjectBlock(blocks[9].GetHash(), new DownloadedBlock() { Length = blocks[9].GetSerializedSize(), Block = blocks[9] }, new CancellationToken());
 
                 //Start processing blocks to download from block 5
                 ChainedBlock nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
