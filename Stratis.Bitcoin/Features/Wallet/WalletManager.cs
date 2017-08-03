@@ -327,6 +327,28 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
+        public HdAddress GetOrCreateChangeAddress(HdAccount account)
+        {
+            // get address to send the change to
+            var changeAddress = account.GetFirstUnusedChangeAddress();
+
+            // no more change addresses left. create a new one.
+            if (changeAddress == null)
+            {
+                var accountAddress = this.CreateAddressesInAccount(account, 1, isChange: true).Single();
+                changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
+
+                // persists the address to the wallet file
+                this.SaveToFile();
+
+                // adds the address to the list of tracked addresses
+                this.LoadKeysLookup();
+            }
+
+            return changeAddress;
+        }
+
+        /// <inheritdoc />
         public IEnumerable<HdAddress> GetHistory(string walletName)
         {
             Guard.NotEmpty(walletName, nameof(walletName));

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -226,5 +226,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="walletName">The name of the wallet to get.</param>
         /// <returns>A wallet or null if it doesn't exist</returns>
         Wallet GetWalletByName(string walletName);
+
+        /// <summary>
+        /// Get the a change address or create one if all change are used. 
+        /// </summary>
+        /// <param name="account">The account to create the change on.</param>
+        /// <returns>The new HD address.</returns>
+        HdAddress GetOrCreateChangeAddress(HdAccount account);
     }
 }

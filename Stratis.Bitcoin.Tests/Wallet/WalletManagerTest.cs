@@ -763,6 +763,71 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
+        public void GetOrCreateChangeAddressWithWalletHavingUnusedAddressReturnsAddress()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetOrCreateChangeAddressWithWalletHavingUnusedAddressReturnsAddress");
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("myWallet", "password");
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "myAccount",
+                InternalAddresses= new List<HdAddress>()
+                {
+                    new HdAddress() {
+                        Index = 0,
+                        Address = "myUsedAddress",
+                        Transactions = new List<TransactionData>()
+                        {
+                            new TransactionData()
+                        }
+                    },
+                    new HdAddress() {
+                        Index = 1,
+                        Address = "myUnusedAddress",
+                        Transactions = new List<TransactionData>()
+                    }
+                },
+                ExternalAddresses = null
+            });
+            walletManager.Wallets.Add(wallet);
+
+            var result = walletManager.GetOrCreateChangeAddress(walletManager.GetAccounts("myWallet").First());
+
+            Assert.Equal("myUnusedAddress", result.Address);
+        }
+
+        [Fact]
+        public void GetOrCreateChangeAddressWithWalletNotHavingUnusedAddressReturnsAddress()
+        {
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetOrCreateChangeAddressWithWalletNotHavingUnusedAddressReturnsAddress");
+            Directory.CreateDirectory(dataFolder.WalletPath);
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var wallet = GenerateBlankWallet("myWallet", "password");
+
+            var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
+            var accountExtendedPubKey = extKey.Derive(new KeyPath($"m/44'/0'/0'")).Neuter().ToString(wallet.Network);
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
+            {
+                Index = 0,
+                Name = "myAccount",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountExtendedPubKey,
+                InternalAddresses = new List<HdAddress>(),
+                ExternalAddresses = new List<HdAddress>()
+            });
+            walletManager.Wallets.Add(wallet);
+
+            var result = walletManager.GetOrCreateChangeAddress(walletManager.GetAccounts("myWallet").First());
+
+            Assert.NotNull(result.Address);
+        }
+
+
+        [Fact]
         public void GetUnusedAddressWithoutWalletHavingUnusedAddressCreatesAddressAndSavesWallet()
         {
             var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAddressWithoutWalletHavingUnusedAddressCreatesAddressAndSavesWallet");
