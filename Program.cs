@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Linq;
-using Breeze.Api;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using Breeze.Wallet;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
