@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp1.1</TargetFramework>
-    <AssemblyName>Breeze.Api.Tests</AssemblyName>
-    <PackageId>Breeze.Api.Tests</PackageId>
+    <AssemblyName>Stratis.Bitcoin.Api.Tests</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Api.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <PackageTargetFallback>$(PackageTargetFallback);netcore50</PackageTargetFallback>
     <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>

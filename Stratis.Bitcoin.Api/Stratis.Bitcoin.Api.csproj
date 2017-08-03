@@ -3,9 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <PreserveCompilationContext>true</PreserveCompilationContext>
-    <AssemblyName>Breeze.Api</AssemblyName>
+    <AssemblyName>Stratis.Bitcoin.Api</AssemblyName>
     <OutputType>Library</OutputType>
-    <PackageId>Breeze.Api</PackageId>
+    <PackageId>Stratis.Bitcoin.Api</PackageId>
     <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
     <PackageTargetFallback>$(PackageTargetFallback);dotnet5.6;portable-net45+win8</PackageTargetFallback>
     <ApplicationIcon />
@@ -14,11 +14,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>..\\Breeze.Daemon\\bin\\Debug\\netcoreapp1.0\\Breeze.Api.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>..\\Breeze.Daemon\\bin\\Release\\netcoreapp1.0\\Breeze.Api.xml</DocumentationFile>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.6</TargetFramework>
-    <AssemblyName>Breeze.Wallet</AssemblyName>
-    <PackageId>Breeze.Wallet</PackageId>
+    <AssemblyName>Stratis.Bitcoin.LightWallet</AssemblyName>
+    <PackageId>Stratis.Bitcoin.LightWallet</PackageId>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
     <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -12,11 +12,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>..\\Breeze.Daemon\\bin\\Debug\\netcoreapp1.0\\Breeze.Wallet.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>..\\Breeze.Daemon\\bin\\Release\\netcoreapp1.0\\Breeze.Wallet.xml</DocumentationFile>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

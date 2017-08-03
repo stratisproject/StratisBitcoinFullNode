@@ -65,8 +65,16 @@ namespace Stratis.Bitcoin.Api
                 var basePath = PlatformServices.Default.Application.ApplicationBasePath;
                 var apiXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.Api.xml");
                 var walletXmlPath = Path.Combine(basePath, "Stratis.Bitcoin.LightWallet.xml");
-                setup.IncludeXmlComments(apiXmlPath);
-                setup.IncludeXmlComments(walletXmlPath);
+
+                if (File.Exists(apiXmlPath))
+                {
+                    setup.IncludeXmlComments(apiXmlPath);
+                }
+
+                if (File.Exists(walletXmlPath))
+                {
+                    setup.IncludeXmlComments(walletXmlPath);
+                }
             });
         }
 
