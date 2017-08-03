@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             this.PerformanceCounter = new IndexStoreRepositoryPerformanceCounter();
             this.Indexes = new Dictionary<string, Index>();
  
-            this.session.Do(() =>
+            this.session.Execute(() =>
             {
                 foreach (var row in this.session.Transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
                 {
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
         {
             base.Initialize().GetAwaiter().GetResult();
 
-            this.session.Do(() =>
+            this.session.Execute(() =>
             {
                 // Ensure this is set so that the base code calls us to index blocks
                 SetTxIndex(true);
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
         {
             Guard.NotNull(name, nameof(name));
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 this.session.Transaction.RemoveAllKeys(IndexTableName(name), true);
                 this.session.Transaction.RemoveKey<string>("Common", IndexTableName(name));
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public Task<KeyValuePair<string, Index>[]> ListIndexes(Func<KeyValuePair<string, Index>, bool> include = null)
         {
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 return this.Indexes.Where(include).ToArray();
             });
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
         {
             Guard.NotNull(name, nameof(name));
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 if (this.Indexes.ContainsKey(name))
                     throw new IndexStoreException("The '" + name + "' index already exists");
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             Guard.Assert(this.Indexes.TryGetValue(indexName, out Index index));
             Guard.Assert(!index.Many);
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 return index.LookupMultiple(new List<byte[]> { key }).ToList()[0];
             });
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             Guard.Assert(this.Indexes.TryGetValue(indexName, out Index index));
             Guard.Assert(index.Many);
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 return index.EnumerateValues(key).ToList();
             });
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             Guard.Assert(this.Indexes.TryGetValue(indexName, out Index index));
             Guard.Assert(!index.Many);
 
-            return this.session.Do(() =>
+            return this.session.Execute(() =>
             {
                 return index.LookupMultiple(keys).ToList();
             });

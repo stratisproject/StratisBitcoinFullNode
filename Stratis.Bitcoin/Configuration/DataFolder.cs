@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Configuration
             this.AddrManFile = Path.Combine(path, "addrman.dat");
             this.ChainPath = Path.Combine(path, "chain");
             this.BlockPath = Path.Combine(path, "blocks");
+            this.IndexPath = Path.Combine(path, "index");
             this.RPCCookieFile = Path.Combine(path, ".cookie");
             this.WalletPath = Path.Combine(path);
             this.LogPath = Path.Combine(path, "Logs");
@@ -64,6 +65,13 @@ namespace Stratis.Bitcoin.Configuration
             internal set;
         }
 
+        /// <summary>Path to the folder with block repository database files.</summary>
+        /// <seealso cref="Features.IndexStore.IndexRepository.IndexRepository"/>
+        public string IndexPath
+        {
+            get;
+            internal set;
+        }
         /// <summary>File to store RPC authorization cookie.</summary>
         /// <seealso cref="Features.RPC.Startup.Configure"/>
         public string RPCCookieFile

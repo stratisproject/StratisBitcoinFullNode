@@ -237,9 +237,9 @@ namespace Stratis.Bitcoin
 
                     if (this.ChainBehaviorState.HighestIndexedBlock != null)
                     {
-                        benchLogs.AppendLine("Index.Height: ".PadRight(LogsExtension.ColumnLength + 3) +
+                        benchLogs.AppendLine("Index.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
                                              this.ChainBehaviorState.HighestIndexedBlock.Height.ToString().PadRight(8) +
-                                             " Index.Hash: ".PadRight(LogsExtension.ColumnLength + 3) +
+                                             " Index.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
                                              this.ChainBehaviorState.HighestIndexedBlock.HashBlock);
                     }
 
