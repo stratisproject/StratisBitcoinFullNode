@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;

@@ -60,9 +60,6 @@ after_build:
         cd Stratis.Bitcoin
         dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
         
-        cd ../Stratis.Bitcoin.Common
-        dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
-
         cd ../Stratis.Bitcoin.Api
         dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
 

@@ -3,7 +3,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.BlockStore;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using Stratis.Bitcoin.Utilities;
