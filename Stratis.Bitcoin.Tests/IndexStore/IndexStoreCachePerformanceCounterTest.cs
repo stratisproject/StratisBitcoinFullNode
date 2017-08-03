@@ -5,7 +5,7 @@ using System.Threading;
 using Stratis.Bitcoin.Features.IndexStore;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.BlockStore
+namespace Stratis.Bitcoin.Tests.IndexStore
 {
     public class IndexStoreCachePerformanceCounterTest
     {
