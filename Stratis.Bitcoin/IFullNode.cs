@@ -1,6 +1,6 @@
 ﻿using System;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Common.Hosting;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
 {

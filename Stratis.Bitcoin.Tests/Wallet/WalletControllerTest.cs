@@ -3,20 +3,19 @@ using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Common.JsonErrors;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Xunit;
 using System.Collections.Generic;
 using NBitcoin.Protocol;
 using System.Security;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Tests.Logging;
 using System.Linq;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {

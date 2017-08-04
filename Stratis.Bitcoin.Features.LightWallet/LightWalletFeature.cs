@@ -8,7 +8,6 @@ using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
