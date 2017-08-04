@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin
 
 		public WalletManager WalletManager { get; set; }
 
-	    public IWalletTransactionBuilder WalletTransactionBuilder { get; set; }
+	    public IWalletTransactionHandler WalletTransactionHandler { get; set; }
 
         public IWebHost RPCHost { get; set; }
 
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
-		    this.WalletTransactionBuilder = this.Services.ServiceProvider.GetService<IWalletTransactionBuilder>();
+		    this.WalletTransactionHandler = this.Services.ServiceProvider.GetService<IWalletTransactionHandler>();
             this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");

@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     {
         private readonly IWalletManager walletManager;
 
-        private readonly IWalletTransactionBuilder walletTransactionBuilder;
+        private readonly IWalletTransactionHandler walletTransactionHandler;
 
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -37,11 +37,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
         private readonly DataFolder dataFolder;
 
-        public WalletController(IWalletManager walletManager, IWalletTransactionBuilder walletTransactionBuilder, IWalletSyncManager walletSyncManager, IConnectionManager connectionManager, Network network,
+        public WalletController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IWalletSyncManager walletSyncManager, IConnectionManager connectionManager, Network network,
             ConcurrentChain chain, DataFolder dataFolder)
         {
             this.walletManager = walletManager;
-            this.walletTransactionBuilder = walletTransactionBuilder;
+            this.walletTransactionHandler = walletTransactionHandler;
             this.walletSyncManager = walletSyncManager;
             this.connectionManager = connectionManager;
             this.network = network;
@@ -437,7 +437,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1
                 };
 
-                var transactionResult = this.walletTransactionBuilder.BuildTransaction(context);
+                var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
 
                 var model = new WalletBuildTransactionModel
                 {

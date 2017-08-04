@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
-    public interface IWalletTransactionBuilder
+    public interface IWalletTransactionHandler
     {
         /// <summary>
         /// Build a new transaction based on information from the <see cref="TransactionBuildContext"/>.
@@ -18,13 +18,13 @@ namespace Stratis.Bitcoin.Features.Wallet
     }
 
     /// <summary>
-    /// A builder that uses various parameters to build a Bitcoin transaction.
+    /// A handler that has various functionalities related to transaction operations.
     /// </summary>
     /// <remarks>
     /// This will uses the FeeEstimator and the TrasnactionBuilder.
     /// TODO: Move also the broadcast transaction to this class
     /// </remarks>
-    public class WalletTransactionBuilder : IWalletTransactionBuilder
+    public class WalletTransactionHandler : IWalletTransactionHandler
     {
         private readonly ConcurrentChain chain;
         private readonly IWalletManager walletManager;
@@ -33,7 +33,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly CoinType coinType;
         private readonly ILogger logger;
 
-        public WalletTransactionBuilder(ILoggerFactory loggerFactory, ConcurrentChain chain, IWalletManager walletManager, IWalletFeePolicy walletFeePolicy, Network network)
+        public WalletTransactionHandler(
+            ILoggerFactory loggerFactory, 
+            ConcurrentChain chain, 
+            IWalletManager walletManager, 
+            IWalletFeePolicy walletFeePolicy, 
+            Network network)
         {
             this.chain = chain;
             this.walletManager = walletManager;
@@ -257,7 +262,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     }
 
     /// <summary>
-    /// Represents recipients of a payment, used in <see cref="WalletTransactionBuilder.BuildTransaction"/> 
+    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/> 
     /// </summary>
     public class Recipient
     {
