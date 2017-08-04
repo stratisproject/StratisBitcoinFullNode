@@ -7,6 +7,8 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
+    // Disable for now as not to impact NBitcoin.
+    /*
     public class IndexStoreTests
     {
         [Fact]
@@ -83,4 +85,5 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
     }
+    */
 }
