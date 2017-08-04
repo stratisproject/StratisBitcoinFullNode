@@ -112,18 +112,10 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>Lower limit for ActualLookahead.</summary>
-        public int MinimumLookahead
-        {
-            get;
-            set;
-        }
+        public int MinimumLookahead { get; set; }
 
         /// <summary>Upper limit for ActualLookahead.</summary>
-        public int MaximumLookahead
-        {
-            get;
-            set;
-        }
+        public int MaximumLookahead { get; set; }
 
         /// <summary>Number of blocks the puller wants to be downloading at once.</summary>
         private int actualLookahead;
@@ -141,11 +133,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>Maximum number of bytes used by unconsumed blocks that the puller is willing to maintain.</summary>
-        public int MaxBufferedSize
-        {
-            get;
-            set;
-        }
+        public int MaxBufferedSize { get; set; }
         
         /// <summary>Current number of bytes that unconsumed blocks are occupying.</summary>
         private long currentSize;
@@ -160,10 +148,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Points to a block that was consumed last time. The next block returned by the puller to the consumer will be at location + 1.</summary>
         private ChainedBlock location;
         /// <summary>Points to a block that was consumed last time. The next block returned by the puller to the consumer will be at location + 1.</summary>
-        public ChainedBlock Location
-        {
-            get { return this.location; }
-        }
+        public ChainedBlock Location { get { return this.location; } }
 
         /// <summary>Event that signals when a downloaded block is consumed.</summary>
         private AutoResetEvent consumed = new AutoResetEvent(false);
@@ -173,13 +158,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Identifies the last block that is currently being requested/downloaded.</summary>
         private ChainedBlock lookaheadLocation;
         /// <summary>Identifies the last block that is currently being requested/downloaded.</summary>
-        public ChainedBlock LookaheadLocation
-        {
-            get
-            {
-                return this.lookaheadLocation;
-            }
-        }
+        public ChainedBlock LookaheadLocation { get { return this.lookaheadLocation; } }
 
         /// <summary>Median of a list of past downloadedCounts values. This is used just for logging purposes.</summary>
         public decimal MedianDownloadCount
@@ -196,18 +175,10 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>If true, the puller is a bottleneck.</summary>
-        public bool IsStalling
-        {
-            get;
-            internal set;
-        }
+        public bool IsStalling { get; internal set; }
 
         /// <summary>If true, the puller consumer is a bottleneck.</summary>
-        public bool IsFull
-        {
-            get;
-            internal set;
-        }
+        public bool IsFull { get; internal set; }
 
         /// <inheritdoc />
         public void SetLocation(ChainedBlock tip)
@@ -287,8 +258,10 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>
         /// Calculates a new value for this.ActualLookahead to keep it within reasonable range.
-        /// <para>This ensures that the puller is requesting enough new blocks quickly enough to 
-        /// keep with the demand, but at the same time not too quickly.</para>
+        /// <para>
+        /// This ensures that the puller is requesting enough new blocks quickly enough to 
+        /// keep with the demand, but at the same time not too quickly.
+        /// </para>
         /// </summary>
         private void CalculateLookahead()
         {
@@ -324,22 +297,23 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <inheritdoc />
         /// <remarks>
-        /// Making this method public allows to push blocks directly to the downloader, 
-        /// which is used for testing and mining.
+        /// This method waits for the block puller to have empty space (see <see cref="MaxBufferedSize"/>)) for a new block.
+        /// This happens if the consumer is not consuming the downloaded blocks quickly enough - relative to how quickly the blocks are downloaded.
+        /// TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/277
         /// </remarks>
-        public override void PushBlock(int length, Block block, CancellationToken token)
+        public override void BlockPushed(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)
         {
-            uint256 hash = block.Header.GetHash();
-            ChainedBlock header = this.Chain.GetBlock(hash);
-            while (this.currentSize + length >= this.MaxBufferedSize && header.Height != this.location.Height + 1)
+            ChainedBlock header = this.Chain.GetBlock(blockHash);
+            // TODO: Race condition here (and also below) on this.currentSize. How about this.location.Height?
+            // https://github.com/stratisproject/StratisBitcoinFullNode/issues/277
+            while ((this.currentSize + downloadedBlock.Length >= this.MaxBufferedSize) && (header.Height != this.location.Height + 1))
             {
                 this.IsFull = true;
                 this.consumed.WaitOne(1000);
-                token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
             }
             this.IsFull = false;
-            AddDownloadedBlock(hash, new DownloadedBlock { Block = block, Length = length });
-            this.currentSize += length;
+            this.currentSize += downloadedBlock.Length;
             this.pushed.Set();
         }
 
@@ -351,8 +325,10 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             if (this.location == null)
                 throw new InvalidOperationException("SetLocation should have been called");
+
             if (this.lookaheadLocation == null && !this.Chain.Contains(this.location))
                 return;
+
             if (this.lookaheadLocation != null && !this.Chain.Contains(this.lookaheadLocation))
                 this.lookaheadLocation = null;
 
@@ -362,6 +338,7 @@ namespace Stratis.Bitcoin.BlockPulling
             ChainedBlock nextLookaheadBlock = this.Chain.GetBlock(Math.Min(lookaheadBlock.Height + this.ActualLookahead, this.Chain.Height));
             if (nextLookaheadBlock == null)
                 return;
+
             ChainedBlock fork = nextLookaheadBlock.FindFork(lookaheadBlock);
 
             this.lookaheadLocation = nextLookaheadBlock;
@@ -369,6 +346,7 @@ namespace Stratis.Bitcoin.BlockPulling
             downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - fork.Height];
             if (downloadRequests.Length == 0)
                 return;
+
             for (int i = 0; i < downloadRequests.Length; i++)
             {
                 downloadRequests[downloadRequests.Length - i - 1] = nextLookaheadBlock;
@@ -397,7 +375,13 @@ namespace Stratis.Bitcoin.BlockPulling
                 cancellationToken.ThrowIfCancellationRequested();
                 ChainedBlock header = this.Chain.GetBlock(this.location.Height + 1);
                 DownloadedBlock block;
-                if (header != null && TryRemoveDownloadedBlock(header.HashBlock, out block))
+
+                bool isDownloading = false;
+                bool isReady = false;
+                if (header != null) CheckBlockStatus(header.HashBlock, out isDownloading, out isReady);
+
+                // If block has been downloaded and is ready to be consumed, then remove it from the list of downloaded blocks and consume it.
+                if (isReady && TryRemoveDownloadedBlock(header.HashBlock, out block))
                 {
                     if (header.Previous.HashBlock != this.location.HashBlock)
                     {
@@ -412,6 +396,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
                 else
                 {
+                    // Otherwise we either have reorg.
                     if (header == null)
                     {
                         if (!this.Chain.Contains(this.location.HashBlock))
@@ -422,14 +407,8 @@ namespace Stratis.Bitcoin.BlockPulling
                     }
                     else
                     {
-                        // TODO: Race condition here - as soon as IsDownloading returns false here, 
-                        // another thread can change that (consider BlockPullerBehavior.Node_MessageReceived, 
-                        // just before the newly downloaded block is pushed, the above check for DownloadedBlocks 
-                        // will fail - block not pushed yet - but then IsDownloading here returns false), which 
-                        // will cause this thread to call AskBlocks for a block that was already downloaded. 
-                        // https://github.com/stratisproject/StratisBitcoinFullNode/issues/244
-                        if (!IsDownloading(header.HashBlock))
-                            AskBlocks(new ChainedBlock[] { header });
+                        // Or the block is still being downloaded or we need to ask for this block to be downloaded.
+                        if (!isDownloading) AskBlocks(new ChainedBlock[] { header });
 
                         OnStalling(header);
                         this.IsStalling = true;

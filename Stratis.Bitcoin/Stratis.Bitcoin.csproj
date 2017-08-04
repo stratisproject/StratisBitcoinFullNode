@@ -43,7 +43,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Common\Stratis.Bitcoin.Common.csproj" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
@@ -55,6 +54,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;1705;IDE0008;</NoWarn>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
 </Project>

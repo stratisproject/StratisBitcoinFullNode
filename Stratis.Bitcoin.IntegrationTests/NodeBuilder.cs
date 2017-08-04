@@ -26,6 +26,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -731,9 +732,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 				blocks.Add(block);
 				if (broadcast)
 				{
-					var newChain = new ChainedBlock(block.Header, block.GetHash(), fullNode.Chain.Tip);
+                    uint256 blockHash = block.GetHash();
+                    var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
 					var oldTip = fullNode.Chain.SetTip(newChain);
-					fullNode.ConsensusLoop.Puller.PushBlock(block.GetSerializedSize(), block, CancellationToken.None);
+					fullNode.ConsensusLoop.Puller.InjectBlock(blockHash, new DownloadedBlock() { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
 
 					//try
 					//{

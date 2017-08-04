@@ -8,7 +8,6 @@ using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
