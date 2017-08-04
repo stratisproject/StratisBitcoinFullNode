@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             List<Block> blocks = CreateBlocks(10);
 
             // The repository has 5 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_DownloadBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_Download")))
             {
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks.Take(10));
 
                 // Create block store loop
-                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\LoopTest_DownloadBlocks");
+                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\LoopTest_Download");
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
                 blockStoreLoop.BlockPuller.InjectBlock(blocks[5].GetHash(), new DownloadedBlock() { Length = blocks[5].GetSerializedSize(), Block = blocks[5] }, new CancellationToken());
@@ -44,9 +44,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 step.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[9].GetHash(), blockStoreLoop.BlockRepository.BlockHash);
-                Assert.Equal(blocks[9].GetHash(), blockStoreLoop.StoredBlock.HashBlock);
-
-                chain = null;
+                Assert.Equal(blocks[9].GetHash(), blockStoreLoop.StoreTip.HashBlock);
             }
         }
     }
