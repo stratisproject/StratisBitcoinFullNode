@@ -5,8 +5,6 @@ using Stratis.Bitcoin.Tests.Logging;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Common;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;

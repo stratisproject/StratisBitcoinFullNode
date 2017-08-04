@@ -14,8 +14,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Utilities;
 using System.Reflection;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Common;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
