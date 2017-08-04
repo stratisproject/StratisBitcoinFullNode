@@ -1,9 +1,5 @@
 ﻿using Stratis.Bitcoin.Configuration;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests
 {
@@ -21,6 +17,8 @@ namespace Stratis.Bitcoin.Tests
             {
                 Directory.Delete(dir, true);
             }
+
+            Directory.CreateDirectory(dir);
 
             return dir;
         }

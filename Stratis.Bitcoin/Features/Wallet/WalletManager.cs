@@ -500,15 +500,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(walletAccountReference, nameof(walletAccountReference));
 
             var accounts = this.GetAccounts(walletAccountReference.WalletName);
-            var currentHeight = this.chain.Tip.Height;
+            var account = accounts.FirstOrDefault(n => n.Name == walletAccountReference.AccountName);
 
             // this will take all the spendable coins that belong to an account
             // and keep the reference to the HDAddress and HDAccount, this is useful
             // so later the private key can be calculated just from a given UTXO
 
             var accountReference = new UnspentAccountReference();
-            foreach (var account in accounts)
+            if (account != null)
             {
+                var currentHeight = this.chain.Tip.Height;
+
                 foreach (var address in account.GetCombinedAddresses())
                 {
                     var unspent = address.UnspentTransactions()
@@ -554,121 +556,121 @@ namespace Stratis.Bitcoin.Features.Wallet
             return addressPrivateKey;
         }
 
-        /// <inheritdoc />
-        public (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
-        {
-            Guard.NotNull(accountReference, nameof(accountReference));
-            Guard.NotEmpty(password, nameof(password));
-            Guard.NotNull(destinationScript, nameof(destinationScript));
-            Guard.NotNull(amount, nameof(amount));
+        ///// <inheritdoc />
+        //public (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        //{
+        //    Guard.NotNull(accountReference, nameof(accountReference));
+        //    Guard.NotEmpty(password, nameof(password));
+        //    Guard.NotNull(destinationScript, nameof(destinationScript));
+        //    Guard.NotNull(amount, nameof(amount));
 
-            if (amount == Money.Zero)
-            {
-                throw new WalletException($"Cannot send transaction with 0 {this.coinType}");
-            }
+        //    if (amount == Money.Zero)
+        //    {
+        //        throw new WalletException($"Cannot send transaction with 0 {this.coinType}");
+        //    }
 
-            // get the wallet and the account
-            Wallet wallet = this.GetWalletByName(accountReference.WalletName);
-            HdAccount account = this.GetAccounts(wallet).GetAccountByName(accountReference.AccountName);
+        //    // get the wallet and the account
+        //    Wallet wallet = this.GetWalletByName(accountReference.WalletName);
+        //    HdAccount account = this.GetAccounts(wallet).GetAccountByName(accountReference.AccountName);
 
-            // get a list of transactions outputs that have not been spent
-            var spendableTransactions = account.GetSpendableTransactions().ToList();
-            if (spendableTransactions.Count == 0)
-            {
-                throw new WalletException($"No spendable transactions found on account {account.Name}.");
-            }
+        //    // get a list of transactions outputs that have not been spent
+        //    var spendableTransactions = account.GetSpendableTransactions().ToList();
+        //    if (spendableTransactions.Count == 0)
+        //    {
+        //        throw new WalletException($"No spendable transactions found on account {account.Name}.");
+        //    }
 
-            // remove whats under min confirmations
-            var currentHeight = this.chain.Height;
-            spendableTransactions = spendableTransactions.Where(s => currentHeight - s.BlockHeight >= minConfirmations).ToList();
+        //    // remove whats under min confirmations
+        //    var currentHeight = this.chain.Height;
+        //    spendableTransactions = spendableTransactions.Where(s => currentHeight - s.BlockHeight >= minConfirmations).ToList();
 
-            // get total spendable balance in the account.
-            var balance = spendableTransactions.Sum(t => t.Amount);
+        //    // get total spendable balance in the account.
+        //    var balance = spendableTransactions.Sum(t => t.Amount);
 
-            // make sure we have enough funds
-            if (balance < amount)
-            {
-                throw new WalletException("Not enough funds.");
-            }
+        //    // make sure we have enough funds
+        //    if (balance < amount)
+        //    {
+        //        throw new WalletException("Not enough funds.");
+        //    }
 
-            // calculate which addresses needs to be used as well as the fee to be charged
-            var calculationResult = this.CalculateFees(spendableTransactions, amount, feeType.ToConfirmations());
+        //    // calculate which addresses needs to be used as well as the fee to be charged
+        //    var calculationResult = this.CalculateFees(spendableTransactions, amount, feeType.ToConfirmations());
 
-            // get extended private key
-            var privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
-            var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
+        //    // get extended private key
+        //    var privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
+        //    var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
 
-            var signingKeys = new HashSet<ISecret>();
-            var coins = new List<Coin>();
-            foreach (var transactionToUse in calculationResult.transactionsToUse)
-            {
-                var address = account.FindAddressesForTransaction(t => t.Id == transactionToUse.Id && t.Index == transactionToUse.Index && t.Amount > 0).Single();
-                ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
-                BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
-                signingKeys.Add(addressPrivateKey);
+        //    var signingKeys = new HashSet<ISecret>();
+        //    var coins = new List<Coin>();
+        //    foreach (var transactionToUse in calculationResult.transactionsToUse)
+        //    {
+        //        var address = account.FindAddressesForTransaction(t => t.Id == transactionToUse.Id && t.Index == transactionToUse.Index && t.Amount > 0).Single();
+        //        ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
+        //        BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
+        //        signingKeys.Add(addressPrivateKey);
 
-                coins.Add(new Coin(transactionToUse.Id, (uint)transactionToUse.Index, transactionToUse.Amount, transactionToUse.ScriptPubKey));
-            }
+        //        coins.Add(new Coin(transactionToUse.Id, (uint)transactionToUse.Index, transactionToUse.Amount, transactionToUse.ScriptPubKey));
+        //    }
 
-            // get address to send the change to
-            var changeAddress = account.GetFirstUnusedChangeAddress();
+        //    // get address to send the change to
+        //    var changeAddress = account.GetFirstUnusedChangeAddress();
 
-            // no more change addresses left. create a new one.
-            if (changeAddress == null)
-            {
-                // todo: save the wallet file?
-                var accountAddress = CreateAddressesInAccount(account, 1, isChange: true).Single();
-                changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
-            }
+        //    // no more change addresses left. create a new one.
+        //    if (changeAddress == null)
+        //    {
+        //        // todo: save the wallet file?
+        //        var accountAddress = CreateAddressesInAccount(account, 1, isChange: true).Single();
+        //        changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
+        //    }
 
-            // build transaction
-            var builder = new TransactionBuilder();
-            Transaction tx = builder
-                .AddCoins(coins)
-                .AddKeys(signingKeys.ToArray())
-                .Send(destinationScript, amount)
-                .SetChange(changeAddress.ScriptPubKey)
-                .SendFees(calculationResult.fee)
-                .BuildTransaction(true);
+        //    // build transaction
+        //    var builder = new TransactionBuilder();
+        //    Transaction tx = builder
+        //        .AddCoins(coins)
+        //        .AddKeys(signingKeys.ToArray())
+        //        .Send(destinationScript, amount)
+        //        .SetChange(changeAddress.ScriptPubKey)
+        //        .SendFees(calculationResult.fee)
+        //        .BuildTransaction(true);
 
-            if (!builder.Verify(tx))
-            {
-                throw new WalletException("Could not build transaction, please make sure you entered the correct data.");
-            }
+        //    if (!builder.Verify(tx))
+        //    {
+        //        throw new WalletException("Could not build transaction, please make sure you entered the correct data.");
+        //    }
 
-            return (tx.ToHex(), tx.GetHash(), calculationResult.fee);
-        }
+        //    return (tx.ToHex(), tx.GetHash(), calculationResult.fee);
+        //}
 
-        /// <summary>
-        /// Calculates which outputs are to be used in the transaction, as well as the fees that will be charged.
-        /// </summary>
-        /// <param name="spendableTransactions">The transactions with unspent funds.</param>
-        /// <param name="amount">The amount to be sent.</param>
-        /// <returns>The collection of transactions to be used and the fee to be charged</returns>
-        private (List<TransactionData> transactionsToUse, Money fee) CalculateFees(IEnumerable<TransactionData> spendableTransactions, Money amount, int targetConfirmations)
-        {
-            Money fee = 0;
-            List<TransactionData> transactionsToUse = new List<TransactionData>();
-            var inputCount = 0;
-            foreach (var transaction in spendableTransactions)
-            {
-                // TODO: revisit this where th entire trx is serialized to get its correct size
-                inputCount++;
-                var inputsize = 180; // estimate size of an input
-                var outputsize = 34; // estimate size of an output
-                var extra = 10; // some extra bytes
-                fee = this.walletFeePolicy.GetMinimumFee(inputCount * inputsize + outputsize * 2 + extra, targetConfirmations);
-                transactionsToUse.Add(transaction);
+        ///// <summary>
+        ///// Calculates which outputs are to be used in the transaction, as well as the fees that will be charged.
+        ///// </summary>
+        ///// <param name="spendableTransactions">The transactions with unspent funds.</param>
+        ///// <param name="amount">The amount to be sent.</param>
+        ///// <returns>The collection of transactions to be used and the fee to be charged</returns>
+        //private (List<TransactionData> transactionsToUse, Money fee) CalculateFees(IEnumerable<TransactionData> spendableTransactions, Money amount, int targetConfirmations)
+        //{
+        //    Money fee = 0;
+        //    List<TransactionData> transactionsToUse = new List<TransactionData>();
+        //    var inputCount = 0;
+        //    foreach (var transaction in spendableTransactions)
+        //    {
+        //        // TODO: revisit this where th entire trx is serialized to get its correct size
+        //        inputCount++;
+        //        var inputsize = 180; // estimate size of an input
+        //        var outputsize = 34; // estimate size of an output
+        //        var extra = 10; // some extra bytes
+        //        fee = this.walletFeePolicy.GetMinimumFee(inputCount * inputsize + outputsize * 2 + extra, targetConfirmations);
+        //        transactionsToUse.Add(transaction);
 
-                // when we have enough spendable transactions to pay the amount + fee stop searching for additional spendable transactions.
-                if (transactionsToUse.Sum(t => t.Amount) >= amount + fee)
-                {
-                    break;
-                }
-            }
+        //        // when we have enough spendable transactions to pay the amount + fee stop searching for additional spendable transactions.
+        //        if (transactionsToUse.Sum(t => t.Amount) >= amount + fee)
+        //        {
+        //            break;
+        //        }
+        //    }
 
-            return (transactionsToUse, fee);
-        }
+        //    return (transactionsToUse, fee);
+        //}
         
         /// <inheritdoc />
         public bool SendTransaction(string transactionHex)

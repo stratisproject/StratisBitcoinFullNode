@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using Stratis.Bitcoin.Connection;
-using Xunit;
-using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
+using System.Collections.Generic;
+using System.Linq;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -50,10 +47,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // send coins to the receiver
                 var sendto = stratisReceiver.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var trx = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101);
+                var trx = stratisSender.FullNode.WalletTransactionBuilder.BuildTransaction(CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // broadcast to the other node
-                stratisSender.FullNode.WalletManager.SendTransaction(trx.hex);
+                stratisSender.FullNode.WalletManager.SendTransaction(trx.ToHex());
 
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
@@ -64,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Null(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions("mywallet").SelectMany(s => s.Items).First().Transaction.BlockHeight);
 
                 // generate two new blocks do the trx is confirmed
-                stratisSender.GenerateStratis(1, new List<Transaction>(new[] {new Transaction(trx.hex)}));
+                stratisSender.GenerateStratis(1, new List<Transaction>(new[] {trx.Clone()}));
                 stratisSender.GenerateStratis(1);
 
                 // wait for block repo for block sync to work
@@ -157,14 +154,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // ====================
                 // send coins to the receiver
                 var sendto = stratisReceiver.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var transaction1 = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101);
+                var transaction1 = stratisSender.FullNode.WalletTransactionBuilder.BuildTransaction(CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // broadcast to the other node
-                stratisSender.FullNode.WalletManager.SendTransaction(transaction1.hex);
+                stratisSender.FullNode.WalletManager.SendTransaction(transaction1.ToHex());
 
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction1.transactionId, false));
+                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction1.GetHash(), false));
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.GetSpendableTransactions("mywallet").SelectMany(s => s.Items).Any());
 
                 var receivetotal = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions("mywallet").SelectMany(s => s.Items).Sum(s => s.Transaction.Amount);
@@ -172,7 +169,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Null(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions("mywallet").SelectMany(s => s.Items).First().Transaction.BlockHeight);
 
                 // generate two new blocks so the trx is confirmed
-                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { new Transaction(transaction1.hex) }));
+                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { transaction1.Clone() }));
                 var transaction1MinedHeight = currentBestHeight + 1;
                 stratisSender.GenerateStratis(1);
                 currentBestHeight = currentBestHeight + 2;
@@ -193,11 +190,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // send more coins to the wallet
                 sendto = stratisReceiver.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var transaction2 = stratisSender.FullNode.WalletManager.BuildTransaction(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 101);
-                stratisSender.FullNode.WalletManager.SendTransaction(transaction2.hex);
+                var transaction2 = stratisSender.FullNode.WalletTransactionBuilder.BuildTransaction(CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 101));
+                stratisSender.FullNode.WalletManager.SendTransaction(transaction2.ToHex());
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction2.transactionId, false));
+                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction2.GetHash(), false));
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager.GetSpendableTransactions("mywallet").SelectMany(s => s.Items).Any());
                 var newamount = stratisReceiver.FullNode.WalletManager.GetSpendableTransactions("mywallet").SelectMany(s => s.Items).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 110, newamount);
@@ -205,7 +202,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // mine more blocks so its included in the chain
               
-                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { new Transaction(transaction2.hex) }));
+                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { transaction2.Clone() }));
                 var transaction2MinedHeight = currentBestHeight + 1;
                 stratisSender.GenerateStratis(1);
                 currentBestHeight = currentBestHeight + 2;
@@ -241,7 +238,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // ReBuild Transaction 2
                 // ====================
                 // mine the transaction again
-                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { new Transaction(transaction2.hex) }));
+                stratisSender.GenerateStratis(1, new List<Transaction>(new[] { new Transaction(transaction2.ToHex()) }));
                 transaction2MinedHeight = currentBestHeight + 1;
                 stratisSender.GenerateStratis(1);
                 currentBestHeight = currentBestHeight + 2;
@@ -319,6 +316,17 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // check that store recovered to be the same as the best chain.
                 Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.WalletManager.WalletTipHash);
             }
+        }
+
+        public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
+            Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        {
+            return new TransactionBuildContext(accountReference,
+                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
+            {
+                MinConfirmations = minConfirmations,
+                FeeType = feeType
+            };
         }
     }
 }

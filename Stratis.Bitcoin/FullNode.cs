@@ -1,31 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Utilities;
-using System.Reflection;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Common;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Common.Hosting;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin
 {
 
-	public class FullNode : IFullNode
+    public class FullNode : IFullNode
 	{
 		private ILogger logger;
 		private NodeLifetime nodeLifetime;
@@ -104,7 +103,9 @@ namespace Stratis.Bitcoin
 
 		public WalletManager WalletManager { get; set; }
 
-		public IWebHost RPCHost { get; set; }
+	    public IWalletTransactionBuilder WalletTransactionBuilder { get; set; }
+
+        public IWebHost RPCHost { get; set; }
 
 		public IConnectionManager ConnectionManager { get; set; }
 
@@ -138,7 +139,8 @@ namespace Stratis.Bitcoin
 			this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
 			this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
 			this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
-		    this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
+		    this.WalletTransactionBuilder = this.Services.ServiceProvider.GetService<IWalletTransactionBuilder>();
+            this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
