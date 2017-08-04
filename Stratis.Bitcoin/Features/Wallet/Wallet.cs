@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -518,6 +518,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// The index of this scriptPubKey in the transaction it is contained.
         /// </summary>
+        /// <remarks>
+        /// This is effectively the index of the output, the position of the output in the parent transaction. 
+        /// TODO: Investigate why is this field null-able.
+        /// </remarks>
         [JsonProperty(PropertyName = "index", NullValueHandling = NullValueHandling.Ignore)]
         public int? Index { get; set; }
 
