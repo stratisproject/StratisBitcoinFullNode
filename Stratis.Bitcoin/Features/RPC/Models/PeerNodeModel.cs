@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         /// <summary>
         /// The Unix epoch time when we last received data from this node.
-        /// Currently not populatated.
+        /// Currently not populated.
         /// </summary>
         [JsonProperty(PropertyName = "lastrecv")]
         public int LastReceive { get; internal set; }
