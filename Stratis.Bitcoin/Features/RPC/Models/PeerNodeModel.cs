@@ -3,7 +3,7 @@
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
     /// <summary>
-    /// Data structure for RPC peer info nodes.
+    /// Data structure for connected peer node.
     /// </summary>
     public class PeerNodeModel
     {
@@ -31,9 +31,16 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         [JsonProperty(PropertyName = "services")]
         public string Services { get; internal set; }
 
+        /// <summary>
+        /// Whether the peer has asked us to relay transactions to it.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "relaytxes")]
+        public bool IsRelayTransactions { get; internal set; }
+
         /// <summary>
         /// The Unix epoch time of the last send from this node.
-        /// Currently not populatated.
+        /// Currently not populated.
         /// </summary>
         [JsonProperty(PropertyName = "lastsend")]
         public int LastSend { get; internal set; }
@@ -73,6 +80,27 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         public int TimeOffset { get; internal set; }
 
         /// <summary>
+        /// The ping time to the node in seconds.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "pingtime")]
+        public double PingTime { get; internal set; }
+
+        /// <summary>
+        /// The minimum observed ping time.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "minping")]
+        public double MinPing { get; internal set; }
+
+        /// <summary>
+        /// The number of seconds waiting for a ping.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "pingwait")]
+        public double PingWait { get; internal set; }
+
+        /// <summary>
         /// The protocol version number used by this node.
         /// </summary>
         [JsonProperty(PropertyName = "version")]
@@ -86,15 +114,30 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         /// <summary>
         /// Whether node is inbound or outbound connection.
+        /// Currently not populated.
         /// </summary>
         [JsonProperty(PropertyName = "inbound")]
         public bool Inbound { get; internal set; }
+
+        /// <summary>
+        /// Whether connection was due to addnode.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "addnode")]
+        public bool IsAddNode { get; internal set; }
 
         /// <summary>
         /// The starting height (block) of the peer.
         /// </summary>
         [JsonProperty(PropertyName = "startingheight")]
         public int StartingHeight { get; internal set; }
+
+        /// <summary>
+        /// The ban score for the node.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "banscore")]
+        public int BanScore { get; internal set; }
             
         /// <summary>
         /// The last header we have in common with this peer.
@@ -122,6 +165,20 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         /// </summary>
         [JsonProperty(PropertyName = "inflight")]
         public uint[] Inflight { get; internal set; }
+
+        /// <summary>
+        /// Total sent bytes aggregated by message type.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "bytessent_per_msg")]
+        public uint[] BytesSentPerMessage { get; internal set; }
+
+        /// <summary>
+        /// Total received bytes aggregated by message type.
+        /// Currently not populated.
+        /// </summary>
+        [JsonProperty(PropertyName = "bytesrecv_per_msg")]
+        public uint[] BytesReceivedPerMessage { get; internal set; }
 
         /// <summary>
         /// Number of blocks on peer.
