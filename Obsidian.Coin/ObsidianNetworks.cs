@@ -20,7 +20,7 @@ namespace Obsidian.Coin
 			NetworkBuilder builder = new NetworkBuilder();
 
 			Block mainGenesisBlock = GenesisBlock.CreateMainGenesisBlock();
-			Debug.Assert(mainGenesisBlock.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
+			
 			var odnMainConsensus = new Consensus
 			{
 				SubsidyHalvingInterval = 210000,
