@@ -1,7 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -14,20 +13,19 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         public void CanExecute_TryPending()
         {
             // Create 15 blocks
-            List<Block> blocks = CreateBlocks(15);
+            var blocks = CreateBlocks(15);
 
-            // The repository has 5 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\LoopTest_Pending")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\Pending")))
             {
+                // Push 5 blocks to the repository
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
-                var chain = new ConcurrentChain(Network.Main);
-
                 // The chain has 10 blocks appended
+                var chain = new ConcurrentChain(Network.Main);
                 AppendBlocks(chain, blocks.Take(10));
 
                 // Create block store loop
-                BlockStoreLoop blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\LoopTest_Pending");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\Pending");
 
                 // Add chained blocks 5 - 9 to PendingStorage
                 AddToPendingStorage(blockStoreLoop, blocks[5]);
@@ -37,10 +35,10 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AddToPendingStorage(blockStoreLoop, blocks[9]);
 
                 //Start processing pending blocks from block 5
-                ChainedBlock nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
+                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new ProcessPendingStorageStep(blockStoreLoop);
-                processPendingStorageStep.Execute(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[9].GetHash(), blockStoreLoop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[9].GetHash(), blockStoreLoop.StoreTip.HashBlock);
