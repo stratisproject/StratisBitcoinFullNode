@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.StratisD": {
+      "commandName": "Project",
+      "commandLineArgs": "mine=STGbXZAaRNTNmemjoDBNwfm3TwWhhyTr1s connect=40.68.27.143"
+    }
+  }
+}
