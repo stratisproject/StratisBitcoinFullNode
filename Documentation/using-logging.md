@@ -136,7 +136,7 @@ and NLog.
 #### Async Wrapper
 
 It is often useful not to use async logging during the development because if the program crashes, you might not have all logs flushed to the disk and you might miss important logs 
-related to the crash. However, if you are testing features and do not expect crash, you might want to use async wrapper to speed things up - especially if you have a lot of logs.
+related to the crash. However, if you are testing features and do not expect crashes, you might want to use async wrapper to speed things up - especially, if you have a lot of logs.
 
 Here is the basic `NLog.config` configuration file with async wrapper:
 
