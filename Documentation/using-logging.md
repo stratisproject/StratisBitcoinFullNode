@@ -158,3 +158,5 @@ Here is the basic `NLog.config` configuration file with async wrapper:
   </rules>
 </nlog>
 ```
+
+In case you are in control of the exception that crashes the program and you want to avoid losing logs by flushing manually using `NLog.LogManager.Flush()`.
