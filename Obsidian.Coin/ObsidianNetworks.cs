@@ -12,7 +12,7 @@ namespace Obsidian.Coin
 {
 	public static class ObsidianNetworks
 	{
-		public static Network RegisterMain()
+		public static Network CreateMainnet()
 		{
 			Block.BlockSignature = true; // ?
 			Transaction.TimeStamp = true; // ?
@@ -97,113 +97,53 @@ namespace Obsidian.Coin
 			return _mainnet;
 		}
 
-		public static Network RegisteTest()
+		public static Network CreateTestnet()
 		{
-			NetworkBuilder builder = new NetworkBuilder();
+			// atm, this supposed to be strictly Stratis Testnet!
 
+			Block.BlockSignature = true;
+			Transaction.TimeStamp = true;
 
-			var genesis = GenesisBlock.CreateMainGenesisBlock();
+			var consensus = Network.StratisMain.Consensus.Clone();
+			consensus.PowLimit = new Target(uint256.Parse("0000ffff00000000000000000000000000000000000000000000000000000000"));
 
-			// Mainnet
-			var odnMainConsensus = new Consensus
-			{
-				SubsidyHalvingInterval = 210000,
-				MajorityEnforceBlockUpgrade = 750,
-				MajorityRejectBlockOutdated = 950,
-				MajorityWindow = 1000,
-				BIP34Hash = null,
-				PowLimit = new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
-				PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks, 20160 minutes
-				PowTargetSpacing = TimeSpan.FromSeconds(10 * 60), // 10 minutes
-				PowAllowMinDifficultyBlocks = false,
-				PowNoRetargeting = false,
-				RuleChangeActivationThreshold = 1916, // 95% of 2016
-				MinerConfirmationWindow = 2016, // nPowTargetTimespan / nPowTargetSpacing
-				CoinbaseMaturity = 100,
-				HashGenesisBlock = new uint256("12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2"),
-				GetPoWHash = ObsidianPoWHash.GetPoWHash,
-				LitecoinWorkCalculation = false,
-				// PoS
-				LastPOWBlock = 12500,
-				ProofOfStakeLimit = new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-				ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false))
-			};
+			var pchMessageStart = new byte[4];
+			pchMessageStart[0] = 0x71;
+			pchMessageStart[1] = 0x31;
+			pchMessageStart[2] = 0x21;
+			pchMessageStart[3] = 0x11;
+			var magic = BitConverter.ToUInt32(pchMessageStart, 0); //0x5223570; 
 
-			odnMainConsensus.BIP34Hash = odnMainConsensus.HashGenesisBlock;
-			odnMainConsensus.BuriedDeployments[BuriedDeployments.BIP34] = 0;
-			odnMainConsensus.BuriedDeployments[BuriedDeployments.BIP65] = 0;
-			odnMainConsensus.BuriedDeployments[BuriedDeployments.BIP66] = 0;
-			odnMainConsensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999);
-			odnMainConsensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1462060800, 1493596800);
-			odnMainConsensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, 0);
+			var genesis = Network.StratisMain.GetGenesis().Clone();
+			genesis.Header.Time = 1493909211;
+			genesis.Header.Nonce = 2433759;
+			genesis.Header.Bits = consensus.PowLimit;
+			consensus.HashGenesisBlock = genesis.GetHash();
 
+			//assert(consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
 
-
-			_mainnet = builder.SetConsensus(odnMainConsensus)
-				.SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { 48 })
-				.SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { 50 })
-				.SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { 176 })
-				.SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { 0x04, 0x88, 0xB2, 0x1E })
-				.SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { 0x04, 0x88, 0xAD, 0xE4 })
-				.SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, Encoders.Bech32("odn"))
-				.SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, Encoders.Bech32("odn"))
-				.SetMagic(0xdbb6c0fb)
-				.SetPort(NetConfig.MainnetPort)
-				.SetRPCPort(NetConfig.TestnetPort)
-				.SetName("odn-main")
-				.AddAlias("odn-mainnet")
-				.AddAlias("obsidian-main")
-				.AddAlias("obsidian-mainnet")
-				.AddDNSSeeds(new[]
-				{
-					new DNSSeedData("obsidianseednode1.westeurope.cloudapp.azure.com", "obsidianseednode1.westeurope.cloudapp.azure.com")
-				})
-				.AddSeeds(ToSeed(pnSeed6_main))
+			var builder = new NetworkBuilder()
+				.SetName("StratisTest")
+				.SetConsensus(consensus)
+				.SetMagic(magic)
 				.SetGenesis(genesis)
-				.BuildAndRegister();
-			return Mainnet;
-			// Testnet
-			builder = new NetworkBuilder();
+				.SetPort(26178)
+				.SetRPCPort(26174)
+				.SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
+				.SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })
+				.SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (65 + 128) })
+				.SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] { 0x01, 0x42 })
+				.SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] { 0x01, 0x43 })
+				.SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
+				.SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) })
 
-			_testnet = builder.SetConsensus(new Consensus()
+
+				.AddDNSSeeds(new DNSSeedData[]
 				{
-					SubsidyHalvingInterval = 840000,
-					MajorityEnforceBlockUpgrade = 51,
-					MajorityRejectBlockOutdated = 75,
-					MajorityWindow = 1000,
-					PowLimit = new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
-					PowTargetTimespan = TimeSpan.FromSeconds(3.5 * 24 * 60 * 60),
-					PowTargetSpacing = TimeSpan.FromSeconds(2.5 * 60),
-					PowAllowMinDifficultyBlocks = true,
-					PowNoRetargeting = false,
-					RuleChangeActivationThreshold = 1512,
-					MinerConfirmationWindow = 2016,
-					CoinbaseMaturity = 100,
-					HashGenesisBlock = new uint256("f5ae71e26c74beacc88382716aced69cddf3dffff24f384e1808905e0188f68f"),
-					GetPoWHash = ObsidianPoWHash.GetPoWHash,
-					LitecoinWorkCalculation = true
-				})
-				.SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { 111 })
-				.SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { 58 })
-				.SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { 239 })
-				.SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { 0x04, 0x35, 0x87, 0xCF })
-				.SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { 0x04, 0x35, 0x83, 0x94 })
-				.SetBech32(Bech32Type.WITNESS_PUBKEY_ADDRESS, Encoders.Bech32("todn"))
-				.SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, Encoders.Bech32("todn"))
-				.SetMagic(0xf1c8d2fd)
-				.SetPort(NetConfig.TestnetPort)
-				.SetRPCPort(NetConfig.TestnetRpcPort)
-				.SetName("odn-test")
-				.AddAlias("odn-testnet")
-				.AddAlias("obsidian-test")
-				.AddAlias("obsidian-testnet")
-				.AddDNSSeeds(new[]
-				{
-					new DNSSeedData("obsidianseednode1.westeurope.cloudapp.azure.com", "obsidianseednode1.westeurope.cloudapp.azure.com")
-				})
-				.AddSeeds(ToSeed(pnSeed6_test))
-				.SetGenesis(new Block(Encoders.Hex.DecodeData("010000000000000000000000000000000000000000000000000000000000000000000000d9ced4ed1130f7b7faad9be25323ffafa33232a17c3edf6cfd97bee6bafbdd97f6028c4ef0ff0f1e38c3f6160101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4804ffff001d0104404e592054696d65732030352f4f63742f32303131205374657665204a6f62732c204170706c65e280997320566973696f6e6172792c2044696573206174203536ffffffff0100f2052a010000004341040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9ac00000000")))
-				.BuildAndRegister();
+
+				});
+
+			return builder.BuildAndRegister();
 		}
 
 		static Tuple<byte[], int>[] pnSeed6_main = {

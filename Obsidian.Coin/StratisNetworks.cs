@@ -14,10 +14,7 @@ namespace Obsidian.Coin
 
 		    var consensus = Network.StratisMain.Consensus.Clone();
 		    consensus.PowLimit = new Target(uint256.Parse("0000ffff00000000000000000000000000000000000000000000000000000000"));
-
-		    // The message start string is designed to be unlikely to occur in normal data.
-		    // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-		    // a large 4-byte int at any alignment.
+			
 		    var pchMessageStart = new byte[4];
 		    pchMessageStart[0] = 0x71;
 		    pchMessageStart[1] = 0x31;
@@ -48,12 +45,11 @@ namespace Obsidian.Coin
 			    .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
 			    .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) })
 
-#if !NOSOCKET
+
 			    .AddDNSSeeds(new DNSSeedData[]
 			    {
-				    //new DNSSeedData("stratisplatform.com", "testnode1.stratisplatform.com"),
+				    
 			    });
-#endif
 
 		    return builder.BuildAndRegister();
 	    }

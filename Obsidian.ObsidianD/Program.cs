@@ -8,6 +8,7 @@ using Obsidian.Coin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -21,15 +22,17 @@ namespace Obsidian.ObsidianD
     {
         public static void Main(string[] args)
         {
-	        var fix= Network.Main; // execute static constructor of Network before everything else, or hashes will get mixed up.
+	        var fix = Network.Main; // execute static constructor of Network before everything else, or hashes will get mixed up.
 
 	        var network = !args.Contains("-testnet") 
-				? StratisNetworks.InitStratisTest()
-				: ObsidianNetworks.RegisteTest();
+				? ObsidianNetworks.CreateMainnet()
+				: ObsidianNetworks.CreateTestnet();
 
 	        if (NodeSettings.PrintHelp(args, network))
 		        return;
 		
+
+
             var nodeSettings = NodeSettings.FromArguments(args, "obsidian", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
 
             var node = new FullNodeBuilder()
@@ -41,7 +44,33 @@ namespace Obsidian.ObsidianD
 	            .AddRPC()
 				.Build();
 
-            Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith(t =>
+	        var options = !args.Contains("-testnet")
+		        ? new ObsidianMainConsensusOptions()
+		        : new ObsidianTestConsensusOptions();
+
+	        node.Network.Consensus.Options = new PosConsensusOptions
+	        {
+
+		        MAX_BLOCK_SERIALIZED_SIZE = options.MAX_BLOCK_SERIALIZED_SIZE,
+		        MAX_BLOCK_WEIGHT = options.MAX_BLOCK_WEIGHT,
+		        WITNESS_SCALE_FACTOR = options.WITNESS_SCALE_FACTOR,
+		        SERIALIZE_TRANSACTION_NO_WITNESS = options.SERIALIZE_TRANSACTION_NO_WITNESS,
+		        MAX_STANDARD_VERSION = options.MAX_STANDARD_VERSION,
+		        MAX_STANDARD_TX_WEIGHT = options.MAX_STANDARD_TX_WEIGHT,
+		        MAX_BLOCK_BASE_SIZE = options.MAX_BLOCK_BASE_SIZE,
+		        MAX_BLOCK_SIGOPS_COST = options.MAX_BLOCK_SIGOPS_COST,
+		        MAX_MONEY = options.MAX_MONEY,
+		        COINBASE_MATURITY = options.COINBASE_MATURITY,
+		        ProofOfWorkReward = options.ProofOfWorkReward,
+		        ProofOfStakeReward = options.ProofOfStakeReward,
+		        PremineReward = options.PremineReward,
+		        PremineHeight = options.PremineHeight,
+		        StakeMinConfirmations = options.StakeMinConfirmations,
+		        StakeMinAge = options.StakeMinAge,
+		        StakeModifierInterval = options.StakeModifierInterval
+	        };
+
+            Task.Delay(TimeSpan.FromSeconds(15)).ContinueWith(t =>
             {
                 TryStartPowMiner(args, node);
                 //TryStartPosMiner(args, node);
