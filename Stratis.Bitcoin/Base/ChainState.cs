@@ -1,7 +1,7 @@
+using NBitcoin;
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -80,6 +80,5 @@ namespace Stratis.Bitcoin.Base
         {
             get; set;
         }
-
     }
 }

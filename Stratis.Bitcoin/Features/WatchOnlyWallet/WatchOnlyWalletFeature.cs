@@ -7,7 +7,9 @@ using Stratis.Bitcoin.Features.WatchOnlyWallet.Notifications;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// A feature used to add a watch-only wallet to the full node.
+    /// </summary>
     public class WatchOnlyWalletFeature : FullNodeFeature
     {
         private readonly IWatchOnlyWalletManager walletManager;

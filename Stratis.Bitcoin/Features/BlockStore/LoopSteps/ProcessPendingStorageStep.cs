@@ -92,8 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             await this.BlockStoreLoop.BlockRepository.PutAsync(lastFoundChainedBlock.HashBlock, pendingBlockPairsToStore.Select(b => b.Block).ToList());
 
-            this.BlockStoreLoop.StoredBlock = lastFoundChainedBlock;
-            this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
+            this.BlockStoreLoop.SetStoreTip(lastFoundChainedBlock);
 
             if (breakExecution)
                 return BlockStoreLoopStepResult.Break();

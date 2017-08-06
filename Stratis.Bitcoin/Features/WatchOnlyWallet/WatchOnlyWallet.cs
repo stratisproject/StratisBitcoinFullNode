@@ -11,7 +11,7 @@ using Script = NBitcoin.Script;
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
     /// <summary>
-    /// A wallet
+    /// Represents a watch-only wallet. 
     /// </summary>
     public class WatchOnlyWallet
     {
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public uint256 LastBlockSyncedHash { get; set; }
 
         /// <summary>
-        /// The script pub key for this address.
+        /// The list of scripts being watched.
         /// </summary>
         [JsonProperty(PropertyName = "scripts", ItemConverterType = typeof(ScriptJsonConverter))]
         public ICollection<Script> Scripts { get; set; }
