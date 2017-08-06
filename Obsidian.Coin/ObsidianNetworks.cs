@@ -86,9 +86,9 @@ namespace Obsidian.Coin
 				.AddAlias("odn-mainnet")
 				.AddAlias("obsidian-main")
 				.AddAlias("obsidian-mainnet")
-				.AddDNSSeeds(new[]
+				.AddDNSSeeds(new DNSSeedData[]
 				{
-					new DNSSeedData("obsidianseednode1.westeurope.cloudapp.azure.com", "obsidianseednode1.westeurope.cloudapp.azure.com")
+					//new DNSSeedData("obsidianseednode1.westeurope.cloudapp.azure.com", "obsidianseednode1.westeurope.cloudapp.azure.com")
 				})
 				.AddSeeds(ToSeed(pnSeed6_main))
 				.SetGenesis(mainGenesisBlock)
