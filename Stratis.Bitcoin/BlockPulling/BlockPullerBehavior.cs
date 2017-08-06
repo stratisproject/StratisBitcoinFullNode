@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private void Node_MessageReceived(Node node, IncomingMessage message)
         {
             // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/292
-            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ({nameof(node.Peer.Endpoint)}:'{node.Peer.Endpoint}')");
 
             message.Message.IfPayloadIs<BlockPayload>((block) =>
             {
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.BlockPulling
             Node attachedNode = this.AttachedNode;
             if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
-                this.logger.LogTrace($"[{this.GetHashCode():x}] (-)[ATTACH_NODE]");
+                this.logger.LogTrace($"[{this.GetHashCode():x}] (-)[ATTACHED_NODE]");
                 return;
             }
 
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.BlockPulling
             Node attachedNode = this.AttachedNode;
             if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
-                this.logger.LogTrace($"[{this.GetHashCode():x}] (-)[ATTACH_NODE]");
+                this.logger.LogTrace($"[{this.GetHashCode():x}] (-)[ATTACHED_NODE]");
                 return;
             }
 
