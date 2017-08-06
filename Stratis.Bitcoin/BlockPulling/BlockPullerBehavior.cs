@@ -72,6 +72,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.puller = puller;
             this.QualityScore = BlockPuller.MaxQualityScore / 2;
+            // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/292
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
         }
@@ -92,15 +93,20 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="message">Received message.</param>
         private void Node_MessageReceived(Node node, IncomingMessage message)
         {
+            // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/292
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             message.Message.IfPayloadIs<BlockPayload>((block) =>
             {
+                uint256 blockHash = block.Object.Header.GetHash();
+                this.logger.LogTrace($"[{this.GetHashCode():x}] Received block '{blockHash}', length {message.Length} bytes.");
+
                 block.Object.Header.CacheHashes();
                 this.QualityScore = Math.Min(BlockPuller.MaxQualityScore, this.QualityScore + 1);
 
                 foreach (Transaction tx in block.Object.Transactions)
                     tx.CacheHashes();
 
-                uint256 blockHash = block.Object.Header.GetHash();
                 DownloadedBlock downloadedBlock = new DownloadedBlock()
                 {
                     Block = block.Object,
@@ -113,6 +119,8 @@ namespace Stratis.Bitcoin.BlockPulling
                 // This peer is now available for more work.
                 this.AssignPendingVector();
             });
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -121,13 +129,20 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         internal void AssignPendingVector()
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             Node attachedNode = this.AttachedNode;
             if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            {
+                this.logger.LogTrace($"[{this.GetHashCode():x}] (-)[ATTACH_NODE]");
                 return;
+            }
 
             uint256 block = null;
             if (this.puller.AssignPendingDownloadTaskToPeer(this, out block))
                 attachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -137,14 +152,21 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>Caller is responsible to add the puller to the map if necessary.</remarks>
         internal void StartDownload(GetDataPayload getDataPayload)
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             Node attachedNode = this.AttachedNode;
             if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            {
+                this.logger.LogTrace($"[{this.GetHashCode():x}] (-)[ATTACH_NODE]");
                 return;
+            }
 
             foreach (InventoryVector inv in getDataPayload.Inventory)
                 inv.Type = attachedNode.AddSupportedOptions(inv.Type);
 
             attachedNode.SendMessageAsync(getDataPayload);
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -152,9 +174,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         protected override void AttachCore()
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             this.AttachedNode.MessageReceived += Node_MessageReceived;
             this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
             AssignPendingVector();
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -165,9 +191,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </remarks>
         protected override void DetachCore()
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             this.cancellationToken.Cancel();
             this.AttachedNode.MessageReceived -= Node_MessageReceived;
             ReleaseAll();
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -175,7 +205,11 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         internal void ReleaseAll()
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             this.puller.ReleaseAllPeerDownloadTaskAssignments(this);
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
     }
 }
