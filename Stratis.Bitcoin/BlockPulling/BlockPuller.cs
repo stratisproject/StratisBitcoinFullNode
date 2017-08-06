@@ -624,7 +624,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 res = this.downloadedBlocks.TryGet(blockHash);
             }
 
-            this.logger.LogTrace("(-):{0}", res != null ? nameof(DownloadedBlock) : "null");
+            this.logger.LogTrace($"(-):'{res}'");
             return res;
         }
 
