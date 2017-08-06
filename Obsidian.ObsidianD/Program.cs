@@ -24,7 +24,7 @@ namespace Obsidian.ObsidianD
 	        var fix= Network.Main; // execute static constructor of Network before everything else, or hashes will get mixed up.
 
 	        var network = !args.Contains("-testnet") 
-				? ObsidianNetworks.RegisterMain() 
+				? StratisNetworks.InitStratisTest()
 				: ObsidianNetworks.RegisteTest();
 
 	        if (NodeSettings.PrintHelp(args, network))
