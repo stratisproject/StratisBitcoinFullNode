@@ -16,6 +16,7 @@ namespace Obsidian.Coin
 		{
 			Block.BlockSignature = true; // ?
 			Transaction.TimeStamp = true; // ?
+			NetConfig.UseSha512OnMain = true;
 
 			NetworkBuilder builder = new NetworkBuilder();
 
