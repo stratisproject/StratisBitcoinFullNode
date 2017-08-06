@@ -411,9 +411,8 @@ namespace Stratis.Bitcoin.BlockPulling
                 if (this.pendingInventoryVectors.Count > 0)
                 {
                     blockHash = this.pendingInventoryVectors.Dequeue();
-                    this.assignedBlockTasks.Add(blockHash, peer);
-
-                    AddPeerPendingDownloadLocked(peer, blockHash);
+                    if (this.assignedBlockTasks.TryAdd(blockHash, peer))
+                        AddPeerPendingDownloadLocked(peer, blockHash);
                 }
             }
 
