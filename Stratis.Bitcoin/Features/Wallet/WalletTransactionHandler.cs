@@ -94,8 +94,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void FundTransaction(TransactionBuildContext context, Transaction transaction)
         {
-            // Turn the txout set into a Recipient array
+            if (context.Recipients.Any())
+                throw new WalletException("Adding outputs is not allowed");
 
+            // Turn the txout set into a Recipient array
             context.Recipients.AddRange(transaction.Outputs
                 .Select(s => new Recipient
                 {

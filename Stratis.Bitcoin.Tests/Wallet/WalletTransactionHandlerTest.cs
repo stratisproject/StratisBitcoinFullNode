@@ -213,8 +213,10 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var wallet = GenerateBlankWallet("myWallet1", "password");
             var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
             var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
-            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
-            var fundDestinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/2");
+            var destinationKeys1 = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            var destinationKeys2 = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/2");
+            var destinationKeys3 = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/3");
+
 
             var address = new HdAddress()
             {
@@ -258,15 +260,39 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 AccountName = "account1",
                 WalletName = "myWallet1"
             };
-         
-            // create a trx with two inputs 
-            var context = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(99, MoneyUnit.BTC), FeeType.Low, 0);
+
+            // create a trx with 3 outputs 50 + 50 + 49 = 149 BTC
+            var context = new TransactionBuildContext(walletReference,
+                new[] 
+                {
+                    new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys1.PubKey.ScriptPubKey },
+                    new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys2.PubKey.ScriptPubKey },
+                    new Recipient { Amount = new Money(49, MoneyUnit.BTC), ScriptPubKey = destinationKeys3.PubKey.ScriptPubKey }
+                }
+                .ToList(), "password")
+            {
+                MinConfirmations = 0,
+                FeeType = FeeType.Low
+            };
+            
             var fundTransaction = walletTransactionHandler.BuildTransaction(context);
-            // remove the change output (1 btc will go to the miner)
-            fundTransaction.Outputs.RemoveAt(0);
+            Assert.Equal(3, fundTransaction.Inputs.Count); // 3 inputs
+            Assert.Equal(4, fundTransaction.Outputs.Count); // 3 outputs with change
+
+            // remove the change output
+            fundTransaction.Outputs.Remove(fundTransaction.Outputs.First(f => f.ScriptPubKey == context.ChangeAddress.ScriptPubKey));
+            // remove 2 inputs they will be added back by fund transaction
+            fundTransaction.Inputs.RemoveAt(2);
+            fundTransaction.Inputs.RemoveAt(1);
+            Assert.Equal(1, fundTransaction.Inputs.Count); // 3 inputs
 
             var fundTransactionClone = fundTransaction.Clone();
-            var fundContext = CreateContext(walletReference, "password", fundDestinationKeys.PubKey.ScriptPubKey, new Money(60, MoneyUnit.BTC), FeeType.Low, 0);
+            var fundContext = new TransactionBuildContext(walletReference, new List<Recipient>(), "password")
+            {
+                MinConfirmations = 0,
+                FeeType = FeeType.Low
+            };
+
             fundContext.OverrideFeeRate = overrideFeeRate;
             walletTransactionHandler.FundTransaction(fundContext, fundTransaction);
 
@@ -276,9 +302,13 @@ namespace Stratis.Bitcoin.Tests.Wallet
             foreach (var input in fundTransactionClone.Inputs) // all original inputs are still in the trx
                 Assert.True(fundTransaction.Inputs.Any(a => a.PrevOut == input.PrevOut));
 
-            Assert.Equal(4, fundTransaction.Inputs.Count); // we expect 4 inputs (4 UTXO * 50 BTC = 200 -> trx total out = 159 + fee) 
-            Assert.Equal(3, fundTransaction.Outputs.Count); // we expect 3 outputs (1 from original trx + 1 from fund trx + change)
+            Assert.Equal(3, fundTransaction.Inputs.Count); // we expect 3 inputs 
+            Assert.Equal(4, fundTransaction.Outputs.Count); // we expect 4 outputs 
+            Assert.Equal(new Money(150, MoneyUnit.BTC) - fundContext.TransactionFee, fundTransaction.TotalOut);
 
+            Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys1.PubKey.ScriptPubKey));
+            Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys2.PubKey.ScriptPubKey));
+            Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys3.PubKey.ScriptPubKey));
         }
 
         private Features.Wallet.Wallet GenerateBlankWallet(string name, string password)
