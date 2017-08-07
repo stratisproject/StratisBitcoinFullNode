@@ -13,10 +13,20 @@ using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
+    /// <summary>
+    /// Class representing a manager for a watch-only wallet.
+    /// In this implementation, the wallet is saved to the file system. 
+    /// </summary>
     public class WatchOnlyWalletManager : IWatchOnlyWalletManager
     {
+        /// <summary>
+        /// The name of the watch-only wallet as saved in the file system.
+        /// </summary>
         private const string WalletFileName = "watch_only_wallet.json";
 
+        /// <summary>
+        /// The watch-only wallet this manager manages.
+        /// </summary>
         public WatchOnlyWallet Wallet { get; private set; }
 
         private readonly CoinType coinType;
@@ -27,8 +37,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         private readonly DataFolder dataFolder;
         private readonly ILogger logger;
 
-        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder)
+        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain, NodeSettings settings, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.connectionManager = connectionManager;
@@ -39,26 +48,31 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             this.dataFolder = dataFolder;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
-            this.SaveToFile();
+            this.SaveWatchOnlyWallet();
         }
 
+        /// <inheritdoc />
         public void Initialize()
         {
             // load the watch only wallet into memory
-            this.Wallet = this.DeserializeWallet();
+            this.Wallet = this.LoadWatchOnlyWallet();
         }
 
+        /// <inheritdoc />
         public uint256 LastReceivedBlock { get; }
 
+        /// <inheritdoc />
         public void RemoveBlocks(ChainedBlock fork)
         {
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void Watch(Script script)
-        {         
+        {
             if (this.Wallet.Scripts.Contains(script))
             {
                 this.logger.LogDebug($"already watching script: {script}. coin: {this.coinType}");
@@ -67,9 +81,10 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 
             this.logger.LogDebug($"added script: {script} to the watch list. coin: {this.coinType}");
             this.Wallet.Scripts.Add(script);
-            this.SaveToFile();
+            this.SaveWatchOnlyWallet();
         }
 
+        /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
             ChainedBlock chainedBlock = this.chain.GetBlock(block.GetHash());
@@ -81,6 +96,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             }
         }
 
+        /// <inheritdoc />
         public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
         {
             var hash = transaction.GetHash();
@@ -93,29 +109,27 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 
                 // check if the outputs contain one of our addresses
                 if (this.Wallet.Scripts.Contains(utxo.ScriptPubKey) && this.Wallet.Transactions.All(t => t.hex != model.hex))
-                {                    
+                {
                     this.Wallet.Transactions.Add(model);
-                    this.SaveToFile();
+                    this.SaveWatchOnlyWallet();
                 }
             }
         }
 
+        /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
         {
             throw new NotImplementedException();
         }
 
-        public void SaveToFile()
+        /// <inheritdoc />
+        public void SaveWatchOnlyWallet()
         {
             File.WriteAllText(this.GetWalletFilePath(), JsonConvert.SerializeObject(this.Wallet, Formatting.Indented));
         }
 
-        /// <summary>
-        /// Gets the wallet located at the specified path.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="System.IO.FileNotFoundException"></exception>
-        private WatchOnlyWallet DeserializeWallet()
+        /// <inheritdoc />
+        public WatchOnlyWallet LoadWatchOnlyWallet()
         {
             string walletFilePath = this.GetWalletFilePath();
             if (!File.Exists(walletFilePath))
@@ -129,21 +143,29 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                     Transactions = new List<TransactionVerboseModel>()
                 };
 
-                this.SaveToFile();
+                this.SaveWatchOnlyWallet();
             }
 
             // load the file from the local system
             return JsonConvert.DeserializeObject<WatchOnlyWallet>(File.ReadAllText(walletFilePath));
         }
 
-        private string GetWalletFilePath()
-        {
-            return Path.Combine(this.dataFolder.WalletPath, WalletFileName);
-        }
-
+        /// <summary>
+        /// Gets the watch-only wallet.
+        /// </summary>
+        /// <returns>The watch-only wallet.</returns>
         public WatchOnlyWallet GetWallet()
         {
             return this.Wallet;
+        }
+
+        /// <summary>
+        /// Gets the file path where the watch-only wallet is saved.
+        /// </summary>
+        /// <returns>The watch-only wallet path in the file system.</returns>
+        private string GetWalletFilePath()
+        {
+            return Path.Combine(this.dataFolder.WalletPath, WalletFileName);
         }
     }
 }

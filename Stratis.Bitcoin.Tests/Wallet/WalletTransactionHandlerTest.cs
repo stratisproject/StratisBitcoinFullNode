@@ -1,6 +1,5 @@
 ﻿using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;

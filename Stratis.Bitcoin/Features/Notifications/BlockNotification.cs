@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 

@@ -2,7 +2,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
-using Stratis.Bitcoin.Common.JsonErrors;
+using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
 {
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
         /// <summary>
         /// Adds a script to the watch list.
         /// </summary>
-        /// <param name="script">The script pubkey to add to the watch list.</param>        
+        /// <param name="script">The script pubkey to add to the watch list.</param>
         [Route("watch")]
         [HttpPost]
         public IActionResult Watch([FromQuery]string script)
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
         /// <summary>
         /// Gets the watch list.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The watch-only wallet or a collection of errors, if any.</returns>
         [HttpGet]
         public IActionResult GetWallet()
         {

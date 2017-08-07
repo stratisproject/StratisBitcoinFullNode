@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -36,7 +37,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Reference to the parent block puller.</summary>
         private readonly BlockPuller puller;
-
         /// <summary>Reference to the parent block puller.</summary>
         public BlockPuller Puller => this.puller;
 
@@ -51,6 +51,17 @@ namespace Stratis.Bitcoin.BlockPulling
                 return this.puller.GetPendingDownloadsCount(this);
             }
         }
+
+        /// <summary>
+        /// Evaluation of the past experience with this node.
+        /// The higher the score, the better experience we have had with it.
+        /// </summary>
+        /// <seealso cref="MaxQualityScore"/>
+        /// <seealso cref="MinQualityScore"/>
+        /// <remarks>
+        /// TODO: Race conditions touching this - https://github.com/stratisproject/StratisBitcoinFullNode/issues/247
+        /// </remarks>
+        public int QualityScore { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the object with parent block puller.
@@ -72,18 +83,6 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Evaluation of the past experience with this node.
-        /// The higher the score, the better experience we have had with it.
-        /// </summary>
-        /// <seealso cref="MaxQualityScore"/>
-        /// <seealso cref="MinQualityScore"/>
-        public int QualityScore
-        {
-            get; set;
-        }
-
-
-        /// <summary>
         /// Event handler that is called when the attached node receives a network message.
         /// <para>
         /// This handler modifies internal state when an information about a block is received.
@@ -98,14 +97,21 @@ namespace Stratis.Bitcoin.BlockPulling
                 block.Object.Header.CacheHashes();
                 this.QualityScore = Math.Min(BlockPuller.MaxQualityScore, this.QualityScore + 1);
 
+                foreach (Transaction tx in block.Object.Transactions)
+                    tx.CacheHashes();
+
                 uint256 blockHash = block.Object.Header.GetHash();
-                if (this.puller.DownloadTaskFinished(this, blockHash))
+                DownloadedBlock downloadedBlock = new DownloadedBlock()
                 {
-                    foreach (Transaction tx in block.Object.Transactions)
-                        tx.CacheHashes();
-                    this.puller.PushBlock((int)message.Length, block.Object, this.cancellationToken.Token);
-                    this.AssignPendingVector();
-                }
+                    Block = block.Object,
+                    Length = (int)message.Length,
+                };
+
+                if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
+                    this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
+
+                // This peer is now available for more work.
+                this.AssignPendingVector();
             });
         }
 
