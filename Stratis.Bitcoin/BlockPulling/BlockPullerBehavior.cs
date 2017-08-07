@@ -52,16 +52,17 @@ namespace Stratis.Bitcoin.BlockPulling
             }
         }
 
+        /// <summary>Lock protecting write access to <see cref="QualityScore"/>.</summary>
+        private readonly object qualityScoreLock = new object();
+
         /// <summary>
         /// Evaluation of the past experience with this node.
         /// The higher the score, the better experience we have had with it.
         /// </summary>
         /// <seealso cref="MaxQualityScore"/>
         /// <seealso cref="MinQualityScore"/>
-        /// <remarks>
-        /// TODO: Race conditions touching this - https://github.com/stratisproject/StratisBitcoinFullNode/issues/247
-        /// </remarks>
-        public int QualityScore { get; set; }
+        /// <remarks>Write access to this object has to be protected by <see cref="qualityScoreLock"/>.</remarks>
+        public double QualityScore { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the object with parent block puller.
@@ -71,7 +72,7 @@ namespace Stratis.Bitcoin.BlockPulling
         public BlockPullerBehavior(BlockPuller puller, ILoggerFactory loggerFactory)
         {
             this.puller = puller;
-            this.QualityScore = BlockPuller.MaxQualityScore / 2;
+            this.QualityScore = BlockPulling.QualityScore.MaxScore / 2;
             // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/292
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
@@ -98,26 +99,32 @@ namespace Stratis.Bitcoin.BlockPulling
 
             message.Message.IfPayloadIs<BlockPayload>((block) =>
             {
+                // There are two pullers for each peer connection and each is having its own puller behavior.
+                // Both these behaviors get notification from the node when it receives a message,
+                // even if the origin of the message was from the other puller behavior.
+                // Therefore we first make a quick check whether this puller behavior was the one 
+                // who should deal with this block.
                 uint256 blockHash = block.Object.Header.GetHash();
-                this.logger.LogTrace($"[{this.GetHashCode():x}] Received block '{blockHash}', length {message.Length} bytes.");
-
-                block.Object.Header.CacheHashes();
-                this.QualityScore = Math.Min(BlockPuller.MaxQualityScore, this.QualityScore + 1);
-
-                foreach (Transaction tx in block.Object.Transactions)
-                    tx.CacheHashes();
-
-                DownloadedBlock downloadedBlock = new DownloadedBlock()
+                if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
-                    Block = block.Object,
-                    Length = (int)message.Length,
-                };
+                    this.logger.LogTrace($"[{this.GetHashCode():x}] Received block '{blockHash}', length {message.Length} bytes.");
 
-                if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
-                    this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
+                    block.Object.Header.CacheHashes();
+                    foreach (Transaction tx in block.Object.Transactions)
+                        tx.CacheHashes();
 
-                // This peer is now available for more work.
-                this.AssignPendingVector();
+                    DownloadedBlock downloadedBlock = new DownloadedBlock()
+                    {
+                        Block = block.Object,
+                        Length = (int)message.Length,
+                    };
+
+                    if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
+                        this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
+
+                    // This peer is now available for more work.
+                    this.AssignPendingVector();
+                }
             });
 
             this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
@@ -210,6 +217,24 @@ namespace Stratis.Bitcoin.BlockPulling
             this.puller.ReleaseAllPeerDownloadTaskAssignments(this);
 
             this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
+        }
+
+        /// <summary>
+        /// Adjusts the quality score of the peer.
+        /// </summary>
+        /// <param name="scoreAdjustment">Adjustment to make to the quality score of the peer.</param>
+        internal void UpdateQualityScore(double scoreAdjustment)
+        {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ({nameof(scoreAdjustment)}:{scoreAdjustment})");
+
+            lock (this.qualityScoreLock)
+            {
+                this.QualityScore += scoreAdjustment;
+                if (this.QualityScore > BlockPulling.QualityScore.MaxScore) this.QualityScore = BlockPulling.QualityScore.MaxScore;
+                if (this.QualityScore < BlockPulling.QualityScore.MinScore) this.QualityScore = BlockPulling.QualityScore.MinScore;
+            }
+
+            this.logger.LogTrace($"(-):{nameof(this.QualityScore)}:{this.QualityScore}");
         }
     }
 }

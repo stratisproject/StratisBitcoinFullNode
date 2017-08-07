@@ -34,10 +34,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public void AssignBlocksToPeersWithNodesWithDifferentChainsCorrectlyDistributesDownloadTasks()
         {
-            // Create list of numbers 6 to 40 and shuffle it.
+            int ourBlockCount = 5;
+            // Create list of numbers ourBlockCount + 1 to 40 and shuffle it.
             Random rnd = new Random();
             List<int> requiredBlockHeights = new List<int>();
-            for (int i = 6; i <= 40; i++)
+            for (int i = ourBlockCount + 1; i <= 40; i++)
                 requiredBlockHeights.Add(i);
 
             requiredBlockHeights = requiredBlockHeights.OrderBy(a => rnd.Next()).ToList();
@@ -49,31 +50,34 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 {
                     PeerId = "A",
                     QualityScore = 100,
-                    ChainHeight = 4
+                    ChainHeight = 4,
+                    TasksAssignedCount = 0
                 },
                 new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "B",
                     QualityScore = 100,
-                    ChainHeight = 20
+                    ChainHeight = 20,
+                    TasksAssignedCount = 0
                 },
                 new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "C",
                     QualityScore = 50,
-                    ChainHeight = 30
+                    ChainHeight = 30,
+                    TasksAssignedCount = 0
                 },
                 new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "C",
                     QualityScore = 150,
-                    ChainHeight = 40
+                    ChainHeight = 40,
+                    TasksAssignedCount = 0
                 },
             };
 
             // Use the assignment strategy to assign tasks to peers.
-            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
-
+            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation, ourBlockCount);
 
             // Check the assignment is valid per our requirements.
             int tasksAssigned = 0;
@@ -140,14 +144,15 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                     {
                         ChainHeight = rnd.Next(bestChainBlockCount) + 1,
                         PeerId = peerIndex,
-                        QualityScore = rnd.Next(BlockPuller.MaxQualityScore) + 1
+                        QualityScore = rnd.NextDouble() * (QualityScore.MaxScore - QualityScore.MinScore) + QualityScore.MinScore,
+                        TasksAssignedCount = rnd.Next(100)
                     };
                     availablePeersInformation.Add(peerInfo);
                     maxPeerChainLength = Math.Max(maxPeerChainLength, peerInfo.ChainHeight);
                 }
 
                 // Use the assignment strategy to assign tasks to peers.
-                Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
+                Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation, ourBlockCount);
 
                 // Check the assignment is valid per our requirements.
                 int tasksAssigned = 0;

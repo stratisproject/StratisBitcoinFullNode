@@ -29,7 +29,7 @@ Class logger is little more difficult as you may not have access to any factory.
 ```
 ILoggerFactory loggerFactory = new LoggerFactory();
 loggerFactory.AddConsole();  // Only if you want to include logging to the console.
-loggerFactory.AddNLog()();   // Only if you want to include logging to the disk. This requires using NLog.Extensions.Logging.
+loggerFactory.AddNLog();   // Only if you want to include logging to the disk. This requires using NLog.Extensions.Logging.
 
 ```
 

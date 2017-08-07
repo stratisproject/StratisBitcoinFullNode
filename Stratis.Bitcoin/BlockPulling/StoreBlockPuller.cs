@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -8,6 +9,9 @@ namespace Stratis.Bitcoin.BlockPulling
     /// </summary>
     public class StoreBlockPuller : BlockPuller
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>
         /// Initializes a new instance of the object having a chain of block headers and a list of available nodes. 
         /// </summary>
@@ -17,6 +21,7 @@ namespace Stratis.Bitcoin.BlockPulling
         public StoreBlockPuller(ConcurrentChain chain, Connection.IConnectionManager nodes, ILoggerFactory loggerFactory)
             : base(chain, nodes.ConnectedNodes, nodes.NodeSettings.ProtocolVersion, loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <summary>
@@ -25,7 +30,11 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="downloadRequest">Description of a block to download.</param>
         public void AskBlock(ChainedBlock downloadRequest)
         {
+            this.logger.LogTrace($"({nameof(downloadRequest)}:'{downloadRequest.HashBlock}/{downloadRequest.Height}')");
+
             base.AskBlocks(new ChainedBlock[] { downloadRequest });
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -36,10 +45,16 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>true if the function succeeds, false otherwise.</returns>
         public bool TryGetBlock(ChainedBlock chainedBlock, out DownloadedBlock block)
         {
+            this.logger.LogTrace($"({nameof(chainedBlock)}:'{chainedBlock.HashBlock}/{chainedBlock.Height}')");
+
             if (TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
+            {
+                this.logger.LogTrace("(-):true");
                 return true;
+            }
 
             this.OnStalling(chainedBlock);
+            this.logger.LogTrace("(-):false");
             return false;
         }
     }
