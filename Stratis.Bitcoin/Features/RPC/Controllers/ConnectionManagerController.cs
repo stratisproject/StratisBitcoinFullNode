@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC.Models;
@@ -76,12 +75,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     {
                         peerNode.Inbound = connectionManagerBehavior.Inbound;
                         peerNode.IsWhiteListed = connectionManagerBehavior.Whitelisted;
-                    }
-
-                    ChainHeadersBehavior chainHeadersBehavior = node.Behavior<ChainHeadersBehavior>();
-                    if (chainHeadersBehavior != null)
-                    {
-                        peerNode.Blocks = chainHeadersBehavior.PendingTip.Height;
                     }
 
                     if (node.TimeOffset != null)

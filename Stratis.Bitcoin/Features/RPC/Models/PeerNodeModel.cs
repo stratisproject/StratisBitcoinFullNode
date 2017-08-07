@@ -179,11 +179,5 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         /// </summary>
         [JsonProperty(PropertyName = "bytesrecv_per_msg")]
         public uint[] BytesReceivedPerMessage { get; internal set; }
-
-        /// <summary>
-        /// Number of blocks on peer.
-        /// </summary>
-        [JsonProperty(PropertyName = "blocks")]
-        public int Blocks { get; internal set; }
     }
 }
