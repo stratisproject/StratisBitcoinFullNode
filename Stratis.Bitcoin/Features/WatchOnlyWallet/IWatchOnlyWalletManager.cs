@@ -25,16 +25,16 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         uint256 LastReceivedBlock { get; }
 
         /// <summary>
-        /// Adds this <see cref="Script"/> to the watch-only wallet so that transactions including it will be monitored.
+        /// Adds this base58 encoded address to the watch-only wallet so that transactions affecting it will be monitored.
         /// </summary>
-        /// <param name="script">The script to watch for in transactions.</param>
-        void Watch(Script script);
+        /// <param name="address">The base58 address to watch for in transactions.</param>
+        void WatchAddress(string address);
 
         /// <summary>
         /// Removes all the thransactions in the wallet that are above this block height.
         /// </summary>
         void RemoveBlocks(ChainedBlock fork);
-        
+
         /// <summary>
         /// Processes a block received from the network.
         /// </summary>
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <param name="blockHeight">The height of the block this transaction came from. <c>null</c> if it was not a transaction included in a block.</param>
         /// <param name="block">The block in which this transaction was included. <c>null</c> if it was not a transaction included in a block.</param>
         void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null);
-        
+
         /// <summary>
         /// Saves the watch-only wallet to a persistent storage.
         /// </summary>

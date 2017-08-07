@@ -16,6 +16,14 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
     public class WatchOnlyWallet
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="WatchOnlyWallet"/> class.
+        /// </summary>
+        public WatchOnlyWallet()
+        {
+            this.WatchedAddresses = new List<WatchedAddress>();
+        }
+
+        /// <summary>
         /// The network this wallet is for.
         /// </summary>
         [JsonProperty(PropertyName = "network")]
@@ -49,15 +57,72 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public uint256 LastBlockSyncedHash { get; set; }
 
         /// <summary>
-        /// The list of scripts being watched.
+        /// The list of <see cref="Script"/>s being watched.
         /// </summary>
-        [JsonProperty(PropertyName = "scripts", ItemConverterType = typeof(ScriptJsonConverter))]
-        public ICollection<Script> Scripts { get; set; }
+        [JsonProperty(PropertyName = "watchedAddresses")]
+        public ICollection<WatchedAddress> WatchedAddresses { get; set; }
+    }
+
+    /// <summary>
+    /// An object contaning a <see cref="Script"/> being watched along with any transactions affecting it.
+    /// </summary>
+    public class WatchedAddress
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WatchedAddress"/> class.
+        /// </summary>
+        public WatchedAddress()
+        {
+            this.Transactions = new List<TransactionData>();
+        }
 
         /// <summary>
-        /// The list of transactions being watched.
+        /// A script being watched for transactions affecting it.
+        /// </summary>
+        [JsonProperty(PropertyName = "script")]
+        [JsonConverter(typeof(ScriptJsonConverter))]
+        public Script Script { get; set; }
+
+        /// <summary>
+        /// A base58 address being watched for transactions affecting it.        
+        /// </summary>
+        /// <remarks>
+        /// This is a convenience property whose intrisic value is equal to <see cref="Script"/>.
+        /// </remarks>
+        [JsonProperty(PropertyName = "address")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// The list of transactions affecting the <see cref="Script"/> being watched.
         /// </summary>
         [JsonProperty(PropertyName = "transactions")]
-        public ICollection<TransactionVerboseModel> Transactions { get; set; }
-    }    
+        public ICollection<TransactionData> Transactions { get; set; }
+
+    }
+
+    /// <summary>
+    /// An object containing the details of a transaction affecting a <see cref="Script"/> being watched.
+    /// </summary>
+    public class TransactionData
+    {
+        /// <summary>
+        /// A transaction affecting a script being watched.
+        /// </summary>
+        [JsonProperty(PropertyName = "transaction")]
+        public TransactionVerboseModel Transaction { get; set; }
+
+        /// <summary>
+        /// The height of the block including this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockHeight", NullValueHandling = NullValueHandling.Ignore)]
+        public int? BlockHeight { get; set; }
+
+        /// <summary>
+        /// The hash of the block including this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockHash", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonConverter(typeof(UInt256JsonConverter))]
+        public uint256 BlockHash { get; set; }
+
+    }
 }

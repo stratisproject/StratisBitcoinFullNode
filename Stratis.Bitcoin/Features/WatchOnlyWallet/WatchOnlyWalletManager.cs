@@ -6,10 +6,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.Wallet;
-using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
@@ -25,26 +23,22 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         private const string WalletFileName = "watch_only_wallet.json";
 
         /// <summary>
-        /// The watch-only wallet this manager manages.
+        /// A wallet containing scripts that are monitored for transactions affecting them.
         /// </summary>
         public WatchOnlyWallet Wallet { get; private set; }
 
         private readonly CoinType coinType;
         private readonly Network network;
-        private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
-        private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
         private readonly ILogger logger;
 
-        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain, NodeSettings settings, DataFolder dataFolder)
+        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, Network network, ConcurrentChain chain, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.connectionManager = connectionManager;
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
-            this.settings = settings;
             this.dataFolder = dataFolder;
         }
 
@@ -67,20 +61,28 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public void RemoveBlocks(ChainedBlock fork)
         {
+            // TODO: to implement when reorg is supported
             throw new NotImplementedException();
         }
 
         /// <inheritdoc />
-        public void Watch(Script script)
+        public void WatchAddress(string address)
         {
-            if (this.Wallet.Scripts.Contains(script))
+            var script = BitcoinAddress.Create(address, this.network).ScriptPubKey;
+
+            if (this.Wallet.WatchedAddresses.Any(wa => wa.Script == script))
             {
                 this.logger.LogDebug($"already watching script: {script}. coin: {this.coinType}");
                 return;
             }
 
             this.logger.LogDebug($"added script: {script} to the watch list. coin: {this.coinType}");
-            this.Wallet.Scripts.Add(script);
+            this.Wallet.WatchedAddresses.Add(new WatchedAddress
+            {
+                Script = script,
+                Address = address
+            });
+
             this.SaveWatchOnlyWallet();
         }
 
@@ -108,9 +110,16 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 TransactionVerboseModel model = new TransactionVerboseModel(transaction, this.network);
 
                 // check if the outputs contain one of our addresses
-                if (this.Wallet.Scripts.Contains(utxo.ScriptPubKey) && this.Wallet.Transactions.All(t => t.hex != model.hex))
+                WatchedAddress addressInWallet = this.Wallet.WatchedAddresses.SingleOrDefault(wa => wa.Script == utxo.ScriptPubKey);
+
+                if (addressInWallet != null && addressInWallet.Transactions.All(t => t.Transaction.hex != model.hex))
                 {
-                    this.Wallet.Transactions.Add(model);
+                    addressInWallet.Transactions.Add(new TransactionData
+                    {
+                        Transaction = model,
+                        BlockHash = block?.GetHash(),
+                        BlockHeight = blockHeight
+                    });
                     this.SaveWatchOnlyWallet();
                 }
             }
@@ -119,6 +128,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
         {
+            // TODO: to implement when reorg is supported
             throw new NotImplementedException();
         }
 
@@ -139,8 +149,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                     Network = this.network,
                     CoinType = this.coinType,
                     CreationTime = DateTimeOffset.Now,
-                    Scripts = new List<Script>(),
-                    Transactions = new List<TransactionVerboseModel>()
+                    WatchedAddresses = new List<WatchedAddress>()
                 };
 
                 this.SaveWatchOnlyWallet();

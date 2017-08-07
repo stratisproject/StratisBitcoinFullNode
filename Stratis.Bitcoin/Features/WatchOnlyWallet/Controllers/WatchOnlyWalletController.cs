@@ -20,22 +20,22 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
         }
 
         /// <summary>
-        /// Adds a script to the watch list.
+        /// Adds a base58 address to the watch list.
         /// </summary>
-        /// <param name="script">The script pubkey to add to the watch list.</param>
+        /// <param name="address">The base58 address to add to the watch list.</param>
         [Route("watch")]
         [HttpPost]
-        public IActionResult Watch([FromQuery]string script)
+        public IActionResult Watch([FromQuery]string address)
         {
             // checks the request is valid
-            if (string.IsNullOrEmpty(script))
+            if (string.IsNullOrEmpty(address))
             {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", "Script to watch is missing.");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", "Address to watch is missing.");
             }
 
             try
             {
-                this.watchOnlyWalletManager.Watch(new Script(script));
+                this.watchOnlyWalletManager.WatchAddress(address);
                 return this.Ok();
             }
             catch (Exception e)
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
         }
 
         /// <summary>
-        /// Gets the watch list.
+        /// Gets the list of addresses being watched along with the transactions affecting them.
         /// </summary>
         /// <returns>The watch-only wallet or a collection of errors, if any.</returns>
         [HttpGet]
