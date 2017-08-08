@@ -1,15 +1,10 @@
-﻿using NBitcoin.Protocol;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NLog.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using System.Collections.Concurrent;
-using NBitcoin.Protocol.Behaviors;
-using System.Threading;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Utilities;
-using Microsoft.Extensions.Logging;
-using NLog.Extensions.Logging;
 
 namespace Stratis.Bitcoin.BlockPulling
 {

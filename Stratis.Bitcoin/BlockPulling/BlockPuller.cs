@@ -1,14 +1,10 @@
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 using NBitcoin.Protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using System.Collections.Concurrent;
-using NBitcoin.Protocol.Behaviors;
 using System.Threading;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -185,7 +181,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace($"({nameof(downloadRequests)}:{string.Join(",", downloadRequests.Select(r => r.Height))})");
 
-            BlockPullerBehavior[] nodes = GetNodeBehaviors();
+            BlockPullerBehavior[] nodes = this.GetNodeBehaviors();
             if ((nodes.Length > 0) && (downloadRequests.Length > 0))
             {
                 Dictionary<int, InventoryVector> vectors = new Dictionary<int, InventoryVector>();
@@ -194,7 +190,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     InventoryVector vector = new InventoryVector(InventoryType.MSG_BLOCK, request.HashBlock);
                     vectors.Add(request.Height, vector);
                 }
-                DistributeDownload(vectors, nodes, downloadRequests.Min(d => d.Height));
+                this.DistributeDownload(vectors, nodes, downloadRequests.Min(d => d.Height));
             }
             else this.logger.LogTrace($"Nothing to do - number of nodes is {nodes.Length}, number of requests is {downloadRequests.Length}.");
 
@@ -228,7 +224,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("()");
 
-            BlockPullerBehavior[] innerNodes = GetNodeBehaviors();
+            BlockPullerBehavior[] innerNodes = this.GetNodeBehaviors();
             if (innerNodes.Length == 0)
             {
                 this.logger.LogTrace("(-)[NO_NODES]");
@@ -257,7 +253,7 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             if (vectors.Count > 0)
-                DistributeDownload(vectors, innerNodes, minHeight);
+                this.DistributeDownload(vectors, innerNodes, minHeight);
 
             this.logger.LogTrace("(-)");
         }
@@ -301,13 +297,13 @@ namespace Stratis.Bitcoin.BlockPulling
                 if (Math.Abs(behavior.QualityScore - QualityScore.MinScore) < 0.00001)
                 {
                     behavior.ReleaseAll();
-                    AssignPendingVectors();
+                    this.AssignPendingVectors();
                 }
             }
             else
             {
                 this.logger.LogTrace($"Block '{chainedBlock.HashBlock}' not assigned to any peer.");
-                AssignPendingVectors();
+                this.AssignPendingVectors();
             }
 
             this.logger.LogTrace("(-)");
@@ -396,7 +392,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 foreach (int blockHeight in blockHeightsToDownload)
                 {
                     InventoryVector inventoryVector = vectors[blockHeight];
-                    if (AssignDownloadTaskToPeer(peerBehavior, inventoryVector.Hash))
+                    if (this.AssignDownloadTaskToPeer(peerBehavior, inventoryVector.Hash))
                     {
                         this.logger.LogTrace($"Block '{inventoryVector.Hash}/{blockHeight}' assigned to peer '{peerBehavior.GetHashCode():x}'");
                         getDataPayload.Inventory.Add(inventoryVector);
@@ -431,7 +427,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 {
                     blockHash = this.pendingInventoryVectors.Dequeue();
                     if (this.assignedBlockTasks.TryAdd(blockHash, peer))
-                        AddPeerPendingDownloadLocked(peer, blockHash);
+                        this.AddPeerPendingDownloadLocked(peer, blockHash);
                 }
             }
 
@@ -457,7 +453,7 @@ namespace Stratis.Bitcoin.BlockPulling
             {
                 if (this.assignedBlockTasks.TryAdd(blockHash, peer))
                 {
-                    AddPeerPendingDownloadLocked(peer, blockHash);
+                    this.AddPeerPendingDownloadLocked(peer, blockHash);
                     res = true;
                 }
             }
@@ -483,7 +479,7 @@ namespace Stratis.Bitcoin.BlockPulling
             {
                 Dictionary<uint256, DownloadTask> peerPendingDownloads;
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
-                    res = ReleaseDownloadTaskAssignmentLocked(peerPendingDownloads, blockHash);
+                    res = this.ReleaseDownloadTaskAssignmentLocked(peerPendingDownloads, blockHash);
             }
 
             this.logger.LogTrace($"(-):{res}");
@@ -537,7 +533,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     // Make a fresh copy of items in peerPendingDownloads to avoid modification of the collection.
                     foreach (uint256 blockHash in peerPendingDownloads.Keys.ToList())
                     {
-                        if (!ReleaseDownloadTaskAssignmentLocked(peerPendingDownloads, blockHash))
+                        if (!this.ReleaseDownloadTaskAssignmentLocked(peerPendingDownloads, blockHash))
                         {
                             this.logger.LogCritical("Data structures inconsistency, please notify the devs.");
                             throw new InvalidOperationException("Data structures inconsistency, please notify the devs.");
