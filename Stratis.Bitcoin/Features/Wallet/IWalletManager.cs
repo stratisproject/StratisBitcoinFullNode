@@ -217,9 +217,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         Wallet GetWalletByName(string walletName);
 
         /// <summary>
-        /// Get the a change address or create one if all change are used. 
+        /// Gets a change address or create one if all change addresses are used. 
         /// </summary>
-        /// <param name="account">The account to create the change on.</param>
+        /// <param name="account">The account to create the change address.</param>
         /// <returns>The new HD address.</returns>
         HdAddress GetOrCreateChangeAddress(HdAccount account);
     }

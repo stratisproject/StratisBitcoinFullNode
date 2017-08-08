@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// A handler that has various functionalities related to transaction operations.
     /// </summary>
     /// <remarks>
-    /// This will uses the FeeEstimator and the TrasnactionBuilder.
+    /// This will uses the <see cref="IWalletFeePolicy"/> and the <see cref="TransactionBuilder"/>.
     /// TODO: Move also the broadcast transaction to this class
     /// TODO: Implement lockUnspents
     /// TODO: Implement subtractFeeFromOutputs
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletFeePolicy = walletFeePolicy;
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
-            this.logger = loggerFactory.CreateLogger(this.GetType());
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc />
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             context.TransactionBuilder = new TransactionBuilder();
 
-            this.AddRecepients(context);
+            this.AddRecipients(context);
             this.AddCoins(context);
             this.AddSecrets(context);
             this.FindChangeAddress(context);
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Load all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
+        /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void AddSecrets(TransactionBuildContext context)
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <remarks>
         /// Add outputs to the <see cref="TransactionBuilder"/> based on the <see cref="Recipient"/> list.
         /// </remarks>
-        private void AddRecepients(TransactionBuildContext context)
+        private void AddRecipients(TransactionBuildContext context)
         {
             if (context.Recipients.Any(a => a.Amount == Money.Zero))
                 throw new WalletException($"No amount specified");
@@ -319,7 +319,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public List<Recipient> Recipients { get; set; }
 
         /// <summary>
-        /// Helper to estimate how much fee to spend on a transaction.
+        /// An indicator to estimate how much fee to spend on a transaction.
         /// </summary>
         /// <remarks>
         /// The higher the fee the faster a transaction will get in to a block. 
