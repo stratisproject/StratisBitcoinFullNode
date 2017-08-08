@@ -102,10 +102,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 {
                     await this.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, stepContext.Store.Select(t => t.Block).ToList());
 
-                    this.BlockStoreLoop.StoredBlock = chainedBlockToDownload;
-                    this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
-                    stepContext.InsertBlockSize = 0;
+                    this.BlockStoreLoop.SetStoreTip(chainedBlockToDownload);
 
+                    stepContext.InsertBlockSize = 0;
                     stepContext.Store.Clear();
 
                     if (!stepContext.DownloadStack.Any())

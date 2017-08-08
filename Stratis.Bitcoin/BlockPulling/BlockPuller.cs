@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.BlockPulling
     /// When a typical consumer wants a next block from the puller, it first checks <see cref="downloadedBlocks"/>, 
     /// if the block is available (the consumer does know the header of the block it wants from the puller,
     /// if not, it simply waits until this information is available). If it is available, it is removed 
-    /// from DownloadedBlocks and consumed. Otherwise, the consumer checks whether this block is being 
+    /// from <see cref="downloadedBlocks"/> and consumed. Otherwise, the consumer checks whether this block is being 
     /// downloaded (or soon to be). If not, it asks the puller to request it from the connect network peers.
     /// <para>
     /// Besides this "on demand" way of requesting blocks from peers, the consumer also tries to keep puller 
@@ -149,21 +149,26 @@ namespace Stratis.Bitcoin.BlockPulling
             };
         }
 
-        /// <inheritdoc />
-        public virtual void PushBlock(int length, Block block, CancellationToken token)
+        /// <summary>
+        /// Method called when a new block is downloaded and pushed to the puller.
+        /// <para>
+        /// This method is to be overridden by derived classes. In the base class it only logs the event.
+        /// </para>
+        /// </summary>
+        /// <param name="blockHash">Hash of the newly downloaded block.</param>
+        /// <param name="downloadedBlock">Desciption of the newly downloaded block.</param>
+        /// <param name="cancellationToken">Cancellation token to be used by derived classes that allows the caller to cancel the execution of the operation.</param>
+        public virtual void BlockPushed(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)
         {
-            uint256 hash = block.Header.GetHash();
+            this.logger.LogTrace($"(blockHash:'{blockHash}',downloadedBlock.Length:{downloadedBlock.Length})");
+            this.logger.LogTrace("(-)");
+        }
 
-            DownloadedBlock downloadedBlock = new DownloadedBlock()
-            {
-                Block = block,
-                Length = length,
-            };
-
-            lock (this.lockObject)
-            {
-                this.downloadedBlocks.TryAdd(hash, downloadedBlock);
-            }
+        /// <inheritdoc />
+        public void InjectBlock(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)
+        {
+            if (this.AddDownloadedBlock(blockHash, downloadedBlock))
+              this.BlockPushed(blockHash, downloadedBlock, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -235,14 +240,13 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public bool IsDownloading(uint256 hash)
+        public void CheckBlockStatus(uint256 hash, out bool IsDownloading, out bool IsReady)
         {
-            bool res = false;
             lock (this.lockObject)
             {
-                res = this.assignedBlockTasks.ContainsKey(hash) || this.pendingInventoryVectors.Contains(hash);
+                IsDownloading = this.assignedBlockTasks.ContainsKey(hash) || this.pendingInventoryVectors.Contains(hash);
+                IsReady = this.downloadedBlocks.ContainsKey(hash);
             }
-            return res;
         }
 
         /// <summary>
@@ -479,14 +483,19 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <para>
         /// The downloaded task is removed from the list of pending downloads
         /// and it is also removed from the <see cref="assignedBlockTasks"/> - i.e. the task is no longer assigned to the peer.
+        /// And finally, it is added to the list of downloaded blocks, provided that the block is not present there already.
         /// </para>
         /// </summary>
         /// <param name="peer">Peer that finished the download task.</param>
         /// <param name="blockHash">Hash of the downloaded block.</param>
+        /// <param name="downloadedBlock">Description of the downloaded block.</param>
         /// <returns>
         /// <c>true</c> if the download task for the block was assigned to <paramref name="peer"/> 
-        /// and the task was removed. <c>false</c> if the downloaded block has been assigned to other peer.</returns>
-        internal bool DownloadTaskFinished(BlockPullerBehavior peer, uint256 blockHash)
+        /// and the task was removed and added to the list of downloaded blocks. 
+        /// <c>false</c> if the downloaded block has been assigned to another peer
+        /// or if the block was already on the list of downloaded blocks.
+        /// </returns>
+        internal bool DownloadTaskFinished(BlockPullerBehavior peer, uint256 blockHash, DownloadedBlock downloadedBlock)
         {
             bool error = false;
             bool res = false;
@@ -504,7 +513,7 @@ namespace Stratis.Bitcoin.BlockPulling
                             if (this.assignedBlockTasks.Remove(blockHash) && peerPendingDownloads.Remove(blockHash))
                             {
                                 // Task was assigned to this peer and was removed.
-                                res = true;
+                                res = this.downloadedBlocks.TryAdd(blockHash, downloadedBlock);
                             }
                             else
                             {
@@ -553,12 +562,17 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="blockHash">Hash of the block to add.</param>
         /// <param name="downloadedBlock">Downloaded block to add.</param>
-        protected void AddDownloadedBlock(uint256 blockHash, DownloadedBlock downloadedBlock)
+        /// <returns><c>true</c> if the block was added to the list of downloaded blocks, <c>false</c> if the block was already present.</returns>
+        protected bool AddDownloadedBlock(uint256 blockHash, DownloadedBlock downloadedBlock)
         {
+            bool res = false;
+
             lock (this.lockObject)
             {
-                this.downloadedBlocks.TryAdd(blockHash, downloadedBlock);
+                res = this.downloadedBlocks.TryAdd(blockHash, downloadedBlock);
             }
+
+            return res;
         }
 
         /// <summary>

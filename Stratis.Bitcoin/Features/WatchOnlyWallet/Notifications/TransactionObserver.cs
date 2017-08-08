@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Notifications
     /// <summary>
     /// Observer that receives notifications about the arrival of new <see cref="Transaction"/>s.
     /// </summary>
-	public class TransactionObserver : SignalObserver<Transaction>
+    public class TransactionObserver : SignalObserver<Transaction>
     {
         private readonly IWatchOnlyWalletManager walletManager;
 
