@@ -43,7 +43,12 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly object lockObject = new object();
 
         /// <summary>Average time of a block download among up to last <see cref="samplesCount"/> blocks.</summary>
-        /// <remarks>Write access to this object has to be protected by <see cref="lockObject"/>.</remarks>
+        /// <remarks>
+        /// Write access to this object has to be protected by <see cref="lockObject"/>.
+        /// <para>
+        /// Public getter allows better testing of the class.
+        /// </para>
+        /// </remarks>
         public double AverageBlockTimePerKb { get; private set; }
 
         /// <summary>Number of block time samples available in <see cref="samples"/>.</summary>
@@ -175,7 +180,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// This mechanism also prevents single peer to go to minimum if it is alone.
         /// </summary>
         /// <returns><c>true</c> if the penalty should be discarded, <c>false</c> otherwise.</returns>
-        private bool IsPenaltyDiscarded()
+        public bool IsPenaltyDiscarded()
         {
             this.logger.LogTrace("()");
 
