@@ -69,39 +69,38 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="requestedBlockHeights">List of block heights that needs to be downloaded.</param>
         /// <param name="availablePeersInformation">List of peers that are available including information about lengths of their chains.</param>
-        /// <param name="currentChainHeight">Height of the current chain.</param>
         /// <returns>List of block heights that each peer is assigned, mapped by information about peers.</returns>
         /// <remarks>
         /// Peers with a lot of work (more than <see cref="HighWorkAmountThreshold"/>) already assigned to them have less chance 
         /// getting more work. However, the quality is stronger factor.
         /// <para>
-        /// Tasks to download blocks between <paramref name="currentChainHeight"/> and <paramref name="currentChainHeight"/>+<see cref="CriticalLookahea"/>
+        /// Tasks to download blocks with height in the lower half of the requested block heights 
         /// are protected from being assigned to peers with quality below the median quality of available peers.</para>
         /// </remarks>
-        public static Dictionary<PeerInformation, List<int>> AssignBlocksToPeers(List<int> requestedBlockHeights, List<PeerInformation> availablePeersInformation, int currentChainHeight)
+        public static Dictionary<PeerInformation, List<int>> AssignBlocksToPeers(List<int> requestedBlockHeights, List<PeerInformation> availablePeersInformation)
         {
-            logger.LogTrace($"({nameof(requestedBlockHeights)}:{string.Join(",", requestedBlockHeights)},{nameof(availablePeersInformation)}.{nameof(availablePeersInformation.Count)}:{availablePeersInformation.Count},{nameof(currentChainHeight)}:{currentChainHeight})");
+            logger.LogTrace($"({nameof(requestedBlockHeights)}:{string.Join(",", requestedBlockHeights)},{nameof(availablePeersInformation)}.{nameof(availablePeersInformation.Count)}:{availablePeersInformation.Count})");
 
             Dictionary<PeerInformation, List<int>> res = new Dictionary<PeerInformation, List<int>>();
             foreach (PeerInformation peerInformation in availablePeersInformation)
                 res.Add(peerInformation, new List<int>());
 
+            int medianBlockHeight = requestedBlockHeights.Median();
+
             foreach (int blockHeight in requestedBlockHeights)
             {
                 // Only consider peers that have the chain long enough to be able to provide block at blockHeight height.
                 List<PeerInformation> filteredPeers = availablePeersInformation.Where(p => p.ChainHeight >= blockHeight).ToList();
-                logger.LogTrace($"{filteredPeers.Count} peers remain after chain height filtration.");
 
                 if (filteredPeers.Count == 0)
                     continue;
 
                 double[] scores = filteredPeers.Select(n => n.QualityScore).ToArray();
-                if (blockHeight < currentChainHeight + CriticalLookahead)
+                if (blockHeight < medianBlockHeight)
                 {
                     // This block task is protected, filter out peers with low quality.
                     double median = scores.Median();
                     filteredPeers = filteredPeers.Where(n => n.QualityScore >= median).ToList();
-                    logger.LogTrace($"{filteredPeers.Count} peers remain after critical block protection filtration.");
 
                     if (filteredPeers.Count == 0)
                         continue;

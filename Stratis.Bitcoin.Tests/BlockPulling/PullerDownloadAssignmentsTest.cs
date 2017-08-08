@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             };
 
             // Use the assignment strategy to assign tasks to peers.
-            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation, ourBlockCount);
+            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
 
             // Check the assignment is valid per our requirements.
             int tasksAssigned = 0;
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 }
 
                 // Use the assignment strategy to assign tasks to peers.
-                Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation, ourBlockCount);
+                Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
 
                 // Check the assignment is valid per our requirements.
                 int tasksAssigned = 0;

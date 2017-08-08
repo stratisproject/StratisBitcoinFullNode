@@ -380,10 +380,8 @@ namespace Stratis.Bitcoin.BlockPulling
                 return;
             }
 
-            // TODO: This is wrong, what we want here is the height of the last consensus block - how do I get ChainState in the puller?
-            int chainHeight = minHeight;
             List<int> requestedBlockHeights = vectors.Keys.ToList();
-            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> blocksAssignedToPeers = PullerDownloadAssignments.AssignBlocksToPeers(requestedBlockHeights, peerInformation, chainHeight);
+            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> blocksAssignedToPeers = PullerDownloadAssignments.AssignBlocksToPeers(requestedBlockHeights, peerInformation);
 
             // Go through the assignments and start download tasks.
             foreach (KeyValuePair<PullerDownloadAssignments.PeerInformation, List<int>> kvp in blocksAssignedToPeers)
