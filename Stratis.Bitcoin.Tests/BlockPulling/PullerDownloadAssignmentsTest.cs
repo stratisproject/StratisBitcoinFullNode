@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                     case "D":
                         // Peers B and C should only get tasks to download blocks up to its chain height.
                         // Peer D can be assigned anything.
-                        Assert.True(assignedBlockHeights.Max() <= peer.ChainHeight);
+                        Assert.True((assignedBlockHeights.Count == 0) || (assignedBlockHeights.Max() <= peer.ChainHeight));
                         break;
 
                     default:
