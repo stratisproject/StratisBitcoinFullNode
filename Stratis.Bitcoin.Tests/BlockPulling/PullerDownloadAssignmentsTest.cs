@@ -7,7 +7,7 @@ using Xunit;
 namespace Stratis.Bitcoin.Tests.BlockPulling
 {
     /// <summary>
-    /// Tests of PullerDownloadAssignments class.
+    /// Tests of <see cref="PullerDownloadAssignments"/> class.
     /// </summary>
     public class PullerDownloadAssignmentsTest
     {
