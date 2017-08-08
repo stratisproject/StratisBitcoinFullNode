@@ -19,7 +19,12 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         private IDisposable blockSubscriberdDisposable;
         private IDisposable transactionSubscriberdDisposable;
 
-        public WatchOnlyWalletFeature(IWatchOnlyWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WatchOnlyWalletFeature"/> class.
+        /// </summary>
+        /// <param name="walletManager">The wallet manager.</param>
+        /// <param name="signals">The signals.</param>
+        public WatchOnlyWalletFeature(IWatchOnlyWalletManager walletManager, Signals.Signals signals)
         {
             this.walletManager = walletManager;
             this.signals = signals;

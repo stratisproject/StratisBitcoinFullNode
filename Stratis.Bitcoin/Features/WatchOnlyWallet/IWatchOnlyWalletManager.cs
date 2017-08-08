@@ -5,6 +5,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
     /// <summary>
     /// An interface representing a manager providing operations on a watch-only wallet.
+    /// TODO Add filtering (and clearing) of transactions whose block hash is not found on the chain (meaning a reorg occured).
     /// </summary>
     public interface IWatchOnlyWalletManager : IDisposable
     {
@@ -17,23 +18,13 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// Gets the watch-only wallet.
         /// </summary>
         /// <returns>A watch-only wallet.</returns>
-        WatchOnlyWallet GetWallet();
-
-        /// <summary>
-        /// Gets the last processed block.
-        /// </summary>
-        uint256 LastReceivedBlock { get; }
-
+        WatchOnlyWallet GetWatchOnlyWallet();
+        
         /// <summary>
         /// Adds this base58 encoded address to the watch-only wallet so that transactions affecting it will be monitored.
         /// </summary>
         /// <param name="address">The base58 address to watch for in transactions.</param>
         void WatchAddress(string address);
-
-        /// <summary>
-        /// Removes all the thransactions in the wallet that are above this block height.
-        /// </summary>
-        void RemoveBlocks(ChainedBlock fork);
 
         /// <summary>
         /// Processes a block received from the network.
@@ -45,9 +36,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// Processes a transaction received from the network.
         /// </summary>
         /// <param name="transaction">The transaction to process.</param>
-        /// <param name="blockHeight">The height of the block this transaction came from. <c>null</c> if it was not a transaction included in a block.</param>
         /// <param name="block">The block in which this transaction was included. <c>null</c> if it was not a transaction included in a block.</param>
-        void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null);
+        void ProcessTransaction(Transaction transaction, Block block = null);
 
         /// <summary>
         /// Saves the watch-only wallet to a persistent storage.
@@ -58,12 +48,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// Loads a stored watch-only wallet.
         /// </summary>
         /// <returns>The stored watch-only wallet.</returns>
-        WatchOnlyWallet LoadWatchOnlyWallet();
-
-        /// <summary>
-        /// Updates all the watch-only wallet with the height of the last block synced.
-        /// </summary>
-        /// <param name="chainedBlock">The height of the last block synced.</param>
-        void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock);
+        WatchOnlyWallet LoadWatchOnlyWallet();        
     }
 }

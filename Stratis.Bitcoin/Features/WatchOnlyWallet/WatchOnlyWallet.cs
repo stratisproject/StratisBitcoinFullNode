@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Script = NBitcoin.Script;
@@ -44,20 +43,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public DateTimeOffset CreationTime { get; set; }
 
         /// <summary>
-        /// The height of the last block that was synced.
-        /// </summary>
-        [JsonProperty(PropertyName = "lastBlockSyncedHeight", NullValueHandling = NullValueHandling.Ignore)]
-        public int? LastBlockSyncedHeight { get; set; }
-
-        /// <summary>
-        /// The hash of the last block that was synced.
-        /// </summary>
-        [JsonProperty(PropertyName = "lastBlockSyncedHash", NullValueHandling = NullValueHandling.Ignore)]
-        [JsonConverter(typeof(UInt256JsonConverter))]
-        public uint256 LastBlockSyncedHash { get; set; }
-
-        /// <summary>
-        /// The list of <see cref="Script"/>s being watched.
+        /// The list of addresses being watched.
         /// </summary>
         [JsonProperty(PropertyName = "watchedAddresses")]
         public ICollection<WatchedAddress> WatchedAddresses { get; set; }
@@ -77,14 +63,14 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         }
 
         /// <summary>
-        /// A script being watched for transactions affecting it.
+        /// A <see cref="Script"/> being watched for transactions affecting it.
         /// </summary>
         [JsonProperty(PropertyName = "script")]
         [JsonConverter(typeof(ScriptJsonConverter))]
         public Script Script { get; set; }
 
         /// <summary>
-        /// A base58 address being watched for transactions affecting it.        
+        /// A base58 address being watched for transactions affecting it.
         /// </summary>
         /// <remarks>
         /// This is a convenience property whose intrisic value is equal to <see cref="Script"/>.
@@ -106,16 +92,16 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
     public class TransactionData
     {
         /// <summary>
-        /// A transaction affecting a script being watched.
+        /// Hexadecimal representation of a transaction affecting a script being watched.
         /// </summary>
-        [JsonProperty(PropertyName = "transaction")]
-        public TransactionVerboseModel Transaction { get; set; }
+        [JsonProperty(PropertyName = "hex")]
+        public string Hex { get; set; }
 
         /// <summary>
-        /// The height of the block including this transaction.
+        /// A transaction affecting a script being watched.
         /// </summary>
-        [JsonProperty(PropertyName = "blockHeight", NullValueHandling = NullValueHandling.Ignore)]
-        public int? BlockHeight { get; set; }
+        [JsonIgnore]
+        public Transaction Transaction => Transaction.Parse(this.Hex);
 
         /// <summary>
         /// The hash of the block including this transaction.
@@ -123,6 +109,5 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonProperty(PropertyName = "blockHash", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 BlockHash { get; set; }
-
     }
 }
