@@ -21,8 +21,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 10 blocks appended
-                var chain = new ConcurrentChain(Network.Main);
-                AppendBlocks(chain, blocks.Take(10));
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(9));
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\CanExecute_TryPending");

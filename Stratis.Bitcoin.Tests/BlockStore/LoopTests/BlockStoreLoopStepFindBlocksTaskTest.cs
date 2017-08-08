@@ -24,8 +24,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 10 blocks appended
-                var chain = new ConcurrentChain(Network.Main);
-                AppendBlocks(chain, blocks);
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(9));
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanFind");
@@ -64,10 +64,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks.Take(2).ToList()).GetAwaiter().GetResult();
 
-                var chain = new ConcurrentChain(Network.Main);
-
                 // The chain has 2 blocks appended
-                AppendBlocks(chain, blocks.Take(3).ToList());
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(2).ToList());
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached");
@@ -105,10 +104,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
-                var chain = new ConcurrentChain(Network.Main);
-
                 // The chain has 3 blocks appended
-                AppendBlocks(chain, blocks);
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage");
@@ -147,10 +145,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
-                var chain = new ConcurrentChain(Network.Main);
-
                 // The chain has 3 blocks appended
-                AppendBlocks(chain, blocks);
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository");
@@ -187,10 +184,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
-                var chain = new ConcurrentChain(Network.Main);
-
                 // The chain has 2 blocks appended
-                AppendBlocks(chain, blocks);
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(1));
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull");
@@ -226,10 +222,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
-                var chain = new ConcurrentChain(Network.Main);
-
                 // The chain has 2 blocks appended
-                AppendBlocks(chain, blocks);
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(1));
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanBreakExecution_DownloadStackIsEmpty");

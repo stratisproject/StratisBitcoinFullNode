@@ -26,8 +26,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 10 blocks appended
-                var chain = new ConcurrentChain(Network.Main);
-                AppendBlocks(chain, blocks.Take(10));
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(9));
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks_Integration");
@@ -57,11 +57,11 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
             using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\DownloadBlocks_EnsureNextChainedBlockIsAskedForOnStartUp")))
             {
-                var chain = new ConcurrentChain(Network.Main);
+                // The chain has 3 blocks appended
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(2));
 
-                AppendBlocks(chain, blocks.Take(3));
-
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks_EnsureNextChainedBlockIsAskedForOnStartUp");
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
 
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
@@ -95,10 +95,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks.Take(3).ToList()).GetAwaiter().GetResult();
 
-                var chain = new ConcurrentChain(Network.Main);
-
                 // The chain has 3 blocks appended
-                AppendBlocks(chain, blocks.Take(3).ToList());
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocks(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks_EnsureNextChainedBlockIsAskedForOnStartUp");
