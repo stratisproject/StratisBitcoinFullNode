@@ -2,7 +2,7 @@
   "profiles": {
     "Stratis.StratisD": {
       "commandName": "Project",
-      "commandLineArgs": "connect=40.68.27.143 mine=TPdqsxAqJJ3M1WNWaSf9SNFU2DgjJdypAw -testnet"
+      "commandLineArgs": "connect=40.68.27.143 mine=TU7Dsigke1CkopiiWw8vgogcyMeWWg2xDe -testnet"
     }
   }
 }
