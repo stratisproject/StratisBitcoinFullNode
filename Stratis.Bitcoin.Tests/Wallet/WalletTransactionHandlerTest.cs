@@ -206,9 +206,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
-        public void FundTransactioSuccess_Given__a_wallet_has_enough_inputs__When__adding_inputs_to_an_existing_transaction__Then__the_transaction_is_funded_successfully()
+        public void FundTransaction_Given__a_wallet_has_enough_inputs__When__adding_inputs_to_an_existing_transaction__Then__the_transaction_is_funded_successfully()
         {
-            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletTransactionHandlerTest/FundTransactionWithInputs_Given__a_wallet_has_enough_inputs__When__adding_inputs_to_an_existing_transaction__Then__the_transaction_is_valid");
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletTransactionHandlerTest/FundTransaction_Given__a_wallet_has_enough_inputs__When__adding_inputs_to_an_existing_transaction__Then__the_transaction_is_funded_successfully");
 
             var wallet = GenerateBlankWallet("myWallet1", "password");
             var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");

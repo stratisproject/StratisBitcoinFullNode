@@ -1242,7 +1242,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var result = walletManager.GetSpendableTransactions("myWallet", confirmations: 0);
 
             Assert.Equal(1, result.Count);
-            Assert.Equal(0, result.First().Items.Count);
+            Assert.Equal(0, result.First().UnspentOutputs.Count);
         }
 
         /// <summary>
@@ -1297,7 +1297,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var resultRef = walletManager.GetSpendableTransactions("myWallet3", confirmations: 1);
             Assert.Equal(1, resultRef.Count);
 
-            var result = resultRef[0].Items;
+            var result = resultRef[0].UnspentOutputs;
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("Second expectation", info.Account.Name);
@@ -1336,7 +1336,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var resultRef = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
             Assert.Equal(1, resultRef.Count);
 
-            var result = resultRef[0].Items;
+            var result = resultRef[0].UnspentOutputs;
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("First expectation", info.Account.Name);
@@ -1413,7 +1413,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var result = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
 
             Assert.Equal(1, result.Count);
-            Assert.Equal(0, result.First().Items.Count);
+            Assert.Equal(0, result.First().UnspentOutputs.Count);
         }
 
         [Fact]

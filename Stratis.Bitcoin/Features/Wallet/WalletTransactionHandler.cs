@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             var signingKeys = new HashSet<ISecret>();
             var added = new HashSet<HdAddress>();
-            foreach (var unspentOutputsItem in context.UnspentOutputs.Items)
+            foreach (var unspentOutputsItem in context.UnspentOutputs.UnspentOutputs)
             {
                 if(added.Contains(unspentOutputsItem.Address))
                     continue;
@@ -201,13 +201,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             context.UnspentOutputs = this.walletManager.GetSpendableTransactions(context.AccountReference, context.MinConfirmations);
 
-            if (context.UnspentOutputs.Items.Count == 0)
+            if (context.UnspentOutputs.UnspentOutputs.Count == 0)
             {
                 throw new WalletException($"No spendable transactions found on account {context.AccountReference.AccountName}.");
             }
 
             // get total spendable balance in the account.
-            var balance = context.UnspentOutputs.Items.Sum(t => t.Transaction.Amount);
+            var balance = context.UnspentOutputs.UnspentOutputs.Sum(t => t.Transaction.Amount);
             if (balance < context.Recipients.Sum(s => s.Amount))
                 throw new WalletException("Not enough funds.");
 
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // input is part of the UTXO set and filter out UTXO's that are not
                 // in the initial list if 'context.AllowOtherInputs' is false
 
-                var availableHashList = context.UnspentOutputs.Items.ToDictionary(item => item.ToOutPoint(), item => item);
+                var availableHashList = context.UnspentOutputs.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
                 if(!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
                     throw new WalletException($"Not all the inputs in 'SelectedInputs' where found ion the wallet.");
@@ -227,12 +227,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     foreach (var unspentOutputsItem in availableHashList)
                         if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
-                            context.UnspentOutputs.Items.Remove(unspentOutputsItem.Value);
+                            context.UnspentOutputs.UnspentOutputs.Remove(unspentOutputsItem.Value);
                 }
             }
 
             var coins = new List<Coin>();
-            foreach (var item in context.UnspentOutputs.Items)
+            foreach (var item in context.UnspentOutputs.UnspentOutputs)
             {
                 coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
             }

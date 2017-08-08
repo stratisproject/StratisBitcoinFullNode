@@ -176,8 +176,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime,
-            string passphrase = null)
+        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(name, nameof(name));
@@ -512,12 +511,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (var address in account.GetCombinedAddresses())
                 {
-                    var unspent = address.UnspentTransactions()
+                    var unspentTransactions = address.UnspentTransactions()
                         .Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
 
-                    foreach (var transactionData in unspent)
+                    foreach (var transactionData in unspentTransactions)
                     {
-                        accountReference.Items.Add(new UnspentOutputReference
+                        accountReference.UnspentOutputs.Add(new UnspentOutputReference
                         {
                             Account = account,
                             Address = address,
@@ -1233,7 +1232,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// Represents an UTXO that keeps a reference to <see cref="HdAddress"/> and <see cref="HdAccount"/>.
     /// </summary>
     /// <remarks>
-    /// This is useful when an UTXO needs access to its HD proprieties like the HD path when recosntructing a provate key.
+    /// This is useful when an UTXO needs access to its HD properties like the HD path when reconstructing a private key.
     /// </remarks>
     public class UnspentOutputReference
     {
@@ -1264,19 +1263,19 @@ namespace Stratis.Bitcoin.Features.Wallet
 
 
     /// <summary>
-    /// Represent a high level account container that hold all its <see cref="UnspentOutputReference"/>.
+    /// Represent a high level account container that hold's all its <see cref="UnspentOutputReference"/>.
     /// </summary>
     public class UnspentAccountReference
     {
         public UnspentAccountReference()
         {
-            this.Items = new List<UnspentOutputReference>();
+            this.UnspentOutputs = new List<UnspentOutputReference>();
         }
 
         /// <summary>
         /// The UTXO's associated with this account.
         /// </summary>
-        public List<UnspentOutputReference> Items { get; set; }
+        public List<UnspentOutputReference> UnspentOutputs { get; set; }
     }
 
 }

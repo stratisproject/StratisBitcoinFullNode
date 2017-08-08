@@ -178,11 +178,11 @@ namespace Stratis.Bitcoin.Features.Miner
 				var stakeTxes = new List<StakeTx>();
 				var spendable = this.wallet.GetSpendableTransactions(walletSecret.WalletName, 1);
 
-				var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.Items.Select(t => t.Transaction.Id)).ToArray()).GetAwaiter().GetResult();
+				var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.UnspentOutputs.Select(t => t.Transaction.Id)).ToArray()).GetAwaiter().GetResult();
 
 				foreach (var unspentInfo in spendable)
 				{
-					foreach (var infoTransaction in unspentInfo.Items)
+					foreach (var infoTransaction in unspentInfo.UnspentOutputs)
 					{
 						var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
 						var utxo = set?._Outputs[infoTransaction.Transaction.Index.Value];
