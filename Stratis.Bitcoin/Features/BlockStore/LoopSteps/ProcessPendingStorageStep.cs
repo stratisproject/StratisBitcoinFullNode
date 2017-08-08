@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
         }
 
-        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        internal override async Task<BlockStoreLoopStepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             // Remove the BlockPair from PendingStorage and return for further processing
             // If the next chained block does not exist, continue with execution
