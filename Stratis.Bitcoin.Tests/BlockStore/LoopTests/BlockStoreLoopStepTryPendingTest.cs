@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             // Create 15 blocks
             var blocks = CreateBlocks(15);
 
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\Pending")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\CanExecute_TryPending")))
             {
                 // Push 5 blocks to the repository
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks.Take(10));
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\Pending");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\CanExecute_TryPending");
 
                 // Add chained blocks 5 - 9 to PendingStorage
                 AddToPendingStorage(blockStoreLoop, blocks[5]);

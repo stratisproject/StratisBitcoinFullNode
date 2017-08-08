@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             // Create 10 blocks
             List<Block> blocks = CreateBlocks(10);
 
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanFind")))
             {
                 // Push 5 blocks to the repository
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks);
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanFind");
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
                 blockStoreLoop.BlockPuller.InjectBlock(blocks[5].GetHash(), new DownloadedBlock() { Length = blocks[5].GetSerializedSize(), Block = blocks[5] }, new CancellationToken());
@@ -41,9 +41,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreStepTaskContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
 
-                var task = new BlockStoreStepFindBlocksTask();
+                var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 //Block[5] and Block[6] in the DownloadStack
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             List<Block> blocks = CreateBlocks(3);
 
             // The repository has 3 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached")))
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks.Take(2).ToList()).GetAwaiter().GetResult();
 
@@ -70,16 +70,16 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks.Take(3).ToList());
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached");
                 blockStoreLoop.BatchDownloadSize = 2;
 
                 //Start finding blocks from Block[1]
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreStepTaskContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
 
-                var task = new BlockStoreStepFindBlocksTask();
+                var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 //Block[1] and Block[2] in the DownloadStack
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 //The FindBlocks() task should be removed from the routine
                 //as the batch download size is reached
                 Assert.Equal(1, context.Routine.Count());
-                Assert.False(context.Routine.OfType<BlockStoreStepFindBlocksTask>().Any());
+                Assert.False(context.Routine.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             List<Block> blocks = CreateBlocks(3);
 
             // The repository has 3 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage")))
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks);
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage");
 
                 //Start finding blocks from Block[1]
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
@@ -120,9 +120,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 blockStoreLoop.PendingStorage.TryAdd(blocks[2].GetHash(), new BlockPair(blocks[2], nextChainedBlock));
 
                 // Create Task Context
-                var context = new BlockStoreStepTaskContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
 
-                var task = new BlockStoreStepFindBlocksTask();
+                var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 //DownloadStack should only contain nextChainedBlock
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 //The FindBlocks() task should be removed from the routine
                 //as the next chained block exists in PendingStorage
                 Assert.Equal(1, context.Routine.Count());
-                Assert.False(context.Routine.OfType<BlockStoreStepFindBlocksTask>().Any());
+                Assert.False(context.Routine.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             List<Block> blocks = CreateBlocks(3);
 
             // The repository has 3 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository")))
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
@@ -153,15 +153,15 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks);
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository");
 
                 //Start finding blocks from Block[1]
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreStepTaskContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
 
-                var task = new BlockStoreStepFindBlocksTask();
+                var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 //DownloadStack should only contain nextChainedBlock
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 //as the next chained block exist in the BlockRepository
                 //causing a stop condition
                 Assert.Equal(1, context.Routine.Count());
-                Assert.False(context.Routine.OfType<BlockStoreStepFindBlocksTask>().Any());
+                Assert.False(context.Routine.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             List<Block> blocks = CreateBlocks(2);
 
             // The repository has 2 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull")))
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
@@ -193,15 +193,15 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks);
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull");
 
                 //Start finding blocks from Block[1]
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreStepTaskContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
 
-                var task = new BlockStoreStepFindBlocksTask();
+                var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 //DownloadStack should only contain nextChainedBlock
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 //The FindBlocks() task should be removed from the routine
                 //as the next chained block is null
                 Assert.Equal(1, context.Routine.Count());
-                Assert.False(context.Routine.OfType<BlockStoreStepFindBlocksTask>().Any());
+                Assert.False(context.Routine.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             List<Block> blocks = CreateBlocks(2);
 
             // The repository has 2 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanBreakExecution_DownloadStackIsEmpty")))
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
@@ -232,16 +232,16 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks);
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanBreakExecution_DownloadStackIsEmpty");
 
                 //Start finding blocks from Block[1]
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreStepTaskContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
                 context.DownloadStack.Clear();
 
-                var task = new BlockStoreStepFindBlocksTask();
+                var task = new BlockStoreInnerStepFindBlocks();
                 var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
                 Assert.True(result.ShouldBreak);
             }

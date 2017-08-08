@@ -12,9 +12,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// Once the downloadStack is empty or InsertBlockSizeThreshold has been reached
     /// the blocks in the store will be pushed to the Repository
     /// </summary>
-    public sealed class BlockStoreStepDownloadBlocksTask : BlockStoreStepTask
+    public sealed class BlockStoreInnerStepDownloadBlocks : BlockStoreStepTask
     {
-        public override async Task<BlockStoreLoopStepResult> ExecuteAsync(BlockStoreStepTaskContext context)
+        public override async Task<BlockStoreLoopStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
             BlockPuller.DownloadedBlock downloadedBlock;
 

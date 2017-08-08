@@ -1,7 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using System;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -15,7 +14,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         {
             var blocks = CreateBlocks(5);
 
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\Exists")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\CanExecute_CheckNextChainedBlockExistStep")))
             {
                 // Push 5 blocks to the repository
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
@@ -26,12 +25,9 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
                 // Create the last chained block without appending to the chain
                 var block03 = chain.GetBlock(blocks[3].GetHash());
-                if (block03.Header.HashPrevBlock != blocks[4].Header.HashPrevBlock)
-                    Console.WriteLine(string.Format("{0} - {1} - {2}", block03.Header.HashPrevBlock, blocks[4].Header.HashPrevBlock, chain.Genesis.HashBlock));
-
                 var block04 = new ChainedBlock(blocks[4].Header, blocks[4].Header.GetHash(), block03);
 
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\Exists");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\CanExecute_CheckNextChainedBlockExistStep");
                 Assert.Null(blockStoreLoop.StoreTip);
 
                 var nextChainedBlock = block04;

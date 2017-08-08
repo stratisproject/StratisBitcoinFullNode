@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     internal sealed class BlockStoreStepChain
     {
-        List<BlockStoreLoopStep> steps = new List<BlockStoreLoopStep>();
+        private List<BlockStoreLoopStep> steps = new List<BlockStoreLoopStep>();
 
         internal void SetNextStep(BlockStoreLoopStep step)
         {

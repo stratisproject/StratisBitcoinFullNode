@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
-    public sealed class BlockStoreStepTaskContext
+    public sealed class BlockStoreInnerStepContext
     {
-        public BlockStoreStepTaskContext(CancellationToken cancellationToken, BlockStoreLoop blockStoreLoop)
+        public BlockStoreInnerStepContext(CancellationToken cancellationToken, BlockStoreLoop blockStoreLoop)
         {
             Guard.NotNull(blockStoreLoop, "blockStoreLoop");
 
@@ -18,19 +18,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.CancellationToken = cancellationToken;
         }
 
-        public BlockStoreStepTaskContext Initialize(ChainedBlock nextChainedBlock)
+        public BlockStoreInnerStepContext Initialize(ChainedBlock nextChainedBlock)
         {
             Guard.NotNull(nextChainedBlock, "nextChainedBlock");
 
             this.DownloadStack = new Queue<ChainedBlock>(new[] { nextChainedBlock });
             this.NextChainedBlock = nextChainedBlock;
-            this.Routine = new List<BlockStoreStepTask>() { new BlockStoreStepFindBlocksTask(), new BlockStoreStepDownloadBlocksTask() };
+            this.Routine = new List<BlockStoreStepTask>() { new BlockStoreInnerStepFindBlocks(), new BlockStoreInnerStepDownloadBlocks() };
 
             this.InsertBlockSize = 0;
             this.StallCount = 0;
             this.Store = new List<BlockPair>();
-
-            this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
 
             return this;
         }
@@ -54,12 +52,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         internal void StopFindingBlocks()
         {
-            this.Routine.Remove(this.Routine.OfType<BlockStoreStepFindBlocksTask>().First());
+            this.Routine.Remove(this.Routine.OfType<BlockStoreInnerStepFindBlocks>().First());
         }
     }
 
     public abstract class BlockStoreStepTask
     {
-        public abstract Task<BlockStoreLoopStepResult> ExecuteAsync(BlockStoreStepTaskContext context);
+        public abstract Task<BlockStoreLoopStepResult> ExecuteAsync(BlockStoreInnerStepContext context);
     }
 }

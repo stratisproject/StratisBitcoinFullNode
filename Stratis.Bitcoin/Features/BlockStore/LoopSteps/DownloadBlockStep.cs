@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     ///     FindBlocks() to download by asking them from the BlockPuller
     ///     DownloadBlocks() and persisting them as a batch to the BlockRepository
     ///      
-    ///     After a "Stop"condition is found the FindBlocksTask 
+    ///     After a "Stop" condition is found the FindBlocksTask 
     ///     will get removed from the routine and only the DownloadBlocksTask 
     ///     will continue to execute until the DownloadStack is empty
     /// </summary>
@@ -31,7 +31,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             var result = BlockStoreLoopStepResult.Next();
 
-            var context = new BlockStoreStepTaskContext(token, this.BlockStoreLoop).Initialize(nextChainedBlock);
+            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop).Initialize(nextChainedBlock);
+
+            this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
 
             while (!token.IsCancellationRequested)
             {

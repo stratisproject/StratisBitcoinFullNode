@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             // Create 10 blocks
             var blocks = CreateBlocks(10);
 
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\DownloadBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\DownloadBlocks_Integration")))
             {
                 // Push 5 blocks to the repository
                 blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks.Take(10));
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks_Integration");
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
                 blockStoreLoop.BlockPuller.InjectBlock(blocks[5].GetHash(), new DownloadedBlock() { Length = blocks[5].GetSerializedSize(), Block = blocks[5] }, new CancellationToken());
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         {
             var blocks = CreateBlocks(3);
 
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\DownloadBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\DownloadBlocks_EnsureNextChainedBlockIsAskedForOnStartUp")))
             {
                 var chain = new ConcurrentChain(Network.Main);
 
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks");
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
 
-                var context = new BlockStoreStepTaskContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
                 Assert.Equal(1, context.DownloadStack.Count());
                 Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == nextChainedBlock.HashBlock));
 
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             List<Block> blocks = CreateBlocks(3);
 
             // The repository has 3 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\DownloadBlocks")))
+            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\DownloadBlocks_EnsureNextChainedBlockIsAskedForOnStartUp")))
             {
                 blockRepository.PutAsync(blocks.Last().GetHash(), blocks.Take(3).ToList()).GetAwaiter().GetResult();
 
@@ -101,16 +101,16 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 AppendBlocks(chain, blocks.Take(3).ToList());
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks");
+                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\DownloadBlocks_EnsureNextChainedBlockIsAskedForOnStartUp");
 
                 //Start finding blocks from Block[1]
                 var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreStepTaskContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
                 context.StallCount = 10001;
 
-                var task = new BlockStoreStepDownloadBlocksTask();
+                var task = new BlockStoreInnerStepDownloadBlocks();
                 var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 Assert.True(result.ShouldBreak);
