@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Maximal quality score of a peer node based on the node's past experience with the peer node.</summary>
         public const double MinScore = 1.0;
         /// <summary>Minimal quality score of a peer node based on the node's past experience with the peer node.</summary>
-        public const double MaxScore = 100.0;
+        public const double MaxScore = 150.0;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Average time of a block download among up to last <see cref="samplesCount"/> blocks.</summary>
         /// <remarks>Write access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private double averageBlockTimePerKb { get; set; }
+        public double AverageBlockTimePerKb { get; private set; }
 
         /// <summary>Number of block time samples available in <see cref="samples"/>.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.BlockPulling
             for (int i = 0; i < this.samples.Length; i++)
                 this.samples[i] = new PeerSample();
 
-            this.averageBlockTimePerKb = 0.0;
+            this.AverageBlockTimePerKb = 0.0;
             this.peerReferenceCounter = new Dictionary<IBlockPullerBehavior, int>();
         }
 
@@ -94,6 +94,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace($"({nameof(peer)}:{peer.GetHashCode():x},{nameof(blockDownloadTimeMs)}:{blockDownloadTimeMs},{nameof(blockSize)}:{blockSize})");
 
             double timePerKb = 1024.0 * (double)blockDownloadTimeMs / (double)blockSize;
+            if (timePerKb < 0.00001) timePerKb = 0.00001;
 
             lock (this.lockObject)
             {
@@ -119,10 +120,10 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 // Update the sum and the average with the latest data.
                 this.samplesSum += timePerKb;
-                this.averageBlockTimePerKb = this.samplesSum / this.samplesCount;
+                this.AverageBlockTimePerKb = this.samplesSum / this.samplesCount;
             }
 
-            this.logger.LogTrace($"(-):{nameof(this.averageBlockTimePerKb)}={this.averageBlockTimePerKb}");
+            this.logger.LogTrace($"(-):{nameof(this.AverageBlockTimePerKb)}={this.AverageBlockTimePerKb}");
         }
 
         /// <summary>
@@ -135,8 +136,10 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace($"({nameof(blockDownloadTimeMs)}:{blockDownloadTimeMs},{nameof(blockSize)}:{blockSize})");
 
-            double avgTimePerKb = this.averageBlockTimePerKb;
+            double avgTimePerKb = this.AverageBlockTimePerKb;
             double timePerKb = 1024.0 * (double)blockDownloadTimeMs / (double)blockSize;
+            if (timePerKb < 0.00001) timePerKb = 0.00001;
+
             this.logger.LogTrace($"Average time per KB is {avgTimePerKb} ms, this sample is {timePerKb} ms/KB.");
 
             // If the block was received with better speed than is 2x average of the recent history we keep
@@ -144,7 +147,7 @@ namespace Stratis.Bitcoin.BlockPulling
             // the block too slowly. If we have no history, then we give a small reward no matter what.
             double res = 0.1;
             if (timePerKb < 2 * avgTimePerKb) res = avgTimePerKb / timePerKb;
-            else if (Math.Abs(avgTimePerKb) > 0.00001) res = -timePerKb / (2 * avgTimePerKb);
+            else if (Math.Abs(avgTimePerKb) >= 0.00001) res = -timePerKb / (2 * avgTimePerKb);
 
             if ((res < 0) && this.IsPenaltyDiscarded())
                 res = 0;
