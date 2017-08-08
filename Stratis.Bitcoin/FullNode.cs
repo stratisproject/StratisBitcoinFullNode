@@ -1,10 +1,9 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
@@ -61,6 +60,9 @@ namespace Stratis.Bitcoin
         /// <summary>Manager providing operations on wallets.</summary>
         public WalletManager WalletManager { get; set; }
 
+        /// <summary>A transaction handler providing operations on transactions in the wallets.</summary>
+        public IWalletTransactionHandler WalletTransactionHandler { get; set; }
+
         /// <summary>ASP.NET Core host for RPC server.</summary>
         public IWebHost RPCHost { get; set; }
 
@@ -70,7 +72,7 @@ namespace Stratis.Bitcoin
         /// <summary>Manager of transactions in memory pool.</summary>
         public MempoolManager MempoolManager { get; set; }
 
-        /// <summary>Manager responsible for persistency of blocks.</summary>
+        /// <summary>Manager responsible for persistence of blocks.</summary>
         public BlockStoreManager BlockStoreManager { get; set; }
 
         /// <summary>Best chain of block headers from genesis.</summary>
@@ -179,6 +181,7 @@ namespace Stratis.Bitcoin
             this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
             this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
             this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
+            this.WalletTransactionHandler = this.Services.ServiceProvider.GetService<IWalletTransactionHandler>();
             this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
