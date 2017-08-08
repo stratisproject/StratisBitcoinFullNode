@@ -14,9 +14,22 @@ using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
-    /// Relation of the node to a network peer node.
+    /// Relation of the node's puller to a network peer node.
     /// </summary>
-    public class BlockPullerBehavior : NodeBehavior
+    public interface IBlockPullerBehavior
+    {
+        /// <summary>
+        /// Evaluation of the past experience with this node.
+        /// The higher the score, the better experience we have had with it.
+        /// </summary>
+        /// <seealso cref="QualityScore.MaxScore"/>
+        /// <seealso cref="QualityScore.MinScore"/>
+        double QualityScore { get; }
+    }
+
+
+    /// <inheritdoc />
+    public class BlockPullerBehavior : NodeBehavior, IBlockPullerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private ILoggerFactory loggerFactory;
@@ -55,12 +68,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Lock protecting write access to <see cref="QualityScore"/>.</summary>
         private readonly object qualityScoreLock = new object();
 
-        /// <summary>
-        /// Evaluation of the past experience with this node.
-        /// The higher the score, the better experience we have had with it.
-        /// </summary>
-        /// <seealso cref="MaxQualityScore"/>
-        /// <seealso cref="MinQualityScore"/>
+        /// <inheritdoc />
         /// <remarks>Write access to this object has to be protected by <see cref="qualityScoreLock"/>.</remarks>
         public double QualityScore { get; private set; }
 
@@ -72,7 +80,7 @@ namespace Stratis.Bitcoin.BlockPulling
         public BlockPullerBehavior(BlockPuller puller, ILoggerFactory loggerFactory)
         {
             this.puller = puller;
-            this.QualityScore = BlockPulling.QualityScore.MaxScore / 2;
+            this.QualityScore = BlockPulling.QualityScore.MaxScore / 3;
             // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/292
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
