@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 				var h = uint256.Parse(hash);
 				Block storedBlock = this.BlockManager.BlockRepository.GetAsync(h).GetAwaiter().GetResult();
 				ChainedBlock chainedBlock = this.Chain.GetBlock(h);
-				var nextChainedBlock = this.Chain.EnumerateToTip(h).FirstOrDefault();
+				var nextChainedBlock = this.Chain.GetBlock(chainedBlock.Height + 1);
 				model = new BlockModel(chainedBlock, nextChainedBlock, storedBlock);
 			}
 			return model;
