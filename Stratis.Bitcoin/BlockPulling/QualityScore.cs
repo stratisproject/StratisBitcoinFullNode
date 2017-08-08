@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.BlockPulling
     public class PeerSample
     {
         /// <summary>Peer who provided the sample.</summary>
-        public BlockPullerBehavior peer { get; set; }
+        public IBlockPullerBehavior peer { get; set; }
 
         /// <summary>Downloading speed as number of milliseconds per KB.</summary>
         public double timePerKb { get; set; }
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Reference counter for peers. This is used for calculating how many peers contributed to the sample history we keep.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private readonly Dictionary<BlockPullerBehavior, int> peerReferenceCounter;
+        private readonly Dictionary<IBlockPullerBehavior, int> peerReferenceCounter;
 
         /// <summary>Sum of all samples in <see cref="samples"/> array.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.samples[i] = new PeerSample();
 
             this.averageBlockTimePerKb = 0.0;
-            this.peerReferenceCounter = new Dictionary<BlockPullerBehavior, int>();
+            this.peerReferenceCounter = new Dictionary<IBlockPullerBehavior, int>();
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="peer">Peer that downloaded the block.</param>
         /// <param name="blockDownloadTimeMs">Time in milliseconds it took to download the block from the peer.</param>
         /// <param name="blockSize">Size of the downloaded block in bytes.</param>
-        public void AddSample(BlockPullerBehavior peer, long blockDownloadTimeMs, int blockSize)
+        public void AddSample(IBlockPullerBehavior peer, long blockDownloadTimeMs, int blockSize)
         {
             this.logger.LogTrace($"({nameof(peer)}:{peer.GetHashCode():x},{nameof(blockDownloadTimeMs)}:{blockDownloadTimeMs},{nameof(blockSize)}:{blockSize})");
 
