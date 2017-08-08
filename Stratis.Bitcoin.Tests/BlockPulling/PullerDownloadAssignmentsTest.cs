@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Stratis.Bitcoin.BlockPulling;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
-using Stratis.Bitcoin.BlockPulling;
 
 namespace Stratis.Bitcoin.Tests.BlockPulling
 {
@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         public void AssignBlocksToPeersWithNodesWithDifferentChainsCorrectlyDistributesDownloadTasks()
         {
             int ourBlockCount = 5;
+
             // Create list of numbers ourBlockCount + 1 to 40 and shuffle it.
             Random rnd = new Random();
             List<int> requiredBlockHeights = new List<int>();
