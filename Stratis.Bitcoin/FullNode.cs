@@ -22,35 +22,98 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin
 {
-
+    /// <summary>
+    /// Node providing all supported features of the blockchain and its network.
+    /// </summary>
     public class FullNode : IFullNode
     {
+        /// <summary>Instance logger.</summary>
         private ILogger logger;
-        private NodeLifetime nodeLifetime;
+
+        /// <summary>Component responsible for starting and stopping all the node's features.</summary>
         private FullNodeFeatureExecutor fullNodeFeatureExecutor;
 
+        /// <summary>Indicates whether the node has been stopped or is currently being stopped.</summary>
         internal bool Stopped;
 
+        /// <summary>Indicates whether the node's instance has been disposed or is currently being disposed.</summary>
         public bool IsDisposed { get; private set; }
+
+        /// <summary>Indicates whether the node's instance disposal has been finished.</summary>
         public bool HasExited { get; private set; }
 
+        /// <summary>Node command line and configuration file settings.</summary>
+        public NodeSettings Settings { get; private set; }
+
+        /// <summary>List of disposable resources that the node uses.</summary>
+        public List<IDisposable> Resources { get; private set; }
+
+        /// <summary>Information about the best chain.</summary>
+        public ChainState ChainBehaviorState { get; private set; }
+
+        /// <summary>Provider of notification about newly available blocks and transactions.</summary>
+        public Signals.Signals Signals { get; set; }
+
+        /// <summary>Component responsible for keeping the node in consensus with the network.</summary>
+        public ConsensusLoop ConsensusLoop { get; set; }
+
+        /// <summary>Manager providing operations on wallets.</summary>
+        public WalletManager WalletManager { get; set; }
+
+        /// <summary>A transaction handler providing operations on transactions in the wallets.</summary>
+        public IWalletTransactionHandler WalletTransactionHandler { get; set; }
+
+        /// <summary>ASP.NET Core host for RPC server.</summary>
+        public IWebHost RPCHost { get; set; }
+
+        /// <summary>Component responsible for connections to peers in P2P network.</summary>
+        public IConnectionManager ConnectionManager { get; set; }
+
+        /// <summary>Manager of transactions in memory pool.</summary>
+        public MempoolManager MempoolManager { get; set; }
+
+        /// <summary>Manager responsible for persistence of blocks.</summary>
+        public BlockStoreManager BlockStoreManager { get; set; }
+
+        /// <summary>Best chain of block headers from genesis.</summary>
+        public ConcurrentChain Chain { get; set; }
+
+        /// <summary>Factory for creating and execution of asynchronous loops.</summary>
+        public IAsyncLoopFactory AsyncLoopFactory { get; set; }
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        public Network Network { get; internal set; }
+
+        /// <summary>Information about transaction outputs in the chain.</summary>
+        public CoinView CoinView { get; set; }
+
+        /// <summary>Contains path locations to folders and files on disk.</summary>
+        public DataFolder DataFolder { get; set; }
+
+        /// <summary>Provider of date time functionality.</summary>
+        public IDateTimeProvider DateTimeProvider { get; set; }
+
+        /// <summary>Application life cycle control - triggers when application shuts down.</summary>
+        private NodeLifetime nodeLifetime;
+
+        /// <inheritdoc />
         public INodeLifetime NodeLifetime
         {
             get { return this.nodeLifetime; }
             private set { this.nodeLifetime = (NodeLifetime)value; }
-        } 
+        }
 
+        /// <inheritdoc />
         public IFullNodeServiceProvider Services { get; set; }
 
-        public NodeSettings Settings { get; private set; }
-
+        /// <inheritdoc />
         public Version Version
         {
             get
             {
-                string versionString =
-                    typeof(FullNode).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ??
+                string versionString = typeof(FullNode).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ??
                     Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion;
+
                 if (!string.IsNullOrEmpty(versionString))
                 {
                     try
@@ -64,18 +127,15 @@ namespace Stratis.Bitcoin
                     {
                     }
                 }
+
                 return new Version(0, 0);
             }
         }
 
-        public Network Network { get; internal set; }
-
-        public CoinView CoinView { get; set; }
-
-        public DataFolder DataFolder { get; set; }
-
-        public IDateTimeProvider DateTimeProvider { get; set; }
-
+        /// <summary>
+        /// Checks whether the node is currently in the process of initial block download.
+        /// </summary>
+        /// <returns><c>true</c> if the node is currently doing IBD, <c>false</c> otherwise.</returns>
         public bool IsInitialBlockDownload()
         {
             // if consensus is no present IBD has no meaning
@@ -84,38 +144,21 @@ namespace Stratis.Bitcoin
 
             if (this.ConsensusLoop.Tip == null)
                 return true;
+
             if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))
                 return true;
-            if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() <
-                (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
+
+            if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
                 return true;
+
             return false;
         }
 
-        public List<IDisposable> Resources { get; private set; }
-
-        public ChainState ChainBehaviorState { get; private set; }
-
-        public Signals.Signals Signals { get; set; }
-
-        public ConsensusLoop ConsensusLoop { get; set; }
-
-        public WalletManager WalletManager { get; set; }
-
-        public IWalletTransactionHandler WalletTransactionHandler { get; set; }
-
-        public IWebHost RPCHost { get; set; }
-
-        public IConnectionManager ConnectionManager { get; set; }
-
-        public MempoolManager MempoolManager { get; set; }
-
-        public BlockStoreManager BlockStoreManager { get; set; }
-
-        public ConcurrentChain Chain { get; set; }
-
-        public IAsyncLoopFactory AsyncLoopFactory { get; set; }
-
+        /// <summary>
+        /// Initializes DI services that the node needs.
+        /// </summary>
+        /// <param name="serviceProvider">Provider of DI services.</param>
+        /// <returns>Full node itself to allow fluent code.</returns>
         public FullNode Initialize(IFullNodeServiceProvider serviceProvider)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
@@ -146,6 +189,7 @@ namespace Stratis.Bitcoin
             return this;
         }
 
+        /// <inheritdoc />
         public void Start()
         {
             if (this.IsDisposed)
@@ -178,6 +222,7 @@ namespace Stratis.Bitcoin
             this.StartPeriodicLog();
         }
 
+        /// <inheritdoc />
         public void Stop()
         {
             if (this.Stopped)
@@ -187,7 +232,7 @@ namespace Stratis.Bitcoin
 
             this.logger.LogInformation("Closing node pending...");
 
-            // Fire INodeLifetime.Stopping
+            // Fire INodeLifetime.Stopping.
             this.nodeLifetime.StopApplication();
 
             this.ConnectionManager.Dispose();
@@ -195,73 +240,80 @@ namespace Stratis.Bitcoin
             foreach (IDisposable dispo in this.Resources)
                 dispo.Dispose();
 
-            // Fire the NodeFeatureExecutor.Stop
+            // Fire the NodeFeatureExecutor.Stop.
             this.fullNodeFeatureExecutor.Stop();
             (this.Services.ServiceProvider as IDisposable)?.Dispose();
 
-            // Fire INodeLifetime.Stopped
+            // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();
         }
 
+        /// <summary>
+        /// Starts a loop to periodically log statistics about node's status very couple of seconds.
+        /// <para>
+        /// These logs are also displayed on the console.
+        /// </para>
+        /// </summary>
         private void StartPeriodicLog()
         {
             this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
+            {
+                // TODO: move stats to each of its components
+                StringBuilder benchLogs = new StringBuilder();
+
+                benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
+                                     this.ConnectionManager.Parameters.UserAgent);
+                benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     this.Chain.Tip.Height.ToString().PadRight(8) +
+                                     " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+
+                if (this.ConsensusLoop != null)
                 {
-                    // TODO: move stats to each of its components
-                    StringBuilder benchLogs = new StringBuilder();
+                    benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                         this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) +
+                                         " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                         this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
+                }
 
-                    benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
-                                         this.ConnectionManager.Parameters.UserAgent);
-                    benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         this.Chain.Tip.Height.ToString().PadRight(8) +
-                                         " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.Chain.Tip.HashBlock);
+                if (this.ChainBehaviorState.HighestPersistedBlock != null)
+                {
+                    benchLogs.AppendLine("Store.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                         this.ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) +
+                                         " Store.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                         this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+                }
 
-                    if (this.ConsensusLoop != null)
-                    {
-                        benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                             this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) +
-                                             " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                             this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
-                    }
+                if (this.WalletManager != null)
+                {
+                    int height = this.WalletManager.LastBlockHeight();
+                    ChainedBlock block = this.Chain.GetBlock(height);
+                    uint256 hashBlock = block == null ? uint256.Zero : block.HashBlock;
 
-                    if (this.ChainBehaviorState.HighestPersistedBlock != null)
-                    {
-                        benchLogs.AppendLine("Store.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                             this.ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) +
-                                             " Store.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                             this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
-                    }
+                    benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                         height.ToString().PadRight(8) +
+                                         " Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                         hashBlock);
+                }
 
-                    if (this.WalletManager != null)
-                    {
-                        var height = this.WalletManager.LastBlockHeight();
-                        var block = this.Chain.GetBlock(height);
-                        var hashBlock = block == null ? uint256.Zero : block.HashBlock;
+                benchLogs.AppendLine();
 
-                        benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                             height.ToString().PadRight(8) +
-                                             " Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                             hashBlock);
-                    }
+                if (this.MempoolManager != null)
+                {
+                    benchLogs.AppendLine("======Mempool======");
+                    benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
+                }
 
-                    benchLogs.AppendLine();
-
-                    if (this.MempoolManager != null)
-                    {
-                        benchLogs.AppendLine("======Mempool======");
-                        benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
-                    }
-
-                    benchLogs.AppendLine("======Connection======");
-                    benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-                    this.logger.LogInformation(benchLogs.ToString());
-                    return Task.CompletedTask;
-                },
+                benchLogs.AppendLine("======Connection======");
+                benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
+                this.logger.LogInformation(benchLogs.ToString());
+                return Task.CompletedTask;
+            },
                 this.nodeLifetime.ApplicationStopping,
                 repeatEvery: TimeSpans.FiveSeconds,
                 startAfter: TimeSpans.FiveSeconds);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             if (this.IsDisposed)

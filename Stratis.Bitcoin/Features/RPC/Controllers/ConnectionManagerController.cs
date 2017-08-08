@@ -1,9 +1,13 @@
-﻿using System;
-using System.Net;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
@@ -35,5 +39,55 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             }
             return true;
         }
+
+        /// <summary>
+        /// RPC implementation of getpeerinfo
+        /// </summary>
+        /// <see cref="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
+        /// <returns>List of connected peer nodes</returns>
+        [ActionName("getpeerinfo")]
+        public List<PeerNodeModel> GetPeerInfo()
+        {
+            List<PeerNodeModel> peerList = new List<PeerNodeModel>();
+
+            List<Node> nodes = this.ConnectionManager.ConnectedNodes.ToList();
+            foreach (Node node in nodes)
+            {
+                if (node != null && node.RemoteSocketAddress != null)
+                {
+                    PeerNodeModel peerNode = new PeerNodeModel
+                    {
+                        Id = nodes.IndexOf(node),
+                        Address = node.RemoteSocketEndpoint.ToString()
+                    };
+
+                    if (node.MyVersion != null)
+                    {
+                        peerNode.LocalAddress = node.MyVersion.AddressReceiver?.ToString();
+                        peerNode.Services = ((ulong)node.MyVersion.Services).ToString("X");
+                        peerNode.Version = (uint)node.MyVersion.Version;
+                        peerNode.SubVersion = node.MyVersion.UserAgent;
+                        peerNode.StartingHeight = node.MyVersion.StartHeight;
+                    }
+
+                    ConnectionManagerBehavior connectionManagerBehavior = node.Behavior<ConnectionManagerBehavior>();
+                    if (connectionManagerBehavior != null)
+                    {
+                        peerNode.Inbound = connectionManagerBehavior.Inbound;
+                        peerNode.IsWhiteListed = connectionManagerBehavior.Whitelisted;
+                    }
+
+                    if (node.TimeOffset != null)
+                    {
+                        peerNode.TimeOffset = node.TimeOffset.Value.Seconds;
+                    }
+
+                    peerList.Add(peerNode);
+                }
+            }
+
+            return peerList;
+        }
+
     }
 }
