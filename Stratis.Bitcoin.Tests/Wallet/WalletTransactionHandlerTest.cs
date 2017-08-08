@@ -296,9 +296,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             fundContext.OverrideFeeRate = overrideFeeRate;
             walletTransactionHandler.FundTransaction(fundContext, fundTransaction);
 
-            var result = new Transaction(fundTransaction.ToHex());
-            var expectedChangeAddressKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
-
             foreach (var input in fundTransactionClone.Inputs) // all original inputs are still in the trx
                 Assert.True(fundTransaction.Inputs.Any(a => a.PrevOut == input.PrevOut));
 

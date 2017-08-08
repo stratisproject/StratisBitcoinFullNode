@@ -38,6 +38,8 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// <remarks>
     /// This will uses the FeeEstimator and the TrasnactionBuilder.
     /// TODO: Move also the broadcast transaction to this class
+    /// TODO: Implement lockUnspents
+    /// TODO: Implement subtractFeeFromOutputs
     /// </remarks>
     public class WalletTransactionHandler : IWalletTransactionHandler
     {
