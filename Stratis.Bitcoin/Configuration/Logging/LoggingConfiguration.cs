@@ -1,17 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
+using NLog.Targets.Wrappers;
+using Stratis.Bitcoin.Configuration.Settings;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Utilities;
-using NLog;
-using NLog.Config;
-using NLog.Targets;
 using System.Text;
-using NLog.Targets.Wrappers;
 
 namespace Stratis.Bitcoin.Configuration.Logging
 {
@@ -183,6 +181,26 @@ namespace Stratis.Bitcoin.Configuration.Logging
         public static void AddFilters(this ILoggerFactory loggerFactory, LogSettings settings, DataFolder dataFolder)
         {
             AddFilters(settings, dataFolder);
+        }
+
+        /// <summary>
+        /// Configure the console logger and set it to filer logs not related to the fullnode.
+        /// </summary>
+        /// <param name="loggerFactory">The logger factory to add the console logger.</param>
+        public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory)
+        {
+            var settings = new ConsoleLoggerSettings
+            {
+                Switches =
+                {
+                    {"Default", Microsoft.Extensions.Logging.LogLevel.Information},
+                    {"System", Microsoft.Extensions.Logging.LogLevel.Warning},
+                    {"Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning},
+                    {"Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Error}
+                }
+            };
+
+            loggerFactory.AddConsole(settings);
         }
     }
 }
