@@ -14,6 +14,11 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
+    /// <summary>
+    /// The BlockStoreLoop simultaneously finds and downloads blocks
+    /// and stores them in the BlockRepository
+    /// <see cref="DownloadAndStoreBlocks"/>
+    /// </summary>
     public sealed class BlockStoreLoop
     {
         internal readonly ConcurrentChain Chain;
@@ -69,16 +74,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// 
         /// Initialize the BlockStore
-        ///                 
+        /// <para>
         /// If StoreTip is null, the store is out of sync.
+        /// 
         /// This can happen when:
         ///     1: The node crashed
         ///     2: The node was not closed down properly
         ///     
         /// To recover we walk back the chain until a common block header is found 
         /// and set the BlockStore's StoreTip to that
+        /// </para>                
         /// </summary>
         public async Task Initialize()
         {
@@ -133,19 +139,35 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StartLoop();
         }
 
+        /// <summary>
+        /// Adds a block to Pending Storage
+        /// <para>
+        /// The BlockStoreSignaler calls AddToPending.
+        /// </para>
+        /// <para>
+        /// Only add the block to pending storage if:
+        ///     1: The block does exist on the chain
+        ///     2: The store's tip is less than the block to add's height
+        /// </para>
+        /// </summary>
+        /// <param name="block"></param>
+        /// <remarks>Possibly check the size of pending in memory</remarks>
         public void AddToPending(Block block)
         {
             ChainedBlock chainedBlock = this.Chain.GetBlock(block.GetHash());
             if (chainedBlock == null)
-                return; // reorg
+                return;
 
-            // check the size of pending in memory
-
-            // add to pending blocks
             if (this.StoreTip.Height < chainedBlock.Height)
                 this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair(block, chainedBlock));
         }
 
+        /// <summary>
+        /// Flush the BlockStore by calling DownloadAndStoreBlocks with disposeMode of true
+        /// <para>
+        /// This happens when the node shuts down
+        /// </para>
+        /// </summary>
         public Task Flush()
         {
             return DownloadAndStoreBlocks(CancellationToken.None, true);
@@ -167,17 +189,34 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 startAfter: TimeSpans.FiveSeconds);
         }
 
+        /// <summary>
+        /// Finds and downloads blocks to store in the Block Repository
+        /// <para>
+        /// This method executes a chain of steps in order:
+        ///     1: Reorganise the repository
+        ///     2: Check if the next chained block exists
+        ///     3: Process the blocks in pending storage
+        ///     4: Find and download blocks
+        /// </para>
+        /// <para>
+        /// All the steps return a BlockStoreLoopStepResult which either signals the While loop
+        /// to break or continue execution.
+        /// </para>
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <param name="disposeMode"></param>
+        /// <remarks>
+        /// TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
+        /// When in IBD we may need many reads for the block key without fetching the block
+        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
+        /// a read is normally done when a peer is asking for the entire block (not just the key) 
+        /// then if LazyLoadingOn = false the read will be faster on the entire block      
+        /// </remarks>
         private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode = false)
         {
-            // TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
-            // When in IBD we may need many reads for the block key without fetching the block
-            // So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
-            // a read is normally done when a peer is asking for the entire block (not just the key) 
-            // then if LazyLoadingOn = false the read will be faster on the entire block            
-
             while (!cancellationToken.IsCancellationRequested)
             {
-                 if (this.StoreTip.Height >= this.ChainState.HighestValidatedPoW?.Height)
+                if (this.StoreTip.Height >= this.ChainState.HighestValidatedPoW?.Height)
                     break;
 
                 ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);

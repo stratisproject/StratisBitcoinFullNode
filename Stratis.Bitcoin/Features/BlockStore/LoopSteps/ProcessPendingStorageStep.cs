@@ -8,9 +8,25 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Check if the next block is in pending storage
-    /// If so loop over the pending blocks and push to the repository in batches
-    /// if a stop condition is met break from the loop back to the start
+    /// Check if the next block is in pending storage i.e. first process pending storage blocks
+    /// before find and downloading more blocks.
+    /// <para>
+    /// Remove the BlockPair from PendingStorage and return for further processing
+    /// If the next chained block does not exist in pending storage
+    /// return a Next() result which cause the BlockStoreLoop to execute
+    /// the next step <see cref="DownloadBlockStep"/>
+    /// </para>
+    /// <para>
+    /// If in IBD (Initial Block Download) and batch count is not yet reached, 
+    /// return a Break() result causing the BlockStoreLoop to break out of the while loop
+    /// and start again.
+    /// </para>
+    /// <para>
+    /// Loop over the pending blocks and push to the repository in batches
+    /// if a stop condition is met break from the inner loop and return a Continue() result.
+    /// This will cause the BlockStoreLoop to skip over  <see cref="DownloadBlockStep"/> and start
+    /// the loop again. 
+    /// </para>
     /// </summary>
     internal sealed class ProcessPendingStorageStep : BlockStoreLoopStep
     {
@@ -21,17 +37,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
         }
 
+        /// <inheritdoc/>
         internal override async Task<BlockStoreLoopStepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
-            // Remove the BlockPair from PendingStorage and return for further processing
-            // If the next chained block does not exist, continue with execution
             if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
                 return BlockStoreLoopStepResult.Next();
 
-            // If in IBD and batch count is not yet reached then wait
             if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
             {
-                if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold) // Skip(0) returns an enumerator which doesn't re-count the collection
+                if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold)
                     return BlockStoreLoopStepResult.Break();
             }
 
@@ -87,6 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         /// <summary>
         /// Store missing blocks and remove them from pending blocks
+        /// Set the Store's tip to <see cref=">lastFoundChainedBlock "/>
         /// </summary>
         private async Task<BlockStoreLoopStepResult> PushPendingBlocksToRepository(int pendingStorageBatchSize, List<BlockPair> pendingBlockPairsToStore, ChainedBlock lastFoundChainedBlock, CancellationToken cancellationToken, bool breakExecution)
         {
@@ -101,7 +116,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <summary>
-        /// Break execution if at the tip or block is already in store or pending insertion
+        /// Break execution if:
+        ///     1: At the tip 
+        ///     2: Block is already in store or pending insertion
         /// </summary>
         private bool ShouldBreakExecution(ChainedBlock inputChainedBlock, ChainedBlock nextChainedBlock)
         {

@@ -5,11 +5,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
     /// Find blocks to download by asking the BlockPuller
-    /// 
-    /// Once the BatchDownloadSize has been reached
-    /// the task will be removed from the routine via context.StopFindingBlocks()
+    /// <para>
+    /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
+    /// there arent blocks to download anymore return a Break() result causing the 
+    /// BlockStoreLoop to break execution and start again
+    /// </para>
+    /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
+    /// there are still blocks to download, stop finding new blocks and only execute
+    /// the download blocks inner step
+    /// </para> 
+    /// <para>
+    /// If a stop condition is not found ask the block puller for the next blocks.
+    /// If the BatchDownloadSize has been reached, also stop finding new blocks.
+    /// </para>
     /// </summary>
-    public sealed class BlockStoreInnerStepFindBlocks : BlockStoreStepTask
+    public sealed class BlockStoreInnerStepFindBlocks : BlockStoreInnerStep
     {
         public override async Task<BlockStoreLoopStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
@@ -34,6 +44,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             return BlockStoreLoopStepResult.Next();
         }
 
+        /// <inheritdoc/>
         private async Task<bool> ShouldStopFindingBlocks(BlockStoreInnerStepContext context)
         {
             if (context.NextChainedBlock == null)
