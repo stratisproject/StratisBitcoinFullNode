@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         }
 
         /// <summary>
-        /// Configure the console logger and set it to filer logs not related to the fullnode.
+        /// Configure the console logger and set it to filter logs not related to the fullnode.
         /// </summary>
         /// <param name="loggerFactory">The logger factory to add the console logger.</param>
         public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory)
