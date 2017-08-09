@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.JsonConverters;
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// </summary>
         public WatchOnlyWallet()
         {
-            this.WatchedAddresses = new List<WatchedAddress>();
+            this.WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>();
         }
 
         /// <summary>
@@ -46,7 +47,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// The list of addresses being watched.
         /// </summary>
         [JsonProperty(PropertyName = "watchedAddresses")]
-        public ICollection<WatchedAddress> WatchedAddresses { get; set; }
+        [JsonConverter(typeof(WatchedAddressesConcurrentDictionaryConverter))]
+        public ConcurrentDictionary<string, WatchedAddress> WatchedAddresses { get; set; }
     }
 
     /// <summary>
@@ -59,7 +61,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// </summary>
         public WatchedAddress()
         {
-            this.Transactions = new List<TransactionData>();
+            this.Transactions = new ConcurrentDictionary<string, TransactionData>();
         }
 
         /// <summary>
@@ -73,7 +75,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// A base58 address being watched for transactions affecting it.
         /// </summary>
         /// <remarks>
-        /// This is a convenience property whose intrisic value is equal to <see cref="Script"/>.
+        /// This is a convenience property whose intrisic value is equal to <see cref="WatchedAddress.Script"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }
@@ -82,7 +84,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// The list of transactions affecting the <see cref="Script"/> being watched.
         /// </summary>
         [JsonProperty(PropertyName = "transactions")]
-        public ICollection<TransactionData> Transactions { get; set; }
+        [JsonConverter(typeof(TransactionDataConcurrentDictionaryConverter))]
+        public ConcurrentDictionary<string, TransactionData> Transactions { get; set; }
 
     }
 
@@ -110,4 +113,78 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 BlockHash { get; set; }
     }
+
+    #region Json Converters
+
+    /// <summary>
+    /// Converter used to convert a <see cref="ConcurrentDictionary{TKey,TValue}"/> (where TKey is <see cref="string"/> and TValue is <see cref="WatchedAddress"/>) to and from a collection of its values.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
+    public class WatchedAddressesConcurrentDictionaryConverter : JsonConverter
+    {
+        /// <inheritdoc />
+        public override bool CanConvert(Type objectType)
+        {
+            // Check this is a ConcurrentDictionary with the right argument types.
+            return objectType == typeof(ConcurrentDictionary<string, WatchedAddress>);
+        }
+
+        /// <inheritdoc />
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            IEnumerable<WatchedAddress> watchedAddesses = serializer.Deserialize<IEnumerable<WatchedAddress>>(reader);
+
+            ConcurrentDictionary<string, WatchedAddress> watchedAddressesDictionary = new ConcurrentDictionary<string, WatchedAddress>();
+            foreach (var watchedAddress in watchedAddesses)
+            {
+                watchedAddressesDictionary.TryAdd(watchedAddress.Script.ToString(), watchedAddress);
+            }
+
+            return watchedAddressesDictionary;
+        }
+
+        /// <inheritdoc />
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            ConcurrentDictionary<string, WatchedAddress> watchedAddressesDictionary = (ConcurrentDictionary<string, WatchedAddress>)value;
+            serializer.Serialize(writer, watchedAddressesDictionary.Values);
+        }
+    }
+
+    /// <summary>
+    /// Converter used to convert a <see cref="ConcurrentDictionary{TKey,TValue}"/> (where TKey is <see cref="string"/> and TValue is <see cref="TransactionData"/>) to and from a collection of its values.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
+    public class TransactionDataConcurrentDictionaryConverter : JsonConverter
+    {
+        /// <inheritdoc />
+        public override bool CanConvert(Type objectType)
+        {
+            // Check this is a ConcurrentDictionary with the right argument types.
+            return objectType == typeof(ConcurrentDictionary<string, TransactionData>);
+        }
+
+        /// <inheritdoc />
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            IEnumerable<TransactionData> transactions = serializer.Deserialize<IEnumerable<TransactionData>>(reader);
+
+            ConcurrentDictionary<string, TransactionData> transactionsDictionary = new ConcurrentDictionary<string, TransactionData>();
+            foreach (var transaction in transactions)
+            {
+                transactionsDictionary.TryAdd(transaction.Hex, transaction);
+            }
+
+            return transactionsDictionary;
+        }
+
+        /// <inheritdoc />
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            ConcurrentDictionary<string, TransactionData> transactionsDictionary = (ConcurrentDictionary<string, TransactionData>)value;
+            serializer.Serialize(writer, transactionsDictionary.Values);
+        }
+    }
+
+    #endregion    
 }

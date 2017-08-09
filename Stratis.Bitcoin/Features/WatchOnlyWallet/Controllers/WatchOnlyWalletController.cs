@@ -75,12 +75,13 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
                 {
                     WatchedAddressModel watchedAddressModel = new WatchedAddressModel
                     {
-                        Address = watchAddress.Address,
+                        Address = watchAddress.Value.Address,
                         Transactions = new List<TransactionVerboseModel>()
                     };
-                    foreach (var transactionData in watchAddress.Transactions)
+
+                    foreach (var transactionData in watchAddress.Value.Transactions)
                     {
-                        watchedAddressModel.Transactions.Add(new TransactionVerboseModel(transactionData.Transaction, watchOnlyWallet.Network));
+                        watchedAddressModel.Transactions.Add(new TransactionVerboseModel(transactionData.Value.Transaction, watchOnlyWallet.Network));
                     }
 
                     model.WatchedAddresses.Add(watchedAddressModel);

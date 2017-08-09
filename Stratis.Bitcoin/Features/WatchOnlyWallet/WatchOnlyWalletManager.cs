@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
@@ -57,14 +56,14 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         {
             var script = BitcoinAddress.Create(address, this.network).ScriptPubKey;
 
-            if (this.Wallet.WatchedAddresses.Any(wa => wa.Script == script))
+            if (this.Wallet.WatchedAddresses.ContainsKey(script.ToString()))
             {
                 this.logger.LogDebug($"already watching script: {script}. coin: {this.coinType}");
                 return;
             }
 
             this.logger.LogDebug($"added script: {script} to the watch list. coin: {this.coinType}");
-            this.Wallet.WatchedAddresses.Add(new WatchedAddress
+            this.Wallet.WatchedAddresses.TryAdd(script.ToString(), new WatchedAddress
             {
                 Script = script,
                 Address = address
@@ -94,15 +93,16 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             foreach (TxOut utxo in transaction.Outputs)
             {
                 // Check if the outputs contain one of our addresses.
-                WatchedAddress addressInWallet = this.Wallet.WatchedAddresses.SingleOrDefault(wa => wa.Script == utxo.ScriptPubKey);
+                this.Wallet.WatchedAddresses.TryGetValue(utxo.ScriptPubKey.ToString(), out WatchedAddress addressInWallet);
 
                 if (addressInWallet != null)
                 {
                     // Retrieve a transaction, if present.
-                    var existingTransaction = addressInWallet.Transactions.SingleOrDefault(t => t.Hex == transaction.ToHex());
+                    string transactionHex = transaction.ToHex();
+                    addressInWallet.Transactions.TryGetValue(transactionHex, out TransactionData existingTransaction);
                     if (existingTransaction == null)
                     {
-                        addressInWallet.Transactions.Add(new TransactionData
+                        addressInWallet.Transactions.TryAdd(transactionHex, new TransactionData
                         {
                             Hex = transaction.ToHex(),
                             BlockHash = block?.GetHash(),
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                     Network = this.network,
                     CoinType = this.coinType,
                     CreationTime = DateTimeOffset.Now,
-                    WatchedAddresses = new List<WatchedAddress>()
+                    WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>()
                 };
 
                 this.SaveWatchOnlyWallet();
