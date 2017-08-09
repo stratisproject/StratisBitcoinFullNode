@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         private readonly DataFolder dataFolder;
         private readonly ILogger logger;
 
-        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, Network network, ConcurrentChain chain, DataFolder dataFolder)
+        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, Network network, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
@@ -98,11 +98,11 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 if (addressInWallet != null)
                 {
                     // Retrieve a transaction, if present.
-                    string transactionHex = transaction.ToHex();
-                    addressInWallet.Transactions.TryGetValue(transactionHex, out TransactionData existingTransaction);
+                    string transactionHash = transaction.GetHash().ToString();
+                    addressInWallet.Transactions.TryGetValue(transactionHash, out TransactionData existingTransaction);
                     if (existingTransaction == null)
                     {
-                        addressInWallet.Transactions.TryAdd(transactionHex, new TransactionData
+                        addressInWallet.Transactions.TryAdd(transactionHash, new TransactionData
                         {
                             Hex = transaction.ToHex(),
                             BlockHash = block?.GetHash(),

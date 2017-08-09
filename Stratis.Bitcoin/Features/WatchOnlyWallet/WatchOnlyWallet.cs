@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             ConcurrentDictionary<string, TransactionData> transactionsDictionary = new ConcurrentDictionary<string, TransactionData>();
             foreach (var transaction in transactions)
             {
-                transactionsDictionary.TryAdd(transaction.Hex, transaction);
+                transactionsDictionary.TryAdd(transaction.Transaction.GetHash().ToString(), transaction);
             }
 
             return transactionsDictionary;
