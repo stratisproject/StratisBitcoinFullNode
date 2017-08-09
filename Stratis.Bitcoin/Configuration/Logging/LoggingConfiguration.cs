@@ -11,6 +11,7 @@ using NLog;
 using NLog.Config;
 using NLog.Targets;
 using System.Text;
+using NLog.Targets.Wrappers;
 
 namespace Stratis.Bitcoin.Configuration.Logging
 {
@@ -66,9 +67,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
             Target debugTarget = LogManager.Configuration.FindTargetByName("debugFile");
             if (debugTarget != null)
             {
-                // Extracts the name of the file currently used and puts it into the log folder.
-                string currentFile = (debugTarget as FileTarget).FileName.Render(new LogEventInfo { TimeStamp = DateTime.UtcNow });
-                (debugTarget as FileTarget).FileName = Path.Combine(folder.LogPath, Path.GetFileName(currentFile));
+                FileTarget debugFileTarget = debugTarget is AsyncTargetWrapper ? (FileTarget)((debugTarget as AsyncTargetWrapper).WrappedTarget) : (FileTarget)debugTarget;
+                string currentFile = debugFileTarget.FileName.Render(new LogEventInfo { TimeStamp = DateTime.UtcNow });
+                debugFileTarget.FileName = Path.Combine(folder.LogPath, Path.GetFileName(currentFile));
             }
 
             // Remove rule that forbids logging before the logging is initialized.
