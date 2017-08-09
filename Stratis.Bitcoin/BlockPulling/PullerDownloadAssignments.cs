@@ -70,7 +70,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// getting more work. However, the quality is stronger factor.
         /// <para>
         /// Tasks to download blocks with height in the lower half of the requested block heights 
-        /// are protected from being assigned to peers with quality below the median quality of available peers.</para>
+        /// are protected from being assigned to peers with quality below the median quality of available peers.
+        /// </para>
         /// </remarks>
         public static Dictionary<PeerInformation, List<int>> AssignBlocksToPeers(List<int> requestedBlockHeights, List<PeerInformation> availablePeersInformation)
         {
