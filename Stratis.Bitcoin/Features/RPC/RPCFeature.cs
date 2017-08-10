@@ -45,17 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC
                         // also copies over singleton instances already defined
                         foreach (var service in this.fullNodeBuilder.Services)
                         {
-                            object obj = null;
-
-                            try
-                            {
-                                obj = this.fullNode.Services.ServiceProvider.GetService(service.ServiceType);
-                            }
-                            catch (InvalidOperationException)
-                            {
-                                this.logger.LogWarning("Unable to copy service {service} from Full Node to RPC. Service injection skipped.", service.ServiceType.ToString());
-                                obj = null;
-                            }
+                            object obj = this.fullNode.Services.ServiceProvider.GetService(service.ServiceType);
 
                             if (obj != null && service.Lifetime == ServiceLifetime.Singleton && service.ImplementationInstance == null)
                             {

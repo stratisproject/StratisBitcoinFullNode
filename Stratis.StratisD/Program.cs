@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Linq;
@@ -32,6 +33,7 @@ namespace Stratis.StratisD
                 .UseStratisConsensus()
                 .UseBlockStore()
                 .UseMempool()
+                .UseWallet()
                 .AddPowPosMining()
                 .Build();
 
