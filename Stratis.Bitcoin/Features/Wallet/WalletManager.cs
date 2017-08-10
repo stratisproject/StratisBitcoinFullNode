@@ -500,29 +500,39 @@ namespace Stratis.Bitcoin.Features.Wallet
             var accounts = this.GetAccounts(walletAccountReference.WalletName);
             var account = accounts.FirstOrDefault(n => n.Name == walletAccountReference.AccountName);
 
+            if (account == null)
+            {
+                throw new WalletException($"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
+            }
+
+            return this.GetSpendableTransactions(account, confirmations);
+        }
+
+        /// <inheritdoc />
+        public UnspentAccountReference GetSpendableTransactions(HdAccount account, int confirmations = 0)
+        {
+            Guard.NotNull(account, nameof(account));
+
             // this will take all the spendable coins that belong to an account
             // and keep the reference to the HDAddress and HDAccount, this is useful
             // so later the private key can be calculated just from a given UTXO
 
+            var currentHeight = this.chain.Tip.Height;
+
             var accountReference = new UnspentAccountReference();
-            if (account != null)
+            foreach (var address in account.GetCombinedAddresses())
             {
-                var currentHeight = this.chain.Tip.Height;
+                var unspentTransactions = address.UnspentTransactions()
+                    .Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
 
-                foreach (var address in account.GetCombinedAddresses())
+                foreach (var transactionData in unspentTransactions)
                 {
-                    var unspentTransactions = address.UnspentTransactions()
-                        .Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
-
-                    foreach (var transactionData in unspentTransactions)
+                    accountReference.UnspentOutputs.Add(new UnspentOutputReference
                     {
-                        accountReference.UnspentOutputs.Add(new UnspentOutputReference
-                        {
-                            Account = account,
-                            Address = address,
-                            Transaction = transactionData
-                        });
-                    }
+                        Account = account,
+                        Address = address,
+                        Transaction = transactionData
+                    });
                 }
             }
 
