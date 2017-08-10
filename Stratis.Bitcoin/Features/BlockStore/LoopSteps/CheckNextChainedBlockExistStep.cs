@@ -14,14 +14,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
         }
 
-        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        internal override async Task<BlockStoreLoopStepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             if (await this.BlockStoreLoop.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
             {
                 await this.BlockStoreLoop.BlockRepository.SetBlockHash(nextChainedBlock.HashBlock);
 
-                this.BlockStoreLoop.StoredBlock = nextChainedBlock;
-                this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
+                this.BlockStoreLoop.SetStoreTip(nextChainedBlock);
 
                 return BlockStoreLoopStepResult.Continue();
             }

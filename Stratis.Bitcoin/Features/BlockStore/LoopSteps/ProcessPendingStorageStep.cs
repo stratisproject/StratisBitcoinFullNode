@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
         }
 
-        internal override async Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        internal override async Task<BlockStoreLoopStepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             // Remove the BlockPair from PendingStorage and return for further processing
             // If the next chained block does not exist, continue with execution
@@ -92,8 +92,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             await this.BlockStoreLoop.BlockRepository.PutAsync(lastFoundChainedBlock.HashBlock, pendingBlockPairsToStore.Select(b => b.Block).ToList());
 
-            this.BlockStoreLoop.StoredBlock = lastFoundChainedBlock;
-            this.BlockStoreLoop.ChainState.HighestPersistedBlock = this.BlockStoreLoop.StoredBlock;
+            this.BlockStoreLoop.SetStoreTip(lastFoundChainedBlock);
 
             if (breakExecution)
                 return BlockStoreLoopStepResult.Break();

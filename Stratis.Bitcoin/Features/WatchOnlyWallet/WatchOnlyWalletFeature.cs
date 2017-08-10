@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Notifications;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
@@ -18,7 +18,12 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         private IDisposable blockSubscriberdDisposable;
         private IDisposable transactionSubscriberdDisposable;
 
-        public WatchOnlyWalletFeature(IWatchOnlyWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WatchOnlyWalletFeature"/> class.
+        /// </summary>
+        /// <param name="walletManager">The wallet manager.</param>
+        /// <param name="signals">The signals.</param>
+        public WatchOnlyWalletFeature(IWatchOnlyWalletManager walletManager, Signals.Signals signals)
         {
             this.walletManager = walletManager;
             this.signals = signals;
@@ -63,6 +68,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IWatchOnlyWalletManager, WatchOnlyWalletManager>();
+                        services.AddSingleton<WatchOnlyWalletController>();
                     });
             });
 

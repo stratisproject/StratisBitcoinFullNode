@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Common.Hosting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -15,10 +9,15 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-	public class PosMinting
+    public class PosMinting
 	{
 		// Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
 		public const int DefaultBlockMinTxFee = 1000;
@@ -179,23 +178,23 @@ namespace Stratis.Bitcoin.Features.Miner
 				var stakeTxes = new List<StakeTx>();
 				var spendable = this.wallet.GetSpendableTransactions(walletSecret.WalletName, 1);
 
-				var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.Transactions.Select(t => t.Id)).ToArray()).GetAwaiter().GetResult();
+				var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.UnspentOutputs.Select(t => t.Transaction.Id)).ToArray()).GetAwaiter().GetResult();
 
 				foreach (var unspentInfo in spendable)
 				{
-					foreach (var infoTransaction in unspentInfo.Transactions)
+					foreach (var infoTransaction in unspentInfo.UnspentOutputs)
 					{
-						var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Id);
-						var utxo = set?._Outputs[infoTransaction.Index.Value];
+						var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
+						var utxo = set?._Outputs[infoTransaction.Transaction.Index.Value];
 
 						if (utxo != null && utxo.Value > Money.Zero)
 						{
 							var stakeTx = new StakeTx();
 
 							stakeTx.TxOut = utxo;
-							stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Index.Value);
-							stakeTx.Address = unspentInfo.Address;
-							stakeTx.OutputIndex = infoTransaction.Index.Value;
+							stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index.Value);
+							stakeTx.Address = infoTransaction.Address;
+							stakeTx.OutputIndex = infoTransaction.Transaction.Index.Value;
 							stakeTx.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
 							stakeTx.UtxoSet = set;
 							stakeTx.Secret = walletSecret; //temporary

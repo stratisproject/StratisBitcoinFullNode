@@ -5,10 +5,6 @@ using System.Runtime.Loader;
 #endif
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Common;
-using Stratis.Bitcoin.Common.Hosting;
 
 namespace Stratis.Bitcoin.Utilities
 {
