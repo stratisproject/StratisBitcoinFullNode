@@ -1,4 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -10,17 +16,12 @@ using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {
     public class WalletControllerTest : LogsTestBase
-    {
+    {        
         [Fact]
         public void GenerateMnemonicWithoutParametersCreatesMnemonicWithDefaults()
         {
@@ -690,7 +691,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             };
 
             var concurrentChain = new ConcurrentChain(Network.Main);
-            ChainedBlock tip = AppendBlock(concurrentChain);
+            ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, new [] {concurrentChain});
 
             var connectionManagerMock = new Mock<IConnectionManager>();
             connectionManagerMock.Setup(c => c.ConnectedNodes)
@@ -800,8 +801,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetHistoryWithValidModelWithoutTransactionSpendingDetailsReturnsWalletHistoryModel()
         {
-            HdAddress address = CreateAddress();
-            TransactionData transaction = CreateTransaction(new uint256(1), new Money(500000), 1);
+            HdAddress address = WalletTestsHelpers.CreateAddress();
+            TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1);
             address.Transactions.Add(transaction);
 
             var mockWalletWrapper = new Mock<IWalletManager>();
@@ -833,17 +834,17 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetHistoryWithValidModelWithTransactionSpendingDetailsReturnsWalletHistoryModel()
         {
-            HdAddress changeAddress = CreateAddress(changeAddress: true);
-            HdAddress address = CreateAddress();
-            HdAddress destinationAddress = CreateAddress();
+            HdAddress changeAddress = WalletTestsHelpers.CreateAddress(changeAddress: true);
+            HdAddress address = WalletTestsHelpers.CreateAddress();
+            HdAddress destinationAddress = WalletTestsHelpers.CreateAddress();
 
-            TransactionData changeTransaction = CreateTransaction(new uint256(2), new Money(275000), 1);
+            TransactionData changeTransaction = WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(275000), 1);
             changeAddress.Transactions.Add(changeTransaction);
 
-            PaymentDetails paymentDetails = CreatePaymentDetails(new Money(200000), destinationAddress);
-            SpendingDetails spendingDetails = CreateSpendingDetails(changeTransaction, paymentDetails);
+            PaymentDetails paymentDetails = WalletTestsHelpers.CreatePaymentDetails(new Money(200000), destinationAddress);
+            SpendingDetails spendingDetails = WalletTestsHelpers.CreateSpendingDetails(changeTransaction, paymentDetails);
 
-            TransactionData transaction = CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
+            TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
             address.Transactions.Add(transaction);
 
 
@@ -893,17 +894,17 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetHistoryWithValidModelWithFeeBelowZeroSetsFeeToZero()
         {
-            HdAddress changeAddress = CreateAddress(changeAddress: true);
-            HdAddress address = CreateAddress();
-            HdAddress destinationAddress = CreateAddress();
+            HdAddress changeAddress = WalletTestsHelpers.CreateAddress(changeAddress: true);
+            HdAddress address = WalletTestsHelpers.CreateAddress();
+            HdAddress destinationAddress = WalletTestsHelpers.CreateAddress();
 
-            TransactionData changeTransaction = CreateTransaction(new uint256(2), new Money(310000), 1);
+            TransactionData changeTransaction = WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(310000), 1);
             changeAddress.Transactions.Add(changeTransaction);
 
-            PaymentDetails paymentDetails = CreatePaymentDetails(new Money(200000), destinationAddress);
-            SpendingDetails spendingDetails = CreateSpendingDetails(changeTransaction, paymentDetails);
+            PaymentDetails paymentDetails = WalletTestsHelpers.CreatePaymentDetails(new Money(200000), destinationAddress);
+            SpendingDetails spendingDetails = WalletTestsHelpers.CreateSpendingDetails(changeTransaction, paymentDetails);
 
-            TransactionData transaction = CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
+            TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
             address.Transactions.Add(transaction);
 
 
@@ -1045,28 +1046,28 @@ namespace Stratis.Bitcoin.Tests.Wallet
         public void GetHistoryWithChangeAddressesShouldIncludeSpentChangeAddesses()
         {
             // first transaction
-            HdAddress changeAddress = CreateAddress(changeAddress: true);
-            HdAddress address = CreateAddress();
-            HdAddress destinationAddress = CreateAddress();
+            HdAddress changeAddress = WalletTestsHelpers.CreateAddress(changeAddress: true);
+            HdAddress address = WalletTestsHelpers.CreateAddress();
+            HdAddress destinationAddress = WalletTestsHelpers.CreateAddress();
 
-            TransactionData changeTransaction = CreateTransaction(new uint256(2), new Money(275000), 1);
+            TransactionData changeTransaction = WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(275000), 1);
             changeAddress.Transactions.Add(changeTransaction);
 
-            PaymentDetails paymentDetails = CreatePaymentDetails(new Money(200000), destinationAddress);
-            SpendingDetails spendingDetails = CreateSpendingDetails(changeTransaction, paymentDetails);
+            PaymentDetails paymentDetails = WalletTestsHelpers.CreatePaymentDetails(new Money(200000), destinationAddress);
+            SpendingDetails spendingDetails = WalletTestsHelpers.CreateSpendingDetails(changeTransaction, paymentDetails);
 
-            TransactionData transaction = CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
+            TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
             address.Transactions.Add(transaction);
 
             // transaction so spendingdetails is filled on change address
-            HdAddress changeAddress2 = CreateAddress(changeAddress: true);
-            HdAddress destinationAddress2 = CreateAddress();
-            TransactionData changeTransaction2 = CreateTransaction(new uint256(4), new Money(200000), 2);
+            HdAddress changeAddress2 = WalletTestsHelpers.CreateAddress(changeAddress: true);
+            HdAddress destinationAddress2 = WalletTestsHelpers.CreateAddress();
+            TransactionData changeTransaction2 = WalletTestsHelpers.CreateTransaction(new uint256(4), new Money(200000), 2);
             changeAddress2.Transactions.Add(changeTransaction2);
 
-            PaymentDetails paymentDetails2 = CreatePaymentDetails(new Money(50000), destinationAddress2);
-            SpendingDetails spendingDetails2 = CreateSpendingDetails(changeTransaction2, paymentDetails2);
-            TransactionData transaction2 = CreateTransaction(new uint256(3), new Money(275000), 2, spendingDetails2);
+            PaymentDetails paymentDetails2 = WalletTestsHelpers.CreatePaymentDetails(new Money(50000), destinationAddress2);
+            SpendingDetails spendingDetails2 = WalletTestsHelpers.CreateSpendingDetails(changeTransaction2, paymentDetails2);
+            TransactionData transaction2 = WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(275000), 2, spendingDetails2);
             changeAddress.Transactions.Add(transaction2);
 
             var mockWalletWrapper = new Mock<IWalletManager>();
@@ -1141,26 +1142,26 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetBalanceWithValidModelStateReturnsWalletBalanceModel()
         {
-            HdAccount account = CreateAccount("account 1");
-            HdAddress accountAddress1 = CreateAddress();
-            accountAddress1.Transactions.Add(CreateTransaction(new uint256(1), new Money(15000), null));
-            accountAddress1.Transactions.Add(CreateTransaction(new uint256(2), new Money(10000), 1));
+            HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
+            HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(15000), null));
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(10000), 1));
 
-            HdAddress accountAddress2 = CreateAddress();
-            accountAddress2.Transactions.Add(CreateTransaction(new uint256(3), new Money(20000), null));
-            accountAddress2.Transactions.Add(CreateTransaction(new uint256(4), new Money(120000), 2));
+            HdAddress accountAddress2 = WalletTestsHelpers.CreateAddress();
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(20000), null));
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(4), new Money(120000), 2));
 
             account.ExternalAddresses.Add(accountAddress1);
             account.InternalAddresses.Add(accountAddress2);
 
-            HdAccount account2 = CreateAccount("account 2");
-            HdAddress account2Address1 = CreateAddress();
-            account2Address1.Transactions.Add(CreateTransaction(new uint256(5), new Money(74000), null));
-            account2Address1.Transactions.Add(CreateTransaction(new uint256(6), new Money(18700), 3));
+            HdAccount account2 = WalletTestsHelpers.CreateAccount("account 2");
+            HdAddress account2Address1 = WalletTestsHelpers.CreateAddress();
+            account2Address1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(5), new Money(74000), null));
+            account2Address1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(6), new Money(18700), 3));
 
-            HdAddress account2Address2 = CreateAddress();
-            account2Address2.Transactions.Add(CreateTransaction(new uint256(7), new Money(65000), null));
-            account2Address2.Transactions.Add(CreateTransaction(new uint256(8), new Money(89300), 4));
+            HdAddress account2Address2 = WalletTestsHelpers.CreateAddress();
+            account2Address2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(7), new Money(65000), null));
+            account2Address2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(8), new Money(89300), 4));
 
             account2.ExternalAddresses.Add(account2Address1);
             account2.InternalAddresses.Add(account2Address2);
@@ -1588,7 +1589,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetUnusedAddressWithValidModelReturnsUnusedAddress()
         {
-            HdAddress address = CreateAddress();
+            HdAddress address = WalletTestsHelpers.CreateAddress();
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(m => m.GetUnusedAddress(new WalletAccountReference("myWallet", "Account 1")))
                 .Returns(address);
@@ -1650,108 +1651,6 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Assert.Equal(400, error.Status);
             Assert.StartsWith("System.InvalidOperationException", error.Description);
             Assert.StartsWith("Wallet not found.", error.Message);
-        }
-
-
-        private HdAccount CreateAccount(string name)
-        {
-            return new HdAccount()
-            {
-                Name = name,
-                HdPath = "1/2/3/4/5",
-            };
-        }
-
-        private static SpendingDetails CreateSpendingDetails(TransactionData changeTransaction, PaymentDetails paymentDetails)
-        {
-            var spendingDetails = new SpendingDetails()
-            {
-                TransactionId = changeTransaction.Id,
-                CreationTime = new DateTimeOffset(new DateTime(2017, 6, 23, 1, 2, 3)),
-                BlockHeight = changeTransaction.BlockHeight
-            };
-
-            spendingDetails.Payments.Add(paymentDetails);
-            return spendingDetails;
-        }
-
-        private static PaymentDetails CreatePaymentDetails(Money amount, HdAddress destinationAddress)
-        {
-            return new PaymentDetails()
-            {
-                Amount = amount,
-                DestinationAddress = destinationAddress.Address,
-                DestinationScriptPubKey = destinationAddress.ScriptPubKey
-            };
-        }
-
-        private TransactionData CreateTransaction(uint256 id, Money amount, int? blockHeight, SpendingDetails spendingDetails = null, DateTimeOffset? creationTime = null)
-        {
-            if (creationTime == null)
-            {
-                creationTime = new DateTimeOffset(new DateTime(2017, 6, 23, 1, 2, 3));
-            }
-
-            return new TransactionData()
-            {
-                Amount = amount,
-                Id = id,
-                CreationTime = creationTime.Value,
-                BlockHeight = blockHeight,
-                SpendingDetails = spendingDetails
-            };
-        }
-
-        private static HdAddress CreateAddress(bool changeAddress = false)
-        {
-            var hdPath = "1/2/3/4/5";
-            if (changeAddress)
-            {
-                hdPath = "1/2/3/4/1";
-            }
-            var key = new Key();
-            var address = new HdAddress()
-            {
-                Address = key.PubKey.GetAddress(Network.Main).ToString(),
-                HdPath = hdPath,
-                ScriptPubKey = key.ScriptPubKey
-            };
-
-            return address;
-        }
-
-        public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
-        {
-            ChainedBlock last = null;
-            var nonce = RandomUtils.GetUInt32();
-            foreach (ConcurrentChain chain in chains)
-            {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
-                block.UpdateMerkleRoot();
-                block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
-                block.Header.Nonce = nonce;
-                if (!chain.TrySetTip(block.Header, out last))
-                    throw new InvalidOperationException("Previous not existing");
-            }
-            return last;
-        }
-
-        private ChainedBlock AppendBlock(params ConcurrentChain[] chains)
-        {
-            ChainedBlock index = null;
-            return AppendBlock(index, chains);
-        }
-
-        public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
-            Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
-        {
-            return new TransactionBuildContext(accountReference,
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
-            {
-                MinConfirmations = minConfirmations,
-                FeeType = feeType
-            };
         }
     }
 }
