@@ -396,5 +396,48 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             return (chain, block.GetHash(), block);
         }
+
+        internal static List<Block> AddBlocksWithCoinbaseToChain(Network network, ConcurrentChain chain, HdAddress address, int blocks = 1)
+        {
+            //var chain = new ConcurrentChain(network.GetGenesis().Header);
+
+            var blockList = new List<Block>();
+
+            for (int i = 0; i < blocks; i++)
+            {
+                Block block = new Block();
+                block.Header.HashPrevBlock = chain.Tip.HashBlock;
+                block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
+                block.Header.UpdateTime(DateTimeOffset.UtcNow, network, chain.Tip);
+
+                var coinbase = new Transaction();
+                coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
+                coinbase.AddOutput(new TxOut(network.GetReward(chain.Height + 1), address.ScriptPubKey));
+
+                block.AddTransaction(coinbase);
+                block.Header.Nonce = 0;
+                block.UpdateMerkleRoot();
+                block.Header.CacheHashes();
+
+                chain.SetTip(block.Header);
+
+                var addressTransaction = new TransactionData()
+                {
+                    Amount = coinbase.TotalOut,
+                    BlockHash = block.GetHash(),
+                    BlockHeight = chain.GetBlock(block.GetHash()).Height,
+                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time),
+                    Id = coinbase.GetHash(),
+                    Index = 0,
+                    ScriptPubKey = coinbase.Outputs[0].ScriptPubKey,
+                };
+
+                address.Transactions.Add(addressTransaction);
+
+                blockList.Add(block);
+            }
+
+            return blockList;
+        }
     }
 }

@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             Assert.Throws<WalletException>(() =>
             {
-                var wallet = GenerateBlankWallet("myWallet1", "password");
+                var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
                 wallet.AccountsRoot.ElementAt(0).Accounts.Add(
                     new HdAccount()
                     {
@@ -70,11 +70,11 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
                     .Returns(new FeeRate(0));
 
-                var wallet = GenerateBlankWallet("myWallet1", "password");
-                var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
-                var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
-                var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
-                var changeKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+                var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
+                var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+                var spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+                var destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+                var changeKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
 
                 var address = new HdAddress()
                 {
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 };
 
                 var chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
-                this.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address);
+                WalletTestsHelpers.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address);
 
                 wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
                 {
@@ -133,10 +133,10 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletTransactionHandlerTest/BuildTransactionNoChangeAdressesLeftCreatesNewChangeAddress");
 
-            var wallet = GenerateBlankWallet("myWallet1", "password");
-            var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
-            var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
-            var destinationKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
+            var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            var spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            var destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
 
             var address = new HdAddress()
             {
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             };
 
             var chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
-            this.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address);
+            WalletTestsHelpers.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address);
             var addressTransaction = address.Transactions.First();
 
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var transactionResult = walletTransactionHandler.BuildTransaction(context);
 
             var result = new Transaction(transactionResult.ToHex());
-            var expectedChangeAddressKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
+            var expectedChangeAddressKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
 
             Assert.Equal(1, result.Inputs.Count);
             Assert.Equal(addressTransaction.Id, result.Inputs[0].PrevOut.Hash);
@@ -210,12 +210,12 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletTransactionHandlerTest/FundTransaction_Given__a_wallet_has_enough_inputs__When__adding_inputs_to_an_existing_transaction__Then__the_transaction_is_funded_successfully");
 
-            var wallet = GenerateBlankWallet("myWallet1", "password");
-            var accountKeys = GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
-            var spendingKeys = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
-            var destinationKeys1 = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
-            var destinationKeys2 = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/2");
-            var destinationKeys3 = GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/3");
+            var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
+            var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            var spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            var destinationKeys1 = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+            var destinationKeys2 = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/2");
+            var destinationKeys3 = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/3");
 
 
             var address = new HdAddress()
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             // wallet with 4 coinbase outputs of 50 = 200 Bitcoin
             var chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
-            this.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address, 4);
+            WalletTestsHelpers.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address, 4);
 
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
             {
@@ -307,88 +307,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys2.PubKey.ScriptPubKey));
             Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys3.PubKey.ScriptPubKey));
         }
-
-        private Features.Wallet.Wallet GenerateBlankWallet(string name, string password)
-        {
-            return GenerateBlankWalletWithExtKey(name, password).wallet;
-        }
-
-        private (Features.Wallet.Wallet wallet, ExtKey key) GenerateBlankWalletWithExtKey(string name, string password)
-        {
-            Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            ExtKey extendedKey = mnemonic.DeriveExtKey(password);
-
-            Features.Wallet.Wallet walletFile = new Features.Wallet.Wallet
-            {
-                Name = name,
-                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, Network.Main).ToWif(),
-                ChainCode = extendedKey.ChainCode,
-                CreationTime = DateTimeOffset.Now,
-                Network = Network.Main,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
-            };
-
-            return (walletFile, extendedKey);
-        }
         
-        private static (ExtKey ExtKey, string ExtPubKey) GenerateAccountKeys(Features.Wallet.Wallet wallet, string password, string keyPath)
-        {
-            var accountExtKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, password, wallet.Network), wallet.ChainCode);
-            var accountExtendedPubKey = accountExtKey.Derive(new KeyPath(keyPath)).Neuter().ToString(wallet.Network);
-            return (accountExtKey, accountExtendedPubKey);
-        }
-
-        private static (PubKey PubKey, BitcoinPubKeyAddress Address) GenerateAddressKeys(Features.Wallet.Wallet wallet, string accountExtendedPubKey, string keyPath)
-        {
-            var addressPubKey = ExtPubKey.Parse(accountExtendedPubKey).Derive(new KeyPath(keyPath)).PubKey;
-            var address = addressPubKey.GetAddress(wallet.Network);
-
-            return (addressPubKey, address);
-        }
-
-        public List<Block> AddBlocksWithCoinbaseToChain(Network network, ConcurrentChain chain, HdAddress address, int blocks = 1)
-        {
-            //var chain = new ConcurrentChain(network.GetGenesis().Header);
-
-            var blockList = new List<Block>();
-
-            for (int i = 0; i < blocks; i++)
-            {
-                Block block = new Block();
-                block.Header.HashPrevBlock = chain.Tip.HashBlock;
-                block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
-                block.Header.UpdateTime(DateTimeOffset.UtcNow, network, chain.Tip);
-
-                var coinbase = new Transaction();
-                coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
-                coinbase.AddOutput(new TxOut(network.GetReward(chain.Height + 1), address.ScriptPubKey));
-
-                block.AddTransaction(coinbase);
-                block.Header.Nonce = 0;
-                block.UpdateMerkleRoot();
-                block.Header.CacheHashes();
-
-                chain.SetTip(block.Header);
-
-                var addressTransaction = new TransactionData()
-                {
-                    Amount = coinbase.TotalOut,
-                    BlockHash = block.GetHash(),
-                    BlockHeight = chain.GetBlock(block.GetHash()).Height,
-                    CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time),
-                    Id = coinbase.GetHash(),
-                    Index = 0,
-                    ScriptPubKey = coinbase.Outputs[0].ScriptPubKey,
-                };
-
-                address.Transactions.Add(addressTransaction);
-
-                blockList.Add(block);
-            }
-
-            return blockList;
-        }
-
         public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
