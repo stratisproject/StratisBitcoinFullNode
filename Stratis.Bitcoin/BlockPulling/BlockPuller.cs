@@ -68,7 +68,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Instance logger.</summary>
         protected readonly ILogger logger;
 
-        /// <summary>Lock protecting access to <see cref="assignedBlockTasks"/>, <see cref="pendingInventoryVectors"/>, <see cref="downloadedBlocks"/>, and <see cref="peersPendingDownloads"/></summary>
+        /// <summary>
+        /// Lock protecting access to <see cref="assignedBlockTasks"/>, <see cref="pendingInventoryVectors"/>, <see cref="downloadedBlocks"/>, <see cref="peersPendingDownloads"/>,
+        /// and also <see cref="BlockPullerBehavior.Disconnected"/></summary>
         private readonly object lockObject = new object();
 
         /// <summary>
@@ -174,15 +176,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public virtual void AskBlocks(ChainedBlock[] downloadRequests)
         {
-            BlockPullerBehavior[] nodes = GetNodeBehaviors();
-
             Dictionary<int, InventoryVector> vectors = new Dictionary<int, InventoryVector>();
             foreach (ChainedBlock request in downloadRequests)
             {
                 InventoryVector vector = new InventoryVector(InventoryType.MSG_BLOCK, request.HashBlock);
                 vectors.Add(request.Height, vector);
             }
-            DistributeDownload(vectors, nodes, downloadRequests.Min(d => d.Height));
+            DistributeDownload(vectors, downloadRequests.Min(d => d.Height));
         }
 
         /// <summary>
@@ -210,10 +210,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         private void AssignPendingVectors()
         {
-            BlockPullerBehavior[] innerNodes = GetNodeBehaviors();
-            if (innerNodes.Length == 0)
-                return;
-
             uint256[] pendingVectorsCopy;
             lock (this.lockObject)
             {
@@ -236,7 +232,7 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             if (vectors.Count > 0)
-                DistributeDownload(vectors, innerNodes, minHeight);
+                DistributeDownload(vectors, minHeight);
         }
 
         /// <inheritdoc />
@@ -294,9 +290,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </para>
         /// </summary>
         /// <param name="vectors">Information about blocks to download.</param>
-        /// <param name="innerNodes">Available nodes to distribute download tasks among.</param>
         /// <param name="minHeight">Minimum height of the chain that the target nodes has to have in order to be asked for one or more of the block to be downloaded from them.</param>
-        private void DistributeDownload(Dictionary<int, InventoryVector> vectors, BlockPullerBehavior[] innerNodes, int minHeight)
+        private void DistributeDownload(Dictionary<int, InventoryVector> vectors, int minHeight)
         {
             if (vectors.Count == 0)
                 return;
@@ -305,7 +300,8 @@ namespace Stratis.Bitcoin.BlockPulling
             // If there is a peer whose chain is so short that it can't provide any blocks we want, it is ignored.
             List<PullerDownloadAssignments.PeerInformation> peerInformation = new List<PullerDownloadAssignments.PeerInformation>();
 
-            foreach (BlockPullerBehavior behavior in innerNodes)
+            BlockPullerBehavior[] nodes = GetNodeBehaviors();
+            foreach (BlockPullerBehavior behavior in nodes)
             {
                 int? peerHeight = behavior.ChainHeadersBehavior?.PendingTip?.Height;
                 if (peerHeight >= minHeight)
@@ -344,16 +340,41 @@ namespace Stratis.Bitcoin.BlockPulling
                 BlockPullerBehavior peerBehavior = (BlockPullerBehavior)peer.PeerId;
 
                 // Create GetDataPayload from the list of block heights this peer has been assigned.
+                bool peerDisconnected = false;
                 foreach (int blockHeight in blockHeightsToDownload)
                 {
                     InventoryVector inventoryVector = vectors[blockHeight];
-                    if (AssignDownloadTaskToPeer(peerBehavior, inventoryVector.Hash))
+                    if (AssignDownloadTaskToPeer(peerBehavior, inventoryVector.Hash, out peerDisconnected))
+                    {
                         getDataPayload.Inventory.Add(inventoryVector);
+                    }
+                    else if (peerDisconnected) 
+                    {
+                        // The peer was disconnected recently, we need to make sure that the blocks assigned to it go back to the pending list.
+                        // This is done below.
+                        break;
+                    }
+                    // else This block has been assigned to someone else already, no action required.
                 }
 
-                // If this node was assigned at least one download task, start the task.
-                if (getDataPayload.Inventory.Count > 0)
-                    peerBehavior.StartDownload(getDataPayload);
+                if (!peerDisconnected)
+                {
+                    // If this node was assigned at least one download task, start the task.
+                    if (getDataPayload.Inventory.Count > 0)
+                        peerBehavior.StartDownload(getDataPayload);
+                }
+                else
+                {
+                    // Return blocks that were supposed to be assigned to the disconnected peer back to the pending list.
+                    lock (this.lockObject)
+                    {
+                        foreach (int blockHeight in blockHeightsToDownload)
+                        {
+                            InventoryVector inventoryVector = vectors[blockHeight];
+                            this.pendingInventoryVectors.Enqueue(inventoryVector.Hash);
+                        }
+                    }
+                }
             }
         }
 
@@ -364,7 +385,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="blockHash">If the function succeeds, this is filled with the hash of the block that will be requested from <paramref name="peer"/>.</param>
         /// <returns>
         /// <c>true</c> if a download task was assigned to the peer, <c>false</c> otherwise, 
-        /// which indicates that there was no pending task.
+        /// which indicates that there was no pending task, or that the peer is disconnected and should not be assigned any more work.
         /// </returns>
         internal bool AssignPendingDownloadTaskToPeer(BlockPullerBehavior peer, out uint256 blockHash)
         {
@@ -372,7 +393,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             lock (this.lockObject)
             {
-                if (this.pendingInventoryVectors.Count > 0)
+                if (!peer.Disconnected && (this.pendingInventoryVectors.Count > 0))
                 {
                     blockHash = this.pendingInventoryVectors.Dequeue();
                     this.assignedBlockTasks.Add(blockHash, peer);
@@ -390,14 +411,15 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="peer">Peer to be assigned the new task.</param>
         /// <param name="blockHash">Hash of the block to download from <paramref name="peer"/>.</param>
+        /// <param name="peerDisconnected">If the function fails, this is set to <c>true</c> if the peer was marked as disconnected and thus unable to be assigned any more work.</param>
         /// <returns><c>true</c> if the block was assigned to the peer, <c>false</c> in case the block has already been assigned to someone.</returns>
-        /// <remarks>The caller of this method is responsible for holding <see cref="lockObject"/>.</remarks>
-        internal bool AssignDownloadTaskToPeer(BlockPullerBehavior peer, uint256 blockHash)
+        internal bool AssignDownloadTaskToPeer(BlockPullerBehavior peer, uint256 blockHash, out bool peerDisconnected)
         {
             bool res = false;
             lock (this.lockObject)
             {
-                if (this.assignedBlockTasks.TryAdd(blockHash, peer))
+                peerDisconnected = peer.Disconnected;
+                if (!peerDisconnected && this.assignedBlockTasks.TryAdd(blockHash, peer))
                 {
                     AddPeerPendingDownloadLocked(peer, blockHash);
                     res = true;
@@ -460,6 +482,9 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             lock (this.lockObject)
             {
+                // Prevent the peer to get any more work from now on.
+                peer.Disconnected = true;
+
                 HashSet<uint256> peerPendingDownloads;
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
                 {

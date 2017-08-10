@@ -43,6 +43,10 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Reference to a component responsible for keeping the chain up to date.</summary>
         public ChainHeadersBehavior ChainHeadersBehavior { get; private set; }
 
+        /// <summary>Set to <c>true</c> when the puller behavior is disconnected, so that the associated network peer can get no more download tasks.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="BlockPuller.lockObject"/>.</remarks>
+        internal bool Disconnected { get; set; }
+
         /// <summary>Number of download tasks assigned to this peer. This is for logging purposes only.</summary>
         public int PendingDownloadsCount
         {
