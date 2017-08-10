@@ -1,4 +1,5 @@
 ﻿using System;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -10,10 +11,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
         public WalletAccountReference(string walletName, string accountName)
         {
-            if(walletName == null)
-                throw new ArgumentNullException("walletName");
-            if(accountName == null)
-                throw new ArgumentNullException("accountName");
+            Guard.NotEmpty(walletName, nameof(walletName));
+            Guard.NotEmpty(accountName, nameof(accountName));
+
             this.WalletName = walletName;
             this.AccountName = accountName;
         }

@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Lists all spendable transactions from the account specified in <see cref="WalletAccountReference"/>.
         /// </summary>
-        /// <param name="account">The account from which to take the spendable transactions.</param>
+        /// <param name="account">The account in which to look for spendable transactions.</param>
         /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
         UnspentAccountReference GetSpendableTransactions(HdAccount account, int confirmations = 0);
