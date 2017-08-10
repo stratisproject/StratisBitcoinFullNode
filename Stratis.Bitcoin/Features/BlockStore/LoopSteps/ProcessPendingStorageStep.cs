@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// Remove the BlockPair from PendingStorage and return for further processing
     /// If the next chained block does not exist in pending storage
     /// return a Next() result which cause the BlockStoreLoop to execute
-    /// the next step <see cref="DownloadBlockStep"/>
+    /// the next step <see cref="DownloadBlockStep"/>.
     /// </para>
     /// <para>
     /// If in IBD (Initial Block Download) and batch count is not yet reached, 
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// and start again.
     /// </para>
     /// <para>
-    /// Loop over the pending blocks and push to the repository in batches
+    /// Loop over the pending blocks and push to the repository in batches.
     /// if a stop condition is met break from the inner loop and return a Continue() result.
     /// This will cause the BlockStoreLoop to skip over  <see cref="DownloadBlockStep"/> and start
     /// the loop again. 

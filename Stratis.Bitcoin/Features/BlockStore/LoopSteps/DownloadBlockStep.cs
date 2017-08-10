@@ -8,13 +8,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Continuously find and download blocks until a stop condition is found.
     ///<para>
+    ///<list>
     /// There are two operations:
-    ///     1: FindBlocks() to download by asking them from the BlockPuller
-    ///     2: DownloadBlocks() and persisting them as a batch to the BlockRepository
-    ///      
+    ///     1: FindBlocks() to download by asking them from the BlockPuller.
+    ///     2: DownloadBlocks() and persisting them as a batch to the BlockRepository.
+    /// </list>
+    /// </para> 
+    /// <para>
     /// After a "Stop" condition is found the FindBlocksTask will be removed from 
-    /// the routine<see cref="BlockStoreInnerStepContext.Routine"/> and only the 
-    /// DownloadBlocksTask will continue to execute until the DownloadStack is empty
+    /// the <see cref="BlockStoreInnerStepContext.Routine"/> and only the 
+    /// <see cref="BlockStoreInnerStepDownloadBlocks"/> will continue to execute until the DownloadStack is empty.
     /// </para>   
     /// </summary>
     internal sealed class DownloadBlockStep : BlockStoreLoopStep

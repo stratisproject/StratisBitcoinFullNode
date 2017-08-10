@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Reorganises the BlockRepository
+    /// Reorganises the BlockRepository.
     /// <para>
     /// This will happen when the BlockStore's tip does not match
     /// the next chained block's previous header.
@@ -15,13 +15,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// Steps:
     ///     1: Add blocks to delete from the repository by walking back the chain until the last chained block is found.
     ///     2: Delete those blocks from the BlockRepository.
-    ///     3: Set the last stored block (tip) to the last found chained block
+    ///     3: Set the last stored block (tip) to the last found chained block.
     /// </para>
     /// <para>
     /// If the store/repository does not require reorganising the step will 
     /// return Next() which will cause the BlockStoreLoop to 
-    /// execute the next step <see cref="CheckNextChainedBlockExistStep"/>
-    /// 
+    /// execute the next step <see cref="CheckNextChainedBlockExistStep"/>. 
     /// If not the step will cause the BlockStoreLoop to break execution and start again.
     /// </para>
     /// </summary>

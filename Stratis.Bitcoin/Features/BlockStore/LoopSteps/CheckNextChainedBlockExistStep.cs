@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Check if the next chained block already exists in the BlockRepository
+    /// Check if the next chained block already exists in the BlockRepository.
     /// <para>
     /// If the block exists in the repository the step 
     /// will return a Continue result which execute a 
-    /// "Continute" on the while loop
+    /// "Continue" on the while loop
     /// </para>
     /// <para>
     /// If the block does not exists in the repository the step 
     /// will return a Next() result which'll cause the BlockStoreLoop to execute 
-    /// the next step (<see cref="ProcessPendingStorageStep"/>)
+    /// the next step (<seealso cref="ProcessPendingStorageStep"/>)
     /// </para>
     /// </summary>
     internal sealed class CheckNextChainedBlockExistStep : BlockStoreLoopStep

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Downloads blocks from the BlockPuller removes block from the DownloadStack
+    /// Downloads blocks from the BlockPuller removes block from the DownloadStack.
     /// <para>
     /// If the block exists in the puller add the the downloaded block to the store to
     /// push to the repository. If the <see cref="BlockStoreLoop.InsertBlockSizeThreshold"/> has been reached
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// start again.
     /// </para>
     /// <para>
-    /// If a block is stalled or lost to the downloader, start again after a threshold <see cref="StallCount"/>
+    /// If a block is stalled or lost to the downloader, start again after a threshold <see cref="BlockStoreLoop.StallCount"/>
     /// </para>
     /// </summary>
     public sealed class BlockStoreInnerStepDownloadBlocks : BlockStoreInnerStep
