@@ -164,9 +164,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Disconnects the puller from the node and cancels pending operations and download tasks.
         /// </summary>
-        /// <remarks>
-        /// TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/246
-        /// </remarks>
         protected override void DetachCore()
         {
             this.cancellationToken.Cancel();
