@@ -412,7 +412,10 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="peer">Peer to be assigned the new task.</param>
         /// <param name="blockHash">Hash of the block to download from <paramref name="peer"/>.</param>
         /// <param name="peerDisconnected">If the function fails, this is set to <c>true</c> if the peer was marked as disconnected and thus unable to be assigned any more work.</param>
-        /// <returns><c>true</c> if the block was assigned to the peer, <c>false</c> in case the block has already been assigned to someone.</returns>
+        /// <returns>
+        /// <c>true</c> if the block was assigned to the peer, <c>false</c> in case the block has already been assigned to someone, 
+        /// or if the peer is disconnected and should not be assigned any more work.
+        /// </returns>
         internal bool AssignDownloadTaskToPeer(BlockPullerBehavior peer, uint256 blockHash, out bool peerDisconnected)
         {
             bool res = false;
