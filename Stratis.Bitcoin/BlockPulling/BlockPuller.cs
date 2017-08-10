@@ -436,29 +436,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Releases the block downloading task from the peer it has been assigned to 
         /// and returns the block to the list of blocks the node wants to download.
         /// </summary>
-        /// <param name="peer">Peer to release the download task assignment for.</param>
-        /// <param name="blockHash">Hash of the block which task should be released.</param>
-        /// <returns><c>true</c> if the function succeeds, <c>false</c> if the block was not assigned to be downloaded by any peer.</returns>
-        /// <exception cref="InvalidOperationException">Thrown in case of data inconsistency between synchronized structures, which should never happen.</exception>
-        internal bool ReleaseDownloadTaskAssignment(BlockPullerBehavior peer, uint256 blockHash)
-        {
-            bool res = false;
-            lock (this.lockObject)
-            {
-                HashSet<uint256> peerPendingDownloads;
-                if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
-                    res = ReleaseDownloadTaskAssignmentLocked(peerPendingDownloads, blockHash);
-            }
-
-            if (!res) throw new InvalidOperationException("Data structures inconsistency, please notify the devs");
-
-            return res;
-        }
-
-        /// <summary>
-        /// Releases the block downloading task from the peer it has been assigned to 
-        /// and returns the block to the list of blocks the node wants to download.
-        /// </summary>
         /// <param name="peerPendingDownloads">List of pending downloads tasks of the peer.</param>
         /// <param name="blockHash">Hash of the block which task should be released.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> if the block was not assigned to be downloaded by any peer.</returns>
