@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void ExpireRemovesBlockFromCacheWhenExists()
+		public void ExpireRemovesBlockFromCacheWhenExists_IX()
 		{
 			object block = null;
 			uint256 blockId = new uint256(2389704);
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void ExpireDoesNotRemoveBlockFromCacheWhenNotExists()
+		public void ExpireDoesNotRemoveBlockFromCacheWhenNotExists_IX()
 		{
 			object block = null;
 			uint256 blockId = new uint256(2389704);
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void GetBlockAsyncBlockInCacheReturnsBlock()
+		public void GetBlockAsyncBlockInCacheReturnsBlock_IX()
 		{
 			object block = null;			
 			uint256 blockId = new uint256(2389704);
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock()
+		public void GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock_IX()
 		{
 			uint256 blockId = new uint256(2389704);
 			Block repositoryBlock = new Block();
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void GetBlockByTrxAsyncBlockInCacheReturnsBlock()
+		public void GetBlockByTrxAsyncBlockInCacheReturnsBlock_IX()
 		{
 			uint256 txId = new uint256(3252);
 			uint256 blockId = new uint256(2389704);
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void GetBlockByTrxAsyncBlockNotInCacheLookupInRepository()
+		public void GetBlockByTrxAsyncBlockNotInCacheLookupInRepository_IX()
 		{
 			uint256 txId = new uint256(3252);
 			uint256 blockId = new uint256(2389704);
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void GetBlockByTrxAsyncBlockNotInCacheLookupNotInRepositoryReturnsNull()
+		public void GetBlockByTrxAsyncBlockNotInCacheLookupNotInRepositoryReturnsNull_IX()
 		{
 			uint256 txId = new uint256(3252);			
 			var memoryCacheStub = new MemoryCacheStub();
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void GetTrxAsyncReturnsTransactionFromBlockInCache()
+		public void GetTrxAsyncReturnsTransactionFromBlockInCache_IX()
 		{
 			var trans = new Transaction();
 			trans.Version = 15121;
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void GetTrxAsyncReturnsNullWhenNotInCache()
+		public void GetTrxAsyncReturnsNullWhenNotInCache_IX()
 		{
 			var trans = new Transaction();
 			trans.Version = 15121;

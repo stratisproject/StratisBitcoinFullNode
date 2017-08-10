@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void Constructor_InitializesTimeAndCount()
+        public void Constructor_InitializesTimeAndCount_IX()
         {
             Assert.Equal(0, this.performanceCounter.CacheHitCount);
             Assert.Equal(0, this.performanceCounter.CacheMissCount);
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void AddCacheHitCount_WithGivenAmount_IncrementsHitCount()
+        public void AddCacheHitCount_WithGivenAmount_IncrementsHitCount_IX()
         {
             this.performanceCounter.AddCacheHitCount(15);
 
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void AddCacheMissCount_WithGivenAmount_IncrementsMissCount()
+        public void AddCacheMissCount_WithGivenAmount_IncrementsMissCount_IX()
         {
             this.performanceCounter.AddCacheMissCount(15);
 
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void AddCacheRemoveCount_WithGivenAmount_IncrementsRemoveCount()
+        public void AddCacheRemoveCount_WithGivenAmount_IncrementsRemoveCount_IX()
         {
             this.performanceCounter.AddCacheRemoveCount(15);
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void AddCacheSetCount_WithGivenAmount_IncrementsSetCount()
+        public void AddCacheSetCount_WithGivenAmount_IncrementsSetCount_IX()
         {
             this.performanceCounter.AddCacheSetCount(15);
 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void Snapshot_CreatesSnapshotWithCurrentPerformanceCount()
+        public void Snapshot_CreatesSnapshotWithCurrentPerformanceCount_IX()
         {
             this.performanceCounter.AddCacheHitCount(15);
             this.performanceCounter.AddCacheMissCount(7);

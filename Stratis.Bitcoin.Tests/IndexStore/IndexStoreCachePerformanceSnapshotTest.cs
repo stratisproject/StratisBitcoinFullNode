@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void Constructor_InitializesCounters()
+        public void Constructor_InitializesCounters_IX()
         {
             var snapshot = new IndexStoreCachePerformanceSnapshot(1301, 2352, 1244, 6452)
             {
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void SubtractOperator_SubtractsValuesFromMultipleSnapshots_CreatesNewSnapshot()
+        public void SubtractOperator_SubtractsValuesFromMultipleSnapshots_CreatesNewSnapshot_IX()
         {
             var snapshot = new IndexStoreCachePerformanceSnapshot(1301, 2352, 1244, 6452)
             {

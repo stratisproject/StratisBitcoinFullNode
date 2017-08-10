@@ -14,25 +14,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		Task<Transaction> GetTrxAsync(uint256 trxid);
 		void AddToCache(Block block);
 	}
-	public class BlockStoreCache : IBlockStoreCache
-	{
-		private readonly IBlockRepository blockRepository;
-		private readonly IMemoryCache cache;
-		public BlockStoreCachePerformanceCounter PerformanceCounter { get; }	
+    public class BlockStoreCache : IBlockStoreCache
+    {
+        private readonly IBlockRepository blockRepository;
+        private readonly IMemoryCache cache;
+        public BlockStoreCachePerformanceCounter PerformanceCounter { get; }
 
-		public BlockStoreCache(BlockRepository blockRepository) : this(blockRepository, new MemoryCache(new MemoryCacheOptions()))
-		{
-		}
+        public BlockStoreCache(BlockRepository blockRepository) : this(blockRepository, new MemoryCache(new MemoryCacheOptions()))
+        {
+        }
 
-		public BlockStoreCache(IBlockRepository blockRepository, IMemoryCache memoryCache)
-		{
-			Guard.NotNull(blockRepository, nameof(blockRepository));
-			Guard.NotNull(memoryCache, nameof(memoryCache));
+        public BlockStoreCache(IBlockRepository blockRepository, IMemoryCache memoryCache)
+        {
+            Guard.NotNull(blockRepository, nameof(blockRepository));
+            Guard.NotNull(memoryCache, nameof(memoryCache));
 
-			this.blockRepository = blockRepository;
-			this.cache = memoryCache;
-			this.PerformanceCounter = new BlockStoreCachePerformanceCounter();
-		}
+            this.blockRepository = blockRepository;
+            this.cache = memoryCache;
+            this.PerformanceCounter = BlockStoreCachePerformanceCounterFactory();
+        }
+
+        public virtual BlockStoreCachePerformanceCounter BlockStoreCachePerformanceCounterFactory()
+        {
+            return new BlockStoreCachePerformanceCounter();
+        }
 
 		public void Expire(uint256 blockid)
 		{

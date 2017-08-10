@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void AnnounceBlocksWithoutBlocksReturns()
+		public void AnnounceBlocksWithoutBlocksReturns_IX()
 		{
 			List<uint256> blocks = new List<uint256>();			
 
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
 		}
 
 		[Fact]
-		public void AnnounceBlocksWithoutAttachedNodeWithoutBlocksReturns()
+		public void AnnounceBlocksWithoutAttachedNodeWithoutBlocksReturns_IX()
 		{
 			List<uint256> blocks = new List<uint256>();
 			blocks.Add(new uint256(1254175239823));			

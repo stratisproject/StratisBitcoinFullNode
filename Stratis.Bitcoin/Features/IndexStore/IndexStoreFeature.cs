@@ -4,71 +4,26 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Features.BlockStore;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
-    public class IndexStoreFeature : FullNodeFeature
+    public class IndexStoreFeature : BlockStoreFeature
     {
-        private readonly ConcurrentChain chain;
-        private readonly Signals.Signals signals;
-        private readonly IndexRepository indexRepository;
-        private readonly IndexStoreCache indexStoreCache;
-        private readonly StoreBlockPuller blockPuller;
-        private readonly IndexStoreLoop indexStoreLoop;
-        private readonly IndexStoreManager indexStoreManager;
-        private readonly IndexStoreSignaled indexStoreSignaled;
-        private readonly INodeLifetime nodeLifetime;
-        private readonly IConnectionManager connectionManager;
-        private readonly NodeSettings nodeSettings;
-        private readonly ILogger storeLogger;
-        private readonly ILoggerFactory loggerFactory;
-
         public IndexStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals.Signals signals, IndexRepository indexRepository,
-            IndexStoreCache indexStoreCache, StoreBlockPuller blockPuller, IndexStoreLoop indexStoreLoop, IndexStoreManager indexStoreManager,
-            IndexStoreSignaled indexStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory)
+            IndexStoreCache indexStoreCache, IndexBlockPuller blockPuller, IndexStoreLoop indexStoreLoop, IndexStoreManager indexStoreManager,
+            IndexStoreSignaled indexStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory):
+            base(chain, connectionManager, signals, indexRepository, indexStoreCache, blockPuller, indexStoreLoop, indexStoreManager,
+                indexStoreSignaled, nodeLifetime, nodeSettings, loggerFactory, "IndexStore")
         {
-            this.chain = chain;
-            this.signals = signals;
-            this.indexRepository = indexRepository;
-            this.indexStoreCache = indexStoreCache;
-            this.blockPuller = blockPuller;
-            this.indexStoreLoop = indexStoreLoop;
-            this.indexStoreManager = indexStoreManager;
-            this.indexStoreSignaled = indexStoreSignaled;
-            this.nodeLifetime = nodeLifetime;
-            this.connectionManager = connectionManager;
-            this.nodeSettings = nodeSettings;
-            this.storeLogger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.loggerFactory = loggerFactory;
         }
 
-        public override void Start()
+        public override BlockStoreBehavior BlockStoreBehaviorFactory()
         {
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new IndexStoreBehavior(this.chain, this.indexRepository, this.indexStoreCache, this.storeLogger));
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
-
-            // signal to peers that this node can serve blocks
-            this.connectionManager.Parameters.Services = (this.nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
-
-            this.signals.Blocks.Subscribe(this.indexStoreSignaled);
-
-            this.indexRepository.Initialize().GetAwaiter().GetResult();
-            this.indexStoreSignaled.RelayWorker();
-            this.indexStoreLoop.Initialize().GetAwaiter().GetResult();
-        }
-
-        public override void Stop()
-        {
-            this.storeLogger.LogInformation("Flushing IndexStore...");
-            this.indexStoreManager.IndexStoreLoop.Flush().GetAwaiter().GetResult();
-
-            this.indexStoreCache.Dispose();
-            this.indexRepository.Dispose();
+            return new IndexStoreBehavior(this.chain, this.blockRepository as IndexRepository, this.blockStoreCache as IndexStoreCache, this.storeLogger);
         }
     }
 
@@ -84,7 +39,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 {
                     services.AddSingleton<IndexRepository>();
                     services.AddSingleton<IndexStoreCache>();
-                    services.AddSingleton<StoreBlockPuller>();
+                    services.AddSingleton<IndexBlockPuller>();
                     services.AddSingleton<IndexStoreLoop>();
                     services.AddSingleton<IndexStoreManager>();
                     services.AddSingleton<IndexStoreSignaled>();
@@ -94,4 +49,5 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return fullNodeBuilder;
         }
     }
+    
 }

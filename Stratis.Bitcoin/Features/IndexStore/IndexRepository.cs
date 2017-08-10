@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
     public class IndexRepository : BlockRepository, IIndexRepository
     {
         public Dictionary<string, Index> Indexes;
-        public new IndexStoreRepositoryPerformanceCounter PerformanceCounter { get; }
+        //public new BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
 
         public static string indexTablePrefix { get { return "Index_"; } }
 
@@ -59,7 +59,6 @@ namespace Stratis.Bitcoin.Features.IndexStore
             base(network, new IndexSession("DBreeze IndexRepository", folder))
         {
             this.tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
-            this.PerformanceCounter = new IndexStoreRepositoryPerformanceCounter();
             this.Indexes = new Dictionary<string, Index>();
  
             this.session.Execute(() =>
@@ -83,6 +82,11 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     if (!this.session.Transaction.Select<string, string>("Common", indexTable).Exists)
                         (this.session as IndexSession).DeleteTable(indexTable);
             }).GetAwaiter().GetResult();
+        }
+
+        public override BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
+        {
+            return new IndexStoreRepositoryPerformanceCounter();
         }
 
         public override Task Initialize()
@@ -240,15 +244,13 @@ namespace Stratis.Bitcoin.Features.IndexStore
         {
             base.OnInsertTransactions(transactions);
             foreach (var index in this.Indexes.Values)
-                this.PerformanceCounter.AddRepositoryInsertCount(
-                index.IndexTransactionDetails(transactions));
+                index.IndexTransactionDetails(transactions);
         }
         
         protected override void OnDeleteTransactions(List<(Transaction, Block)> transactions)
         {
             foreach (var index in this.Indexes.Values)
-                this.PerformanceCounter.AddRepositoryDeleteCount(
-                    index.IndexTransactionDetails(transactions, true));
+                index.IndexTransactionDetails(transactions, true);
             base.OnDeleteTransactions(transactions);
         }       
     }

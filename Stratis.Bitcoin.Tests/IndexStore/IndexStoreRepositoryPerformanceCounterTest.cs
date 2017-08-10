@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void Constructor_InitializesTimeAndCount()
+        public void Constructor_InitializesTimeAndCount_IX()
         {
             Assert.Equal(0, this.performanceCounter.RepositoryHitCount);
             Assert.Equal(0, this.performanceCounter.RepositoryMissCount);
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void AddRepositoryHitCount_WithGivenAmount_IncrementsHitCount()
+        public void AddRepositoryHitCount_WithGivenAmount_IncrementsHitCount_IX()
         {
             this.performanceCounter.AddRepositoryHitCount(15);
 
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void AddRepositoryMissCount_WithGivenAmount_IncrementsMissCount()
+        public void AddRepositoryMissCount_WithGivenAmount_IncrementsMissCount_IX()
         {
             this.performanceCounter.AddRepositoryMissCount(15);
 
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void AddRepositoryDeleteCount_WithGivenAmount_IncrementsDeleteCount()
+        public void AddRepositoryDeleteCount_WithGivenAmount_IncrementsDeleteCount_IX()
         {
             this.performanceCounter.AddRepositoryDeleteCount(15);
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void AddRepositoryInsertCount_WithGivenAmount_IncrementsInsertCount()
+        public void AddRepositoryInsertCount_WithGivenAmount_IncrementsInsertCount_IX()
         {
             this.performanceCounter.AddRepositoryInsertCount(15);
 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void Snapshot_CreatesSnapshotWithCurrentPerformanceCount()
+        public void Snapshot_CreatesSnapshotWithCurrentPerformanceCount_IX()
         {
             this.performanceCounter.AddRepositoryHitCount(15);
             this.performanceCounter.AddRepositoryMissCount(7);

@@ -12,9 +12,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private long _RepositoryDeleteCount;
 		private long _RepositoryHitCount;
 		private long _RepositoryMissCount;
+        private string _Name;
 
-		public BlockStoreRepositoryPerformanceCounter()
+		public BlockStoreRepositoryPerformanceCounter(string name = "BlockStore")
 		{
+            this._Name = name;
 			this._Start = DateTime.UtcNow;
 		}
 
@@ -32,6 +34,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 				return DateTime.UtcNow - this.Start;
 			}
 		}
+
+        public string Name
+        {
+            get
+            {
+                return this._Name;
+            }
+        }
 
 		public long RepositoryInsertCount
 		{
@@ -90,7 +100,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 #if !(PORTABLE || NETCORE)
 			Thread.MemoryBarrier();
 #endif
-			var snap = new BlockStoreRepositoryPerformanceSnapshot(this.RepositoryHitCount, this.RepositoryMissCount, this.RepositoryDeleteCount, this.RepositoryInsertCount)
+			var snap = new BlockStoreRepositoryPerformanceSnapshot(this.RepositoryHitCount, this.RepositoryMissCount, this.RepositoryDeleteCount, this.RepositoryInsertCount, this.Name)
 			{
 				Start = this.Start,
 				Taken = DateTime.UtcNow
@@ -110,14 +120,24 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private readonly long _RepositoryMissCount;
 		private readonly long _RepositoryDeleteCount;
 		private readonly long _RepositoryInsertCount;
+        private readonly string _Name;
 
-		public BlockStoreRepositoryPerformanceSnapshot(long repositoryHitCount, long repositoryMissCount, long repositoryDeleteCount, long repositoryInsertCount)
+        public BlockStoreRepositoryPerformanceSnapshot(long repositoryHitCount, long repositoryMissCount, long repositoryDeleteCount, long repositoryInsertCount, string name = "BlockStore")
 		{
 			this._RepositoryHitCount = repositoryHitCount;
 			this._RepositoryMissCount = repositoryMissCount;
 			this._RepositoryDeleteCount = repositoryDeleteCount;
             this._RepositoryInsertCount = repositoryInsertCount;
+            this._Name = name;
 		}
+
+        public string Name
+        {
+            get
+            {
+                return this._Name;
+            }
+        }
 
 		public long TotalRepositoryHitCount
 		{
@@ -184,7 +204,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return new BlockStoreRepositoryPerformanceSnapshot(end.TotalRepositoryHitCount - start.TotalRepositoryHitCount,
                                             end.TotalRepositoryMissCount - start.TotalRepositoryMissCount,
                                             end.TotalRepositoryDeleteCount - start.TotalRepositoryDeleteCount,
-                                            end.TotalRepositoryInsertCount - start.TotalRepositoryInsertCount)
+                                            end.TotalRepositoryInsertCount - start.TotalRepositoryInsertCount, start.Name)
             {
                 Start = start.Taken,
                 Taken = end.Taken
@@ -195,7 +215,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			StringBuilder builder = new StringBuilder();
 
-			builder.AppendLine("====BlockStore Repository Stats(%)====");
+			builder.AppendLine($"===={this._Name} Repository Stats(%)====");
 			builder.AppendLine("Hit Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryHitCount);
 			builder.AppendLine("Miss Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryMissCount);
 			builder.AppendLine("Delete Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryDeleteCount);

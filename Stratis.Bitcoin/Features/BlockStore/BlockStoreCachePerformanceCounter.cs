@@ -12,11 +12,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private long _CacheRemoveCount;
 		private long _CacheHitCount;
 		private long _CacheMissCount;
+        private string _Name;
 
-		public BlockStoreCachePerformanceCounter()
+		public BlockStoreCachePerformanceCounter(string name = "BlockStore")
 		{
+            this._Name = name;
 			this._Start = DateTime.UtcNow;
 		}
+
+        public string Name
+        {
+            get
+            {
+                return _Name;
+            }
+        }
 
 		public DateTime Start
 		{
@@ -87,12 +97,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			Interlocked.Add(ref this._CacheSetCount, count);
 		}
 
-		public BlockStoreCachePerformanceSnapshot Snapshot()
+		public virtual BlockStoreCachePerformanceSnapshot Snapshot()
 		{
 #if !(PORTABLE || NETCORE)
 			Thread.MemoryBarrier();
 #endif
-			var snap = new BlockStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount)
+			var snap = new BlockStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount, this.Name)
 			{
 				Start = this.Start,
 				Taken = DateTime.UtcNow
@@ -112,14 +122,25 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private readonly long _CacheMissCount;
 		private readonly long _CacheRemoveCount;
 		private readonly long _CacheSetCount;
+        private readonly string _Name;
 
-		public BlockStoreCachePerformanceSnapshot(long cacheHitCount, long cacheMissCount, long cacheRemoveCount, long cacheSetCount)
+        public BlockStoreCachePerformanceSnapshot(long cacheHitCount, long cacheMissCount, long cacheRemoveCount, long cacheSetCount, string name = "BlockStore")
 		{
 			this._CacheHitCount = cacheHitCount;
 			this._CacheMissCount = cacheMissCount;
 			this._CacheRemoveCount = cacheRemoveCount;
             this._CacheSetCount = cacheSetCount;
+            this._Name = name;
 		}
+
+        public string Name
+        {
+            get
+            {
+                return this._Name;
+            }
+        }
+
 
 		public long TotalCacheHitCount
 		{
@@ -186,7 +207,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return new BlockStoreCachePerformanceSnapshot(end.TotalCacheHitCount - start.TotalCacheHitCount,
                                             end.TotalCacheMissCount - start.TotalCacheMissCount,
                                             end.TotalCacheRemoveCount - start.TotalCacheRemoveCount,
-                                            end.TotalCacheSetCount - start.TotalCacheSetCount)
+                                            end.TotalCacheSetCount - start.TotalCacheSetCount, start.Name)
             {
                 Start = start.Taken,
                 Taken = end.Taken
@@ -197,7 +218,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			StringBuilder builder = new StringBuilder();
 
-			builder.AppendLine("====BlockStore Cache Stats(%)====");			
+			builder.AppendLine($"===={this.Name} Cache Stats(%)====");			
 			builder.AppendLine("Hit Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheHitCount);			
 			builder.AppendLine("Miss Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheMissCount);
 			builder.AppendLine("Remove Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheRemoveCount);

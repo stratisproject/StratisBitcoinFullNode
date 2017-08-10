@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
     public class IndexRepositoryTest : TestBase
     {
         [Fact]
-        public void InitializesGenBlockAndTxIndexOnFirstLoad()
+        public void InitializesGenBlockAndTxIndexOnFirstLoad_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/InitializeGenBlockAndTxIndex");
             using (var repository = SetupRepository(Network.Main, dir))
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void DoesNotOverwriteExistingBlockAndTxIndexOnFirstLoad()
+        public void DoesNotOverwriteExistingBlockAndTxIndexOnFirstLoad_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/NoOverwriteExistingBlockAndTxIndex");
 
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void GetTrxAsyncWithoutTransactionIndexReturnsNewTransaction()
+        public void GetTrxAsyncWithoutTransactionIndexReturnsNewTransaction_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxAsyncWithoutTxIndex");
 
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void GetTrxAsyncWithoutTransactionInIndexReturnsNull()
+        public void GetTrxAsyncWithoutTransactionInIndexReturnsNull_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxAsyncWithoutTransactionFound");
 
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void GetTrxAsyncWithTransactionReturnsExistingTransaction()
+        public void GetTrxAsyncWithTransactionReturnsExistingTransaction_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxAsyncWithTransaction");
             var trans = new Transaction();
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithoutTxIndexReturnsDefaultId()
+        public void GetTrxBlockIdAsyncWithoutTxIndexReturnsDefaultId_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxBlockIdAsyncWithoutTxIndex");
 
@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithoutExistingTransactionReturnsNull()
+        public void GetTrxBlockIdAsyncWithoutExistingTransactionReturnsNull_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxBlockIdAsyncWithoutTransaction");
 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithTransactionReturnsBlockId()
+        public void GetTrxBlockIdAsyncWithTransactionReturnsBlockId_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxBlockIdAsyncWithoutTransaction");
 
@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void PutAsyncWritesBlocksAndTransactionsToDbAndSavesNextBlockHash()
+        public void PutAsyncWritesBlocksAndTransactionsToDbAndSavesNextBlockHash_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/PutAsyncStoresBlocksAndTxs");
 
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void SetTxIndexUpdatesTxIndex()
+        public void SetTxIndexUpdatesTxIndex_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/SetTxIndexUpdatesTxIndex");
             using (var engine = new DBreezeEngine(dir))
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void SetBlockHashUpdatesBlockHash()
+        public void SetBlockHashUpdatesBlockHash_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/SetBlockHashUpdatesBlockHash");
             using (var engine = new DBreezeEngine(dir))
@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void GetAsyncWithExistingBlockReturnsBlock()
+        public void GetAsyncWithExistingBlockReturnsBlock_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetAsyncWithExistingBlock");
             var block = new Block();
@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void GetAsyncWithoutExistingBlockReturnsNull()
+        public void GetAsyncWithoutExistingBlockReturnsNull_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetAsyncWithoutExistingBlock");
 
@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void ExistAsyncWithExistingBlockReturnsTrue()
+        public void ExistAsyncWithExistingBlockReturnsTrue_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/ExistAsyncWithExistingBlock");
             var block = new Block();
@@ -384,7 +384,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void ExistAsyncWithoutExistingBlockReturnsFalse()
+        public void ExistAsyncWithoutExistingBlockReturnsFalse_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/ExistAsyncWithoutExistingBlock");
 
@@ -533,7 +533,7 @@ namespace Stratis.Bitcoin.Tests.IndexStore
         }
 
         [Fact]
-        public void DeleteAsyncRemovesBlocksAndTransactions()
+        public void DeleteAsyncRemovesBlocksAndTransactions_IX()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/DeleteAsyncRemovesBlocksAndTransactions");
             var block = new Block();

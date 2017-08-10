@@ -2,30 +2,19 @@
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.BlockStore;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
-    public class IndexStoreManager
+    public class IndexStoreManager: BlockStoreManager
     {
-        private readonly ConcurrentChain chain;
-        private readonly IConnectionManager connection;
-        public IndexRepository IndexRepository { get; } // public for testing
-        public IndexStoreLoop IndexStoreLoop { get; } // public for testing
-
-        private readonly IDateTimeProvider dateTimeProvider;
-        private readonly NodeSettings nodeArgs;
-        public ChainState ChainState { get; }
-
         public IndexStoreManager(ConcurrentChain chain, IConnectionManager connection, IndexRepository indexRepository,
-            IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, ChainState chainState, IndexStoreLoop indexStoreLoop)
+            IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, ChainState chainState, IndexStoreLoop indexStoreLoop):
+            base(chain, connection, indexRepository, dateTimeProvider, nodeArgs, chainState, indexStoreLoop)
         {
-            this.chain = chain;
-            this.connection = connection;
-            this.IndexRepository = indexRepository;
-            this.dateTimeProvider = dateTimeProvider;
-            this.nodeArgs = nodeArgs;
-            this.ChainState = chainState;
-            this.IndexStoreLoop = indexStoreLoop;
-        }
+
+        }       
+        
+        public IndexRepository IndexRepository {  get { return this.BlockRepository as IndexRepository;  } }
     }
 }
