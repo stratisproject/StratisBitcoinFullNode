@@ -132,3 +132,31 @@ or ask developers on Stratis Slack. With NLog you have many different targets an
 into the console does not go through NLog. If you create rules that go to console via NLog, you will see a mix of console logs from `Microsoft.Extensions.Logging` 
 and NLog.
 
+
+#### Async Wrapper
+
+It is often useful not to use async logging during the development because if the program crashes, you might not have all logs flushed to the disk and you might miss important logs 
+related to the crash. However, if you are testing features and do not expect crashes, you might want to use async wrapper to speed things up - especially, if you have a lot of logs.
+
+Here is the basic `NLog.config` configuration file with async wrapper:
+
+```
+<?xml version="1.0" encoding="utf-8" ?>
+<nlog xmlns="http://www.nlog-project.org/schemas/NLog.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" autoReload="true">
+  <targets>
+    <target name="debugFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
+      <target xsi:type="File" fileName="debug.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
+    </target>
+    <target xsi:type="null" name="null" formatMessage="false" /> 
+  </targets>
+
+  <rules>
+    <!-- Avoid logging to incorrect folder before the logging initialization is done. If you want to see those logging messages, comment out this line, but your log file will be somewhere else. -->
+    <logger name="*" minlevel="Trace" writeTo="null" final="true" />
+
+    <logger name="*" minlevel="Trace" writeTo="debugFile" />
+  </rules>
+</nlog>
+```
+
+In case you are in control of the exception that crashes the program and you want to avoid losing logs by flushing manually using `NLog.LogManager.Flush()`.

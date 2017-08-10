@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -23,7 +23,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// List all spendable transactions from all accounts
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
-        List<UnspentInfo> GetSpendableTransactions(string walletName, int confirmations = 0);
+        List<UnspentAccountReference> GetSpendableTransactions(string walletName, int confirmations = 0);
+
+        /// <summary>
+        /// List all spendable transactions from an account specified in <see cref="WalletAccountReference"/>
+        /// </summary>
+        /// <returns>A collection of spendable outputs that belong to the given account.</returns>
+        UnspentAccountReference GetSpendableTransactions(WalletAccountReference walletAccountReference, int confirmations = 0);
 
         /// <summary>
         /// Gets the private key for the given address.
@@ -139,20 +145,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns></returns>
         IEnumerable<HdAccount> GetAccounts(string walletName);
 
-        /// <summary>
-        /// Builds a transaction to be sent to the network.
-        /// </summary>
-        /// <param name="accountReference">The name of the wallet and account</param>
-        /// <param name="password">The password used to decrypt the private key.</param>
-        /// <param name="destinationScript">The destination to send the funds to.</param>
-        /// <param name="amount">The amount of funds to be sent.</param>
-        /// <param name="feeType">The type of fee to be included.</param>
-        /// <param name="minConfirmations">The minimum number of confirmations we require for unspent outputs to be included.</param>
-        /// <returns></returns>
-        (string hex, uint256 transactionId, Money fee) BuildTransaction(WalletAccountReference accountReference, string password, Script destinationScript, Money amount, FeeType feeType, int minConfirmations);
 
         /// <summary>
-        /// Remove all the thransactions in the wallet that are above this block height
+        /// Remove all the transactions in the wallet that are above this block height
         /// </summary>
         void RemoveBlocks(ChainedBlock fork);
 
@@ -213,5 +208,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="chainedBlock">The height of the last block synced.</param>
         void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock);
+
+        /// <summary>
+        /// Gets a wallet given its name.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to get.</param>
+        /// <returns>A wallet or null if it doesn't exist</returns>
+        Wallet GetWalletByName(string walletName);
+
+        /// <summary>
+        /// Gets a change address or create one if all change addresses are used. 
+        /// </summary>
+        /// <param name="account">The account to create the change address.</param>
+        /// <returns>The new HD address.</returns>
+        HdAddress GetOrCreateChangeAddress(HdAccount account);
     }
 }

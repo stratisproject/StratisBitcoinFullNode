@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+namespace Stratis.Bitcoin.Features.BlockStore
 {
     internal sealed class BlockStoreStepChain
     {
@@ -21,8 +21,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             foreach (var step in this.steps)
             {
-                var stepResult = await step.Execute(nextChainedBlock, cancellationToken, disposeMode);
-
+                var stepResult = await step.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode);
                 if (stepResult.ShouldBreak || stepResult.ShouldContinue)
                 {
                     result = stepResult;
@@ -45,15 +44,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         internal BlockStoreLoop BlockStoreLoop;
 
-        internal abstract Task<BlockStoreLoopStepResult> Execute(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode);
+        internal abstract Task<BlockStoreLoopStepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode);
     }
 
-    internal sealed class BlockStoreLoopStepResult
+    public sealed class BlockStoreLoopStepResult
     {
         internal BlockStoreLoopStepResult() { }
 
-        internal bool ShouldBreak { get; private set; }
-        internal bool ShouldContinue { get; private set; }
+        public bool ShouldBreak { get; private set; }
+        public bool ShouldContinue { get; private set; }
 
         internal static BlockStoreLoopStepResult Break()
         {

@@ -16,6 +16,8 @@ namespace Stratis.Bitcoin.Tests
             if (Directory.Exists(dir))
                 Directory.Delete(dir, true);
 
+            Directory.CreateDirectory(dir);
+
             return dir;
         }
     }

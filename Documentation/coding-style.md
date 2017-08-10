@@ -27,276 +27,226 @@ The general rules:
 13. We use ```nameof(...)``` instead of ```"..."``` whenever possible and relevant.
 14. Fields should be specified at the top within type declarations.
 15. When including non-ASCII characters in the source code use Unicode escape sequences (\uXXXX) instead of literal characters. Literal non-ASCII characters occasionally get garbled by a tool or editor.
+16. Use single line for simple propery setters and getters:  
+`public int X { get; set; }`  
+`public int X { get; private set; }`  
+17. Avoid initializing instance properties outside of constructor.  
+`public int MaxItems { get; set; } = 100000;`  
 
 We have provided a Visual Studio 2017 EditorConfig file (`.editorconfig`) at the root of the full node repository, enabling C# auto-formatting and warnings conforming to some of the above guidelines.
 
 ### Example File:
 
-``FullNode.cs:``
+``BlockPuller.cs:``
 
 ```
-using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
-
-namespace Stratis.Bitcoin
-{
-	public class FullNode : IDisposable
-	{
-      public Network Network
-      {
-        get;
-        internal set;
-      }
-    
-      public bool IsInitialBlockDownload()
-      {
-        if (this.ConsensusLoop.Tip == null)
-          return true;
-        if (this.ConsensusLoop.Tip.ChainWork < this.Network.Consensus.MinimumChainWork)
-          return true;
-        if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Args.MaxTipAge))
-          return true;
-        return false;
-      }
-  }
-}
-```
-
-``BlockStoreLoop.cs:``
-
-```
-using NBitcoin;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Utilities;
+using NBitcoin.Protocol;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using NBitcoin;
 using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
-namespace Stratis.Bitcoin.BlockStore
+namespace Stratis.Bitcoin.BlockPulling
 {
-	public class BlockPair
-	{
-		public Block Block;
-		public ChainedBlock ChainedBlock;
-	}
+    /// <summary>
+    /// Base class for pullers that download blocks from peers.
+    /// <para>
+    /// This must be inherited and the implementing class
+    /// needs to handle taking blocks off the queue and stalling.
+    /// </para>
+    /// </summary>
+    /// <remarks>
+    /// There are 4 important objects that hold the state of the puller and that need to be kept in sync:
+    /// <see cref="assignedBlockTasks"/>, <see cref="pendingInventoryVectors"/>, <see cref="downloadedBlocks"/>, 
+    /// and <see cref="peersPendingDownloads"/>.
+    /// <para>
+    /// <see cref="downloadedBlocks"/> is a list of blocks that have been downloaded recently but not processed 
+    /// by the consumer of the puller.
+    /// </para>
+    /// <para>
+    /// When a typical consumer wants a next block from the puller, it first checks <see cref="downloadedBlocks"/>, 
+    /// if the block is available (the consumer does know the header of the block it wants from the puller,
+    /// if not, it simply waits until this information is available). If it is available, it is removed 
+    /// from DownloadedBlocks and consumed. Otherwise, the consumer checks whether this block is being 
+    /// downloaded (or soon to be). If not, it asks the puller to request it from the connect network peers.
+    /// <para>
+    /// Besides this "on demand" way of requesting blocks from peers, the consumer also tries to keep puller 
+    /// ahead of the demand, so that the blocks are downloaded some time before they are needed.
+    /// </para>
+    /// </para>
+    /// <para>
+    /// For a block to be considered as currently (or soon to be) being downloaded, its hash has to be 
+    /// either in <see cref="assignedBlockTasks"/> or <see cref="pendingInventoryVectors"/>.
+    /// </para>
+    /// <para>
+    /// When the puller is about to request blocks from the peers, it selects which of its peers will 
+    /// be asked to provide which blocks. These assignments of block downloading tasks is kept inside 
+    /// <see cref="assignedBlockTasks"/>. Unsatisfied requests go to <see cref="pendingInventoryVectors"/>, which happens 
+    /// when the puller find out that neither of its peers can be asked for certain block. It also happens 
+    /// when something goes wrong (e.g. the peer disconnects) and the downloading request to a peer is not 
+    /// completed. Such requests need to be reassigned later. Note that it is possible for a peer 
+    /// to be operating well, but slowly, which can cause its quality score to go down and its work 
+    /// to be taken from it. However, this reassignment of the work does not mean the node is stopped 
+    /// in its current task and it is still possible that it will deliver the blocks it was asked for.
+    /// Such late blocks deliveries are currently ignored and wasted.
+    /// </para>
+    /// <para><see cref="peersPendingDownloads"/> is an inverse mapping to <see cref="assignedBlockTasks"/>. Each connected 
+    /// peer node has its list of assigned tasks here and there is an equivalence between tasks in both structures.</para>
+    /// </remarks>
+    public abstract class BlockPuller : IBlockPuller
+    {
+        /// <summary>Maximal quality score of a peer node based on the node's past experience with the peer node.</summary>
+        public const int MaxQualityScore = 150;
 
-	public class BlockStoreLoop
-	{
-		private readonly ConcurrentChain chain;
-		private readonly ConnectionManager connection;
+        /// <summary>Minimal quality score of a peer node based on the node's past experience with the peer node.</summary>
+        public const int MinQualityScore = 1;
 
-		private int batchsize = 30;
-		private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
-		private readonly TimeSpan pushIntervalIBD = TimeSpan.FromMilliseconds(100);
+        /// <summary>Instance logger.</summary>
+        protected readonly ILogger logger;
 
-		public BlockRepository BlockRepository { get; } // public for testing
-		private readonly DateTimeProvider dateTimeProvider;
-		private readonly NodeArgs nodeArgs;
-		private readonly BlockingPuller blockPuller;
+        /// <summary>Lock protecting access to <see cref="assignedBlockTasks"/>, <see cref="pendingInventoryVectors"/>, <see cref="downloadedBlocks"/>, and <see cref="peersPendingDownloads"/></summary>
+        private readonly object lockObject = new object();
 
-		public BlockStore.ChainBehavior.ChainState ChainState
-		{
-			get;
-		}
+        /// <summary>
+        /// Hashes of blocks to be downloaded mapped by the peers that the download tasks are assigned to.
+        /// </summary>
+        /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
+        private readonly Dictionary<uint256, BlockPullerBehavior> assignedBlockTasks;
 
-		public ConcurrentDictionary<uint256, BlockPair> PendingStorage
-		{
-			get;
-		}
+        /// <summary>List of block header hashes that the node wants to obtain from its peers.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
+        private readonly Queue<uint256> pendingInventoryVectors;
 
-		public ChainedBlock StoredBlock
-		{
-			get; private set;
-		}
+        /// <summary>List of unprocessed downloaded blocks mapped by their header hashes.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
+        private readonly Dictionary<uint256, DownloadedBlock> downloadedBlocks;
 
-		public BlockStoreLoop(ConcurrentChain chain, ConnectionManager connection, BlockRepository blockRepository,
-			DateTimeProvider dateTimeProvider, NodeArgs nodeArgs, BlockStore.ChainBehavior.ChainState chainState, 
-			CancellationTokenSource globalCancellationTokenSource, BlockingPuller blockPuller)
-		{
-			this.chain = chain;
-			this.connection = connection;
-			this.BlockRepository = blockRepository;
-			this.dateTimeProvider = dateTimeProvider;
-			this.nodeArgs = nodeArgs;
-			this.blockPuller = blockPuller;
-			this.ChainState = chainState;
-			
-			if(this.nodeArgs.Store.ReIndex)
-				throw new NotImplementedException();
+        /// <summary>Number of items in <see cref="downloadedBlocks"/>. This is for statistical purposes only.</summary>
+        public int DownloadedBlocksCount
+        {
+            get
+            {
+                lock (this.lockObject)
+                {
+                    return this.downloadedBlocks.Count;
+                }
+            }
+        }
 
-			PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-			StoredBlock = chain.GetBlock(this.BlockRepository.BlockHash);
-			if (StoredBlock == null)
-			{
-				// TODO: load and delete all blocks till a common fork with Chain is found
-				// this is a rare event where a reorg happened and the ChainedBlock is lost
-				// to solve this each block needs to be pulled from storage and deleted 
-				// all the way till a common fork is found with Chain
-				throw new NotImplementedException();
-			}
+        /// <summary>Sets of block header hashes that are being downloaded mapped by peers they are assigned to.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
+        private readonly Dictionary<BlockPullerBehavior, HashSet<uint256>> peersPendingDownloads = new Dictionary<BlockPullerBehavior, HashSet<uint256>>();
 
-			if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
-			{
-				if (this.chain.Tip != this.chain.Genesis)
-					throw new BlockStoreException("You need to rebuild the database using -reindex-chainstate to change -txindex");
-				if (this.nodeArgs.Store.TxIndex)
-					this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
-			}
+        /// <summary>Collection of available network peers.</summary>
+        protected readonly IReadOnlyNodesCollection Nodes;
 
-			chainState.HighestPersistedBlock = this.StoredBlock;
-			this.Loop(globalCancellationTokenSource.Token);
-		}
+        /// <summary>Best chain that the node is aware of.</summary>
+        protected readonly ConcurrentChain Chain;
 
-		public void AddToPending(Block block)
-		{
-			var chainedBlock = this.chain.GetBlock(block.GetHash());
-			if (chainedBlock == null)
-				return; // reorg
+        /// <summary>Random number generator.</summary>
+        private Random Rand = new Random();
 
-			// check the size of pending in memory
+        /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
+        private readonly NodeRequirement requirements;
+        /// <summary>Specification of requirements the puller has on its peer nodes to consider asking them to provide blocks.</summary>
+        public virtual NodeRequirement Requirements => this.requirements;
 
-			// add to pending blocks
-			if (this.StoredBlock.Height < chainedBlock.Height)
-				this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair {Block = block, ChainedBlock = chainedBlock});
-		}
+        /// <summary>Description of a block together with its size.</summary>
+        public class DownloadedBlock
+        {
+            /// <summary>Size of the serialized block in bytes.</summary>
+            public int Length;
 
-		public Task Flush()
-		{
-			return this.DownloadAndStoreBlocks(CancellationToken.None, true);
-		}
+            /// <summary>Description of a block.</summary>
+            public Block Block;
+        }
 
-		public void Loop(CancellationToken cancellationToken)
-		{
-			// A loop that writes pending blocks to store 
-			// or downloads missing blocks then writes them to store
-			AsyncLoop.Run("BlockStoreLoop.DownloadBlocks", async token =>
-			{
-				await DownloadAndStoreBlocks(cancellationToken);
-			},
-			cancellationToken,
-			repeateEvery: TimeSpans.Second,
-			startAfter: TimeSpans.FiveSeconds);
-		}
+        /// <summary>
+        /// Initializes a new instance of the object having a chain of block headers and a list of available nodes. 
+        /// </summary>
+        /// <param name="chain">Chain of block headers.</param>
+        /// <param name="nodes">Network peers of the node.</param>
+        /// <param name="protocolVersion">Version of the protocol that the node supports.</param>
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
+        protected BlockPuller(ConcurrentChain chain, IReadOnlyNodesCollection nodes, ProtocolVersion protocolVersion, ILoggerFactory loggerFactory)
+        {
+            this.Chain = chain;
+            this.Nodes = nodes;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.downloadedBlocks = new Dictionary<uint256, DownloadedBlock>();
+            this.pendingInventoryVectors = new Queue<uint256>();
+            this.assignedBlockTasks = new Dictionary<uint256, BlockPullerBehavior>();
 
-		public async Task DownloadAndStoreBlocks(CancellationToken token, bool disposemode = false)
-		{
-			while (!token.IsCancellationRequested)
-			{
-				if (StoredBlock.Height >= this.ChainState.HighestValidatedPoW?.Height)
-					break;
+            // set the default requirements
+            this.requirements = new NodeRequirement
+            {
+                MinVersion = protocolVersion,
+                RequiredServices = NodeServices.Network
+            };
+        }
 
-				// find next block to download
-				var next = this.chain.GetBlock(StoredBlock.Height + 1);
-				if (next == null)
-					break; //no blocks to store
+        /// <inheritdoc />
+        public virtual void PushBlock(int length, Block block, CancellationToken token)
+        {
+            uint256 hash = block.Header.GetHash();
 
-				// reorg logic
-				if (this.StoredBlock.HashBlock != next.Header.HashPrevBlock)
-				{
-					if(disposemode)
-						break;
+            DownloadedBlock downloadedBlock = new DownloadedBlock()
+            {
+                Block = block,
+                Length = length,
+            };
 
-					var blockstoremove = new List<uint256>();
-					var remove = this.StoredBlock;
-					// reorg - we need to delete blocks, start walking back the chain
-					while (this.chain.GetBlock(remove.HashBlock) == null)
-					{
-						blockstoremove.Add(remove.HashBlock);
-						remove = remove.Previous;
-					}
+            lock (this.lockObject)
+            {
+                this.downloadedBlocks.TryAdd(hash, downloadedBlock);
+            }
+        }
+        
+        /// <summary>
+        /// Constructs relations to peer nodes that meet the requirements.
+        /// </summary>
+        /// <returns>Array of relations to peer nodes that can be asked for blocks.</returns>
+        /// <remarks>TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/246</remarks>
+        /// <seealso cref="requirements"/>
+        private BlockPullerBehavior[] GetNodeBehaviors()
+        {
+            return this.Nodes
+                .Where(n => this.requirements.Check(n.PeerVersion))
+                .SelectMany(n => n.Behaviors.OfType<BlockPullerBehavior>())
+                .Where(b => b.Puller == this)
+                .ToArray();
+        }
 
-					await this.BlockRepository.DeleteAsync(remove.HashBlock, blockstoremove);
-					this.StoredBlock = remove;
-					this.ChainState.HighestPersistedBlock = this.StoredBlock;
-					break;
-				}
+        /// <summary>
+        /// Assigns a pending download task to a specific peer.
+        /// </summary>
+        /// <param name="peer">Peer to be assigned the new task.</param>
+        /// <param name="blockHash">If the function succeeds, this is filled with the hash of the block that will be requested from <paramref name="peer"/>.</param>
+        /// <returns>
+        /// <c>true</c> if a download task was assigned to the peer, <c>false</c> otherwise, 
+        /// which indicates that there was no pending task.
+        /// </returns>
+        internal bool AssignPendingDownloadTaskToPeer(BlockPullerBehavior peer, out uint256 blockHash)
+        {
+            blockHash = null;
 
-				if (await this.BlockRepository.ExistAsync(next.HashBlock))
-				{
-					// next block is in storage update StoredBlock 
-					await this.BlockRepository.SetBlockHash(next.HashBlock);
-					this.StoredBlock = next;
-					this.ChainState.HighestPersistedBlock = this.StoredBlock;
-					continue;
-				}
+            lock (this.lockObject)
+            {
+                if (this.pendingInventoryVectors.Count > 0)
+                {
+                    blockHash = this.pendingInventoryVectors.Dequeue();
+                    this.assignedBlockTasks.Add(blockHash, peer);
 
-				// check if the next block is in pending storage
-				BlockPair insert;
-				if (this.PendingStorage.TryGetValue(next.HashBlock, out insert))
-				{
-					// if in IBD and batch will not be full then wait for more blocks
-					if (this.ChainState.IsInitialBlockDownload && !disposemode)
-						if (this.PendingStorage.Skip(0).Count() < batchsize) // ConcurrentDictionary perf
-							break;
+                    AddPeerPendingDownloadLocked(peer, blockHash);
+                }
+            }
 
-					if (!this.PendingStorage.TryRemove(next.HashBlock, out insert))
-						break;
-
-					var tostore = new List<BlockPair>(new[] { insert });
-					var storebest = next;
-					foreach (var index in Enumerable.Range(1, batchsize - 1))
-					{
-						var old = next;
-						next = this.chain.GetBlock(next.Height + 1);
-						
-						// stop if at the tip or block is already in store or pending insertion
-						if (next == null) break;
-						if (next.Header.HashPrevBlock != old.HashBlock) break;
-						if (next.Height > this.ChainState.HighestValidatedPoW?.Height) break;
-						if (!this.PendingStorage.TryRemove(next.HashBlock, out insert)) break;
-						tostore.Add(insert);
-						storebest = next;
-					}
-
-					// store missing blocks and remove them from pending blocks
-					await this.BlockRepository.PutAsync(storebest.HashBlock, tostore.Select(b => b.Block).ToList());
-					this.StoredBlock = storebest;
-					this.ChainState.HighestPersistedBlock = this.StoredBlock;
-
-					// this can be twicked if insert is effecting the consensus speed
-					if (this.ChainState.IsInitialBlockDownload)
-						await Task.Delay(pushIntervalIBD, token);
-
-					continue;
-				}
-
-				if(disposemode)
-					break;
-
-				// block is not in store and not in pending 
-				// download the block or blocks
-				// find a batch of blocks to download
-				var todownload = new List<ChainedBlock>(new[] {next});
-				var downloadbest = next;
-				foreach (var index in Enumerable.Range(1, batchsize - 1))
-				{
-					var old = next;
-					next = this.chain.GetBlock(old.Height + 1);
-
-					// stop if at the tip or block is already in store or pending insertion
-					if (next == null) break;
-					if (next.Header.HashPrevBlock != old.HashBlock) break;
-					if (next.Height > this.ChainState.HighestValidatedPoW?.Height) break;
-					if (this.PendingStorage.ContainsKey(next.HashBlock)) break;
-					if (await this.BlockRepository.ExistAsync(next.HashBlock)) break;
-
-					todownload.Add(next);
-					downloadbest = next;
-				}
-
-				// download and store missing blocks
-				var blocks = await this.blockPuller.AskBlocks(token, todownload.ToArray());
-				await this.BlockRepository.PutAsync(downloadbest.HashBlock, blocks);
-				this.StoredBlock = downloadbest;
-				this.ChainState.HighestPersistedBlock = this.StoredBlock;
-			}
-		}
-	}
+            bool res = blockHash != null;
+            return res;
+        }
+    }
 }
 
 ```

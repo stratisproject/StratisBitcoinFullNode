@@ -1,7 +1,7 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
+using System;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
@@ -56,6 +56,14 @@ namespace Stratis.Bitcoin.Features.LightWallet
             // But always obey the maximum
             if (feeNeeded > this.maxTxFee)
                 feeNeeded = this.maxTxFee;
+            return feeNeeded;
+        }
+
+        public FeeRate GetFeeRate(int confirmTarget)
+        {
+            FeeRate feeNeeded = this.minTxFee;
+            if (confirmTarget < 50) feeNeeded = this.mediumTxFeePerKb;
+            if (confirmTarget < 20) feeNeeded = this.highxFeePerKb;
             return feeNeeded;
         }
     }
