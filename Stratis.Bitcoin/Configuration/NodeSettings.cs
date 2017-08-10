@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NLog.Extensions.Logging;
@@ -128,7 +129,7 @@ namespace Stratis.Bitcoin.Configuration
 
             // The logger factory goes in the settings with minimal configuration, 
             // that's so the settings can also log out its progress.
-            nodeSettings.LoggerFactory.AddConsoleWithFilters(out var consoleSettings);
+            nodeSettings.LoggerFactory.AddConsoleWithFilters(out ConsoleLoggerSettings consoleSettings);
             nodeSettings.LoggerFactory.AddNLog();
             nodeSettings.Logger = nodeSettings.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 

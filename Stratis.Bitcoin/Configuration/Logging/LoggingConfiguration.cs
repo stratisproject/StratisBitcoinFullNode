@@ -27,6 +27,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <summary>Currently used data folder to determine path to logs.</summary>
         private static DataFolder folder;
 
+        /// <summary>Mappings of keys to class name spaces to be used when filtering log categories.</summary>
+        private static readonly Dictionary<string, string> keyCategories;
+
         /// <summary>
         /// Initializes application logging.
         /// </summary>
@@ -37,6 +40,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
 
             // Installs handler to be called when NLog's configuration file is changed on disk.
             LogManager.ConfigurationReloaded += NLogConfigurationReloaded;
+
+            // Load the key to name-space mappings.
+            keyCategories = LoadKeyCategories();
         }
 
         /// <summary>
@@ -99,11 +105,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
             // Default logging level is Info for all components.
             var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Info, mainTarget);
 
-            // Configure main file target rules based on node settings.
-            // TODO: Preload enough args for -conf= or -datadir= to get debug args from there. We currently forbid logging before the logging is initialized.
-            // TODO: Currently only takes -debug arg.
-            var keyToCategory = LoadKeyCategorys();
-
             if (settings.DebugArgs.Any())
             {
                 if (settings.DebugArgs[0] == "1")
@@ -119,7 +120,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     foreach (string key in settings.DebugArgs)
                     {
                         string category;
-                        if (!keyToCategory.TryGetValue(key.Trim(), out category))
+                        if (!keyCategories.TryGetValue(key.Trim(), out category))
                         {
                             // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
                             category = key.Trim();
@@ -179,7 +180,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// </summary>
         /// <param name="loggerFactory">Not used.</param>
         /// <param name="consoleLoggerSettings">Console settings to filter.</param>
-        /// <param name="settings">A settings that hold potential debug arguments, if null no debug arguments will be loaded."/></param>
+        /// <param name="settings">Settings that hold potential debug arguments, if null no debug arguments will be loaded."/></param>
         public static void ConfigureConsoleFilters(this ILoggerFactory loggerFactory, ConsoleLoggerSettings consoleLoggerSettings, LogSettings settings)
         {
             if (settings != null)
@@ -193,14 +194,13 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     }
                     else
                     {
-                        var keyToCategory = LoadKeyCategorys();
                         HashSet<string> usedCategories = new HashSet<string>(StringComparer.Ordinal);
 
                         // Increase selected categories to Trace.
                         foreach (string key in settings.DebugArgs)
                         {
                             string category;
-                            if (!keyToCategory.TryGetValue(key.Trim(), out category))
+                            if (!keyCategories.TryGetValue(key.Trim(), out category))
                             {
                                 // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
                                 category = key.Trim();
@@ -220,15 +220,15 @@ namespace Stratis.Bitcoin.Configuration.Logging
         }
 
         /// <summary>
-        /// Create a key to category mappings to allow to limit filtering based on short debug codes
+        /// Create a key to category mappings to allow to limit filtering based on short debug codes.
         /// </summary>
         /// <returns>The key category mappings.</returns>
-        private static Dictionary<string, string> LoadKeyCategorys()
+        private static Dictionary<string, string> LoadKeyCategories()
         {
             // Configure main file target rules based on node settings.
             // TODO: Preload enough args for -conf= or -datadir= to get debug args from there. We currently forbid logging before the logging is initialized.
             // TODO: Currently only takes -debug arg.
-            var keyToCategory = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            var keyCategories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 //{ "addrman", "" },
                 //{ "alert", "" },
@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 { "wallet", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Wallet)}.*" },
             };
 
-            return keyToCategory;
+            return keyCategories;
         }
     }
 }
