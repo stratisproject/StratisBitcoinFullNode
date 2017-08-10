@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.Wallet;
-using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
@@ -25,26 +21,20 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         private const string WalletFileName = "watch_only_wallet.json";
 
         /// <summary>
-        /// The watch-only wallet this manager manages.
+        /// A wallet containing scripts that are monitored for transactions affecting them.
         /// </summary>
         public WatchOnlyWallet Wallet { get; private set; }
 
         private readonly CoinType coinType;
         private readonly Network network;
-        private readonly IConnectionManager connectionManager;
-        private readonly ConcurrentChain chain;
-        private readonly NodeSettings settings;
         private readonly DataFolder dataFolder;
         private readonly ILogger logger;
 
-        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, IConnectionManager connectionManager, Network network, ConcurrentChain chain, NodeSettings settings, DataFolder dataFolder)
+        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, Network network, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.connectionManager = connectionManager;
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
-            this.chain = chain;
-            this.settings = settings;
             this.dataFolder = dataFolder;
         }
 
@@ -62,64 +52,71 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         }
 
         /// <inheritdoc />
-        public uint256 LastReceivedBlock { get; }
-
-        /// <inheritdoc />
-        public void RemoveBlocks(ChainedBlock fork)
+        public void WatchAddress(string address)
         {
-            throw new NotImplementedException();
-        }
+            var script = BitcoinAddress.Create(address, this.network).ScriptPubKey;
 
-        /// <inheritdoc />
-        public void Watch(Script script)
-        {
-            if (this.Wallet.Scripts.Contains(script))
+            if (this.Wallet.WatchedAddresses.ContainsKey(script.ToString()))
             {
                 this.logger.LogDebug($"already watching script: {script}. coin: {this.coinType}");
                 return;
             }
 
             this.logger.LogDebug($"added script: {script} to the watch list. coin: {this.coinType}");
-            this.Wallet.Scripts.Add(script);
+            this.Wallet.WatchedAddresses.TryAdd(script.ToString(), new WatchedAddress
+            {
+                Script = script,
+                Address = address
+            });
+
             this.SaveWatchOnlyWallet();
         }
 
         /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
-            ChainedBlock chainedBlock = this.chain.GetBlock(block.GetHash());
-            this.logger.LogDebug($"watch only wallet received block height: {chainedBlock.Height}, hash: {block.Header.GetHash()}, coin: {this.coinType}");
+            this.logger.LogDebug($"Watch only wallet received block with hash: {block.Header.GetHash()}, coin: {this.coinType}");
 
             foreach (Transaction transaction in block.Transactions)
             {
-                this.ProcessTransaction(transaction, chainedBlock.Height, block);
+                this.ProcessTransaction(transaction, block);
             }
         }
 
         /// <inheritdoc />
-        public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
+        public void ProcessTransaction(Transaction transaction, Block block = null)
         {
             var hash = transaction.GetHash();
             this.logger.LogDebug($"watch only wallet received transaction - hash: {hash}, coin: {this.coinType}");
 
-            // check the outputs
+            // Check the transaction outputs for transactions we might be interested in.
             foreach (TxOut utxo in transaction.Outputs)
             {
-                TransactionVerboseModel model = new TransactionVerboseModel(transaction, this.network);
+                // Check if the outputs contain one of our addresses.
+                this.Wallet.WatchedAddresses.TryGetValue(utxo.ScriptPubKey.ToString(), out WatchedAddress addressInWallet);
 
-                // check if the outputs contain one of our addresses
-                if (this.Wallet.Scripts.Contains(utxo.ScriptPubKey) && this.Wallet.Transactions.All(t => t.hex != model.hex))
+                if (addressInWallet != null)
                 {
-                    this.Wallet.Transactions.Add(model);
+                    // Retrieve a transaction, if present.
+                    string transactionHash = transaction.GetHash().ToString();
+                    addressInWallet.Transactions.TryGetValue(transactionHash, out TransactionData existingTransaction);
+                    if (existingTransaction == null)
+                    {
+                        addressInWallet.Transactions.TryAdd(transactionHash, new TransactionData
+                        {
+                            Hex = transaction.ToHex(),
+                            BlockHash = block?.GetHash(),
+                        });
+                    }
+                    else
+                    {
+                        // If there is a transaction already present, update the hash of the block containing it.
+                        existingTransaction.BlockHash = block?.GetHash();
+                    }
+
                     this.SaveWatchOnlyWallet();
                 }
             }
-        }
-
-        /// <inheritdoc />
-        public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
-        {
-            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -139,14 +136,13 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                     Network = this.network,
                     CoinType = this.coinType,
                     CreationTime = DateTimeOffset.Now,
-                    Scripts = new List<Script>(),
-                    Transactions = new List<TransactionVerboseModel>()
+                    WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>()
                 };
 
                 this.SaveWatchOnlyWallet();
             }
 
-            // load the file from the local system
+            // Load the file from the local system.
             return JsonConvert.DeserializeObject<WatchOnlyWallet>(File.ReadAllText(walletFilePath));
         }
 
@@ -154,7 +150,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// Gets the watch-only wallet.
         /// </summary>
         /// <returns>The watch-only wallet.</returns>
-        public WatchOnlyWallet GetWallet()
+        public WatchOnlyWallet GetWatchOnlyWallet()
         {
             return this.Wallet;
         }
