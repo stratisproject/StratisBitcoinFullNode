@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(chainedBlock, "chainedBlock");
 
             this.StoreTip = chainedBlock;
-            this.ChainState.HighestPersistedBlock = chainedBlock;
+            SetHighestPersistedBlock(chainedBlock);
         }
     }
 }
