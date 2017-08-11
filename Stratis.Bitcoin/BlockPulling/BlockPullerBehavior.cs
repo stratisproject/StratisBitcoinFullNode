@@ -14,9 +14,22 @@ using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
-    /// Relation of the node to a network peer node.
+    /// Relation of the node's puller to a network peer node.
     /// </summary>
-    public class BlockPullerBehavior : NodeBehavior
+    public interface IBlockPullerBehavior
+    {
+        /// <summary>
+        /// Evaluation of the past experience with this node.
+        /// The higher the score, the better experience we have had with it.
+        /// </summary>
+        /// <seealso cref="QualityScore.MaxScore"/>
+        /// <seealso cref="QualityScore.MinScore"/>
+        double QualityScore { get; }
+    }
+
+
+    /// <inheritdoc />
+    public class BlockPullerBehavior : NodeBehavior, IBlockPullerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private ILoggerFactory loggerFactory;
@@ -52,16 +65,12 @@ namespace Stratis.Bitcoin.BlockPulling
             }
         }
 
-        /// <summary>
-        /// Evaluation of the past experience with this node.
-        /// The higher the score, the better experience we have had with it.
-        /// </summary>
-        /// <seealso cref="MaxQualityScore"/>
-        /// <seealso cref="MinQualityScore"/>
-        /// <remarks>
-        /// TODO: Race conditions touching this - https://github.com/stratisproject/StratisBitcoinFullNode/issues/247
-        /// </remarks>
-        public int QualityScore { get; set; }
+        /// <summary>Lock protecting write access to <see cref="QualityScore"/>.</summary>
+        private readonly object qualityScoreLock = new object();
+
+        /// <inheritdoc />
+        /// <remarks>Write access to this object has to be protected by <see cref="qualityScoreLock"/>.</remarks>
+        public double QualityScore { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the object with parent block puller.
@@ -71,7 +80,8 @@ namespace Stratis.Bitcoin.BlockPulling
         public BlockPullerBehavior(BlockPuller puller, ILoggerFactory loggerFactory)
         {
             this.puller = puller;
-            this.QualityScore = BlockPuller.MaxQualityScore / 2;
+            this.QualityScore = BlockPulling.QualityScore.MaxScore / 3;
+            // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/292
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
         }
@@ -92,27 +102,40 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="message">Received message.</param>
         private void Node_MessageReceived(Node node, IncomingMessage message)
         {
+            // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/292
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ({nameof(node.Peer.Endpoint)}:'{node.Peer.Endpoint}')");
+
             message.Message.IfPayloadIs<BlockPayload>((block) =>
             {
-                block.Object.Header.CacheHashes();
-                this.QualityScore = Math.Min(BlockPuller.MaxQualityScore, this.QualityScore + 1);
-
-                foreach (Transaction tx in block.Object.Transactions)
-                    tx.CacheHashes();
-
+                // There are two pullers for each peer connection and each is having its own puller behavior.
+                // Both these behaviors get notification from the node when it receives a message,
+                // even if the origin of the message was from the other puller behavior.
+                // Therefore we first make a quick check whether this puller behavior was the one 
+                // who should deal with this block.
                 uint256 blockHash = block.Object.Header.GetHash();
-                DownloadedBlock downloadedBlock = new DownloadedBlock()
+                if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
-                    Block = block.Object,
-                    Length = (int)message.Length,
-                };
+                    this.logger.LogTrace($"[{this.GetHashCode():x}] Received block '{blockHash}', length {message.Length} bytes.");
 
-                if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
-                    this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
+                    block.Object.Header.CacheHashes();
+                    foreach (Transaction tx in block.Object.Transactions)
+                        tx.CacheHashes();
 
-                // This peer is now available for more work.
-                this.AssignPendingVector();
+                    DownloadedBlock downloadedBlock = new DownloadedBlock()
+                    {
+                        Block = block.Object,
+                        Length = (int)message.Length,
+                    };
+
+                    if (this.puller.DownloadTaskFinished(this, blockHash, downloadedBlock))
+                        this.puller.BlockPushed(blockHash, downloadedBlock, this.cancellationToken.Token);
+
+                    // This peer is now available for more work.
+                    this.AssignPendingVector();
+                }
             });
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -121,13 +144,20 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         internal void AssignPendingVector()
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             Node attachedNode = this.AttachedNode;
             if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            {
+                this.logger.LogTrace($"[{this.GetHashCode():x}] (-)[ATTACHED_NODE]");
                 return;
+            }
 
             uint256 block = null;
             if (this.puller.AssignPendingDownloadTaskToPeer(this, out block))
                 attachedNode.SendMessageAsync(new GetDataPayload(new InventoryVector(attachedNode.AddSupportedOptions(InventoryType.MSG_BLOCK), block)));
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -137,14 +167,21 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>Caller is responsible to add the puller to the map if necessary.</remarks>
         internal void StartDownload(GetDataPayload getDataPayload)
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             Node attachedNode = this.AttachedNode;
             if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            {
+                this.logger.LogTrace($"[{this.GetHashCode():x}] (-)[ATTACHED_NODE]");
                 return;
+            }
 
             foreach (InventoryVector inv in getDataPayload.Inventory)
                 inv.Type = attachedNode.AddSupportedOptions(inv.Type);
 
             attachedNode.SendMessageAsync(getDataPayload);
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -152,9 +189,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         protected override void AttachCore()
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             this.AttachedNode.MessageReceived += Node_MessageReceived;
             this.ChainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
             AssignPendingVector();
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -165,9 +206,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </remarks>
         protected override void DetachCore()
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             this.cancellationToken.Cancel();
             this.AttachedNode.MessageReceived -= Node_MessageReceived;
             ReleaseAll();
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
         }
 
         /// <summary>
@@ -175,7 +220,29 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         internal void ReleaseAll()
         {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ()");
+
             this.puller.ReleaseAllPeerDownloadTaskAssignments(this);
+
+            this.logger.LogTrace($"[{this.GetHashCode():x}] (-)");
+        }
+
+        /// <summary>
+        /// Adjusts the quality score of the peer.
+        /// </summary>
+        /// <param name="scoreAdjustment">Adjustment to make to the quality score of the peer.</param>
+        internal void UpdateQualityScore(double scoreAdjustment)
+        {
+            this.logger.LogTrace($"[{this.GetHashCode():x}] ({nameof(scoreAdjustment)}:{scoreAdjustment})");
+
+            lock (this.qualityScoreLock)
+            {
+                this.QualityScore += scoreAdjustment;
+                if (this.QualityScore > BlockPulling.QualityScore.MaxScore) this.QualityScore = BlockPulling.QualityScore.MaxScore;
+                if (this.QualityScore < BlockPulling.QualityScore.MinScore) this.QualityScore = BlockPulling.QualityScore.MinScore;
+            }
+
+            this.logger.LogTrace($"(-):{nameof(this.QualityScore)}:{this.QualityScore}");
         }
     }
 }
