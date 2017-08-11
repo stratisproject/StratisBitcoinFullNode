@@ -15,6 +15,9 @@ using System.Linq;
 
 namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 {
+    /// <summary>
+    /// Base test class for all the <see cref="BlockStoreLoop"/> tests.
+    /// </summary>
     public class BlockStoreLoopStepBaseTest
     {
         private Mock<ILogger> fullNodeLogger;

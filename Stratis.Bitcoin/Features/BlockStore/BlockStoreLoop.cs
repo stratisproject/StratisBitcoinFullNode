@@ -14,9 +14,16 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public  class BlockStoreLoop
+    /// <summary>
+    /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
+    /// </summary>
+    public class BlockStoreLoop
     {
+        /// <summary>
+        /// Best chain of block headers.
+        /// </summary>
         internal readonly ConcurrentChain Chain;
+
         public BlockRepository BlockRepository { get; }
         private readonly NodeSettings nodeArgs;
         public StoreBlockPuller BlockPuller { get; private set; }
@@ -26,6 +33,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly BlockStoreStats blockStoreStats;
         private readonly ILogger storeLogger;
         private string name;
+
+        /// <summary>
+        /// The chain of steps that gets executed to find and download blocks.
+        /// </summary>
         private BlockStoreStepChain stepChain;
         protected virtual void SetHighestPersistedBlock(ChainedBlock block)
         {
@@ -33,6 +44,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         internal ChainState ChainState { get; }
+
+        /// <summary>
+        /// Blocks that in PendingStorage will be processed first before new 
+        /// blocks are downloaded.
+        /// </summary>
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
         /// <summary>
@@ -40,10 +56,23 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         internal ChainedBlock StoreTip { get; private set; }
 
-        internal uint InsertBlockSizeThreshold = 1000000 * 5; // Block.MAX_BLOCK_SIZE // Should be configurable 
-        internal int PendingStorageBatchThreshold = 5;  // Should be configurable
-        internal int BatchDownloadSize = 1000; // Should be configurable
+        /// <summary>
+        /// TODO: Should be configurable?
+        /// </summary>
+        internal uint InsertBlockSizeThreshold = 1000000 * 5;
+
+        /// <summary>
+        /// TODO: Should be configurable?
+        /// </summary>
+        internal int PendingStorageBatchThreshold = 5;
+
+        /// <summary>
+        /// TODO: Should be configurable?
+        /// </summary>
+        internal int BatchDownloadSize = 1000;
+
         private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
+
         internal readonly TimeSpan PushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
         /// <summary>
@@ -76,16 +105,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// 
         /// Initialize the BlockStore
-        ///                 
-        /// If StoreTip is null, the store is out of sync.
-        /// This can happen when:
-        ///     1: The node crashed
-        ///     2: The node was not closed down properly
-        ///     
+        /// <para>
+        /// If StoreTip is <c>null</c>, the store is out of sync. This can happen when:</para>
+        /// <list>
+        ///     <item>1. The node crashed.</item>
+        ///     <item>2. The node was not closed down properly.</item>
+        /// </list>
+        /// <para>
         /// To recover we walk back the chain until a common block header is found 
-        /// and set the BlockStore's StoreTip to that
+        /// and set the BlockStore's StoreTip to that.
+        /// </para>                
         /// </summary>
         public async Task Initialize()
         {
@@ -140,28 +170,36 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StartLoop();
         }
 
+        /// <summary>
+        /// Adds a block to Pending Storage
+        /// <para>
+        /// The BlockStoreSignaler calls AddToPending. Only add the block to pending storage if:
+        /// </para>
+        /// <list>
+        ///     <item>1: The block does exist on the chain.</item>
+        ///     <item>2: The store's tip is behind the given block.</item>
+        /// </list>
+        /// </summary>
+        /// <param name="block">The block to add to pending storage</param>
+        /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
         public void AddToPending(Block block)
         {
             ChainedBlock chainedBlock = this.Chain.GetBlock(block.GetHash());
             if (chainedBlock == null)
-                return; // reorg
+                return;
 
-            // check the size of pending in memory
-
-            // add to pending blocks
             if (this.StoreTip.Height < chainedBlock.Height)
                 this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair(block, chainedBlock));
         }
 
+        ///<summary>Persists unsaved blocks to disk when the node shuts down.</summary>
         public Task Flush()
         {
             return DownloadAndStoreBlocks(CancellationToken.None, true);
         }
 
         /// <summary>
-        /// A loop that:
-        ///     1: Writes pending blocks to store 
-        ///     2: Download missing blocks and write to store
+        /// Executes DownloadAndStoreBlocks()
         /// </summary>
         internal void StartLoop()
         {
@@ -174,17 +212,36 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 startAfter: TimeSpans.FiveSeconds);
         }
 
+        /// <summary>
+        /// Finds and downloads blocks to store in the BlockRepository.
+        /// <para>
+        /// This method executes a chain of steps in order:
+        /// <list>
+        ///     <item>1. Reorganise the repository</item>
+        ///     <item>2. Check if the block exists in store, if it does move on to the next block</item>
+        ///     <item>3. Process the blocks in pending storage</item>
+        ///     <item>4. Find and download blocks</item>
+        /// </list>
+        /// </para>
+        /// <para>
+        /// Steps return a <see cref="BlockStoreLoopStepResult"/> which either signals the While loop
+        /// to break or continue execution.
+        /// </para>
+        /// </summary>
+        /// <param name="cancellationToken">CancellationToken to check</param>
+        /// <param name="disposeMode">This will <c>true</c> if the Flush() was called</param>
+        /// <remarks>
+        /// TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
+        /// When in IBD we may need many reads for the block key without fetching the block
+        /// So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
+        /// a read is normally done when a peer is asking for the entire block (not just the key) 
+        /// then if LazyLoadingOn = false the read will be faster on the entire block      
+        /// </remarks>
         private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode = false)
         {
-            // TODO: add support to BlockStoreLoop to unset LazyLoadingOn when not in IBD
-            // When in IBD we may need many reads for the block key without fetching the block
-            // So the repo starts with LazyLoadingOn = true, however when not anymore in IBD 
-            // a read is normally done when a peer is asking for the entire block (not just the key) 
-            // then if LazyLoadingOn = false the read will be faster on the entire block            
-
             while (!cancellationToken.IsCancellationRequested)
             {
-                 if (this.StoreTip.Height >= this.ChainState.HighestValidatedPoW?.Height)
+                if (this.StoreTip.Height >= this.ChainState.HighestValidatedPoW?.Height)
                     break;
 
                 ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
@@ -203,14 +260,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Sets the highest stored block
+        /// Sets the store's tip
         /// </summary>
-        internal void SetStoreTip(ChainedBlock nextChainedBlock)
+        internal void SetStoreTip(ChainedBlock chainedBlock)
         {
-            Guard.NotNull(nextChainedBlock, "nextChainedBlock");
+            Guard.NotNull(chainedBlock, "chainedBlock");
 
-            this.StoreTip = nextChainedBlock;
-            SetHighestPersistedBlock(nextChainedBlock);
+            this.StoreTip = chainedBlock;
+            this.ChainState.HighestPersistedBlock = chainedBlock;
         }
     }
 }
