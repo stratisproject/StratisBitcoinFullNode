@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.BlockPulling
     /// <summary>
     /// Describes the assigned download tasks.
     /// </summary>
-    public class DownloadTask
+    public class DownloadAssignment
     {
         /// <summary>Hash of the block being downloaded.</summary>
         public uint256 BlockHash { get; set; }
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         /// <param name="blockHash">Hash of the block being downloaded.</param>
         /// <param name="start">If <c>true</c>, the download task's stopwatch will be started immediately.</param>
-        public DownloadTask(uint256 blockHash, bool start = true)
+        public DownloadAssignment(uint256 blockHash, bool start = true)
         {
             this.BlockHash = blockHash;
             this.Stopwatch = new Stopwatch();

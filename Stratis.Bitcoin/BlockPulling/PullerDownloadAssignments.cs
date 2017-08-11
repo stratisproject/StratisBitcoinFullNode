@@ -109,9 +109,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 int totalWork = filteredPeers.Sum(p => p.TasksAssignedCount);
                 for (int i = 0; i < filteredPeers.Count; i++)
                 {
-                    if (filteredPeers[i].TasksAssignedCount > HighWorkAmountThreshold)
+                    int peerTaskCount = filteredPeers[i].TasksAssignedCount;
+                    if (peerTaskCount > HighWorkAmountThreshold)
                     {
-                        double penaltyCoef = 1 + ((filteredPeers[i].TasksAssignedCount * filteredPeers[i].TasksAssignedCount) / (totalWork * totalWork));
+                        double penaltyCoef = 1 + ((peerTaskCount * peerTaskCount) / (totalWork * totalWork));
                         scores[i] /= penaltyCoef;
                     }
                 }

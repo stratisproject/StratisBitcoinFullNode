@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Sets of download tasks representing blocks that are being downloaded mapped by peers they are assigned to.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private readonly Dictionary<BlockPullerBehavior, Dictionary<uint256, DownloadTask>> peersPendingDownloads = new Dictionary<BlockPullerBehavior, Dictionary<uint256, DownloadTask>>();
+        private readonly Dictionary<BlockPullerBehavior, Dictionary<uint256, DownloadAssignment>> peersPendingDownloads = new Dictionary<BlockPullerBehavior, Dictionary<uint256, DownloadAssignment>>();
 
         /// <summary>Collection of available network peers.</summary>
         protected readonly IReadOnlyNodesCollection Nodes;
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.BlockPulling
             BlockPullerBehavior[] nodes = this.GetNodeBehaviors();
             if ((nodes.Length > 0) && (downloadRequests.Length > 0))
             {
-                Dictionary<int, InventoryVector> vectors = new Dictionary<int, InventoryVector>();
+                var vectors = new Dictionary<int, InventoryVector>();
                 foreach (ChainedBlock request in downloadRequests)
                 {
                     InventoryVector vector = new InventoryVector(InventoryType.MSG_BLOCK, request.HashBlock);
@@ -334,7 +334,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 foreach (BlockPullerBehavior behavior in innerNodes)
                 {
                     int taskCount = 0;
-                    Dictionary<uint256, DownloadTask> peerPendingDownloads;
+                    Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
                     if (this.peersPendingDownloads.TryGetValue(behavior, out peerPendingDownloads))
                         taskCount = peerPendingDownloads.Keys.Count;
 
@@ -477,7 +477,7 @@ namespace Stratis.Bitcoin.BlockPulling
             bool res = false;
             lock (this.lockObject)
             {
-                Dictionary<uint256, DownloadTask> peerPendingDownloads;
+                Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
                     res = this.ReleaseDownloadTaskAssignmentLocked(peerPendingDownloads, blockHash);
             }
@@ -499,7 +499,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="blockHash">Hash of the block which task should be released.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> if the block was not assigned to be downloaded by any peer.</returns>
         /// <remarks>The caller of this method is responsible for holding <see cref="lockObject"/>.</remarks>
-        private bool ReleaseDownloadTaskAssignmentLocked(Dictionary<uint256, DownloadTask> peerPendingDownloads, uint256 blockHash)
+        private bool ReleaseDownloadTaskAssignmentLocked(Dictionary<uint256, DownloadAssignment> peerPendingDownloads, uint256 blockHash)
         {
             this.logger.LogTrace($"({nameof(peerPendingDownloads)}.{nameof(peerPendingDownloads.Count)}:{peerPendingDownloads.Count},{nameof(blockHash)}:{blockHash})");
 
@@ -525,7 +525,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             lock (this.lockObject)
             {
-                Dictionary<uint256, DownloadTask> peerPendingDownloads;
+                Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
                 {
                     this.logger.LogTrace($"Releasing {peerPendingDownloads.Count} pending downloads of peer '{peer.GetHashCode():x}'.");
@@ -578,12 +578,12 @@ namespace Stratis.Bitcoin.BlockPulling
                 BlockPullerBehavior peerAssigned;
                 if (this.assignedBlockTasks.TryGetValue(blockHash, out peerAssigned))
                 {
-                    Dictionary<uint256, DownloadTask> peerPendingDownloads;
+                    Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
                     if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
                     {
                         if (peer == peerAssigned)
                         {
-                            DownloadTask downloadTask = null;
+                            DownloadAssignment downloadTask = null;
                             peerPendingDownloads.TryGetValue(blockHash, out downloadTask);
 
                             if (this.assignedBlockTasks.Remove(blockHash) && peerPendingDownloads.Remove(blockHash))
@@ -714,7 +714,7 @@ namespace Stratis.Bitcoin.BlockPulling
             int res = 0;
             lock (this.lockObject)
             {
-                Dictionary<uint256, DownloadTask> peerPendingDownloads;
+                Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
                     res = peerPendingDownloads.Count;
             }
@@ -731,14 +731,14 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}',{nameof(blockHash)}:'{blockHash}')");
 
-            Dictionary<uint256, DownloadTask> peerPendingDownloads;
+            Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
             if (!this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
             {
-                peerPendingDownloads = new Dictionary<uint256, DownloadTask>();
+                peerPendingDownloads = new Dictionary<uint256, DownloadAssignment>();
                 this.peersPendingDownloads.Add(peer, peerPendingDownloads);
             }
 
-            DownloadTask downloadTask = new DownloadTask(blockHash);
+            DownloadAssignment downloadTask = new DownloadAssignment(blockHash);
             peerPendingDownloads.Add(blockHash, downloadTask);
             this.logger.LogTrace("(-)");
         }
@@ -756,7 +756,7 @@ namespace Stratis.Bitcoin.BlockPulling
             bool res = false;
             lock (this.lockObject)
             {
-                Dictionary<uint256, DownloadTask> peerPendingDownloads;
+                Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
                     res = peerPendingDownloads.ContainsKey(blockHash);
             }
