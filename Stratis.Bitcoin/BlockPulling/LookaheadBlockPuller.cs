@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
                 else
                 {
-                    // Otherwise we either have reorg, or we don't know the next block.
+                    // Otherwise we either have reorg, or we reached the best chain tip.
                     if (header == null)
                     {
                         if (!this.Chain.Contains(this.location.HashBlock))
