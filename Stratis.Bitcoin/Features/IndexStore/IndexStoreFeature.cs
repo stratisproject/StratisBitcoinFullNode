@@ -1,13 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.RPC.Controllers;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     services.AddSingleton<IndexStoreLoop>();
                     services.AddSingleton<IndexStoreManager>();
                     services.AddSingleton<IndexStoreSignaled>();
+                    services.AddSingleton<IndexStoreRPCController>();
                 });
             });
 

@@ -60,36 +60,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return Task.CompletedTask;
         }
 
-        [ActionName("createindex")]
-        public async Task<bool>CreateIndex(string name, bool multiValue, string builder, string[] dependancies = null)
-        {
-            if (dependancies?[0] == null)
-                dependancies = null;
-
-            return await this.IndexManager.IndexRepository.CreateIndex(name, multiValue, builder, dependancies);
-        }
-
-        [ActionName("dropindex")]
-        public async Task<bool> DropIndex(string name)
-        {
-            return await this.IndexManager.IndexRepository.DropIndex(name);
-        }
-
-        [ActionName("listindexnames")]
-        public string[] ListIndexNames()
-        {
-            return this.IndexManager.IndexRepository.Indexes.Keys.ToArray();
-        }
-
-        [ActionName("describeindex")]
-        public string[] DescribeIndex(string name)
-        {
-            if (!this.IndexManager.IndexRepository.Indexes.TryGetValue(name, out Index index))
-                return null;
-
-            return new string[] { index.ToString() };
-        }
-
         [ActionName("getrawtransaction")]
         public async Task<TransactionModel> GetRawTransaction(string txid, int verbose = 0)
         {

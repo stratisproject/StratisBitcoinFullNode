@@ -19,7 +19,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         protected ConsensusLoop ConsensusLoop;
         protected ChainBase Chain;
         protected ChainState ChainState;
-        protected IndexStoreManager IndexManager;
         protected BlockStoreManager BlockManager;
         protected MempoolManager MempoolManager;
         protected Connection.IConnectionManager ConnectionManager;
@@ -45,10 +44,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.Chain = chain;
             this.ChainState = chainState;
             this.BlockManager = blockManager;
-            this.IndexManager = indexManager;
             this.MempoolManager = mempoolManager;
             this.ConnectionManager = connectionManager;
         }
-
     }
 }

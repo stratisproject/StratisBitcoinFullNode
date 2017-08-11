@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public static IndexStoreRepositoryPerformanceSnapshot operator -(IndexStoreRepositoryPerformanceSnapshot end, IndexStoreRepositoryPerformanceSnapshot start)
         {
-            var diff = (end as IndexStoreRepositoryPerformanceSnapshot) - (start as IndexStoreRepositoryPerformanceSnapshot);
+            var diff = (end as BlockStoreRepositoryPerformanceSnapshot) - (start as BlockStoreRepositoryPerformanceSnapshot);
 
             return new IndexStoreRepositoryPerformanceSnapshot(diff.TotalRepositoryHitCount, diff.TotalRepositoryMissCount, diff.TotalRepositoryDeleteCount, diff.TotalRepositoryInsertCount)
             {

@@ -7,34 +7,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
 	public class BlockStoreCachePerformanceCounter
 	{
-		private DateTime _Start;
-		private long _CacheSetCount;
-		private long _CacheRemoveCount;
-		private long _CacheHitCount;
-		private long _CacheMissCount;
-        private string _Name;
+		private long cacheSetCount;
+		private long cacheRemoveCount;
+		private long cacheHitCount;
+		private long cacheMissCount;
+        public string Name { get; private set; }
+        public DateTime Start { get; private set; }
 
-		public BlockStoreCachePerformanceCounter(string name = "BlockStore")
+        public BlockStoreCachePerformanceCounter(string name = "BlockStore")
 		{
-            this._Name = name;
-			this._Start = DateTime.UtcNow;
+            this.Name = name;
+			this.Start = DateTime.UtcNow;
 		}
 
-        public string Name
-        {
-            get
-            {
-                return _Name;
-            }
-        }
-
-		public DateTime Start
-		{
-			get
-			{
-				return this._Start;
-			}
-		}
 		public TimeSpan Elapsed
 		{
 			get
@@ -43,12 +28,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			}
 		}
 
-
 		public long CacheSetCount
 		{
 			get
 			{
-				return this._CacheSetCount;
+				return this.cacheSetCount;
 			}
 		}
 
@@ -56,7 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._CacheRemoveCount;
+				return this.cacheRemoveCount;
 			}
 		}
 
@@ -65,7 +49,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._CacheHitCount;
+				return this.cacheHitCount;
 			}
 		}
 
@@ -73,28 +57,28 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._CacheMissCount;
+				return this.cacheMissCount;
 			}
 		}
 
 		internal void AddCacheHitCount(long count)
 		{
-			Interlocked.Add(ref this._CacheHitCount, count);
+			Interlocked.Add(ref this.cacheHitCount, count);
 		}
 
 		internal void AddCacheRemoveCount(long count)
 		{
-			Interlocked.Add(ref this._CacheRemoveCount, count);
+			Interlocked.Add(ref this.cacheRemoveCount, count);
 		}
 
 		internal void AddCacheMissCount(long count)
 		{
-			Interlocked.Add(ref this._CacheMissCount, count);
+			Interlocked.Add(ref this.cacheMissCount, count);
 		}
 
 		internal void AddCacheSetCount(long count)
 		{
-			Interlocked.Add(ref this._CacheSetCount, count);
+			Interlocked.Add(ref this.cacheSetCount, count);
 		}
 
 		public virtual BlockStoreCachePerformanceSnapshot Snapshot()
@@ -118,35 +102,28 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 	public class BlockStoreCachePerformanceSnapshot
 	{
-		private readonly long _CacheHitCount;
-		private readonly long _CacheMissCount;
-		private readonly long _CacheRemoveCount;
-		private readonly long _CacheSetCount;
-        private readonly string _Name;
-
+		private readonly long cacheHitCount;
+		private readonly long cacheMissCount;
+		private readonly long cacheRemoveCount;
+		private readonly long cacheSetCount;
+        public string Name { get; private set; }
+        public DateTime Start { get; set; }
+        public DateTime Taken { get; set; }
+  
         public BlockStoreCachePerformanceSnapshot(long cacheHitCount, long cacheMissCount, long cacheRemoveCount, long cacheSetCount, string name = "BlockStore")
 		{
-			this._CacheHitCount = cacheHitCount;
-			this._CacheMissCount = cacheMissCount;
-			this._CacheRemoveCount = cacheRemoveCount;
-            this._CacheSetCount = cacheSetCount;
-            this._Name = name;
+			this.cacheHitCount = cacheHitCount;
+			this.cacheMissCount = cacheMissCount;
+			this.cacheRemoveCount = cacheRemoveCount;
+            this.cacheSetCount = cacheSetCount;
+            this.Name = name;
 		}
-
-        public string Name
-        {
-            get
-            {
-                return this._Name;
-            }
-        }
-
 
 		public long TotalCacheHitCount
 		{
 			get
 			{
-				return this._CacheHitCount;
+				return this.cacheHitCount;
 			}
 		}
 
@@ -154,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._CacheMissCount;
+				return this.cacheMissCount;
 			}
 		}
 
@@ -162,7 +139,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._CacheRemoveCount;
+				return this.cacheRemoveCount;
 			}
 		}
 
@@ -170,29 +147,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._CacheSetCount;
+				return this.cacheSetCount;
 			}
 		}
 
-		public DateTime Start
-		{
-			get;
-			set;
-		}
-
-		public DateTime Taken
-		{
-			get;
-			set;
-		}
-
-		public TimeSpan Elapsed
-		{
-			get
-			{
-				return this.Taken - this.Start;
-			}
-		}
+        public TimeSpan Elapsed
+        {
+            get
+            {
+                return this.Taken - this.Start;
+            }
+        }
 
         public static BlockStoreCachePerformanceSnapshot operator -(BlockStoreCachePerformanceSnapshot end, BlockStoreCachePerformanceSnapshot start)
         {

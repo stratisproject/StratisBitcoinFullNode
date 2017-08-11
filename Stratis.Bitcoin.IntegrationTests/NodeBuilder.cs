@@ -18,7 +18,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Builder;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -46,8 +45,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 		void Start(string dataDir);
 	}
 
-	public class StratisBitcoinRunner : INodeRunner
-	{
+    public class StratisBitcoinRunner : INodeRunner
+    {
+        private HashSet<string> options;
+
+        public StratisBitcoinRunner(HashSet<string> options = null):base()
+        {
+            this.options = options;
+        }
+
 		public bool HasExited
 		{
 			get { return this.FullNode.HasExited; }
@@ -65,24 +71,41 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{			
 			var args = NodeSettings.FromArguments(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
 
-			var node = BuildFullNode(args);
+			var node = BuildFullNode(args, this.options);
 
 			this.FullNode = node;
             this.FullNode.Start();
 		}
 
-		public static FullNode BuildFullNode(NodeSettings args)
+		public static FullNode BuildFullNode(NodeSettings args, HashSet<string> options = null)
 		{
-			var node = (FullNode)new FullNodeBuilder()
-				.UseNodeSettings(args)
-				.UseConsensus()
-				.UseBlockStore()
-                .UseIndexStore()
-				.UseMempool()
-                .AddMining()
-				.UseWallet()
-				.AddRPC()
-				.Build();
+            FullNode node;
+
+            if (options != null && options.Contains("IndexStore"))
+            {
+                node = (FullNode)new FullNodeBuilder()
+                    .UseNodeSettings(args)
+                    .UseConsensus()
+                    .UseBlockStore()
+                    .UseIndexStore()
+                    .UseMempool()
+                    .AddMining()
+                    .UseWallet()
+                    .AddRPC()
+                    .Build();
+            }
+            else
+            {
+                node = (FullNode)new FullNodeBuilder()
+                    .UseNodeSettings(args)
+                    .UseConsensus()
+                    .UseBlockStore()
+                    .UseMempool()
+                    .AddMining()
+                    .UseWallet()
+                    .AddRPC()
+                    .Build();
+            }
 
 			var testWalletPath = Path.Combine(node.DataFolder.WalletPath, "test.wallet.json");
 			if (!File.Exists(testWalletPath))
@@ -296,10 +319,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 			return node;
 		}
 
-		public CoreNode CreateStratisNode(bool start = false)
+		public CoreNode CreateStratisNode(bool start = false, HashSet<string> options = null)
 		{
 			string child = CreateNewEmptyFolder();
-			var node = new CoreNode(child, new StratisBitcoinRunner(), this);
+			var node = new CoreNode(child, new StratisBitcoinRunner(options), this);
             this.Nodes.Add(node);
 			if (start)
 				node.Start();
