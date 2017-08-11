@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
     /// </summary>
-    public sealed class BlockStoreLoop
+    public class BlockStoreLoop
     {
         /// <summary>
         /// Best chain of block headers.
@@ -26,17 +26,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockRepository BlockRepository { get; }
         private readonly NodeSettings nodeArgs;
-        internal StoreBlockPuller BlockPuller { get; private set; }
+        public StoreBlockPuller BlockPuller { get; private set; }
         private readonly BlockStoreCache blockStoreCache;
         private readonly INodeLifetime nodeLifetime;
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly BlockStoreStats blockStoreStats;
         private readonly ILogger storeLogger;
+        private string name;
 
         /// <summary>
         /// The chain of steps that gets executed to find and download blocks.
         /// </summary>
         private BlockStoreStepChain stepChain;
+        protected virtual void SetHighestPersistedBlock(ChainedBlock block)
+        {
+            this.ChainState.HighestPersistedBlock = block;
+        }
 
         internal ChainState ChainState { get; }
 
@@ -81,8 +86,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainState chainState,
             NodeSettings nodeArgs,
             INodeLifetime nodeLifetime,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            string name = "BlockStore")
         {
+            this.name = name;
             this.asyncLoopFactory = asyncLoopFactory;
             this.BlockPuller = blockPuller;
             this.BlockRepository = blockRepository;
@@ -141,18 +148,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 ChainedBlock newTip = this.Chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList);
                 this.StoreTip = newTip;
-                this.storeLogger.LogWarning($"BlockStore Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
+                this.storeLogger.LogWarning($"{this.name} Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
             }
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
             {
                 if (this.StoreTip != this.Chain.Genesis)
-                    throw new BlockStoreException("You need to rebuild the database using -reindex-chainstate to change -txindex");
+                    throw new BlockStoreException($"You need to rebuild the {this.name} database using -reindex-chainstate to change -txindex");
                 if (this.nodeArgs.Store.TxIndex)
                     await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
             }
 
-            this.ChainState.HighestPersistedBlock = this.StoreTip;
+            SetHighestPersistedBlock(this.StoreTip);
 
             this.stepChain = new BlockStoreStepChain();
             this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this));
@@ -196,7 +203,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         internal void StartLoop()
         {
-            this.asyncLoopFactory.Run("BlockStoreLoop.DownloadBlocks", async token =>
+            this.asyncLoopFactory.Run($"{this.name}Loop.DownloadBlocks", async token =>
                 {
                     await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping);
                 },
@@ -260,7 +267,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(chainedBlock, "chainedBlock");
 
             this.StoreTip = chainedBlock;
-            this.ChainState.HighestPersistedBlock = chainedBlock;
+            SetHighestPersistedBlock(chainedBlock);
         }
     }
 }

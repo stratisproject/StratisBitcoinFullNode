@@ -7,24 +7,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
 	public class BlockStoreRepositoryPerformanceCounter
 	{
-		private DateTime _Start;
-		private long _RepositoryInsertCount;
-		private long _RepositoryDeleteCount;
-		private long _RepositoryHitCount;
-		private long _RepositoryMissCount;
+		private long repositoryInsertCount;
+		private long repositoryDeleteCount;
+		private long repositoryHitCount;
+		private long repositoryMissCount;
+        public string Name { get; private set; }
+        public DateTime Start {get; private set; }
 
-		public BlockStoreRepositoryPerformanceCounter()
+        public BlockStoreRepositoryPerformanceCounter(string name = "BlockStore")
 		{
-			this._Start = DateTime.UtcNow;
+            this.Name = name;
+			this.Start = DateTime.UtcNow;
 		}
 
-		public DateTime Start
-		{
-			get
-			{
-				return this._Start;
-			}
-		}
 		public TimeSpan Elapsed
 		{
 			get
@@ -37,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._RepositoryInsertCount;
+				return this.repositoryInsertCount;
 			}
 		}
 
@@ -45,7 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._RepositoryDeleteCount;
+				return this.repositoryDeleteCount;
 			}
 		}
 
@@ -53,7 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._RepositoryHitCount;
+				return this.repositoryHitCount;
 			}
 		}
 
@@ -61,28 +56,28 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._RepositoryMissCount;
+				return this.repositoryMissCount;
 			}
 		}
 
 		internal void AddRepositoryHitCount(long count)
 		{
-			Interlocked.Add(ref this._RepositoryHitCount, count);
+			Interlocked.Add(ref this.repositoryHitCount, count);
 		}
 
 		internal void AddRepositoryMissCount(long count)
 		{
-			Interlocked.Add(ref this._RepositoryMissCount, count);
+			Interlocked.Add(ref this.repositoryMissCount, count);
 		}
 
 		internal void AddRepositoryDeleteCount(long count)
 		{
-			Interlocked.Add(ref this._RepositoryDeleteCount, count);
+			Interlocked.Add(ref this.repositoryDeleteCount, count);
 		}
 
 		internal void AddRepositoryInsertCount(long count)
 		{
-			Interlocked.Add(ref this._RepositoryInsertCount, count);
+			Interlocked.Add(ref this.repositoryInsertCount, count);
 		}
 
 		public BlockStoreRepositoryPerformanceSnapshot Snapshot()
@@ -90,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 #if !(PORTABLE || NETCORE)
 			Thread.MemoryBarrier();
 #endif
-			var snap = new BlockStoreRepositoryPerformanceSnapshot(this.RepositoryHitCount, this.RepositoryMissCount, this.RepositoryDeleteCount, this.RepositoryInsertCount)
+			var snap = new BlockStoreRepositoryPerformanceSnapshot(this.RepositoryHitCount, this.RepositoryMissCount, this.RepositoryDeleteCount, this.RepositoryInsertCount, this.Name)
 			{
 				Start = this.Start,
 				Taken = DateTime.UtcNow
@@ -106,24 +101,28 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 	public class BlockStoreRepositoryPerformanceSnapshot
 	{
-		private readonly long _RepositoryHitCount;
-		private readonly long _RepositoryMissCount;
-		private readonly long _RepositoryDeleteCount;
-		private readonly long _RepositoryInsertCount;
+		private readonly long repositoryHitCount;
+		private readonly long repositoryMissCount;
+		private readonly long repositoryDeleteCount;
+		private readonly long repositoryInsertCount;
+        public string Name { get; private set; }
+        public DateTime Start { get; set; }    
+        public DateTime Taken { get; set; }
 
-		public BlockStoreRepositoryPerformanceSnapshot(long repositoryHitCount, long repositoryMissCount, long repositoryDeleteCount, long repositoryInsertCount)
+        public BlockStoreRepositoryPerformanceSnapshot(long repositoryHitCount, long repositoryMissCount, long repositoryDeleteCount, long repositoryInsertCount, string name = "BlockStore")
 		{
-			this._RepositoryHitCount = repositoryHitCount;
-			this._RepositoryMissCount = repositoryMissCount;
-			this._RepositoryDeleteCount = repositoryDeleteCount;
-            this._RepositoryInsertCount = repositoryInsertCount;
+			this.repositoryHitCount = repositoryHitCount;
+			this.repositoryMissCount = repositoryMissCount;
+			this.repositoryDeleteCount = repositoryDeleteCount;
+            this.repositoryInsertCount = repositoryInsertCount;
+            this.Name = name;
 		}
 
 		public long TotalRepositoryHitCount
 		{
 			get
 			{
-				return this._RepositoryHitCount;
+				return this.repositoryHitCount;
 			}
 		}
 
@@ -131,7 +130,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._RepositoryMissCount;
+				return this.repositoryMissCount;
 			}
 		}
 
@@ -139,7 +138,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._RepositoryDeleteCount;
+				return this.repositoryDeleteCount;
 			}
 		}
 
@@ -147,20 +146,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			get
 			{
-				return this._RepositoryInsertCount;
+				return this.repositoryInsertCount;
 			}
-		}
-
-		public DateTime Start
-		{
-			get;
-			set;
-		}
-
-		public DateTime Taken
-		{
-			get;
-			set;
 		}
 
 		public TimeSpan Elapsed
@@ -184,7 +171,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return new BlockStoreRepositoryPerformanceSnapshot(end.TotalRepositoryHitCount - start.TotalRepositoryHitCount,
                                             end.TotalRepositoryMissCount - start.TotalRepositoryMissCount,
                                             end.TotalRepositoryDeleteCount - start.TotalRepositoryDeleteCount,
-                                            end.TotalRepositoryInsertCount - start.TotalRepositoryInsertCount)
+                                            end.TotalRepositoryInsertCount - start.TotalRepositoryInsertCount, start.Name)
             {
                 Start = start.Taken,
                 Taken = end.Taken
@@ -195,7 +182,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		{
 			StringBuilder builder = new StringBuilder();
 
-			builder.AppendLine("====BlockStore Repository Stats(%)====");
+			builder.AppendLine($"===={this.Name} Repository Stats(%)====");
 			builder.AppendLine("Hit Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryHitCount);
 			builder.AppendLine("Miss Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryMissCount);
 			builder.AppendLine("Delete Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalRepositoryDeleteCount);

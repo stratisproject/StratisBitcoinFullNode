@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 using DBreeze;
+using DBreeze.Utils;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -35,7 +37,7 @@ namespace Stratis.Bitcoin.Utilities
     public class DBreezeSingleThreadSession : IDBreezeSingleThreadSession
     {
         /// <summary>Access to DBreeze database.</summary>
-        private DBreezeEngine engine;
+        protected DBreezeEngine engine;
 
         /// <summary>
         /// Scheduler that uses only a single thread to provide ability for exclusive execution of the tasks. 
@@ -65,19 +67,19 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="threadName">Name of the exclusive thread that will care about tasks accessing the database in exclusive manner.</param>
         /// <param name="folder">Path to the directory to hold DBreeze database files.</param>
         public DBreezeSingleThreadSession(string threadName, string folder)
-		{
+        {
             Guard.NotEmpty(threadName, nameof(threadName));
             Guard.NotEmpty(folder, nameof(folder));
 
             this.singleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
-			new Task(() =>
-			{
-				DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
-				DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
+            new Task(() =>
+            {
+                DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
+                DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
                 this.engine = new DBreezeEngine(folder);
-				this.transaction = this.engine.GetTransaction();
-			}).Start(this.singleThread);
-		}
+                this.transaction = this.engine.GetTransaction();
+            }).Start(this.singleThread);
+        }
 
         /// <summary>
         /// Serializes object to a binary data format.
@@ -85,17 +87,30 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="obj">Object to be serialized.</param>
         /// <returns>Binary data representing the serialized object.</returns>
 		internal static byte[] NBitcoinSerialize(object obj)
-		{
-			IBitcoinSerializable serializable = obj as IBitcoinSerializable;
-			if(serializable != null)
-				return serializable.ToBytes();
+        {
+            IBitcoinSerializable serializable = obj as IBitcoinSerializable;
+            if (serializable != null)
+                return serializable.ToBytes();
 
-			uint256 u = obj as uint256;
-			if(u != null)
-				return u.ToBytes();
+            uint256 u256 = obj as uint256;
+            if (u256 != null)
+                return u256.ToBytes();
+            uint160 u160 = obj as uint160;
+            if (u160 != null)
+                return u160.ToBytes();
+            uint? u32 = obj as uint?;
+            if (u32 != null)
+                return u32.ToBytes();
 
-			throw new NotSupportedException();
-		}
+            object[] a = obj as object[];
+            if (a != null)
+            {
+                var result = (from x in a select NBitcoinSerialize(x)).ToArray().SelectMany(x => x).ToArray();
+                return result;
+            }
+
+            throw new NotSupportedException();
+        }
 
         /// <summary>
         /// Deserializes binary data to an object of specific type.
@@ -104,75 +119,75 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="type">Type of the serialized object.</param>
         /// <returns>Deserialized object.</returns>
 		internal static object NBitcoinDeserialize(byte[] bytes, Type type)
-		{
-			if (type == typeof(Coins))
-			{
-				Coins coin = new Coins();
-				coin.ReadWrite(bytes);
-				return coin;
-			}
+        {
+            if (type == typeof(Coins))
+            {
+                Coins coin = new Coins();
+                coin.ReadWrite(bytes);
+                return coin;
+            }
 
-			if (type == typeof(BlockHeader))
-			{
-				BlockHeader header = new BlockHeader();
-				header.ReadWrite(bytes);
-				return header;
-			}
+            if (type == typeof(BlockHeader))
+            {
+                BlockHeader header = new BlockHeader();
+                header.ReadWrite(bytes);
+                return header;
+            }
 
-			if (type == typeof(RewindData))
-			{
-				RewindData rewind = new RewindData();
-				rewind.ReadWrite(bytes);
-				return rewind;
-			}
+            if (type == typeof(RewindData))
+            {
+                RewindData rewind = new RewindData();
+                rewind.ReadWrite(bytes);
+                return rewind;
+            }
 
-			if (type == typeof(uint256))
-			{
-				return new uint256(bytes);
-			}
+            if (type == typeof(uint256))
+            {
+                return new uint256(bytes);
+            }
 
-			if (type == typeof(Block))
-			{
-				return new Block(bytes);
-			}
+            if (type == typeof(Block))
+            {
+                return new Block(bytes);
+            }
 
-			if (type == typeof(BlockStake))
-			{
-				return new BlockStake(bytes);
-			}
+            if (type == typeof(BlockStake))
+            {
+                return new BlockStake(bytes);
+            }
 
-			throw new NotSupportedException();
-		}
+            throw new NotSupportedException();
+        }
 
         /// <inheritdoc />
 		public Task Execute(Action act)
-		{
-            Guard.NotNull(act, nameof(act));
-
-			this.AssertNotDisposed();
-			var task = new Task(() =>
-			{
-				this.AssertNotDisposed();
-				act();
-			});
-			task.Start(this.singleThread);
-			return task;
-		}
-
-        /// <inheritdoc />
-		public Task<T> Execute<T>(Func<T> act)
-		{
+        {
             Guard.NotNull(act, nameof(act));
 
             this.AssertNotDisposed();
-			var task = new Task<T>(() =>
-			{
-				this.AssertNotDisposed();
-				return act();
-			});
-			task.Start(this.singleThread);
-			return task;
-		}
+            var task = new Task(() =>
+            {
+                this.AssertNotDisposed();
+                act();
+            });
+            task.Start(this.singleThread);
+            return task;
+        }
+
+        /// <inheritdoc />
+		public Task<T> Execute<T>(Func<T> act)
+        {
+            Guard.NotNull(act, nameof(act));
+
+            this.AssertNotDisposed();
+            var task = new Task<T>(() =>
+            {
+                this.AssertNotDisposed();
+                return act();
+            });
+            task.Start(this.singleThread);
+            return task;
+        }
 
         /// <summary>
         /// Throws exception if the instance of the object has been disposed.
