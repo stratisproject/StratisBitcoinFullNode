@@ -723,8 +723,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="amount">The amount.</param>
         /// <param name="script">The script.</param>
         /// <param name="blockHeight">Height of the block.</param>
-        /// <param name="block">The block containing the transaction to add.</param>       
-        private void AddTransactionToWallet(uint256 transactionHash, uint time, int? index, Money amount, Script script,
+        /// <param name="block">The block containing the transaction to add.</param>
+        private void AddTransactionToWallet(uint256 transactionHash, uint time, int index, Money amount, Script script,
             int? blockHeight = null, Block block = null)
         {
             // get the collection of transactions to add to.
