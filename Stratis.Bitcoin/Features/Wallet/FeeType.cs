@@ -3,7 +3,7 @@
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
-    /// An indicator on how fast a transaction will be accepted in a block
+    /// An indicator of how fast a transaction will be accepted in a block.
     /// </summary>
     public enum FeeType
     {
@@ -27,10 +27,13 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public static FeeType Parse(string value)
         {
-            if (Enum.TryParse<FeeType>(value, true, out var ret))
-                return ret;
+            bool isParsed = Enum.TryParse<FeeType>(value, true, out var result);
+            if (!isParsed)
+            {                
+                throw new FormatException($"FeeType {value} is not a valid FeeType");
+            }
 
-            return FeeType.Medium;
+            return result;
         }
 
         /// <summary>

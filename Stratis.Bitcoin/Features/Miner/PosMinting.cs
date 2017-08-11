@@ -185,16 +185,16 @@ namespace Stratis.Bitcoin.Features.Miner
 					foreach (var infoTransaction in unspentInfo.UnspentOutputs)
 					{
 						var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
-						var utxo = set?._Outputs[infoTransaction.Transaction.Index.Value];
+						var utxo = set?._Outputs[infoTransaction.Transaction.Index];
 
 						if (utxo != null && utxo.Value > Money.Zero)
 						{
 							var stakeTx = new StakeTx();
 
 							stakeTx.TxOut = utxo;
-							stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index.Value);
+							stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
 							stakeTx.Address = infoTransaction.Address;
-							stakeTx.OutputIndex = infoTransaction.Transaction.Index.Value;
+							stakeTx.OutputIndex = infoTransaction.Transaction.Index;
 							stakeTx.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
 							stakeTx.UtxoSet = set;
 							stakeTx.Secret = walletSecret; //temporary

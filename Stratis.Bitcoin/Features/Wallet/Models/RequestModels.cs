@@ -80,6 +80,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string WalletName { get; set; }
     }
 
+    /// <summary>
+    /// Model object to use as input to the Api request for getting the maximum spendable amount on an account. 
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
+    public class WalletMaximumBalanceRequest : RequestModel
+    {
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string WalletName { get; set; }
+
+        [Required(ErrorMessage = "The name of the account is missing.")]
+        public string AccountName { get; set; }
+
+        [Required(ErrorMessage = "A fee type is required. It can be 'low', 'medium' or 'high'.")]
+        public string FeeType { get; set; }
+
+        public bool AllowUnconfirmed { get; set; }
+    }
+
     public class WalletName : RequestModel
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
