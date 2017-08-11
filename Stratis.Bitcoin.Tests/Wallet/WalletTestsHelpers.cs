@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Microsoft.AspNetCore.Server.Kestrel.Internal.Http;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
+using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {
@@ -46,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             };
         }
 
-        internal static TransactionData CreateTransaction(uint256 id, Money amount, int? blockHeight, SpendingDetails spendingDetails = null, DateTimeOffset? creationTime = null)
+        internal static TransactionData CreateTransaction(uint256 id, Money amount, int? blockHeight, SpendingDetails spendingDetails = null, DateTimeOffset? creationTime = null, Script script = null)
         {
             if (creationTime == null)
             {
@@ -54,12 +52,13 @@ namespace Stratis.Bitcoin.Tests.Wallet
             }
 
             return new TransactionData()
-            {
+            {                
                 Amount = amount,
                 Id = id,
                 CreationTime = creationTime.Value,
                 BlockHeight = blockHeight,
-                SpendingDetails = spendingDetails
+                SpendingDetails = spendingDetails,
+                ScriptPubKey = script
             };
         }
 

@@ -11,14 +11,14 @@ namespace Stratis.Bitcoin.Features.Wallet
     public interface IWalletTransactionHandler
     {
         /// <summary>
-        /// Build a new transaction based on information from the <see cref="TransactionBuildContext"/>.
+        /// Builds a new transaction based on information from the <see cref="TransactionBuildContext"/>.
         /// </summary>
         /// <param name="context">The context that is used to build a new transaction.</param>
         /// <returns>The new transaction.</returns>
         Transaction BuildTransaction(TransactionBuildContext context);
 
         /// <summary>
-        /// Add inputs to a transaction until it has enough in value to meet its out value.
+        /// Adds inputs to a transaction until it has enough in value to meet its out value.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         /// <param name="transaction">The transaction that will have more inputs added to it.</param>
@@ -30,6 +30,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Note that all existing inputs must have their previous output transaction be in the wallet.
         /// </remarks>
         void FundTransaction(TransactionBuildContext context, Transaction transaction);
+
+        /// <summary>
+        /// Calculates the maximum amount a user can spend in a single transaction, taking into account the fees required.
+        /// </summary>
+        /// <param name="accountReference">The account from which to calculate the amount.</param>
+        /// <param name="feeType">The type of fee used to calculate the maximum amount the user can spend. The higher the fee, the smaller this amount will be.</param>
+        /// <param name="allowUnconfirmed"><c>true</c> to include unconfirmed transactions in the calculation, <c>false</c> otherwise.</param>
+        /// <returns>The maximum amount the user can spend in a single transaction, along with the fee required.</returns>
+        (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(WalletAccountReference accountReference, FeeType feeType, bool allowUnconfirmed);
     }
 
     /// <summary>
@@ -61,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.network = network;
-            this.coinType = (CoinType)network.Consensus.CoinType;
+            this.coinType = (CoinType)network.Consensus.CoinType;            
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -144,6 +153,53 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <inheritdoc />
+        public (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(WalletAccountReference accountReference, FeeType feeType, bool allowUnconfirmed)
+        {
+            Guard.NotNull(accountReference, nameof(accountReference));
+            Guard.NotEmpty(accountReference.WalletName, nameof(accountReference.WalletName));
+            Guard.NotEmpty(accountReference.AccountName, nameof(accountReference.AccountName));
+            
+            // Get the total value of spendable coins in the account.
+            var maxSpendableAmount = this.walletManager.GetSpendableTransactions(accountReference, allowUnconfirmed ? 0 : 1).UnspentOutputs.Sum(x => x.Transaction.Amount);
+
+            // Return 0 if the user has nothing to spend.
+            if (maxSpendableAmount == Money.Zero)
+            {
+                return (Money.Zero, Money.Zero);
+            }
+
+            Money fee;
+            try
+            {
+                // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
+                // When the transaction builder throws an exception informing us that we have insufficient funds, 
+                // we use the amount we're missing as the fee.
+                var context = new TransactionBuildContext(accountReference, null, null)
+                {
+                    FeeType = feeType,
+                    MinConfirmations = allowUnconfirmed ? 0 : 1,
+                    TransactionBuilder = new TransactionBuilder(),
+
+                    // Create a recipient with a dummy destination address as it's required by NBitcoin's transaction builder.
+                    Recipients = new[] { new Recipient { Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey } }.ToList()
+                };
+
+                this.AddRecipients(context);
+                this.AddCoins(context);
+                this.AddFee(context);
+
+                // Throw an exception if this code is reached, as building a transaction without any funds for the fee should always throw an exception.
+                throw new WalletException("This should be unreachable; please find and fix the bug that caused this to be reached.");
+            }
+            catch (NotEnoughFundsException e)
+            {
+                fee = (Money) e.Missing;
+            }            
+
+            return (maxSpendableAmount - fee, fee);
+        }
+
         /// <summary>
         /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
@@ -206,22 +262,22 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new WalletException($"No spendable transactions found on account {context.AccountReference.AccountName}.");
             }
 
-            // get total spendable balance in the account.
+            // Get total spendable balance in the account.
             var balance = context.UnspentOutputs.UnspentOutputs.Sum(t => t.Transaction.Amount);
-            if (balance < context.Recipients.Sum(s => s.Amount))
+            if (context.Recipients != null && balance < context.Recipients.Sum(s => s.Amount))
                 throw new WalletException("Not enough funds.");
 
             if (context.SelectedInputs.Any())
             {
                 // 'SelectedInputs' are inputs that must be included in the 
-                // current transaction, at this point we check the given 
-                // input is part of the UTXO set and filter out UTXO's that are not
-                // in the initial list if 'context.AllowOtherInputs' is false
+                // current transaction. At this point we check the given 
+                // input is part of the UTXO set and filter out UTXOs that are not
+                // in the initial list if 'context.AllowOtherInputs' is false.
 
                 var availableHashList = context.UnspentOutputs.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
                 if(!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
-                    throw new WalletException($"Not all the inputs in 'SelectedInputs' where found ion the wallet.");
+                    throw new WalletException($"Not all the inputs in 'SelectedInputs' were found on the wallet.");
 
                 if (!context.AllowOtherInputs)
                 {
@@ -237,11 +293,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
             }
 
-            // All the UTXO is added to the builder without filtering.
+            // All the UTXOs are added to the builder without filtering.
             // The builder then has its own coin selection mechanism 
             // to select the best UTXO set for the corresponding amount.
             // To add a custom implementation of a coin selection override 
-            // the builder using builder.SetCoinSelection()
+            // the builder using builder.SetCoinSelection().
 
             context.TransactionBuilder.AddCoins(coins);
         }
@@ -389,7 +445,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool Sign { get; set; }
 
         /// <summary>
-        /// Allow the context to specify a<see cref="FeeRate"/> when building a transaction.
+        /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
         /// </summary>
         public FeeRate OverrideFeeRate { get; set; }
     }
@@ -405,7 +461,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Script ScriptPubKey { get; set; }
 
         /// <summary>
-        /// The amount that will be sent
+        /// The amount that will be sent.
         /// </summary>
         public Money Amount { get; set; }
 

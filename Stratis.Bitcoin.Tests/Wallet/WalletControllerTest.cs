@@ -1652,5 +1652,75 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Assert.StartsWith("System.InvalidOperationException", error.Description);
             Assert.StartsWith("Wallet not found.", error.Message);
         }
+
+        [Fact]
+        public void GetMaximumBalanceWithValidModelStateReturnsMaximumBalance()
+        {
+            var controller = new WalletController(new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>());
+            controller.ModelState.AddModelError("Error in model", "There was an error in the model.");
+            IActionResult result = controller.GetMaximumSpendableBalance(new WalletMaximumBalanceRequest()
+            {
+                WalletName = "myWallet",
+                AccountName = "account 1",
+                FeeType = "low",
+                AllowUnconfirmed = true
+            });
+
+            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Equal(1, errorResponse.Errors.Count);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.NotNull(errorResult.StatusCode);
+            Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
+            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("There was an error in the model.", error.Description);
+
+        }
+
+        [Fact]
+        public void GetMaximumBalanceSuccessfullyReturnsMaximumBalanceAndFee()
+        {
+            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
+            mockWalletTransactionHandler.Setup(w => w.GetMaximumSpendableAmount(It.IsAny<WalletAccountReference>(), It.IsAny<FeeType>(), true)).Returns((new Money(1000000), new Money(100)));
+
+            var controller = new WalletController(new Mock<IWalletManager>().Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>());
+            IActionResult result = controller.GetMaximumSpendableBalance(new WalletMaximumBalanceRequest()
+            {
+                WalletName = "myWallet",
+                AccountName = "account 1",
+                FeeType = "low",
+                AllowUnconfirmed = true
+            });
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            var model = viewResult.Value as MaxSpendableAmountModel;
+
+            Assert.NotNull(model);
+            Assert.Equal(new Money(1000000), model.MaxSpendableAmount);
+            Assert.Equal(new Money(100), model.Fee);
+        }
+
+        [Fact]
+        public void GetMaximumBalanceWithExceptionReturnsBadRequest()
+        {
+            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
+            mockWalletTransactionHandler.Setup(w => w.GetMaximumSpendableAmount(It.IsAny<WalletAccountReference>(), It.IsAny<FeeType>(), true)).Throws(new Exception("failure"));
+
+            var controller = new WalletController(new Mock<IWalletManager>().Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>());
+            IActionResult result = controller.GetMaximumSpendableBalance(new WalletMaximumBalanceRequest()
+            {
+                WalletName = "myWallet",
+                AccountName = "account 1",
+                FeeType = "low",
+                AllowUnconfirmed = true
+            });
+
+            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.NotNull(errorResult.StatusCode);
+            Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
+        }
     }
 }

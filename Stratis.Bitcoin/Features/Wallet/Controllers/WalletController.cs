@@ -408,6 +408,39 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Gets the maximum spendable balance on an account, along with the fee required to spend it.
+        /// </summary>
+        /// <param name="request">The request parameters.</param>
+        /// <returns></returns>
+        [Route("maxbalance")]
+        [HttpGet]
+        public IActionResult GetMaximumSpendableBalance([FromQuery] WalletMaximumBalanceRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+            }
+
+            try
+            {
+                var transactionResult = this.walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference(request.WalletName, request.AccountName), FeeParser.Parse(request.FeeType), request.AllowUnconfirmed);
+                return this.Json(new MaxSpendableAmountModel
+                {
+                    MaxSpendableAmount = transactionResult.maximumSpendableAmount,
+                    Fee = transactionResult.Fee
+                });
+            }
+            catch (Exception e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Builds a transaction. 
         /// </summary>
         /// <param name="request">The transaction parameters.</param>

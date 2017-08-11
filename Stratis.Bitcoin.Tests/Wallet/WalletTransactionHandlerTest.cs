@@ -307,6 +307,172 @@ namespace Stratis.Bitcoin.Tests.Wallet
             Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys2.PubKey.ScriptPubKey));
             Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys3.PubKey.ScriptPubKey));
         }
+
+        [Fact]
+        public void Given_AnInvalidAccountIsUsed_When_GetMaximumSpendableAmountIsCalled_Then_AnExceptionIsThrown()
+        {
+           string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_AnInvalidAccountIsUsed_When_GetMaximumSpendableAmountIsCalled_Then_AnExceptionIsThrown");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
+
+            var wallet = WalletTestsHelpers.CreateWallet("wallet1");
+            wallet.AccountsRoot.Add(new AccountRoot
+            {
+                Accounts = new List<HdAccount> { WalletTestsHelpers.CreateAccount("account 1") }
+            });            
+            walletManager.Wallets.Add(wallet);
+            
+            Exception ex = Assert.Throws<WalletException>(() => walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference("wallet1", "noaccount"), FeeType.Low, true));
+            Assert.NotNull(ex);
+            Assert.NotNull(ex.Message);
+            Assert.NotEqual(string.Empty, ex.Message);
+            Assert.IsType<WalletException>(ex);
+        }
+
+        [Fact]
+        public void Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoSpendableFound_Then_MaxAmountReturnsAsZero()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoSpendableFound_Then_MaxAmountReturnsAsZero");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
+
+            HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
+
+            HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(15000), 1, new SpendingDetails()));
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(10000), 1, new SpendingDetails()));
+
+            HdAddress accountAddress2 = WalletTestsHelpers.CreateAddress();
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(20000), 3, new SpendingDetails()));
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(4), new Money(120000), 4, new SpendingDetails()));
+
+            account.ExternalAddresses.Add(accountAddress1);
+            account.InternalAddresses.Add(accountAddress2);
+
+            var wallet = WalletTestsHelpers.CreateWallet("wallet1");
+            wallet.AccountsRoot.Add(new AccountRoot
+            {
+                Accounts = new List<HdAccount> { account }
+            });
+            
+            walletManager.Wallets.Add(wallet);
+
+            (Money max, Money fee) result = walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference("wallet1", "account 1"), FeeType.Low, true);
+            Assert.Equal(Money.Zero, result.max);
+            Assert.Equal(Money.Zero, result.fee);
+        }
+
+        [Fact]
+        public void Given_GetMaximumSpendableAmountIsCalledForConfirmedTransactions_When_ThereAreNoConfirmedSpendableFound_Then_MaxAmountReturnsAsZero()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_GetMaximumSpendableAmountIsCalledForConfirmedTransactions_When_ThereAreNoConfirmedSpendableFound_Then_MaxAmountReturnsAsZero");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
+
+            HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
+
+            HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(15000), null));
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(10000), null));
+
+            HdAddress accountAddress2 = WalletTestsHelpers.CreateAddress();
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(20000), null));
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(4), new Money(120000), null));
+
+            account.ExternalAddresses.Add(accountAddress1);
+            account.InternalAddresses.Add(accountAddress2);
+
+            var wallet = WalletTestsHelpers.CreateWallet("wallet1");
+            wallet.AccountsRoot.Add(new AccountRoot
+            {
+                Accounts = new List<HdAccount> { account }
+            });
+
+            walletManager.Wallets.Add(wallet);
+
+            (Money max, Money fee) result = walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference("wallet1", "account 1"), FeeType.Low, false);
+            Assert.Equal(Money.Zero, result.max);
+            Assert.Equal(Money.Zero, result.fee);
+        }
+
+        [Fact]
+        public void Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoConfirmedSpendableFound_Then_MaxAmountReturnsAsTheSumOfUnconfirmedTxs()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_GetMaximumSpendableAmountIsCalledForConfirmedTransactions_When_ThereAreNoConfirmedSpendableFound_Then_MaxAmountReturnsAsZero");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, walletFeePolicy.Object, Network.Main);
+
+            HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
+
+            HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(15000), null, null, null, new Key().ScriptPubKey));
+            accountAddress1.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(2), new Money(10000), null, null, null, new Key().ScriptPubKey));
+
+            HdAddress accountAddress2 = WalletTestsHelpers.CreateAddress();
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(20000), null, null, null, new Key().ScriptPubKey));
+            accountAddress2.Transactions.Add(WalletTestsHelpers.CreateTransaction(new uint256(4), new Money(120000), null, null, null, new Key().ScriptPubKey));
+
+            account.ExternalAddresses.Add(accountAddress1);
+            account.InternalAddresses.Add(accountAddress2);
+
+            var wallet = WalletTestsHelpers.CreateWallet("wallet1");
+            wallet.AccountsRoot.Add(new AccountRoot
+            {
+                Accounts = new List<HdAccount> { account }
+            });
+
+            walletManager.Wallets.Add(wallet);
+
+            (Money max, Money fee) result = walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference("wallet1", "account 1"), FeeType.Low, true);
+            Assert.Equal(new Money(165000), result.max + result.fee);
+        }
+
+        [Fact]
+        public void Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoTransactions_Then_MaxAmountReturnsAsZero()
+        {
+            string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoTransactions_Then_MaxAmountReturnsAsZero");
+            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
+            HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
+            HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
+            HdAddress accountAddress2 = WalletTestsHelpers.CreateAddress();
+            account.ExternalAddresses.Add(accountAddress1);
+            account.InternalAddresses.Add(accountAddress2);
+
+            var wallet = WalletTestsHelpers.CreateWallet("wallet1");
+            wallet.AccountsRoot.Add(new AccountRoot
+            {
+                Accounts = new List<HdAccount> { account }
+            });
+
+            walletManager.Wallets.Add(wallet);
+
+            (Money max, Money fee) result = walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference("wallet1", "account 1"), FeeType.Low, true);
+            Assert.Equal(Money.Zero, result.max);
+            Assert.Equal(Money.Zero, result.fee);
+        }
         
         public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
