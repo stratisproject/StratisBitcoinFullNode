@@ -169,20 +169,20 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return (Money.Zero, Money.Zero);
             }
 
+            // Create a recipient with a dummy destination address as it's required by NBitcoin's transaction builder.
+            List<Recipient> recipients = new[] {new Recipient {Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey}}.ToList();
             Money fee;
+
             try
             {
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
                 // When the transaction builder throws an exception informing us that we have insufficient funds, 
                 // we use the amount we're missing as the fee.
-                var context = new TransactionBuildContext(accountReference, null, null)
+                var context = new TransactionBuildContext(accountReference, recipients, null)
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1,
-                    TransactionBuilder = new TransactionBuilder(),
-
-                    // Create a recipient with a dummy destination address as it's required by NBitcoin's transaction builder.
-                    Recipients = new[] { new Recipient { Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey } }.ToList()
+                    TransactionBuilder = new TransactionBuilder()
                 };
 
                 this.AddRecipients(context);
@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Get total spendable balance in the account.
             var balance = context.UnspentOutputs.UnspentOutputs.Sum(t => t.Transaction.Amount);
-            if (context.Recipients != null && balance < context.Recipients.Sum(s => s.Amount))
+            if (balance < context.Recipients.Sum(s => s.Amount))
                 throw new WalletException("Not enough funds.");
 
             if (context.SelectedInputs.Any())
@@ -354,6 +354,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
         public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword)
         {
+            Guard.NotNull(recipients, nameof(recipients));
+
             this.AccountReference = accountReference;
             this.Recipients = recipients;
             this.WalletPassword = walletPassword;
