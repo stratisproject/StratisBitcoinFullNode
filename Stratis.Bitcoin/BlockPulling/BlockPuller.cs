@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace($"({nameof(vectors)}.{nameof(vectors.Count)}:{vectors.Count},{nameof(minHeight)}:{minHeight})");
 
             // Count number of tasks assigned to each peer.
-            BlockPullerBehavior[] nodes = GetNodeBehaviors();
+            BlockPullerBehavior[] nodes = this.GetNodeBehaviors();
             Dictionary<BlockPullerBehavior, int> assignedTasksCount = new Dictionary<BlockPullerBehavior, int>();
             lock (this.lockObject)
             {
