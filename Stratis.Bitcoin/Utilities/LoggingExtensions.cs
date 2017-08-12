@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns>Newly created logger.</returns>
         public static ILogger CreateLogger(this ILoggerFactory loggerFactory, string categoryName, string prefix = "")
         {
-            return new PrefixLogger(loggerFactory, categoryName, prefix);
+            return new PrefixLogger(categoryName, prefix);
         }
 
         /// <summary>

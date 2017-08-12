@@ -27,10 +27,9 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Creates a logger instance with given prefix.
         /// </summary>
-        /// <param name="loggerFactory">Factory to create loggers.</param>
         /// <param name="categoryName">Category name for messages produced by the logger.</param>
         /// <param name="prefix">String to be put in front of each log of the newly created logger.</param>
-        public PrefixLogger(ILoggerFactory loggerFactory, string categoryName, string prefix = null)
+        public PrefixLogger(string categoryName, string prefix = null)
         {
             this.logger = NLog.LogManager.GetLogger(categoryName);
             this.prefix = prefix != null ? prefix : "";
