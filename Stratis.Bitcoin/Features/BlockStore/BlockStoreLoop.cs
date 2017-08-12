@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.ChainState.HighestPersistedBlock = block;
         }
 
-        internal ChainState ChainState { get; }
+        public ChainState ChainState { get; }
 
         /// <summary>
         /// Blocks that in PendingStorage will be processed first before new 
