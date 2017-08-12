@@ -1,15 +1,16 @@
-using NBitcoin;
-using System;
-using System.IO;
-using System.Linq;
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Text;
+using Microsoft.Extensions.Logging.Console;
+using NBitcoin;
 using NBitcoin.Protocol;
+using NLog.Extensions.Logging;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
-using NLog.Extensions.Logging;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -128,7 +129,7 @@ namespace Stratis.Bitcoin.Configuration
 
             // The logger factory goes in the settings with minimal configuration, 
             // that's so the settings can also log out its progress.
-            nodeSettings.LoggerFactory.AddConsole();
+            nodeSettings.LoggerFactory.AddConsoleWithFilters(out ConsoleLoggerSettings consoleSettings);
             nodeSettings.LoggerFactory.AddNLog();
             nodeSettings.Logger = nodeSettings.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
@@ -186,6 +187,7 @@ namespace Stratis.Bitcoin.Configuration
             // set the configuration filter and file path
             nodeSettings.Log.Load(config);
             nodeSettings.LoggerFactory.AddFilters(nodeSettings.Log, nodeSettings.DataFolder);
+            nodeSettings.LoggerFactory.ConfigureConsoleFilters(consoleSettings, nodeSettings.Log);
 
             nodeSettings.Logger.LogInformation("Data directory set to " + nodeSettings.DataDir);
             nodeSettings.Logger.LogInformation("Configuration file set to " + nodeSettings.ConfigurationFile);

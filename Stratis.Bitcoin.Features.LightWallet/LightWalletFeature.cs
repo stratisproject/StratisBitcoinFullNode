@@ -88,6 +88,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IWalletSyncManager, LightWalletSyncManager>();
+                        services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
                         services.AddSingleton<IWalletManager, WalletManager>();
                         services.AddSingleton<IWalletFeePolicy, LightWalletFeePolicy>();
                         services.AddSingleton<WalletController>();

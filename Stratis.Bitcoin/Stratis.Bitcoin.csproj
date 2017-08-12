@@ -20,6 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DBreeze" Version="1.85.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.3.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.2" />
     <PackageReference Include="NLog" Version="5.0.0-beta09" />
     <PackageReference Include="NLog.Extensions.Logging" Version="1.0.0-rtm-beta5" />

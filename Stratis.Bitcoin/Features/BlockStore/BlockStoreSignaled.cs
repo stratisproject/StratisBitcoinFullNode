@@ -18,12 +18,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private readonly IConnectionManager connection;
 	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly string name;
 
-	    private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
+        private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
 		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeSettings nodeArgs, 
 			ChainState chainState, IConnectionManager connection, 
-            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory,
+            string name = "BlockStore")
 		{
 			this.storeLoop = storeLoop;
 			this.chain = chain;
@@ -32,6 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			this.connection = connection;
 		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
+            this.name = name;
 
 		    this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
 		}
@@ -52,7 +55,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 		public void RelayWorker()
 		{
-            this.asyncLoopFactory.Run("BlockStore.RelayWorker", async token =>
+            this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
 			{
 				var blocks = this.blockHashesToAnnounce.Keys.ToList();
 

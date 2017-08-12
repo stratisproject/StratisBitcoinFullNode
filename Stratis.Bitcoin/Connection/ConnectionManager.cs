@@ -176,7 +176,8 @@ namespace Stratis.Bitcoin.Connection
 						builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diff.WrittenBytesPerSecond));
 						if (behavior != null)
 						{
-							builder.Append("\tQualityScore: " + behavior.QualityScore + (behavior.QualityScore < 10 ? "\t" : "") + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
+                            int intQuality = (int)behavior.QualityScore;
+                            builder.Append("\tQualityScore: " + intQuality + (intQuality < 10 ? "\t" : "") + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
 						}
 						builder.AppendLine();
 					}
