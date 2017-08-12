@@ -1,13 +1,12 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Connection;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -95,21 +94,13 @@ namespace Stratis.Bitcoin.BlockPulling
     public class LookaheadBlockPuller : BlockPuller, ILookaheadBlockPuller
     {
         /// <summary>Maximal size of a block in bytes.</summary>
-        private const int BLOCK_SIZE = 2000000;
+        private const int MaxBlockSize = 2000000;
 
-        /// <summary>
-        /// Initializes a new instance of the object having a chain of block headers and a connection manager. 
-        /// </summary>
-        /// <param name="chain">Chain of block headers.</param>
-        /// <param name="connectionManager">Manager of information about the node's network connections.</param>
-        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        public LookaheadBlockPuller(ConcurrentChain chain, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
-            : base(chain, connectionManager.ConnectedNodes, connectionManager.NodeSettings.ProtocolVersion, loggerFactory)
-        {
-            this.MaxBufferedSize = BLOCK_SIZE * 10;
-            this.MinimumLookahead = 4;
-            this.MaximumLookahead = 2000;
-        }
+        /// <summary>Number of milliseconds for a single waiting round for the next block in the <see cref="NextBlockCore"/> loop.</summary>
+        private const int WaitNextBlockRoundTimeMs = 100;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         /// <summary>Lower limit for ActualLookahead.</summary>
         public int MinimumLookahead { get; set; }
@@ -134,12 +125,12 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Maximum number of bytes used by unconsumed blocks that the puller is willing to maintain.</summary>
         public int MaxBufferedSize { get; set; }
-        
+
         /// <summary>Current number of bytes that unconsumed blocks are occupying.</summary>
         private long currentSize;
 
         /// <summary>Lock object to protect access to <see cref="downloadedCounts"/>.</summary>
-        private object downloadedCountsLock = new object();
+        private readonly object downloadedCountsLock = new object();
 
         /// <summary>Maintains the statistics of number of downloaded blocks. This is used for calculating new actualLookahead value.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="downloadedCountsLock"/>.</remarks>
@@ -180,6 +171,21 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>If true, the puller consumer is a bottleneck.</summary>
         public bool IsFull { get; internal set; }
 
+        /// <summary>
+        /// Initializes a new instance of the object having a chain of block headers and a connection manager. 
+        /// </summary>
+        /// <param name="chain">Chain of block headers.</param>
+        /// <param name="connectionManager">Manager of information about the node's network connections.</param>
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
+        public LookaheadBlockPuller(ConcurrentChain chain, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
+            : base(chain, connectionManager.ConnectedNodes, connectionManager.NodeSettings.ProtocolVersion, loggerFactory)
+        {
+            this.MaxBufferedSize = MaxBlockSize * 10;
+            this.MinimumLookahead = 4;
+            this.MaximumLookahead = 2000;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
         /// <inheritdoc />
         public void SetLocation(ChainedBlock tip)
         {
@@ -190,22 +196,29 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public void RequestOptions(TransactionOptions transactionOptions)
         {
+            this.logger.LogTrace($"({nameof(transactionOptions)}:{transactionOptions})");
+
             if (transactionOptions == TransactionOptions.Witness)
             {
                 this.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
-                foreach (var node in this.Nodes.Select(n => n.Behaviors.Find<BlockPullerBehavior>()))
+                foreach (BlockPullerBehavior node in this.Nodes.Select(n => n.Behaviors.Find<BlockPullerBehavior>()))
                 {
                     if (!this.Requirements.Check(node.AttachedNode.PeerVersion))
                     {
+                        this.logger.LogDebug($"Peer {node.GetHashCode():x} does not meet requirements, releasing its tasks.");
                         node.ReleaseAll();
                     }
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public Block NextBlock(CancellationToken cancellationToken)
         {
+            this.logger.LogTrace("()");
+
             lock (this.downloadedCountsLock)
             {
                 this.downloadedCounts.Add(this.DownloadedBlocksCount);
@@ -213,6 +226,8 @@ namespace Stratis.Bitcoin.BlockPulling
 
             if (this.lookaheadLocation == null)
             {
+                this.logger.LogTrace("Lookahead location is not initialized.");
+
                 // Calling twice is intentional here.
                 // lookaheadLocation is null only during initialization
                 // or when reorganisation happens. Calling this twice will 
@@ -221,17 +236,21 @@ namespace Stratis.Bitcoin.BlockPulling
                 AskBlocks();
                 AskBlocks();
             }
+
             Block block = NextBlockCore(cancellationToken);
-            if (block == null)
+            if (block != null)
             {
-                //A reorg
-                return null;
+                if ((this.lookaheadLocation.Height - this.location.Height) <= this.ActualLookahead)
+                {
+                    this.logger.LogTrace($"Recalculating lookahead: Last request block height is {this.lookaheadLocation.Height}, last processed block height is {this.location.Height}, {nameof(this.ActualLookahead)} is {this.ActualLookahead}.");
+                    CalculateLookahead();
+                    AskBlocks();
+                }
+                else this.logger.LogTrace($"Lookahead needs no adjustment.");
             }
-            if ((this.lookaheadLocation.Height - this.location.Height) <= this.ActualLookahead)
-            {
-                CalculateLookahead();
-                AskBlocks();
-            }
+            else this.logger.LogTrace("Reorganization detected.");
+
+            this.logger.LogTrace($"(-):'{block}'");
             return block;
         }
 
@@ -265,6 +284,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </summary>
         private void CalculateLookahead()
         {
+            this.logger.LogTrace("()");
+
             decimal medianDownloads = 0;
             lock (this.downloadedCountsLock)
             {
@@ -272,26 +293,37 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.downloadedCounts.Clear();
             }
 
-            var expectedDownload = this.ActualLookahead * 1.1m;
+            decimal expectedDownload = this.ActualLookahead * 1.1m;
             decimal tolerance = 0.05m;
-            var margin = expectedDownload * tolerance;
+            decimal margin = expectedDownload * tolerance;
             if (medianDownloads <= expectedDownload - margin)
                 this.ActualLookahead = (int)Math.Max(this.ActualLookahead * 1.1m, this.ActualLookahead + 1);
             else if (medianDownloads >= expectedDownload + margin)
                 this.ActualLookahead = (int)Math.Min(this.ActualLookahead / 1.1m, this.ActualLookahead - 1);
+
+            this.logger.LogTrace($"(-):{nameof(this.ActualLookahead)}={this.ActualLookahead}");
         }
 
         /// <inheritdoc />
         public Block TryGetLookahead(int count)
         {
+            this.logger.LogTrace($"({nameof(count)}:{count})");
+
             ChainedBlock chainedBlock = this.Chain.GetBlock(this.location.Height + 1 + count);
             if (chainedBlock == null)
+            {
+                this.logger.LogTrace("(-)[NOT_KNOWN]");
                 return null;
+            }
 
             DownloadedBlock block = GetDownloadedBlock(chainedBlock.HashBlock);
             if (block == null)
+            {
+                this.logger.LogTrace("(-)[NOT_AVAILABLE]");
                 return null;
+            }
 
+            this.logger.LogTrace($"(-):'{block.Block}'");
             return block.Block;
         }
 
@@ -303,11 +335,14 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </remarks>
         public override void BlockPushed(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)
         {
+            this.logger.LogTrace($"({nameof(blockHash)}:'{blockHash}')");
+
             ChainedBlock header = this.Chain.GetBlock(blockHash);
             // TODO: Race condition here (and also below) on this.currentSize. How about this.location.Height?
             // https://github.com/stratisproject/StratisBitcoinFullNode/issues/277
             while ((this.currentSize + downloadedBlock.Length >= this.MaxBufferedSize) && (header.Height != this.location.Height + 1))
             {
+                this.logger.LogTrace($"Waiting for free space in the puller. {nameof(this.currentSize)}={this.currentSize} + {nameof(downloadedBlock)}.{nameof(downloadedBlock.Length)}={downloadedBlock.Length} = {this.currentSize + downloadedBlock.Length} >= {this.MaxBufferedSize}.");
                 this.IsFull = true;
                 this.consumed.WaitOne(1000);
                 cancellationToken.ThrowIfCancellationRequested();
@@ -315,6 +350,8 @@ namespace Stratis.Bitcoin.BlockPulling
             this.IsFull = false;
             this.currentSize += downloadedBlock.Length;
             this.pushed.Set();
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -323,11 +360,16 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>TODO: Comment is missing here about the details of the logic in this method.</remarks>
         private void AskBlocks()
         {
+            this.logger.LogTrace("()");
+
             if (this.location == null)
                 throw new InvalidOperationException("SetLocation should have been called");
 
             if (this.lookaheadLocation == null && !this.Chain.Contains(this.location))
+            {
+                this.logger.LogTrace("(-)[REORG]");
                 return;
+            }
 
             if (this.lookaheadLocation != null && !this.Chain.Contains(this.lookaheadLocation))
                 this.lookaheadLocation = null;
@@ -354,13 +396,9 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             AskBlocks(downloadRequests);
-        }
 
-        /// <summary>
-        /// Number of milliseconds to wait for a block in each iteration in NextBlockCore method.
-        /// The array is processed in circular manner.
-        /// </summary>
-        private static int[] waitTime = new[] { 1, 10, 20, 40, 100, 1000 };
+            this.logger.LogTrace("(-)");
+        }
 
         /// <summary>
         /// Waits for a next block to be available (downloaded).
@@ -369,10 +407,15 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>Next block or null if a reorganization happened on the chain.</returns>
         private Block NextBlockCore(CancellationToken cancellationToken)
         {
-            int i = 0;
-            while (true)
+            this.logger.LogTrace("()");
+
+            Block res = null;
+
+            while (res == null)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
+                this.logger.LogTrace($"Requesting block at height {this.location.Height + 1}.");
                 ChainedBlock header = this.Chain.GetBlock(this.location.Height + 1);
                 DownloadedBlock block;
 
@@ -385,38 +428,46 @@ namespace Stratis.Bitcoin.BlockPulling
                 {
                     if (header.Previous.HashBlock != this.location.HashBlock)
                     {
-                        //A reorg
-                        return null;
+                        this.logger.LogTrace("Blockchain reorganization detected.");
+                        break;
                     }
                     this.IsStalling = false;
                     this.location = header;
                     Interlocked.Add(ref this.currentSize, -block.Length);
                     this.consumed.Set();
-                    return block.Block;
+
+                    res = block.Block;
                 }
                 else
                 {
-                    // Otherwise we either have reorg.
+                    // Otherwise we either have reorg, or we reached the best chain tip.
                     if (header == null)
                     {
                         if (!this.Chain.Contains(this.location.HashBlock))
                         {
-                            //A reorg
-                            return null;
+                            this.logger.LogTrace("Blockchain reorganization detected.");
+                            break;
                         }
+
+                        this.logger.LogTrace("Hash of the next block is not known.");
                     }
                     else
                     {
+                        this.logger.LogTrace($"Block not available.");
+
                         // Or the block is still being downloaded or we need to ask for this block to be downloaded.
                         if (!isDownloading) AskBlocks(new ChainedBlock[] { header });
 
                         OnStalling(header);
                         this.IsStalling = true;
                     }
-                    WaitHandle.WaitAny(new[] { this.pushed, cancellationToken.WaitHandle }, waitTime[i]);
-                    i = i == waitTime.Length - 1 ? 0 : i + 1;
+
+                    WaitHandle.WaitAny(new[] { this.pushed, cancellationToken.WaitHandle }, WaitNextBlockRoundTimeMs);
                 }
             }
+
+            this.logger.LogTrace($"(-):'{res}'");
+            return res;
         }
     }
 }

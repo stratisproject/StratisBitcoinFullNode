@@ -1,13 +1,14 @@
-﻿using System;
+﻿using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
-using Stratis.Bitcoin.BlockPulling;
 
 namespace Stratis.Bitcoin.Tests.BlockPulling
 {
     /// <summary>
-    /// Tests of PullerDownloadAssignments class.
+    /// Tests of <see cref="PullerDownloadAssignments"/> class.
     /// </summary>
     public class PullerDownloadAssignmentsTest
     {
@@ -34,10 +35,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public void AssignBlocksToPeersWithNodesWithDifferentChainsCorrectlyDistributesDownloadTasks()
         {
-            // Create list of numbers 6 to 40 and shuffle it.
+            int ourBlockCount = 5;
+
+            // Create list of numbers ourBlockCount + 1 to 40 and shuffle it.
             Random rnd = new Random();
             List<int> requiredBlockHeights = new List<int>();
-            for (int i = 6; i <= 40; i++)
+            for (int i = ourBlockCount + 1; i <= 40; i++)
                 requiredBlockHeights.Add(i);
 
             requiredBlockHeights = requiredBlockHeights.OrderBy(a => rnd.Next()).ToList();
@@ -49,35 +52,38 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 {
                     PeerId = "A",
                     QualityScore = 100,
-                    ChainHeight = 4
+                    ChainHeight = 4,
+                    TasksAssignedCount = 0
                 },
                 new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "B",
                     QualityScore = 100,
-                    ChainHeight = 20
+                    ChainHeight = 20,
+                    TasksAssignedCount = 0
                 },
                 new PullerDownloadAssignments.PeerInformation()
                 {
                     PeerId = "C",
                     QualityScore = 50,
-                    ChainHeight = 30
+                    ChainHeight = 30,
+                    TasksAssignedCount = 0
                 },
                 new PullerDownloadAssignments.PeerInformation()
                 {
-                    PeerId = "C",
+                    PeerId = "D",
                     QualityScore = 150,
-                    ChainHeight = 40
+                    ChainHeight = 40,
+                    TasksAssignedCount = 0
                 },
             };
 
             // Use the assignment strategy to assign tasks to peers.
             Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
 
-
             // Check the assignment is valid per our requirements.
             int tasksAssigned = 0;
-            Assert.Equal(4, assignments.Count);
+            Assert.Equal(availablePeersInformation.Count, assignments.Count);
             foreach (KeyValuePair<PullerDownloadAssignments.PeerInformation, List<int>> kvp in assignments)
             {
                 PullerDownloadAssignments.PeerInformation peer = kvp.Key;
@@ -96,7 +102,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                     case "D":
                         // Peers B and C should only get tasks to download blocks up to its chain height.
                         // Peer D can be assigned anything.
-                        Assert.True(assignedBlockHeights.Max() <= peer.ChainHeight);
+                        Assert.True((assignedBlockHeights.Count == 0) || (assignedBlockHeights.Max() <= peer.ChainHeight));
                         break;
 
                     default:
@@ -140,7 +146,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                     {
                         ChainHeight = rnd.Next(bestChainBlockCount) + 1,
                         PeerId = peerIndex,
-                        QualityScore = rnd.Next(BlockPuller.MaxQualityScore) + 1
+                        QualityScore = rnd.NextDouble() * (QualityScore.MaxScore - QualityScore.MinScore) + QualityScore.MinScore,
+                        TasksAssignedCount = rnd.Next(100)
                     };
                     availablePeersInformation.Add(peerInfo);
                     maxPeerChainLength = Math.Max(maxPeerChainLength, peerInfo.ChainHeight);
@@ -168,6 +175,163 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 int taskShouldAssign = requiredBlockHeights.Where(r => r <= maxPeerChainLength).Count();
                 Assert.Equal(taskShouldAssign, tasksAssigned);
             }
+        }
+
+        /// <summary>
+        /// Assignment of tasks to nodes should prevent the very next blocks that the consumer will need 
+        /// in the nearest future to be assigned to nodes that are considered of poor quality.
+        /// This test checks that this protection works as intended.
+        /// <para>
+        /// We will request assignment of blocks A to B, and check that the lower half of these requests 
+        /// (i.e. blocks from A to median(A..B) are not assigned to nodes having quality score worse than median.
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void AssignBlocksToPeersWithNodesWithLowQualityProtectsLowerHalfRequestsFromBeingAssignedToPoorQualityNodes()
+        {
+            Random rnd = new Random();
+            int ourBlockCount = rnd.Next(1000) + 1;
+            int bestBlockCount = rnd.Next(1000) + ourBlockCount + 1;
+
+            // Create list of numbers ourBlockCount + 1 to bestBlockCount and shuffle it.
+            List<int> requiredBlockHeights = new List<int>();
+            for (int i = ourBlockCount + 1; i <= bestBlockCount; i++)
+                requiredBlockHeights.Add(i);
+
+            requiredBlockHeights = requiredBlockHeights.OrderBy(a => rnd.Next()).ToList();
+            int medianBlockHeight = requiredBlockHeights.Median();
+
+            // Initialize node's peers. We have 5 peers with median quality 100.
+            // Thus peers A and E should not receive any work from the lower half of the requests.
+            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>()
+            {
+                new PullerDownloadAssignments.PeerInformation()
+                {
+                    PeerId = "A",
+                    QualityScore = 20,
+                    ChainHeight = bestBlockCount,
+                    TasksAssignedCount = rnd.Next(1000)
+                },
+                new PullerDownloadAssignments.PeerInformation()
+                {
+                    PeerId = "B",
+                    QualityScore = 100,
+                    ChainHeight = bestBlockCount,
+                    TasksAssignedCount = rnd.Next(1000)
+                },
+                new PullerDownloadAssignments.PeerInformation()
+                {
+                    PeerId = "C",
+                    QualityScore = 150,
+                    ChainHeight = bestBlockCount,
+                    TasksAssignedCount = rnd.Next(1000)
+                },
+                new PullerDownloadAssignments.PeerInformation()
+                {
+                    PeerId = "D",
+                    QualityScore = 120,
+                    ChainHeight = bestBlockCount,
+                    TasksAssignedCount = rnd.Next(1000)
+                },
+                new PullerDownloadAssignments.PeerInformation()
+                {
+                    PeerId = "E",
+                    QualityScore = 90,
+                    ChainHeight = bestBlockCount,
+                    TasksAssignedCount = rnd.Next(1000)
+                },
+            };
+
+            // Use the assignment strategy to assign tasks to peers.
+            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
+
+            // Check the assignment is valid per our requirements.
+            int tasksAssigned = 0;
+            Assert.Equal(availablePeersInformation.Count, assignments.Count);
+            foreach (KeyValuePair<PullerDownloadAssignments.PeerInformation, List<int>> kvp in assignments)
+            {
+                PullerDownloadAssignments.PeerInformation peer = kvp.Key;
+                List<int> assignedBlockHeights = kvp.Value;
+                tasksAssigned += assignedBlockHeights.Count;
+
+                switch ((string)peer.PeerId)
+                {
+                    case "A":
+                    case "E":
+                        // Peers A and E should not get work.
+                        Assert.True((assignedBlockHeights.Count == 0) || (assignedBlockHeights.Max() >= medianBlockHeight));
+                        break;
+
+                    case "B":
+                    case "C":
+                    case "D":
+                        // PeerS B, C, D can be assigned anything.
+                        break;
+
+                    default:
+                        // This should never occur.
+                        Assert.True(false, "Invalid peer ID.");
+                        break;
+                }
+            }
+            Assert.Equal(requiredBlockHeights.Count, tasksAssigned);
+        }
+
+        /// <summary>
+        /// Same as <see cref="AssignBlocksToPeersWithNodesWithLowQualityProtectsLowerHalfRequestsFromBeingAssignedToPoorQualityNodes"/>
+        /// except that we generate a large number of peers with random qualities.
+        /// </summary>
+        [Fact]
+        public void AssignBlocksToPeersWithManyNodesWithLowQualityProtectsLowerHalfRequestsFromBeingAssignedToPoorQualityNodes()
+        {
+            Random rnd = new Random();
+            int ourBlockCount = rnd.Next(1000) + 1;
+            int bestBlockCount = rnd.Next(1000) + ourBlockCount + 1;
+
+            // Create list of numbers ourBlockCount + 1 to bestBlockCount and shuffle it.
+            List<int> requiredBlockHeights = new List<int>();
+            for (int i = ourBlockCount + 1; i <= bestBlockCount; i++)
+                requiredBlockHeights.Add(i);
+
+            requiredBlockHeights = requiredBlockHeights.OrderBy(a => rnd.Next()).ToList();
+            int medianBlockHeight = requiredBlockHeights.Median();
+
+            // Randomly generate peers and count median quality.
+            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>();
+            int peerCount = rnd.Next(1000) + 1;
+            List<double> qualities = new List<double>();
+            for (int i = 0; i < peerCount; i++)
+            {
+                var peerInfo = new PullerDownloadAssignments.PeerInformation()
+                {
+                    PeerId = i.ToString(),
+                    QualityScore = rnd.NextDouble() * (QualityScore.MaxScore - QualityScore.MinScore) + QualityScore.MinScore,
+                    ChainHeight = bestBlockCount,
+                    TasksAssignedCount = rnd.Next(1000)
+                };
+                qualities.Add(peerInfo.QualityScore);
+                availablePeersInformation.Add(peerInfo);
+            };
+
+            double qualityMedian = qualities.Median();
+
+            // Use the assignment strategy to assign tasks to peers.
+            Dictionary<PullerDownloadAssignments.PeerInformation, List<int>> assignments = PullerDownloadAssignments.AssignBlocksToPeers(requiredBlockHeights, availablePeersInformation);
+
+            // Check the assignment is valid per our requirements.
+            int tasksAssigned = 0;
+            Assert.Equal(availablePeersInformation.Count, assignments.Count);
+            foreach (KeyValuePair<PullerDownloadAssignments.PeerInformation, List<int>> kvp in assignments)
+            {
+                PullerDownloadAssignments.PeerInformation peer = kvp.Key;
+                List<int> assignedBlockHeights = kvp.Value;
+                tasksAssigned += assignedBlockHeights.Count;
+
+                // If the peer is poor, it must not get bottom half work assignment.
+                if (peer.QualityScore < qualityMedian)
+                    Assert.True((assignedBlockHeights.Count == 0) || (assignedBlockHeights.Max() >= medianBlockHeight));
+            }
+            Assert.Equal(requiredBlockHeights.Count, tasksAssigned);
         }
     }
 }

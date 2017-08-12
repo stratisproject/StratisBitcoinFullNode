@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -283,11 +284,19 @@ namespace Stratis.Bitcoin
                                          this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
                 }
 
-                if (this.WalletManager != null)
-                {
-                    int height = this.WalletManager.LastBlockHeight();
-                    ChainedBlock block = this.Chain.GetBlock(height);
-                    uint256 hashBlock = block == null ? uint256.Zero : block.HashBlock;
+                    if (this.ChainBehaviorState.HighestIndexedBlock != null)
+                    {
+                        benchLogs.AppendLine("Index.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                             this.ChainBehaviorState.HighestIndexedBlock.Height.ToString().PadRight(8) +
+                                             " Index.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                             this.ChainBehaviorState.HighestIndexedBlock.HashBlock);
+                    }
+
+                    if (this.WalletManager != null)
+					{
+						var height = this.WalletManager.LastBlockHeight();
+					    var block = this.Chain.GetBlock(height);
+					    var hashBlock = block == null ? uint256.Zero : block.HashBlock;
 
                     benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
                                          height.ToString().PadRight(8) +

@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			    this.entry = new TestMemPoolEntryHelper();
 			    this.chain = new ConcurrentChain(network);
 			    this.network.Consensus.Options = new PowConsensusOptions();
-			    this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
+                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
 			    this.consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory()), new LoggerFactory()), new NodeDeployments(this.network));
 			    this.consensus.Initialize();
 

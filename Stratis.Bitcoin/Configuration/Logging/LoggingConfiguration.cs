@@ -1,17 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
+using NLog.Targets.Wrappers;
+using Stratis.Bitcoin.Configuration.Settings;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Utilities;
-using NLog;
-using NLog.Config;
-using NLog.Targets;
 using System.Text;
-using NLog.Targets.Wrappers;
 
 namespace Stratis.Bitcoin.Configuration.Logging
 {
@@ -29,6 +27,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <summary>Currently used data folder to determine path to logs.</summary>
         private static DataFolder folder;
 
+        /// <summary>Mappings of keys to class name spaces to be used when filtering log categories.</summary>
+        private static readonly Dictionary<string, string> keyCategories;
+
         /// <summary>
         /// Initializes application logging.
         /// </summary>
@@ -39,6 +40,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
 
             // Installs handler to be called when NLog's configuration file is changed on disk.
             LogManager.ConfigurationReloaded += NLogConfigurationReloaded;
+
+            // Load the key to name-space mappings.
+            keyCategories = LoadKeyCategories();
         }
 
         /// <summary>
@@ -101,10 +105,130 @@ namespace Stratis.Bitcoin.Configuration.Logging
             // Default logging level is Info for all components.
             var defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Info, mainTarget);
 
+            if (settings.DebugArgs.Any())
+            {
+                if (settings.DebugArgs[0] == "1")
+                {
+                    // Increase all logging to Trace.
+                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Trace, mainTarget);
+                }
+                else
+                {
+                    HashSet<string> usedCategories = new HashSet<string>(StringComparer.Ordinal);
+
+                    // Increase selected categories to Trace.
+                    foreach (string key in settings.DebugArgs)
+                    {
+                        string category;
+                        if (!keyCategories.TryGetValue(key.Trim(), out category))
+                        {
+                            // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
+                            category = key.Trim();
+                        }
+
+                        if (!usedCategories.Contains(category))
+                        {
+                            usedCategories.Add(category);
+                            var rule = new LoggingRule(category, NLog.LogLevel.Trace, mainTarget);
+                            LogManager.Configuration.LoggingRules.Add(rule);
+                        }
+                    }
+                }
+            }
+
+            LogManager.Configuration.LoggingRules.Add(defaultRule);
+
+            // Apply new rules.
+            LogManager.ReconfigExistingLoggers();
+        }
+
+        /// <summary>
+        /// Extends the logging rules in the "NLog.config" with node log settings rules.
+        /// </summary>
+        /// <param name="loggerFactory">Not used.</param>
+        /// <param name="settings">Node log settings to extend the rules from the configuration file, or null if no extension is required.</param>
+        /// <param name="dataFolder">Data folder to determine path to log files.</param>
+        public static void AddFilters(this ILoggerFactory loggerFactory, LogSettings settings, DataFolder dataFolder)
+        {
+            AddFilters(settings, dataFolder);
+        }
+
+        /// <summary>
+        /// Configure the console logger and set it to filter logs not related to the fullnode.
+        /// </summary>
+        /// <param name="loggerFactory">The logger factory to add the console logger.</param>
+        /// <param name="consoleLoggerSettings"></param>
+        /// <returns>The new console settings.</returns>
+        public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory, out ConsoleLoggerSettings consoleLoggerSettings)
+        {
+           consoleLoggerSettings = new ConsoleLoggerSettings
+            {
+                Switches =
+                {
+                    {"Default", Microsoft.Extensions.Logging.LogLevel.Information},
+                    {"System", Microsoft.Extensions.Logging.LogLevel.Warning},
+                    {"Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning},
+                    {"Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Error}
+                }
+            };
+
+            loggerFactory.AddConsole(consoleLoggerSettings);
+        }
+
+        /// <summary>
+        /// Configure the console logger and set it to filter logs not related to the fullnode.
+        /// </summary>
+        /// <param name="loggerFactory">Not used.</param>
+        /// <param name="consoleLoggerSettings">Console settings to filter.</param>
+        /// <param name="settings">Settings that hold potential debug arguments, if null no debug arguments will be loaded."/></param>
+        public static void ConfigureConsoleFilters(this ILoggerFactory loggerFactory, ConsoleLoggerSettings consoleLoggerSettings, LogSettings settings)
+        {
+            if (settings != null)
+            {
+                if (settings.DebugArgs.Any())
+                {
+                    if (settings.DebugArgs[0] == "1")
+                    {
+                        // Increase all logging to Trace.
+                        consoleLoggerSettings.Switches.Add($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}", Microsoft.Extensions.Logging.LogLevel.Trace);
+                    }
+                    else
+                    {
+                        HashSet<string> usedCategories = new HashSet<string>(StringComparer.Ordinal);
+
+                        // Increase selected categories to Trace.
+                        foreach (string key in settings.DebugArgs)
+                        {
+                            string category;
+                            if (!keyCategories.TryGetValue(key.Trim(), out category))
+                            {
+                                // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
+                                category = key.Trim();
+                            }
+
+                            if (!usedCategories.Contains(category))
+                            {
+                                usedCategories.Add(category);
+                                consoleLoggerSettings.Switches.Add(category.TrimEnd('*').TrimEnd('.'), Microsoft.Extensions.Logging.LogLevel.Trace);
+                            }
+                        }
+                    }
+                }
+            }
+
+            consoleLoggerSettings.Reload();
+        }
+
+        /// <summary>
+        /// Create a key to category mappings to allow to limit filtering based on short debug codes.
+        /// </summary>
+        /// <returns>The key category mappings.</returns>
+        private static Dictionary<string, string> LoadKeyCategories()
+        {
             // Configure main file target rules based on node settings.
             // TODO: Preload enough args for -conf= or -datadir= to get debug args from there. We currently forbid logging before the logging is initialized.
             // TODO: Currently only takes -debug arg.
-            var keyToCategory = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            var keyCategories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 //{ "addrman", "" },
                 //{ "alert", "" },
@@ -137,52 +261,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 { "wallet", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Wallet)}.*" },
             };
 
-            if (settings.DebugArgs.Any())
-            {
-                if (settings.DebugArgs[0] == "1")
-                {
-                    // Increase all logging to Trace.
-                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Trace, mainTarget);
-                }
-                else
-                {
-                    HashSet<string> usedCategories = new HashSet<string>(StringComparer.Ordinal);
-
-                    // Increase selected categories to Trace.
-                    foreach (string key in settings.DebugArgs)
-                    {
-                        string category;
-                        if (!keyToCategory.TryGetValue(key.Trim(), out category))
-                        {
-                            // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
-                            category = key.Trim();
-                        }
-
-                        if (!usedCategories.Contains(category))
-                        {
-                            usedCategories.Add(category);
-                            var rule = new LoggingRule(category, NLog.LogLevel.Trace, mainTarget);
-                            LogManager.Configuration.LoggingRules.Add(rule);
-                        }
-                    }
-                }
-            }
-
-            LogManager.Configuration.LoggingRules.Add(defaultRule);
-
-            // Apply new rules.
-            LogManager.ReconfigExistingLoggers();
-        }
-
-        /// <summary>
-        /// Extends the logging rules in the "NLog.config" with node log settings rules.
-        /// </summary>
-        /// <param name="loggerFactory">Not used.</param>
-        /// <param name="settings">Node log settings to extend the rules from the configuration file, or null if no extension is required.</param>
-        /// <param name="dataFolder">Data folder to determine path to log files.</param>
-        public static void AddFilters(this ILoggerFactory loggerFactory, LogSettings settings, DataFolder dataFolder)
-        {
-            AddFilters(settings, dataFolder);
+            return keyCategories;
         }
     }
 }

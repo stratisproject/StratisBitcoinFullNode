@@ -519,11 +519,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The index of this scriptPubKey in the transaction it is contained.
         /// </summary>
         /// <remarks>
-        /// This is effectively the index of the output, the position of the output in the parent transaction. 
-        /// TODO: Investigate why is this field null-able.
+        /// This is effectively the index of the output, the position of the output in the parent transaction.
         /// </remarks>
         [JsonProperty(PropertyName = "index", NullValueHandling = NullValueHandling.Ignore)]
-        public int? Index { get; set; }
+        public int Index { get; set; }
 
         /// <summary>
         /// The height of the block including this transaction.
