@@ -44,7 +44,7 @@ if it violates a soft rule and it can be fixed easily.
    * **SUMMARY-2** - `<summary>` should contain information useful for someone who is trying to understand the code. Implementation details belong to `<remarks>`. *(SOFT)*
    * **METHODS** - Method comments must contain `<summary>`. If the method has input and/or output parameters `<param>` must be used for each of them. If the method returns anything else than `void` or `Task` (but not `Task<T>`),
 it must contain `<returns>`. The order of the tags is `<summary>`, `<param>`, `<returns>`, `<exception>`, `<remarks>`, `<example>`, `<seealso>`. *(HARD)*
-   * **FORMAT** - Use `<para>`, `<see>`, `<seealso>`, `<c>`, `<code>`, `<list>` to make the comment structure better. *(SOFT)*
+   * **FORMAT** - Use `<para>`, `<see>`, `<seealso>`, `<c>`, `<code>`, `<list>` to make the comment structure better. Do not use empty lines on formatting based on whitespaces. *(SOFT)*
    * **INHERITDOC** - Use `<inheritdoc />` if the comment already exists on lower level (base class, interface, virtual/abstract method). But feel free to add additional comments if the base comment is not sufficient. *(HARD)*
    * **REFERENCE** - Always use `<see>` when the comment contains name of existing class/property/field/... This prevents invalidating the comment after renaming/refactoring. *(HARD)*
  * **INLINE** - Use double slash (inline) comments for function body code, variables, and inline comments. Never use inline comments for what is XML documentation prescribed. *(HARD)*
