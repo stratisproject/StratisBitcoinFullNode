@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using Stratis.Bitcoin.Configuration.Logging;
 using System;
 
 namespace Stratis.Bitcoin.Utilities
@@ -24,16 +26,22 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Wrapper class type for the NLog callsite to skip it.</summary>
         private Type wrapperType;
 
+        private ILogger consoleLogger;
+
         /// <summary>
         /// Creates a logger instance with given prefix.
         /// </summary>
+        /// <param name="loggerFactory">Factory to create loggers.</param>
         /// <param name="categoryName">Category name for messages produced by the logger.</param>
         /// <param name="prefix">String to be put in front of each log of the newly created logger.</param>
-        public PrefixLogger(string categoryName, string prefix = null)
+        public PrefixLogger(ILoggerFactory loggerFactory, string categoryName, string prefix = null)
         {
             this.logger = NLog.LogManager.GetLogger(categoryName);
             this.prefix = prefix != null ? prefix : "";
             this.wrapperType = typeof(PrefixLogger);
+
+            var consoleLoggerProvider = new ConsoleLoggerProvider(loggerFactory.GetConsoleSettings());
+            this.consoleLogger = consoleLoggerProvider.CreateLogger(categoryName);
         }
 
         /// <inheritdoc />
@@ -76,6 +84,7 @@ namespace Stratis.Bitcoin.Utilities
             NLog.LogEventInfo eventInfo = NLog.LogEventInfo.Create(nLogLevel, this.logger.Name, message);
             eventInfo.Exception = exception;
             this.logger.Log(this.wrapperType, eventInfo);
+            this.consoleLogger.Log(logLevel, eventId, state, exception, (s, e) => { return this.prefix + formatter(s, e); });
         }
     }
 }
