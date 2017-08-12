@@ -8,12 +8,6 @@ namespace Stratis.Bitcoin.Utilities
     /// <summary>
     /// Logger that prefixes every log with specified string.
     /// </summary>
-    /// <remarks>
-    /// TODO: Currently this is not compatible with logging to the console.
-    /// This means that if you use a prefix logger for logging in a class,
-    /// the logging output will not go to the console even if the logging 
-    /// level is at or above the minimum logging level for the console.
-    /// </remarks>
     public class PrefixLogger : ILogger
     {
         /// <summary>Internal logger instance.</summary>

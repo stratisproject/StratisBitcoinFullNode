@@ -28,7 +28,6 @@ namespace Stratis.Bitcoin.BlockPulling
         double QualityScore { get; }
     }
 
-
     /// <inheritdoc />
     public class BlockPullerBehavior : NodeBehavior, IBlockPullerBehavior
     {
