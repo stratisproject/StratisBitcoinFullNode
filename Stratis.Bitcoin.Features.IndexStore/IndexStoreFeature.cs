@@ -49,6 +49,5 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
             return fullNodeBuilder;
         }
-    }
-    
+    }    
 }
