@@ -13,7 +13,7 @@ can define an index described by the following LINQ expression:
 "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })"
 
 where:
-- "(t,b,n)" are the (transaction, block, network)
+- "(t,b,n)" are the (transaction, block, network) associated with a single transaction.
 - the key value for the lookup is represented by "new object[] { i.PrevOut.Hash, i.PrevOut.N }" (identifying an output) and 
 - the value being looked up is represented by "t.GetHash()" (the transaction spending the output)
 
@@ -28,7 +28,8 @@ How does it work?
 =================
 
 The IndexStore looks at each transaction being added to the index store and runs the above LINQ query (one per index)
-on it to obtain key/value pairs to add to any of the custom pre-defined indexes.
+on it to obtain key/value pairs to add to any of the custom pre-defined indexes. The preceding implies that your LINQ
+query is expected to operate at transaction level.
 
 Available methods
 =================
