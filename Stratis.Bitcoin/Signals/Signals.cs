@@ -8,35 +8,17 @@ namespace Stratis.Bitcoin.Signals
     /// </summary>
     public interface ISignals
     {
-        /// <summary>Signaler providing notifications about newly available blocks to its subscribers.</summary>
-        /// <remarks>TODO: Consider making this private (i.e. remove it from the interface) as it seems that this is being misused with code like:
-        /// <code>
-        /// this.signals.Blocks.Broadcast(block.Block);
-        /// </code>
-        /// <para>
-        /// which should probably be instead:
-        /// </para>
-        /// <code>
-        /// this.signals.Signal(block.Block);
-        /// </code>
-        /// </remarks>
-        ISignaler<Block> Blocks { get; }
-
-        /// <summary>Signaler providing notifications about newly available transactions to its subscribers.</summary>
-        /// <remarks>TODO: Consider making this private (i.e. remove it from the interface) - see <see cref="Blocks"/>'s remarks.
-        ISignaler<Transaction> Transactions { get; }
-
         /// <summary>
         /// Notify subscribers about a new transaction being available.
         /// </summary>
         /// <param name="trx">Newly added transaction.</param>
-        void Signal(Transaction trx);
+        void SignalTransaction(Transaction trx);
 
         /// <summary>
         /// Notify subscribers about a new block being available.
         /// </summary>
         /// <param name="block">Newly added block.</param>
-        void Signal(Block block);
+        void SignalBlock(Block block);
     }
 
     /// <inheritdoc />
@@ -63,15 +45,15 @@ namespace Stratis.Bitcoin.Signals
             this.Transactions = transactionSignaler;
         }
 
-        /// <inheritdoc />
+        /// <summary>Signaler providing notifications about newly available blocks to its subscribers.</summary>
         public ISignaler<Block> Blocks { get; }
 
-        /// <inheritdoc />
+        /// <summary>Signaler providing notifications about newly available transactions to its subscribers.</summary>
         public ISignaler<Transaction> Transactions { get; }
 
         /// <inheritdoc />
         /// <remarks>TODO: Remove guard - Broadcast has its own guard.</remarks>
-        public void Signal(Block block)
+        public void SignalBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
 
@@ -80,7 +62,7 @@ namespace Stratis.Bitcoin.Signals
 
         /// <inheritdoc />
         /// <remarks>TODO: Remove guard - Broadcast has its own guard.</remarks>
-        public void Signal(Transaction trx)
+        public void SignalTransaction(Transaction trx)
         {
             Guard.NotNull(trx, nameof(trx));
 
