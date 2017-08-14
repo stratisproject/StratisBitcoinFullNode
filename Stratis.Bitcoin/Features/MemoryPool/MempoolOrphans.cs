@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -189,7 +189,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return false;
             }
 
-            //int nFetchFlags = 0; //GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
+            // TODO: Related to the commented code below with regrads to RelayBehaviour
+            //GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
             foreach (var txin in tx.Inputs)
             {
                 // TODO: this goes in the RelayBehaviour
