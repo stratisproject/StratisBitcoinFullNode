@@ -1,4 +1,6 @@
-﻿namespace Stratis.Bitcoin.Builder.Feature
+﻿using System.Collections.Generic;
+
+namespace Stratis.Bitcoin.Builder.Feature
 {
     /// <summary>
     /// Defines methods for features that are managed by the FullNode.
@@ -15,8 +17,15 @@
         /// Requests may still be in flight. Shutdown will block until this event completes.
         /// </summary>
         void Stop();
-    }
 
+        /// <summary>
+        /// Validates the feature's dependencies are all present in feature collection. 
+        /// </summary>
+        /// <exception cref="MissingDependencyException">should be thrown if dependency is missing</exception>
+        /// <param name="features">feature collection from builder</param>      
+        void ValidateDependencies(IEnumerable<IFullNodeFeature> features);
+    }
+    
     /// <summary>
     /// A feature is used to extend functionality into the full node.
     /// It can manage its life time or use the full node disposable resources.
@@ -34,6 +43,11 @@
 
         /// <inheritdoc />
         public virtual void Stop()
+        {
+        }
+
+        /// <inheritdoc />
+        public virtual void ValidateDependencies(IEnumerable<IFullNodeFeature> features)
         {
         }
     }
