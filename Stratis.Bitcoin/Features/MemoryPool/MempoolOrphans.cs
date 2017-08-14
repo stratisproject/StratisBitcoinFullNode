@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 					{
 						this.mempoolLogger.LogInformation($"accepted orphan tx {orphanHash}");
 						await behavior.RelayTransaction(orphanTx.GetHash());
-						this.signals.Transactions.Broadcast(orphanTx);
+						this.signals.SignalTransaction(orphanTx);
 						for (var index = 0; index < orphanTx.Outputs.Count; index++)
 							vWorkQueue.Enqueue(new OutPoint(orphanHash, index));
 						vEraseQueue.Add(orphanHash);

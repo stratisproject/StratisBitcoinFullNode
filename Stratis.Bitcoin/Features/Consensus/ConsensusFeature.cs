@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 							var unused = cache.FlushAsync();
 						}
 
-						this.signals.Blocks.Broadcast(block.Block);
+						this.signals.SignalBlock(block.Block);
 					}
 
 					// TODO: replace this with a signalling object

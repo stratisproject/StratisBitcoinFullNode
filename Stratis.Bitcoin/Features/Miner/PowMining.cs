@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
 					// similar logic to what's in the full node code
 					this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-					this.signals.Blocks.Broadcast(pblock);
+					this.signals.SignalBlock(pblock);
 
 					this.logger.LogInformation($"Mined new {(BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW")} block: {blockResult.ChainedBlock.HashBlock}");
 
