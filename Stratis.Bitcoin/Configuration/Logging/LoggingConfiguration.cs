@@ -30,6 +30,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <summary>Mappings of keys to class name spaces to be used when filtering log categories.</summary>
         private static readonly Dictionary<string, string> keyCategories;
 
+        /// <summary>Configuration of console logger.</summary>
+        private static ConsoleLoggerSettings consoleSettings;
+
         /// <summary>
         /// Initializes application logging.
         /// </summary>
@@ -161,18 +164,19 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <returns>The new console settings.</returns>
         public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory, out ConsoleLoggerSettings consoleLoggerSettings)
         {
-           consoleLoggerSettings = new ConsoleLoggerSettings
+            consoleLoggerSettings = new ConsoleLoggerSettings
             {
                 Switches =
                 {
-                    {"Default", Microsoft.Extensions.Logging.LogLevel.Information},
-                    {"System", Microsoft.Extensions.Logging.LogLevel.Warning},
-                    {"Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning},
-                    {"Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Error}
+                    { "Default", Microsoft.Extensions.Logging.LogLevel.Information },
+                    { "System", Microsoft.Extensions.Logging.LogLevel.Warning },
+                    { "Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning },
+                    { "Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Error }
                 }
             };
 
             loggerFactory.AddConsole(consoleLoggerSettings);
+            consoleSettings = consoleLoggerSettings;
         }
 
         /// <summary>
@@ -262,6 +266,16 @@ namespace Stratis.Bitcoin.Configuration.Logging
             };
 
             return keyCategories;
+        }
+
+        /// <summary>
+        /// Obtains configuration of the console logger.
+        /// </summary>
+        /// <param name="loggerFactory">Not used.</param>
+        /// <returns>Console logger settings.</returns>
+        public static ConsoleLoggerSettings GetConsoleSettings(this ILoggerFactory loggerFactory)
+        {
+            return consoleSettings;
         }
     }
 }
