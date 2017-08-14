@@ -189,8 +189,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return false;
             }
 
-            // TODO: Related to the commented code below with regards to RelayBehaviour
-            //GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
             foreach (var txin in tx.Inputs)
             {
                 // TODO: this goes in the RelayBehaviour
