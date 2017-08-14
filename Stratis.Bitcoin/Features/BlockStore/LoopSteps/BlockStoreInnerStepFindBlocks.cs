@@ -6,12 +6,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Find blocks to download by asking the BlockPuller.
     /// <para>
-    /// If a stop condition is found <seealso cref="ShouldStopFindingBlocks"/> and
+    /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
     /// there aren't blocks to download anymore, return a Break() result causing the 
     /// BlockStoreLoop to break execution and start again.
     /// </para>
     /// <para>
-    /// If a stop condition is found <seealso cref="ShouldStopFindingBlocks"/> and
+    /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
     /// there are still blocks to download, stop finding new blocks and only execute
     /// the download blocks inner step.
     /// </para> 

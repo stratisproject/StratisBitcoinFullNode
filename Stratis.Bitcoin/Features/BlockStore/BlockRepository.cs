@@ -12,32 +12,33 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public interface IBlockRepository : IDisposable
     {
         Task Initialize();
-
         Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
-
         Task<Block> GetAsync(uint256 hash);
-
         Task<Transaction> GetTrxAsync(uint256 trxid);
-
         Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
-
         Task<bool> ExistAsync(uint256 hash);
 
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
-
         Task SetBlockHash(uint256 nextBlockHash);
-
         Task SetTxIndex(bool txIndex);
+
+        uint256 BlockHash { get; }
+        BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
+        bool TxIndex { get; }
     }
 
     public class BlockRepository : IBlockRepository
     {
         protected readonly DBreezeSingleThreadSession session;
         protected readonly Network network;
+
+        protected static readonly byte[] blockHashKey = new byte[0];
         protected HashSet<string> tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
-        protected static readonly byte[] BlockHashKey = new byte[0];
-        protected static readonly byte[] TxIndexKey = new byte[1];
+        protected static readonly byte[] txIndexKey = new byte[1];
+
+        public uint256 BlockHash { get; private set; }
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
+        public bool TxIndex { get; private set; }
 
         public BlockRepository(Network network, DataFolder dataFolder)
             : this(network, dataFolder.BlockPath)
@@ -154,9 +155,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             });
         }
 
-        public uint256 BlockHash { get; private set; }
-        public bool TxIndex { get; private set; }
-
         virtual protected void OnInsertBlocks(List<Block> blocks)
         {
             var transactions = new List<(Transaction, Block)>();
@@ -239,7 +237,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private bool? LoadTxIndex()
         {
-            var item = this.session.Transaction.Select<byte[], bool>("Common", TxIndexKey);
+            var item = this.session.Transaction.Select<byte[], bool>("Common", txIndexKey);
 
             if (!item.Exists)
             {
@@ -253,11 +251,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return item.Value;
             }
         }
+
         private void SaveTxIndex(bool txIndex)
         {
             this.TxIndex = txIndex;
             this.PerformanceCounter.AddRepositoryInsertCount(1);
-            this.session.Transaction.Insert<byte[], bool>("Common", TxIndexKey, txIndex);
+            this.session.Transaction.Insert<byte[], bool>("Common", txIndexKey, txIndex);
         }
 
         public Task SetTxIndex(bool txIndex)
@@ -271,7 +270,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private uint256 LoadBlockHash()
         {
-            this.BlockHash = this.BlockHash ?? this.session.Transaction.Select<byte[], uint256>("Common", BlockHashKey)?.Value;
+            this.BlockHash = this.BlockHash ?? this.session.Transaction.Select<byte[], uint256>("Common", blockHashKey)?.Value;
             return this.BlockHash;
         }
 
@@ -290,7 +289,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.BlockHash = nextBlockHash;
             this.PerformanceCounter.AddRepositoryInsertCount(1);
-            this.session.Transaction.Insert<byte[], uint256>("Common", BlockHashKey, nextBlockHash);
+            this.session.Transaction.Insert<byte[], uint256>("Common", blockHashKey, nextBlockHash);
         }
 
         public Task<Block> GetAsync(uint256 hash)

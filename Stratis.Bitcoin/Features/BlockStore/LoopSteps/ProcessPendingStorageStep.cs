@@ -61,7 +61,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 nextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(nextChainedBlock.Height + 1);
 
                 var breakExecution = ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
-
                 if (!breakExecution && !this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
                     breakExecution = true;
 
