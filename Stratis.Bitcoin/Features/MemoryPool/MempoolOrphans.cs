@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
