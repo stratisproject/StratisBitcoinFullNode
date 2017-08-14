@@ -942,7 +942,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		int nHeight = 1;
 		bool spendsCoinbase = false;
 		long sigOpCost = 4;
-		LockPoints lp;
+		LockPoints lp = new LockPoints();
 
 
 		public TxMempoolEntry FromTx(Transaction tx, TxMempool pool = null)
