@@ -38,8 +38,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolManager.LoadPool().GetAwaiter().GetResult();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
-            this.signals.Blocks.Subscribe(this.mempoolSignaled);
-
+            this.signals.SubscribeForBlocks(this.mempoolSignaled);
         }
 
         public override void Stop()
