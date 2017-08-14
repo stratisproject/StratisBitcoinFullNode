@@ -8,37 +8,37 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-	public class MempoolFeature : FullNodeFeature 
-	{
-		private readonly Signals.Signals signals;
-		private readonly IConnectionManager connectionManager;
-		private readonly MempoolSignaled mempoolSignaled;
-		private readonly MempoolBehavior mempoolBehavior;
-		private readonly MempoolManager mempoolManager;
-	    private readonly ILogger mempoolLogger;
+    public class MempoolFeature : FullNodeFeature
+    {
+        private readonly Signals.Signals signals;
+        private readonly IConnectionManager connectionManager;
+        private readonly MempoolSignaled mempoolSignaled;
+        private readonly MempoolBehavior mempoolBehavior;
+        private readonly MempoolManager mempoolManager;
+        private readonly ILogger mempoolLogger;
 
         public MempoolFeature(
-            IConnectionManager connectionManager, 
-            Signals.Signals signals, 
-            MempoolSignaled mempoolSignaled, 
-            MempoolBehavior mempoolBehavior, 
+            IConnectionManager connectionManager,
+            Signals.Signals signals,
+            MempoolSignaled mempoolSignaled,
+            MempoolBehavior mempoolBehavior,
             MempoolManager mempoolManager,
             ILoggerFactory loggerFactory)
-		{
-			this.signals = signals;
-			this.connectionManager = connectionManager;
-			this.mempoolSignaled = mempoolSignaled;
-			this.mempoolBehavior = mempoolBehavior;
-			this.mempoolManager = mempoolManager;
-		    this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
-		}
+        {
+            this.signals = signals;
+            this.connectionManager = connectionManager;
+            this.mempoolSignaled = mempoolSignaled;
+            this.mempoolBehavior = mempoolBehavior;
+            this.mempoolManager = mempoolManager;
+            this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
 
-		public override void Start()
-		{
+        public override void Start()
+        {
             this.mempoolManager.LoadPool().GetAwaiter().GetResult();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
-			this.signals.SubscribeForBlocks(this.mempoolSignaled);
+            this.signals.Blocks.Subscribe(this.mempoolSignaled);
 
         }
 
@@ -66,28 +66,28 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public static partial class IFullNodeBuilderExtensions
     {
-		public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
-		{
-			fullNodeBuilder.ConfigureFeature(features =>
-			{
-				features
-				.AddFeature<MempoolFeature>()
-				.FeatureServices(services =>
-					{
-						services.AddSingleton<MempoolScheduler>();
-						services.AddSingleton<TxMempool>();
-					    services.AddSingleton<BlockPolicyEstimator>();
-                        services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
-						services.AddSingleton<IMempoolValidator, MempoolValidator>();
-						services.AddSingleton<MempoolOrphans>();
-						services.AddSingleton<MempoolManager>();
-						services.AddSingleton<MempoolBehavior>();
-						services.AddSingleton<MempoolSignaled>();
-						services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
-					});
-			});
+        public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                .AddFeature<MempoolFeature>()
+                .FeatureServices(services =>
+                {
+                    services.AddSingleton<MempoolScheduler>();
+                    services.AddSingleton<TxMempool>();
+                    services.AddSingleton<BlockPolicyEstimator>();
+                    services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
+                    services.AddSingleton<IMempoolValidator, MempoolValidator>();
+                    services.AddSingleton<MempoolOrphans>();
+                    services.AddSingleton<MempoolManager>();
+                    services.AddSingleton<MempoolBehavior>();
+                    services.AddSingleton<MempoolSignaled>();
+                    services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
+                });
+            });
 
-			return fullNodeBuilder;
-		}
-	}
+            return fullNodeBuilder;
+        }
+    }
 }
