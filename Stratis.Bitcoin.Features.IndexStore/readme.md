@@ -21,6 +21,9 @@ Any index returning more than one value per key is expected to set the "multiVal
 is set to false as we only expect one transaction to spend any given output from another transaction and hence there will
 only be one value for each key.
 
+The definition of the index is a once-off activity. Once the index has been created it is automaically kept up-to-date and 
+you can perform a lookup against the index at any time. See methods listed below.
+
 How does it work?
 =================
 
