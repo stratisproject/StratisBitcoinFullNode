@@ -12,7 +12,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusStats
     {
-        private CoinViewStack stack;
         private CachedCoinView cache;
         private DBreezeCoinView dbreeze;
         private CoinView bottom;
