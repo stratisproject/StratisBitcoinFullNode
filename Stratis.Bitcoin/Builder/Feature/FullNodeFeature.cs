@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Stratis.Bitcoin.Builder.Feature
+﻿namespace Stratis.Bitcoin.Builder.Feature
 {
     /// <summary>
     /// Defines methods for features that are managed by the FullNode.
@@ -19,11 +17,11 @@ namespace Stratis.Bitcoin.Builder.Feature
         void Stop();
 
         /// <summary>
-        /// Validates the feature's dependencies are all present in feature collection. 
+        /// Validates the feature's required dependencies are all present. 
         /// </summary>
         /// <exception cref="MissingDependencyException">should be thrown if dependency is missing</exception>
-        /// <param name="features">feature collection from builder</param>      
-        void ValidateDependencies(IEnumerable<IFullNodeFeature> features);
+        /// <param name="services">Services and features registered to node.</param>      
+        void ValidateDependencies(IFullNodeServiceProvider services);
     }
     
     /// <summary>
@@ -47,7 +45,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         }
 
         /// <inheritdoc />
-        public virtual void ValidateDependencies(IEnumerable<IFullNodeFeature> features)
+        public virtual void ValidateDependencies(IFullNodeServiceProvider services)
         {
         }
     }

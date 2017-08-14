@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Builder.Feature;
+﻿using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Builder.Feature;
 using System;
 using System.Collections.Generic;
 using Xunit;
@@ -29,8 +30,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                 throw new NotImplementedException();
             }
 
-            /// <inheritdoc />
-            public void ValidateDependencies(IEnumerable<IFullNodeFeature> features)
+            public void ValidateDependencies(IFullNodeServiceProvider services)
             {
                 throw new NotImplementedException();
             }
@@ -53,8 +53,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                 throw new NotImplementedException();
             }
 
-            /// <inheritdoc />
-            public void ValidateDependencies(IEnumerable<IFullNodeFeature> features)
+            public void ValidateDependencies(IFullNodeServiceProvider services)
             {
                 throw new NotImplementedException();
             }
