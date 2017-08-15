@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <returns>The new console settings.</returns>
         public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory, out ConsoleLoggerSettings consoleLoggerSettings)
         {
-           consoleLoggerSettings = new ConsoleLoggerSettings
+            consoleLoggerSettings = new ConsoleLoggerSettings
             {
                 Switches =
                 {

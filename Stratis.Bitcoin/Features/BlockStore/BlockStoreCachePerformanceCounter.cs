@@ -61,22 +61,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			}
 		}
 
-		internal void AddCacheHitCount(long count)
+		public void AddCacheHitCount(long count)
 		{
 			Interlocked.Add(ref this.cacheHitCount, count);
 		}
 
-		internal void AddCacheRemoveCount(long count)
+		public void AddCacheRemoveCount(long count)
 		{
 			Interlocked.Add(ref this.cacheRemoveCount, count);
 		}
 
-		internal void AddCacheMissCount(long count)
+		public void AddCacheMissCount(long count)
 		{
 			Interlocked.Add(ref this.cacheMissCount, count);
 		}
 
-		internal void AddCacheSetCount(long count)
+		public void AddCacheSetCount(long count)
 		{
 			Interlocked.Add(ref this.cacheSetCount, count);
 		}

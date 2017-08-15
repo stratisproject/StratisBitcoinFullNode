@@ -15,8 +15,15 @@
         /// Requests may still be in flight. Shutdown will block until this event completes.
         /// </summary>
         void Stop();
-    }
 
+        /// <summary>
+        /// Validates the feature's required dependencies are all present. 
+        /// </summary>
+        /// <exception cref="MissingDependencyException">should be thrown if dependency is missing</exception>
+        /// <param name="services">Services and features registered to node.</param>      
+        void ValidateDependencies(IFullNodeServiceProvider services);
+    }
+    
     /// <summary>
     /// A feature is used to extend functionality into the full node.
     /// It can manage its life time or use the full node disposable resources.
@@ -34,6 +41,11 @@
 
         /// <inheritdoc />
         public virtual void Stop()
+        {
+        }
+
+        /// <inheritdoc />
+        public virtual void ValidateDependencies(IFullNodeServiceProvider services)
         {
         }
     }

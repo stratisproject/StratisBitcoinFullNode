@@ -1,7 +1,5 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -11,18 +9,18 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     public sealed class BlockStoreLoopStepReorganiseTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void CanExecute_Reorganise()
+        public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks_InMemory()
         {
-            List<Block> blocks = CreateBlocks(15);
+            var blocks = CreateBlocks(15);
 
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\CanExecute_Reorganise")))
+            using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 15 blocks to the repository
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocks(chain, blocks.Skip(1).Take(9));
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
                 // Create the last 5 chained blocks without appending to the chain
                 var block9 = chain.GetBlock(blocks[9].Header.GetHash());
@@ -32,19 +30,19 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var block13 = new ChainedBlock(blocks[13].Header, blocks[13].Header.GetHash(), block12);
                 var block14 = new ChainedBlock(blocks[14].Header, blocks[14].Header.GetHash(), block13);
 
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\CanExecute_Reorganise");
-                blockStoreLoop.SetStoreTip(block14);
+                fluent.Create(chain);
+                fluent.Loop.SetStoreTip(block14);
 
-                Assert.Equal(blockStoreLoop.StoreTip.Header.GetHash(), block14.Header.GetHash());
-                Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block14.Header.GetHash());
+                Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block14.Header.GetHash());
+                Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block14.Header.GetHash());
 
                 //Reorganise (delete) blocks from the block repository that is not found
                 var nextChainedBlock = block10;
-                var reorganiseStep = new ReorganiseBlockRepositoryStep(blockStoreLoop);
+                var reorganiseStep = new ReorganiseBlockRepositoryStep(fluent.Loop);
                 reorganiseStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
-                Assert.Equal(blockStoreLoop.StoreTip.Header.GetHash(), block10.Previous.Header.GetHash());
-                Assert.Equal(blockStoreLoop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());
+                Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block10.Previous.Header.GetHash());
+                Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());
             }
         }
     }

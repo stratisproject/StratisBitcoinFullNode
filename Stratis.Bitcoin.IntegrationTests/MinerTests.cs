@@ -563,7 +563,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		}
 
 		//NOTE: These tests rely on CreateNewBlock doing its own self-validation!
-		public void MinerCreateNewBlockValidity()
+		private void MinerCreateNewBlockValidity()
 		{
 			//TODO: fix this test
 			// orphan in mempool, template creation fails

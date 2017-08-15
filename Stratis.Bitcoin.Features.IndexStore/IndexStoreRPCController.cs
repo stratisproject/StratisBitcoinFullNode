@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Features.MemoryPool;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
@@ -16,8 +17,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         public IndexStoreRPCController(
             ILoggerFactory loggerFactory,
-            IndexStoreManager indexManager = null)
-            : base(indexManager: indexManager)
+            IndexStoreManager indexManager,
+            MempoolManager mempoolManager = null)
+            : base(mempoolManager:mempoolManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.IndexManager = indexManager;

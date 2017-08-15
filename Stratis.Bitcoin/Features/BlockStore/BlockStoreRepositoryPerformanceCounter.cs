@@ -60,22 +60,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			}
 		}
 
-		internal void AddRepositoryHitCount(long count)
+		public void AddRepositoryHitCount(long count)
 		{
 			Interlocked.Add(ref this.repositoryHitCount, count);
 		}
 
-		internal void AddRepositoryMissCount(long count)
+		public void AddRepositoryMissCount(long count)
 		{
 			Interlocked.Add(ref this.repositoryMissCount, count);
 		}
 
-		internal void AddRepositoryDeleteCount(long count)
+		public void AddRepositoryDeleteCount(long count)
 		{
 			Interlocked.Add(ref this.repositoryDeleteCount, count);
 		}
 
-		internal void AddRepositoryInsertCount(long count)
+		public void AddRepositoryInsertCount(long count)
 		{
 			Interlocked.Add(ref this.repositoryInsertCount, count);
 		}

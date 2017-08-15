@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <para>
     /// If the block does not exists in the repository the step 
     /// will return a Next() result which'll cause the BlockStoreLoop to execute 
-    /// the next step (<seealso cref="ProcessPendingStorageStep"/>)
+    /// the next step (<see cref="ProcessPendingStorageStep"/>)
     /// </para>
     /// </summary>
     internal sealed class CheckNextChainedBlockExistStep : BlockStoreLoopStep
