@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     public sealed class BlockStoreLoopStepTryPendingTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void ProcessPendingStorage_CanExecute()
+        public void ProcessPendingStorage_WithPendingBlocks_PushToRepoBeforeDownloadingNewBlocks_InMemory()
         {
             var blocks = CreateBlocks(15);
 

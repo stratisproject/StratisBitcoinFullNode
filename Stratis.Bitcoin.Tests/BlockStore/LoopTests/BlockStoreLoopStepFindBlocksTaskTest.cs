@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     public sealed class BlockStoreLoopStepFindBlocksTaskTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void FindBlocks_CanFind()
+        public void BlockStoreInnerStepFindBlocks_WithBlocksFound_AddToDownloadStack()
         {
             var blocks = CreateBlocks(10);
 
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached()
         {
             var blocks = CreateBlocks(3);
 
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage()
         {
             var blocks = CreateBlocks(3);
 
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository()
         {
             var blocks = CreateBlocks(3);
 
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull()
         {
             var blocks = CreateBlocks(2);
 
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanBreakExecution_DownloadStackIsEmpty()
+        public void BlockStoreInnerStepFindBlocks_CanBreakExecution_DownloadStackIsEmpty()
         {
             var blocks = CreateBlocks(2);
 

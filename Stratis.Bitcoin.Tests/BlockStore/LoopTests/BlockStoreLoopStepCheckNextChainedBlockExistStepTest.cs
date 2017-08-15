@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     public sealed class BlockStoreLoopStepCheckNextChainedBlockExistStepTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void CheckNextChainedBlockExists_CanExecute()
+        public void CheckNextChainedBlockExists_WithNextChainedBlock_Exists_SetStoreTipAndBlockHash_InMemory()
         {
             var blocks = CreateBlocks(5);
 

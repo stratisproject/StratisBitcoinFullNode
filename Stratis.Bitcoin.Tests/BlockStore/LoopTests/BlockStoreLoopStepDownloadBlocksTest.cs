@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         /// This test executes DownloadBlockStep (DownloadBlocks() and FindBlocks() tasks)
         /// </summary>
         [Fact]
-        public void DownloadBlocks_TestStep()
+        public void DownloadBlockStep_WithBlocksToFindAndDownload_PushToRepository()
         {
             var blocks = CreateBlocks(10);
 
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void DownloadBlocks_EnsureNextChainedBlockIsAskedForOnStartUp()
+        public void DownloadBlockStep_WithBlocksToFindAndDownload_EnsureNextChainedBlockIsAskedForOnStartUp()
         {
             var blocks = CreateBlocks(3);
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         /// Test only DownloadBlocks() task
         /// </summary>
         [Fact]
-        public void DownloadBlocks_CanBreakExecutionOnStallCountReached()
+        public void DownloadBlockStep_WithBlocksToFindAndDownload_CanBreakExecutionOnStallCountReached()
         {
             var blocks = CreateBlocks(3);
 

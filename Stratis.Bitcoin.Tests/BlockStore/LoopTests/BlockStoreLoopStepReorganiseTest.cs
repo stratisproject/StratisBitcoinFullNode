@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     public sealed class BlockStoreLoopStepReorganiseTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void ReorganiseBlockRepository_CanExecute()
+        public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks_InMemory()
         {
             var blocks = CreateBlocks(15);
 

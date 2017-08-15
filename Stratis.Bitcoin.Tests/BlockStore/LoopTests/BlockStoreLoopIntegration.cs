@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         /// Tests the block store loop step with a concrete implementation of BlockRepository.
         /// </summary>
         [Fact]
-        public void CheckNextChainedBlockExists_Integration()
+        public void CheckNextChainedBlockExists_WithNextChainedBlock_Exists_SetStoreTipAndBlockHash()
         {
             var blocks = CreateBlocks(5);
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void ReorganiseBlockRepository_Integration()
+        public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks()
         {
             var blocks = CreateBlocks(15);
 
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void ProcessPendingStorage_Integration()
+        public void ProcessPendingStorage_WithPendingBlocks_PushToRepoBeforeDownloadingNewBlocks()
         {
             var blocks = CreateBlocks(15);
 
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void DownloadBlocks_Integration()
+        public void DownloadBlockStep_WithNewBlocksToDownload_DownloadBlocksAndPushToRepo()
         {
             var blocks = CreateBlocks(10);
 
