@@ -1,19 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-	public class ReserveScript
+    public class ReserveScript
 	{
 		public ReserveScript()
 		{
@@ -146,28 +145,26 @@ namespace Stratis.Bitcoin.Features.Miner
 
 					var blockResult = new BlockResult {Block = pblock};
 					this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
+					this.consensusLoop.Puller.SetLocation(newChain);
+				    this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
 
-					if (blockResult.ChainedBlock == null)
+                    if (blockResult.ChainedBlock == null)
 						break; //reorg
 
 					if (blockResult.Error != null)
 						return blocks;
 
-					// similar logic to what's in the full node code
-					this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-					this.signals.Blocks.Broadcast(pblock);
+                    // push the block to disk, so it is available when peers ask for it 
+				    this.blockRepository.PutAsync(blockResult.ChainedBlock.HashBlock, new List<Block> { pblock }).GetAwaiter().GetResult();
+
+                    // similar logic to what's in the full node code
+                    this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
+                    this.signals.Blocks.Broadcast(pblock);
 
 					this.logger.LogInformation($"Mined new {(BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW")} block: {blockResult.ChainedBlock.HashBlock}");
 
 					++nHeight;
 					blocks.Add(pblock.GetHash());
-
-					// ensure the block is written to disk
-					ulong retry = 0;
-					while (++retry < maxTries &&
-                           nHeight == nHeightEnd && // last block
-					       !this.blockRepository.ExistAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
-						Thread.Sleep(100);
 
 					pblocktemplate = null;
 				}

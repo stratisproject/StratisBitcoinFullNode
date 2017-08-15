@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using System;
 using System.Collections.Generic;
@@ -113,7 +114,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                 throw new NotImplementedException();
             }
 
-            public void ValidateDependencies(IEnumerable<IFullNodeFeature> features)
+            public void ValidateDependencies(IFullNodeServiceProvider services)
             {
                 throw new NotImplementedException();
             }

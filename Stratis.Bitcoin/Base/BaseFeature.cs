@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -13,6 +10,9 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Stratis.Bitcoin.Base
 {

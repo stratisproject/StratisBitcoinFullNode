@@ -1,18 +1,18 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Text;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreStats
+    public sealed class BlockStoreStats
     {
-        private BlockRepository repository;
+        private IBlockRepository repository;
         private BlockStoreCache cache;
         private readonly ILogger logger;
         private BlockStoreRepositoryPerformanceSnapshot lastRepositorySnapshot;
         private BlockStoreCachePerformanceSnapshot lastCacheSnapshot;
 
-        public BlockStoreStats(BlockRepository blockRepository, BlockStoreCache blockStoreCache, ILogger logger)
+        public BlockStoreStats(IBlockRepository blockRepository, BlockStoreCache blockStoreCache, ILogger logger)
         {
             this.repository = blockRepository;
             this.cache = blockStoreCache;
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.repository != null)
             {
-                var snapshot = this.repository.PerformanceCounter.Snapshot();                
+                var snapshot = this.repository.PerformanceCounter.Snapshot();
                 performanceLogBuilder.AppendLine((snapshot - this.lastRepositorySnapshot).ToString());
                 this.lastRepositorySnapshot = snapshot;
             }
@@ -44,10 +44,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 var snapshot = this.cache.PerformanceCounter.Snapshot();
                 performanceLogBuilder.AppendLine((snapshot - this.lastCacheSnapshot).ToString());
-                this.lastCacheSnapshot = snapshot;                
+                this.lastCacheSnapshot = snapshot;
             }
 
             this.logger.LogInformation(performanceLogBuilder.ToString());
-        }       
+        }
     }
 }

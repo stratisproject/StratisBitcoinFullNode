@@ -1,16 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-	public class BlockResult
+    public class BlockResult
 	{
 		public ChainedBlock ChainedBlock
 		{
@@ -180,6 +180,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             // set the new tip.
             this.Tip = context.BlockResult.ChainedBlock;
 		}
+
+	    public Task FlushAsync()
+	    {
+	        return (this.UTXOSet as CachedCoinView)?.FlushAsync();
+	    }
 
 		private Task TryPrefetchAsync(ConsensusFlags flags)
 		{
