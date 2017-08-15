@@ -1,4 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
@@ -6,12 +12,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Transaction = NBitcoin.Transaction;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Mnemonic mnemonic = string.IsNullOrEmpty(mnemonicList)
                 ? new Mnemonic(Wordlist.English, WordCount.Twelve)
                 : new Mnemonic(mnemonicList);
-            ExtKey extendedKey = mnemonic.DeriveExtKey(passphrase);
+            ExtKey extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
 
             // create a wallet file 
             Wallet wallet = this.GenerateWalletFile(password, name, extendedKey);
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // generate the root seed used to generate keys
-            ExtKey extendedKey = (new Mnemonic(mnemonic)).DeriveExtKey(passphrase);
+            ExtKey extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
 
             // create a wallet file 
             Wallet wallet = this.GenerateWalletFile(password, name, extendedKey, creationTime);
@@ -357,14 +357,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
             {
                 // generate new receiving address
-                var pubkey = this.GenerateAddress(account.ExtendedPubKey, i, isChange);
+                PubKey pubkey = HdOperations.GeneratePublicKey(account.ExtendedPubKey, i, isChange);
                 BitcoinPubKeyAddress address = pubkey.GetAddress(this.network);
 
                 // add address details
                 addresses.Add(new HdAddress
                 {
                     Index = i,
-                    HdPath = CreateBip44Path(account.GetCoinType(), account.Index, i, isChange),
+                    HdPath = HdOperations.CreateHdPath((int)account.GetCoinType(), account.Index, i, isChange),
                     ScriptPubKey = address.ScriptPubKey,
                     Pubkey = pubkey.ScriptPubKey,
                     Address = address.ToString(),
@@ -517,11 +517,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // get extended private key
-            var privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
-            var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
-            ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
-            BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
-            return addressPrivateKey;
+            Key privateKey = HdOperations.DecryptSeed(wallet.EncryptedSeed, password, wallet.Network);
+            return HdOperations.GetExtendedPrivateKey(privateKey, wallet.ChainCode, address.HdPath, wallet.Network);
         }
         
         /// <inheritdoc />
@@ -990,32 +987,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             return wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
         }
-
-        private PubKey GenerateAddress(string accountExtPubKey, int index, bool isChange)
-        {
-            int change = isChange ? 1 : 0;
-            KeyPath keyPath = new KeyPath($"{change}/{index}");
-            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey).Derive(keyPath);
-            return extPubKey.PubKey;
-        }
-
-        /// <summary>
-        /// Creates the bip44 path.
-        /// </summary>
-        /// <param name="coinType">Type of the coin.</param>
-        /// <param name="accountIndex">Index of the account.</param>
-        /// <param name="addressIndex">Index of the address.</param>
-        /// <param name="isChange">if set to <c>true</c> [is change].</param>
-        /// <returns></returns>
-        public static string CreateBip44Path(CoinType coinType, int accountIndex, int addressIndex, bool isChange = false)
-        {
-            //// populate the items according to the BIP44 path 
-            //// [m/purpose'/coin_type'/account'/change/address_index]
-
-            int change = isChange ? 1 : 0;
-            return $"m/44'/{(int) coinType}'/{accountIndex}'/{change}/{addressIndex}";
-        }
-
+        
         /// <summary>
         /// Loads the keys and transactions we're tracking in memory for faster lookups.
         /// </summary>

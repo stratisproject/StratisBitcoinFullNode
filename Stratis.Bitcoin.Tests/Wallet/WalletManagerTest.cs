@@ -2787,7 +2787,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void CreateBip44PathWithChangeAddressReturnsPath()
         {
-            var result = WalletManager.CreateBip44Path(CoinType.Stratis, 4, 3, true);
+            var result = HdOperations.CreateHdPath((int)CoinType.Stratis, 4, 3, true);
 
             Assert.Equal("m/44'/105'/4'/1/3", result);
         }
@@ -2795,7 +2795,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void CreateBip44PathWithoutChangeAddressReturnsPath()
         {
-            var result = WalletManager.CreateBip44Path(CoinType.Stratis, 4, 3, false);
+            var result = HdOperations.CreateHdPath((int)CoinType.Stratis, 4, 3, false);
 
             Assert.Equal("m/44'/105'/4'/0/3", result);
         }

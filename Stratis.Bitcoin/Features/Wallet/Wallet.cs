@@ -225,13 +225,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // Get the extended pub key used to generate addresses for this account.
-            var privateKey = Key.Parse(encryptedSeed, password, network);
-            var seedExtKey = new ExtKey(privateKey, chainCode);
-            var accountHdPath = $"m/44'/{(int)this.CoinType}'/{newAccountIndex}'";
-            KeyPath keyPath = new KeyPath(accountHdPath);
-            ExtKey accountExtKey = seedExtKey.Derive(keyPath);
-            ExtPubKey accountExtPubKey = accountExtKey.Neuter();
-
+            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, newAccountIndex);
+            Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
+            ExtPubKey accountExtPubKey = HdOperations.GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
+            
             var newAccount = new HdAccount
             {
                 Index = newAccountIndex,
@@ -314,20 +311,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A <see cref="CoinType"/>.</returns>
         public CoinType GetCoinType()
         {
-            if (string.IsNullOrWhiteSpace(this.HdPath))
-                throw new InvalidOperationException($"Empty HdPath on account {this.Name}");
-
-            string[] pathElements = this.HdPath.Split('/');
-            if (pathElements.Length < 3)
-                throw new InvalidOperationException($"Could not parse CoinType from HdPath {this.HdPath} on account {this.Name}");
-
-            var coinType = 0;
-            if (int.TryParse(pathElements[2].Replace("'", string.Empty), out coinType))
-            {
-                return (CoinType)coinType;
-            }
-
-            throw new InvalidOperationException($"Could not parse CoinType from HdPath {this.HdPath} on account {this.Name}");
+            return (CoinType)HdOperations.GetCoinType(this.HdPath);
         }
 
         /// <summary>
@@ -527,20 +511,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </returns>
         public bool IsChangeAddress()
         {
-            if (string.IsNullOrWhiteSpace(this.HdPath))
-                throw new InvalidOperationException($"Empty HdPath on address {this.Address}");
-
-            var hdPathParts = this.HdPath.Split('/');
-            if (hdPathParts.Length < 5)
-                throw new InvalidOperationException($"Could not parse value from HdPath on address {this.Address}");
-
-            int result = 0;
-            if (int.TryParse(hdPathParts[4], out result))
-            {
-                return result == 1;
-            }
-
-            return false;
+            return HdOperations.IsChangeAddress(this.HdPath);
         }
 
         /// <summary>
