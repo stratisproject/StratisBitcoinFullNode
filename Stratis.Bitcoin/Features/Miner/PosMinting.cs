@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.Features.Miner
 		private readonly PosConsensusValidator posConsensusValidator;
 	    private readonly ILogger logger;
 
-        private uint256 hashPrevBlock;
 		private Task mining;
 		private readonly long lastCoinStakeSearchTime;
 		private Money reserveBalance;

@@ -10,8 +10,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     ///<para>
     ///<list>
     /// There are two operations:
-    ///     1: FindBlocks() to download by asking them from the BlockPuller.
-    ///     2: DownloadBlocks() and persisting them as a batch to the BlockRepository.
+    ///     <item>1: FindBlocks() to download by asking them from the BlockPuller.</item>
+    ///     <item>2: DownloadBlocks() and persisting them as a batch to the BlockRepository.</item>
     /// </list>
     /// </para> 
     /// <para>

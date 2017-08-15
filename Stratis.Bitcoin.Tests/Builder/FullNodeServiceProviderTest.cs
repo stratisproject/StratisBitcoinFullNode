@@ -68,8 +68,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 throw new NotImplementedException();
             }
 
-            /// <inheritdoc />
-            public void ValidateDependencies(IEnumerable<IFullNodeFeature> features)
+            public void ValidateDependencies(IFullNodeServiceProvider services)
             {
                 throw new NotImplementedException();
             }
@@ -89,8 +88,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 throw new NotImplementedException();
             }
 
-            /// <inheritdoc />
-            public void ValidateDependencies(IEnumerable<IFullNodeFeature> features)
+            public void ValidateDependencies(IFullNodeServiceProvider services)
             {
                 throw new NotImplementedException();
             }
