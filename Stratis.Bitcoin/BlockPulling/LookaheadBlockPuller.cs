@@ -383,17 +383,18 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.lookaheadLocation = nextLookaheadBlock;
 
-            ChainedBlock[] downloadRequests = downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - fork.Height];
-            if (downloadRequests.Length == 0)
-                return;
-
-            for (int i = 0; i < downloadRequests.Length; i++)
+            int requestsCount = nextLookaheadBlock.Height - fork.Height;
+            if (requestsCount > 0)
             {
-                downloadRequests[downloadRequests.Length - i - 1] = nextLookaheadBlock;
-                nextLookaheadBlock = nextLookaheadBlock.Previous;
-            }
+                ChainedBlock[] downloadRequests = new ChainedBlock[requestsCount];
+                for (int i = 0; i < requestsCount; i++)
+                {
+                    downloadRequests[requestsCount - i - 1] = nextLookaheadBlock;
+                    nextLookaheadBlock = nextLookaheadBlock.Previous;
+                }
 
-            AskBlocks(downloadRequests);
+                AskBlocks(downloadRequests);
+            }
 
             this.logger.LogTrace("(-)");
         }
