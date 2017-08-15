@@ -2,7 +2,6 @@
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Wallet;
-using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -19,9 +18,12 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         ///<inheritdoc />
-        public override void ValidateDependencies(IEnumerable<IFullNodeFeature> features)
-        {
-            features.EnsureFeature<WalletFeature>();
+        public override void ValidateDependencies(IFullNodeServiceProvider services)
+        {            
+            if (services.ServiceProvider.GetService<PosMinting>() != null)
+            {
+                services.Features.EnsureFeature<WalletFeature>();
+            }
         }
     }
 

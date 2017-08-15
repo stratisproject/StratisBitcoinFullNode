@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             get
             {
                 Mock<IFullNodeFeature> feature = new Mock<IFullNodeFeature>();
-                feature.Setup(f => f.ValidateDependencies(It.IsAny<IEnumerable<IFullNodeFeature>>()))
+                feature.Setup(f => f.ValidateDependencies(It.IsAny<IFullNodeServiceProvider>()))
                     .Throws(new MissingDependencyException());
 
                 var fullNodeServiceProvider = new Mock<IFullNodeServiceProvider>();
