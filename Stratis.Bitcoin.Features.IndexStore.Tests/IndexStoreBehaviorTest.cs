@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Features.IndexStore;
 using Xunit;
 using IIndexRepository = Stratis.Bitcoin.Features.IndexStore.IIndexRepository;
 
-namespace Stratis.Bitcoin.Tests.IndexStore
+namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {
     public class IndexStoreBehaviorTest
     {

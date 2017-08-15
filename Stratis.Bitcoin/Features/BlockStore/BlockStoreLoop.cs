@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
 
-        internal ChainState ChainState { get; }
+        public ChainState ChainState { get; }
 
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
