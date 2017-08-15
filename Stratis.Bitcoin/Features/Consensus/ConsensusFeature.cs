@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -13,10 +11,12 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Threading;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-	public class ConsensusFeature : FullNodeFeature
+    public class ConsensusFeature : FullNodeFeature
 	{
 		private readonly DBreezeCoinView dBreezeCoinView;
 		private readonly Network network;
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 						this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
 						if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
 						{
-							var unused = cache.FlushAsync();
+						    var unused = this.consensusLoop.FlushAsync();
 						}
 
 						this.signals.Blocks.Broadcast(block.Block);

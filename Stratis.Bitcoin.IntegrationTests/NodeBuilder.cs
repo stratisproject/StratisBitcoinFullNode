@@ -1,8 +1,17 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.DependencyInjection;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.IndexStore;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.Wallet;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,14 +26,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.IndexStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -723,6 +724,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 			var state = new MempoolValidationState(true);
 
 			return fullNode.MempoolManager.Validator.AcceptToMemoryPool(state, trx).Result;
+		}
+
+		public List<uint256> GenerateStratisWithMiner(int blockCount)
+		{
+			return this.FullNode.Services.ServiceProvider.GetService<PowMining>().GenerateBlocks(new ReserveScript { reserveSfullNodecript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
 		}
 
 		public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
