@@ -10,8 +10,8 @@ namespace Stratis.Bitcoin.BlockStore
         /// </summary>
         public BlockPair(Block block, ChainedBlock chainedBlock)
         {
-            Guard.NotNull(block, "block");
-            Guard.NotNull(chainedBlock, "chainedBlock");
+            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(chainedBlock, nameof(chainedBlock));
 
             this.Block = block;
             this.ChainedBlock = chainedBlock;

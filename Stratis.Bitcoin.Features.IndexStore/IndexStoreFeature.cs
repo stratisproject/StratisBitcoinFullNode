@@ -5,9 +5,9 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
     {
         public IndexStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals.Signals signals, IndexRepository indexRepository,
             IndexStoreCache indexStoreCache, IndexBlockPuller blockPuller, IndexStoreLoop indexStoreLoop, IndexStoreManager indexStoreManager,
-            IndexStoreSignaled indexStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory):
+            IndexStoreSignaled indexStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory) :
             base(chain, connectionManager, signals, indexRepository, indexStoreCache, blockPuller, indexStoreLoop, indexStoreManager,
                 indexStoreSignaled, nodeLifetime, nodeSettings, loggerFactory, "IndexStore")
         {
@@ -49,5 +49,5 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
             return fullNodeBuilder;
         }
-    }    
+    }
 }

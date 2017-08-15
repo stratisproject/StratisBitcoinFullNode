@@ -16,34 +16,11 @@ using System.Linq;
 namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 {
     /// <summary>
-    /// Base test class for all the <see cref="BlockStoreLoop"/> tests.
+    /// Base test class for all the BlockStoreLoop tests.
     /// </summary>
     public class BlockStoreLoopStepBaseTest
     {
-        private Mock<ILogger> fullNodeLogger;
-        private Mock<ILoggerFactory> loggerFactory;
-        private Mock<ILogger> rpcLogger;
-
-        private void ConfigureLogger()
-        {
-            this.fullNodeLogger = new Mock<ILogger>();
-            this.rpcLogger = new Mock<ILogger>();
-            this.loggerFactory = new Mock<ILoggerFactory>();
-            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
-            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.FullNode")).Returns(this.fullNodeLogger.Object).Verifiable();
-            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC")).Returns(this.rpcLogger.Object).Verifiable();
-        }
-
-        private Mock<IConnectionManager> ConfigureConnectionManager()
-        {
-            var connectionManager = new Mock<IConnectionManager>();
-            connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
-            connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.Default());
-            connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
-            return connectionManager;
-        }
-
-        internal void AppendBlocks(ConcurrentChain chain, IEnumerable<Block> blocks)
+        internal void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)
         {
             foreach (var block in blocks)
             {
@@ -51,6 +28,12 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                     block.Header.HashPrevBlock = chain.Tip.HashBlock;
                 chain.SetTip(block.Header);
             }
+        }
+
+        internal void AddBlockToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
+        {
+            var chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
+            blockStoreLoop.PendingStorage.TryAdd(block.GetHash(), new BlockPair(block, chainedBlock));
         }
 
         internal List<Block> CreateBlocks(int amount)
@@ -70,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         {
             var block = new Block();
 
-            for (int j = 0; j < 50; j++)
+            for (int j = 0; j < 10; j++)
             {
                 var trx = new Transaction();
 
@@ -89,42 +72,109 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
             return block;
         }
+    }
 
-        internal BlockStoreLoop CreateBlockStoreLoop(ConcurrentChain chain, BlockRepository blockRepository, string testFolder)
+    internal class FluentBlockStoreLoop : IDisposable
+    {
+        private IAsyncLoopFactory asyncLoopFactory;
+        private StoreBlockPuller blockPuller;
+        internal Features.BlockStore.IBlockRepository BlockRepository { get; private set; }
+        private Mock<ChainState> chainState;
+        private Mock<IConnectionManager> connectionManager;
+        private DataFolder dataFolder;
+        private Mock<ILogger> fullNodeLogger;
+        private Mock<INodeLifetime> nodeLifeTime;
+        private Mock<ILoggerFactory> loggerFactory;
+        private Mock<ILogger> rpcLogger;
+
+        public BlockStoreLoop Loop { get; private set; }
+
+        internal FluentBlockStoreLoop()
         {
             ConfigureLogger();
+            ConfigureConnectionManager();
 
-            Mock<IConnectionManager> connectionManager = ConfigureConnectionManager();
-            var blockPuller = new StoreBlockPuller(chain, connectionManager.Object, this.loggerFactory.Object);
+            this.BlockRepository = new BlockRepositoryInMemory();
+            this.dataFolder = TestBase.AssureEmptyDirAsDataFolder($"{AppContext.BaseDirectory}\\BlockStoreLoop");
 
-            FullNode fullNode = new Mock<FullNode>().Object;
+            var fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
 
-            var chainState = new Mock<ChainState>(fullNode);
-            chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
+            this.chainState = new Mock<ChainState>(fullNode);
+            this.chainState.Object.SetIsInitialBlockDownload(false, DateTime.Today);
 
-            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
-
-            INodeLifetime nodeLifeTime = new Mock<INodeLifetime>().Object;
-
-            var blockStoreLoop = new BlockStoreLoop(
-                asyncLoopFactory,
-                blockPuller,
-                blockRepository,
-                null,
-                chain,
-                chainState.Object,
-                NodeSettings.FromArguments(new string[] { string.Format("-datadir={0}", testFolder) }),
-                nodeLifeTime,
-                this.loggerFactory.Object);
-
-            return blockStoreLoop;
+            this.nodeLifeTime = new Mock<INodeLifetime>();
         }
 
-        internal void AddToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
+        internal FluentBlockStoreLoop WithConcreteLoopFactory()
         {
-            ChainedBlock chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
-            blockStoreLoop.PendingStorage.TryAdd(block.GetHash(), new BlockPair(block, chainedBlock));
+            this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory.Object);
+            return this;
         }
+
+        internal FluentBlockStoreLoop WithConcreteRepository(DataFolder dataFolder)
+        {
+            this.BlockRepository = new BlockRepository(Network.Main, dataFolder);
+            this.dataFolder = dataFolder;
+            return this;
+        }
+
+        private void ConfigureLogger()
+        {
+            this.fullNodeLogger = new Mock<ILogger>();
+            this.rpcLogger = new Mock<ILogger>();
+            this.loggerFactory = new Mock<ILoggerFactory>();
+            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
+            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.FullNode")).Returns(this.fullNodeLogger.Object).Verifiable();
+            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC")).Returns(this.rpcLogger.Object).Verifiable();
+        }
+
+        private void ConfigureConnectionManager()
+        {
+            this.connectionManager = new Mock<IConnectionManager>();
+            this.connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
+            this.connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.Default());
+            this.connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
+        }
+
+        internal void Create(ConcurrentChain chain)
+        {
+            this.blockPuller = new StoreBlockPuller(chain, this.connectionManager.Object, this.loggerFactory.Object);
+
+            if (this.asyncLoopFactory == null)
+                this.asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+
+            this.Loop = new BlockStoreLoop(
+                    this.asyncLoopFactory,
+                    this.blockPuller,
+                    this.BlockRepository,
+                    null,
+                    chain,
+                    this.chainState.Object,
+                    NodeSettings.FromArguments(new string[] { $"-datadir={dataFolder.WalletPath}" }),
+                    this.nodeLifeTime.Object,
+                    this.loggerFactory.Object);
+        }
+
+        #region IDisposable Support
+
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this.disposedValue)
+            {
+                if (disposing)
+                    this.BlockRepository.Dispose();
+                this.disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        #endregion
     }
 }

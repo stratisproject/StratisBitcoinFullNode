@@ -15,10 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         private List<BlockStoreLoopStep> steps = new List<BlockStoreLoopStep>();
 
-        /// <summary>
-        /// Sets the next step to execute in the BlockStoreLoop.
-        /// </summary>
-        /// <param name="step"></param>
+        /// <summary>Set the next step to execute in the BlockStoreLoop.</summary>
         internal void SetNextStep(BlockStoreLoopStep step)
         {
             this.steps.Add(step);
@@ -56,14 +53,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
     }
 
-    /// <summary> 
-    /// Base class for each block store step.
-    /// <para>
+    /// <summary>Base class for each block store step.</summary>
     internal abstract class BlockStoreLoopStep
     {
         protected BlockStoreLoopStep(BlockStoreLoop blockStoreLoop)
         {
-            Guard.NotNull(blockStoreLoop, "blockStoreLoop");
+            Guard.NotNull(blockStoreLoop, nameof(blockStoreLoop));
 
             this.BlockStoreLoop = blockStoreLoop;
         }
