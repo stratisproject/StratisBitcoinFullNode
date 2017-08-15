@@ -374,8 +374,6 @@ namespace Stratis.Bitcoin.BlockPulling
             if (this.lookaheadLocation != null && !this.Chain.Contains(this.lookaheadLocation))
                 this.lookaheadLocation = null;
 
-            ChainedBlock[] downloadRequests = null;
-
             ChainedBlock lookaheadBlock = this.lookaheadLocation ?? this.location;
             ChainedBlock nextLookaheadBlock = this.Chain.GetBlock(Math.Min(lookaheadBlock.Height + this.ActualLookahead, this.Chain.Height));
             if (nextLookaheadBlock == null)
@@ -385,7 +383,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.lookaheadLocation = nextLookaheadBlock;
 
-            downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - fork.Height];
+            ChainedBlock[] downloadRequests = downloadRequests = new ChainedBlock[nextLookaheadBlock.Height - fork.Height];
             if (downloadRequests.Length == 0)
                 return;
 
@@ -453,7 +451,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     }
                     else
                     {
-                        this.logger.LogTrace($"Block not available.");
+                        this.logger.LogTrace("Block not available.");
 
                         // Or the block is still being downloaded or we need to ask for this block to be downloaded.
                         if (!isDownloading) AskBlocks(new ChainedBlock[] { header });
