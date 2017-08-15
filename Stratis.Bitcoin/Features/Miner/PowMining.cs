@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -41,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly Network network;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly AssemblerFactory blockAssemblerFactory;
-        private readonly BlockRepository blockRepository;
+        private readonly IBlockRepository blockRepository;
         private readonly ChainState chainState;
         private readonly Signals.Signals signals;
         private readonly INodeLifetime nodeLifetime;
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             IDateTimeProvider dateTimeProvider, 
             AssemblerFactory blockAssemblerFactory, 
-            BlockRepository blockRepository,
+            IBlockRepository blockRepository,
             ChainState chainState, 
             Signals.Signals signals, 
             INodeLifetime nodeLifetime, 
