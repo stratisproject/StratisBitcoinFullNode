@@ -537,7 +537,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         var handles = new WaitHandle[] { this.pushed, this.consumed, cancellationToken.WaitHandle };
                         int handleIndex = WaitHandle.WaitAny(handles, WaitNextBlockRoundTimeMs);
 
-                        if (handles[handleIndex] == this.consumed)
+                        if ((handleIndex != WaitHandle.WaitTimeout) && (handles[handleIndex] == this.consumed))
                         {
                             // Block has been consumed, check if we can ask for more blocks.
                             this.logger.LogTrace("Block has been previously consumed.");
