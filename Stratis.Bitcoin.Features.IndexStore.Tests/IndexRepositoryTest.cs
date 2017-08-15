@@ -1,6 +1,8 @@
-﻿using Stratis.Bitcoin.Features.IndexStore;
+﻿using Stratis.Bitcoin;
+using Stratis.Bitcoin.Tests;
+using Stratis.Bitcoin.Features.IndexStore;
 
-namespace Stratis.Bitcoin.Tests.IndexStore
+namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {
     using DBreeze;
     using Moq;

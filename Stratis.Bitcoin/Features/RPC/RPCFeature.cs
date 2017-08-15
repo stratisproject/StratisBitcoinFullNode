@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
@@ -7,6 +6,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
+using System;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -45,7 +45,8 @@ namespace Stratis.Bitcoin.Features.RPC
                         // also copies over singleton instances already defined
                         foreach (var service in this.fullNodeBuilder.Services)
                         {
-                            var obj = this.fullNode.Services.ServiceProvider.GetService(service.ServiceType);
+                            object obj = this.fullNode.Services.ServiceProvider.GetService(service.ServiceType);
+
                             if (obj != null && service.Lifetime == ServiceLifetime.Singleton && service.ImplementationInstance == null)
                             {
                                 collection.AddSingleton(service.ServiceType, obj);

@@ -4,7 +4,7 @@ using System.Text;
 using Stratis.Bitcoin.Features.IndexStore;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.IndexStore
+namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {
     public class IndexStoreRepositoryPerformanceSnapshotTest
     {

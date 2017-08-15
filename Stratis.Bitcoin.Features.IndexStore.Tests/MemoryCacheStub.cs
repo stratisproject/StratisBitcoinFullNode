@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Primitives;
 
-namespace Stratis.Bitcoin.Tests.IndexStore
+namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {
 	internal class CacheEntryStub : ICacheEntry
 	{

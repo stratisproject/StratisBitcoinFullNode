@@ -36,12 +36,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 				{
 					collector.Add(1);
 					// push another exclusive task to the scheduler
-					session.WriteAsync(() => collector.Add(2));
+					Task exclusiveTask = session.WriteAsync(() => collector.Add(2));
 					// await a concurrent task, this will split the current method in two tasks
 					// the pushed exclusive task will processes before the await yields back control
 				    await session.ReadAsync(() =>  collector.Add(3));
 					collector.Add(4);
-				});
+                    await exclusiveTask;
+                });
 
 			});
 

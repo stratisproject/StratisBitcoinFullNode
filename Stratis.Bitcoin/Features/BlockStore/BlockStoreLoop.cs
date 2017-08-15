@@ -19,89 +19,65 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class BlockStoreLoop
     {
-        /// <summary>
-        /// Best chain of block headers.
-        /// </summary>
+        /// <summary> Best chain of block headers.</summary>
         internal readonly ConcurrentChain Chain;
 
-        public BlockRepository BlockRepository { get; }
-        private readonly NodeSettings nodeArgs;
-        public StoreBlockPuller BlockPuller { get; private set; }
-        private readonly BlockStoreCache blockStoreCache;
-        private readonly INodeLifetime nodeLifetime;
+        public StoreBlockPuller BlockPuller { get; }
+        public IBlockRepository BlockRepository { get; }
+        public virtual string StoreName { get { return GetType().Name; } }
+
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly BlockStoreStats blockStoreStats;
+        private readonly NodeSettings nodeArgs;
+        private readonly INodeLifetime nodeLifetime;
         private readonly ILogger storeLogger;
-        private string name;
 
-        /// <summary>
-        /// The chain of steps that gets executed to find and download blocks.
-        /// </summary>
+        /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
-        protected virtual void SetHighestPersistedBlock(ChainedBlock block)
-        {
-            this.ChainState.HighestPersistedBlock = block;
-        }
 
-        internal ChainState ChainState { get; }
+        public ChainState ChainState { get; }
 
-        /// <summary>
-        /// Blocks that in PendingStorage will be processed first before new 
-        /// blocks are downloaded.
-        /// </summary>
+        /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
-        /// <summary>
-        /// The highest stored block in the repository
-        /// </summary>
+        /// <summary>The highest stored block in the repository</summary>
         internal ChainedBlock StoreTip { get; private set; }
 
-        /// <summary>
-        /// TODO: Should be configurable?
-        /// </summary>
+        /// <summary>TODO: Should be configurable?</summary>
         internal uint InsertBlockSizeThreshold = 1000000 * 5;
 
-        /// <summary>
-        /// TODO: Should be configurable?
-        /// </summary>
+        /// <summary>TODO: Should be configurable?</summary>
         internal int PendingStorageBatchThreshold = 5;
 
-        /// <summary>
-        /// TODO: Should be configurable?
-        /// </summary>
+        /// <summary>TODO: Should be configurable?</summary>
         internal int BatchDownloadSize = 1000;
 
         private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
 
         internal readonly TimeSpan PushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
-        /// <summary>
-        /// Public constructor for unit testing
-        /// </summary>
+        /// <summary>Public constructor for unit testing</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
             StoreBlockPuller blockPuller,
-            BlockRepository blockRepository,
+            IBlockRepository blockRepository,
             BlockStoreCache cache,
             ConcurrentChain chain,
             ChainState chainState,
             NodeSettings nodeArgs,
             INodeLifetime nodeLifetime,
-            ILoggerFactory loggerFactory,
-            string name = "BlockStore")
+            ILoggerFactory loggerFactory)
         {
-            this.name = name;
             this.asyncLoopFactory = asyncLoopFactory;
             this.BlockPuller = blockPuller;
             this.BlockRepository = blockRepository;
             this.Chain = chain;
             this.ChainState = chainState;
-            this.blockStoreCache = cache;
             this.nodeLifetime = nodeLifetime;
             this.nodeArgs = nodeArgs;
             this.storeLogger = loggerFactory.CreateLogger(GetType().FullName);
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, this.blockStoreCache, this.storeLogger);
+            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.storeLogger);
         }
 
         /// <summary>
@@ -148,13 +124,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 ChainedBlock newTip = this.Chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList);
                 this.StoreTip = newTip;
-                this.storeLogger.LogWarning($"{this.name} Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
+                this.storeLogger.LogWarning($"{this.StoreName} Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
             }
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
             {
                 if (this.StoreTip != this.Chain.Genesis)
-                    throw new BlockStoreException($"You need to rebuild the {this.name} database using -reindex-chainstate to change -txindex");
+                    throw new BlockStoreException($"You need to rebuild the {this.StoreName} database using -reindex-chainstate to change -txindex");
                 if (this.nodeArgs.Store.TxIndex)
                     await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
             }
@@ -203,7 +179,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         internal void StartLoop()
         {
-            this.asyncLoopFactory.Run($"{this.name}Loop.DownloadBlocks", async token =>
+            this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
                 {
                     await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping);
                 },
@@ -244,14 +220,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.StoreTip.Height >= this.ChainState.HighestValidatedPoW?.Height)
                     break;
 
-                ChainedBlock nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
+                var nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);
                 if (nextChainedBlock == null)
                     break;
 
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                BlockStoreLoopStepResult result = await this.stepChain.Execute(nextChainedBlock, disposeMode, cancellationToken);
+                var result = await this.stepChain.Execute(nextChainedBlock, disposeMode, cancellationToken);
                 if (result.ShouldBreak)
                     break;
                 if (result.ShouldContinue)
@@ -259,15 +235,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
-        /// <summary>
-        /// Sets the store's tip
-        /// </summary>
+        /// <summary>Set the store's tip</summary>
         internal void SetStoreTip(ChainedBlock chainedBlock)
         {
-            Guard.NotNull(chainedBlock, "chainedBlock");
+            Guard.NotNull(chainedBlock, nameof(chainedBlock));
 
             this.StoreTip = chainedBlock;
+
             SetHighestPersistedBlock(chainedBlock);
+        }
+
+        protected virtual void SetHighestPersistedBlock(ChainedBlock block)
+        {
+            this.ChainState.HighestPersistedBlock = block;
         }
     }
 }
