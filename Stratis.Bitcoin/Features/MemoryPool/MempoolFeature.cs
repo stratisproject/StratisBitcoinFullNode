@@ -8,15 +8,57 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
+    /// <summary>
+    /// Transaction memory pool feature for the Full Node.
+    /// <see cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
+    /// </summary>
     public class MempoolFeature : FullNodeFeature 
     {
+        #region Fields
+
+        /// <summary>
+        /// Node notifications available to subscribe to.
+        /// </summary>
         private readonly Signals.Signals signals;
+
+        /// <summary>
+        /// Node connetion manager.
+        /// </summary>
         private readonly IConnectionManager connectionManager;
+
+        /// <summary>
+        /// Observes block signal notifications from signals.
+        /// </summary>
         private readonly MempoolSignaled mempoolSignaled;
+
+        /// <summary>
+        /// Memory pool node behavior.
+        /// </summary>
         private readonly MempoolBehavior mempoolBehavior;
+
+        /// <summary>
+        /// Memory pool manager.
+        /// </summary>
         private readonly MempoolManager mempoolManager;
+
+        /// <summary>
+        /// Logger for the memory pool.
+        /// </summary>
         private readonly ILogger mempoolLogger;
 
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Constructs a memory pool feature.
+        /// </summary>
+        /// <param name="connectionManager">Injected connection manager dependency.</param>
+        /// <param name="signals">Injected signals dependency.</param>
+        /// <param name="mempoolSignaled">Injected memory pool signals dependency.</param>
+        /// <param name="mempoolBehavior">Injected behavior dependency.</param>
+        /// <param name="mempoolManager">Injected memory pool manager dependency.</param>
+        /// <param name="loggerFactory">Injected logger factory dependency.</param>
         public MempoolFeature(
             IConnectionManager connectionManager, 
             Signals.Signals signals, 
@@ -33,15 +75,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        #endregion
+
+        #region FullNodeFeature Overrides
+
+        /// <inheritdoc />
         public override void Start()
         {
             this.mempoolManager.LoadPool().GetAwaiter().GetResult();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
             this.signals.Blocks.Subscribe(this.mempoolSignaled);
-
         }
 
+        /// <inheritdoc />
         public override void Stop()
         {
             if (this.mempoolManager != null)
@@ -59,6 +106,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
         }
+
+        #endregion
     }
 
     /// <summary>
@@ -66,6 +115,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public static partial class IFullNodeBuilderExtensions
     {
+        /// <summary>
+        /// Include the memory pool feature and related services in the full node.
+        /// </summary>
+        /// <param name="fullNodeBuilder">full node builder</param>
+        /// <returns>full node builder</returns>
         public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>

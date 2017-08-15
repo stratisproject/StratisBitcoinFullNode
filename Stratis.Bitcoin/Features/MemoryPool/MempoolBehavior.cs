@@ -13,30 +13,86 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
+    /// <summary>
+    /// Node behavior for memory pool.
+    /// </summary>
     public class MempoolBehavior : NodeBehavior
     {
-        // Average delay between trickled inventory transmissions in seconds.
-        //  Blocks and whitelisted receivers bypass this, outbound peers get half this delay. 
+        #region Fields
+
+        /// <summary>
+        /// Average delay between trickled inventory transmissions in seconds.
+        /// Blocks and whitelisted receivers bypass this, outbound peers get half this delay. 
+        /// </summary>
         const int INVENTORY_BROADCAST_INTERVAL = 5;
-        // Maximum number of inventory items to send per transmission.
-        //  Limits the impact of low-fee transaction floods. 
+
+        /// <summary>
+        /// Maximum number of inventory items to send per transmission.
+        /// Limits the impact of low-fee transaction floods.
+        /// </summary>
         const int INVENTORY_BROADCAST_MAX = 7*INVENTORY_BROADCAST_INTERVAL;
 
+        /// <summary>
+        /// Memory pool validator injected dependency.
+        /// </summary>
         private readonly IMempoolValidator validator;
+
+        /// <summary>
+        /// Memory pool manager injected dependency.
+        /// </summary>
         private readonly MempoolManager manager;
+
+        /// <summary>
+        /// Memory pool orphans injected dependency.
+        /// </summary>
         private readonly MempoolOrphans orphans;
+
+        /// <summary>
+        /// Connection manager injected dependency.
+        /// </summary>
         private readonly IConnectionManager connectionManager;
+
+        /// <summary>
+        /// Chain state injected dependency.
+        /// </summary>
         private readonly ChainState chainState;
+
+        /// <summary>
+        /// Signals injected dependency.
+        /// </summary>
         private readonly Signals.Signals signals;
+
+        /// <summary>
+        /// Logger for memory pool.
+        /// </summary>
         private readonly ILogger logger;
 
-        public long LastMempoolReq { get; private set; }
-        public long NextInvSend { get; set; }
-
-        // state that is local to the behaviour
+        /// <summary>
+        /// Inventory transaction to send.
+        /// State that is local to the behavior.
+        /// </summary>
         private readonly Dictionary<uint256, uint256> inventoryTxToSend;
+
+        /// <summary>
+        /// Filter for inventory known.
+        /// State that is local to the behavior.
+        /// </summary>
         private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Constructs an instance of memory pool behavior.
+        /// </summary>
+        /// <param name="validator">Memory pool validator injected dependency.</param>
+        /// <param name="manager">Memory pool manager injected dependency.</param>
+        /// <param name="orphans">Memory pool orphans injected dependency.</param>
+        /// <param name="connectionManager">Connection manager injected dependency.</param>
+        /// <param name="chainState">Chain state injected dependency.</param>
+        /// <param name="signals">Signaled notifications injected dependency.</param>
+        /// <param name="logger">Memory pool behavior logger.</param>
         public MempoolBehavior(
             IMempoolValidator validator,
             MempoolManager manager,
@@ -58,6 +114,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.filterInventoryKnown = new Dictionary<uint256, uint256>();
         }
 
+        /// <summary>
+        /// Constructs and instance of memory pool behavior.
+        /// </summary>
+        /// <param name="validator">Memory pool validator injected dependency.</param>
+        /// <param name="manager">Memory pool manager injected dependency.</param>
+        /// <param name="orphans">Memory pool orphans injected dependency.</param>
+        /// <param name="connectionManager">Connection manager injected dependency.</param>
+        /// <param name="chainState">Chain state injected dependency.</param>
+        /// <param name="signals">Signaled notifications injected dependency.</param>
+        /// <param name="loggerFactory">Logger factory injected dependency.</param>
         public MempoolBehavior(
             IMempoolValidator validator, 
             MempoolManager manager, 
@@ -70,16 +136,76 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
         }
 
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Time of last memory pool request in unix time.
+        /// </summary>
+        public long LastMempoolReq { get; private set; }
+
+        /// <summary>
+        /// Time of next inventory send in unix time.
+        /// </summary>
+        public long NextInvSend { get; set; }
+
+        /// <summary>
+        /// Whether memory pool is in state where it is ready to send it's inventory.
+        /// </summary>
+        public bool CanSend
+        {
+            get
+            {
+                if (!this.AttachedNode?.PeerVersion?.Relay ?? true)
+                    return false;
+
+                // Check whether periodic sends should happen
+                var sendTrickle = this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted;
+
+                if (this.NextInvSend < this.manager.DateTimeProvider.GetTime())
+                {
+                    sendTrickle = true;
+                    // Use half the delay for outbound peers, as there is less privacy concern for them.
+                    this.NextInvSend = this.manager.DateTimeProvider.GetTime() + TimeSpan.TicksPerMinute;
+                    // TODO: PoissonNextSend(nNow, INVENTORY_BROADCAST_INTERVAL >> !pto->fInbound);
+                }
+
+                return sendTrickle;
+            }
+        }
+
+        #endregion
+
+        #region NodeBehavior Overrides
+
+        /// <inheritdoc />
         protected override void AttachCore()
         {
             this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
         }
 
+        /// <inheritdoc />
         protected override void DetachCore()
         {
             this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
         }
 
+        /// <inheritdoc />
+        public override object Clone()
+        {
+            return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState, this.signals, this.logger);
+        }
+
+        #endregion
+
+        #region Message Handlers
+
+        /// <summary>
+        /// Handler for processing incoming message from node.
+        /// </summary>
+        /// <param name="node">Node sending the message.</param>
+        /// <param name="message">Incoming message.</param>
         private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
         {
             // TODO: Add exception handling
@@ -107,9 +233,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 Debugger.Break();
                 throw;
             }
-            
         }
 
+        /// <summary>
+        /// Asynchronous processing of node message.
+        /// Handles the following message payloads: TxPayload, MempoolPayload, GetDataPayload, InvPayload.
+        /// </summary>
+        /// <param name="node">Node sending the message.</param>
+        /// <param name="message">Incoming message.</param>
+        /// <returns></returns>
         private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
         {
             var txPayload = message.Message.Payload as TxPayload;
@@ -131,135 +263,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return Task.CompletedTask;
         }
 
-        private async Task ProcessInvAsync(Node node, InvPayload invPayload)
-        {
-            Guard.Assert(node == this.AttachedNode); // just in case
+        #endregion
 
-            if (invPayload.Inventory.Count > ConnectionManager.MAX_INV_SZ)
-            {
-                //Misbehaving(pfrom->GetId(), 20); // TODO: Misbehaving
-                return; //error("message inv size() = %u", vInv.size());
-            }
-
-            if(this.chainState.IsInitialBlockDownload)
-                return;
-
-            bool blocksOnly = !this.manager.NodeArgs.Mempool.RelayTxes;
-            // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
-            if (node.Behavior<ConnectionManagerBehavior>().Whitelisted && this.manager.NodeArgs.Mempool.WhiteListRelay)
-                blocksOnly = false;
-
-            //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
-
-            var send = new GetDataPayload();
-            foreach (var inv in invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
-            {
-                //inv.type |= nFetchFlags;
-
-                if (blocksOnly)
-                    this.logger.LogInformation($"transaction ({inv.Hash}) inv sent in violation of protocol peer={node.RemoteSocketEndpoint}");
-
-                if (await this.orphans.AlreadyHave(inv.Hash))
-                    continue;
-
-                send.Inventory.Add(inv);
-            }
-
-            // add to known inventory
-            await this.manager.MempoolScheduler.WriteAsync(() =>
-            {
-                foreach (var inventoryVector in send.Inventory)
-                    this.filterInventoryKnown.TryAdd(inventoryVector.Hash, inventoryVector.Hash);
-            });
-
-            if (node.IsConnected)
-                await node.SendMessageAsync(send).ConfigureAwait(false);
-        }
-
-        private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
-        {
-            Guard.Assert(node == this.AttachedNode); // just in case
-
-            foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
-            {
-                // TODO: check if we need to add support for "not found" 
-
-                var trxInfo = await this.manager.InfoAsync(item.Hash).ConfigureAwait(false);
-
-                if (trxInfo != null)
-                    //TODO strip block of witness if node does not support
-                    if (node.IsConnected)
-                        await node.SendMessageAsync(new TxPayload(trxInfo.Trx.WithOptions(node.SupportedTransactionOptions))).ConfigureAwait(false);
-            }
-        }
-
-        private async Task ProcessTxPayloadAsync(Node node, TxPayload transactionPayload)
-        {
-            var trx = transactionPayload.Object;
-            var trxHash = trx.GetHash();
-
-            // add to local filter
-            await this.manager.MempoolScheduler.WriteAsync(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
-
-            var state = new MempoolValidationState(true);
-            if (!await this.orphans.AlreadyHave(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
-            {
-                await this.validator.SanityCheck();
-                await this.RelayTransaction(trxHash).ConfigureAwait(false);
-
-                this.signals.Transactions.Broadcast(trx);
-
-                var mmsize = state.MempoolSize;
-                var memdyn = state.MempoolDynamicSize;
-
-                this.logger.LogInformation($"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
-
-                await this.orphans.ProcessesOrphans(this, trx);
-            }
-            else if (state.MissingInputs)
-            {
-                await this.orphans.ProcessesOrphansMissingInputs(node, trx);
-            }
-            else
-            {
-                if (!trx.HasWitness && state.CorruptionPossible)
-                {
-
-                }
-
-                // TODO: Implement Processes whitelistforcerelay
-            }
-
-            if (state.IsInvalid)
-            {
-                this.logger.LogInformation($"{trxHash} from peer={node.Peer.Endpoint} was not accepted: {state}");
-            }
-        }
-
-        public Task RelayTransaction(uint256 hash)
-        {
-            var nodes = this.connectionManager.ConnectedNodes;
-            if (!nodes.Any())
-                return Task.CompletedTask;
-
-            // find all behaviours then start an exclusive task 
-            // to add the hash to each local collection
-            var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
-            return this.manager.MempoolScheduler.WriteAsync(() =>
-            {
-                foreach (var mempoolBehavior in behaviours)
-                {
-                    if (mempoolBehavior?.AttachedNode.PeerVersion.Relay ?? false)
-                        if (!mempoolBehavior.filterInventoryKnown.ContainsKey(hash))
-                            mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
-                }
-            });
-        }
+        #region Message Processing
 
         /// <summary>
-        /// Send the memory pool payload to the attached node
+        /// Send the memory pool payload to the attached node.
+        /// Gets the transaction info from the memory pool and sends to the attached node.
         /// </summary>
-        public async Task SendMempoolPayload(Node node, MempoolPayload message)
+        /// <param name="node">Node Sending the message</param>
+        /// <param name="message">The payload</param>
+        /// <returns>The asynchronous task.</returns>
+        private async Task SendMempoolPayload(Node node, MempoolPayload message)
         {
             Guard.Assert(node == this.AttachedNode); // just in case
 
@@ -308,6 +323,138 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.LastMempoolReq = this.manager.DateTimeProvider.GetTime();
         }
 
+        /// <summary>
+        /// Asynchronous processing of inventory payload from the node.
+        /// Adds inventory to known inventory then sends GetDataPayload to the attached node.
+        /// </summary>
+        /// <param name="node">The node sending the message.</param>
+        /// <param name="invPayload">The inventory payload in the message.</param>
+        /// <returns>The asynchronous task.</returns>
+        private async Task ProcessInvAsync(Node node, InvPayload invPayload)
+        {
+            Guard.Assert(node == this.AttachedNode); // just in case
+
+            if (invPayload.Inventory.Count > ConnectionManager.MAX_INV_SZ)
+            {
+                //Misbehaving(pfrom->GetId(), 20); // TODO: Misbehaving
+                return; //error("message inv size() = %u", vInv.size());
+            }
+
+            if(this.chainState.IsInitialBlockDownload)
+                return;
+
+            bool blocksOnly = !this.manager.NodeArgs.Mempool.RelayTxes;
+            // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
+            if (node.Behavior<ConnectionManagerBehavior>().Whitelisted && this.manager.NodeArgs.Mempool.WhiteListRelay)
+                blocksOnly = false;
+
+            //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
+
+            var send = new GetDataPayload();
+            foreach (var inv in invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
+            {
+                //inv.type |= nFetchFlags;
+
+                if (blocksOnly)
+                    this.logger.LogInformation($"transaction ({inv.Hash}) inv sent in violation of protocol peer={node.RemoteSocketEndpoint}");
+
+                if (await this.orphans.AlreadyHave(inv.Hash))
+                    continue;
+
+                send.Inventory.Add(inv);
+            }
+
+            // add to known inventory
+            await this.manager.MempoolScheduler.WriteAsync(() =>
+            {
+                foreach (var inventoryVector in send.Inventory)
+                    this.filterInventoryKnown.TryAdd(inventoryVector.Hash, inventoryVector.Hash);
+            });
+
+            if (node.IsConnected)
+                await node.SendMessageAsync(send).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Asynchronous processing of the get data payload message from node.
+        /// Sends the memory pool transaction info via TxPayload to the attached node.
+        /// </summary>
+        /// <param name="node">Node sending the message</param>
+        /// <param name="getDataPayload">The payload for the message.</param>
+        /// <returns>The asynchronous task.</returns>
+        private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
+        {
+            Guard.Assert(node == this.AttachedNode); // just in case
+
+            foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
+            {
+                // TODO: check if we need to add support for "not found" 
+
+                var trxInfo = await this.manager.InfoAsync(item.Hash).ConfigureAwait(false);
+
+                if (trxInfo != null)
+                    //TODO strip block of witness if node does not support
+                    if (node.IsConnected)
+                        await node.SendMessageAsync(new TxPayload(trxInfo.Trx.WithOptions(node.SupportedTransactionOptions))).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Asynchronous processing of the transaction payload message from node.
+        /// Adds transaction from the transaction payload to the memory pool.
+        /// </summary>
+        /// <param name="node">Node sending the message.</param>
+        /// <param name="transactionPayload">The payload for the message.</param>
+        /// <returns>The asynchronous task.</returns>
+        private async Task ProcessTxPayloadAsync(Node node, TxPayload transactionPayload)
+        {
+            var trx = transactionPayload.Object;
+            var trxHash = trx.GetHash();
+
+            // add to local filter
+            await this.manager.MempoolScheduler.WriteAsync(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
+
+            var state = new MempoolValidationState(true);
+            if (!await this.orphans.AlreadyHave(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
+            {
+                await this.validator.SanityCheck();
+                await this.RelayTransaction(trxHash).ConfigureAwait(false);
+
+                this.signals.Transactions.Broadcast(trx);
+
+                var mmsize = state.MempoolSize;
+                var memdyn = state.MempoolDynamicSize;
+
+                this.logger.LogInformation($"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
+
+                await this.orphans.ProcessesOrphans(this, trx);
+            }
+            else if (state.MissingInputs)
+            {
+                await this.orphans.ProcessesOrphansMissingInputs(node, trx);
+            }
+            else
+            {
+                if (!trx.HasWitness && state.CorruptionPossible)
+                {
+
+                }
+
+                // TODO: Implement Processes whitelistforcerelay
+            }
+
+            if (state.IsInvalid)
+            {
+                this.logger.LogInformation($"{trxHash} from peer={node.Peer.Endpoint} was not accepted: {state}");
+            }
+        }
+
+        /// <summary>
+        /// Sends transactions as inventory to attached node.
+        /// </summary>
+        /// <param name="node">Node to receive message.</param>
+        /// <param name="trxList">List of transactions.</param>
+        /// <returns>The asynchronous task.</returns>
         private async Task SendAsTxInventory(Node node, IEnumerable<uint256> trxList)
         {
             var queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(InventoryType.MSG_TX, s)));
@@ -319,28 +466,40 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
         }
 
-        public bool CanSend
+        #endregion
+
+        #region Operations
+
+        /// <summary>
+        /// Relays a transaction to the connected nodes.
+        /// </summary>
+        /// <param name="hash">Hash of the transaction.</param>
+        /// <returns>The asynchronous task.</returns>
+        public Task RelayTransaction(uint256 hash)
         {
-            get
+            var nodes = this.connectionManager.ConnectedNodes;
+            if (!nodes.Any())
+                return Task.CompletedTask;
+
+            // find all behaviours then start an exclusive task 
+            // to add the hash to each local collection
+            var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
+            return this.manager.MempoolScheduler.WriteAsync(() =>
             {
-                if (!this.AttachedNode?.PeerVersion?.Relay ?? true)
-                    return false;
-
-                // Check whether periodic sends should happen
-                var sendTrickle = this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted;
-
-                if (this.NextInvSend < this.manager.DateTimeProvider.GetTime())
+                foreach (var mempoolBehavior in behaviours)
                 {
-                    sendTrickle = true;
-                    // Use half the delay for outbound peers, as there is less privacy concern for them.
-                    this.NextInvSend = this.manager.DateTimeProvider.GetTime() + TimeSpan.TicksPerMinute;
-                    // TODO: PoissonNextSend(nNow, INVENTORY_BROADCAST_INTERVAL >> !pto->fInbound);
+                    if (mempoolBehavior?.AttachedNode.PeerVersion.Relay ?? false)
+                        if (!mempoolBehavior.filterInventoryKnown.ContainsKey(hash))
+                            mempoolBehavior.inventoryTxToSend.TryAdd(hash, hash);
                 }
-
-                return sendTrickle;
-            }
+            });
         }
 
+        /// <summary>
+        /// Sends transaction inventory to attached node.
+        /// This is executed on a 10 second loop when MempoolSignaled is constructed.
+        /// </summary>
+        /// <returns>The asynchronous task.</returns>
         public async Task SendTrickle()
         {
             if (!this.CanSend)
@@ -348,7 +507,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // before locking an exclusive task 
             // check if there is anything to processes
-            if(!await this.manager.MempoolScheduler.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
+            if (!await this.manager.MempoolScheduler.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
                 return;
 
             var sends = await this.manager.MempoolScheduler.WriteAsync(() =>
@@ -381,9 +540,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 await this.SendAsTxInventory(this.AttachedNode, sends);
         }
 
-        public override object Clone()
-        {
-            return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState, this.signals, this.logger);
-        }
+        #endregion
     }
 }
