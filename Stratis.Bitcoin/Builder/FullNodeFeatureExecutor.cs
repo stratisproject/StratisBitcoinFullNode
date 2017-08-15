@@ -3,7 +3,6 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Builder
 {
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.Builder
         {
             try
             {
-                this.Execute(service => service.ValidateDependencies(this.node.Services.Features.ToList()));
+                this.Execute(service => service.ValidateDependencies(this.node.Services));
                 this.Execute(service => service.Start());
             }
             catch (Exception ex)
