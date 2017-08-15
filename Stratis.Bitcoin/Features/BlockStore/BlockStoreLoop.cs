@@ -124,13 +124,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 ChainedBlock newTip = this.Chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList);
                 this.StoreTip = newTip;
-                this.storeLogger.LogWarning($"{StoreName} Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
+                this.storeLogger.LogWarning($"{this.StoreName} Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
             }
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
             {
                 if (this.StoreTip != this.Chain.Genesis)
-                    throw new BlockStoreException($"You need to rebuild the {StoreName} database using -reindex-chainstate to change -txindex");
+                    throw new BlockStoreException($"You need to rebuild the {this.StoreName} database using -reindex-chainstate to change -txindex");
                 if (this.nodeArgs.Store.TxIndex)
                     await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
             }
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         internal void StartLoop()
         {
-            this.asyncLoopFactory.Run($"{StoreName}.DownloadAndStoreBlocks", async token =>
+            this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
                 {
                     await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping);
                 },
