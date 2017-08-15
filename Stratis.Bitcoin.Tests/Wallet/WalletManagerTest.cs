@@ -652,12 +652,13 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithoutUnusedAccountsCreatesAccountAndSavesWallet");
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+            var network = Network.Main;
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), network, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
               dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var wallet = WalletTestsHelpers.GenerateBlankWallet("testWallet", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Clear();
 
-            var result = walletManager.CreateNewAccount(wallet, "password");
+            var result = wallet.AddNewAccount("password", (CoinType)network.Consensus.CoinType);
 
             Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.Count);
             var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
@@ -675,12 +676,13 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/GetUnusedAccountUsingWalletNameWithoutUnusedAccountsCreatesAccountAndSavesWallet");
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
+            var network = Network.Main;
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), network, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
               dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var wallet = WalletTestsHelpers.GenerateBlankWallet("testWallet", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount() { Name = "unused" });
 
-            var result = walletManager.CreateNewAccount(wallet, "password");
+            var result = wallet.AddNewAccount("password", (CoinType)network.Consensus.CoinType);
 
             Assert.Equal(2, wallet.AccountsRoot.ElementAt(0).Accounts.Count);
             var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);

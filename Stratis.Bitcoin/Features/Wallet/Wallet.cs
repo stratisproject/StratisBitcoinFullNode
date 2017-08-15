@@ -107,6 +107,23 @@ namespace Stratis.Bitcoin.Features.Wallet
                 yield return address.ScriptPubKey;
             }
         }
+
+        /// <summary>
+        /// Adds an account to the current wallet.
+        /// </summary>
+        /// <remarks>The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.
+        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/></remarks>
+        /// <param name="password">The password used to decrypt the wallet's <see cref="EncryptedSeed"/>.</param>
+        /// <param name="coinType">The type of coin this account is for.</param>
+        /// <returns>A new hd account.</returns>
+        public HdAccount AddNewAccount(string password, CoinType coinType)
+        {
+            Guard.NotEmpty(password, nameof(password));
+
+            var accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
+            return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network);
+        }
     }
 
     /// <summary>
@@ -179,6 +196,57 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new Exception($"No account with the name {accountName} could be found.");
             
             return account;
+        }
+
+        /// <summary>
+        /// Adds an account to the current account root.
+        /// </summary>
+        /// <remarks>The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains transactions.
+        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/></remarks>
+        /// <param name="password">The password used to decrypt the wallet's encrypted seed.</param>
+        /// <param name="encryptedSeed">The encrypted private key for this wallet.</param>
+        /// <param name="chainCode">The chain code for this wallet.</param>
+        /// <param name="network">The network for which this account will be created.</param>
+        /// <returns>A new hd account.</returns>
+        public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network)
+        {
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
+            Guard.NotNull(chainCode, nameof(chainCode));
+
+            // Get the accounts for this type of coin.
+            var accounts = this.Accounts.ToList();
+
+            int newAccountIndex = 0;
+            if (accounts.Any())
+            {
+                newAccountIndex = accounts.Max(a => a.Index) + 1;
+            }
+
+            // Get the extended pub key used to generate addresses for this account.
+            var privateKey = Key.Parse(encryptedSeed, password, network);
+            var seedExtKey = new ExtKey(privateKey, chainCode);
+            var accountHdPath = $"m/44'/{(int)this.CoinType}'/{newAccountIndex}'";
+            KeyPath keyPath = new KeyPath(accountHdPath);
+            ExtKey accountExtKey = seedExtKey.Derive(keyPath);
+            ExtPubKey accountExtPubKey = accountExtKey.Neuter();
+
+            var newAccount = new HdAccount
+            {
+                Index = newAccountIndex,
+                ExtendedPubKey = accountExtPubKey.ToString(network),
+                ExternalAddresses = new List<HdAddress>(),
+                InternalAddresses = new List<HdAddress>(),
+                Name = $"account {newAccountIndex}",
+                HdPath = accountHdPath,
+                CreationTime = DateTimeOffset.Now
+            };
+
+            accounts.Add(newAccount);
+            this.Accounts = accounts;
+
+            return newAccount;
         }
     }
     
