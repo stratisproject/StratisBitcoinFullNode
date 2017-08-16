@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
         {
-            return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.logger);
+            return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory);
         }
 
         public override void Start()
