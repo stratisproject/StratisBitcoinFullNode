@@ -67,15 +67,12 @@ namespace Stratis.Bitcoin.Tests.Notifications
                 .Returns((Block)null);
 
             var signals = new Mock<ISignals>();
-            var signalerMock = new Mock<ISignaler<Block>>();
-            signals.Setup(s => s.Blocks)
-                .Returns(signalerMock.Object);
 
             var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             await notification.Notify();
 
-            signalerMock.Verify(s => s.Broadcast(It.IsAny<Block>()), Times.Exactly(0));
+            signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(0));
         }
 
         [Fact]
@@ -97,16 +94,13 @@ namespace Stratis.Bitcoin.Tests.Notifications
                 .Returns((Block)null);
 
             var signals = new Mock<ISignals>();
-            var signalerMock = new Mock<ISignaler<Block>>();
-            signals.Setup(s => s.Blocks)
-                .Returns(signalerMock.Object);
             
             var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             notification.SyncFrom(startBlockId);
             await notification.Notify();            
             
-            signalerMock.Verify(s => s.Broadcast(It.IsAny<Block>()), Times.Exactly(2));
+            signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(2));
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             if (transaction != null)
             {
                 // broadcast the transaction to the registered observers
-                this.signals.Transactions.Broadcast(transaction);
+                this.signals.SignalTransaction(transaction);
             }
         }		
 	}

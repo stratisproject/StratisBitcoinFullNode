@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         {
             var block = new Block();
 
-            this.signals.Signal(block);
+            this.signals.SignalBlock(block);
 
             this.blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));            
         }
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         {
             var transaction = new Transaction();
 
-            this.signals.Signal(transaction);
+            this.signals.SignalTransaction(transaction);
 
             this.transactionSignaler.Verify(b => b.Broadcast(transaction), Times.Exactly(1));
         }
