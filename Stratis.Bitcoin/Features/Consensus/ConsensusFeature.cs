@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
                         if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
                         {
-                            var unused = this.consensusLoop.FlushAsync();
+                            this.consensusLoop.FlushAsync();
                         }
 
                         this.signals.SignalBlock(block.Block);
