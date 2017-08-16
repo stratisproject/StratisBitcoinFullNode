@@ -213,7 +213,8 @@ namespace Stratis.Bitcoin.BlockPulling
                     if (!this.Requirements.Check(node.AttachedNode.PeerVersion))
                     {
                         this.logger.LogDebug($"Peer {node.GetHashCode():x} does not meet requirements, releasing its tasks.");
-                        node.ReleaseAll();
+                        // Prevent this node to be assigned any more work.
+                        node.ReleaseAll(true);
                     }
                 }
             }
