@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         const int INVENTORY_BROADCAST_INTERVAL = 5;
         // Maximum number of inventory items to send per transmission.
         //  Limits the impact of low-fee transaction floods. 
-        const int INVENTORY_BROADCAST_MAX = 7*INVENTORY_BROADCAST_INTERVAL;
+        const int INVENTORY_BROADCAST_MAX = 7 * INVENTORY_BROADCAST_INTERVAL;
 
         private readonly IMempoolValidator validator;
         private readonly MempoolManager manager;
@@ -59,14 +59,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         public MempoolBehavior(
-            IMempoolValidator validator, 
-            MempoolManager manager, 
-            MempoolOrphans orphans, 
-            IConnectionManager connectionManager, 
-            ChainState chainState, 
-            Signals.Signals signals, 
+            IMempoolValidator validator,
+            MempoolManager manager,
+            MempoolOrphans orphans,
+            IConnectionManager connectionManager,
+            ChainState chainState,
+            Signals.Signals signals,
             ILoggerFactory loggerFactory)
-            :this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
+            : this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
         {
         }
 
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 Debugger.Break();
                 throw;
             }
-            
+
         }
 
         private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return; //error("message inv size() = %u", vInv.size());
             }
 
-            if(this.chainState.IsInitialBlockDownload)
+            if (this.chainState.IsInitialBlockDownload)
                 return;
 
             bool blocksOnly = !this.manager.NodeArgs.Mempool.RelayTxes;
@@ -207,12 +207,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 await this.validator.SanityCheck();
                 await this.RelayTransaction(trxHash).ConfigureAwait(false);
 
-                this.signals.Transactions.Broadcast(trx);
+                this.signals.SignalTransaction(trx);
 
                 var mmsize = state.MempoolSize;
                 var memdyn = state.MempoolDynamicSize;
 
-                this.logger.LogInformation($"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
+                this.logger.LogInformation($"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn / 1000} kb)");
 
                 await this.orphans.ProcessesOrphans(this, trx);
             }
@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // before locking an exclusive task 
             // check if there is anything to processes
-            if(!await this.manager.MempoolScheduler.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
+            if (!await this.manager.MempoolScheduler.ReadAsync(() => this.inventoryTxToSend.Keys.Any()))
                 return;
 
             var sends = await this.manager.MempoolScheduler.WriteAsync(() =>

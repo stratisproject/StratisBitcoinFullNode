@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 					if (block != null)
 					{
 						// broadcast the block to the registered observers
-						this.signals.Blocks.Broadcast(block);
+						this.signals.SignalBlock(block);
                         this.tip = this.Chain.GetBlock(block.GetHash());
 					}
 					else

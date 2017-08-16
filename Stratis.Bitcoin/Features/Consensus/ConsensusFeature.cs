@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         public override void Start()
-        {			
+        {
             this.dBreezeCoinView.Initialize().GetAwaiter().GetResult();
             var cache = this.coinView as CachedCoinView;
             if (cache != null)
@@ -152,10 +152,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
                         if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
                         {
-                            var unused = this.consensusLoop.FlushAsync();
+                            this.consensusLoop.FlushAsync();
                         }
 
-                        this.signals.Blocks.Broadcast(block.Block);
+                        this.signals.SignalBlock(block.Block);
                     }
 
                     // TODO: replace this with a signalling object

@@ -32,12 +32,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <inheritdoc/>
-        internal override async Task<BlockStoreLoopStepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             if (this.BlockStoreLoop.StoreTip.HashBlock != nextChainedBlock.Header.HashPrevBlock)
             {
                 if (disposeMode)
-                    return BlockStoreLoopStepResult.Break();
+                    return StepResult.Stop;
 
                 var blocksToDelete = new List<uint256>();
                 var blockToDelete = this.BlockStoreLoop.StoreTip;
@@ -52,10 +52,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
                 this.BlockStoreLoop.SetStoreTip(blockToDelete);
 
-                return BlockStoreLoopStepResult.Break();
+                return StepResult.Stop;
             }
 
-            return BlockStoreLoopStepResult.Next();
+            return StepResult.Next;
         }
     }
 }
