@@ -1,11 +1,11 @@
-﻿using NBitcoin;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Gets all the pub keys conatined in this wallet.
+        /// Gets all the pub keys contained in this wallet.
         /// </summary>
         /// <param name="coinType">Type of the coin.</param>
         /// <returns></returns>
@@ -106,6 +106,25 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 yield return address.ScriptPubKey;
             }
+        }
+
+        /// <summary>
+        /// Adds an account to the current wallet.
+        /// </summary>
+        /// <remarks>
+        /// The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.        
+        /// </remarks>
+        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/>
+        /// <param name="password">The password used to decrypt the wallet's <see cref="EncryptedSeed"/>.</param>
+        /// <param name="coinType">The type of coin this account is for.</param>
+        /// <returns>A new HD account.</returns>
+        public HdAccount AddNewAccount(string password, CoinType coinType)
+        {
+            Guard.NotEmpty(password, nameof(password));
+
+            var accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
+            return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network);
         }
     }
 
@@ -180,6 +199,54 @@ namespace Stratis.Bitcoin.Features.Wallet
             
             return account;
         }
+
+        /// <summary>
+        /// Adds an account to the current account root.
+        /// </summary>
+        /// <remarks>The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains transactions.
+        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/></remarks>
+        /// <param name="password">The password used to decrypt the wallet's encrypted seed.</param>
+        /// <param name="encryptedSeed">The encrypted private key for this wallet.</param>
+        /// <param name="chainCode">The chain code for this wallet.</param>
+        /// <param name="network">The network for which this account will be created.</param>
+        /// <returns>A new hd account.</returns>
+        public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network)
+        {
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
+            Guard.NotNull(chainCode, nameof(chainCode));
+
+            // Get the current collection of accounts.
+            var accounts = this.Accounts.ToList();
+
+            int newAccountIndex = 0;
+            if (accounts.Any())
+            {
+                newAccountIndex = accounts.Max(a => a.Index) + 1;
+            }
+
+            // Get the extended pub key used to generate addresses for this account.
+            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, newAccountIndex);
+            Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
+            ExtPubKey accountExtPubKey = HdOperations.GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
+            
+            var newAccount = new HdAccount
+            {
+                Index = newAccountIndex,
+                ExtendedPubKey = accountExtPubKey.ToString(network),
+                ExternalAddresses = new List<HdAddress>(),
+                InternalAddresses = new List<HdAddress>(),
+                Name = $"account {newAccountIndex}",
+                HdPath = accountHdPath,
+                CreationTime = DateTimeOffset.Now
+            };
+
+            accounts.Add(newAccount);
+            this.Accounts = accounts;
+
+            return newAccount;
+        }
     }
     
     /// <summary>
@@ -246,20 +313,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A <see cref="CoinType"/>.</returns>
         public CoinType GetCoinType()
         {
-            if (string.IsNullOrWhiteSpace(this.HdPath))
-                throw new InvalidOperationException($"Empty HdPath on account {this.Name}");
-
-            string[] pathElements = this.HdPath.Split('/');
-            if (pathElements.Length < 3)
-                throw new InvalidOperationException($"Could not parse CoinType from HdPath {this.HdPath} on account {this.Name}");
-
-            var coinType = 0;
-            if (int.TryParse(pathElements[2].Replace("'", string.Empty), out coinType))
-            {
-                return (CoinType)coinType;
-            }
-
-            throw new InvalidOperationException($"Could not parse CoinType from HdPath {this.HdPath} on account {this.Name}");
+            return (CoinType)HdOperations.GetCoinType(this.HdPath);
         }
 
         /// <summary>
@@ -459,20 +513,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </returns>
         public bool IsChangeAddress()
         {
-            if (string.IsNullOrWhiteSpace(this.HdPath))
-                throw new InvalidOperationException($"Empty HdPath on address {this.Address}");
-
-            var hdPathParts = this.HdPath.Split('/');
-            if (hdPathParts.Length < 5)
-                throw new InvalidOperationException($"Could not parse value from HdPath on address {this.Address}");
-
-            int result = 0;
-            if (int.TryParse(hdPathParts[4], out result))
-            {
-                return result == 1;
-            }
-
-            return false;
+            return HdOperations.IsChangeAddress(this.HdPath);
         }
 
         /// <summary>

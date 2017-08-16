@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected readonly ConcurrentChain chain;
         protected readonly CoinType coinType;
         protected readonly ILogger logger;
-        private readonly BlockStoreCache blockStoreCache;
+        private readonly IBlockStoreCache blockStoreCache;
         private readonly NodeSettings nodeSettings;
 
         protected ChainedBlock walletTip;
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public ChainedBlock WalletTip => this.walletTip;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, 
-            Network network, BlockStoreCache blockStoreCache, NodeSettings nodeSettings)
+            Network network, IBlockStoreCache blockStoreCache, NodeSettings nodeSettings)
         {
             this.walletManager = walletManager as WalletManager;
             this.chain = chain;
