@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="message">Received message.</param>
         private void Node_MessageReceived(Node node, IncomingMessage message)
         {
-            this.logger.LogTrace($"({nameof(node.Peer.Endpoint)}:'{node.Peer.Endpoint}')");
+            this.logger.LogTrace($"({nameof(node)}:'{node.Peer.Endpoint}')");
 
             message.Message.IfPayloadIs<BlockPayload>((block) =>
             {
