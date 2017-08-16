@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using Stratis.Bitcoin.Utilities;
@@ -60,7 +59,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
             StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
-            BlockStoreCache cache,
+            IBlockStoreCache cache,
             ConcurrentChain chain,
             ChainState chainState,
             NodeSettings nodeArgs,

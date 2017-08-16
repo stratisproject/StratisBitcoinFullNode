@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.BlockStore
+namespace Stratis.Bitcoin.Features.BlockStore
 {
     public sealed class BlockPair
     {

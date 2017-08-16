@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly ConcurrentChain chain;
         protected readonly Signals.Signals signals;
         protected readonly IBlockRepository blockRepository;
-        protected readonly BlockStoreCache blockStoreCache;
+        protected readonly IBlockStoreCache blockStoreCache;
         protected readonly StoreBlockPuller blockPuller;
         protected readonly BlockStoreLoop blockStoreLoop;
         protected readonly BlockStoreManager blockStoreManager;
@@ -28,9 +28,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly ILoggerFactory loggerFactory;
         protected readonly string name;
 
-        public BlockStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals.Signals signals, IBlockRepository blockRepository,
-            BlockStoreCache blockStoreCache, StoreBlockPuller blockPuller, BlockStoreLoop blockStoreLoop, BlockStoreManager blockStoreManager,
-            BlockStoreSignaled blockStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory, string name = "BlockStore")
+        public BlockStoreFeature(
+            ConcurrentChain chain, 
+            IConnectionManager connectionManager, 
+            Signals.Signals signals, 
+            IBlockRepository blockRepository,
+            IBlockStoreCache blockStoreCache, 
+            StoreBlockPuller blockPuller, 
+            BlockStoreLoop blockStoreLoop, 
+            BlockStoreManager blockStoreManager,
+            BlockStoreSignaled blockStoreSignaled, 
+            INodeLifetime nodeLifetime, 
+            NodeSettings nodeSettings, 
+            ILoggerFactory loggerFactory, 
+            string name = "BlockStore")
         {
             this.name = name;
             this.chain = chain;
@@ -92,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<IBlockRepository, BlockRepository>();
-                        services.AddSingleton<BlockStoreCache>();
+                        services.AddSingleton<IBlockStoreCache, BlockStoreCache>();
                         services.AddSingleton<StoreBlockPuller>();
                         services.AddSingleton<BlockStoreLoop>();
                         services.AddSingleton<BlockStoreManager>();
