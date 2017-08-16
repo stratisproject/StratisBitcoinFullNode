@@ -197,7 +197,9 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             Guard.NotNull(tip, nameof(tip));
             lock (this.locationLock)
+            {
                 this.location = tip;
+            }
         }
 
         /// <inheritdoc />
@@ -400,7 +402,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Adds requests to download blocks to the queue.
+        /// Adds block download requests to the queue, that later will distribute them to peers.
         /// </summary>
         /// <param name="downloadRequests">
         /// Array of block descriptions that need to be downloaded. Must not be empty.
@@ -507,7 +509,9 @@ namespace Stratis.Bitcoin.BlockPulling
                     }
 
                     lock (this.locationLock)
-                      this.location = header;
+                    {
+                        this.location = header;
+                    }
 
                     lock (this.bufferLock)
                     {
