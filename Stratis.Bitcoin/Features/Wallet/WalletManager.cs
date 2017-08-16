@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.GetWalletByName(accountReference.WalletName);
 
             // get the account
-            HdAccount account = this.GetAccounts(wallet).GetAccountByName(accountReference.AccountName);
+            HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
             // validate address creation
             if (account.ExternalAddresses.Any())
@@ -929,11 +929,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             this.Wallets.Add(wallet);
-        }
-
-        private AccountRoot GetAccounts(Wallet wallet)
-        {
-            return wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
         }
         
         /// <summary>
