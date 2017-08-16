@@ -43,12 +43,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ConcurrentChain chain, 
             BlockRepository blockRepository, 
             IBlockStoreCache blockStoreCache, 
-            ILogger logger)
-			: this(chain, blockRepository as IBlockRepository, blockStoreCache, logger)
+            ILoggerFactory loggerFactory)
+			: this(chain, blockRepository as IBlockRepository, blockStoreCache, loggerFactory)
 		{
 		}
 
-		public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILogger logger)
+		public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILoggerFactory loggerFactory)
 		{
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(blockRepository, nameof(blockRepository));
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
 			this.blockRepository = blockRepository;
 			this.blockStoreCache = blockStoreCache;
-		    this.logger = logger;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.CanRespondToGetBlocksPayload = false;
 			this.CanRespondeToGetDataPayload = true;
@@ -69,18 +69,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 		protected override void AttachCore()
 		{
-			this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
-		}
+            this.logger.LogTrace("()");
 
-		protected override void DetachCore()
-		{
-			this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
-		}
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
 
-		private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+            this.logger.LogTrace("(-)");
+        }
+
+        protected override void DetachCore()
 		{
-			try
-			{
+            this.logger.LogTrace("()");
+
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+		{
+            this.logger.LogTrace("({0}:'{1}'", nameof(node), node.Peer.Endpoint);
+            try
+            {
 				await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
 			}
 			catch (OperationCanceledException opx)
