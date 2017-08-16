@@ -390,8 +390,11 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
 
                 this.QueueRequests(downloadRequests);
-                this.ProcessQueue();
             }
+
+            // Process the queue even if we haven't added anything now
+            // because there can be tasks waiting from previous rounds.
+            this.ProcessQueue();
 
             this.logger.LogTrace("(-)");
         }
@@ -461,7 +464,10 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             if (requestsToAsk.Count > 0)
-              AskBlocks(requestsToAsk.ToArray());
+            {
+                this.logger.LogTrace($"{requestsToAsk.Count} requests from queue will be processed now.");
+                this.AskBlocks(requestsToAsk.ToArray());
+            }
 
             this.logger.LogTrace("(-)");
         }
