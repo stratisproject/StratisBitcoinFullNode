@@ -868,19 +868,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // generate blocks and wait for the downloader to pickup
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratis(105); // coinbase maturity = 100
+                stratisNodeSync.GenerateStratisWithMiner(105); // coinbase maturity = 100
                 // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null); 
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
 
                 // sync both nodes
                 stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
                 stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-                TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
 
                 // create some transactions and push them to the pool
                 var trxs = new List<Transaction>();
@@ -916,7 +912,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetRawMempool().Length == 5);
 
                 // mine the transactions in the mempool
-                stratisNodeSync.GenerateStratis(1, stratisNodeSync.FullNode.MempoolManager.InfoAllAsync().Result.Select(s => s.Trx).ToList());
+                stratisNodeSync.GenerateStratisWithMiner(1);
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
 
                 // wait for block and mempool to change
