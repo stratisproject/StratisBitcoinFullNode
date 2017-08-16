@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Linq;
