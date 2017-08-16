@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Context for the inner steps, <see cref="BlockStoreInnerStepFindBlocks"/> and <see cref="BlockStoreInnerStepDownloadBlocks"/>.
     /// <para>
-    /// The context also initializes the inner step <see cref="Routine"/>.
+    /// The context also initializes the inner step <see cref="InnerSteps"/>.
     /// </para>
     /// </summary>
     public sealed class BlockStoreInnerStepContext
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             this.DownloadStack = new Queue<ChainedBlock>(new[] { nextChainedBlock });
             this.NextChainedBlock = nextChainedBlock;
-            this.Routine = new List<BlockStoreInnerStep>() { new BlockStoreInnerStepFindBlocks(), new BlockStoreInnerStepDownloadBlocks() };
+            this.InnerSteps = new List<BlockStoreInnerStep>() { new BlockStoreInnerStepFindBlocks(), new BlockStoreInnerStepDownloadBlocks() };
 
             this.InsertBlockSize = 0;
             this.StallCount = 0;
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         public ChainedBlock NextChainedBlock { get; private set; }
 
         /// <summary>The routine (list of inner steps) the DownloadBlockStep executes.</summary>
-        public List<BlockStoreInnerStep> Routine { get; private set; }
+        public List<BlockStoreInnerStep> InnerSteps { get; private set; }
 
         public CancellationToken CancellationToken;
 
@@ -73,13 +73,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary> Removes BlockStoreInnerStepFindBlocks from the routine.</summary>
         internal void StopFindingBlocks()
         {
-            this.Routine.Remove(this.Routine.OfType<BlockStoreInnerStepFindBlocks>().First());
+            this.InnerSteps.Remove(this.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().First());
         }
     }
 
     /// <summary>Abstract class that all DownloadBlockSteps implement</summary>
     public abstract class BlockStoreInnerStep
     {
-        public abstract Task<BlockStoreLoopStepResult> ExecuteAsync(BlockStoreInnerStepContext context);
+        public abstract Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context);
     }
 }

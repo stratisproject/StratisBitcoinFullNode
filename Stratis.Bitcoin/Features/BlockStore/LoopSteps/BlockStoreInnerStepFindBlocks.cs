@@ -23,14 +23,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     public sealed class BlockStoreInnerStepFindBlocks : BlockStoreInnerStep
     {
         /// <inheritdoc/>
-        public override async Task<BlockStoreLoopStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
+        public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
             context.GetNextBlock();
 
             if (await ShouldStopFindingBlocks(context))
             {
                 if (!context.DownloadStack.Any())
-                    return BlockStoreLoopStepResult.Break();
+                    return InnerStepResult.Stop;
 
                 context.StopFindingBlocks();
             }
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     context.StopFindingBlocks();
             }
 
-            return BlockStoreLoopStepResult.Next();
+            return InnerStepResult.Next;
         }
 
         private async Task<bool> ShouldStopFindingBlocks(BlockStoreInnerStepContext context)

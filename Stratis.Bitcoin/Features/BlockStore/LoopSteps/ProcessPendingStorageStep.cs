@@ -38,15 +38,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <inheritdoc/>
-        internal override async Task<BlockStoreLoopStepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
+        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
             if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
-                return BlockStoreLoopStepResult.Next();
+                return StepResult.Next;
 
             if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
             {
                 if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold)
-                    return BlockStoreLoopStepResult.Break();
+                    return StepResult.Stop;
             }
 
             var pendingBlockPairsToStore = new List<BlockPair>();
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 if (pendingStorageBatchSize > this.BlockStoreLoop.InsertBlockSizeThreshold || breakExecution)
                 {
                     var result = await PushPendingBlocksToRepository(pendingStorageBatchSize, pendingBlockPairsToStore, lastFoundChainedBlock, cancellationToken, breakExecution);
-                    if (result.ShouldBreak)
+                    if (result == StepResult.Stop)
                         break;
 
                     pendingBlockPairsToStore.Clear();
@@ -95,29 +95,31 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             this.pendingBlockPairToStore = null;
 
-            return BlockStoreLoopStepResult.Continue();
+            return StepResult.Continue;
         }
 
         /// <summary>
         /// Store missing blocks and remove them from pending blocks
         /// Set the Store's tip to <see cref=">lastFoundChainedBlock "/>
         /// </summary>
-        private async Task<BlockStoreLoopStepResult> PushPendingBlocksToRepository(int pendingStorageBatchSize, List<BlockPair> pendingBlockPairsToStore, ChainedBlock lastFoundChainedBlock, CancellationToken cancellationToken, bool breakExecution)
+        private async Task<StepResult> PushPendingBlocksToRepository(int pendingStorageBatchSize, List<BlockPair> pendingBlockPairsToStore, ChainedBlock lastFoundChainedBlock, CancellationToken cancellationToken, bool breakExecution)
         {
             await this.BlockStoreLoop.BlockRepository.PutAsync(lastFoundChainedBlock.HashBlock, pendingBlockPairsToStore.Select(b => b.Block).ToList());
 
             this.BlockStoreLoop.SetStoreTip(lastFoundChainedBlock);
 
             if (breakExecution)
-                return BlockStoreLoopStepResult.Break();
+                return StepResult.Stop;
 
-            return BlockStoreLoopStepResult.Next();
+            return StepResult.Next;
         }
 
         /// <summary>
         /// Break execution if:
-        ///     1: At the tip 
-        ///     2: Block is already in store or pending insertion
+        /// <list>
+        ///     <item>1: At the tip</item>
+        ///     <item>2: Block is already in store or pending insertion</item>
+        ///<list>
         /// </summary>
         private bool ShouldBreakExecution(ChainedBlock inputChainedBlock, ChainedBlock nextChainedBlock)
         {
