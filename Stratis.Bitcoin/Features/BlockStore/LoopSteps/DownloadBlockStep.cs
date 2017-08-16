@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             {
                 foreach (var innerStep in context.InnerSteps.ToList())
                 {
-                    var innerStepResult = await innerStep.ExecuteAsync(context);
+                    InnerStepResult innerStepResult = await innerStep.ExecuteAsync(context);
                     if (innerStepResult == InnerStepResult.Stop)
                         return StepResult.Next;
                 }

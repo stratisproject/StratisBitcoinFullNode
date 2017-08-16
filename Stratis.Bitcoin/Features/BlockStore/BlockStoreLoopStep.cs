@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             foreach (var step in this.steps)
             {
                 var stepResult = await step.ExecuteAsync(nextChainedBlock, cancellationToken, disposeMode);
-                if (stepResult == StepResult.Continue || stepResult == StepResult.Stop)
+                if ((stepResult == StepResult.Continue) || (stepResult == StepResult.Stop))
                     return stepResult;
             }
 
@@ -65,19 +65,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
     /// <summary>
     /// The result that is returned from executing each loop step.
-    /// <para>
-    /// The caller, based on the result, will either:
-    /// <list>
-    ///     <item>1: "Break" > Break out of a loop.</item>
-    ///     <item>2: "Continue" > Continue execution of the loop.</item>
-    ///     <item>3: "Next" > Execute the next line of code.</item>
-    /// </list>
-    /// </para>
     /// </summary>   
     public enum StepResult
     {
+        /// <summary>Continue execution of the loop.</summary>
         Continue,
+
+        /// <summary>Execute the next line of code in the loop.</summary>
         Next,
+
+        /// <summary>Break out of the loop.</summary>
         Stop,
     }
 }

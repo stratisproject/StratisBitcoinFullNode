@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <list>
         ///     <item>1: At the tip</item>
         ///     <item>2: Block is already in store or pending insertion</item>
-        ///<list>
+        /// </list>
         /// </summary>
         private bool ShouldBreakExecution(ChainedBlock inputChainedBlock, ChainedBlock nextChainedBlock)
         {
