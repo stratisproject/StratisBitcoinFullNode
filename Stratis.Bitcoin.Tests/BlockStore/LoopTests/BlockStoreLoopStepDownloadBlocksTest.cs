@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var task = new BlockStoreInnerStepDownloadBlocks();
                 var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
 
-                Assert.True(result.ShouldBreak);
+                Assert.Equal(InnerStepResult.Stop, result);
             }
         }
     }

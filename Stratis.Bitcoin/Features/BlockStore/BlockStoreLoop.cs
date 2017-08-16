@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using Stratis.Bitcoin.Utilities;
@@ -60,7 +59,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
             StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
-            BlockStoreCache cache,
+            IBlockStoreCache cache,
             ConcurrentChain chain,
             ChainState chainState,
             NodeSettings nodeArgs,
@@ -200,7 +199,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </list>
         /// </para>
         /// <para>
-        /// Steps return a <see cref="BlockStoreLoopStepResult"/> which either signals the While loop
+        /// Steps return a <see cref="StepResult"/> which either signals the While loop
         /// to break or continue execution.
         /// </para>
         /// </summary>
@@ -228,9 +227,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.blockStoreStats.Log();
 
                 var result = await this.stepChain.Execute(nextChainedBlock, disposeMode, cancellationToken);
-                if (result.ShouldBreak)
+                if (result == StepResult.Stop)
                     break;
-                if (result.ShouldContinue)
+                if (result == StepResult.Continue)
                     continue;
             }
         }

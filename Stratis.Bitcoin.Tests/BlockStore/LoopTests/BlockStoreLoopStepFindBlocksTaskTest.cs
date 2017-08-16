@@ -1,5 +1,5 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
@@ -84,8 +84,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
                 //The FindBlocks() task should be removed from the routine
                 //as the batch download size is reached
-                Assert.Equal(1, context.Routine.Count());
-                Assert.False(context.Routine.OfType<BlockStoreInnerStepFindBlocks>().Any());
+                Assert.Equal(1, context.InnerSteps.Count());
+                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
@@ -124,8 +124,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
                 //The FindBlocks() task should be removed from the routine
                 //as the next chained block exists in PendingStorage
-                Assert.Equal(1, context.Routine.Count());
-                Assert.False(context.Routine.OfType<BlockStoreInnerStepFindBlocks>().Any());
+                Assert.Equal(1, context.InnerSteps.Count());
+                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
@@ -162,8 +162,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 //The FindBlocks() task should be removed from the routine
                 //as the next chained block exist in the BlockRepository
                 //causing a stop condition
-                Assert.Equal(1, context.Routine.Count());
-                Assert.False(context.Routine.OfType<BlockStoreInnerStepFindBlocks>().Any());
+                Assert.Equal(1, context.InnerSteps.Count());
+                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
@@ -199,8 +199,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
                 //The FindBlocks() task should be removed from the routine
                 //as the next chained block is null
-                Assert.Equal(1, context.Routine.Count());
-                Assert.False(context.Routine.OfType<BlockStoreInnerStepFindBlocks>().Any());
+                Assert.Equal(1, context.InnerSteps.Count());
+                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
                 var task = new BlockStoreInnerStepFindBlocks();
                 var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
-                Assert.True(result.ShouldBreak);
+                Assert.Equal(InnerStepResult.Stop, result);
             }
         }
     }
