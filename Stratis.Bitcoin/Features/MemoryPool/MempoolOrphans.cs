@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
@@ -40,14 +40,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private uint256 hashRecentRejectsChainTip;
 
         public MempoolOrphans(
-            MempoolScheduler mempoolScheduler, 
-            TxMempool memPool, 
-            ConcurrentChain chain, 
-            Signals.Signals signals, 
-            IMempoolValidator validator, 
-            PowConsensusValidator consensusValidator, 
-            CoinView coinView, 
-            IDateTimeProvider dateTimeProvider, 
+            MempoolScheduler mempoolScheduler,
+            TxMempool memPool,
+            ConcurrentChain chain,
+            Signals.Signals signals,
+            IMempoolValidator validator,
+            PowConsensusValidator consensusValidator,
+            CoinView coinView,
+            IDateTimeProvider dateTimeProvider,
             NodeSettings nodeArgs,
             ILoggerFactory loggerFactory)
         {
@@ -108,11 +108,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             Queue<OutPoint> vWorkQueue = new Queue<OutPoint>();
             List<uint256> vEraseQueue = new List<uint256>();
-            
+
             var trxHash = tx.GetHash();
             for (var index = 0; index < tx.Outputs.Count; index++)
                 vWorkQueue.Enqueue(new OutPoint(trxHash, index));
-            
+
             // Recursively process any orphan transactions that depended on this one
             List<ulong> setMisbehaving = new List<ulong>();
             while (vWorkQueue.Any())
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 foreach (var mi in itByPrev)
                 {
                     var orphanTx = mi.Tx; //->second.tx;
-                    var  orphanHash = orphanTx.GetHash();
+                    var orphanHash = orphanTx.GetHash();
                     var fromPeer = mi.NodeId;// (*mi)->second.fromPeer;
 
                     if (setMisbehaving.Contains(fromPeer))
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     {
                         this.mempoolLogger.LogInformation($"accepted orphan tx {orphanHash}");
                         await behavior.RelayTransaction(orphanTx.GetHash());
-                        this.signals.Transactions.Broadcast(orphanTx);
+                        this.signals.SignalTransaction(orphanTx);
                         for (var index = 0; index < orphanTx.Outputs.Count; index++)
                             vWorkQueue.Enqueue(new OutPoint(orphanHash, index));
                         vEraseQueue.Add(orphanHash);
@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (nErased > 0)
                     this.mempoolLogger.LogInformation($"Erased {nErased} orphan tx due to expiration");
             }
-            await await this.MempoolScheduler.ReadAsync(async () => 
+            await await this.MempoolScheduler.ReadAsync(async () =>
             {
                 while (this.mapOrphanTransactions.Count > maxOrphanTx)
                 {
@@ -246,10 +246,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     ++nEvicted;
                 }
             });
-            
+
             return nEvicted;
         }
-      
+
         public Task<bool> AddOrphanTx(ulong nodeId, Transaction tx)
         {
             return this.MempoolScheduler.WriteAsync(() =>

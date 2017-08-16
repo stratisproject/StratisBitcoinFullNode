@@ -60,10 +60,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolManager">Injected memory pool manager dependency.</param>
         /// <param name="loggerFactory">Injected logger factory dependency.</param>
         public MempoolFeature(
-            IConnectionManager connectionManager, 
-            Signals.Signals signals, 
-            MempoolSignaled mempoolSignaled, 
-            MempoolBehavior mempoolBehavior, 
+            IConnectionManager connectionManager,
+            Signals.Signals signals,
+            MempoolSignaled mempoolSignaled,
+            MempoolBehavior mempoolBehavior,
             MempoolManager mempoolManager,
             ILoggerFactory loggerFactory)
         {
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolManager.LoadPool().GetAwaiter().GetResult();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
-            this.signals.Blocks.Subscribe(this.mempoolSignaled);
+            this.signals.SubscribeForBlocks(this.mempoolSignaled);
         }
 
         /// <inheritdoc />
@@ -127,18 +127,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 features
                 .AddFeature<MempoolFeature>()
                 .FeatureServices(services =>
-                    {
-                        services.AddSingleton<MempoolScheduler>();
-                        services.AddSingleton<TxMempool>();
-                        services.AddSingleton<BlockPolicyEstimator>();
-                        services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
-                        services.AddSingleton<IMempoolValidator, MempoolValidator>();
-                        services.AddSingleton<MempoolOrphans>();
-                        services.AddSingleton<MempoolManager>();
-                        services.AddSingleton<MempoolBehavior>();
-                        services.AddSingleton<MempoolSignaled>();
-                        services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
-                    });
+                {
+                    services.AddSingleton<MempoolScheduler>();
+                    services.AddSingleton<TxMempool>();
+                    services.AddSingleton<BlockPolicyEstimator>();
+                    services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
+                    services.AddSingleton<IMempoolValidator, MempoolValidator>();
+                    services.AddSingleton<MempoolOrphans>();
+                    services.AddSingleton<MempoolManager>();
+                    services.AddSingleton<MempoolBehavior>();
+                    services.AddSingleton<MempoolSignaled>();
+                    services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
+                });
             });
 
             return fullNodeBuilder;

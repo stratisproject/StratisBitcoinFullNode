@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using System;
 
 namespace Stratis.Bitcoin.Signals
 {
@@ -8,35 +9,31 @@ namespace Stratis.Bitcoin.Signals
     /// </summary>
     public interface ISignals
     {
-        /// <summary>Signaler providing notifications about newly available blocks to its subscribers.</summary>
-        /// <remarks>TODO: Consider making this private (i.e. remove it from the interface) as it seems that this is being misused with code like:
-        /// <code>
-        /// this.signals.Blocks.Broadcast(block.Block);
-        /// </code>
-        /// <para>
-        /// which should probably be instead:
-        /// </para>
-        /// <code>
-        /// this.signals.Signal(block.Block);
-        /// </code>
-        /// </remarks>
-        ISignaler<Block> Blocks { get; }
-
-        /// <summary>Signaler providing notifications about newly available transactions to its subscribers.</summary>
-        /// <remarks>TODO: Consider making this private (i.e. remove it from the interface) - see <see cref="Blocks"/>'s remarks.
-        ISignaler<Transaction> Transactions { get; }
+        /// <summary>
+        /// Notify subscribers about a new block being available.
+        /// </summary>
+        /// <param name="block">Newly added block.</param>
+        void SignalBlock(Block block);
 
         /// <summary>
         /// Notify subscribers about a new transaction being available.
         /// </summary>
         /// <param name="trx">Newly added transaction.</param>
-        void Signal(Transaction trx);
+        void SignalTransaction(Transaction trx);
 
         /// <summary>
-        /// Notify subscribers about a new block being available.
+        /// Subscribes to receive notifications when a new block is available.
         /// </summary>
-        /// <param name="block">Newly added block.</param>
-        void Signal(Block block);
+        /// <param name="observer">Observer to be subscribed to receive signaler's messages.</param>
+        /// <returns>Disposable object to allow observer to unsubscribe from the signaler.</returns>
+        IDisposable SubscribeForBlocks(IObserver<Block> observer);
+
+        /// <summary>
+        /// Subscribes to receive notifications when a new transaction is available.
+        /// </summary>
+        /// <param name="observer">Observer to be subscribed to receive signaler's messages.</param>
+        /// <returns>Disposable object to allow observer to unsubscribe from the signaler.</returns>
+        IDisposable SubscribeForTransactions(IObserver<Transaction> observer);
     }
 
     /// <inheritdoc />
@@ -59,32 +56,46 @@ namespace Stratis.Bitcoin.Signals
             Guard.NotNull(blockSignaler, nameof(blockSignaler));
             Guard.NotNull(transactionSignaler, nameof(transactionSignaler));
 
-            this.Blocks = blockSignaler;
-            this.Transactions = transactionSignaler;
+            this.blocks = blockSignaler;
+            this.transactions = transactionSignaler;
         }
 
-        /// <inheritdoc />
-        public ISignaler<Block> Blocks { get; }
+        /// <summary>Signaler providing notifications about newly available blocks to its subscribers.</summary>
+        private ISignaler<Block> blocks { get; }
+
+        /// <summary>Signaler providing notifications about newly available transactions to its subscribers.</summary>
+        private ISignaler<Transaction> transactions { get; }
 
         /// <inheritdoc />
-        public ISignaler<Transaction> Transactions { get; }
-
-        /// <inheritdoc />
-        /// <remarks>TODO: Remove guard - Broadcast has its own guard.</remarks>
-        public void Signal(Block block)
+        public void SignalBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
 
-            this.Blocks.Broadcast(block);
+            this.blocks.Broadcast(block);
         }
 
         /// <inheritdoc />
-        /// <remarks>TODO: Remove guard - Broadcast has its own guard.</remarks>
-        public void Signal(Transaction trx)
+        public void SignalTransaction(Transaction trx)
         {
             Guard.NotNull(trx, nameof(trx));
 
-            this.Transactions.Broadcast(trx);
+            this.transactions.Broadcast(trx);
+        }
+
+        /// <inheritdoc />
+        public IDisposable SubscribeForBlocks(IObserver<Block> observer)
+        {
+            Guard.NotNull(observer, nameof(observer));
+
+            return this.blocks.Subscribe(observer);
+        }
+
+        /// <inheritdoc />
+        public IDisposable SubscribeForTransactions(IObserver<Transaction> observer)
+        {
+            Guard.NotNull(observer, nameof(observer));
+
+            return this.transactions.Subscribe(observer);
         }
     }
 }

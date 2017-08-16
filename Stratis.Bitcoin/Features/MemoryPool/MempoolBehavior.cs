@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Maximum number of inventory items to send per transmission.
         /// Limits the impact of low-fee transaction floods.
         /// </summary>
-        const int INVENTORY_BROADCAST_MAX = 7*INVENTORY_BROADCAST_INTERVAL;
+        const int INVENTORY_BROADCAST_MAX = 7 * INVENTORY_BROADCAST_INTERVAL;
 
         /// <summary>
         /// Memory pool validator injected dependency.
@@ -125,14 +125,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="signals">Signaled notifications injected dependency.</param>
         /// <param name="loggerFactory">Logger factory injected dependency.</param>
         public MempoolBehavior(
-            IMempoolValidator validator, 
-            MempoolManager manager, 
-            MempoolOrphans orphans, 
-            IConnectionManager connectionManager, 
-            ChainState chainState, 
-            Signals.Signals signals, 
+            IMempoolValidator validator,
+            MempoolManager manager,
+            MempoolOrphans orphans,
+            IConnectionManager connectionManager,
+            ChainState chainState,
+            Signals.Signals signals,
             ILoggerFactory loggerFactory)
-            :this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
+            : this(validator, manager, orphans, connectionManager, chainState, signals, loggerFactory.CreateLogger(typeof(MempoolBehavior).FullName))
         {
         }
 
@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return; //error("message inv size() = %u", vInv.size());
             }
 
-            if(this.chainState.IsInitialBlockDownload)
+            if (this.chainState.IsInitialBlockDownload)
                 return;
 
             bool blocksOnly = !this.manager.NodeArgs.Mempool.RelayTxes;
@@ -420,12 +420,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 await this.validator.SanityCheck();
                 await this.RelayTransaction(trxHash).ConfigureAwait(false);
 
-                this.signals.Transactions.Broadcast(trx);
+                this.signals.SignalTransaction(trx);
 
                 var mmsize = state.MempoolSize;
                 var memdyn = state.MempoolDynamicSize;
 
-                this.logger.LogInformation($"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn/1000} kb)");
+                this.logger.LogInformation($"AcceptToMemoryPool: peer={node.Peer.Endpoint}: accepted {trxHash} (poolsz {mmsize} txn, {memdyn / 1000} kb)");
 
                 await this.orphans.ProcessesOrphans(this, trx);
             }
