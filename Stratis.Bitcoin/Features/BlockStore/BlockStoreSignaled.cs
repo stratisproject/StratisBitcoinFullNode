@@ -12,56 +12,56 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
-	{
-		private readonly BlockStoreLoop storeLoop;
-		private readonly ConcurrentChain chain;
-		private readonly NodeSettings nodeArgs;
-		private readonly ChainState chainState;
-		private readonly IConnectionManager connection;
-	    private readonly INodeLifetime nodeLifetime;
-	    private readonly IAsyncLoopFactory asyncLoopFactory;
-	    private readonly IBlockRepository blockRepository;
-	    private readonly string name;
+    {
+        private readonly BlockStoreLoop storeLoop;
+        private readonly ConcurrentChain chain;
+        private readonly NodeSettings nodeArgs;
+        private readonly ChainState chainState;
+        private readonly IConnectionManager connection;
+        private readonly INodeLifetime nodeLifetime;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+        private readonly IBlockRepository blockRepository;
+        private readonly string name;
 
         private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
-		public BlockStoreSignaled(
+        public BlockStoreSignaled(
             BlockStoreLoop storeLoop, 
             ConcurrentChain chain, 
             NodeSettings nodeArgs, 
-			ChainState chainState, 
+            ChainState chainState, 
             IConnectionManager connection, 
             INodeLifetime nodeLifetime, 
             IAsyncLoopFactory asyncLoopFactory, 
             IBlockRepository blockRepository,
             string name = "BlockStore")
-		{
-			this.storeLoop = storeLoop;
-			this.chain = chain;
-			this.nodeArgs = nodeArgs;
-			this.chainState = chainState;
-			this.connection = connection;
-		    this.nodeLifetime = nodeLifetime;
-		    this.asyncLoopFactory = asyncLoopFactory;
-		    this.blockRepository = blockRepository;
-		    this.name = name;
+        {
+            this.storeLoop = storeLoop;
+            this.chain = chain;
+            this.nodeArgs = nodeArgs;
+            this.chainState = chainState;
+            this.connection = connection;
+            this.nodeLifetime = nodeLifetime;
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.blockRepository = blockRepository;
+            this.name = name;
 
-		    this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
-		}
+            this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
+        }
 
-		protected override void OnNextCore(Block value)
-		{
-			if (this.nodeArgs.Store.Prune)
-				return;
+        protected override void OnNextCore(Block value)
+        {
+            if (this.nodeArgs.Store.Prune)
+                return;
 
-			// ensure the block is written to disk before relaying
-			this.storeLoop.AddToPending(value);
+            // ensure the block is written to disk before relaying
+            this.storeLoop.AddToPending(value);
 
-			if (this.chainState.IsInitialBlockDownload)
-				return;
+            if (this.chainState.IsInitialBlockDownload)
+                return;
 
-			this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
-		}
+            this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
+        }
 
         /// <summary>
         /// A loop method that continuasly relays blocks found in <see cref="BlockStoreSignaled.blockHashesToAnnounce"/> to connected peers on the network.
@@ -82,47 +82,47 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// TODO: consider moving the relay logic to the <see cref="ProcessPendingStorageStep.PushPendingBlocksToRepository"/>.
         /// </remarks>
         public void RelayWorker()
-		{
+        {
             this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
-			{
-				var blocks = this.blockHashesToAnnounce.Keys.ToList();
+            {
+                var blocks = this.blockHashesToAnnounce.Keys.ToList();
 
-				if (!blocks.Any())
-					return;
-			    
-			    var broadcastItems = new List<uint256>();
-			    foreach (var blockHash in blocks)
-			    {
-			        // the first block that is not in disk will abort the loop.
-			        if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
-			        {
-			            // if the hash is not on disk and no in the best chain 
-			            // we assume all the following blocks are also discardable
-			            if (!this.chain.Contains(blockHash))
-			                this.blockHashesToAnnounce.Clear();
+                if (!blocks.Any())
+                    return;
+                
+                var broadcastItems = new List<uint256>();
+                foreach (var blockHash in blocks)
+                {
+                    // the first block that is not in disk will abort the loop.
+                    if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
+                    {
+                        // if the hash is not on disk and no in the best chain 
+                        // we assume all the following blocks are also discardable
+                        if (!this.chain.Contains(blockHash))
+                            this.blockHashesToAnnounce.Clear();
 
-			            break;
-			        }
+                        break;
+                    }
 
-			        if (this.blockHashesToAnnounce.TryRemove(blockHash, out uint256 hashToBroadcast))
-			            broadcastItems.Add(hashToBroadcast);
-			    }
+                    if (this.blockHashesToAnnounce.TryRemove(blockHash, out uint256 hashToBroadcast))
+                        broadcastItems.Add(hashToBroadcast);
+                }
 
-			    if(!broadcastItems.Any())
+                if(!broadcastItems.Any())
                     return;
 
                 var nodes = this.connection.ConnectedNodes;
-				if (!nodes.Any())
-					return;
+                if (!nodes.Any())
+                    return;
 
-				// announce the blocks on each nodes behaviour
-				var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
-				foreach (var behaviour in behaviours)
-					await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
+                // announce the blocks on each nodes behaviour
+                var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
+                foreach (var behaviour in behaviours)
+                    await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.FiveSeconds);
-		}
-	}
+        }
+    }
 }
