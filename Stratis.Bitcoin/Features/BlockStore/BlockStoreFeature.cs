@@ -15,8 +15,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         protected readonly ConcurrentChain chain;
         protected readonly Signals.Signals signals;
-        protected readonly BlockRepository blockRepository;
-        protected readonly BlockStoreCache blockStoreCache;
+        protected readonly IBlockRepository blockRepository;
+        protected readonly IBlockStoreCache blockStoreCache;
         protected readonly StoreBlockPuller blockPuller;
         protected readonly BlockStoreLoop blockStoreLoop;
         protected readonly BlockStoreManager blockStoreManager;
@@ -28,9 +28,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly ILoggerFactory loggerFactory;
         protected readonly string name;
 
-        public BlockStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals.Signals signals, BlockRepository blockRepository,
-            BlockStoreCache blockStoreCache, StoreBlockPuller blockPuller, BlockStoreLoop blockStoreLoop, BlockStoreManager blockStoreManager,
-            BlockStoreSignaled blockStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory, string name = "BlockStore")
+        public BlockStoreFeature(
+            ConcurrentChain chain, 
+            IConnectionManager connectionManager, 
+            Signals.Signals signals, 
+            IBlockRepository blockRepository,
+            IBlockStoreCache blockStoreCache, 
+            StoreBlockPuller blockPuller, 
+            BlockStoreLoop blockStoreLoop, 
+            BlockStoreManager blockStoreManager,
+            BlockStoreSignaled blockStoreSignaled, 
+            INodeLifetime nodeLifetime, 
+            NodeSettings nodeSettings, 
+            ILoggerFactory loggerFactory, 
+            string name = "BlockStore")
         {
             this.name = name;
             this.chain = chain;
@@ -53,29 +64,29 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.storeLogger);
         }
 
-		public override void Start()
-		{
-			this.connectionManager.Parameters.TemplateBehaviors.Add(BlockStoreBehaviorFactory());
-			this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
+        public override void Start()
+        {
+            this.connectionManager.Parameters.TemplateBehaviors.Add(BlockStoreBehaviorFactory());
+            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             // signal to peers that this node can serve blocks
             this.connectionManager.Parameters.Services = (this.nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 
-			this.blockRepository.Initialize().GetAwaiter().GetResult();
-			this.blockStoreSignaled.RelayWorker();
-			this.blockStoreLoop.Initialize().GetAwaiter().GetResult();			
-		}
+            this.blockRepository.Initialize().GetAwaiter().GetResult();
+            this.blockStoreSignaled.RelayWorker();
+            this.blockStoreLoop.Initialize().GetAwaiter().GetResult();
+        }
 
-		public override void Stop()
-		{
-		    this.storeLogger.LogInformation($"Flushing {this.name}...");
-			this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
+        public override void Stop()
+        {
+            this.storeLogger.LogInformation($"Flushing {this.name}...");
+            this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
 
-			this.blockStoreCache.Dispose();
-			this.blockRepository.Dispose();
-		}
+            this.blockStoreCache.Dispose();
+            this.blockRepository.Dispose();
+        }
     }
 
     /// <summary>
@@ -83,24 +94,24 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public static partial class IFullNodeBuilderExtensions
     {
-		public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
-		{          
+        public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
+        {
             fullNodeBuilder.ConfigureFeature(features =>
-			{
-				features
-				.AddFeature<BlockStoreFeature>()
-				.FeatureServices(services =>
-					{
-						services.AddSingleton<BlockRepository>();
-						services.AddSingleton<BlockStoreCache>();
-						services.AddSingleton<StoreBlockPuller>();
-						services.AddSingleton<BlockStoreLoop>();
-						services.AddSingleton<BlockStoreManager>();
-						services.AddSingleton<BlockStoreSignaled>();
-					});
-			});
+            {
+                features
+                .AddFeature<BlockStoreFeature>()
+                .FeatureServices(services =>
+                    {
+                        services.AddSingleton<IBlockRepository, BlockRepository>();
+                        services.AddSingleton<IBlockStoreCache, BlockStoreCache>();
+                        services.AddSingleton<StoreBlockPuller>();
+                        services.AddSingleton<BlockStoreLoop>();
+                        services.AddSingleton<BlockStoreManager>();
+                        services.AddSingleton<BlockStoreSignaled>();
+                    });
+            });
 
-			return fullNodeBuilder;
-		}
-	}
+            return fullNodeBuilder;
+        }
+    }
 }

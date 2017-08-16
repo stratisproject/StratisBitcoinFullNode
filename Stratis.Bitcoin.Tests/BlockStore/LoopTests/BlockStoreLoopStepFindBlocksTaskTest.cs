@@ -1,8 +1,6 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -13,35 +11,34 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     public sealed class BlockStoreLoopStepFindBlocksTaskTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void FindBlocks_CanFind()
+        public void BlockStoreInnerStepFindBlocks_WithBlocksFound_AddToDownloadStack()
         {
-            // Create 10 blocks
-            List<Block> blocks = CreateBlocks(10);
+            var blocks = CreateBlocks(10);
 
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanFind")))
+            using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 5 blocks to the repository
-                blockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocks(chain, blocks.Skip(1).Take(9));
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanFind");
+                fluent.Create(chain);
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
-                blockStoreLoop.BlockPuller.InjectBlock(blocks[5].GetHash(), new DownloadedBlock() { Length = blocks[5].GetSerializedSize(), Block = blocks[5] }, new CancellationToken());
-                blockStoreLoop.BlockPuller.InjectBlock(blocks[6].GetHash(), new DownloadedBlock() { Length = blocks[6].GetSerializedSize(), Block = blocks[6] }, new CancellationToken());
-                blockStoreLoop.BlockPuller.InjectBlock(blocks[7].GetHash(), new DownloadedBlock() { Length = blocks[7].GetSerializedSize(), Block = blocks[7] }, new CancellationToken());
-                blockStoreLoop.BlockPuller.InjectBlock(blocks[8].GetHash(), new DownloadedBlock() { Length = blocks[8].GetSerializedSize(), Block = blocks[8] }, new CancellationToken());
-                blockStoreLoop.BlockPuller.InjectBlock(blocks[9].GetHash(), new DownloadedBlock() { Length = blocks[9].GetSerializedSize(), Block = blocks[9] }, new CancellationToken());
+                fluent.Loop.BlockPuller.InjectBlock(blocks[5].GetHash(), new DownloadedBlock() { Length = blocks[5].GetSerializedSize(), Block = blocks[5] }, new CancellationToken());
+                fluent.Loop.BlockPuller.InjectBlock(blocks[6].GetHash(), new DownloadedBlock() { Length = blocks[6].GetSerializedSize(), Block = blocks[6] }, new CancellationToken());
+                fluent.Loop.BlockPuller.InjectBlock(blocks[7].GetHash(), new DownloadedBlock() { Length = blocks[7].GetSerializedSize(), Block = blocks[7] }, new CancellationToken());
+                fluent.Loop.BlockPuller.InjectBlock(blocks[8].GetHash(), new DownloadedBlock() { Length = blocks[8].GetSerializedSize(), Block = blocks[8] }, new CancellationToken());
+                fluent.Loop.BlockPuller.InjectBlock(blocks[9].GetHash(), new DownloadedBlock() { Length = blocks[9].GetSerializedSize(), Block = blocks[9] }, new CancellationToken());
 
                 //Start processing blocks to download from block 5
-                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[5].GetHash());
+                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -54,29 +51,28 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached()
         {
-            // Create 3 blocks
-            List<Block> blocks = CreateBlocks(3);
+            var blocks = CreateBlocks(3);
 
-            // The repository has 3 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached")))
+            using (var fluent = new FluentBlockStoreLoop())
             {
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks.Take(2).ToList()).GetAwaiter().GetResult();
+                // Push 3 blocks to the repository
+                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks.Take(2).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 2 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocks(chain, blocks.Skip(1).Take(2).ToList());
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(2).ToList());
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BatchDownloadSizeReached");
-                blockStoreLoop.BatchDownloadSize = 2;
+                fluent.Create(chain);
+                fluent.Loop.BatchDownloadSize = 2;
 
                 //Start finding blocks from Block[1]
-                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
+                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -94,31 +90,30 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage()
         {
-            // Create 3 blocks
-            List<Block> blocks = CreateBlocks(3);
+            var blocks = CreateBlocks(3);
 
-            // The repository has 3 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage")))
+            using (var fluent = new FluentBlockStoreLoop())
             {
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                // Push 3 blocks to the repository
+                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocks(chain, blocks.Skip(1).Take(2));
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage");
+                fluent.Create(chain);
 
                 //Start finding blocks from Block[1]
-                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
+                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 //Add nextChainedBlock to Pending Storage
-                blockStoreLoop.PendingStorage.TryAdd(blocks[2].GetHash(), new BlockPair(blocks[2], nextChainedBlock));
+                fluent.Loop.PendingStorage.TryAdd(blocks[2].GetHash(), new BlockPair(blocks[2], nextChainedBlock));
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -135,28 +130,27 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository()
         {
-            // Create 3 blocks
-            List<Block> blocks = CreateBlocks(3);
+            var blocks = CreateBlocks(3);
 
-            // The repository has 3 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository")))
+            using (var fluent = new FluentBlockStoreLoop())
             {
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                // Push 3 blocks to the repository
+                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocks(chain, blocks.Skip(1).Take(2));
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository");
+                fluent.Create(chain);
 
                 //Start finding blocks from Block[1]
-                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
+                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -174,28 +168,27 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull()
         {
-            // Create 2 blocks
-            List<Block> blocks = CreateBlocks(2);
+            var blocks = CreateBlocks(2);
 
-            // The repository has 2 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull")))
+            using (var fluent = new FluentBlockStoreLoop())
             {
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                // Push 2 blocks to the repository
+                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
                 // The chain has 2 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocks(chain, blocks.Skip(1).Take(1));
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull");
+                fluent.Create(chain);
 
                 //Start finding blocks from Block[1]
-                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
+                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks();
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -212,28 +205,27 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void FindBlocks_CanBreakExecution_DownloadStackIsEmpty()
+        public void BlockStoreInnerStepFindBlocks_CanBreakExecution_DownloadStackIsEmpty()
         {
-            // Create 2 blocks
-            List<Block> blocks = CreateBlocks(2);
+            var blocks = CreateBlocks(2);
 
-            // The repository has 2 blocks stored
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\FindBlocks_CanBreakExecution_DownloadStackIsEmpty")))
+            using (var fluent = new FluentBlockStoreLoop())
             {
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                // Push 2 blocks to the repository
+                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
                 // The chain has 2 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocks(chain, blocks.Skip(1).Take(1));
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
 
                 // Create block store loop
-                var blockStoreLoop = CreateBlockStoreLoop(chain, blockRepository, @"BlockStore\FindBlocks_CanBreakExecution_DownloadStackIsEmpty");
+                fluent.Create(chain);
 
                 //Start finding blocks from Block[1]
-                var nextChainedBlock = blockStoreLoop.Chain.GetBlock(blocks[1].GetHash());
+                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), blockStoreLoop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop).Initialize(nextChainedBlock);
                 context.DownloadStack.Clear();
 
                 var task = new BlockStoreInnerStepFindBlocks();

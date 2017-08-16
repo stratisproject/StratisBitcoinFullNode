@@ -1,6 +1,5 @@
 ﻿using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.BlockStore;
-using System.Linq;
+using System.Linq; 
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps

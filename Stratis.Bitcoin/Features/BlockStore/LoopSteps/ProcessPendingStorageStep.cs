@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -61,7 +60,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 nextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(nextChainedBlock.Height + 1);
 
                 var breakExecution = ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
-
                 if (!breakExecution && !this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
                     breakExecution = true;
 
@@ -101,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         /// <summary>
         /// Store missing blocks and remove them from pending blocks
-        /// Set the Store's tip to <see cref=">lastFoundChainedBlock "/>
+        /// Set the Store's tip to <see cref="lastFoundChainedBlock"/>
         /// </summary>
         private async Task<BlockStoreLoopStepResult> PushPendingBlocksToRepository(int pendingStorageBatchSize, List<BlockPair> pendingBlockPairsToStore, ChainedBlock lastFoundChainedBlock, CancellationToken cancellationToken, bool breakExecution)
         {

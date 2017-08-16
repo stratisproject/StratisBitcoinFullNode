@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.BlockStore;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,14 +10,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Context for the inner steps, <see cref="BlockStoreInnerStepFindBlocks"/> and <see cref="BlockStoreInnerStepDownloadBlocks"/>.
     /// <para>
-    /// The context also initializes the inner step <seealso cref="Routine"/>.
+    /// The context also initializes the inner step <see cref="Routine"/>.
     /// </para>
     /// </summary>
     public sealed class BlockStoreInnerStepContext
     {
         public BlockStoreInnerStepContext(CancellationToken cancellationToken, BlockStoreLoop blockStoreLoop)
         {
-            Guard.NotNull(blockStoreLoop, "blockStoreLoop");
+            Guard.NotNull(blockStoreLoop, nameof(blockStoreLoop));
 
             this.BlockStoreLoop = blockStoreLoop;
             this.CancellationToken = cancellationToken;
@@ -26,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         public BlockStoreInnerStepContext Initialize(ChainedBlock nextChainedBlock)
         {
-            Guard.NotNull(nextChainedBlock, "nextChainedBlock");
+            Guard.NotNull(nextChainedBlock, nameof(nextChainedBlock));
 
             this.DownloadStack = new Queue<ChainedBlock>(new[] { nextChainedBlock });
             this.NextChainedBlock = nextChainedBlock;
@@ -56,7 +55,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         /// <summary>
         /// A store of blocks that will be pushed to the repository once
-        /// the <seealso cref="BlockStoreLoop.InsertBlockSizeThreshold"/> has been reached.
+        /// the <see cref="BlockStoreLoop.InsertBlockSizeThreshold"/> has been reached.
         /// </summary>
         public List<BlockPair> Store;
 
@@ -70,7 +69,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.NextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(this.InputChainedBlock.Height + 1);
         }
 
-        /// <summary> Removes the BlockStoreInnerStepFindBlocks from the routine.</summary>
+        /// <summary> Removes BlockStoreInnerStepFindBlocks from the routine.</summary>
         internal void StopFindingBlocks()
         {
             this.Routine.Remove(this.Routine.OfType<BlockStoreInnerStepFindBlocks>().First());

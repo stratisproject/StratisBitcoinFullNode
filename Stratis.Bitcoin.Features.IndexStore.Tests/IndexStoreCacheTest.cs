@@ -10,7 +10,7 @@ using Microsoft.Extensions.Primitives;
 using Stratis.Bitcoin.Features.IndexStore;
 using IIndexRepository = Stratis.Bitcoin.Features.IndexStore.IIndexRepository;
 
-namespace Stratis.Bitcoin.Tests.IndexStore
+namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {
     public class IndexStoreCacheTest
     {

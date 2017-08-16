@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly Network network;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly AssemblerFactory blockAssemblerFactory;
-        private readonly BlockRepository blockRepository;
+        private readonly IBlockRepository blockRepository;
         private readonly ChainState chainState;
         private readonly Signals.Signals signals;
         private readonly INodeLifetime nodeLifetime;
@@ -52,15 +52,15 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         public PowMining(
-            ConsensusLoop consensusLoop,
-            ConcurrentChain chain,
+            ConsensusLoop consensusLoop, 
+            ConcurrentChain chain, 
             Network network,
-            IDateTimeProvider dateTimeProvider,
-            AssemblerFactory blockAssemblerFactory,
-            BlockRepository blockRepository,
-            ChainState chainState,
-            Signals.Signals signals,
-            INodeLifetime nodeLifetime,
+            IDateTimeProvider dateTimeProvider, 
+            AssemblerFactory blockAssemblerFactory, 
+            IBlockRepository blockRepository,
+            ChainState chainState, 
+            Signals.Signals signals, 
+            INodeLifetime nodeLifetime, 
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
         {
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.mining = this.asyncLoopFactory.Run("PowMining.Mine", token =>
             {
-                this.GenerateBlocks(new ReserveScript { reserveSfullNodecript = reserveScript }, int.MaxValue, int.MaxValue);
+                this.GenerateBlocks(new ReserveScript {reserveSfullNodecript = reserveScript}, int.MaxValue, int.MaxValue);
                 this.mining = null;
                 return Task.CompletedTask;
             },
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ulong nHeightEnd = 0;
             ulong nHeight = 0;
 
-            nHeightStart = (ulong)this.chain.Height;
+            nHeightStart = (ulong) this.chain.Height;
             nHeight = nHeightStart;
             nHeightEnd = nHeightStart + generate;
             int nExtraNonce = 0;
@@ -144,8 +144,10 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     this.chain.SetTip(newChain);
 
-                    var blockResult = new BlockResult { Block = pblock };
+                    var blockResult = new BlockResult {Block = pblock};
                     this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
+                    this.consensusLoop.Puller.SetLocation(newChain);
+                    this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
 
                     if (blockResult.ChainedBlock == null)
                         break; //reorg
@@ -153,21 +155,17 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (blockResult.Error != null)
                         return blocks;
 
+                    // push the block to disk, so it is available when peers ask for it 
+                    this.blockRepository.PutAsync(blockResult.ChainedBlock.HashBlock, new List<Block> { pblock }).GetAwaiter().GetResult();
+
                     // similar logic to what's in the full node code
                     this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-                    this.signals.SignalBlock(pblock);
+                    this.signals.Blocks.Broadcast(pblock);
 
                     this.logger.LogInformation($"Mined new {(BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW")} block: {blockResult.ChainedBlock.HashBlock}");
 
                     ++nHeight;
                     blocks.Add(pblock.GetHash());
-
-                    // ensure the block is written to disk
-                    ulong retry = 0;
-                    while (++retry < maxTries &&
-                           nHeight == nHeightEnd && // last block
-                           !this.blockRepository.ExistAsync(blockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult())
-                        Thread.Sleep(100);
 
                     pblocktemplate = null;
                 }

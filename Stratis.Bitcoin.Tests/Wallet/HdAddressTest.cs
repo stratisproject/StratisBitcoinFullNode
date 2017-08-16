@@ -1,8 +1,7 @@
-﻿using NBitcoin;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Xunit;
 
@@ -50,9 +49,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
-        public void IsChangeAddressWithInvalidHdPathThrowsInvalidOperationException()
+        public void IsChangeAddressWithInvalidHdPathThrowsFormatException()
         {
-            Assert.Throws<InvalidOperationException>(() =>
+            Assert.Throws<FormatException>(() =>
             {
                 var address = new HdAddress()
                 {
@@ -64,9 +63,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
-        public void IsChangeAddressWithEmptyHdPathThrowsInvalidOperationException()
+        public void IsChangeAddressWithEmptyHdPathThrowsArgumentException()
         {
-            Assert.Throws<InvalidOperationException>(() =>
+            Assert.Throws<ArgumentException> (() =>
             {
                 var address = new HdAddress()
                 {
@@ -78,9 +77,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
         }
 
         [Fact]
-        public void IsChangeAddressWithNulledHdPathThrowsInvalidOperationException()
+        public void IsChangeAddressWithNulledHdPathThrowsArgumentNullException()
         {
-            Assert.Throws<InvalidOperationException>(() =>
+            Assert.Throws<ArgumentNullException>(() =>
             {
                 var address = new HdAddress()
                 {

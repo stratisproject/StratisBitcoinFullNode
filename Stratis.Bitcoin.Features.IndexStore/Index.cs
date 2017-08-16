@@ -79,8 +79,6 @@ namespace Stratis.Bitcoin.Features.IndexStore
             }
         }
 
-        [JsonIgnore()]
-        public IndexStoreRepositoryPerformanceCounter PerformanceCounter { get; }
         [JsonProperty(PropertyName = "Name")]
         public string Name { get; private set; }
         [JsonProperty(PropertyName = "Table")]
@@ -159,13 +157,11 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
                     if (trxId.Exists)
                     {
-                        this.PerformanceCounter.AddRepositoryHitCount(1);
                         yield return trxId.Value;
                         continue;
                     }
                 }
 
-                this.PerformanceCounter.AddRepositoryMissCount(1);
                 yield return null;
             }
         }
@@ -190,11 +186,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     yield return addrRow.GetValuePart(offset + 2, itemSize);
                     offset += (itemSize + 2);
                 }
-
-                this.PerformanceCounter.AddRepositoryHitCount(1);
             }
-            else
-                this.PerformanceCounter.AddRepositoryMissCount(1);
         }
 
         public int IndexTransactionDetails(List<(Transaction, Block)> transactions, bool remove = false)

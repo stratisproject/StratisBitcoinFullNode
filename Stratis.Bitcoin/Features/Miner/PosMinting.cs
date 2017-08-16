@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IConnectionManager connection;
         private readonly IDateTimeProvider dateTimeProvider;
         private readonly AssemblerFactory blockAssemblerFactory;
-        private readonly BlockRepository blockRepository;
+        private readonly IBlockRepository blockRepository;
         private readonly ChainState chainState;
         private readonly Signals.Signals signals;
         private readonly INodeLifetime nodeLifetime;
@@ -44,31 +45,30 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly PosConsensusValidator posConsensusValidator;
         private readonly ILogger logger;
 
-        private uint256 hashPrevBlock;
         private Task mining;
         private readonly long lastCoinStakeSearchTime;
         private Money reserveBalance;
         private readonly int minimumInputValue;
         private readonly int minerSleep;
 
-
+        
         public long LastCoinStakeSearchInterval;
         public long LastCoinStakeSearchTime;
 
         public PosMinting(
-            ConsensusLoop consensusLoop,
-            ConcurrentChain chain,
-            Network network,
+            ConsensusLoop consensusLoop, 
+            ConcurrentChain chain, 
+            Network network, 
             IConnectionManager connection,
-            IDateTimeProvider dateTimeProvider,
-            AssemblerFactory blockAssemblerFactory,
-            BlockRepository blockRepository,
-            ChainState chainState,
+            IDateTimeProvider dateTimeProvider, 
+            AssemblerFactory blockAssemblerFactory, 
+            IBlockRepository blockRepository,
+            ChainState chainState, 
             Signals.Signals signals, INodeLifetime nodeLifetime,
-            NodeSettings settings,
-            CoinView coinView,
-            StakeChain stakeChain,
-            IWalletManager wallet,
+            NodeSettings settings, 
+            CoinView coinView, 
+            StakeChain stakeChain, 
+            IWalletManager wallet, 
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
         {
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     tryToSync = false;
                     if (this.connection.ConnectedNodes.Count() < 3 ||
-                        this.chain.Tip.Header.Time < this.dateTimeProvider.GetTime() - 10 * 60)
+                        this.chain.Tip.Header.Time < this.dateTimeProvider.GetTime() - 10*60)
                     {
                         //this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
                         continue;
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 if (pblocktemplate == null)
-                    pblocktemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                    pblocktemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() {IsProofOfStake = true}).CreateNewBlock(new Script());
 
 
                 var pblock = pblocktemplate.Block;
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 // Trying to sign a block
                 if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblocktemplate.TotalFee))
                 {
-                    var blockResult = new BlockResult { Block = pblock };
+                    var blockResult = new BlockResult {Block = pblock};
                     this.CheckState(new ContextInformation(blockResult, this.network.Consensus), pindexPrev);
 
                     pblocktemplate = null;
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Found a solution
             if (block.Header.HashPrevBlock != this.chain.Tip.HashBlock)
                 return;
-
+            
             // validate the block
             this.consensusLoop.AcceptBlock(context);
 
@@ -246,12 +246,12 @@ namespace Stratis.Bitcoin.Features.Miner
             if (context.BlockResult.ChainedBlock.ChainWork <= this.chain.Tip.ChainWork)
                 return;
 
-            // similar logic to what's in the full node code
+                // similar logic to what's in the full node code
             this.chain.SetTip(context.BlockResult.ChainedBlock);
             this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
             this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
-            this.signals.SignalBlock(block);
+            this.signals.Blocks.Broadcast(block);
 
             this.logger.LogInformation($"==================================================================");
             this.logger.LogInformation($"Found new POS block hash={context.BlockResult.ChainedBlock.HashBlock} height={context.BlockResult.ChainedBlock.Height}");
@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         // append a signature to our block
                         var signature = key.Sign(block.GetHash());
 
-                        block.BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+                        block.BlockSignatur = new BlockSignature {Signature = signature.ToDER()};
                         return true;
                     }
                 }
@@ -373,7 +373,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             long nCredit = 0;
             Script scriptPubKeyKernel = null;
-
+            
             // Note: I would expect to see coins sorted by weight on the original implementation 
             // sort the coins from heighest weight
             setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
@@ -393,7 +393,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
                         long nBlockTime = 0;
 
-                        var context = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
+                        var context = new ContextInformation(new BlockResult {Block = block}, this.network.Consensus);
                         context.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(context, pindexPrev, block.Header.Bits, txNew.Time - n, prevoutStake, ref nBlockTime);
 
@@ -444,7 +444,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
                             continue;
-
+                        
                         throw;
                     }
                 }
@@ -586,7 +586,7 @@ namespace Stratis.Bitcoin.Features.Miner
             return money;
         }
 
-        private bool SelectCoinsForStaking(List<StakeTx> stakeTxes, long nTargetValue, uint nSpendTime, out List<StakeTx> setCoinsRet, out long nValueRet)
+        private bool SelectCoinsForStaking(List<StakeTx> stakeTxes,  long nTargetValue, uint nSpendTime, out List<StakeTx> setCoinsRet, out long nValueRet)
         {
             var coins = this.AvailableCoinsForStaking(stakeTxes, nSpendTime);
             setCoinsRet = new List<StakeTx>();
