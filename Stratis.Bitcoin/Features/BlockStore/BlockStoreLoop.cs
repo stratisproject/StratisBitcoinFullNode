@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,
             StoreBlockPuller blockPuller,
             IBlockRepository blockRepository,
-            BlockStoreCache cache,
+            IBlockStoreCache cache,
             ConcurrentChain chain,
             ChainState chainState,
             NodeSettings nodeArgs,

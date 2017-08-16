@@ -133,9 +133,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
 
                 var maturity = (int)stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().COINBASE_MATURITY;
-				stratisSender.GenerateStratisWithMiner(maturity + 15);
+                stratisSender.GenerateStratisWithMiner(maturity + 15);
 
-				var currentBestHeight = maturity + 15;
+                var currentBestHeight = maturity + 15;
 
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
@@ -170,15 +170,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Null(stratisReceiver.FullNode.WalletManager.GetSpendableTransactions("mywallet").SelectMany(s => s.UnspentOutputs).First().Transaction.BlockHeight);
 
                 // generate two new blocks so the trx is confirmed
-	            stratisSender.GenerateStratisWithMiner(1);
+                stratisSender.GenerateStratisWithMiner(1);
                 var transaction1MinedHeight = currentBestHeight + 1;
                 stratisSender.GenerateStratisWithMiner(1);
                 currentBestHeight = currentBestHeight + 2;
 
-				// wait for block repo for block sync to work
-				TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
-	            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-	            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+                // wait for block repo for block sync to work
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
                 Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
                 TestHelper.WaitLoop(() => transaction1MinedHeight == stratisReceiver.FullNode.WalletManager.GetSpendableTransactions("mywallet").SelectMany(s => s.UnspentOutputs).First().Transaction.BlockHeight);
 

@@ -39,8 +39,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		public bool PreferHeaders; // public for testing
 		private bool preferHeaderAndIDs;
 
-		public BlockStoreBehavior(ConcurrentChain chain, BlockRepository blockRepository, BlockStoreCache blockStoreCache, ILogger logger)
-			: this(chain, blockRepository as IBlockRepository, blockStoreCache as IBlockStoreCache, logger)
+		public BlockStoreBehavior(
+            ConcurrentChain chain, 
+            BlockRepository blockRepository, 
+            IBlockStoreCache blockStoreCache, 
+            ILogger logger)
+			: this(chain, blockRepository as IBlockRepository, blockStoreCache, logger)
 		{
 		}
 

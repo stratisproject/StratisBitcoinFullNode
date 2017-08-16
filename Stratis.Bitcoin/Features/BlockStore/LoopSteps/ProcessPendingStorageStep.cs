@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         /// <summary>
         /// Store missing blocks and remove them from pending blocks
-        /// Set the Store's tip to <see cref=">lastFoundChainedBlock "/>
+        /// Set the Store's tip to <see cref="lastFoundChainedBlock"/>
         /// </summary>
         private async Task<StepResult> PushPendingBlocksToRepository(int pendingStorageBatchSize, List<BlockPair> pendingBlockPairsToStore, ChainedBlock lastFoundChainedBlock, CancellationToken cancellationToken, bool breakExecution)
         {
