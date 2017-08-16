@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     }
     
     /// <summary>
-    /// An Hd account's details.
+    /// An HD account's details.
     /// </summary>
     public class HdAccount
     {
@@ -449,10 +449,66 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return addresses;
         }
+
+        /// <summary>
+        /// Creates a number of additional addresses in the current account.
+        /// </summary>
+        /// <remarks>
+        /// The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.        
+        /// </remarks>
+        /// <param name="network">The network these addresses will be for.</param>
+        /// <param name="addressesQuantity">The number of addresses to create.</param>
+        /// <param name="isChange">Whether the addresses added are change (internal) addresses or receiving (external) addresses.</param>
+        /// <returns>A list of addresses in Base58 format.</returns>        
+        public List<string> CreateAddresses(Network network, int addressesQuantity, bool isChange = false)
+        {
+            List<string> addressesCreated = new List<string>();
+
+            var addresses = isChange ? this.InternalAddresses : this.ExternalAddresses;
+
+            // Get the index of the last address that contains transactions.
+            int firstNewAddressIndex = 0;
+            if (addresses.Any())
+            {
+                firstNewAddressIndex = addresses.Max(add => add.Index) + 1;
+            }
+
+            for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
+            {
+                // Generate a new address.
+                PubKey pubkey = HdOperations.GeneratePublicKey(this.ExtendedPubKey, i, isChange);
+                BitcoinPubKeyAddress address = pubkey.GetAddress(network);
+
+                // Add the new address details to the list of addresses.
+                addresses.Add(new HdAddress
+                {
+                    Index = i,
+                    HdPath = HdOperations.CreateHdPath((int)this.GetCoinType(), this.Index, i, isChange),
+                    ScriptPubKey = address.ScriptPubKey,
+                    Pubkey = pubkey.ScriptPubKey,
+                    Address = address.ToString(),
+                    Transactions = new List<TransactionData>()
+                });
+
+                addressesCreated.Add(address.ToString());
+            }
+
+            if (isChange)
+            {
+                this.InternalAddresses = addresses;
+            }
+            else
+            {
+                this.ExternalAddresses = addresses;
+            }
+
+            return addressesCreated;
+        }
     }
 
     /// <summary>
-    /// An Hd address.
+    /// An HD address.
     /// </summary>
     public class HdAddress
     {

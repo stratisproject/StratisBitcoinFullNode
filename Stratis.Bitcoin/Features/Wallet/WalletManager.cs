@@ -145,8 +145,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             for (int i = 0; i < WalletCreationAccountsCount; i++)
             {
                 HdAccount account = wallet.AddNewAccount(password, this.coinType);
-                this.CreateAddressesInAccount(account, UnusedAddressesBuffer);
-                this.CreateAddressesInAccount(account, UnusedAddressesBuffer, true);
+                account.CreateAddresses(this.network, UnusedAddressesBuffer);
+                account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
 
             // update the height of the we start syncing from
@@ -198,8 +198,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
                 HdAccount account = wallet.AddNewAccount(password, this.coinType);
-                this.CreateAddressesInAccount(account, UnusedAddressesBuffer);
-                this.CreateAddressesInAccount(account, UnusedAddressesBuffer, true);
+                account.CreateAddresses(this.network, UnusedAddressesBuffer);
+                account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
 
             int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // creates an address
-            this.CreateAddressesInAccount(account, 1);
+            account.CreateAddresses(this.network, 1);
 
             // persists the address to the wallet file
             this.SaveToFile(wallet);
@@ -293,7 +293,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // no more change addresses left. create a new one.
             if (changeAddress == null)
             {
-                var accountAddress = this.CreateAddressesInAccount(account, 1, isChange: true).Single();
+                var accountAddress = account.CreateAddresses(this.network, 1, isChange: true).Single();
                 changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
 
                 // persists the address to the wallet file
@@ -333,59 +333,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
         }
-
-        /// <summary>
-        /// Creates a number of addresses in the provided account.
-        /// </summary>
-        /// <param name="account">The account.</param>
-        /// <param name="addressesQuantity">The number of addresses to create.</param>
-        /// <param name="isChange">Whether the addresses added are change (internal) addresses or receiving (external) addresses.</param>
-        /// <returns>A list of addresses in Base58.</returns>
-        private List<string> CreateAddressesInAccount(HdAccount account, int addressesQuantity, bool isChange = false)
-        {
-            List<string> addressesCreated = new List<string>();
-
-            var addresses = isChange ? account.InternalAddresses : account.ExternalAddresses;
-
-            // gets the index of the last address with transactions
-            int firstNewAddressIndex = 0;
-            if (addresses.Any())
-            {
-                firstNewAddressIndex = addresses.Max(add => add.Index) + 1;
-            }
-
-            for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
-            {
-                // generate new receiving address
-                PubKey pubkey = HdOperations.GeneratePublicKey(account.ExtendedPubKey, i, isChange);
-                BitcoinPubKeyAddress address = pubkey.GetAddress(this.network);
-
-                // add address details
-                addresses.Add(new HdAddress
-                {
-                    Index = i,
-                    HdPath = HdOperations.CreateHdPath((int)account.GetCoinType(), account.Index, i, isChange),
-                    ScriptPubKey = address.ScriptPubKey,
-                    Pubkey = pubkey.ScriptPubKey,
-                    Address = address.ToString(),
-                    Transactions = new List<TransactionData>()
-                });
-
-                addressesCreated.Add(address.ToString());
-            }
-
-            if (isChange)
-            {
-                account.InternalAddresses = addresses;
-            }
-            else
-            {
-                account.ExternalAddresses = addresses;
-            }
-
-            return addressesCreated;
-        }
-
+        
         /// <inheritdoc />
         public Wallet GetWallet(string walletName)
         {
@@ -826,7 +774,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
                     int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
                     int accountsToAdd = UnusedAddressesBuffer - emptyAddressesCount;
-                    this.CreateAddressesInAccount(account, accountsToAdd, isChange);
+                    account.CreateAddresses(this.network, accountsToAdd, isChange);
 
                     // persists the address to the wallet file
                     this.SaveToFile(wallet);
