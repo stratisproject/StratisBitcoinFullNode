@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Stratis.Bitcoin.Features.BlockStore;
 using Xunit;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
@@ -18,14 +19,16 @@ namespace Stratis.Bitcoin.Tests.BlockStore
 		private Mock<IBlockStoreCache> blockCache;
 		private Mock<IBlockRepository> blockRepository;
 		private ConcurrentChain chain;
+        private readonly ILoggerFactory loggerFactory;
 
 		public BlockStoreBehaviorTest()
 		{
-			this.chain = new ConcurrentChain();
+            this.loggerFactory = new LoggerFactory();
+            this.chain = new ConcurrentChain();
 			this.blockRepository = new Mock<IBlockRepository>();
 			this.blockCache = new Mock<IBlockStoreCache>();
 
-			this.behavior = new BlockStoreBehavior(this.chain, this.blockRepository.Object, this.blockCache.Object, NullLogger.Instance);
+			this.behavior = new BlockStoreBehavior(this.chain, this.blockRepository.Object, this.blockCache.Object, this.loggerFactory);
 		}
 
 		[Fact]
