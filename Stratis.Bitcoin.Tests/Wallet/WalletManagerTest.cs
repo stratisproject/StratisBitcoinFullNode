@@ -1,4 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -11,15 +16,10 @@ using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Tests.Utilities;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet
-{    
+{
     public class WalletManagerTest : LogsTestBase
     {
         /// <summary>
@@ -2723,7 +2723,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             walletManager.Wallets.Add(wallet);
             walletManager.Wallets.Add(wallet2);
 
-            var result = walletManager.GetWallets().OrderBy(w => w).ToArray();
+            var result = walletManager.GetWalletsNames().OrderBy(w => w).ToArray();
 
             Assert.Equal(2, result.Count());
             Assert.Equal("wallet1", result[0]);
@@ -2736,7 +2736,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-            var result = walletManager.GetWallets().OrderBy(w => w).ToArray();
+            var result = walletManager.GetWalletsNames().OrderBy(w => w).ToArray();
 
             Assert.Equal(0, result.Count());
         }

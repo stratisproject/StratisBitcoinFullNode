@@ -955,7 +955,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.keysLookup = lookup;
         }
 
-        public string[] GetWallets()
+        /// <inheritdoc />
+        public string[] GetWalletsNames()
         {
             return this.Wallets.Select(w => w.Name).ToArray();
         }

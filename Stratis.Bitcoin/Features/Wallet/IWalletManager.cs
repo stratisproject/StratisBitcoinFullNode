@@ -1,6 +1,6 @@
-﻿using NBitcoin;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -187,10 +187,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         string GetWalletFileExtension();
 
         /// <summary>
-        /// Get all the wallets name
+        /// Gets all the wallets' names.
         /// </summary>
-        /// <returns></returns>
-        string[] GetWallets();
+        /// <returns>A collection of the wallets' names.</returns>
+        string[] GetWalletsNames();
         
         /// <summary>
         /// Updates the wallet with the height of the last block synced.
