@@ -1,11 +1,11 @@
-﻿using NBitcoin;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Gets all the pub keys conatined in this wallet.
+        /// Gets all the pub keys contained in this wallet.
         /// </summary>
         /// <param name="coinType">Type of the coin.</param>
         /// <returns></returns>
@@ -111,12 +111,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Adds an account to the current wallet.
         /// </summary>
-        /// <remarks>The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
-        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.
-        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/></remarks>
+        /// <remarks>
+        /// The name given to the account is of the form "account (i)" by default, where (i) is an incremental index starting at 0.
+        /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.        
+        /// </remarks>
+        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/>
         /// <param name="password">The password used to decrypt the wallet's <see cref="EncryptedSeed"/>.</param>
         /// <param name="coinType">The type of coin this account is for.</param>
-        /// <returns>A new hd account.</returns>
+        /// <returns>A new HD account.</returns>
         public HdAccount AddNewAccount(string password, CoinType coinType)
         {
             Guard.NotEmpty(password, nameof(password));
@@ -215,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
             Guard.NotNull(chainCode, nameof(chainCode));
 
-            // Get the accounts for this type of coin.
+            // Get the current collection of accounts.
             var accounts = this.Accounts.ToList();
 
             int newAccountIndex = 0;

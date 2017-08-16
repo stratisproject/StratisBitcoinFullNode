@@ -69,12 +69,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Gets the extended public key for an account.
+        /// Gets the extended public key corresponding to an HD path.
         /// </summary>
         /// <param name="privateKey">The private key from which to generate the extended public key.</param>
         /// <param name="chainCode">The chain code used in creating the extended public key.</param>
-        /// <param name="hdPath">The HD path of the account for which to get the extended public key.</param>
-        /// <returns>The extended public key for an account, used to derive child keys.</returns>
+        /// <param name="hdPath">The HD path for which to get the extended public key.</param>
+        /// <returns>The extended public key, used to derive child keys.</returns>
         public static ExtPubKey GetExtendedPublicKey(Key privateKey, byte[] chainCode, string hdPath)
         {
             Guard.NotNull(privateKey, nameof(privateKey));
@@ -84,8 +84,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             // get extended private key
             ExtKey seedExtKey = new ExtKey(privateKey, chainCode);
             ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(hdPath));
-            ExtPubKey accountExtPubKey = addressExtKey.Neuter();
-            return accountExtPubKey;
+            ExtPubKey extPubKey = addressExtKey.Neuter();
+            return extPubKey;
         }
 
         /// <summary>
