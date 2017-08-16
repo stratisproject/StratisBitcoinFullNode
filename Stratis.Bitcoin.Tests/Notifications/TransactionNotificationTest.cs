@@ -15,26 +15,20 @@ namespace Stratis.Bitcoin.Tests.Notifications
         public void NotifyWithTransactionBroadcastsSuccessfully()
         {
             var signals = new Mock<ISignals>();
-            var signalerMock = new Mock<ISignaler<Transaction>>();
-            signals.Setup(s => s.Transactions).Returns(signalerMock.Object);
 
             var notification = new TransactionNotification(signals.Object);
             notification.Notify(new Transaction());
-            signalerMock.Verify(s => s.Broadcast(It.IsAny<Transaction>()), Times.Once);
-
+            signals.Verify(s => s.SignalTransaction(It.IsAny<Transaction>()), Times.Once);
         }
 
         [Fact]
         public void NotifyWithNullTransactionDoesntBroadcast()
         {
             var signals = new Mock<ISignals>();
-            var signalerMock = new Mock<ISignaler<Transaction>>();
-            signals.Setup(s => s.Transactions).Returns(signalerMock.Object);
 
             var notification = new TransactionNotification(signals.Object);
             notification.Notify(null);
-            signalerMock.Verify(s => s.Broadcast(It.IsAny<Transaction>()), Times.Never);
-
+            signals.Verify(s => s.SignalTransaction(It.IsAny<Transaction>()), Times.Never);
         }
 
         [Fact]

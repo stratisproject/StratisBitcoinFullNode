@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-    public class MempoolFeature : FullNodeFeature 
+    public class MempoolFeature : FullNodeFeature
     {
         private readonly Signals.Signals signals;
         private readonly IConnectionManager connectionManager;
@@ -18,10 +18,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ILogger mempoolLogger;
 
         public MempoolFeature(
-            IConnectionManager connectionManager, 
-            Signals.Signals signals, 
-            MempoolSignaled mempoolSignaled, 
-            MempoolBehavior mempoolBehavior, 
+            IConnectionManager connectionManager,
+            Signals.Signals signals,
+            MempoolSignaled mempoolSignaled,
+            MempoolBehavior mempoolBehavior,
             MempoolManager mempoolManager,
             ILoggerFactory loggerFactory)
         {
@@ -38,8 +38,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolManager.LoadPool().GetAwaiter().GetResult();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
-            this.signals.Blocks.Subscribe(this.mempoolSignaled);
-
+            this.signals.SubscribeForBlocks(this.mempoolSignaled);
         }
 
         public override void Stop()
@@ -73,18 +72,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 features
                 .AddFeature<MempoolFeature>()
                 .FeatureServices(services =>
-                    {
-                        services.AddSingleton<MempoolScheduler>();
-                        services.AddSingleton<TxMempool>();
-                        services.AddSingleton<BlockPolicyEstimator>();
-                        services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
-                        services.AddSingleton<IMempoolValidator, MempoolValidator>();
-                        services.AddSingleton<MempoolOrphans>();
-                        services.AddSingleton<MempoolManager>();
-                        services.AddSingleton<MempoolBehavior>();
-                        services.AddSingleton<MempoolSignaled>();
-                        services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
-                    });
+                {
+                    services.AddSingleton<MempoolScheduler>();
+                    services.AddSingleton<TxMempool>();
+                    services.AddSingleton<BlockPolicyEstimator>();
+                    services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
+                    services.AddSingleton<IMempoolValidator, MempoolValidator>();
+                    services.AddSingleton<MempoolOrphans>();
+                    services.AddSingleton<MempoolManager>();
+                    services.AddSingleton<MempoolBehavior>();
+                    services.AddSingleton<MempoolSignaled>();
+                    services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
+                });
             });
 
             return fullNodeBuilder;

@@ -9,12 +9,12 @@ namespace Stratis.Bitcoin.Signals
     /// Defines provider with ability to broadcast messages to all its subscribers.
     /// </summary>
     /// <typeparam name="T">Type of messages being sent.</typeparam>
-    public interface IBroadcast<in T>
+    public interface IBroadcast<T>
     {
         /// <summary>
         /// Sends a message to all subscribers.
         /// </summary>
-        /// <param name="item">Message to send.</param>
+        /// <param name="item">Message to send, must not be <c>null</c>.</param>
         void Broadcast(T item);
     }
 
@@ -56,11 +56,7 @@ namespace Stratis.Bitcoin.Signals
             this.observable = this.subject.AsObservable();
         }
 
-        /// <summary>
-        /// Subscribes observer to the signaler to receive its messages.
-        /// </summary>
-        /// <param name="observer">Observer to be subscribed to receive signaler's messages.</param>
-        /// <returns>Disposable object to allow observer to unsubscribe from the signaler.</returns>
+        /// <inheritdoc />
         public IDisposable Subscribe(IObserver<T> observer)
         {
             Guard.NotNull(observer, nameof(observer));
@@ -71,8 +67,6 @@ namespace Stratis.Bitcoin.Signals
         /// <inheritdoc />
         public void Broadcast(T item)
         {
-            Guard.NotNull(item, nameof(item));
-
             this.subject.OnNext(item);
         }
     }
