@@ -241,8 +241,8 @@ namespace Stratis.Bitcoin.BlockPulling
                 // or when reorganisation happens. Calling this twice will 
                 // make sure the initial work of the puller is away from 
                 // the lower boundary.
-                AskBlocks();
-                AskBlocks();
+                this.AskBlocks();
+                this.AskBlocks();
             }
 
             Block block = NextBlockCore(cancellationToken);
@@ -251,8 +251,8 @@ namespace Stratis.Bitcoin.BlockPulling
                 if ((this.lookaheadLocation.Height - this.location.Height) <= this.ActualLookahead)
                 {
                     this.logger.LogTrace($"Recalculating lookahead: Last request block height is {this.lookaheadLocation.Height}, last processed block height is {this.location.Height}, {nameof(this.ActualLookahead)} is {this.ActualLookahead}.");
-                    CalculateLookahead();
-                    AskBlocks();
+                    this.CalculateLookahead();
+                    this.AskBlocks();
                 }
                 else this.logger.LogTrace($"Lookahead needs no adjustment.");
             }
@@ -536,7 +536,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         this.logger.LogTrace("Block not available.");
 
                         // Or the block is still being downloaded or we need to ask for this block to be downloaded.
-                        if (!isDownloading) AskBlocks(new ChainedBlock[] { header });
+                        if (!isDownloading) this.AskBlocks(new ChainedBlock[] { header });
 
                         this.OnStalling(header);
                     }
