@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
-using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -28,7 +28,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(12, mnemonic1.Words.Length);
                 Assert.Equal(12, mnemonic2.Words.Length);
                 var addr = stratisSender.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var key = stratisSender.FullNode.WalletManager.GetKeyForAddress("mywallet","123456", addr).PrivateKey;
+                var wallet = stratisSender.FullNode.WalletManager.GetWalletByName("mywallet");
+                var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
                 var maturity = (int)stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().COINBASE_MATURITY;
@@ -127,7 +128,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(12, mnemonic1.Words.Length);
                 Assert.Equal(12, mnemonic2.Words.Length);
                 var addr = stratisSender.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var key = stratisSender.FullNode.WalletManager.GetKeyForAddress("mywallet","123456", addr).PrivateKey;
+                var wallet = stratisSender.FullNode.WalletManager.GetWalletByName("mywallet");
+                var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;                
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
@@ -272,7 +274,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var mnemonic = stratisminer.FullNode.WalletManager.CreateWallet("123456", "mywallet");
                 Assert.Equal(12, mnemonic.Words.Length);
                 var addr = stratisminer.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var key = stratisminer.FullNode.WalletManager.GetKeyForAddress("mywallet", "123456", addr).PrivateKey;
+                var wallet = stratisminer.FullNode.WalletManager.GetWalletByName("mywallet");
+                var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;                
 
                 stratisminer.SetDummyMinerSecret(key.GetBitcoinSecret(stratisminer.FullNode.Network));
                 stratisminer.GenerateStratis(10);
@@ -301,8 +304,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var mnemonic = stratisNodeSync.FullNode.WalletManager.CreateWallet("123456", "mywallet");
                 Assert.Equal(12, mnemonic.Words.Length);
                 var addr = stratisNodeSync.FullNode.WalletManager.GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                var key = stratisNodeSync.FullNode.WalletManager.GetKeyForAddress("mywallet", "123456", addr).PrivateKey;
-
+                var wallet = stratisNodeSync.FullNode.WalletManager.GetWalletByName("mywallet");
+                var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
+               
                 stratisNodeSync.SetDummyMinerSecret(key.GetBitcoinSecret(stratisNodeSync.FullNode.Network));
                 stratisNodeSync.GenerateStratis(10);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));

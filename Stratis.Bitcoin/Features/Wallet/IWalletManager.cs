@@ -38,16 +38,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
         UnspentAccountReference GetSpendableTransactions(HdAccount account, int confirmations = 0);
-
-        /// <summary>
-        /// Gets the private key for the given address.
-        /// </summary>
-        /// <param name="walletName">The name of the wallet.</param>
-        /// <param name="password">The password used to encrypt sensitive info.</param>
-        /// <param name="address">The address to get the private key for.</param>
-        /// <returns></returns>
-        ISecret GetKeyForAddress(string walletName, string password, HdAddress address);
-
+        
         /// <summary>
         /// Creates a wallet and persist it as a file on the local system.
         /// </summary>

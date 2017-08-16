@@ -135,6 +135,67 @@ namespace Stratis.Bitcoin.Features.Wallet
             var accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
             return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network);
         }
+
+        /// <summary>
+        /// Gets the first account that contains no transaction.
+        /// </summary>
+        /// <returns>An unused account.</returns>
+        public HdAccount GetFirstUnusedAccount(CoinType coinType)
+        {
+            // Get the accounts root for this type of coin.
+            var accountsRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
+            
+            if (accountsRoot.Accounts.Any())
+            {
+                // Get an unused account.
+                var firstUnusedAccount = accountsRoot.GetFirstUnusedAccount();
+                if (firstUnusedAccount != null)
+                {
+                    return firstUnusedAccount;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Determines whether the wallet contains the specified address.
+        /// </summary>
+        /// <param name="address">The address to check.</param>
+        /// <returns>A value indicating whether the wallet contains the specified address.</returns>
+        public bool ContainsAddress(HdAddress address)
+        {
+            if (!this.AccountsRoot.Any(r => r.Accounts.Any(
+                a => a.ExternalAddresses.Any(i => i.Address == address.Address) ||
+                     a.InternalAddresses.Any(i => i.Address == address.Address))))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the extended private key for the given address.
+        /// </summary>
+        /// <param name="password">The password used to encrypt/decrypt sensitive info.</param>
+        /// <param name="address">The address to get the private key for.</param>
+        /// <returns>The extended private key.</returns>
+        public ISecret GetExtendedPrivateKeyForAddress(string password, HdAddress address)
+        {
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotNull(address, nameof(address));
+
+            // Check if the wallet contains the address.
+            if (!this.ContainsAddress(address))
+            {
+                throw new WalletException("Address not found on wallet.");
+            }
+
+            // get extended private key
+            Key privateKey = HdOperations.DecryptSeed(this.EncryptedSeed, password, this.Network);
+            return HdOperations.GetExtendedPrivateKey(privateKey, this.ChainCode, address.HdPath, this.Network);
+        }
     }
 
     /// <summary>
@@ -219,7 +280,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="encryptedSeed">The encrypted private key for this wallet.</param>
         /// <param name="chainCode">The chain code for this wallet.</param>
         /// <param name="network">The network for which this account will be created.</param>
-        /// <returns>A new hd account.</returns>
+        /// <returns>A new HD account.</returns>
         public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network)
         {
             Guard.NotEmpty(password, nameof(password));

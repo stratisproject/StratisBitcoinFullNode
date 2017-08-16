@@ -1426,7 +1426,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                        new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-                walletManager.GetKeyForAddress("myWallet", "password", new HdAddress());
+                var wallet = walletManager.GetWalletByName("mywallet");
+                var key = wallet.GetExtendedPrivateKeyForAddress("password", new HdAddress()).PrivateKey;
             });
         }
 
@@ -1454,7 +1455,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             });
             walletManager.Wallets.Add(data.wallet);
 
-            var result = walletManager.GetKeyForAddress("myWallet", "password", address);
+
+            var result = data.wallet.GetExtendedPrivateKeyForAddress("password", address);
 
             Assert.Equal(data.key.Derive(new KeyPath("m/44'/0'/0'/0/0")).GetWif(data.wallet.Network), result);
         }
@@ -1483,7 +1485,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 });
                 walletManager.Wallets.Add(data.wallet);
 
-                walletManager.GetKeyForAddress("myWallet", "password", address);
+                data.wallet.GetExtendedPrivateKeyForAddress("password", address);
             });
         }        
      

@@ -230,21 +230,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(wallet, nameof(wallet));
             Guard.NotEmpty(password, nameof(password));
 
-            // get the accounts root for this type of coin
-            var accountsRoot = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType);
+            HdAccount account = wallet.GetFirstUnusedAccount(this.coinType);
 
-            // check if an unused account exists
-            if (accountsRoot.Accounts.Any())
+            if (account != null)
             {
-                // gets an unused account
-                var firstUnusedAccount = accountsRoot.GetFirstUnusedAccount();
-                if (firstUnusedAccount != null)
-                {
-                    return firstUnusedAccount;
-                }
+                return account;
             }
 
-            // all accounts contain transactions, create a new one
+            // No unused account was found, create a new one.
             var newAccount = wallet.AddNewAccount(password, this.coinType);
 
             // save the changes to the file
@@ -445,28 +438,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return accountReference;
-        }
-
-        /// <inheritdoc />        
-        public ISecret GetKeyForAddress(string walletName, string password, HdAddress address)
-        {
-            Guard.NotEmpty(walletName, nameof(walletName));
-            Guard.NotEmpty(password, nameof(password));
-            Guard.NotNull(address, nameof(address));
-
-            var wallet = this.GetWalletByName(walletName);
-
-            // check if the wallet contains the address.
-            if (!wallet.AccountsRoot.Any(r => r.Accounts.Any(
-                a => a.ExternalAddresses.Any(i => i.Address == address.Address) ||
-                     a.InternalAddresses.Any(i => i.Address == address.Address))))
-            {
-                throw new WalletException("Address not found on wallet.");
-            }
-
-            // get extended private key
-            Key privateKey = HdOperations.DecryptSeed(wallet.EncryptedSeed, password, wallet.Network);
-            return HdOperations.GetExtendedPrivateKey(privateKey, wallet.ChainCode, address.HdPath, wallet.Network);
         }
         
         /// <inheritdoc />
