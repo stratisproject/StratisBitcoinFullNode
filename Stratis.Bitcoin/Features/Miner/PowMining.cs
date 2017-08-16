@@ -107,9 +107,6 @@ namespace Stratis.Bitcoin.Features.Miner
             int nExtraNonce = 0;
             var blocks = new List<uint256>();
 
-
-            // BlockTemplate pblocktemplate = null;
-
             while (nHeight < nHeightEnd)
             {
                 try
