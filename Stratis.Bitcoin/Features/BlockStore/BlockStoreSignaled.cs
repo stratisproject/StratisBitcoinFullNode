@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -64,20 +63,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// A loop method that continuasly relays blocks found in <see cref="BlockStoreSignaled.blockHashesToAnnounce"/> to connected peers on the network.
+        /// A loop method that continuously relays blocks found in <see cref="BlockStoreSignaled.blockHashesToAnnounce"/> to connected peers on the network.
         /// </summary>
         /// <remarks>
         /// The dictionary <see cref="BlockStoreSignaled.blockHashesToAnnounce"/> contains 
-        /// hashes of blocks that where validated by the conensus rules.
+        /// hashes of blocks that were validated by the consensus rules.
         /// 
-        /// This block hashes need to be relayd to connected peers, a peer that does not have a block 
-        /// will then ask for the entire block, that mean only blocks that have been stored should be relayed.
+        /// This block hashes need to be relayed to connected peers. A peer that does not have a block 
+        /// will then ask for the entire block, that means only blocks that have been stored should be relayed.
         /// 
-        /// During IBD blocks are not relaydto peers.
+        /// During IBD blocks are not relayed to peers.
         /// 
-        /// If no nodes are connected the blocks are just discarded, whoever this is very unlikely to happen.
+        /// If no nodes are connected the blocks are just discarded, however this is very unlikely to happen.
         /// 
-        /// Before relay verify the block is still in the best chain else discaard it.
+        /// Before relaying, verify the block is still in the best chain else discard it.
         /// 
         /// TODO: consider moving the relay logic to the <see cref="ProcessPendingStorageStep.PushPendingBlocksToRepository"/>.
         /// </remarks>
@@ -93,10 +92,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 var broadcastItems = new List<uint256>();
                 foreach (var blockHash in blocks)
                 {
-                    // the first block that is not in disk will abort the loop.
+                    // The first block that is not in disk will abort the loop.
                     if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
                     {
-                        // if the hash is not on disk and no in the best chain 
+                        // NOTE: there is a very minimal possibility a reorg would happen 
+                        // and post reorg blocks will now be in the 'blockHashesToAnnounce', 
+                        // current logic will discard those blocks, I suspect this will be unlikely 
+                        // to happen. In case it does a block will just not be relays.
+
+                        // If the hash is not on disk and not in the best chain 
                         // we assume all the following blocks are also discardable
                         if (!this.chain.Contains(blockHash))
                             this.blockHashesToAnnounce.Clear();
@@ -115,7 +119,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (!nodes.Any())
                     return;
 
-                // announce the blocks on each nodes behaviour
+                // Announce the blocks to each of the peers.
                 var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
                 foreach (var behaviour in behaviours)
                     await behaviour.AnnounceBlocks(blocks).ConfigureAwait(false);
