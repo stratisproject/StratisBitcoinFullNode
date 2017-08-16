@@ -492,6 +492,8 @@ namespace Stratis.Bitcoin.BlockPulling
                 // If block has been downloaded and is ready to be consumed, then remove it from the list of downloaded blocks and consume it.
                 if (isReady && TryRemoveDownloadedBlock(header.HashBlock, out block))
                 {
+                    this.logger.LogTrace($"Consuming block '{header.HashBlock}'.");
+
                     if (header.Previous.HashBlock != this.location.HashBlock)
                     {
                         this.logger.LogTrace("Blockchain reorganization detected.");
