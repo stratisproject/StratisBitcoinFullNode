@@ -1,4 +1,6 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -18,13 +20,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private readonly IConnectionManager connection;
 	    private readonly INodeLifetime nodeLifetime;
 	    private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly string name;
+	    private readonly IBlockRepository blockRepository;
+	    private readonly string name;
 
         private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
-		public BlockStoreSignaled(BlockStoreLoop storeLoop, ConcurrentChain chain, NodeSettings nodeArgs, 
-			ChainState chainState, IConnectionManager connection, 
-            INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory,
+		public BlockStoreSignaled(
+            BlockStoreLoop storeLoop, 
+            ConcurrentChain chain, 
+            NodeSettings nodeArgs, 
+			ChainState chainState, 
+            IConnectionManager connection, 
+            INodeLifetime nodeLifetime, 
+            IAsyncLoopFactory asyncLoopFactory, 
+            IBlockRepository blockRepository,
             string name = "BlockStore")
 		{
 			this.storeLoop = storeLoop;
@@ -34,7 +43,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			this.connection = connection;
 		    this.nodeLifetime = nodeLifetime;
 		    this.asyncLoopFactory = asyncLoopFactory;
-            this.name = name;
+		    this.blockRepository = blockRepository;
+		    this.name = name;
 
 		    this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
 		}
@@ -53,7 +63,25 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
 		}
 
-		public void RelayWorker()
+        /// <summary>
+        /// A loop method that continuasly relays blocks found in <see cref="BlockStoreSignaled.blockHashesToAnnounce"/> to connected peers on the network.
+        /// </summary>
+        /// <remarks>
+        /// The dictionary <see cref="BlockStoreSignaled.blockHashesToAnnounce"/> contains 
+        /// hashes of blocks that where validated by the conensus rules.
+        /// 
+        /// This block hashes need to be relayd to connected peers, a peer that does not have a block 
+        /// will then ask for the entire block, that mean only blocks that have been stored should be relayed.
+        /// 
+        /// During IBD blocks are not relaydto peers.
+        /// 
+        /// If no nodes are connected the blocks are just discarded, whoever this is very unlikely to happen.
+        /// 
+        /// Before relay verify the block is still in the best chain else discaard it.
+        /// 
+        /// TODO: consider moving the relay logic to the <see cref="ProcessPendingStorageStep.PushPendingBlocksToRepository"/>.
+        /// </remarks>
+        public void RelayWorker()
 		{
             this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
 			{
@@ -61,12 +89,29 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 				if (!blocks.Any())
 					return;
+			    
+			    var broadcastItems = new List<uint256>();
+			    foreach (var blockHash in blocks)
+			    {
+			        // the first block that is not in disk will abort the loop.
+			        if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
+			        {
+			            // if the hash is not on disk and no in the best chain 
+			            // we assume all the following blocks are also discardable
+			            if (!this.chain.Contains(blockHash))
+			                this.blockHashesToAnnounce.Clear();
 
-				uint256 outer;
-				foreach (var blockHash in blocks)
-					this.blockHashesToAnnounce.TryRemove(blockHash, out outer);
+			            break;
+			        }
 
-				var nodes = this.connection.ConnectedNodes;
+			        if (this.blockHashesToAnnounce.TryRemove(blockHash, out uint256 hashToBroadcast))
+			            broadcastItems.Add(hashToBroadcast);
+			    }
+
+			    if(!broadcastItems.Any())
+                    return;
+
+                var nodes = this.connection.ConnectedNodes;
 				if (!nodes.Any())
 					return;
 
