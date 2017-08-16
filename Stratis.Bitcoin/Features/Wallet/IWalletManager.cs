@@ -105,19 +105,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         /// <returns>An unused account.</returns>
         HdAccount GetUnusedAccount(Wallet wallet, string password);
-
-        /// <summary>
-        /// Creates a new account.
-        /// </summary>
-        /// <param name="wallet">The wallet in which this account will be created.</param>
-        /// <param name="password">The password used to decrypt the private key.</param>
-        /// <remarks>
-        /// According to BIP44, an account at index (i) can only be created when the account
-        /// at index (i - 1) contains transactions.
-        /// </remarks>
-        /// <returns>The new account.</returns>
-        HdAccount CreateNewAccount(Wallet wallet, string password);
-
+        
         /// <summary>
         /// Gets an address that contains no transaction.
         /// </summary>
