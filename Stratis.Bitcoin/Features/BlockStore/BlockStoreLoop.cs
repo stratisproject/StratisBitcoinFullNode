@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly BlockStoreStats blockStoreStats;
         private readonly NodeSettings nodeArgs;
         private readonly INodeLifetime nodeLifetime;
-        private readonly ILogger storeLogger;
+        private readonly ILogger logger;
 
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
@@ -73,10 +73,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.ChainState = chainState;
             this.nodeLifetime = nodeLifetime;
             this.nodeArgs = nodeArgs;
-            this.storeLogger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.storeLogger);
+            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.logger);
         }
 
         /// <summary>
@@ -94,6 +94,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         public async Task Initialize()
         {
+            this.logger.LogTrace("()");
+
             if (this.nodeArgs.Store.ReIndex)
                 throw new NotImplementedException();
 
@@ -123,13 +125,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 ChainedBlock newTip = this.Chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList);
                 this.StoreTip = newTip;
-                this.storeLogger.LogWarning($"{this.StoreName} Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
+                this.logger.LogWarning($"{this.StoreName} Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
             }
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
             {
                 if (this.StoreTip != this.Chain.Genesis)
                     throw new BlockStoreException($"You need to rebuild the {this.StoreName} database using -reindex-chainstate to change -txindex");
+
                 if (this.nodeArgs.Store.TxIndex)
                     await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
             }
@@ -143,6 +146,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.stepChain.SetNextStep(new DownloadBlockStep(this));
 
             StartLoop();
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -159,12 +164,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>TODO: Possibly check the size of pending in memory</remarks>
         public void AddToPending(Block block)
         {
-            ChainedBlock chainedBlock = this.Chain.GetBlock(block.GetHash());
+            uint256 blockHash = block.GetHash();
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
+
+            ChainedBlock chainedBlock = this.Chain.GetBlock(blockHash);
             if (chainedBlock == null)
+            {
+                this.logger.LogTrace("(-)[REORG]");
                 return;
+            }
 
             if (this.StoreTip.Height < chainedBlock.Height)
                 this.PendingStorage.TryAdd(chainedBlock.HashBlock, new BlockPair(block, chainedBlock));
+
+            this.logger.LogTrace("(-)");
         }
 
         ///<summary>Persists unsaved blocks to disk when the node shuts down.</summary>
@@ -178,13 +191,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         internal void StartLoop()
         {
+            this.logger.LogTrace("()");
+
             this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
                 {
+                    this.logger.LogTrace("()");
+
                     await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping);
+
+                    this.logger.LogTrace("(-)");
                 },
                 this.nodeLifetime.ApplicationStopping,
                 repeatEvery: TimeSpans.Second,
                 startAfter: TimeSpans.FiveSeconds);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -214,6 +235,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </remarks>
         private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode = false)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(disposeMode), disposeMode);
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (this.StoreTip.Height >= this.ChainState.HighestValidatedPoW?.Height)
@@ -229,24 +252,35 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 var result = await this.stepChain.Execute(nextChainedBlock, disposeMode, cancellationToken);
                 if (result == StepResult.Stop)
                     break;
+
+                // TODO: Remove this as it does nothing?
                 if (result == StepResult.Continue)
                     continue;
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Set the store's tip</summary>
         internal void SetStoreTip(ChainedBlock chainedBlock)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock?.HashBlock);
             Guard.NotNull(chainedBlock, nameof(chainedBlock));
 
             this.StoreTip = chainedBlock;
 
             SetHighestPersistedBlock(chainedBlock);
+
+            this.logger.LogTrace("(-)");
         }
 
         protected virtual void SetHighestPersistedBlock(ChainedBlock block)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block?.HashBlock);
+
             this.ChainState.HighestPersistedBlock = block;
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
