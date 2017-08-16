@@ -12,10 +12,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private BlockStoreRepositoryPerformanceSnapshot lastRepositorySnapshot;
         private BlockStoreCachePerformanceSnapshot lastCacheSnapshot;
 
-        public BlockStoreStats(IBlockRepository blockRepository, BlockStoreCache blockStoreCache, ILogger logger)
+        public BlockStoreStats(IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILogger logger)
         {
             this.repository = blockRepository;
-            this.cache = blockStoreCache;
+            this.cache = blockStoreCache as BlockStoreCache;
             this.logger = logger;
             this.lastRepositorySnapshot = this.repository?.PerformanceCounter.Snapshot();
             this.lastCacheSnapshot = this.cache?.PerformanceCounter.Snapshot();
