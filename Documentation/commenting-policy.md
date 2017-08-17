@@ -47,7 +47,7 @@ it must contain `<returns>`. The order of the tags is `<summary>`, `<param>`, `<
    * **FORMAT** - Use `<para>`, `<see>`, `<seealso>`, `<c>`, `<code>`, `<list>` to make the comment structure better. Do not use empty lines on formatting based on whitespaces. *(SOFT)*
    * **INHERITDOC** - Use `<inheritdoc />` if the comment already exists on lower level (base class, interface, virtual/abstract method). But feel free to add additional comments if the base comment is not sufficient. *(HARD)*
    * **REFERENCE** - Always use `<see>` when the comment contains name of existing class/property/field/... This prevents invalidating the comment after renaming/refactoring. *(HARD)*
- * **INLINE** - Use double slash (inline) comments for function body code, variables, and inline comments. Never use inline comments for what is XML documentation prescribed. *(HARD)*
+ * **INLINE** - If you want to comment function body code, variables, or make inline comments, use double slash (inline) comments. Never use inline comments for what the XML documentation is prescribed. *(HARD)*
    * **USE** - Double slash comments are optional and should be used to explain complicated or counter-intuitive segments of the code. *(SOFT)*
    * **TRIVIAL** - Do not use double slash comments for trivial constructs. See [Fibonacci example](#fibonacci) below. *(HARD)*
  * **BIG-PICTURE** - Try to describe the intent or the big picture rather than what the code does. Explain the interactions of the code with other parts of the system. This includes contracts and limitations that has to be respected - e.g. code protected by locks. *(SOFT)*
