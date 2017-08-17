@@ -30,6 +30,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <summary>Mappings of keys to class name spaces to be used when filtering log categories.</summary>
         private static readonly Dictionary<string, string> keyCategories;
 
+        /// <summary>Configuration of console logger.</summary>
+        private static ConsoleLoggerSettings consoleSettings;
+
         /// <summary>
         /// Initializes application logging.
         /// </summary>
@@ -173,6 +176,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
             };
 
             loggerFactory.AddConsole(consoleLoggerSettings);
+            consoleSettings = consoleLoggerSettings;
         }
 
         /// <summary>
@@ -262,6 +266,16 @@ namespace Stratis.Bitcoin.Configuration.Logging
             };
 
             return keyCategories;
+        }
+
+        /// <summary>
+        /// Obtains configuration of the console logger.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory interface being extended.</param>
+        /// <returns>Console logger settings.</returns>
+        public static ConsoleLoggerSettings GetConsoleSettings(this ILoggerFactory loggerFactory)
+        {
+            return consoleSettings;
         }
     }
 }
