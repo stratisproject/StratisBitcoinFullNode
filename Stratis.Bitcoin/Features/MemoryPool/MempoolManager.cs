@@ -10,31 +10,27 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
     /// <summary>
-    /// Memory pool scheduler.
+    /// A lock for managing asynchronous access to memory pool.
     /// </summary>
-    public class MempoolScheduler : AsyncLock
+    public class MempoolAsyncLock : AsyncLock
     { }
 
     /// <summary>
-    /// Memory pool manager.
+    /// The memory pool manager contains high level methods that can be used from outside of the mempool.
+    /// Includes querying information about the transactions in the memory pool.
+    /// Also includes methods for persisting memory pool.
     /// </summary>
     public class MempoolManager
     {
         #region Fields
 
-        /// <summary>
-        /// Memory pool persistence injected dependency.
-        /// </summary>
+        /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
         private IMempoolPersistence mempoolPersistence;
 
-        /// <summary>
-        /// Memory pool manager logger.
-        /// </summary>
+        /// <summary>Memory pool manager logger.</summary>
         private readonly ILogger mempoolLogger;
 
-        /// <summary>
-        /// Transaction memory pool injected dependency.
-        /// </summary>
+        /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly TxMempool memPool;
 
         #endregion
@@ -44,16 +40,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Constructs an instance of a memory pool manager object.
         /// </summary>
-        /// <param name="mempoolScheduler">Memory pool scheduler injected dependency.</param>
-        /// <param name="memPool">Transaction memory pool injected dependency.</param>
-        /// <param name="validator">Memory pool validator injected dependency.</param>
-        /// <param name="orphans">Memory pool orphans injected dependency.</param>
-        /// <param name="dateTimeProvider">Date and time provider injected dependency.</param>
-        /// <param name="nodeArgs">Node settings injected dependency.</param>
-        /// <param name="mempoolPersistence">Memory pool persistence injected dependency.</param>
-        /// <param name="loggerFactory">Logger factory injected dependency.</param>
+        /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
+        /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
+        /// <param name="validator">Memory pool validator for validating transactions.</param>
+        /// <param name="orphans">Memory pool orphans for managing orphan transactions.</param>
+        /// <param name="dateTimeProvider">Date and time information provider.</param>
+        /// <param name="nodeArgs">Settings from the node.</param>
+        /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
+        /// <param name="loggerFactory">Logger factory for creating logger.</param>
         public MempoolManager(
-            MempoolScheduler mempoolScheduler, 
+            MempoolAsyncLock mempoolLock, 
             TxMempool memPool,
             IMempoolValidator validator, 
             MempoolOrphans orphans, 
@@ -62,7 +58,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IMempoolPersistence mempoolPersistence,
             ILoggerFactory loggerFactory)
         {
-            this.MempoolScheduler = mempoolScheduler;
+            this.MempoolLock = mempoolLock;
             this.memPool = memPool;
             this.DateTimeProvider = dateTimeProvider;
             this.NodeArgs = nodeArgs;
@@ -76,34 +72,22 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         #region Properties
 
-        /// <summary>
-        /// Memory pool scheduler injected dependency.
-        /// </summary>
-        public MempoolScheduler MempoolScheduler { get; }
+        /// <summary>Lock for memory pool access.</summary>
+        public MempoolAsyncLock MempoolLock { get; }
 
-        /// <summary>
-        /// Memory pool validator injected dependency.
-        /// </summary>
+        /// <summary>Memory pool validator for validating transactions.</summary>
         public IMempoolValidator Validator { get; } // public for testing
 
-        /// <summary>
-        /// Memory pool orphans injected dependency.
-        /// </summary>
+        /// <summary>Memory pool orphans for managing orphan transactions.</summary>
         public MempoolOrphans Orphans { get; } // public for testing
 
-        /// <summary>
-        /// Date time provider injected dependency.
-        /// </summary>
+        /// <summary>Date and time information provider.</summary>
         public IDateTimeProvider DateTimeProvider { get; }
 
-        /// <summary>
-        /// Node settings injected dependency.
-        /// </summary>
+        /// <summary>Settings from the node.</summary>
         public NodeSettings NodeArgs { get; set; }
 
-        /// <summary>
-        /// Memory pool validator performance counter
-        /// </summary>
+        /// <summary>Access to memory pool validator performance counter.</summary>
         public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
 
         #endregion
@@ -111,12 +95,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         #region Operations
 
         /// <summary>
-        /// Gets the memory pool transactions asynchronously.
+        /// Gets the memory pool transactions.
         /// </summary>
-        /// <returns>Asynchronous task.</returns>
+        /// <returns>List of transactions</returns>
         public Task<List<uint256>> GetMempoolAsync()
         {
-            return this.MempoolScheduler.ReadAsync(() => this.memPool.MapTx.Keys.ToList());
+            return this.MempoolLock.ReadAsync(() => this.memPool.MapTx.Keys.ToList());
         }
 
         /// <summary>
@@ -140,7 +124,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Loads the memory pool asynchronously from a file.
         /// </summary>
         /// <param name="fileName">Filename to load from.</param>
-        /// <returns>Asynchronous task.</returns>
         internal async Task LoadPool(string fileName = null)
         {
             if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
@@ -203,64 +186,62 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Gets transaction information asynchronously for all transactions in memory pool.
+        /// Gets transaction information for all transactions in memory pool.
         /// </summary>
-        /// <returns>Asynchronous task containing list of transaction information.</returns>
+        /// <returns>List of transaction information.</returns>
         public Task<List<TxMempoolInfo>> InfoAllAsync()
         {
-            return this.MempoolScheduler.ReadAsync(this.InfoAll);
+            return this.MempoolLock.ReadAsync(this.InfoAll);
 
         }
 
         /// <summary>
-        /// Gets transaction info asynchronously for a specific transaction in memory pool.
+        /// Gets transaction info for a specific transaction in memory pool.
         /// </summary>
         /// <param name="hash">Hash of the transaction to query.</param>
-        /// <returns>Asynchronous task containing transaction information.</returns>
+        /// <returns>Transaction information.</returns>
         public Task<TxMempoolInfo> InfoAsync(uint256 hash)
         {
-            return this.MempoolScheduler.ReadAsync(() => this.Info(hash));
+            return this.MempoolLock.ReadAsync(() => this.Info(hash));
         }
 
         /// <summary>
-        /// Gets the memory pool size asynchronously.
+        /// Gets the memory pool size.
         /// </summary>
-        /// <returns>Asynchronous task containing memory pool size.</returns>
+        /// <returns>Memory pool size.</returns>
         public Task<long> MempoolSize()
         {
-            return this.MempoolScheduler.ReadAsync(() => this.memPool.Size);
+            return this.MempoolLock.ReadAsync(() => this.memPool.Size);
         }
 
         /// <summary>
-        /// Asynchronously clears the memory pool.
+        /// Clears the memory pool.
         /// </summary>
-        /// <returns>Asynchronous task.</returns>
         public Task Clear()
         {
-            return this.MempoolScheduler.ReadAsync(() => this.memPool.Clear());
+            return this.MempoolLock.ReadAsync(() => this.memPool.Clear());
         }
 
         /// <summary>
-        /// Gets the memory pool dynamic memory usage asynchronously.
+        /// Gets the memory pool dynamic memory usage.
         /// </summary>
-        /// <returns>Asynchronous task containing the memory usage.</returns>
+        /// <returns>Dynamic memory usage.</returns>
         public Task<long> MempoolDynamicMemoryUsage()
         {
-            return this.MempoolScheduler.ReadAsync(() => this.memPool.DynamicMemoryUsage());
+            return this.MempoolLock.ReadAsync(() => this.memPool.DynamicMemoryUsage());
         }
 
         /// <summary>
-        /// Removes transaction from a block in memory pool asynchronously.
+        /// Removes transaction from a block in memory pool.
         /// </summary>
         /// <param name="block">Block of transactions.</param>
         /// <param name="blockHeight">Location of the block.</param>
-        /// <returns>Asynchronous task.</returns>
         public Task RemoveForBlock(Block block, int blockHeight)
         {
             //if (this.IsInitialBlockDownload)
             //	return Task.CompletedTask;
 
-            return this.MempoolScheduler.WriteAsync(() =>
+            return this.MempoolLock.WriteAsync(() =>
             {
                 this.memPool.RemoveForBlock(block.Transactions, blockHeight);
 

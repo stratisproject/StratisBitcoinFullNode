@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
 		protected readonly ConsensusLoop consensusLoop;
 		protected readonly ConcurrentChain chain;
-		protected readonly MempoolScheduler mempoolScheduler;
+		protected readonly MempoolAsyncLock mempoolScheduler;
 		protected readonly TxMempool mempool;
 		protected readonly IDateTimeProvider dateTimeProvider;
 	    private readonly ILogger logger;
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ConsensusLoop consensusLoop, 
             Network network, 
             ConcurrentChain chain,
-			MempoolScheduler mempoolScheduler, 
+			MempoolAsyncLock mempoolScheduler, 
             TxMempool mempool,
 			IDateTimeProvider dateTimeProvider, 
             ILogger logger,

@@ -10,40 +10,28 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 {
     /// <summary>
     /// Transaction memory pool feature for the Full Node.
-    /// <see cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
     /// </summary>
+    /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
     public class MempoolFeature : FullNodeFeature 
     {
         #region Fields
 
-        /// <summary>
-        /// Node notifications available to subscribe to.
-        /// </summary>
+        /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
 
-        /// <summary>
-        /// Node connetion manager.
-        /// </summary>
+        /// <summary>Connection manager for managing node connections.</summary>
         private readonly IConnectionManager connectionManager;
 
-        /// <summary>
-        /// Observes block signal notifications from signals.
-        /// </summary>
+        /// <summary>Observes block signal notifications from signals.</summary>
         private readonly MempoolSignaled mempoolSignaled;
 
-        /// <summary>
-        /// Memory pool node behavior.
-        /// </summary>
+        /// <summary>Memory pool node behavior for managing attached node messages.</summary>
         private readonly MempoolBehavior mempoolBehavior;
 
-        /// <summary>
-        /// Memory pool manager.
-        /// </summary>
+        /// <summary>Memory pool manager for managing external access to memory pool.</summary>
         private readonly MempoolManager mempoolManager;
 
-        /// <summary>
-        /// Logger for the memory pool.
-        /// </summary>
+        /// <summary>Logger for the memory pool component.</summary>
         private readonly ILogger mempoolLogger;
 
         #endregion
@@ -53,12 +41,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Constructs a memory pool feature.
         /// </summary>
-        /// <param name="connectionManager">Injected connection manager dependency.</param>
-        /// <param name="signals">Injected signals dependency.</param>
-        /// <param name="mempoolSignaled">Injected memory pool signals dependency.</param>
-        /// <param name="mempoolBehavior">Injected behavior dependency.</param>
-        /// <param name="mempoolManager">Injected memory pool manager dependency.</param>
-        /// <param name="loggerFactory">Injected logger factory dependency.</param>
+        /// <param name="connectionManager">Connection manager for managing node connections.</param>
+        /// <param name="signals">Node notifications available to subscribe to.</param>
+        /// <param name="mempoolSignaled">Observes block signal notifications from signals.</param>
+        /// <param name="mempoolBehavior">Memory pool node behavior for managing attached node messages.</param>
+        /// <param name="mempoolManager">Memory pool manager for managing external access to memory pool.</param>
+        /// <param name="loggerFactory">Logger factory for creating loggers.</param>
         public MempoolFeature(
             IConnectionManager connectionManager,
             Signals.Signals signals,
@@ -118,8 +106,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Include the memory pool feature and related services in the full node.
         /// </summary>
-        /// <param name="fullNodeBuilder">full node builder</param>
-        /// <returns>full node builder</returns>
+        /// <param name="fullNodeBuilder">Full node builder.</param>
+        /// <returns>Full node builder.</returns>
         public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
@@ -127,18 +115,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 features
                 .AddFeature<MempoolFeature>()
                 .FeatureServices(services =>
-                {
-                    services.AddSingleton<MempoolScheduler>();
-                    services.AddSingleton<TxMempool>();
-                    services.AddSingleton<BlockPolicyEstimator>();
-                    services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
-                    services.AddSingleton<IMempoolValidator, MempoolValidator>();
-                    services.AddSingleton<MempoolOrphans>();
-                    services.AddSingleton<MempoolManager>();
-                    services.AddSingleton<MempoolBehavior>();
-                    services.AddSingleton<MempoolSignaled>();
-                    services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
-                });
+                    {
+                        services.AddSingleton<MempoolAsyncLock>();
+                        services.AddSingleton<TxMempool>();
+                        services.AddSingleton<BlockPolicyEstimator>();
+                        services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
+                        services.AddSingleton<IMempoolValidator, MempoolValidator>();
+                        services.AddSingleton<MempoolOrphans>();
+                        services.AddSingleton<MempoolManager>();
+                        services.AddSingleton<MempoolBehavior>();
+                        services.AddSingleton<MempoolSignaled>();
+                        services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
+                    });
             });
 
             return fullNodeBuilder;
