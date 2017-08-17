@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the accounts the wallet has for this type of coin.
         /// </summary>
         /// <param name="coinType">Type of the coin.</param>
-        /// <returns>The </returns>
+        /// <returns>The accounts in the wallet corresponding to this type of coin.</returns>
         public IEnumerable<HdAccount> GetAccountsByCoinType(CoinType coinType)
         {
             return this.AccountsRoot.Where(a => a.CoinType == coinType).SelectMany(a => a.Accounts);
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="accountName">The name of the account to retrieve.</param>
         /// <param name="coinType">The type of the coin this account is for.</param>
-        /// <returns></returns>
+        /// <returns>The requested account.</returns>
         public HdAccount GetAccountByCoinType(string accountName, CoinType coinType)
         {
             AccountRoot accountRoot = this.AccountsRoot.SingleOrDefault(a => a.CoinType == coinType);
