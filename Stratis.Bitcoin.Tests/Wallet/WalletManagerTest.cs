@@ -698,7 +698,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetUnusedAddressUsingNameWithWalletWithoutAccountOfGivenNameThrowsException()
         {
-            Assert.Throws<Exception>(() =>
+            Assert.Throws<WalletException>(() =>
             {
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -1241,10 +1241,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions("myWallet", confirmations: 0);
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet", confirmations: 0);
 
-            Assert.Equal(1, result.Count);
-            Assert.Equal(0, result.First().UnspentOutputs.Count);
+            Assert.Equal(0, result.Count);
         }
 
         /// <summary>
@@ -1296,10 +1295,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             walletManager.Wallets.Add(wallet2);
             walletManager.Wallets.Add(wallet3);
 
-            var resultRef = walletManager.GetSpendableTransactions("myWallet3", confirmations: 1);
-            Assert.Equal(1, resultRef.Count);
-
-            var result = resultRef[0].UnspentOutputs;
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet3", confirmations: 1);
+            
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("Second expectation", info.Account.Name);
@@ -1335,10 +1332,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var resultRef = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
-            Assert.Equal(1, resultRef.Count);
-
-            var result = resultRef[0].UnspentOutputs;
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1);
+            
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("First expectation", info.Account.Name);
@@ -1371,7 +1366,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                         new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-                walletManager.GetSpendableTransactions("myWallet", confirmations: 1);               
+                walletManager.GetSpendableTransactionsInWallet("myWallet", confirmations: 1);               
             });
         }
 
@@ -1391,7 +1386,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             });
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions("myWallet2", confirmations: 1);
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet2", confirmations: 1);
 
             Assert.Equal(0, result.Count);
         }
@@ -1412,10 +1407,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1);
 
-            Assert.Equal(1, result.Count);
-            Assert.Equal(0, result.First().UnspentOutputs.Count);
+            Assert.Equal(0, result.Count);
         }
 
         [Fact]

@@ -377,67 +377,28 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public List<UnspentAccountReference> GetSpendableTransactions(string walletName, int confirmations = 0)
+        public List<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
 
-            var accounts = this.GetAccounts(walletName);
-
-            var walletAccounts = new List<UnspentAccountReference>();
-            foreach (var account in accounts)
-            {
-                var walletAccount = new WalletAccountReference {AccountName = account.Name, WalletName = walletName};
-                walletAccounts.Add(this.GetSpendableTransactions(walletAccount, confirmations));
-            }
-
-            return walletAccounts;
+            Wallet wallet = this.GetWalletByName(walletName);
+            return wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations);
         }
 
         /// <inheritdoc />
-        public UnspentAccountReference GetSpendableTransactions(WalletAccountReference walletAccountReference, int confirmations = 0)
+        public List<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0)
         {
             Guard.NotNull(walletAccountReference, nameof(walletAccountReference));
 
-            var accounts = this.GetAccounts(walletAccountReference.WalletName);
-            var account = accounts.FirstOrDefault(n => n.Name == walletAccountReference.AccountName);
-
+            Wallet wallet = this.GetWalletByName(walletAccountReference.WalletName);
+            HdAccount account = wallet.GetAccountByCoinType(walletAccountReference.AccountName, this.coinType);
+            
             if (account == null)
             {
                 throw new WalletException($"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
             }
 
-            return this.GetSpendableTransactions(account, confirmations);
-        }
-
-        /// <inheritdoc />
-        public UnspentAccountReference GetSpendableTransactions(HdAccount account, int confirmations = 0)
-        {
-            Guard.NotNull(account, nameof(account));
-
-            // this will take all the spendable coins that belong to an account
-            // and keep the reference to the HDAddress and HDAccount, this is useful
-            // so later the private key can be calculated just from a given UTXO
-
-            var currentHeight = this.chain.Tip.Height;
-
-            var accountReference = new UnspentAccountReference();
-            foreach (var address in account.GetCombinedAddresses())
-            {
-                var unspentTransactions = address.UnspentTransactions()
-                    .Where(a => currentHeight - (a.BlockHeight ?? currentHeight) >= confirmations).ToList();
-
-                foreach (var transactionData in unspentTransactions)
-                {
-                    accountReference.UnspentOutputs.Add(new UnspentOutputReference
-                    {
-                        Account = account,
-                        Address = address,
-                        Transaction = transactionData
-                    });
-                }
-            }
-
-            return accountReference;
+            return account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
         }
         
         /// <inheritdoc />
@@ -944,17 +905,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
     }
-
-    public class TransactionDetails
-    {
-        public uint256 Hash { get; set; }
-
-        public int? Index { get; set; }
-
-        public Money Amount { get; internal set; }
-
-    }
-
+    
     public class TransactionFoundEventArgs : EventArgs
     {
         public Script Script { get; set; }
@@ -966,54 +917,5 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Script = script;
             this.TransactionHash = transactionHash;
         }
-    }
-
-    /// <summary>
-    /// Represents an UTXO that keeps a reference to <see cref="HdAddress"/> and <see cref="HdAccount"/>.
-    /// </summary>
-    /// <remarks>
-    /// This is useful when an UTXO needs access to its HD properties like the HD path when reconstructing a private key.
-    /// </remarks>
-    public class UnspentOutputReference
-    {
-        /// <summary>
-        /// The account associated with this UTXO
-        /// </summary>
-        public HdAccount Account { get; set; }
- 
-        /// <summary>
-        /// The address associated with this UTXO
-        /// </summary>
-        public HdAddress Address { get; set; }
-
-        /// <summary>
-        /// The transaction representing the UTXO.
-        /// </summary>
-        public TransactionData Transaction { get; set; }
-
-        /// <summary>
-        /// Convert the <see cref="TransactionData"/> to an <see cref="OutPoint"/>
-        /// </summary>
-        /// <returns>The corresponding <see cref="OutPoint"/>.</returns>
-        public OutPoint ToOutPoint()
-        {
-            return new OutPoint(this.Transaction.Id, (uint) this.Transaction.Index);
-        }
-    }
-
-    /// <summary>
-    /// Represent a high level account container that hold's all its <see cref="UnspentOutputReference"/>.
-    /// </summary>
-    public class UnspentAccountReference
-    {
-        public UnspentAccountReference()
-        {
-            this.UnspentOutputs = new List<UnspentOutputReference>();
-        }
-
-        /// <summary>
-        /// The UTXO's associated with this account.
-        /// </summary>
-        public List<UnspentOutputReference> UnspentOutputs { get; set; }
     }
 }

@@ -196,6 +196,27 @@ namespace Stratis.Bitcoin.Features.Wallet
             Key privateKey = HdOperations.DecryptSeed(this.EncryptedSeed, password, this.Network);
             return HdOperations.GetExtendedPrivateKey(privateKey, this.ChainCode, address.HdPath, this.Network);
         }
+
+        /// <summary>
+        /// Lists all spendable transactions from all accounts in the wallet.
+        /// </summary>
+        /// <param name="coinType">Type of the coin to get transactions from.</param>
+        /// <param name="currentChainHeight">Height of the current chain, used in calculating the number of confirmations.</param>
+        /// <param name="confirmations">The number of confirmations required to consider a transaction spendable.</param>
+        /// <returns>A collection of spendable outputs.</returns>
+        public List<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0)
+        {
+            var accounts = this.GetAccountsByCoinType(coinType);
+
+            var walletAccounts = new List<UnspentOutputReference>();
+            foreach (var account in accounts)
+            {
+                walletAccounts.AddRange(account.GetSpendableTransactions(currentChainHeight, confirmations));
+            }
+
+            return walletAccounts;
+        }
+
     }
 
     /// <summary>
@@ -260,12 +281,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public HdAccount GetAccountByName(string accountName)
         {
             if (this.Accounts == null)
-                throw new Exception($"No account with the name {accountName} could be found.");
+                throw new WalletException($"No account with the name {accountName} could be found.");
 
             // get the account
             HdAccount account = this.Accounts.SingleOrDefault(a => a.Name == accountName);
             if (account == null)
-                throw new Exception($"No account with the name {accountName} could be found.");
+                throw new WalletException($"No account with the name {accountName} could be found.");
 
             return account;
         }
@@ -575,6 +596,36 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return addressesCreated;
         }
+
+        /// <summary>
+        /// Lists all spendable transactions in the current account.
+        /// </summary>
+        /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
+        /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
+        /// <returns>A collection of spendable outputs that belong to the given account.</returns>
+        public List<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, int confirmations = 0)
+        {
+            // This will take all the spendable coins that belong to the account and keep the reference to the HDAddress and HDAccount. 
+            // This is useful so later the private key can be calculated just from a given UTXO.
+            List<UnspentOutputReference> unspentOutputs = new List<UnspentOutputReference>();
+            foreach (var address in this.GetCombinedAddresses())
+            {
+                var unspentTransactions = address.UnspentTransactions()
+                    .Where(a => currentChainHeight - (a.BlockHeight ?? currentChainHeight) >= confirmations).ToList();
+
+                foreach (var transactionData in unspentTransactions)
+                {
+                    unspentOutputs.Add(new UnspentOutputReference
+                    {
+                        Account = this,
+                        Address = address,
+                        Transaction = transactionData
+                    });
+                }
+            }
+
+            return unspentOutputs;
+        }
     }
 
     /// <summary>
@@ -834,6 +885,39 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool IsSpentConfirmed()
         {
             return this.BlockHeight != null;
+        }
+    }
+
+    /// <summary>
+    /// Represents an UTXO that keeps a reference to <see cref="HdAddress"/> and <see cref="HdAccount"/>.
+    /// </summary>
+    /// <remarks>
+    /// This is useful when an UTXO needs access to its HD properties like the HD path when reconstructing a private key.
+    /// </remarks>
+    public class UnspentOutputReference
+    {
+        /// <summary>
+        /// The account associated with this UTXO
+        /// </summary>
+        public HdAccount Account { get; set; }
+
+        /// <summary>
+        /// The address associated with this UTXO
+        /// </summary>
+        public HdAddress Address { get; set; }
+
+        /// <summary>
+        /// The transaction representing the UTXO.
+        /// </summary>
+        public TransactionData Transaction { get; set; }
+
+        /// <summary>
+        /// Convert the <see cref="TransactionData"/> to an <see cref="OutPoint"/>
+        /// </summary>
+        /// <returns>The corresponding <see cref="OutPoint"/>.</returns>
+        public OutPoint ToOutPoint()
+        {
+            return new OutPoint(this.Transaction.Id, (uint)this.Transaction.Index);
         }
     }
 }

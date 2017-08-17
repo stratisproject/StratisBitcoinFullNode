@@ -175,30 +175,27 @@ namespace Stratis.Bitcoin.Features.Miner
                 var pindexPrev = this.consensusLoop.Tip;
 
                 var stakeTxes = new List<StakeTx>();
-                var spendable = this.walletManager.GetSpendableTransactions(walletSecret.WalletName, 1);
+                var spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
 
-                var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.UnspentOutputs.Select(t => t.Transaction.Id)).ToArray()).GetAwaiter().GetResult();
+                var coinset = this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).GetAwaiter().GetResult();
 
-                foreach (var unspentInfo in spendable)
+                foreach (var infoTransaction in spendable)
                 {
-                    foreach (var infoTransaction in unspentInfo.UnspentOutputs)
+                    var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
+                    var utxo = set?._Outputs[infoTransaction.Transaction.Index];
+
+                    if (utxo != null && utxo.Value > Money.Zero)
                     {
-                        var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
-                        var utxo = set?._Outputs[infoTransaction.Transaction.Index];
+                        var stakeTx = new StakeTx();
 
-                        if (utxo != null && utxo.Value > Money.Zero)
-                        {
-                            var stakeTx = new StakeTx();
-
-                            stakeTx.TxOut = utxo;
-                            stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
-                            stakeTx.Address = infoTransaction.Address;
-                            stakeTx.OutputIndex = infoTransaction.Transaction.Index;
-                            stakeTx.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
-                            stakeTx.UtxoSet = set;
-                            stakeTx.Secret = walletSecret; //temporary
-                            stakeTxes.Add(stakeTx);
-                        }
+                        stakeTx.TxOut = utxo;
+                        stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
+                        stakeTx.Address = infoTransaction.Address;
+                        stakeTx.OutputIndex = infoTransaction.Transaction.Index;
+                        stakeTx.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
+                        stakeTx.UtxoSet = set;
+                        stakeTx.Secret = walletSecret; //temporary
+                        stakeTxes.Add(stakeTx);
                     }
                 }
 
