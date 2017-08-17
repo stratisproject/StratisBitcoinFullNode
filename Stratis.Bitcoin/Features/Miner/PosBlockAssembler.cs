@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Miner
 {
 
-	public class PosBlockAssembler : PowBlockAssembler
+    public class PosBlockAssembler : PowBlockAssembler
 	{
 		private readonly StakeChain stakeChain;
 
@@ -16,13 +16,13 @@ namespace Stratis.Bitcoin.Features.Miner
             ConsensusLoop consensusLoop, 
             Network network, 
             ConcurrentChain chain,
-			MempoolAsyncLock mempoolScheduler, 
+			MempoolAsyncLock mempoolLock, 
             TxMempool mempool,
 			IDateTimeProvider dateTimeProvider, 
             StakeChain stakeChain,
             ILogger logger,
             AssemblerOptions options = null)
-			: base(consensusLoop, network, chain, mempoolScheduler, mempool, dateTimeProvider, logger, options)
+			: base(consensusLoop, network, chain, mempoolLock, mempool, dateTimeProvider, logger, options)
 		{
 			this.stakeChain = stakeChain;
 		}
