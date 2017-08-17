@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </para> 
     /// <para>
     /// After a "Stop" condition is found the FindBlocksTask will be removed from 
-    /// the <see cref="BlockStoreInnerStepContext.Routine"/> and only the 
+    /// the <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the 
     /// <see cref="BlockStoreInnerStepDownloadBlocks"/> will continue to execute until the DownloadStack is empty.
     /// </para>   
     /// </summary>
@@ -28,12 +28,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <inheritdoc/>
-        internal override async Task<BlockStoreLoopStepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken token, bool disposeMode)
+        internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken token, bool disposeMode)
         {
             if (disposeMode)
-                return BlockStoreLoopStepResult.Break();
-
-            var result = BlockStoreLoopStepResult.Next();
+                return StepResult.Stop;
 
             var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop).Initialize(nextChainedBlock);
 
@@ -41,15 +39,27 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             while (!token.IsCancellationRequested)
             {
-                foreach (var item in context.Routine.ToList())
+                foreach (var innerStep in context.InnerSteps.ToList())
                 {
-                    var executionResult = await item.ExecuteAsync(context);
-                    if (executionResult.ShouldBreak)
-                        return result;
+                    InnerStepResult innerStepResult = await innerStep.ExecuteAsync(context);
+                    if (innerStepResult == InnerStepResult.Stop)
+                        return StepResult.Next;
                 }
             }
 
-            return result;
+            return StepResult.Next;
         }
+    }
+
+    /// <summary>
+    /// The result that is returned from executing each inner step.
+    /// </summary>   
+    public enum InnerStepResult
+    {
+        /// <summary>Execute the next line of code in the loop.</summary>
+        Next,
+
+        /// <summary>Break out of the loop.</summary>
+        Stop
     }
 }

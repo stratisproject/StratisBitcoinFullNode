@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     public sealed class BlockStoreInnerStepDownloadBlocks : BlockStoreInnerStep
     {
         /// <inheritdoc/>
-        public override async Task<BlockStoreLoopStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
+        public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
             BlockPuller.DownloadedBlock downloadedBlock;
 
@@ -42,20 +42,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     context.Store.Clear();
 
                     if (!context.DownloadStack.Any())
-                        return BlockStoreLoopStepResult.Break();
+                        return InnerStepResult.Stop;
                 }
             }
             else
             {
                 if (context.StallCount > 10000)
-                    return BlockStoreLoopStepResult.Break();
+                    return InnerStepResult.Stop;
 
                 await Task.Delay(100, context.CancellationToken);
 
                 context.StallCount++;
             }
 
-            return BlockStoreLoopStepResult.Next();
+            return InnerStepResult.Next;
         }
     }
 }

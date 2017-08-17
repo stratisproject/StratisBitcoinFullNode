@@ -48,10 +48,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public Task Initialize()
         {
             // subscribe to receiving blocks and transactions
-            BlockSubscriber sub = new BlockSubscriber(this.signals.Blocks, new BlockObserver(this));
-            sub.Subscribe();
-            TransactionSubscriber txSub = new TransactionSubscriber(this.signals.Transactions, new TransactionObserver(this));
-            txSub.Subscribe();
+            IDisposable sub = this.signals.SubscribeForBlocks(new BlockObserver(this));
+            IDisposable txSub = this.signals.SubscribeForTransactions(new TransactionObserver(this));
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
             if (!this.walletManager.Wallets.Any())

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ConsensusLoop consensusLoop, 
             Network network, 
             ConcurrentChain chain,
-			MempoolScheduler mempoolScheduler, 
+			MempoolAsyncLock mempoolScheduler, 
             TxMempool mempool,
 			IDateTimeProvider dateTimeProvider, 
             StakeChain stakeChain,

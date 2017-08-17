@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
             this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
-            this.signals.Blocks.Broadcast(block);
+            this.signals.SignalBlock(block);
 
             this.logger.LogInformation($"==================================================================");
             this.logger.LogInformation($"Found new POS block hash={context.BlockResult.ChainedBlock.HashBlock} height={context.BlockResult.ChainedBlock.Height}");

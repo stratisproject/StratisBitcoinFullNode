@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </list>
         /// </para>
         /// <para>
-        /// Steps return a <see cref="BlockStoreLoopStepResult"/> which either signals the While loop
+        /// Steps return a <see cref="StepResult"/> which either signals the While loop
         /// to break or continue execution.
         /// </para>
         /// </summary>
@@ -227,9 +227,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.blockStoreStats.Log();
 
                 var result = await this.stepChain.Execute(nextChainedBlock, disposeMode, cancellationToken);
-                if (result.ShouldBreak)
+                if (result == StepResult.Stop)
                     break;
-                if (result.ShouldContinue)
+                if (result == StepResult.Continue)
                     continue;
             }
         }
