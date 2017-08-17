@@ -6,13 +6,14 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Notifications.Controllers;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
-	/// <summary>
-	/// Feature enabling the broadcasting of blocks.
-	/// </summary>
-	public class BlockNotificationFeature : FullNodeFeature
+    /// <summary>
+    /// Feature enabling the broadcasting of blocks.
+    /// </summary>
+    public class BlockNotificationFeature : FullNodeFeature
 	{
 		private readonly BlockNotification blockNotification;
 		private readonly IConnectionManager connectionManager;
@@ -54,7 +55,8 @@ namespace Stratis.Bitcoin.Features.Notifications
 				{					
 					services.AddSingleton<BlockNotification>();				
 					services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
-				});
+				    services.AddSingleton<NotificationsController>();
+                });
 			});
 
 			return fullNodeBuilder;

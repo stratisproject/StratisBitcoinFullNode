@@ -6,10 +6,10 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
-	/// <summary>
-	/// Class used to broadcast about new blocks.
-	/// </summary>
-	public class BlockNotification
+    /// <summary>
+    /// Class used to broadcast about new blocks.
+    /// </summary>
+    public class BlockNotification
 	{
 		private readonly ISignals signals;
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
 		private bool reSync;
 
-		public void SyncFrom(uint256 startHash)
+		public virtual void SyncFrom(uint256 startHash)
 		{
 			if (this.StartHash != null)
 			{
