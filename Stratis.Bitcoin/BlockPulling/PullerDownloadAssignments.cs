@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </remarks>
         public static Dictionary<PeerInformation, List<int>> AssignBlocksToPeers(List<int> requestedBlockHeights, List<PeerInformation> availablePeersInformation)
         {
-            logger.LogTrace($"({nameof(requestedBlockHeights)}:{string.Join(",", requestedBlockHeights)},{nameof(availablePeersInformation)}.{nameof(availablePeersInformation.Count)}:{availablePeersInformation.Count})");
+            logger.LogTrace("({0}:[{1}],{2}.{3}:{4})", nameof(requestedBlockHeights), string.Join(",", requestedBlockHeights), nameof(availablePeersInformation), nameof(availablePeersInformation.Count), availablePeersInformation.Count);
 
             Dictionary<PeerInformation, List<int>> res = new Dictionary<PeerInformation, List<int>>();
             foreach (PeerInformation peerInformation in availablePeersInformation)
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 res[selectedPeer].Add(blockHeight);
             }
 
-            logger.LogTrace($"(-):*.{nameof(res.Count)}={res.Count}");
+            logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
             return res;
         }
 
