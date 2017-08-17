@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using Stratis.Bitcoin.Configuration.Logging;
 using System;
 
 namespace Stratis.Bitcoin.Utilities
@@ -14,9 +16,11 @@ namespace Stratis.Bitcoin.Utilities
     /// </remarks>
     public class PrefixLogger : ILogger
     {
-        /// <summary>Internal logger instance.</summary>
-        //private ILogger logger;
+        /// <summary>Internal NLog logger instance.</summary>
         private NLog.Logger logger;
+
+        /// <summary>Internal console logger instance.</summary>
+        private ILogger consoleLogger;
 
         /// <summary>Prefix to put in front of every message.</summary>
         private string prefix;
@@ -27,11 +31,15 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Creates a logger instance with given prefix.
         /// </summary>
+        /// <param name="loggerFactory">Factory to create loggers.</param>
         /// <param name="categoryName">Category name for messages produced by the logger.</param>
         /// <param name="prefix">String to be put in front of each log of the newly created logger.</param>
-        public PrefixLogger(string categoryName, string prefix = null)
+        public PrefixLogger(ILoggerFactory loggerFactory, string categoryName, string prefix = null)
         {
             this.logger = NLog.LogManager.GetLogger(categoryName);
+            var consoleLoggerProvider = new ConsoleLoggerProvider(loggerFactory.GetConsoleSettings());
+            this.consoleLogger = consoleLoggerProvider.CreateLogger(categoryName);
+
             this.prefix = prefix != null ? prefix : "";
             this.wrapperType = typeof(PrefixLogger);
         }
@@ -64,6 +72,11 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
+            // First we take care about output to console.
+            if (this.consoleLogger.IsEnabled(logLevel))
+                this.consoleLogger.Log(logLevel, eventId, state, exception, (s, e) => { return this.prefix + formatter(s, e); });
+
+            // The rest of the method cares about logging via NLog to files.
             NLog.LogLevel nLogLevel = logLevel.ToNLogLevel();
             if (!this.IsEnabled(nLogLevel))
                 return;
