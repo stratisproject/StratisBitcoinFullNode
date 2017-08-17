@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
         {
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
             txMemPool = new TxMempool(new FeeRate(1000), dateTimeProvider, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default(), new LoggerFactory()), new LoggerFactory());
-            var mempoolScheduler = new MempoolScheduler();
+            var mempoolScheduler = new MempoolAsyncLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
             var mempoolPersistence = new MempoolPersistence(settings, new LoggerFactory());

@@ -210,7 +210,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.cancellationToken.Cancel();
             this.AttachedNode.MessageReceived -= Node_MessageReceived;
-            ReleaseAll();
+            ReleaseAll(true);
 
             this.logger.LogTrace("(-)");
         }
@@ -218,11 +218,12 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Releases all pending block download tasks from the peer.
         /// </summary>
-        internal void ReleaseAll()
+        /// <param name="peerDisconnected">If set to <c>true</c> the peer is considered as disconnected and should be prevented from being assigned additional work.</param>
+        internal void ReleaseAll(bool peerDisconnected)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace($"({nameof(peerDisconnected)}:{peerDisconnected})");
 
-            this.puller.ReleaseAllPeerDownloadTaskAssignments(this);
+            this.puller.ReleaseAllPeerDownloadTaskAssignments(this, peerDisconnected);
 
             this.logger.LogTrace("(-)");
         }

@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit);
             this.LimitDescendantSize = config.GetOrDefault("limitdescendantsize", MempoolValidator.DefaultDescendantSizeLimit);
             this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement);
-            this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DEFAULT_MAX_ORPHAN_TRANSACTIONS);
+            this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly);
             this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
         }

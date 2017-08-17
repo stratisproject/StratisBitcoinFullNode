@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 behavior.UpdateQualityScore(penalty);
                 if (Math.Abs(behavior.QualityScore - QualityScore.MinScore) < 0.00001)
                 {
-                    behavior.ReleaseAll();
+                    behavior.ReleaseAll(false);
                     this.AssignPendingVectors();
                 }
             }
@@ -504,15 +504,16 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Releases all pending block download tasks assigned to a peer.
         /// </summary>
         /// <param name="peer">Peer to have all its pending download task released.</param>
+        /// <param name="disconnectPeer">If set to <c>true</c> the peer is considered as disconnected and should be prevented from being assigned additional work.</param>
         /// <exception cref="InvalidOperationException">Thrown in case of data inconsistency between synchronized structures, which should never happen.</exception>
-        internal void ReleaseAllPeerDownloadTaskAssignments(BlockPullerBehavior peer)
+        internal void ReleaseAllPeerDownloadTaskAssignments(BlockPullerBehavior peer, bool disconnectPeer)
         {
-            this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}')");
+            this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}',{nameof(disconnectPeer)}:{disconnectPeer})");
 
             lock (this.lockObject)
             {
-                // Prevent the peer to get any more work from now on.
-                peer.Disconnected = true;
+                // Prevent the peer to get any more work from now on if it was disconnected.
+                if (disconnectPeer) peer.Disconnected = true;
 
                 Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
