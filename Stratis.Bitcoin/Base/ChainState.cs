@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.Base
                 {
                     this.lastupdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks; // sample every minute
 
-                    // if consensus is no present IBD has no meaning. Set to false to match legacy code.
-                    var consensusFeature = this.fullNode.Services.Features.OfType<IConsensusFeature>().FirstOrDefault(); // No hard failure if not present
+                    // if consensus is no present IBD has no meaning. Set to false to match legacy code.                    
+                    var consensusFeature = this.fullNode.Services?.Features.OfType<IConsensusFeature>().FirstOrDefault(); // No hard failure if not present
                     this.lastresult = (consensusFeature == null)?false:consensusFeature.IsInitialBlockDownload();
                 }
                 return this.lastresult;
