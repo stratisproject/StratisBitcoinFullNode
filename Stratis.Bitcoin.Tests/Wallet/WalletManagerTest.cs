@@ -20,8 +20,21 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet
 {
-    public class WalletManagerTest : LogsTestBase
+    public class WalletManagerTest : LogsTestBase, IDisposable
     {
+        
+        public void Dispose()
+        {
+            // This is needed here because of the fact that the Stratis network, when initialized, sets the 
+            // Transaction.TimeStamp value to 'true' (look in Network.InitStratisTest() and Network.InitStratisMain()) in order
+            // for proof-of-stake to work.
+            // Now, there are a few tests where we're trying to parse Bitcoin transaction, but since the TimeStamp is set the true,
+            // the execution path is different and the bitcoin transaction tests are failing.
+            // Here we're resetting the TimeStamp after every test so it doesn't cause any trouble.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         /// <summary>
         /// This is more of an integration test to verify fields are filled correctly. This is what I could confirm.
         /// </summary>
