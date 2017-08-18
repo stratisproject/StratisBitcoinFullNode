@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 ChainedBlock newTip = this.Chain.GetBlock(resetBlockHash);
                 await this.BlockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList);
                 this.StoreTip = newTip;
-                this.logger.LogWarning($"{this.StoreName} Initialize recovering to block height = {newTip.Height} hash = {newTip.HashBlock}");
+                this.logger.LogWarning("{0} Initialize recovering to block height = {1}, hash = {2}.", this.StoreName, newTip.Height, newTip.HashBlock);
             }
 
             if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)

@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.logger.LogInformation($"Flushing {this.name}...");
+            this.logger.LogInformation("Flushing {0}...", this.name);
             this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
 
             this.blockStoreCache.Dispose();
