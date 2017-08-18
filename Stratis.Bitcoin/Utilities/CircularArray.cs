@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -100,7 +98,7 @@ namespace Stratis.Bitcoin.Utilities
         public IEnumerator<T> GetEnumerator()
         {
             int itemIndex = 0;
-            if (this.Count == this.Capacity) itemIndex = (this.Index + 1) % this.Capacity;
+            if (this.Count == this.Capacity) itemIndex = this.Index;
 
             for (int i = 0; i < this.Count; i++)
             {
