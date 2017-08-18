@@ -4,11 +4,13 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
+using Stratis.Bitcoin.Configuration.Logging;
 using System;
+using System.Text;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
-    public class WalletFeature : FullNodeFeature
+    public class WalletFeature : FullNodeFeature, FullNode.IConsoleLogger
     {
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
@@ -22,6 +24,25 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
             this.signals = signals;
+        }
+
+        public void AddLog(FullNode fullNode, StringBuilder benchLogs, bool nodeStats)
+        {
+            if (nodeStats)
+            {
+                var walletManager = this.walletManager as WalletManager;
+                if (walletManager != null)
+                {
+                    var height = walletManager.LastBlockHeight();
+                    var block = fullNode.Chain.GetBlock(height);
+                    var hashBlock = block == null ? 0 : block.HashBlock;
+
+                    benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                         height.ToString().PadRight(8) +
+                                         " Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                         hashBlock);
+                }
+            }
         }
 
         public override void Start()

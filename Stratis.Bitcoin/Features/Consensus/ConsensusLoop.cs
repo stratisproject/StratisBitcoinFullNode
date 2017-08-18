@@ -28,7 +28,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
     public class ConsensusLoop
     {
-        public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, StakeChain stakeChain = null)
+        public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, StakeChain stakeChain = null,
+            FullNode fullNode = null)
         {
             Guard.NotNull(validator, nameof(validator));
             Guard.NotNull(chain, nameof(chain));
@@ -41,6 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.UTXOSet = utxoSet;
             this.Puller = puller;
             this.NodeDeployments = nodeDeployments;
+            this.FullNode = fullNode;
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
@@ -48,6 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         StopWatch watch = new StopWatch();
 
+        public FullNode FullNode { get; }
         public StakeChain StakeChain { get; }
         public LookaheadBlockPuller Puller { get; }
         public ConcurrentChain Chain { get; }
@@ -67,6 +70,24 @@ namespace Stratis.Bitcoin.Features.Consensus
                 utxoHash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
             }
             this.Puller.SetLocation(this.Tip);
+        }
+
+        /// <summary>
+        /// Checks whether the node is currently in the process of initial block download.
+        /// </summary>
+        /// <returns><c>true</c> if the node is currently doing IBD, <c>false</c> otherwise.</returns>
+        public bool IsInitialBlockDownload()
+        {
+            if (this.Tip == null)
+                return true;
+
+            if (this.Tip.ChainWork < (this.FullNode.Network.Consensus.MinimumChainWork ?? uint256.Zero))
+                return true;
+
+            if (this.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.FullNode.DateTimeProvider.GetTime() - this.FullNode.Settings.MaxTipAge))
+                return true;
+
+            return false;
         }
 
         public IEnumerable<BlockResult> Execute(CancellationToken cancellationToken)

@@ -5,10 +5,11 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using System.Text;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-    public class MempoolFeature : FullNodeFeature
+    public class MempoolFeature : FullNodeFeature, FullNode.IConsoleLogger
     {
         private readonly Signals.Signals signals;
         private readonly IConnectionManager connectionManager;
@@ -31,6 +32,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolBehavior = mempoolBehavior;
             this.mempoolManager = mempoolManager;
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        public void AddLog(FullNode fullNode, StringBuilder benchLogs, bool nodeStats)
+        {
+            if (!nodeStats)
+            {
+                benchLogs.AppendLine();
+
+                if (this.mempoolManager != null)
+                {
+                    benchLogs.AppendLine("======Mempool======");
+                    benchLogs.AppendLine(this.mempoolManager.PerformanceCounter.ToString());
+                }
+            }
         }
 
         public override void Start()

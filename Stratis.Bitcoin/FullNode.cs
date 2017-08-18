@@ -7,11 +7,6 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
@@ -54,26 +49,11 @@ namespace Stratis.Bitcoin
         /// <summary>Provider of notification about newly available blocks and transactions.</summary>
         public Signals.Signals Signals { get; set; }
 
-        /// <summary>Component responsible for keeping the node in consensus with the network.</summary>
-        public ConsensusLoop ConsensusLoop { get; set; }
-
-        /// <summary>Manager providing operations on wallets.</summary>
-        public WalletManager WalletManager { get; set; }
-
-        /// <summary>A transaction handler providing operations on transactions in the wallets.</summary>
-        public IWalletTransactionHandler WalletTransactionHandler { get; set; }
-
         /// <summary>ASP.NET Core host for RPC server.</summary>
         public IWebHost RPCHost { get; set; }
 
         /// <summary>Component responsible for connections to peers in P2P network.</summary>
         public IConnectionManager ConnectionManager { get; set; }
-
-        /// <summary>Manager of transactions in memory pool.</summary>
-        public MempoolManager MempoolManager { get; set; }
-
-        /// <summary>Manager responsible for persistence of blocks.</summary>
-        public BlockStoreManager BlockStoreManager { get; set; }
 
         /// <summary>Best chain of block headers from genesis.</summary>
         public ConcurrentChain Chain { get; set; }
@@ -84,9 +64,6 @@ namespace Stratis.Bitcoin
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; internal set; }
 
-        /// <summary>Information about transaction outputs in the chain.</summary>
-        public CoinView CoinView { get; set; }
-
         /// <summary>Contains path locations to folders and files on disk.</summary>
         public DataFolder DataFolder { get; set; }
 
@@ -95,6 +72,11 @@ namespace Stratis.Bitcoin
 
         /// <summary>Application life cycle control - triggers when application shuts down.</summary>
         private NodeLifetime nodeLifetime;
+
+        public interface IConsoleLogger
+        {
+            void AddLog(FullNode fullNode, StringBuilder benchLog, bool nodeStats);
+        }
 
         /// <inheritdoc />
         public INodeLifetime NodeLifetime
@@ -105,6 +87,21 @@ namespace Stratis.Bitcoin
 
         /// <inheritdoc />
         public IFullNodeServiceProvider Services { get; set; }
+
+        public T NodeService<T>(bool failWithDefault = false)
+        {
+            if (this.Services != null && this.Services.ServiceProvider != null)
+            {
+                var service = this.Services.ServiceProvider.GetService<T>();
+                if (service != null)
+                    return service;
+            }
+
+            if (failWithDefault)
+                return default(T);
+
+            throw new InvalidOperationException($"The {typeof(T).ToString()} service is not supported");
+        }
 
         /// <inheritdoc />
         public Version Version
@@ -133,28 +130,6 @@ namespace Stratis.Bitcoin
         }
 
         /// <summary>
-        /// Checks whether the node is currently in the process of initial block download.
-        /// </summary>
-        /// <returns><c>true</c> if the node is currently doing IBD, <c>false</c> otherwise.</returns>
-        public bool IsInitialBlockDownload()
-        {
-            // if consensus is no present IBD has no meaning
-            if (this.ConsensusLoop == null)
-                return false;
-
-            if (this.ConsensusLoop.Tip == null)
-                return true;
-
-            if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))
-                return true;
-
-            if (this.ConsensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.DateTimeProvider.GetTime() - this.Settings.MaxTipAge))
-                return true;
-
-            return false;
-        }
-
-        /// <summary>
         /// Initializes DI services that the node needs.
         /// </summary>
         /// <param name="serviceProvider">Provider of DI services.</param>
@@ -172,16 +147,10 @@ namespace Stratis.Bitcoin
             this.Network = this.Services.ServiceProvider.GetService<Network>();
             this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
             this.ChainBehaviorState = this.Services.ServiceProvider.GetService<ChainState>();
-            this.CoinView = this.Services.ServiceProvider.GetService<CoinView>();
             this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
-            this.MempoolManager = this.Services.ServiceProvider.GetService<MempoolManager>();
             this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
 
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
-            this.BlockStoreManager = this.Services.ServiceProvider.GetService<BlockStoreManager>();
-            this.ConsensusLoop = this.Services.ServiceProvider.GetService<ConsensusLoop>();
-            this.WalletManager = this.Services.ServiceProvider.GetService<IWalletManager>() as WalletManager;
-            this.WalletTransactionHandler = this.Services.ServiceProvider.GetService<IWalletTransactionHandler>();
             this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
@@ -263,11 +232,14 @@ namespace Stratis.Bitcoin
 
                 benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
                                      this.ConnectionManager.Parameters.UserAgent);
+
+                // TODO: BaseFeature?
                 benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
                                      this.Chain.Tip.Height.ToString().PadRight(8) +
                                      " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.Chain.Tip.HashBlock);
 
-                if (this.ConsensusLoop != null)
+                // TODO
+                if (this?.ChainBehaviorState?.HighestValidatedPoW != null)
                 {
                     benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
                                          this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) +
@@ -275,6 +247,7 @@ namespace Stratis.Bitcoin
                                          this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
                 }
 
+                // TODO
                 if (this.ChainBehaviorState.HighestPersistedBlock != null)
                 {
                     benchLogs.AppendLine("Store.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
@@ -283,6 +256,7 @@ namespace Stratis.Bitcoin
                                          this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
                 }
 
+                // TODO
                 if (this.ChainBehaviorState.HighestIndexedBlock != null)
                 {
                     benchLogs.AppendLine("Index.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
@@ -291,26 +265,14 @@ namespace Stratis.Bitcoin
                                          this.ChainBehaviorState.HighestIndexedBlock.HashBlock);
                 }
 
-                if (this.WalletManager != null)
-                {
-                    var height = this.WalletManager.LastBlockHeight();
-                    var block = this.Chain.GetBlock(height);
-                    var hashBlock = block == null ? uint256.Zero : block.HashBlock;
+                // Display node stats grouped together
+                foreach (var feature in this.Services.Features)
+                    (feature as IConsoleLogger)?.AddLog(this, benchLogs, true);
 
-                    benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         height.ToString().PadRight(8) +
-                                         " Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         hashBlock);
-                }
-
-                benchLogs.AppendLine();
-
-                if (this.MempoolManager != null)
-                {
-                    benchLogs.AppendLine("======Mempool======");
-                    benchLogs.AppendLine(this.MempoolManager.PerformanceCounter.ToString());
-                }
-
+                // Now display the other stats
+                foreach (var feature in this.Services.Features)
+                    (feature as IConsoleLogger)?.AddLog(this, benchLogs, false);
+                
                 benchLogs.AppendLine("======Connection======");
                 benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
                 this.logger.LogInformation(benchLogs.ToString());
