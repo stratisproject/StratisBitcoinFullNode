@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Transaction memory pool feature for the Full Node.
     /// </summary>
     /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
-    public class MempoolFeature : FullNodeFeature, FullNode.IConsoleLogger
+    public class MempoolFeature : FullNodeFeature, IFeatureStats
     {
         #region Fields
 
@@ -64,17 +64,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public void AddLog(FullNode fullNode, StringBuilder benchLogs, bool nodeStats)
+        public void AddFeatureStats(StringBuilder benchLogs)
         {
-            if (!nodeStats)
+            if (this.mempoolManager != null)
             {
                 benchLogs.AppendLine();
-
-                if (this.mempoolManager != null)
-                {
-                    benchLogs.AppendLine("======Mempool======");
-                    benchLogs.AppendLine(this.mempoolManager.PerformanceCounter.ToString());
-                }
+                benchLogs.AppendLine("======Mempool======");
+                benchLogs.AppendLine(this.mempoolManager.PerformanceCounter.ToString());
             }
         }
 

@@ -14,6 +14,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Stratis.Bitcoin
 {
@@ -72,11 +73,6 @@ namespace Stratis.Bitcoin
 
         /// <summary>Application life cycle control - triggers when application shuts down.</summary>
         private NodeLifetime nodeLifetime;
-
-        public interface IConsoleLogger
-        {
-            void AddLog(FullNode fullNode, StringBuilder benchLog, bool nodeStats);
-        }
 
         /// <inheritdoc />
         public INodeLifetime NodeLifetime
@@ -266,12 +262,12 @@ namespace Stratis.Bitcoin
                 }
 
                 // Display node stats grouped together
-                foreach (var feature in this.Services.Features)
-                    (feature as IConsoleLogger)?.AddLog(this, benchLogs, true);
+                foreach (var feature in this.Services.Features.OfType<INodeStats>())
+                    feature.AddNodeStats(benchLogs);
 
                 // Now display the other stats
-                foreach (var feature in this.Services.Features)
-                    (feature as IConsoleLogger)?.AddLog(this, benchLogs, false);
+                foreach (var feature in this.Services.Features.OfType<IFeatureStats>())
+                    feature.AddFeatureStats(benchLogs);
                 
                 benchLogs.AppendLine("======Connection======");
                 benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
