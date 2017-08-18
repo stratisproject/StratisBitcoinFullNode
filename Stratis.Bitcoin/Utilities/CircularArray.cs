@@ -36,15 +36,15 @@ namespace Stratis.Bitcoin.Utilities
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="capacity">Maximal number of items that can be stored in the circular array.</param>
-        /// <param name="initializeItems">If set to <c>true</c>, all items in the array will be initialized using their default constructor. 
+        /// <param name="preinitializeItems">If set to <c>true</c>, all items in the array will be initialized using their default constructor. 
         /// This can be used to prevent further allocations when the structure is used.</param>
-        public CircularArray(int capacity, bool initializeItems = true)
+        public CircularArray(int capacity, bool preinitializeItems = true)
         {
             this.Index = 0;
             this.Count = 0;
             this.Capacity = capacity;
             this.items = new T[capacity];
-            if (initializeItems)
+            if (preinitializeItems)
             {
                 for (int i = 0; i < capacity; i++)
                     this.items[i] = new T();
