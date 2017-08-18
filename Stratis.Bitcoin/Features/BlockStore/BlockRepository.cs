@@ -1,4 +1,5 @@
 ﻿using DBreeze.Utils;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
@@ -27,6 +28,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
     public class BlockRepository : IBlockRepository
     {
+        private readonly ILogger logger;
+
         protected readonly DBreezeSingleThreadSession session;
         protected readonly Network network;
 
@@ -38,21 +41,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
         public bool TxIndex { get; private set; }
 
-        public BlockRepository(Network network, DataFolder dataFolder)
-            : this(network, dataFolder.BlockPath)
+        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.BlockPath, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, string folder)
-            : this(network, (new DBreezeSingleThreadSession($"DBreeze BlockRepository", folder)))
+        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
+            : this(network, (new DBreezeSingleThreadSession($"DBreeze BlockRepository", folder)), loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, DBreezeSingleThreadSession session)
+        public BlockRepository(Network network, DBreezeSingleThreadSession session, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(session, nameof(session));
 
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.session = session;
             this.network = network;
             this.PerformanceCounter = PerformanceCounterFactory();
@@ -65,6 +69,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public virtual Task Initialize()
         {
+            this.logger.LogTrace("()");
             var genesis = this.network.GetGenesis();
 
             var sync = this.session.Execute(() =>
@@ -87,7 +92,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             });
 
-            return Task.WhenAll(new[] { sync, hash });
+            Task res = Task.WhenAll(new[] { sync, hash });
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         public bool LazyLoadingOn
@@ -98,17 +105,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public Task<Transaction> GetTrxAsync(uint256 trxid)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
             Guard.NotNull(trxid, nameof(trxid));
 
             if (!this.TxIndex)
                 return Task.FromResult(default(Transaction));
 
-            return this.session.Execute(() =>
+            Task<Transaction> res = this.session.Execute(() =>
             {
+                this.logger.LogTrace("()");
                 var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
                 if (!blockid.Exists)
                 {
                     this.PerformanceCounter.AddRepositoryMissCount(1);
+                    this.logger.LogTrace("(-)[NO_BLOCK]:null");
                     return null;
                 }
 
@@ -125,36 +135,51 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.PerformanceCounter.AddRepositoryHitCount(1);
                 }
 
+                this.logger.LogTrace("(-):{0}", trx);
                 return trx;
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
             Guard.NotNull(trxid, nameof(trxid));
 
             if (!this.TxIndex)
-                return Task.FromResult(default(uint256));
-
-            return this.session.Execute(() =>
             {
+                this.logger.LogTrace("(-)[NO_TXINDEX]");
+                return Task.FromResult(default(uint256));
+            }
+
+            Task<uint256> res = this.session.Execute(() =>
+            {
+                this.logger.LogTrace("()");
                 var blockid = this.session.Transaction.Select<byte[], uint256>("Transaction", trxid.ToBytes());
 
                 if (!blockid.Exists)
                 {
                     this.PerformanceCounter.AddRepositoryMissCount(1);
+                    this.logger.LogTrace("(-):null");
                     return null;
                 }
                 else
                 {
                     this.PerformanceCounter.AddRepositoryHitCount(1);
+                    this.logger.LogTrace("(-):'{0}'", blockid.Value);
                     return blockid.Value;
                 }
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         virtual protected void OnInsertBlocks(List<Block> blocks)
         {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(blocks), nameof(blocks.Count), blocks?.Count);
             var transactions = new List<(Transaction, Block)>();
 
             var byteListComparer = new ByteListComparer();
@@ -198,10 +223,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.TxIndex)
                 this.OnInsertTransactions(transactions);
+
+            this.logger.LogTrace("(-)");
         }
 
         virtual protected void OnInsertTransactions(List<(Transaction, Block)> transactions)
         {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(transactions), nameof(transactions.Count), transactions?.Count);
+
             var byteListComparer = new ByteListComparer();
 
             transactions.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Item1.GetHash().ToBytes(), pair2.Item1.GetHash().ToBytes()));
@@ -212,10 +241,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.PerformanceCounter.AddRepositoryInsertCount(1);
                 this.session.Transaction.Insert<byte[], uint256>("Transaction", transaction.GetHash().ToBytes(), block.GetHash());
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
         {
+            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(nextBlockHash), nextBlockHash, nameof(blocks), nameof(blocks.Count), blocks?.Count);
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
             Guard.NotNull(blocks, nameof(blocks));
 
@@ -223,7 +255,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // however we need to find how byte arrays are sorted in dbreeze this link can help 
             // https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
 
-            return this.session.Execute(() =>
+            Task res = this.session.Execute(() =>
             {
                 this.OnInsertBlocks(blocks);
 
@@ -231,71 +263,104 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.SaveBlockHash(nextBlockHash);
                 this.session.Transaction.Commit();
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         private bool? LoadTxIndex()
         {
+            this.logger.LogTrace("()");
+
             var item = this.session.Transaction.Select<byte[], bool>("Common", TxIndexKey);
 
             if (!item.Exists)
             {
                 this.PerformanceCounter.AddRepositoryMissCount(1);
+
+                this.logger.LogTrace("(-):null");
                 return null;
             }
             else
             {
                 this.PerformanceCounter.AddRepositoryHitCount(1);
                 this.TxIndex = item.Value;
+
+                this.logger.LogTrace("(-):{0}", item.Value);
                 return item.Value;
             }
         }
 
         private void SaveTxIndex(bool txIndex)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(txIndex), txIndex);
+
             this.TxIndex = txIndex;
             this.PerformanceCounter.AddRepositoryInsertCount(1);
             this.session.Transaction.Insert<byte[], bool>("Common", TxIndexKey, txIndex);
+
+            this.logger.LogTrace("(-)");
         }
 
         public Task SetTxIndex(bool txIndex)
         {
-            return this.session.Execute(() =>
+            this.logger.LogTrace("({0}:{1})", nameof(txIndex), txIndex);
+
+            Task res = this.session.Execute(() =>
             {
                 this.SaveTxIndex(txIndex);
                 this.session.Transaction.Commit();
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         private uint256 LoadBlockHash()
         {
+            this.logger.LogTrace("()");
+
             this.BlockHash = this.BlockHash ?? this.session.Transaction.Select<byte[], uint256>("Common", BlockHashKey)?.Value;
+
+            this.logger.LogTrace("(-):'{0}'", this.BlockHash);
             return this.BlockHash;
         }
 
         public Task SetBlockHash(uint256 nextBlockHash)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(nextBlockHash), nextBlockHash);
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
 
-            return this.session.Execute(() =>
+            Task res = this.session.Execute(() =>
             {
                 this.SaveBlockHash(nextBlockHash);
                 this.session.Transaction.Commit();
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         private void SaveBlockHash(uint256 nextBlockHash)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(nextBlockHash), nextBlockHash);
+
             this.BlockHash = nextBlockHash;
             this.PerformanceCounter.AddRepositoryInsertCount(1);
             this.session.Transaction.Insert<byte[], uint256>("Common", BlockHashKey, nextBlockHash);
+
+            this.logger.LogTrace("(-)");
         }
 
         public Task<Block> GetAsync(uint256 hash)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
             Guard.NotNull(hash, nameof(hash));
 
-            return this.session.Execute(() =>
+            Task<Block> res = this.session.Execute(() =>
             {
+                this.logger.LogTrace("()");
+
                 var key = hash.ToBytes();
                 var item = this.session.Transaction.Select<byte[], Block>("Block", key);
                 if (!item.Exists)
@@ -307,16 +372,23 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.PerformanceCounter.AddRepositoryHitCount(1);
                 }
 
+                this.logger.LogTrace("(-):{0}", item?.Value);
                 return item?.Value;
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         public Task<bool> ExistAsync(uint256 hash)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
             Guard.NotNull(hash, nameof(hash));
 
-            return this.session.Execute(() =>
+            Task<bool> res = this.session.Execute(() =>
             {
+                this.logger.LogTrace("()");
+
                 var key = hash.ToBytes();
                 var item = this.session.Transaction.Select<byte[], Block>("Block", key);
                 if (!item.Exists)
@@ -328,21 +400,31 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.PerformanceCounter.AddRepositoryHitCount(1);
                 }
 
+                this.logger.LogTrace("(-):{0}", item.Exists);
                 return item.Exists; // lazy loading is on so we don't fetch the whole value, just the row.
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         protected virtual void OnDeleteTransactions(List<(Transaction, Block)> transactions)
         {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(transactions), nameof(transactions.Count), transactions?.Count);
+
             foreach (var transaction in transactions)
             {
                 this.PerformanceCounter.AddRepositoryDeleteCount(1);
                 this.session.Transaction.RemoveKey<byte[]>("Transaction", transaction.Item1.GetHash().ToBytes());
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         protected virtual void OnDeleteBlocks(List<Block> blocks)
         {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(blocks), nameof(blocks.Count), blocks?.Count);
+
             if (this.TxIndex)
             {
                 var transactions = new List<(Transaction, Block)>();
@@ -360,10 +442,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.session.Transaction.RemoveKey<byte[]>("Block", block.GetHash().ToBytes());
             }
 
+            this.logger.LogTrace("(-)");
         }
 
         private List<Block> GetBlocksFromHashes(List<uint256> hashes)
         {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(hashes), nameof(hashes.Count), hashes?.Count);
+
             var blocks = new List<Block>();
 
             foreach (var hash in hashes)
@@ -382,20 +467,29 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(blocks.Count), blocks?.Count);
             return blocks;
         }
 
         public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newlockHash), newlockHash, nameof(hashes), nameof(hashes.Count), hashes?.Count);
             Guard.NotNull(newlockHash, nameof(newlockHash));
             Guard.NotNull(hashes, nameof(hashes));
 
-            return this.session.Execute(() =>
+            Task res = this.session.Execute(() =>
             {
+                this.logger.LogTrace("()");
+
                 this.OnDeleteBlocks(this.GetBlocksFromHashes(hashes));
                 this.SaveBlockHash(newlockHash);
                 this.session.Transaction.Commit();
+
+                this.logger.LogTrace("(-)");
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         public void Dispose()
