@@ -15,20 +15,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolCoinView : CoinView , IBackedCoinView
     {
-        #region Fields
-
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="mempoolLock"/>.</remarks>
         private readonly TxMempool memPool;
 
-        /// <summary>A lock for managing asynchronous access to memory pool.</summary>
+        /// <summary>A lock for protecting access to <see cref="memPool"/>.</summary>
         private readonly AsyncLock mempoolLock;
 
         /// <summary>Memory pool validator for validating transactions.</summary>
         private readonly IMempoolValidator mempoolValidator;
-
-        #endregion
-
-        #region Constructor
 
         /// <summary>
         /// Constructs a memory pool coin view.
@@ -46,27 +41,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.Set = new UnspentOutputSet();
         }
 
-        #endregion
-
-        #region Properties
-
         /// <summary>
         /// Gets the unspent transaction output set.
         /// </summary>
         public UnspentOutputSet Set { get; private set; }
 
-        #endregion
-
-        #region IBackedCoinView Properties
-
         /// <summary>
         /// Backing coin view instance.
         /// </summary>
         public CoinView Inner { get; }
-
-        #endregion
-
-        #region CoinView Overrides
 
         /// <inheritdoc />
         public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
@@ -87,17 +70,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             throw new NotImplementedException();
         }
 
-        #endregion
-
-        #region Operations
-
         /// <summary>
         /// Load the coin view for a memory pool transaction.
         /// </summary>
         /// <param name="trx">Memory pool transaction.</param>
         public async Task LoadView(Transaction trx)
         {
-            // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent)
+            // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();
             FetchCoinsResponse coins = await this.Inner.FetchCoinsAsync(ids.ToArray());
             // find coins currently in the mempool
@@ -127,7 +106,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Whether coins exist for a given transaction id.
+        /// Check whether a transaction id exists in the <see cref="TxMempool"/> or in the <see cref="MempoolCoinView"/>.
         /// </summary>
         /// <param name="txid">Transaction identifier.</param>
         /// <returns>Whether coins exist.</returns>
@@ -145,13 +124,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="tx">Memory pool transaction.</param>
         /// <param name="nHeight">Chain height.</param>
         /// <param name="inChainInputValue">Chain input value(not used).</param>
-        /// <returns>Priority value.</returns>
-        /// <remarks>TODO: Can we remove inChainInputValue?</remarks>
-        public double GetPriority(Transaction tx, int nHeight, Money inChainInputValue)
+        /// <returns>Tuple of priority value and sum of all txin values that are already in blockchain.</returns>
+        public (double priority, Money inChainInputValue) GetPriority(Transaction tx, int nHeight)
         {
-            inChainInputValue = 0;
+            Money inChainInputValue = 0;
             if (tx.IsCoinBase)
-                return 0.0;
+                return (0.0, inChainInputValue);
             double dResult = 0.0;
             foreach (TxIn txInput in tx.Inputs)
             {
@@ -165,7 +143,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 }
             }
-            return this.ComputePriority(tx, dResult);
+            return (this.ComputePriority(tx, dResult), inChainInputValue);
         }
 
         /// <summary>
@@ -229,7 +207,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return this.Set.GetOutputFor(input);
         }
-
-        #endregion
     }
 }

@@ -9,8 +9,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolPerformanceCounter
     {
-        #region Fields
-
         /// <summary>Number of transactions in the memory pool.</summary>
         private long mempoolSize;
 
@@ -23,10 +21,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Counter of number of memory pool hits.</summary>
         private long hitCount;
 
-        #endregion
-
-        #region Constructor
-
         /// <summary>
         /// Constructs a memory pool performance counter.
         /// </summary>
@@ -34,10 +28,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.Start = DateTime.UtcNow;
         }
-
-        #endregion
-
-        #region Properties
 
         /// <summary>Gets the start time of the performance counter.</summary>
         public DateTime Start { get; }
@@ -59,10 +49,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Gets the count of memory pool hits.</summary>
         public long HitCount => this.hitCount;
-
-        #endregion
-
-        #region Operations
 
         /// <summary>
         /// Sets the number of transactions in the memory pool.
@@ -113,8 +99,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 " OrphanSize: " + this.MempoolOrphanSize.ToString().PadRight(4));
             return benchLogs.ToString();
         }
-
-        #endregion
     }
 
 }

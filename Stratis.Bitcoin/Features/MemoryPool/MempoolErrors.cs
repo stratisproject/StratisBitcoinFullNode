@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     {
         /// <summary>
         /// Constructs a memory pool exception object.
-        /// Exception message is set from <see cref="MempoolValidationState.ErrorMessage"/>
+        /// Exception message is set from <see cref="MempoolValidationState.ErrorMessage"/>.
         /// </summary>
         /// <param name="state">Validation state of the memory pool.</param>
         public MempoolErrorException(MempoolValidationState state) : base(state.ErrorMessage)
@@ -19,11 +19,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>Gets the validation state of the memory pool.</summary>
-        public MempoolValidationState ValidationState
-        {
-            get;
-            private set;
-        }
+        public MempoolValidationState ValidationState { get; private set; }
     }
 
     /// <summary>
@@ -127,7 +123,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         #endregion
 
-        #region Errors
 
         /// <summary>'coinbase' error returns a <see cref="RejectInvalid"/> reject code.</summary>
         public static MempoolError Coinbase = new MempoolError(RejectInvalid, "coinbase");
@@ -209,8 +204,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>'multi-op-return' error returns a <see cref="RejectNonStandard"/> reject code.</summary>
         public static MempoolError MultiOpReturn = new MempoolError(RejectNonstandard, "multi-op-return");
-
-        #endregion
     }
 
 }
