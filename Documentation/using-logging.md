@@ -55,6 +55,27 @@ this.logger.LogTrace("Message: {0}", message);
 logger.LogWarning("Message: {0}", message);
 ```
 
+#### Interpolated Strings
+
+Do not use [interpolated strings](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/interpolated-strings) with loggers. 
+The reason is that the loggers themselves integrate ability to provide composite format string and array of objects to format. This allows the logger 
+to avoid the performance penalty of formatting the string if the particular log is below the currently enabled level for the given class.
+For example, consider the following code:
+
+```
+this.logger.LogTrace($"Message: {message}");
+```
+
+If the logging level is strictly above TRACE, this call makes a useless operation of formatting the interpolated string that is passed 
+to the logger, which immediately returns because it recognizes that the TRACE level should not be logged. If you instead use the following code:
+
+```
+this.logger.LogTrace("Message: {0}", message);
+```
+
+you avoid the penalty because the logger first checks the logging level and it returns immediately if the message should not be logged.
+Only if it should be logged, it formats the final message itself and uses it.
+
 
 ## Logging Configuration
 

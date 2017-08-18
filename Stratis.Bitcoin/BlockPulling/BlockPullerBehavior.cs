@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="message">Received message.</param>
         private void Node_MessageReceived(Node node, IncomingMessage message)
         {
-            this.logger.LogTrace($"({nameof(node.Peer.Endpoint)}:'{node.Peer.Endpoint}')");
+            this.logger.LogTrace("({0}:'{1}')", nameof(node), node?.RemoteSocketEndpoint);
 
             message.Message.IfPayloadIs<BlockPayload>((block) =>
             {
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 uint256 blockHash = block.Object.Header.GetHash();
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
-                    this.logger.LogTrace($"Received block '{blockHash}', length {message.Length} bytes.");
+                    this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);
 
                     block.Object.Header.CacheHashes();
                     foreach (Transaction tx in block.Object.Transactions)
@@ -210,7 +210,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.cancellationToken.Cancel();
             this.AttachedNode.MessageReceived -= Node_MessageReceived;
-            ReleaseAll();
+            ReleaseAll(true);
 
             this.logger.LogTrace("(-)");
         }
@@ -218,11 +218,12 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Releases all pending block download tasks from the peer.
         /// </summary>
-        internal void ReleaseAll()
+        /// <param name="peerDisconnected">If set to <c>true</c> the peer is considered as disconnected and should be prevented from being assigned additional work.</param>
+        internal void ReleaseAll(bool peerDisconnected)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(peerDisconnected), peerDisconnected);
 
-            this.puller.ReleaseAllPeerDownloadTaskAssignments(this);
+            this.puller.ReleaseAllPeerDownloadTaskAssignments(this, peerDisconnected);
 
             this.logger.LogTrace("(-)");
         }
@@ -233,7 +234,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="scoreAdjustment">Adjustment to make to the quality score of the peer.</param>
         internal void UpdateQualityScore(double scoreAdjustment)
         {
-            this.logger.LogTrace($"({nameof(scoreAdjustment)}:{scoreAdjustment})");
+            this.logger.LogTrace("({0}:{1})", nameof(scoreAdjustment), scoreAdjustment);
 
             lock (this.qualityScoreLock)
             {
@@ -242,7 +243,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 if (this.QualityScore < BlockPulling.QualityScore.MinScore) this.QualityScore = BlockPulling.QualityScore.MinScore;
             }
 
-            this.logger.LogTrace($"(-):{nameof(this.QualityScore)}:{this.QualityScore}");
+            this.logger.LogTrace("(-):{0}={1}", nameof(this.QualityScore), this.QualityScore);
         }
     }
 }

@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(accountReference.AccountName, nameof(accountReference.AccountName));
             
             // Get the total value of spendable coins in the account.
-            var maxSpendableAmount = this.walletManager.GetSpendableTransactions(accountReference, allowUnconfirmed ? 0 : 1).UnspentOutputs.Sum(x => x.Transaction.Amount);
+            var maxSpendableAmount = this.walletManager.GetSpendableTransactionsInAccount(accountReference, allowUnconfirmed ? 0 : 1).Sum(x => x.Transaction.Amount);
 
             // Return 0 if the user has nothing to spend.
             if (maxSpendableAmount == Money.Zero)
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             var signingKeys = new HashSet<ISecret>();
             var added = new HashSet<HdAddress>();
-            foreach (var unspentOutputsItem in context.UnspentOutputs.UnspentOutputs)
+            foreach (var unspentOutputsItem in context.UnspentOutputs)
             {
                 if(added.Contains(unspentOutputsItem.Address))
                     continue;
@@ -255,15 +255,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void AddCoins(TransactionBuildContext context)
         {
-            context.UnspentOutputs = this.walletManager.GetSpendableTransactions(context.AccountReference, context.MinConfirmations);
+            context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(context.AccountReference, context.MinConfirmations);
 
-            if (context.UnspentOutputs.UnspentOutputs.Count == 0)
+            if (context.UnspentOutputs.Count == 0)
             {
                 throw new WalletException($"No spendable transactions found on account {context.AccountReference.AccountName}.");
             }
 
             // Get total spendable balance in the account.
-            var balance = context.UnspentOutputs.UnspentOutputs.Sum(t => t.Transaction.Amount);
+            var balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
             if (balance < context.Recipients.Sum(s => s.Amount))
                 throw new WalletException("Not enough funds.");
 
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // input is part of the UTXO set and filter out UTXOs that are not
                 // in the initial list if 'context.AllowOtherInputs' is false.
 
-                var availableHashList = context.UnspentOutputs.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
+                var availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
                 if(!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
                     throw new WalletException($"Not all the inputs in 'SelectedInputs' were found on the wallet.");
@@ -283,12 +283,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     foreach (var unspentOutputsItem in availableHashList)
                         if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
-                            context.UnspentOutputs.UnspentOutputs.Remove(unspentOutputsItem.Value);
+                            context.UnspentOutputs.Remove(unspentOutputsItem.Value);
                 }
             }
 
             var coins = new List<Coin>();
-            foreach (var item in context.UnspentOutputs.UnspentOutputs)
+            foreach (var item in context.UnspentOutputs)
             {
                 coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
             }
@@ -391,9 +391,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <summary>
         /// Coins that are available to be spent.
-        /// </summary>
-        /// <remarks>Only outputs from a single account are represented in <see cref="UnspentAccountReference"/>.</remarks>
-        public UnspentAccountReference UnspentOutputs { get; set; }
+        /// </summary>        
+        public List<UnspentOutputReference> UnspentOutputs { get; set; }
 
         /// <summary>
         /// The builder used to build the current transaction.

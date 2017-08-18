@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="blockSize">Size of the downloaded block in bytes.</param>
         public void AddSample(IBlockPullerBehavior peer, long blockDownloadTimeMs, int blockSize)
         {
-            this.logger.LogTrace($"({nameof(peer)}:{peer.GetHashCode():x},{nameof(blockDownloadTimeMs)}:{blockDownloadTimeMs},{nameof(blockSize)}:{blockSize})");
+            this.logger.LogTrace("({0}:{1:x},{2}:{3},{4}:{5})", nameof(peer), peer.GetHashCode(), nameof(blockDownloadTimeMs), blockDownloadTimeMs, nameof(blockSize), blockSize);
 
             double timePerKb = 1024.0 * (double)blockDownloadTimeMs / (double)blockSize;
             if (timePerKb < 0.00001) timePerKb = 0.00001;
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.AverageBlockTimePerKb = this.samplesSum / this.samplesCount;
             }
 
-            this.logger.LogTrace($"(-):{nameof(this.AverageBlockTimePerKb)}={this.AverageBlockTimePerKb}");
+            this.logger.LogTrace("(-):{0}={1}", nameof(this.AverageBlockTimePerKb), this.AverageBlockTimePerKb);
         }
 
         /// <summary>
@@ -139,13 +139,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>Quality score adjustment for the peer.</returns>
         public double CalculateQualityAdjustment(long blockDownloadTimeMs, int blockSize)
         {
-            this.logger.LogTrace($"({nameof(blockDownloadTimeMs)}:{blockDownloadTimeMs},{nameof(blockSize)}:{blockSize})");
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(blockDownloadTimeMs), blockDownloadTimeMs, nameof(blockSize), blockSize);
 
             double avgTimePerKb = this.AverageBlockTimePerKb;
             double timePerKb = 1024.0 * (double)blockDownloadTimeMs / (double)blockSize;
             if (timePerKb < 0.00001) timePerKb = 0.00001;
 
-            this.logger.LogTrace($"Average time per KB is {avgTimePerKb} ms, this sample is {timePerKb} ms/KB.");
+            this.logger.LogTrace("Average time per KB is {0} ms, this sample is {1} ms/KB.", avgTimePerKb, timePerKb);
 
             // If the block was received with better speed than is 2x average of the recent history we keep
             // then we reward the peer for downloading it quickly. Otherwise, we penalize the peer for downloading 
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.BlockPulling
             if ((res < 0) && this.IsPenaltyDiscarded())
                 res = 0;
 
-            this.logger.LogTrace($"(-):{res}");
+            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
 
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             double res = this.IsPenaltyDiscarded() ? 0 : -1;
 
-            this.logger.LogTrace($"(-):{res}");
+            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
 
@@ -191,10 +191,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 peerCount = this.peerReferenceCounter.Keys.Count;
                 peerQualitySum = this.peerReferenceCounter.Keys.Sum(p => p.QualityScore);
             }
-            this.logger.LogTrace($"Number of peers is {peerCount}, sum of peer qualities is {peerQualitySum}.");
+            this.logger.LogTrace("Number of peers is {0}, sum of peer qualities is {1}.", peerCount, peerQualitySum);
             bool res = peerQualitySum < 2 * peerCount;
 
-            this.logger.LogTrace($"(-):{res}");
+            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
     }
