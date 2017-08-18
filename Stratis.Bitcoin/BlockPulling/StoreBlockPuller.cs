@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="downloadRequest">Description of a block to download.</param>
         public void AskBlock(ChainedBlock downloadRequest)
         {
-            this.logger.LogTrace($"({nameof(downloadRequest)}:'{downloadRequest.HashBlock}/{downloadRequest.Height}')");
+            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(downloadRequest), downloadRequest.HashBlock, downloadRequest.Height);
 
             base.AskBlocks(new ChainedBlock[] { downloadRequest });
 
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>true if the function succeeds, false otherwise.</returns>
         public bool TryGetBlock(ChainedBlock chainedBlock, out DownloadedBlock block)
         {
-            this.logger.LogTrace($"({nameof(chainedBlock)}:'{chainedBlock.HashBlock}/{chainedBlock.Height}')");
+            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainedBlock), chainedBlock.HashBlock, chainedBlock.Height);
 
             if (TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
             {

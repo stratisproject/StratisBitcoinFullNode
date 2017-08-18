@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NLog;
 using NLog.Config;
@@ -61,6 +61,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
             { "wallet", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Wallet)}.*" },
         };
 
+        /// <summary>Configuration of console logger.</summary>
+        private static ConsoleLoggerSettings consoleSettings;
+
         /// <summary>
         /// Initializes application logging.
         /// </summary>
@@ -115,7 +118,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 }
             }
             LogManager.Configuration.LoggingRules.Remove(nullPreInitRule);
-
 
             // Configure main file target, configured using command line or node configuration file settings.
             var mainTarget = new FileTarget();
@@ -201,6 +203,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
             };
 
             loggerFactory.AddConsole(consoleLoggerSettings);
+            consoleSettings = consoleLoggerSettings;
         }
 
         /// <summary>
@@ -245,6 +248,16 @@ namespace Stratis.Bitcoin.Configuration.Logging
             }
 
             consoleLoggerSettings.Reload();
+        }
+
+        /// <summary>
+        /// Obtains configuration of the console logger.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory interface being extended.</param>
+        /// <returns>Console logger settings.</returns>
+        public static ConsoleLoggerSettings GetConsoleSettings(this ILoggerFactory loggerFactory)
+        {
+            return consoleSettings;
         }
     }
 }
