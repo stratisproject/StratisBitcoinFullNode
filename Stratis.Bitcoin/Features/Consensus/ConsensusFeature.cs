@@ -16,7 +16,7 @@ using System.Threading;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusFeature : FullNodeFeature
+    public class ConsensusFeature : FullNodeFeature, IConsensusFeature
     {
         private readonly DBreezeCoinView dBreezeCoinView;
         private readonly Network network;
@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly StakeChainStore stakeChain;
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
+        private readonly IDateTimeProvider dateTimeProvider;
 
         public ConsensusFeature(
             DBreezeCoinView dBreezeCoinView,
@@ -50,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             NodeSettings nodeSettings,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider,
             StakeChainStore stakeChain = null)
         {
             this.dBreezeCoinView = dBreezeCoinView;
@@ -68,6 +70,28 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.stakeChain = stakeChain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
+            this.dateTimeProvider = dateTimeProvider;
+        }
+
+        /// <summary>
+        /// Checks whether the node is currently in the process of initial block download.
+        /// </summary>
+        /// <returns><c>true</c> if the node is currently doing IBD, <c>false</c> otherwise.</returns>
+        public bool IsInitialBlockDownload()
+        {
+            if (this.consensusLoop == null)
+                return false;
+
+            if (this.consensusLoop.Tip == null)
+                return true;
+
+            if (this.consensusLoop.Tip.ChainWork < (this.network.Consensus.MinimumChainWork ?? uint256.Zero))
+                return true;
+
+            if (this.consensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.nodeSettings.MaxTipAge))
+                return true;
+
+            return false;
         }
 
         public override void Start()

@@ -23,8 +23,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock) return false;
             if (node1.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock != node2.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock) return false;
             if (node1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock != node2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock) return false;
-            if (node1.FullNode.MempoolManager.InfoAll().Count != node2.FullNode.MempoolManager.InfoAll().Count) return false;
-            if (node1.FullNode.WalletManager.WalletTipHash != node2.FullNode.WalletManager.WalletTipHash) return false;
+            if (node1.FullNode.MempoolManager().InfoAll().Count != node2.FullNode.MempoolManager().InfoAll().Count) return false;
+            if (node1.FullNode.WalletManager().WalletTipHash != node2.FullNode.WalletManager().WalletTipHash) return false;
             if (node1.CreateRPCClient().GetBestBlockHash() != node2.CreateRPCClient().GetBestBlockHash()) return false;
             return true;
         }
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock) return false;
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock) return false;
-            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager.WalletTipHash) return false;
+            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash) return false;
             return true;
         }
     }
