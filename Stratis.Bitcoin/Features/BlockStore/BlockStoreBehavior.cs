@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
-            this.logger.LogTrace("({0}:'{1}')", nameof(node), node?.RemoteSocketEndpoint);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
             try
             {
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
 		{
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node?.RemoteSocketEndpoint, nameof(message), nameof(message.Length), message.Length);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
             var getDataPayload = message.Message.Payload as GetDataPayload;
             if ((getDataPayload != null) && this.CanRespondToGetDataPayload)
