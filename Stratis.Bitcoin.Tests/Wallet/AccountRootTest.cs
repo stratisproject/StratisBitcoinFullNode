@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {            
             var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
 
-            Assert.Throws<Exception>(() => { accountRoot.GetAccountByName("test"); });           
+            Assert.Throws<WalletException>(() => { accountRoot.GetAccountByName("test"); });           
         }
     }
 }

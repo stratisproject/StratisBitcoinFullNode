@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
@@ -30,6 +31,39 @@ using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
+    static class FullNodeExt
+    {
+        public static WalletManager WalletManager(this FullNode fullNode)
+        {
+            return fullNode.NodeService<IWalletManager>() as WalletManager;
+        }
+
+        public static WalletTransactionHandler WalletTransactionHandler(this FullNode fullNode)
+        {
+            return fullNode.NodeService<IWalletTransactionHandler>() as WalletTransactionHandler;
+        }
+
+        public static ConsensusLoop ConsensusLoop(this FullNode fullNode)
+        {
+            return fullNode.NodeService<ConsensusLoop>();
+        }
+
+        public static CoinView CoinView(this FullNode fullNode)
+        {
+            return fullNode.NodeService<CoinView>();
+        }
+
+        public static MempoolManager MempoolManager(this FullNode fullNode)
+        {
+            return fullNode.NodeService<MempoolManager>();
+        }
+
+        public static BlockStoreManager BlockStoreManager(this FullNode fullNode)
+        {
+            return fullNode.NodeService<BlockStoreManager>();
+        }
+    }
+
     public enum CoreNodeState
     {
         Stopped,
@@ -723,7 +757,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var fullNode = (this._Runner as StratisBitcoinRunner).FullNode;
             var state = new MempoolValidationState(true);
 
-            return fullNode.MempoolManager.Validator.AcceptToMemoryPool(state, trx).Result;
+            return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
         }
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
@@ -764,7 +798,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     uint256 blockHash = block.GetHash();
                     var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
                     var oldTip = fullNode.Chain.SetTip(newChain);
-                    fullNode.ConsensusLoop.Puller.InjectBlock(blockHash, new DownloadedBlock() { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock() { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
 
                     //try
                     //{

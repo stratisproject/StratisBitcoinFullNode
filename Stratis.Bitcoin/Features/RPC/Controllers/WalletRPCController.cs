@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private WalletAccountReference GetAccount()
         {
             //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-            var w = this.WalletManager.GetWallets().FirstOrDefault();
+            var w = this.WalletManager.GetWalletsNames().FirstOrDefault();
             if(w == null)
                 throw new RPCServerException(NBitcoin.RPC.RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
             var account = this.WalletManager.GetAccounts(w).FirstOrDefault();

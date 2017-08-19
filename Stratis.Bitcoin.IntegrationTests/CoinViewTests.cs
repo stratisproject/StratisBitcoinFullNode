@@ -31,9 +31,9 @@ using Stratis.Bitcoin.Features.Consensus.Deployments;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-	public class CoinViewTests
+    public class CoinViewTests
 	{
-		[Fact]
+        [Fact]
 		public void TestDBreezeSerialization()
 		{
 			using(NodeContext ctx = NodeContext.Create())
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
 			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
 				stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
-				((CachedCoinView)stratisNode.FullNode.CoinView).FlushAsync().Wait();
+				((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
 
 				//Core1 discovers 30 blocks, sends to stratis
 				tip = coreNode1.FindBlock(30).Last();
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
 			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
 				stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
-				((CachedCoinView)stratisNode.FullNode.CoinView).FlushAsync().Wait();
+				((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
 
 			    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
 			}
