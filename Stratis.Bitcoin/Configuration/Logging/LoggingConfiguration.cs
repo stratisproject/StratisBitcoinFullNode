@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NLog;
 using NLog.Config;
@@ -28,7 +28,41 @@ namespace Stratis.Bitcoin.Configuration.Logging
         private static DataFolder folder;
 
         /// <summary>Mappings of keys to class name spaces to be used when filtering log categories.</summary>
-        private static readonly Dictionary<string, string> keyCategories;
+        private static readonly Dictionary<string, string> keyCategories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            //{ "addrman", "" },
+            //{ "alert", "" },
+            { "bench", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.{nameof(Stratis.Bitcoin.Features.Consensus.ConsensusStats)}" },
+            //{ "cmpctblock", "" }
+            //{ "coindb", "" },
+            { "db", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.BlockStore)}.*"}, 
+            //{ "http", "" }, 
+            //{ "libevent", "" }, 
+            //{ "lock", "" }, 
+            { "mempool", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.MemoryPool)}.*" }, 
+            //{ "mempoolrej", "" }, 
+            { "net", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Connection)}.*" }, 
+            //{ "proxy", "" }, 
+            //{ "prune", "" }, 
+            //{ "rand", "" }, 
+            //{ "reindex", "" }, 
+            { "rpc", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.RPC)}.*" }, 
+            //{ "qt", "" },
+            //{ "selectcoins", "" }, 
+            //{ "tor", "" }, 
+            //{ "zmq", "" }, 
+            
+            // Short Names
+            { "estimatefee", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.MemoryPool)}.{nameof(Stratis.Bitcoin.Features.MemoryPool.Fee)}.*" },
+            { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
+            { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" },
+            { "consensus", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.*" },
+            { "mining", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Miner)}.*" },
+            { "wallet", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Wallet)}.*" },
+        };
+
+        /// <summary>Configuration of console logger.</summary>
+        private static ConsoleLoggerSettings consoleSettings;
 
         /// <summary>
         /// Initializes application logging.
@@ -40,9 +74,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
 
             // Installs handler to be called when NLog's configuration file is changed on disk.
             LogManager.ConfigurationReloaded += NLogConfigurationReloaded;
-
-            // Load the key to name-space mappings.
-            keyCategories = LoadKeyCategories();
         }
 
         /// <summary>
@@ -80,14 +111,13 @@ namespace Stratis.Bitcoin.Configuration.Logging
             LoggingRule nullPreInitRule = null;
             foreach (LoggingRule rule in LogManager.Configuration.LoggingRules)
             {
-                if (rule.Final && rule.NameMatches($"*") && (rule.Targets.Count > 0) && (rule.Targets[0].Name == "null"))
+                if (rule.Final && rule.NameMatches("*") && (rule.Targets.Count > 0) && (rule.Targets[0].Name == "null"))
                 {
                     nullPreInitRule = rule;
                     break;
                 }
             }
             LogManager.Configuration.LoggingRules.Remove(nullPreInitRule);
-
 
             // Configure main file target, configured using command line or node configuration file settings.
             var mainTarget = new FileTarget();
@@ -109,14 +139,14 @@ namespace Stratis.Bitcoin.Configuration.Logging
             {
                 if (settings.DebugArgs[0] == "1")
                 {
-                    // Increase all logging to Trace.
-                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Trace, mainTarget);
+                    // Increase all logging to Debug level.
+                    defaultRule = new LoggingRule($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.*", NLog.LogLevel.Debug, mainTarget);
                 }
                 else
                 {
                     HashSet<string> usedCategories = new HashSet<string>(StringComparer.Ordinal);
 
-                    // Increase selected categories to Trace.
+                    // Increase selected categories to Debug.
                     foreach (string key in settings.DebugArgs)
                     {
                         string category;
@@ -129,7 +159,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                         if (!usedCategories.Contains(category))
                         {
                             usedCategories.Add(category);
-                            var rule = new LoggingRule(category, NLog.LogLevel.Trace, mainTarget);
+                            var rule = new LoggingRule(category, NLog.LogLevel.Debug, mainTarget);
                             LogManager.Configuration.LoggingRules.Add(rule);
                         }
                     }
@@ -173,6 +203,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
             };
 
             loggerFactory.AddConsole(consoleLoggerSettings);
+            consoleSettings = consoleLoggerSettings;
         }
 
         /// <summary>
@@ -189,14 +220,14 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 {
                     if (settings.DebugArgs[0] == "1")
                     {
-                        // Increase all logging to Trace.
-                        consoleLoggerSettings.Switches.Add($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}", Microsoft.Extensions.Logging.LogLevel.Trace);
+                        // Increase all logging to Debug.
+                        consoleLoggerSettings.Switches.Add($"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}", Microsoft.Extensions.Logging.LogLevel.Debug);
                     }
                     else
                     {
                         HashSet<string> usedCategories = new HashSet<string>(StringComparer.Ordinal);
 
-                        // Increase selected categories to Trace.
+                        // Increase selected categories to Debug.
                         foreach (string key in settings.DebugArgs)
                         {
                             string category;
@@ -209,7 +240,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                             if (!usedCategories.Contains(category))
                             {
                                 usedCategories.Add(category);
-                                consoleLoggerSettings.Switches.Add(category.TrimEnd('*').TrimEnd('.'), Microsoft.Extensions.Logging.LogLevel.Trace);
+                                consoleLoggerSettings.Switches.Add(category.TrimEnd('*').TrimEnd('.'), Microsoft.Extensions.Logging.LogLevel.Debug);
                             }
                         }
                     }
@@ -220,48 +251,13 @@ namespace Stratis.Bitcoin.Configuration.Logging
         }
 
         /// <summary>
-        /// Create a key to category mappings to allow to limit filtering based on short debug codes.
+        /// Obtains configuration of the console logger.
         /// </summary>
-        /// <returns>The key category mappings.</returns>
-        private static Dictionary<string, string> LoadKeyCategories()
+        /// <param name="loggerFactory">Logger factory interface being extended.</param>
+        /// <returns>Console logger settings.</returns>
+        public static ConsoleLoggerSettings GetConsoleSettings(this ILoggerFactory loggerFactory)
         {
-            // Configure main file target rules based on node settings.
-            // TODO: Preload enough args for -conf= or -datadir= to get debug args from there. We currently forbid logging before the logging is initialized.
-            // TODO: Currently only takes -debug arg.
-            var keyCategories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                //{ "addrman", "" },
-                //{ "alert", "" },
-                { "bench", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.{nameof(Stratis.Bitcoin.Features.Consensus.ConsensusStats)}" },
-                //{ "cmpctblock", "" }
-                //{ "coindb", "" },
-                { "db", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.BlockStore)}.*"}, 
-                //{ "http", "" }, 
-                //{ "libevent", "" }, 
-                //{ "lock", "" }, 
-                { "mempool", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.MemoryPool)}.*" }, 
-                //{ "mempoolrej", "" }, 
-                { "net", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Connection)}.*" }, 
-                //{ "proxy", "" }, 
-                //{ "prune", "" }, 
-                //{ "rand", "" }, 
-                //{ "reindex", "" }, 
-                { "rpc", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.RPC)}.*" }, 
-                //{ "qt", "" },
-                //{ "selectcoins", "" }, 
-                //{ "tor", "" }, 
-                //{ "zmq", "" }, 
-                
-                // Short Names
-                { "estimatefee", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.MemoryPool)}.{nameof(Stratis.Bitcoin.Features.MemoryPool.Fee)}.*" },
-                { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
-                { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" },
-                { "consensus", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.*" },
-                { "mining", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Miner)}.*" },
-                { "wallet", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Wallet)}.*" },
-            };
-
-            return keyCategories;
+            return consoleSettings;
         }
     }
 }

@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// Loads the logging settings from the application configuration.
         /// </summary>
         /// <param name="config">Application configuration.</param>
+        /// <remarks>TODO: Currently only takes -debug arg.</remarks>
         public void Load(TextFileConfiguration config)
         {
             this.DebugArgs = config.GetOrDefault("-debug", string.Empty).Split(',').Where(s => !string.IsNullOrEmpty(s)).ToList();

@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
 		protected readonly ConsensusLoop consensusLoop;
 		protected readonly ConcurrentChain chain;
-		protected readonly MempoolScheduler mempoolScheduler;
+		protected readonly MempoolAsyncLock mempoolLock;
 		protected readonly TxMempool mempool;
 		protected readonly IDateTimeProvider dateTimeProvider;
 	    private readonly ILogger logger;
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ConsensusLoop consensusLoop, 
             Network network, 
             ConcurrentChain chain,
-			MempoolScheduler mempoolScheduler, 
+			MempoolAsyncLock mempoolLock, 
             TxMempool mempool,
 			IDateTimeProvider dateTimeProvider, 
             ILogger logger,
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
 			this.consensusLoop = consensusLoop;
 			this.chain = chain;
-			this.mempoolScheduler = mempoolScheduler;
+			this.mempoolLock = mempoolLock;
 			this.mempool = mempool;
 			this.dateTimeProvider = dateTimeProvider;
 		    this.logger = logger;
@@ -368,7 +368,7 @@ namespace Stratis.Bitcoin.Features.Miner
 		    this.UpdatePackagesForAdded(this.inBlock, mapModifiedTx);
 
 		    var ancestorScoreList =
-			    this.mempoolScheduler.ReadAsync(() => this.mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
+			    this.mempoolLock.ReadAsync(() => this.mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
 
 		    TxMempoolEntry iter;
 
@@ -578,7 +578,7 @@ namespace Stratis.Bitcoin.Features.Miner
 			foreach (var setEntry in alreadyAdded)
 		    {
 				TxMempool.SetEntries setEntries = new TxMempool.SetEntries();
-				this.mempoolScheduler.ReadAsync(() => this.mempool.CalculateDescendants(setEntry, setEntries)).GetAwaiter().GetResult();
+				this.mempoolLock.ReadAsync(() => this.mempool.CalculateDescendants(setEntry, setEntries)).GetAwaiter().GetResult();
 			    foreach (var desc in setEntries)
 			    {
 					if(alreadyAdded.Contains(desc))

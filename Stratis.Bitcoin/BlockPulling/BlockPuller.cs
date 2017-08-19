@@ -161,14 +161,14 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="cancellationToken">Cancellation token to be used by derived classes that allows the caller to cancel the execution of the operation.</param>
         public virtual void BlockPushed(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)
         {
-            this.logger.LogTrace($"({nameof(blockHash)}:'{blockHash}',{nameof(downloadedBlock)}.{nameof(downloadedBlock.Length)}:{downloadedBlock.Length})");
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(blockHash), blockHash, nameof(downloadedBlock), nameof(downloadedBlock.Length), downloadedBlock.Length);
             this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void InjectBlock(uint256 blockHash, DownloadedBlock downloadedBlock, CancellationToken cancellationToken)
         {
-            this.logger.LogTrace($"({nameof(blockHash)}:'{blockHash}',{nameof(downloadedBlock)}.{nameof(downloadedBlock.Length)}:{downloadedBlock.Length})");
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(blockHash), blockHash, nameof(downloadedBlock), nameof(downloadedBlock.Length), downloadedBlock.Length);
 
             if (this.AddDownloadedBlock(blockHash, downloadedBlock))
                 this.BlockPushed(blockHash, downloadedBlock, cancellationToken);
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public virtual void AskBlocks(ChainedBlock[] downloadRequests)
         {
-            this.logger.LogTrace($"({nameof(downloadRequests)}:{string.Join(",", downloadRequests.Select(r => r.Height))})");
+            this.logger.LogTrace("({0}:[{1}])", nameof(downloadRequests), string.Join(",", downloadRequests.Select(r => r.Height)));
 
             var vectors = new Dictionary<int, InventoryVector>();
             foreach (ChainedBlock request in downloadRequests)
@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public void CheckBlockStatus(uint256 hash, out bool IsDownloading, out bool IsReady)
         {
-            this.logger.LogTrace($"({nameof(hash)}:'{hash}')");
+            this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
 
             lock (this.lockObject)
             {
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 IsReady = this.downloadedBlocks.ContainsKey(hash);
             }
 
-            this.logger.LogTrace($"(-):*{nameof(IsDownloading)}={IsDownloading},*{nameof(IsReady)}={IsReady}");
+            this.logger.LogTrace("(-):*{0}={1},*{2}={3}", nameof(IsDownloading), IsDownloading, nameof(IsReady), IsReady);
         }
 
         /// <summary>
@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="chainedBlock">Block the node wanted to download, but something went wrong during the process.</param>
         protected void OnStalling(ChainedBlock chainedBlock)
         {
-            this.logger.LogTrace($"({nameof(chainedBlock)}.{nameof(chainedBlock.HashBlock)}:'{chainedBlock.HashBlock}')");
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock.HashBlock);
             BlockPullerBehavior behavior = null;
 
             lock (this.lockObject)
@@ -278,18 +278,18 @@ namespace Stratis.Bitcoin.BlockPulling
             if (behavior != null)
             {
                 double penalty = this.peerQuality.CalculateNextBlockTimeoutQualityPenalty();
-                this.logger.LogTrace($"Block '{chainedBlock.HashBlock}' assigned to '{behavior.GetHashCode():x}', penalty is {penalty}.");
+                this.logger.LogTrace("Block '{0}' assigned to peer {1:x}, penalty is {2}.", chainedBlock.HashBlock, behavior.GetHashCode(), penalty);
 
                 behavior.UpdateQualityScore(penalty);
                 if (Math.Abs(behavior.QualityScore - QualityScore.MinScore) < 0.00001)
                 {
-                    behavior.ReleaseAll();
+                    behavior.ReleaseAll(false);
                     this.AssignPendingVectors();
                 }
             }
             else
             {
-                this.logger.LogTrace($"Block '{chainedBlock.HashBlock}' not assigned to any peer.");
+                this.logger.LogTrace("Block '{0}' not assigned to any peer.", chainedBlock.HashBlock);
                 this.AssignPendingVectors();
             }
 
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="minHeight">Minimum height of the chain that the target nodes has to have in order to be asked for one or more of the block to be downloaded from them.</param>
         private void DistributeDownload(Dictionary<int, InventoryVector> vectors, int minHeight)
         {
-            this.logger.LogTrace($"({nameof(vectors)}.{nameof(vectors.Count)}:{vectors.Count},{nameof(minHeight)}:{minHeight})");
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(vectors), nameof(vectors.Count), vectors.Count, nameof(minHeight), minHeight);
 
             // Count number of tasks assigned to each peer.
             BlockPullerBehavior[] nodes = this.GetNodeBehaviors();
@@ -346,9 +346,9 @@ namespace Stratis.Bitcoin.BlockPulling
                         TasksAssignedCount = assignedTasksCount[behavior]
                     };
                     peerInformation.Add(peerInfo);
-                    this.logger.LogTrace($"Peer '{peerInfo.PeerId.GetHashCode():x}' available: quality {peerInfo.QualityScore}, height {peerInfo.ChainHeight}.");
+                    this.logger.LogTrace("Peer '{0:x}' available: quality {1}, height {2}.", peerInfo.PeerId.GetHashCode(), peerInfo.QualityScore, peerInfo.ChainHeight);
                 }
-                else this.logger.LogTrace($"Peer '{behavior.GetHashCode():x}' filtered out: height {peerHeight}.");
+                else this.logger.LogTrace("Peer '{0:x}' filtered out: height {1}.", behavior.GetHashCode(), peerHeight);
             }
 
             // There are no available peers with long enough chains.
@@ -382,14 +382,14 @@ namespace Stratis.Bitcoin.BlockPulling
                     InventoryVector inventoryVector = vectors[blockHeight];
                     if (this.AssignDownloadTaskToPeer(peerBehavior, inventoryVector.Hash, out peerDisconnected))
                     {
-                        this.logger.LogTrace($"Block '{inventoryVector.Hash}/{blockHeight}' assigned to peer '{peerBehavior.GetHashCode():x}'");
+                        this.logger.LogTrace("Block '{0}/{1}' assigned to peer '{2:x}'", inventoryVector.Hash, blockHeight, peerBehavior.GetHashCode());
                         getDataPayload.Inventory.Add(inventoryVector);
                     }
                     else if (peerDisconnected)
                     {
                         // The peer was disconnected recently, we need to make sure that the blocks assigned to it go back to the pending list.
                         // This is done below.
-                        this.logger.LogTrace($"Peer '{peerBehavior.GetHashCode():x} has been disconnected.'");
+                        this.logger.LogTrace("Peer '{0:x} has been disconnected.'", peerBehavior.GetHashCode());
                         break;
                     }
                     // else This block has been assigned to someone else already, no action required.
@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </returns>
         internal bool AssignPendingDownloadTaskToPeer(BlockPullerBehavior peer, out uint256 blockHash)
         {
-            this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}')");
+            this.logger.LogTrace("({0}:'{1:x}')", nameof(peer), peer.GetHashCode());
             blockHash = null;
 
             lock (this.lockObject)
@@ -444,7 +444,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             bool res = blockHash != null;
 
-            this.logger.LogTrace($"(-):{res},*{nameof(blockHash)}='{blockHash}'");
+            this.logger.LogTrace("(-):{0},*{1}='{2}'", res, nameof(blockHash), blockHash);
             return res;
         }
 
@@ -460,7 +460,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </returns>
         internal bool AssignDownloadTaskToPeer(BlockPullerBehavior peer, uint256 blockHash, out bool peerDisconnected)
         {
-            this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}',{nameof(blockHash)}:'{blockHash}')");
+            this.logger.LogTrace("({0}:'{1:x}',{2}:'{3}')", nameof(peer), peer.GetHashCode(), nameof(blockHash), blockHash);
 
             bool res = false;
             lock (this.lockObject)
@@ -473,7 +473,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
             }
 
-            this.logger.LogTrace($"(-):{res}");
+            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
 
@@ -487,7 +487,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>The caller of this method is responsible for holding <see cref="lockObject"/>.</remarks>
         private bool ReleaseDownloadTaskAssignmentLocked(Dictionary<uint256, DownloadAssignment> peerPendingDownloads, uint256 blockHash)
         {
-            this.logger.LogTrace($"({nameof(peerPendingDownloads)}.{nameof(peerPendingDownloads.Count)}:{peerPendingDownloads.Count},{nameof(blockHash)}:{blockHash})");
+            this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}')", nameof(peerPendingDownloads), nameof(peerPendingDownloads.Count), peerPendingDownloads.Count, nameof(blockHash), blockHash);
 
             bool res = false;
             if (this.assignedBlockTasks.Remove(blockHash) && peerPendingDownloads.Remove(blockHash))
@@ -496,7 +496,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 res = true;
             }
 
-            this.logger.LogTrace($"(-):{res}");
+            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
 
@@ -504,20 +504,21 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Releases all pending block download tasks assigned to a peer.
         /// </summary>
         /// <param name="peer">Peer to have all its pending download task released.</param>
+        /// <param name="disconnectPeer">If set to <c>true</c> the peer is considered as disconnected and should be prevented from being assigned additional work.</param>
         /// <exception cref="InvalidOperationException">Thrown in case of data inconsistency between synchronized structures, which should never happen.</exception>
-        internal void ReleaseAllPeerDownloadTaskAssignments(BlockPullerBehavior peer)
+        internal void ReleaseAllPeerDownloadTaskAssignments(BlockPullerBehavior peer, bool disconnectPeer)
         {
-            this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}')");
+            this.logger.LogTrace("({0}:'{1:x}',{2}:{3})", nameof(peer), peer.GetHashCode(), nameof(disconnectPeer), disconnectPeer);
 
             lock (this.lockObject)
             {
-                // Prevent the peer to get any more work from now on.
-                peer.Disconnected = true;
+                // Prevent the peer to get any more work from now on if it was disconnected.
+                if (disconnectPeer) peer.Disconnected = true;
 
                 Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
                 {
-                    this.logger.LogTrace($"Releasing {peerPendingDownloads.Count} pending downloads of peer '{peer.GetHashCode():x}'.");
+                    this.logger.LogTrace("Releasing {0} pending downloads of peer '{1:x}'.", peerPendingDownloads.Count, peer.GetHashCode());
 
                     // Make a fresh copy of items in peerPendingDownloads to avoid modification of the collection.
                     foreach (uint256 blockHash in peerPendingDownloads.Keys.ToList())
@@ -533,7 +534,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
             }
 
-            this.logger.LogTrace($"(-)");
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -555,7 +556,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </returns>
         internal bool DownloadTaskFinished(BlockPullerBehavior peer, uint256 blockHash, DownloadedBlock downloadedBlock)
         {
-            this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}',{nameof(blockHash)}:'{blockHash}',{nameof(downloadedBlock)}.{nameof(downloadedBlock.Length)}:{downloadedBlock.Length})");
+            this.logger.LogTrace("({0}:'{1:x}',{2}:'{3}',{4}.{5}:{6})", nameof(peer), peer.GetHashCode(), nameof(blockHash), blockHash, nameof(downloadedBlock), nameof(downloadedBlock.Length), downloadedBlock.Length);
 
             bool error = false;
             bool res = false;
@@ -584,11 +585,11 @@ namespace Stratis.Bitcoin.BlockPulling
                                     this.peerQuality.AddSample(peer, blockDownloadTime, downloadedBlock.Length);
                                     peerQualityAdjustment = this.peerQuality.CalculateQualityAdjustment(blockDownloadTime, downloadedBlock.Length);
 
-                                    this.logger.LogTrace($"Block '{blockHash}' size '{downloadedBlock.Length}' downloaded by peer '{peer.GetHashCode():x}' in {blockDownloadTime} ms, peer's score will be adjusted by {peerQualityAdjustment}.");
+                                    this.logger.LogTrace("Block '{0}' size '{1}' downloaded by peer '{2:x}' in {3} ms, peer's score will be adjusted by {4}.", blockHash, downloadedBlock.Length, peer.GetHashCode(), blockDownloadTime, peerQualityAdjustment);
 
                                     res = true;
                                 }
-                                else this.logger.LogTrace($"Block '{blockHash}' already present on the list of downloaded blocks.");
+                                else this.logger.LogTrace("Block '{0}' already present on the list of downloaded blocks.", blockHash);
                             }
                             else
                             {
@@ -599,19 +600,19 @@ namespace Stratis.Bitcoin.BlockPulling
                         else
                         {
                             // Before this peer provided the block, it has been assigned to other peer, which is OK.
-                            this.logger.LogTrace($"Incoming block '{blockHash}' is assigned to peer '{peerAssigned.GetHashCode():x}', not to '{peer.GetHashCode():x}'.");
+                            this.logger.LogTrace("Incoming block '{0}' is assigned to peer '{1:x}', not to '{2:x}'.", blockHash, peerAssigned.GetHashCode(), peer.GetHashCode());
                         }
                     }
                     else
                     {
                         // Peer's pending downloads were probably released, which is OK.
-                        this.logger.LogTrace($"Peer '{peer.GetHashCode():x}' has no assignments.");
+                        this.logger.LogTrace("Peer '{0:x}' has no assignments.", peer.GetHashCode());
                     }
                 }
                 else
                 {
                     // The task was probably assigned to other peer and that task completed before this peer provided the block, which is OK.
-                    this.logger.LogTrace($"Incoming block '{blockHash}' is not pending.");
+                    this.logger.LogTrace("Incoming block '{0}' is not pending.", blockHash);
                 }
             }
 
@@ -625,7 +626,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             if (res) peer.UpdateQualityScore(peerQualityAdjustment);
 
-            this.logger.LogTrace($"(-):{res}");
+            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
 
@@ -636,7 +637,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>Downloaded block or null if block with the given hash is not on the list.</returns>
         protected DownloadedBlock GetDownloadedBlock(uint256 blockHash)
         {
-            this.logger.LogTrace($"({nameof(blockHash)}:'{blockHash}')");
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
             DownloadedBlock res = null;
             lock (this.lockObject)
@@ -644,7 +645,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 res = this.downloadedBlocks.TryGet(blockHash);
             }
 
-            this.logger.LogTrace($"(-):'{res}'");
+            this.logger.LogTrace("(-):'{0}'", res);
             return res;
         }
 
@@ -678,7 +679,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns><c>true</c> if the function succeeds, <c>false</c> if the block with the given hash was not in the list.</returns>
         protected bool TryRemoveDownloadedBlock(uint256 blockHash, out DownloadedBlock downloadedBlock)
         {
-            this.logger.LogTrace($"({nameof(blockHash)}:'{blockHash}')");
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
             bool res = false;
 
@@ -688,8 +689,8 @@ namespace Stratis.Bitcoin.BlockPulling
                     res = this.downloadedBlocks.Remove(blockHash);
             }
 
-            if (res) this.logger.LogTrace($"(-):{res},*{nameof(downloadedBlock)}.{nameof(downloadedBlock.Length)}:{downloadedBlock.Length}");
-            else this.logger.LogTrace($"(-):{res}");
+            if (res) this.logger.LogTrace("(-):{0},*{1}.{2}:{3}", res, nameof(downloadedBlock), nameof(downloadedBlock.Length), downloadedBlock.Length);
+            else this.logger.LogTrace("(-):{0}", res);
             return res;
         }
 
@@ -718,7 +719,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>The caller of this method is responsible for holding <see cref="lockObject"/>.</remarks>
         private void AddPeerPendingDownloadLocked(BlockPullerBehavior peer, uint256 blockHash)
         {
-            this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}',{nameof(blockHash)}:'{blockHash}')");
+            this.logger.LogTrace("({0}:'{1:x}',{2}:'{3}')", nameof(peer), peer.GetHashCode(), nameof(blockHash), blockHash);
 
             Dictionary<uint256, DownloadAssignment> peerPendingDownloads;
             if (!this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
@@ -740,7 +741,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns><c>true</c> if the <paramref name="peer"/> is currently responsible for downloading block with hash <paramref name="blockHash"/>.</returns>
         public bool CheckBlockTaskAssignment(BlockPullerBehavior peer, uint256 blockHash)
         {
-            this.logger.LogTrace($"({nameof(peer)}:'{peer.GetHashCode():x}',{nameof(blockHash)}:'{blockHash}')");
+            this.logger.LogTrace("({0}:'{1:x}',{2}:'{3}')", nameof(peer), peer.GetHashCode(), nameof(blockHash), blockHash);
 
             bool res = false;
             lock (this.lockObject)
@@ -750,7 +751,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     res = peerPendingDownloads.ContainsKey(blockHash);
             }
 
-            this.logger.LogTrace($"(-):{res}");
+            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
     }

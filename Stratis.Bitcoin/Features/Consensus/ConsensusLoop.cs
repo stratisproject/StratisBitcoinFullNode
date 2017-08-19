@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             get; set;
         }
     }
-
+    
     public class ConsensusLoop
     {
         public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, StakeChain stakeChain = null)
