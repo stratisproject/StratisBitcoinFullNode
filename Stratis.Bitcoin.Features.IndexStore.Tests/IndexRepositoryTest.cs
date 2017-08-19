@@ -572,7 +572,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
         private Features.IndexStore.IIndexRepository SetupRepository(Network main, string dir)
         {
-            var repository = new IndexRepository(main, dir);
+            var repository = new IndexRepository(main, dir, this.loggerFactory);
             repository.Initialize().GetAwaiter().GetResult();
 
             return repository;

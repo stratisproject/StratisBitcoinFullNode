@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Tests.Logging
     public class LogsTestBase : TestBase
     {
         private Mock<ILogger> fullNodeLogger;
-        private Mock<ILoggerFactory> loggerFactory;
+        private Mock<ILoggerFactory> mockLoggerFactory;
         private Mock<ILogger> rpcLogger;
         private Mock<ILogger> logger;
 
@@ -25,13 +25,13 @@ namespace Stratis.Bitcoin.Tests.Logging
             this.fullNodeLogger = new Mock<ILogger>();
             this.rpcLogger = new Mock<ILogger>();
             this.logger = new Mock<ILogger>();
-            this.loggerFactory = new Mock<ILoggerFactory>();
-            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
+            this.mockLoggerFactory = new Mock<ILoggerFactory>();
+            this.mockLoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                .Returns(this.logger.Object);
-            this.loggerFactory.Setup(l => l.CreateLogger(typeof(FullNode).FullName))
+            this.mockLoggerFactory.Setup(l => l.CreateLogger(typeof(FullNode).FullName))
                .Returns(this.fullNodeLogger.Object)
                .Verifiable();
-            this.loggerFactory.Setup(l => l.CreateLogger(typeof(RPCFeature).FullName))
+            this.mockLoggerFactory.Setup(l => l.CreateLogger(typeof(RPCFeature).FullName))
                 .Returns(this.rpcLogger.Object)
                  .Verifiable();
         }
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.Logging
         {
             get
             {
-                return this.loggerFactory;
+                return this.mockLoggerFactory;
             }
         }
 
