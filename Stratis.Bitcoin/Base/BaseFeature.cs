@@ -118,9 +118,9 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
 
-            this.disposableResources.Add(this.nodeSettings.LoggerFactory);
             this.disposableResources.Add(this.chainRepository);
             this.disposableResources.Add(this.connectionManager);
+            this.disposableResources.Add(this.nodeSettings.LoggerFactory);
         }
 
         /// <summary>
