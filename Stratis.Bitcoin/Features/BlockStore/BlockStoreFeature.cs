@@ -24,8 +24,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly INodeLifetime nodeLifetime;
         protected readonly IConnectionManager connectionManager;
         protected readonly NodeSettings nodeSettings;
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
+        /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
+
         protected readonly string name;
 
         public BlockStoreFeature(

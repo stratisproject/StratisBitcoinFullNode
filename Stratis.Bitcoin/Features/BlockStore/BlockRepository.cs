@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
     public class BlockRepository : IBlockRepository
     {
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         protected readonly DBreezeSingleThreadSession session;

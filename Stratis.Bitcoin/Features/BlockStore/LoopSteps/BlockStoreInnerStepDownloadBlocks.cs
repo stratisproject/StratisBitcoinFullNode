@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.BlockPulling;
+﻿using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.BlockPulling;
 using System.Linq; 
 using System.Threading.Tasks;
 
@@ -21,9 +22,23 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     public sealed class BlockStoreInnerStepDownloadBlocks : BlockStoreInnerStep
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>
+        /// Initializes new instance of the object.
+        /// </summary>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        public BlockStoreInnerStepDownloadBlocks(ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+        }
+
         /// <inheritdoc/>
         public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
+            this.logger.LogTrace("()");
+
             BlockPuller.DownloadedBlock downloadedBlock;
 
             if (context.BlockStoreLoop.BlockPuller.TryGetBlock(context.DownloadStack.Peek(), out downloadedBlock))
@@ -42,19 +57,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     context.Store.Clear();
 
                     if (!context.DownloadStack.Any())
+                    {
+                        this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
                         return InnerStepResult.Stop;
+                    }
                 }
             }
             else
             {
                 if (context.StallCount > 10000)
+                {
+                    this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
                     return InnerStepResult.Stop;
+                }
 
                 await Task.Delay(100, context.CancellationToken);
 
                 context.StallCount++;
             }
 
+            this.logger.LogTrace("(-):{0}", InnerStepResult.Next);
             return InnerStepResult.Next;
         }
     }

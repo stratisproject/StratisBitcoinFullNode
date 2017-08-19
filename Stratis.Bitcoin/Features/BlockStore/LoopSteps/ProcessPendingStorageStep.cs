@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -29,23 +30,35 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     internal sealed class ProcessPendingStorageStep : BlockStoreLoopStep
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         private BlockPair pendingBlockPairToStore;
 
-        internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop)
-            : base(blockStoreLoop)
+        internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+            : base(blockStoreLoop, loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
         }
 
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height, nameof(disposeMode), disposeMode);
+
             if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
+            {
+                this.logger.LogTrace("(-):{0}", StepResult.Next);
                 return StepResult.Next;
+            }
 
             if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
             {
                 if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold)
+                {
+                    this.logger.LogTrace("(-):{0}", StepResult.Stop);
                     return StepResult.Stop;
+                }
             }
 
             var pendingBlockPairsToStore = new List<BlockPair>();
@@ -94,6 +107,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             this.pendingBlockPairToStore = null;
 
+            this.logger.LogTrace("(-):{0}", StepResult.Continue);
             return StepResult.Continue;
         }
 
@@ -103,13 +117,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task<StepResult> PushPendingBlocksToRepository(int pendingStorageBatchSize, List<BlockPair> pendingBlockPairsToStore, ChainedBlock lastFoundChainedBlock, CancellationToken cancellationToken, bool breakExecution)
         {
+            this.logger.LogTrace("({0}:{1},{2}.{3}:{4},{5}:'{6}/{7}',{8}:{9})", nameof(pendingBlockPairsToStore), pendingBlockPairsToStore, nameof(pendingBlockPairsToStore), nameof(pendingBlockPairsToStore.Count), pendingBlockPairsToStore?.Count, nameof(lastFoundChainedBlock), lastFoundChainedBlock?.HashBlock, lastFoundChainedBlock?.Height, nameof(breakExecution), breakExecution);
+
             await this.BlockStoreLoop.BlockRepository.PutAsync(lastFoundChainedBlock.HashBlock, pendingBlockPairsToStore.Select(b => b.Block).ToList());
 
             this.BlockStoreLoop.SetStoreTip(lastFoundChainedBlock);
 
             if (breakExecution)
+            {
+                this.logger.LogTrace("(-):{0}", StepResult.Stop);
                 return StepResult.Stop;
+            }
 
+            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
 
@@ -122,16 +142,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private bool ShouldBreakExecution(ChainedBlock inputChainedBlock, ChainedBlock nextChainedBlock)
         {
-            if (nextChainedBlock == null)
-                return true;
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}')", nameof(inputChainedBlock), inputChainedBlock?.HashBlock, inputChainedBlock?.Height, nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height);
 
-            if (nextChainedBlock.Header.HashPrevBlock != inputChainedBlock.HashBlock)
-                return true;
+            bool res = (nextChainedBlock == null)
+                || (nextChainedBlock.Header.HashPrevBlock != inputChainedBlock.HashBlock)
+                || (nextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
 
-            if (nextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
-                return true;
-
-            return false;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
     }
 }

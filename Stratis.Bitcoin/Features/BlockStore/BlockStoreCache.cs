@@ -21,6 +21,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IBlockRepository blockRepository;
         private readonly IMemoryCache cache;
         public BlockStoreCachePerformanceCounter PerformanceCounter { get; }
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         public BlockStoreCache(IBlockRepository blockRepository, ILoggerFactory loggerFactory)

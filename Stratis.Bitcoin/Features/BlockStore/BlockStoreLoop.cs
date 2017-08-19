@@ -18,6 +18,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class BlockStoreLoop
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Factory for creating loggers.</summary>
+        protected readonly ILoggerFactory loggerFactory;
+
         /// <summary> Best chain of block headers.</summary>
         internal readonly ConcurrentChain Chain;
 
@@ -29,7 +35,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly BlockStoreStats blockStoreStats;
         private readonly NodeSettings nodeArgs;
         private readonly INodeLifetime nodeLifetime;
-        private readonly ILogger logger;
 
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
@@ -74,6 +79,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.nodeArgs = nodeArgs;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.loggerFactory = loggerFactory;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.logger);
@@ -140,10 +146,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             SetHighestPersistedBlock(this.StoreTip);
 
             this.stepChain = new BlockStoreStepChain();
-            this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this));
-            this.stepChain.SetNextStep(new CheckNextChainedBlockExistStep(this));
-            this.stepChain.SetNextStep(new ProcessPendingStorageStep(this));
-            this.stepChain.SetNextStep(new DownloadBlockStep(this));
+            this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this, this.loggerFactory));
+            this.stepChain.SetNextStep(new CheckNextChainedBlockExistStep(this, this.loggerFactory));
+            this.stepChain.SetNextStep(new ProcessPendingStorageStep(this, this.loggerFactory));
+            this.stepChain.SetNextStep(new DownloadBlockStep(this, this.loggerFactory));
 
             StartLoop();
 

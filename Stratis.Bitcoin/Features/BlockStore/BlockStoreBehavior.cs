@@ -29,7 +29,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private readonly ConcurrentChain chain;
 		private readonly IBlockRepository blockRepository;
 		private readonly IBlockStoreCache blockStoreCache;
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
+        /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
         public bool CanRespondToGetBlocksPayload { get; set; }
