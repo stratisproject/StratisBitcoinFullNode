@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(nextBlockHash), nextBlockHash, nameof(blocks), nameof(blocks.Count), blocks?.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(nextBlockHash), nextBlockHash, nameof(blocks), nameof(blocks.Count), blocks?.Count);
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
             Guard.NotNull(blocks, nameof(blocks));
 
