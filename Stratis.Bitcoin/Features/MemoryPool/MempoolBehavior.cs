@@ -188,6 +188,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="message">Incoming message.</param>
+        /// <remarks>
+        /// TODO: Fix the exception handling of the async event.
+        /// </remarks>
         private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
         {
             // TODO: Add exception handling
