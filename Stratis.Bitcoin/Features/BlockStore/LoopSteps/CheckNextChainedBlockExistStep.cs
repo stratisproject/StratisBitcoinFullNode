@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -19,23 +20,31 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     internal sealed class CheckNextChainedBlockExistStep : BlockStoreLoopStep
     {
-        internal CheckNextChainedBlockExistStep(BlockStoreLoop blockStoreLoop)
-            : base(blockStoreLoop)
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        internal CheckNextChainedBlockExistStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+            : base(blockStoreLoop, loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
         }
 
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
+
             if (await this.BlockStoreLoop.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
             {
                 await this.BlockStoreLoop.BlockRepository.SetBlockHash(nextChainedBlock.HashBlock);
 
                 this.BlockStoreLoop.SetStoreTip(nextChainedBlock);
 
+                this.logger.LogTrace("(-):{0}", StepResult.Continue);
                 return StepResult.Continue;
             }
 
+            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }

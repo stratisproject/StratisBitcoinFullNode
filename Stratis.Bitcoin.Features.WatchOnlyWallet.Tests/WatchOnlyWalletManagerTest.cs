@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using Moq;
-using NBitcoin;
+﻿using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.WatchOnlyWallet;
 using Stratis.Bitcoin.Tests.Logging;
+using System;
+using System.Collections.Concurrent;
+using System.IO;
 using Xunit;
-using TransactionData = Stratis.Bitcoin.Features.WatchOnlyWallet.TransactionData;
 
-namespace Stratis.Bitcoin.Tests.WatchOnlyWallet
+namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
 {
     public class WatchOnlyWalletManagerTest : LogsTestBase
     {        

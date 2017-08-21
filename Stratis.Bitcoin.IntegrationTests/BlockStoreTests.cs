@@ -11,16 +11,28 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Xunit;
 using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class BlockStoreTests
     {
+        /// <summary>Factory for creating loggers.</summary>
+        protected readonly ILoggerFactory loggerFactory;
+
+        /// <summary>
+        /// Initializes logger factory for tests in this class.
+        /// </summary>
+        public BlockStoreTests()
+        {
+            this.loggerFactory = new LoggerFactory();
+        }
+
         private void BlockRepositoryBench()
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
                 {
                     var lst = new List<Block>();
                     for (int i = 0; i < 30; i++)
@@ -68,7 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
                 {
                     blockRepo.SetTxIndex(true).Wait();
 
@@ -116,7 +128,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
                 {
                     blockRepo.Initialize().GetAwaiter().GetResult();
 

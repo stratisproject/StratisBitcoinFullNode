@@ -19,6 +19,17 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     /// </summary>
     public class BlockStoreLoopStepBaseTest
     {
+        /// <summary>Factory for creating loggers.</summary>
+        protected readonly ILoggerFactory loggerFactory;
+
+        /// <summary>
+        /// Initializes logger factory for inherited tests.
+        /// </summary>
+        public BlockStoreLoopStepBaseTest()
+        {
+            this.loggerFactory = new LoggerFactory();
+        }
+
         internal void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)
         {
             foreach (var block in blocks)
@@ -113,7 +124,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
         internal FluentBlockStoreLoop WithConcreteRepository(DataFolder dataFolder)
         {
-            this.BlockRepository = new BlockRepository(Network.Main, dataFolder);
+            this.BlockRepository = new BlockRepository(Network.Main, dataFolder, this.loggerFactory.Object);
             this.dataFolder = dataFolder;
             return this;
         }

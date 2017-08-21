@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Threading;
@@ -51,10 +52,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>Base class for each block store step.</summary>
     internal abstract class BlockStoreLoopStep
     {
-        protected BlockStoreLoopStep(BlockStoreLoop blockStoreLoop)
+        /// <summary>Factory for creating loggers.</summary>
+        protected readonly ILoggerFactory loggerFactory;
+
+        protected BlockStoreLoopStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(blockStoreLoop, nameof(blockStoreLoop));
 
+            this.loggerFactory = loggerFactory;
             this.BlockStoreLoop = blockStoreLoop;
         }
 
