@@ -3,6 +3,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Builder
 {
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.Builder
         {
             try
             {
-                Execute(service => service.Stop());
+                this.Execute(service => service.Stop(), true);
             }
             catch (Exception ex)
             {
@@ -80,15 +81,21 @@ namespace Stratis.Bitcoin.Builder
         /// Executes start or stop method of all the features registered with the associated full node.
         /// </summary>
         /// <param name="callback">Delegate to run start or stop method of the feature.</param>
+        /// <param name="reverseOrder">Reveres the order of which the features are executed.</param>
         /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called 
         /// for all features, it throws AggregateException if there were any exceptions.</remarks>
-        private void Execute(Action<IFullNodeFeature> callback)
+        private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
         {
             List<Exception> exceptions = null;
 
             if (this.node.Services != null)
             {
-                foreach (var service in this.node.Services.Features)
+                var iterator = this.node.Services.Features;
+
+                if (reverseOrder)
+                    iterator = iterator.Reverse();
+
+                foreach (var service in iterator)
                 {
                     try
                     {
