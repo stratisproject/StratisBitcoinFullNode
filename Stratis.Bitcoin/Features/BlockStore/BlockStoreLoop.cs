@@ -42,6 +42,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly NodeSettings nodeArgs;
         private readonly INodeLifetime nodeLifetime;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
 
@@ -72,7 +75,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainState chainState,
             NodeSettings nodeArgs,
             INodeLifetime nodeLifetime,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory, 
+            IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.BlockPuller = blockPuller;
@@ -83,6 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeArgs = nodeArgs;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
             this.loggerFactory = loggerFactory;
+            this.dateTimeProvider = dateTimeProvider;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.logger);
@@ -152,7 +157,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new CheckNextChainedBlockExistStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new ProcessPendingStorageStep(this, this.loggerFactory));
-            this.stepChain.SetNextStep(new DownloadBlockStep(this, this.loggerFactory));
+            this.stepChain.SetNextStep(new DownloadBlockStep(this, this.loggerFactory, this.dateTimeProvider));
 
             StartLoop();
 
