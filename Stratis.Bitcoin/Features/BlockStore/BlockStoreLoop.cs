@@ -258,10 +258,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 var result = await this.stepChain.Execute(nextChainedBlock, disposeMode, cancellationToken);
                 if (result == StepResult.Stop)
                     break;
-
-                // TODO: Remove this as it does nothing?
-                if (result == StepResult.Continue)
-                    continue;
             }
 
             this.logger.LogTrace("(-)");
