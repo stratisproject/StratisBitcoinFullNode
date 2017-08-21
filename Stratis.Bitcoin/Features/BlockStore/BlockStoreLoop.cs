@@ -18,6 +18,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class BlockStoreLoop
     {
+        /// <summary>Maximal number of bytes the block puller can download before the downloaded blocks are stored to the disk.</summary>
+        internal const uint MaxInsertBlockSize = 20 * 1024 * 1024;
+
+        /// <summary>Maximal number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
+        internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -46,9 +52,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>The highest stored block in the repository</summary>
         internal ChainedBlock StoreTip { get; private set; }
-
-        /// <summary>TODO: Should be configurable?</summary>
-        internal uint InsertBlockSizeThreshold = 1000000 * 5;
 
         /// <summary>TODO: Should be configurable?</summary>
         internal int PendingStorageBatchThreshold = 5;
@@ -159,7 +162,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Adds a block to Pending Storage
         /// <para>
-        /// The BlockStoreSignaler calls AddToPending. Only add the block to pending storage if:
+        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if:
         /// </para>
         /// <list>
         ///     <item>1: The block does exist on the chain.</item>
