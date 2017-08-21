@@ -32,9 +32,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </list>
         /// </para>
         /// </summary>
-        /// <param name="nextChainedBlock">Next chained block to process</param>
-        /// <param name="disposeMode">This will <c>true</c> if Flush() was called on the BlockStore</param>
-        /// <param name="cancellationToken">Cancellation token to check</param>
+        /// <param name="nextChainedBlock">Next chained block to process.</param>
+        /// <param name="disposeMode">This is <c>true</c> if <see cref="BlockStoreLoop.Flush"/> was called.</param>
+        /// <param name="cancellationToken">Cancellation token to check.</param>
         /// <returns>BlockStoreLoopStepResult</returns>
         internal async Task<StepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode, CancellationToken cancellationToken)
         {
