@@ -12,7 +12,6 @@ namespace Stratis.Bitcoin.Utilities
     /// Complexity of supported operations:
     /// <list type="bullet">
     /// <item><see cref="Add"/> - O(1),</item>
-    /// <item><see cref="AddNoSet"/> - O(1),</item>
     /// <item><see cref="this[int]"/> - O(1).</item>
     /// </list>
     /// </remarks>
@@ -21,7 +20,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Maximal number of items that can be stored in <see cref="items"/> array.</summary>
         public int Capacity { get; private set; }
 
-        /// <summary>Number of valid items in <see cref="items"/> array.</summary>
+        /// <summary>Number of valid (slots in array occupied by added items) items in <see cref="items"/> array.</summary>
         public int Count { get; private set; }
 
         /// <summary>Index in <see cref="items"/> array where the next item will be stored.</summary>
