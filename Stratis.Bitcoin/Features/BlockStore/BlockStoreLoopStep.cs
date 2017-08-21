@@ -23,12 +23,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Executes the chain of BlockStoreLoop steps.
+        /// Executes the chain of <see cref="BlockStoreLoop"/> steps.
         /// <para>
-        /// Each step will return a BlockStoreLoopStepResult which will either:
+        /// Each step will return a <see cref="BlockStoreLoopStepResult"/> which will either:
         /// <list>
-        ///     <item>1: Break out of the ForEach</item>
-        ///     <item>2: Continue execution of the ForEach</item>
+        ///     <item>1: Break out of the foreach loop.</item>
+        ///     <item>2: Continue execution of the foreach loop.</item>
         /// </list>
         /// </para>
         /// </summary>
