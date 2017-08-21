@@ -1,19 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -53,8 +53,9 @@ namespace Stratis.Bitcoin.Connection
 		private readonly NodeConnectionParameters parameters;
 		private readonly NodeSettings nodeSettings;
         private readonly ILogger logger;
+        private readonly INodeLifetime nodeLifetime;
 
-		public Network Network { get { return this.network; } }
+        public Network Network { get { return this.network; } }
 		public NodeConnectionParameters Parameters { get { return this.parameters; } }
 		public NodeSettings NodeSettings { get { return this.nodeSettings; } }
 		public IReadOnlyNodesCollection ConnectedNodes { get { return this.connectedNodes; } }
@@ -63,16 +64,17 @@ namespace Stratis.Bitcoin.Connection
 		public NodesGroup AddNodeNodeGroup { get; private set; }
 		public NodesGroup DiscoveredNodeGroup { get; set; }
 
-		public ConnectionManager(Network network, NodeConnectionParameters parameters, NodeSettings nodeSettings, ILoggerFactory loggerFactory)
-		{
-			this.network = network;
-			this.nodeSettings = nodeSettings;
-			this.connectionManagerSettings = nodeSettings.ConnectionManager;
-			this.parameters = parameters;
-		    this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-		}
-
-		public void Start()
+        public ConnectionManager(Network network, NodeConnectionParameters parameters, NodeSettings nodeSettings, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime)
+        {
+            this.network = network;
+            this.nodeSettings = nodeSettings;
+            this.nodeLifetime = nodeLifetime;
+            this.connectionManagerSettings = nodeSettings.ConnectionManager;
+            this.parameters = parameters;
+            this.parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+        public void Start()
 		{
 			this.parameters.UserAgent = "StratisBitcoin:" + GetVersion();
 			this.parameters.Version = this.NodeSettings.ProtocolVersion;
