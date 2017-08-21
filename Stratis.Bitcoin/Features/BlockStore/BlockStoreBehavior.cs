@@ -184,29 +184,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        ////private Task ProcessGetBlocksAsync(Node node, GetBlocksPayload getBlocksPayload)
-        ////{
-        ////	ChainedBlock chainedBlock = this.chain.FindFork(getBlocksPayload.BlockLocators);
-
-        ////	if (chainedBlock == null)
-        ////		return Task.CompletedTask;
-
-        ////	var inv = new InvPayload();
-        ////	for (var limit = 0; limit < 500; limit++)
-        ////	{
-        ////		chainedBlock = this.chain.GetBlock(chainedBlock.Height + 1);
-        ////		if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
-        ////			break;
-
-        ////		inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
-        ////	}
-
-        ////	if (inv.Inventory.Any())
-        ////		return node.SendMessageAsync(inv);
-
-        ////	return Task.CompletedTask;
-        ////}
-
         private async Task SendAsBlockInventory(Node node, IEnumerable<uint256> blocks)
 		{
             this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(node), node?.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
