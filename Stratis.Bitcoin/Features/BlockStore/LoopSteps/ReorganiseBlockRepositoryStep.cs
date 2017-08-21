@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,18 +27,27 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     internal sealed class ReorganiseBlockRepositoryStep : BlockStoreLoopStep
     {
-        internal ReorganiseBlockRepositoryStep(BlockStoreLoop blockStoreLoop)
-            : base(blockStoreLoop)
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        internal ReorganiseBlockRepositoryStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+            : base(blockStoreLoop, loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
         }
 
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height, nameof(disposeMode), disposeMode);
+
             if (this.BlockStoreLoop.StoreTip.HashBlock != nextChainedBlock.Header.HashPrevBlock)
             {
                 if (disposeMode)
+                {
+                    this.logger.LogTrace("(-):{0}", StepResult.Stop);
                     return StepResult.Stop;
+                }
 
                 var blocksToDelete = new List<uint256>();
                 var blockToDelete = this.BlockStoreLoop.StoreTip;
@@ -52,9 +62,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
                 this.BlockStoreLoop.SetStoreTip(blockToDelete);
 
+                this.logger.LogTrace("(-):{0}", StepResult.Stop);
                 return StepResult.Stop;
             }
 
+            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }
