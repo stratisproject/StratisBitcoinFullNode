@@ -113,9 +113,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			catch (Exception ex)
 			{
 				this.logger.LogError("Exception occurred: {0}", ex.ToString());
-
-				// while in dev catch any unhandled exceptions
-				Debugger.Break();
 				throw;
 			}
 
