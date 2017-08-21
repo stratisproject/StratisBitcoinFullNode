@@ -11,8 +11,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolSignaled : SignalObserver<Block>
     {
-        #region Fields
-
         /// <summary>
         /// Memory pool manager injected dependency.
         /// </summary>
@@ -38,10 +36,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        #endregion
-
-        #region Constructors
-
         /// <summary>
         /// Constructs an instance of a MempoolSignaled object.
         /// Starts the block notification loop to memory pool behaviors for connected nodes.
@@ -62,21 +56,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.RelayWorker();
         }
 
-        #endregion
-
-        #region ObserverBase Overrides
-
         /// <inheritdoc />
         protected override void OnNextCore(Block value)
         {
-            var task = this.manager.RemoveForBlock(value, this.chain.GetBlock(value.GetHash()).Height);
+            var blockHeader = this.chain.GetBlock(value.GetHash());
+
+            var task = this.manager.RemoveForBlock(value, blockHeader?.Height ?? -1);
 
             // wait for the mempool code to complete
             // until the signaler becomes async 
             task.GetAwaiter().GetResult();
         }
-
-        #endregion
 
         /// <summary>
         /// Announces blocks on all connected nodes memory pool behaviours every ten seconds.
