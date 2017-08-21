@@ -18,12 +18,12 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             CircularArray<int> carray = new CircularArray<int>(8, false);
 
-            carray.Add(10);
-            carray.Add(20);
-            carray.Add(30);
-            carray.Add(40);
-            carray.Add(50);
-            carray.Add(60);
+            carray.Add(10, out int oldItem);
+            carray.Add(20, out oldItem);
+            carray.Add(30, out oldItem);
+            carray.Add(40, out oldItem);
+            carray.Add(50, out oldItem);
+            carray.Add(60, out oldItem);
 
             int sum = 0;
             foreach (int item in carray)
@@ -41,12 +41,12 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             CircularArray<int> carray = new CircularArray<int>(5, false);
 
-            carray.Add(10);
-            carray.Add(20);
-            carray.Add(30);
-            carray.Add(40);
-            carray.Add(50);
-            carray.Add(60);
+            carray.Add(10, out int oldItem);
+            carray.Add(20, out oldItem);
+            carray.Add(30, out oldItem);
+            carray.Add(40, out oldItem);
+            carray.Add(50, out oldItem);
+            carray.Add(60, out oldItem);
 
             int sum = 0;
             foreach (int item in carray)
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             // Add all items from normal array to circular array.
             for (int i = 0; i < array.Length; i++)
-                carray.Add(array[i]);
+                carray.Add(array[i], out int oldItem);
 
             // Create a new array from enumeration over circular array.
             int index = 0;
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             // Add all items from normal array to circular array.
             for (int i = 0; i < array.Length; i++)
-                carray.Add(array[i]);
+                carray.Add(array[i], out int oldItem);
 
             // Create a new array from enumeration over circular array.
             int index = 0;
@@ -109,18 +109,19 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// Checks that adding new item without setting the value works as expected.
         /// </summary>
         [Fact]
-        public void AddNoSetWorksCorrectly()
+        public void AddReplacementsWorkCorrectly()
         {
             CircularArray<IPHostEntry> carray = new CircularArray<IPHostEntry>(5);
 
-            int index = carray.AddNoSet();
-            carray[index].HostName = "a";
+            IPHostEntry oldItem;
+            bool replaced = carray.Add(new IPHostEntry() { HostName = "a" }, out oldItem);
+            Assert.False(replaced);
 
-            index = carray.AddNoSet();
-            carray[index].HostName = "b";
+            replaced = carray.Add(new IPHostEntry() { HostName = "b" }, out oldItem);
+            Assert.False(replaced);
 
-            index = carray.AddNoSet();
-            carray[index].HostName = "c";
+            replaced = carray.Add(new IPHostEntry() { HostName = "c" }, out oldItem);
+            Assert.False(replaced);
 
             string nameSum = "";
             foreach (IPHostEntry item in carray)
@@ -128,17 +129,17 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Assert.Equal("abc", nameSum);
 
-            index = carray.AddNoSet();
-            carray[index].HostName = "d";
+            replaced = carray.Add(new IPHostEntry() { HostName = "d" }, out oldItem);
+            Assert.False(replaced);
 
-            index = carray.AddNoSet();
-            carray[index].HostName = "e";
+            replaced = carray.Add(new IPHostEntry() { HostName = "e" }, out oldItem);
+            Assert.False(replaced);
 
-            index = carray.AddNoSet();
-            carray[index].HostName = "f";
+            replaced = carray.Add(new IPHostEntry() { HostName = "f" }, out oldItem);
+            Assert.True(replaced);
 
-            index = carray.AddNoSet();
-            carray[index].HostName = "g";
+            replaced = carray.Add(new IPHostEntry() { HostName = "g" }, out oldItem);
+            Assert.True(replaced);
 
             nameSum = "";
             foreach (IPHostEntry item in carray)
@@ -146,8 +147,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Assert.Equal("cdefg", nameSum);
 
-            index = carray.AddNoSet();
-            Assert.Equal("c", carray[index].HostName);
+            replaced = carray.Add(new IPHostEntry() { HostName = "g" }, out oldItem);
+            Assert.True(replaced);
+            Assert.Equal("c", oldItem.HostName);
         }
     }
 }

@@ -53,24 +53,24 @@ namespace Stratis.Bitcoin.Utilities
         /// Add a new item to the circular array.
         /// </summary>
         /// <param name="item">Item to add.</param>
+        /// <param name="oldItem">If the function returns <c>true</c>, this is filled with the oldest item that was replaced.</param>
+        /// <returns><c>true</c> if the oldest item was replaced, <c>false</c> otherwise.</returns>
         /// <remarks>If the array already reached its capacity, this method will replace the oldest item with the new item.</remarks>
-        public void Add(T item)
+        public bool Add(T item, out T oldItem)
         {
-            int index = this.AddNoSet();
-            this.items[index] = item;
-        }
-
-        /// <summary>
-        /// Add a new item to the circular array without setting its value.
-        /// </summary>
-        /// <returns>Index to the array where the new item should be placed.</returns>
-        /// <remarks>This method only moves the array indexes as if a new item was added, but the caller is responsible for actually setting new values of the item.</remarks>
-        public int AddNoSet()
-        {
+            bool res = false;
+            oldItem = default(T);
             if (this.Count < this.Capacity)
+            {
                 this.Count++;
+            }
+            else
+            {
+                oldItem = this.items[this.Index];
+                res = true;
+            }
 
-            int res = this.Index;
+            this.items[this.Index] = item;
             this.Index = (this.Index + 1) % this.Capacity;
 
             return res;

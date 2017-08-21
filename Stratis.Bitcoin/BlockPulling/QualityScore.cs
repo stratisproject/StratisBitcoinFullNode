@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.BlockPulling
     /// <summary>
     /// Single historic sample item for quality score calculations.
     /// </summary>
-    public class PeerSample
+    public struct PeerSample
     {
         /// <summary>Peer who provided the sample.</summary>
         public IBlockPullerBehavior peer { get; set; }
@@ -92,24 +92,24 @@ namespace Stratis.Bitcoin.BlockPulling
 
             lock (this.lockObject)
             {
-                // If we reached the maximum number of samples, we need to remove oldest sample.
-                if (this.samples.Count == this.samples.Capacity)
-                {
-                    PeerSample oldSample = this.samples[this.samples.Index];
+                // Add new sample to the mix.
+                PeerSample newSample = new PeerSample();
+                newSample.timePerKb = timePerKb;
+                newSample.peer = peer;
+
+                if (this.peerReferenceCounter.ContainsKey(peer)) this.peerReferenceCounter[peer]++;
+                else this.peerReferenceCounter.Add(peer, 1);
+
+                PeerSample oldSample;
+                if (this.samples.Add(newSample, out oldSample))
+                { 
+                  // If we reached the maximum number of samples, we need to remove oldest sample.
                     this.samplesSum -= oldSample.timePerKb;
                     this.peerReferenceCounter[oldSample.peer]--;
 
                     if (this.peerReferenceCounter[oldSample.peer] == 0)
                         this.peerReferenceCounter.Remove(oldSample.peer);
                 }
-
-                // Add new sample to the mix.
-                int index = this.samples.AddNoSet();
-                this.samples[index].timePerKb = timePerKb;
-                this.samples[index].peer = peer;
-
-                if (this.peerReferenceCounter.ContainsKey(peer)) this.peerReferenceCounter[peer]++;
-                else this.peerReferenceCounter.Add(peer, 1);
 
                 // Update the sum and the average with the latest data.
                 this.samplesSum += timePerKb;
