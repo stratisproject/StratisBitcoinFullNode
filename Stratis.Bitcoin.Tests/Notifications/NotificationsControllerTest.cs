@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
 
             // Assert
-            Assert.ThrowsAny<Exception>(() => notificationController.SyncFrom(hashLocation));
+            Assert.Throws<FormatException>(() => notificationController.SyncFrom(hashLocation));
         }
     }
 }
