@@ -8,18 +8,31 @@ using NBitcoin.BitcoinCore;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
 using Xunit;
 using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class BlockStoreTests
     {
+        /// <summary>Factory for creating loggers.</summary>
+        protected readonly ILoggerFactory loggerFactory;
+
+        /// <summary>
+        /// Initializes logger factory for tests in this class.
+        /// </summary>
+        public BlockStoreTests()
+        {
+            this.loggerFactory = new LoggerFactory();
+        }
+
         private void BlockRepositoryBench()
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
                 {
                     var lst = new List<Block>();
                     for (int i = 0; i < 30; i++)
@@ -67,7 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
                 {
                     blockRepo.SetTxIndex(true).Wait();
 
@@ -115,7 +128,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
                 {
                     blockRepo.Initialize().GetAwaiter().GetResult();
 
@@ -144,7 +157,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 stratisNodeSync.GenerateStratisWithMiner(10); // coinbase maturity = 10
                 // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
@@ -160,8 +173,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // generate two new blocks
                 stratisNodeSync.GenerateStratisWithMiner(2);
                 // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.Chain.Tip.HashBlock == stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.CreateRPCClient().GetBestBlockHash()).Result != null);
 
                 // wait for the other nodes to pick up the newly generated blocks
                 TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
@@ -272,11 +285,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.Height == 10);
                 TestHelper.WaitLoop(() => stratisNode1.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock == stratisNode2.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
 
-                var bestBlock1 = stratisNode1.FullNode.BlockStoreManager.BlockRepository.GetAsync(stratisNode1.FullNode.Chain.Tip.HashBlock).Result;
+                var bestBlock1 = stratisNode1.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNode1.FullNode.Chain.Tip.HashBlock).Result;
                 Assert.NotNull(bestBlock1);
 
                 // get the block coinbase trx 
-                var trx = stratisNode2.FullNode.BlockStoreManager.BlockRepository.GetTrxAsync(bestBlock1.Transactions.First().GetHash()).Result;
+                var trx = stratisNode2.FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(bestBlock1.Transactions.First().GetHash()).Result;
                 Assert.NotNull(trx);
                 Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
             }

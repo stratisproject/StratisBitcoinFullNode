@@ -6,9 +6,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public sealed class BlockStoreStats
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         private IBlockRepository repository;
         private BlockStoreCache cache;
-        private readonly ILogger logger;
         private BlockStoreRepositoryPerformanceSnapshot lastRepositorySnapshot;
         private BlockStoreCachePerformanceSnapshot lastCacheSnapshot;
 

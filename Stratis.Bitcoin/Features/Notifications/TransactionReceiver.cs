@@ -17,13 +17,13 @@ namespace Stratis.Bitcoin.Features.Notifications
         private readonly TransactionNotificationProgress notifiedTransactions;
         private readonly ILogger logger;
 
-	    public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILoggerFactory loggerFactory)
-			: this(transactionNotification, notifiedTransactions, loggerFactory.CreateLogger(typeof(TransactionReceiver).FullName))
-	    {
-		    
-	    }
+        public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILoggerFactory loggerFactory)
+            : this(transactionNotification, notifiedTransactions, loggerFactory.CreateLogger(typeof(TransactionReceiver).FullName))
+        {
 
-		public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILogger logger)
+        }
+
+        public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILogger logger)
         {
             this.transactionNotification = transactionNotification;
             this.notifiedTransactions = notifiedTransactions;
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         }
 
         private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
-        {            
+        {
             try
             {
                 //Guard.Assert(node == this.AttachedNode); // just in case
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                 // while in dev catch any unhandled exceptions
                 Debugger.Break();
                 throw;
-            }              
+            }
         }
 
         private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             var invPayload = message.Message.Payload as InvPayload;
             if (invPayload != null)
             {
-                return this.ProcessInvAsync(node, invPayload);                
+                return this.ProcessInvAsync(node, invPayload);
             }
 
             var txPayload = message.Message.Payload as TxPayload;
@@ -100,9 +100,9 @@ namespace Stratis.Bitcoin.Features.Notifications
         }
 
         private async Task ProcessInvAsync(Node node, InvPayload invPayload)
-        {            
+        {
             var txs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
-            
+
             // get the transactions in this inventory that have never been received - either because new or requested.
             var newTxs = txs.Where(t => this.notifiedTransactions.TransactionsReceived.All(ts => ts.Key != t.Hash)).ToList();
 

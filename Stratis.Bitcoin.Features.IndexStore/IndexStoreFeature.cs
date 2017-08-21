@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public override BlockStoreBehavior BlockStoreBehaviorFactory()
         {
-            return new IndexStoreBehavior(this.chain, this.blockRepository as IndexRepository, this.blockStoreCache as IndexStoreCache, this.storeLogger);
+            return new IndexStoreBehavior(this.chain, this.blockRepository as IndexRepository, this.blockStoreCache as IndexStoreCache, this.loggerFactory);
         }
     }
 

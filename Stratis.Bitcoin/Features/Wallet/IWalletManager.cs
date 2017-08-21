@@ -1,6 +1,6 @@
-﻿using NBitcoin;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -20,34 +20,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         uint256 WalletTipHash { get; }
 
         /// <summary>
-        /// Lists all spendable transactions from all accounts.
+        /// Lists all spendable transactions from all accounts in the wallet.
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
-        List<UnspentAccountReference> GetSpendableTransactions(string walletName, int confirmations = 0);
+        List<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0);
 
         /// <summary>
         /// Lists all spendable transactions from the account specified in <see cref="WalletAccountReference"/>.
         /// </summary>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
-        UnspentAccountReference GetSpendableTransactions(WalletAccountReference walletAccountReference, int confirmations = 0);
-
-        /// <summary>
-        /// Lists all spendable transactions from the account specified in <see cref="WalletAccountReference"/>.
-        /// </summary>
-        /// <param name="account">The account in which to look for spendable transactions.</param>
-        /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
-        /// <returns>A collection of spendable outputs that belong to the given account.</returns>
-        UnspentAccountReference GetSpendableTransactions(HdAccount account, int confirmations = 0);
-
-        /// <summary>
-        /// Gets the private key for the given address.
-        /// </summary>
-        /// <param name="walletName">The name of the wallet.</param>
-        /// <param name="password">The password used to encrypt sensitive info.</param>
-        /// <param name="address">The address to get the private key for.</param>
-        /// <returns></returns>
-        ISecret GetKeyForAddress(string walletName, string password, HdAddress address);
-
+        List<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0);
+        
         /// <summary>
         /// Creates a wallet and persist it as a file on the local system.
         /// </summary>
@@ -187,10 +170,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         string GetWalletFileExtension();
 
         /// <summary>
-        /// Get all the wallets name
+        /// Gets all the wallets' names.
         /// </summary>
-        /// <returns></returns>
-        string[] GetWallets();
+        /// <returns>A collection of the wallets' names.</returns>
+        string[] GetWalletsNames();
         
         /// <summary>
         /// Updates the wallet with the height of the last block synced.

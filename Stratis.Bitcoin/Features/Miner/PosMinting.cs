@@ -1,19 +1,18 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -41,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly CoinView coinView;
         private readonly StakeChain stakeChain;
         private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly WalletManager wallet;
+        private readonly WalletManager walletManager;
         private readonly PosConsensusValidator posConsensusValidator;
         private readonly ILogger logger;
 
@@ -86,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.coinView = coinView;
             this.stakeChain = stakeChain;
             this.asyncLoopFactory = asyncLoopFactory;
-            this.wallet = wallet as WalletManager;
+            this.walletManager = wallet as WalletManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
@@ -176,30 +175,27 @@ namespace Stratis.Bitcoin.Features.Miner
                 var pindexPrev = this.consensusLoop.Tip;
 
                 var stakeTxes = new List<StakeTx>();
-                var spendable = this.wallet.GetSpendableTransactions(walletSecret.WalletName, 1);
+                var spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
 
-                var coinset = this.coinView.FetchCoinsAsync(spendable.SelectMany(s => s.UnspentOutputs.Select(t => t.Transaction.Id)).ToArray()).GetAwaiter().GetResult();
+                var coinset = this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).GetAwaiter().GetResult();
 
-                foreach (var unspentInfo in spendable)
+                foreach (var infoTransaction in spendable)
                 {
-                    foreach (var infoTransaction in unspentInfo.UnspentOutputs)
+                    var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
+                    var utxo = set?._Outputs[infoTransaction.Transaction.Index];
+
+                    if (utxo != null && utxo.Value > Money.Zero)
                     {
-                        var set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
-                        var utxo = set?._Outputs[infoTransaction.Transaction.Index];
+                        var stakeTx = new StakeTx();
 
-                        if (utxo != null && utxo.Value > Money.Zero)
-                        {
-                            var stakeTx = new StakeTx();
-
-                            stakeTx.TxOut = utxo;
-                            stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
-                            stakeTx.Address = infoTransaction.Address;
-                            stakeTx.OutputIndex = infoTransaction.Transaction.Index;
-                            stakeTx.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
-                            stakeTx.UtxoSet = set;
-                            stakeTx.Secret = walletSecret; //temporary
-                            stakeTxes.Add(stakeTx);
-                        }
+                        stakeTx.TxOut = utxo;
+                        stakeTx.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
+                        stakeTx.Address = infoTransaction.Address;
+                        stakeTx.OutputIndex = infoTransaction.Transaction.Index;
+                        stakeTx.HashBlock = this.chain.GetBlock((int)set.Height).HashBlock;
+                        stakeTx.UtxoSet = set;
+                        stakeTx.Secret = walletSecret; //temporary
+                        stakeTxes.Add(stakeTx);
                     }
                 }
 
@@ -411,12 +407,14 @@ namespace Stratis.Bitcoin.Features.Miner
                             if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
                             {
                                 var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-                                key = this.wallet.GetKeyForAddress(coin.Secret.WalletName, coin.Secret.WalletPassword, coin.Address).PrivateKey;
+                                var wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
+                                key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
                             }
                             else if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
                             {
                                 var outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-                                key = this.wallet.GetKeyForAddress(coin.Secret.WalletName, coin.Secret.WalletPassword, coin.Address).PrivateKey;
+                                var wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
+                                key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
                             }
                             else
                             {

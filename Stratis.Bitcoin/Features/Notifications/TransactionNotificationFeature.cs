@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Notifications.Controllers;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
@@ -40,7 +41,8 @@ namespace Stratis.Bitcoin.Features.Notifications
                     {
                         services.AddSingleton<TransactionNotificationProgress>();
                         services.AddSingleton<TransactionNotification>();
-                        services.AddSingleton<TransactionReceiver>();                       
+                        services.AddSingleton<TransactionReceiver>();
+                        services.AddSingleton<NotificationsController>();
                     });
             });
 

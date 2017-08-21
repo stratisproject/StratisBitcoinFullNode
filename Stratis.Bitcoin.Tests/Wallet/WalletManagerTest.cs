@@ -1,4 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -11,17 +16,25 @@ using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Tests.Utilities;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Wallet
-{    
-    public class WalletManagerTest : LogsTestBase
+{
+    public class WalletManagerTest : LogsTestBase, IDisposable
     {
+        
+        public void Dispose()
+        {
+            // This is needed here because of the fact that the Stratis network, when initialized, sets the 
+            // Transaction.TimeStamp value to 'true' (look in Network.InitStratisTest() and Network.InitStratisMain()) in order
+            // for proof-of-stake to work.
+            // Now, there are a few tests where we're trying to parse Bitcoin transaction, but since the TimeStamp is set the true,
+            // the execution path is different and the bitcoin transaction tests are failing.
+            // Here we're resetting the TimeStamp after every test so it doesn't cause any trouble.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
         /// <summary>
         /// This is more of an integration test to verify fields are filled correctly. This is what I could confirm.
         /// </summary>
@@ -698,7 +711,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetUnusedAddressUsingNameWithWalletWithoutAccountOfGivenNameThrowsException()
         {
-            Assert.Throws<Exception>(() =>
+            Assert.Throws<WalletException>(() =>
             {
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -1241,10 +1254,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions("myWallet", confirmations: 0);
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet", confirmations: 0);
 
-            Assert.Equal(1, result.Count);
-            Assert.Equal(0, result.First().UnspentOutputs.Count);
+            Assert.Equal(0, result.Count);
         }
 
         /// <summary>
@@ -1296,10 +1308,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             walletManager.Wallets.Add(wallet2);
             walletManager.Wallets.Add(wallet3);
 
-            var resultRef = walletManager.GetSpendableTransactions("myWallet3", confirmations: 1);
-            Assert.Equal(1, resultRef.Count);
-
-            var result = resultRef[0].UnspentOutputs;
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet3", confirmations: 1);
+            
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("Second expectation", info.Account.Name);
@@ -1335,10 +1345,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var resultRef = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
-            Assert.Equal(1, resultRef.Count);
-
-            var result = resultRef[0].UnspentOutputs;
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1);
+            
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("First expectation", info.Account.Name);
@@ -1371,7 +1379,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                         new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-                walletManager.GetSpendableTransactions("myWallet", confirmations: 1);               
+                walletManager.GetSpendableTransactionsInWallet("myWallet", confirmations: 1);               
             });
         }
 
@@ -1391,7 +1399,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             });
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions("myWallet2", confirmations: 1);
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet2", confirmations: 1);
 
             Assert.Equal(0, result.Count);
         }
@@ -1412,10 +1420,9 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactions("myWallet1", confirmations: 1);
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1);
 
-            Assert.Equal(1, result.Count);
-            Assert.Equal(0, result.First().UnspentOutputs.Count);
+            Assert.Equal(0, result.Count);
         }
 
         [Fact]
@@ -1426,7 +1433,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                        new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-                walletManager.GetKeyForAddress("myWallet", "password", new HdAddress());
+                var wallet = walletManager.GetWalletByName("mywallet");
+                var key = wallet.GetExtendedPrivateKeyForAddress("password", new HdAddress()).PrivateKey;
             });
         }
 
@@ -1454,7 +1462,8 @@ namespace Stratis.Bitcoin.Tests.Wallet
             });
             walletManager.Wallets.Add(data.wallet);
 
-            var result = walletManager.GetKeyForAddress("myWallet", "password", address);
+
+            var result = data.wallet.GetExtendedPrivateKeyForAddress("password", address);
 
             Assert.Equal(data.key.Derive(new KeyPath("m/44'/0'/0'/0/0")).GetWif(data.wallet.Network), result);
         }
@@ -1483,7 +1492,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
                 });
                 walletManager.Wallets.Add(data.wallet);
 
-                walletManager.GetKeyForAddress("myWallet", "password", address);
+                data.wallet.GetExtendedPrivateKeyForAddress("password", address);
             });
         }        
      
@@ -2723,7 +2732,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             walletManager.Wallets.Add(wallet);
             walletManager.Wallets.Add(wallet2);
 
-            var result = walletManager.GetWallets().OrderBy(w => w).ToArray();
+            var result = walletManager.GetWalletsNames().OrderBy(w => w).ToArray();
 
             Assert.Equal(2, result.Count());
             Assert.Equal("wallet1", result[0]);
@@ -2736,7 +2745,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-            var result = walletManager.GetWallets().OrderBy(w => w).ToArray();
+            var result = walletManager.GetWalletsNames().OrderBy(w => w).ToArray();
 
             Assert.Equal(0, result.Count());
         }

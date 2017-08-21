@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		    options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
 		    options.BlockMinFeeRate = blockMinFeeRate;
 
-		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.scheduler, testContext.mempool, testContext.date, NullLogger.Instance, options);
+		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.mempoolLock, testContext.mempool, testContext.date, NullLogger.Instance, options);
 	    }
 		public class Blockinfo
 		{
@@ -82,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 	    public bool TestSequenceLocks(TestContext testContext, ChainedBlock chainedBlock, Transaction tx, Transaction.LockTimeFlags flags, LockPoints uselock = null)
 	    {
 		    var context = new MempoolValidationContext(tx, new MempoolValidationState(false));
-		    context.View = new MempoolCoinView(testContext.cachedCoinView, testContext.mempool, testContext.scheduler, null);
+		    context.View = new MempoolCoinView(testContext.cachedCoinView, testContext.mempool, testContext.mempoolLock, null);
 			context.View.LoadView(tx).GetAwaiter().GetResult();
 			return MempoolValidator.CheckSequenceLocks(chainedBlock, context, flags, uselock, false);
 	    }
@@ -101,7 +102,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			public ConsensusLoop consensus;
 			public DateTimeProvider date;
 			public TxMempool mempool;
-			public MempoolAsyncLock scheduler;
+			public MempoolAsyncLock mempoolLock;
 			public List<Transaction> txFirst;
 			public Money BLOCKSUBSIDY = 50 * Money.COIN;
 			public Money LOWFEE = Money.CENT;
@@ -124,10 +125,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.newBlock = new BlockTemplate();
 
 			    this.entry = new TestMemPoolEntryHelper();
-			    this.chain = new ConcurrentChain(network);
+			    this.chain = new ConcurrentChain(this.network);
 			    this.network.Consensus.Options = new PowConsensusOptions();
-                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock));
-			    this.consensus = new ConsensusLoop(new PowConsensusValidator(network), chain, cachedCoinView, new LookaheadBlockPuller(chain, new ConnectionManager(network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory()), new LoggerFactory()), new NodeDeployments(this.network));
+                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock));
+			    this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network));
 			    this.consensus.Initialize();
 
 				this.entry.Fee(11);
@@ -137,7 +138,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				date1.timeutc = DateTimeProvider.Default.GetUtcNow();
 				this.date = date1;
                 this.mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), NodeSettings.Default(), new LoggerFactory()), new LoggerFactory()); ;
-                this.scheduler = new MempoolAsyncLock();
+                this.mempoolLock = new MempoolAsyncLock();
 
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);

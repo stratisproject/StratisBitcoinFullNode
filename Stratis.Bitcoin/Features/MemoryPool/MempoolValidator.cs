@@ -54,8 +54,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolValidator : IMempoolValidator
     {
-        #region Fields
-
         /// <summary>
         /// Default for relay priority.
         /// </summary>
@@ -155,10 +153,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         //	public long LastTime;
         //}
 
-        #endregion
-
-        #region Constructor
-
         /// <summary>
         /// Constructs a memory pool validator object.
         /// </summary>
@@ -193,19 +187,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.PerformanceCounter = new MempoolPerformanceCounter();
         }
 
-        #endregion
-
-        #region Properties
-
         /// <summary>Gets a counter for tracking memory pool performance.</summary>
         public MempoolPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>Gets the consensus options from the <see cref="PowConsensusValidator"/></summary>
         public PowConsensusOptions ConsensusOptions => this.consensusValidator.ConsensusOptions;
-
-        #endregion
-
-        #region IMempoolValidator Overrides
 
         /// <inheritdoc />
         public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
@@ -247,8 +233,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return this.mempoolLock.ReadAsync(() => this.memPool.Check(this.coinView));
         }
-
-        #endregion
 
         #region Static Operations
 
@@ -431,8 +415,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         #endregion
-
-        #region Operations
 
         /// <summary>
         /// Validates and then adds a transaction to memory pool.
@@ -773,8 +755,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.memPool.ApplyDeltas(context.TransactionHash, ref priorityDummy, ref nModifiedFees);
             context.ModifiedFees = nModifiedFees;
 
-            Money inChainInputValue = Money.Zero;
-            double dPriority = context.View.GetPriority(context.Transaction, this.chain.Height, inChainInputValue);
+            (double dPriority, Money inChainInputValue) = context.View.GetPriority(context.Transaction, this.chain.Height);
 
             // Keep track of transactions that spend a coinbase, which we re-scan
             // during reorgs to ensure COINBASE_MATURITY is still met.
@@ -1178,7 +1159,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement Witness Code
             return true;
         }
-
-        #endregion
     }
 }

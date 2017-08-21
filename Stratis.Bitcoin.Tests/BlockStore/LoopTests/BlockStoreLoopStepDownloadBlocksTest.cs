@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 // Start processing blocks to download from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
-                var step = new DownloadBlockStep(fluent.Loop);
+                var step = new DownloadBlockStep(fluent.Loop, this.loggerFactory);
                 step.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
@@ -62,7 +63,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory).Initialize(nextChainedBlock);
                 Assert.Equal(1, context.DownloadStack.Count());
                 Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == nextChainedBlock.HashBlock));
 
@@ -103,10 +104,10 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory).Initialize(nextChainedBlock);
                 context.StallCount = 10001;
 
-                var task = new BlockStoreInnerStepDownloadBlocks();
+                var task = new BlockStoreInnerStepDownloadBlocks(this.loggerFactory);
                 var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 Assert.Equal(InnerStepResult.Stop, result);

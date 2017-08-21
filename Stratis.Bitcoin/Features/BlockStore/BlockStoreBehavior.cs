@@ -29,11 +29,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
 		private readonly ConcurrentChain chain;
 		private readonly IBlockRepository blockRepository;
 		private readonly IBlockStoreCache blockStoreCache;
-	    private readonly ILogger logger;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Factory for creating loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
 
         public bool CanRespondToGetBlocksPayload { get; set; }
 
-		public bool CanRespondeToGetDataPayload { get; set; }
+		public bool CanRespondToGetDataPayload { get; set; }
 
 		// local resources
 		public bool PreferHeaders; // public for testing
@@ -43,12 +48,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ConcurrentChain chain, 
             BlockRepository blockRepository, 
             IBlockStoreCache blockStoreCache, 
-            ILogger logger)
-			: this(chain, blockRepository as IBlockRepository, blockStoreCache, logger)
+            ILoggerFactory loggerFactory)
+			: this(chain, blockRepository as IBlockRepository, blockStoreCache, loggerFactory)
 		{
 		}
 
-		public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILogger logger)
+		public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILoggerFactory loggerFactory)
 		{
 			Guard.NotNull(chain, nameof(chain));
 			Guard.NotNull(blockRepository, nameof(blockRepository));
@@ -58,10 +63,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
 			this.blockRepository = blockRepository;
 			this.blockStoreCache = blockStoreCache;
-		    this.logger = logger;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.loggerFactory = loggerFactory;
 
             this.CanRespondToGetBlocksPayload = false;
-			this.CanRespondeToGetDataPayload = true;
+			this.CanRespondToGetDataPayload = true;
 
 			this.PreferHeaders = false;
 			this.preferHeaderAndIDs = false;
@@ -69,43 +75,61 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 		protected override void AttachCore()
 		{
-			this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
-		}
+            this.logger.LogTrace("()");
 
-		protected override void DetachCore()
-		{
-			this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
-		}
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
 
-		private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+            this.logger.LogTrace("(-)");
+        }
+
+        protected override void DetachCore()
 		{
-			try
-			{
+            this.logger.LogTrace("()");
+
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+		{
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
+
+            try
+            {
 				await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
 			}
 			catch (OperationCanceledException opx)
 			{
-				if (!opx.CancellationToken.IsCancellationRequested)
-					if (this.AttachedNode?.IsConnected ?? false)
-						throw;
+                if (!opx.CancellationToken.IsCancellationRequested)
+                    if (this.AttachedNode?.IsConnected ?? false)
+                    {
+                        this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
+                        throw;
+                    }
 
 				// do nothing
 			}
 			catch (Exception ex)
 			{
-				this.logger.LogError(ex.ToString());
-
-				// while in dev catch any unhandled exceptions
-				Debugger.Break();
+				this.logger.LogError("Exception occurred: {0}", ex.ToString());
 				throw;
 			}
-		}
 
-		private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+            this.logger.LogTrace("(-)");
+        }
+
+        private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
 		{
-			var getDataPayload = message.Message.Payload as GetDataPayload;
-			if (getDataPayload != null && this.CanRespondeToGetDataPayload)
-				return this.ProcessGetDataAsync(node, getDataPayload);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
+
+            var getDataPayload = message.Message.Payload as GetDataPayload;
+            if ((getDataPayload != null) && this.CanRespondToGetDataPayload)
+            {
+                Task res = this.ProcessGetDataAsync(node, getDataPayload);
+                this.logger.LogTrace("(-)[GET_DATA_PAYLOAD]");
+                return res;
+            }
 
 			// TODO: this is not used in core anymore consider deleting it
 			////var getBlocksPayload = message.Message.Payload as GetBlocksPayload;
@@ -113,14 +137,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
 			////	return this.ProcessGetBlocksAsync(node, getBlocksPayload);
 
 			var sendCmpctPayload = message.Message.Payload as SendCmpctPayload;
-			if (sendCmpctPayload != null)
-				return this.ProcessSendCmpctPayload(node, sendCmpctPayload);
+            if (sendCmpctPayload != null)
+            {
+                Task res = this.ProcessSendCmpctPayload(node, sendCmpctPayload);
+                this.logger.LogTrace("(-)[SEND_CMPCT_PAYLOAD]");
+                return res;
+            }
 
-			var sendHeadersPayload = message.Message.Payload as SendHeadersPayload;
+            var sendHeadersPayload = message.Message.Payload as SendHeadersPayload;
 			if (sendHeadersPayload != null)
 				this.PreferHeaders = true;
 
-			return Task.CompletedTask;
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
 		}
 
 		private Task ProcessSendCmpctPayload(Node node, SendCmpctPayload sendCmpct)
@@ -131,66 +160,62 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 		private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
 		{
-			Guard.Assert(node != null);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node?.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
+            Guard.Assert(node != null);
 
 			// TODO: bring logic from core 
-			foreach (var item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
+			foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
 			{
 				// TODO: check if we need to add support for "not found" 
+				Block block = await this.blockStoreCache.GetBlockAsync(item.Hash).ConfigureAwait(false);
 
-				var block = await this.blockStoreCache.GetBlockAsync(item.Hash).ConfigureAwait(false);
+                if (block != null)
+                {
+                    this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, node?.RemoteSocketEndpoint);
 
-
-				if (block != null)
-					//TODO strip block of witness if node does not support
-					await node.SendMessageAsync(new BlockPayload(block.WithOptions(node.SupportedTransactionOptions))).ConfigureAwait(false);
+                    //TODO strip block of witness if node does not support
+                    await node.SendMessageAsync(new BlockPayload(block.WithOptions(node.SupportedTransactionOptions))).ConfigureAwait(false);
+                }
 			}
-		}
 
-		////private Task ProcessGetBlocksAsync(Node node, GetBlocksPayload getBlocksPayload)
-		////{
-		////	ChainedBlock chainedBlock = this.chain.FindFork(getBlocksPayload.BlockLocators);
+            this.logger.LogTrace("(-)");
+        }
 
-		////	if (chainedBlock == null)
-		////		return Task.CompletedTask;
-
-		////	var inv = new InvPayload();
-		////	for (var limit = 0; limit < 500; limit++)
-		////	{
-		////		chainedBlock = this.chain.GetBlock(chainedBlock.Height + 1);
-		////		if (chainedBlock.HashBlock == getBlocksPayload.HashStop)
-		////			break;
-
-		////		inv.Inventory.Add(new InventoryVector(InventoryType.MSG_BLOCK, chainedBlock.HashBlock));
-		////	}
-
-		////	if (inv.Inventory.Any())
-		////		return node.SendMessageAsync(inv);
-
-		////	return Task.CompletedTask;
-		////}
-
-		private async Task SendAsBlockInventory(Node node, IEnumerable<uint256> blocks)
+        private async Task SendAsBlockInventory(Node node, IEnumerable<uint256> blocks)
 		{
-			var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s)));
+            this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(node), node?.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
+
+            var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s)));
 			while (queue.Count > 0)
 			{
 				var items = queue.TakeAndRemove(ConnectionManager.MAX_INV_SZ).ToArray();
-				if (node.IsConnected)
-					await node.SendMessageAsync(new InvPayload(items));
+                if (node.IsConnected)
+                {
+                    this.logger.LogTrace("Sending inventory message to peer '{0}'.", node?.RemoteSocketEndpoint);
+                    await node.SendMessageAsync(new InvPayload(items));
+                }
 			}
-		}
 
-		public Task AnnounceBlocks(List<uint256> blockHashesToAnnounce)
+            this.logger.LogTrace("(-)");
+        }
+
+        public Task AnnounceBlocks(List<uint256> blockHashesToAnnounce)
 		{
-			Guard.NotNull(blockHashesToAnnounce, nameof(blockHashesToAnnounce));
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(blockHashesToAnnounce), nameof(blockHashesToAnnounce.Count), blockHashesToAnnounce?.Count);
+            Guard.NotNull(blockHashesToAnnounce, nameof(blockHashesToAnnounce));
 
-			if (!blockHashesToAnnounce.Any())
-				return Task.CompletedTask;
+            if (!blockHashesToAnnounce.Any())
+            {
+                this.logger.LogTrace("(-)[NO_HASHES]");
+                return Task.CompletedTask;
+            }
 
-			var node = this.AttachedNode;
-			if (node == null)
-				return Task.CompletedTask;
+			Node node = this.AttachedNode;
+            if (node == null)
+            {
+                this.logger.LogTrace("(-)[NO_NODE]");
+                return Task.CompletedTask;
+            }
 
 			bool revertToInv = ((!this.PreferHeaders &&
 								 (!this.preferHeaderAndIDs || blockHashesToAnnounce.Count > 1)) ||
@@ -210,56 +235,55 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 				foreach (var hash in blockHashesToAnnounce)
 				{
-					var chainedBlock = this.chain.GetBlock(hash);
+					ChainedBlock chainedBlock = this.chain.GetBlock(hash);
 					if (chainedBlock == null)
 					{
 						// Bail out if we reorged away from this block
 						revertToInv = true;
 						break;
 					}
+
 					bestIndex = chainedBlock;
-					if (foundStartingHeader)
-						headers.Add(chainedBlock.Header);
-					else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) != null)
-						continue;
-					else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height) != null)
-					{
-						// Peer doesn't have this header but they do have the prior one.
-						// Start sending headers.
-						foundStartingHeader = true;
-						headers.Add(chainedBlock.Header);
-					}
-					else
-					{
-						// Peer doesn't have this header or the prior one -- nothing will
-						// connect, so bail out.
-						revertToInv = true;
-						break;
-					}
+                    if (foundStartingHeader)
+                    {
+                        headers.Add(chainedBlock.Header);
+                    }
+                    else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) != null)
+                    {
+                        continue;
+                    }
+                    else if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Previous.Height) != null)
+                    {
+                        // Peer doesn't have this header but they do have the prior one.
+                        // Start sending headers.
+                        foundStartingHeader = true;
+                        headers.Add(chainedBlock.Header);
+                    }
+                    else
+                    {
+                        // Peer doesn't have this header or the prior one -- nothing will
+                        // connect, so bail out.
+                        revertToInv = true;
+                        break;
+                    }
 				}
 			}
 
 			if (!revertToInv && headers.Any())
 			{
-				if (headers.Count == 1 && this.preferHeaderAndIDs)
+				if ((headers.Count == 1) && this.preferHeaderAndIDs)
 				{
 					// TODO:
 				}
 				else if (this.PreferHeaders)
 				{
-					if (headers.Count > 1)
-					{
-					    this.logger.LogInformation(
-							$"{headers.Count} headers, range ({headers.First()}, {headers.Last()}), to peer={node.RemoteSocketEndpoint}");
-					}
-					else
-					{
-					    this.logger.LogInformation(
-							$"sending header ({headers.First()}), to peer={node.RemoteSocketEndpoint}");
-					}
+					if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), node.RemoteSocketEndpoint);
+                    else this.logger.LogDebug("Sending header {0} to peer '{1}'.", headers.First(), node.RemoteSocketEndpoint);
 
 					chainBehavior.SetPendingTip(bestIndex);
-					return node.SendMessageAsync(new HeadersPayload(headers.ToArray()));
+                    Task res = node.SendMessageAsync(new HeadersPayload(headers.ToArray()));
+                    this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
+                    return res;
 				}
 				else
 				{
@@ -275,14 +299,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 				if (blockHashesToAnnounce.Any())
 				{
-					var hashToAnnounce = blockHashesToAnnounce.Last();
-					var chainedBlock = this.chain.GetBlock(hashToAnnounce);
+					uint256 hashToAnnounce = blockHashesToAnnounce.Last();
+					ChainedBlock chainedBlock = this.chain.GetBlock(hashToAnnounce);
 					if (chainedBlock != null)
 					{
 						if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
 						{
 							inventoryBlockToSend.Add(hashToAnnounce);
-						    this.logger.LogInformation($"sending inv peer={node.RemoteSocketEndpoint} hash={hashToAnnounce}");
+						    this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", node.RemoteSocketEndpoint, hashToAnnounce);
 						}
 					}
 				}
@@ -290,19 +314,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
 			if (inventoryBlockToSend.Any())
 			{
-				return this.SendAsBlockInventory(node, inventoryBlockToSend);
-			}
+				Task res = this.SendAsBlockInventory(node, inventoryBlockToSend);
+                this.logger.LogTrace("(-)[SEND_INVENTORY]");
+                return res;
+            }
 
-			return Task.CompletedTask;
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
 		}
 
 		public override object Clone()
 		{
-			return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.logger)
+            this.logger.LogTrace("()");
+
+            var res = new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory)
 			{
 				CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
-				CanRespondeToGetDataPayload = this.CanRespondeToGetDataPayload
+				CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
 			};
+
+            this.logger.LogTrace("(-)");
+            return res;
 		}
 	}
 }
