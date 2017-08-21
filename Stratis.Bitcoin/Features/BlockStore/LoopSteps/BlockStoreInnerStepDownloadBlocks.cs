@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using System;
 using System.Collections.Generic;
 using System.Linq; 
 using System.Threading.Tasks;
@@ -52,14 +53,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 context.InsertBlockSize += downloadedBlock.Length;
                 context.StallCount = 0;
 
-                this.logger.LogTrace("Insert block size is {0} bytes, download stack contains {1} more blocks to download.", context.InsertBlockSize, context.DownloadStack.Count);
-                if ((context.InsertBlockSize > BlockStoreLoop.MaxInsertBlockSize) || !context.DownloadStack.Any())
+                DateTime now = context.DateTimeProvider.GetUtcNow();
+                uint lastFlushDiff = (uint)(now - context.LastDownloadStackFlushTime).TotalMilliseconds;
+                this.logger.LogTrace("Insert block size is {0} bytes, download stack contains {1} more blocks to download, last flush time was {2} ms ago.", context.InsertBlockSize, context.DownloadStack.Count, lastFlushDiff);
+
+                bool flushBufferSizeReached = context.InsertBlockSize > BlockStoreLoop.MaxInsertBlockSize;
+                bool downloadStackEmpty = !context.DownloadStack.Any();
+                bool flushTimeReached = lastFlushDiff > BlockStoreInnerStepContext.MaxDownloadStackFlushTimeMs;
+
+                if (flushBufferSizeReached || flushTimeReached || downloadStackEmpty)
                 {
                     List<Block> blocksToStore = context.Store.Select(bp => bp.Block).ToList();
                     await context.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, blocksToStore);
                     context.BlockStoreLoop.SetStoreTip(chainedBlockToDownload);
                     context.InsertBlockSize = 0;
                     context.Store.Clear();
+                    context.LastDownloadStackFlushTime = context.DateTimeProvider.GetUtcNow();
 
                     if (!context.DownloadStack.Any())
                     {

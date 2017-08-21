@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -19,22 +21,32 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>Number of milliseconds to wait after each failed attempt to get a block from the block puller.</summary>
         internal const int StallDelayMs = 100;
 
+        /// <summary><see cref="DownloadStack"/> is flushed to the disk if more than this amount of milliseconds passed since the last flush was made.</summary>
+        internal const int MaxDownloadStackFlushTimeMs = 20 * 1000; 
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        /// <summary>Provider of time functions.</summary>
+        internal readonly IDateTimeProvider DateTimeProvider;
+
         /// <summary>Number of attempts to obtain a block from the block puller before giving up and requesting the block again.</summary>
         /// <remarks>If the threshold is reached, it is increased to allow more attempts next time.</remarks>
         internal int StallCountThreshold = 1800;
 
-        public BlockStoreInnerStepContext(CancellationToken cancellationToken, BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+        /// <summary>Timestamp of the last flush of <see cref="DownloadStack"/> to the disk.</summary>
+        internal DateTime LastDownloadStackFlushTime;
+
+        public BlockStoreInnerStepContext(CancellationToken cancellationToken, BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
         {
             Guard.NotNull(blockStoreLoop, nameof(blockStoreLoop));
 
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.DateTimeProvider = dateTimeProvider;
 
             this.BlockStoreLoop = blockStoreLoop;
             this.CancellationToken = cancellationToken;
@@ -45,6 +57,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.logger.LogTrace("({0}:'{1}/{2}')", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height);
             Guard.NotNull(nextChainedBlock, nameof(nextChainedBlock));
 
+            this.LastDownloadStackFlushTime = this.DateTimeProvider.GetUtcNow();
             this.DownloadStack = new Queue<ChainedBlock>(new[] { nextChainedBlock });
             this.NextChainedBlock = nextChainedBlock;
             this.InnerSteps = new List<BlockStoreInnerStep>() { new BlockStoreInnerStepFindBlocks(this.loggerFactory), new BlockStoreInnerStepDownloadBlocks(this.loggerFactory) };
