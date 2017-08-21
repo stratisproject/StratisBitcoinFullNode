@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,10 +27,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
             : base(blockStoreLoop, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
         }
 
         /// <inheritdoc/>
@@ -43,7 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return StepResult.Stop;
             }
 
-            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, this.loggerFactory).Initialize(nextChainedBlock);
+            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, this.loggerFactory, this.dateTimeProvider).Initialize(nextChainedBlock);
 
             this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
 
