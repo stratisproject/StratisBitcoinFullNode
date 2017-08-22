@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Interfaces;
 using System;
 using System.Text;
 

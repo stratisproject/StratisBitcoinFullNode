@@ -15,7 +15,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Stratis.Bitcoin.Features.RPC;
 
-namespace Stratis.Bitcoin.Tests.RPC
+namespace Stratis.Bitcoin.Features.RPC.Tests
 {
 	public class RPCRouteHandlerTest
 	{

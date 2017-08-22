@@ -1,13 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Builder;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using Stratis.Bitcoin.Features.RPC.Controllers;
+using System;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC.Controller
+namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class AddNodeActionTest : BaseRPCControllerTest
     {

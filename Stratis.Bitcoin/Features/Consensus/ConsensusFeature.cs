@@ -10,13 +10,14 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Threading;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusFeature : FullNodeFeature, IConsensusFeature
+    public class ConsensusFeature : FullNodeFeature, IBlockDownloadState, INetworkDifficulty
     {
         private readonly DBreezeCoinView dBreezeCoinView;
         private readonly Network network;
@@ -92,6 +93,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return true;
 
             return false;
+        }
+
+        public Target GetNetworkDifficulty()
+        {
+            if (this.consensusValidator?.ConsensusParams != null && this.chainState?.HighestValidatedPoW != null)
+                return Miner.PowMining.GetWorkRequired(this.consensusValidator.ConsensusParams, this.chainState?.HighestValidatedPoW);
+            else
+                return null;
         }
 
         public override void Start()

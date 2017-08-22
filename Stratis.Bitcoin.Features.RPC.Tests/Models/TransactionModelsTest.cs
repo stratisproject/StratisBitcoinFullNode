@@ -9,7 +9,7 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC.Models;
 
-namespace Stratis.Bitcoin.Tests.RPC.Models
+namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 {
     public class TransactionModelsTest : BaseRPCModelTest, IDisposable
     {

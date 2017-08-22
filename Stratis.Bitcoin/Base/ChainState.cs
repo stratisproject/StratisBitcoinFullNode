@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -55,8 +56,8 @@ namespace Stratis.Bitcoin.Base
                     this.lastupdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks; // sample every minute
 
                     // if consensus is no present IBD has no meaning. Set to false to match legacy code.                    
-                    var consensusFeature = this.fullNode.Services?.Features.OfType<IConsensusFeature>().FirstOrDefault(); // No hard failure if not present
-                    this.lastresult = (consensusFeature == null)?false:consensusFeature.IsInitialBlockDownload();
+                    var IBDStateProvider = this.fullNode.Services?.Features.OfType<IBlockDownloadState>().FirstOrDefault(); // No hard failure if not present
+                    this.lastresult = (IBDStateProvider == null)?false:IBDStateProvider.IsInitialBlockDownload();
                 }
                 return this.lastresult;
             }

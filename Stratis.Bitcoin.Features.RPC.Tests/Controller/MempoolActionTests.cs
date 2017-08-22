@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC.Controller
+namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class MempoolActionTests : BaseRPCControllerTest
     {
