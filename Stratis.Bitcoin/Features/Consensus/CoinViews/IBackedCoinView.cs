@@ -1,10 +1,10 @@
 ﻿namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
-	public interface IBackedCoinView
-	{
-		CoinView Inner
-		{
-			get;
-		}
-	}
+    public interface IBackedCoinView
+    {
+        CoinView Inner
+        {
+            get;
+        }
+    }
 }
