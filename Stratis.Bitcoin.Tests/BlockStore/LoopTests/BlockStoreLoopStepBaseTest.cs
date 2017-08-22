@@ -163,7 +163,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                     this.chainState.Object,
                     NodeSettings.FromArguments(new string[] { $"-datadir={dataFolder.WalletPath}" }),
                     this.nodeLifeTime.Object,
-                    this.loggerFactory.Object);
+                    this.loggerFactory.Object,
+                    DateTimeProvider.Default);
         }
 
         #region IDisposable Support

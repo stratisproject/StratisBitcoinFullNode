@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 // Start processing blocks to download from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
-                var step = new DownloadBlockStep(fluent.Loop, this.loggerFactory);
+                var step = new DownloadBlockStep(fluent.Loop, this.loggerFactory, DateTimeProvider.Default);
                 step.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         /// <summary>
-        /// Test only DownloadBlocks() inner step
+        /// Test only BlockStoreInnerStepReadBlocks() inner step
         /// </summary>
         [Fact]
         public void BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_CanBreakExecutionOnStallCountReached()
@@ -72,7 +73,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                context.DownloadStack.Enqueue(nextChainedBlock);
                 context.StallCount = 10001;
 
                 var task = new BlockStoreInnerStepReadBlocks(this.loggerFactory);
@@ -103,7 +105,8 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                context.StallCount = 10001;
 
                 var task = new BlockStoreInnerStepReadBlocks(this.loggerFactory);
                 var result = task.ExecuteAsync(context).GetAwaiter().GetResult();

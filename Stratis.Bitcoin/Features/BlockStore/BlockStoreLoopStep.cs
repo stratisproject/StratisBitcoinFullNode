@@ -23,18 +23,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Executes the chain of BlockStoreLoop steps.
+        /// Executes the chain of <see cref="BlockStoreLoop"/> steps.
         /// <para>
-        /// Each step will return a BlockStoreLoopStepResult which will either:
+        /// Each step will return a <see cref="BlockStoreLoopStepResult"/> which will either:
         /// <list>
-        ///     <item>1: Break out of the ForEach</item>
-        ///     <item>2: Continue execution of the ForEach</item>
+        ///     <item>1: Break out of the foreach loop.</item>
+        ///     <item>2: Continue execution of the foreach loop.</item>
         /// </list>
         /// </para>
         /// </summary>
-        /// <param name="nextChainedBlock">Next chained block to process</param>
-        /// <param name="disposeMode">This will <c>true</c> if Flush() was called on the BlockStore</param>
-        /// <param name="cancellationToken">Cancellation token to check</param>
+        /// <param name="nextChainedBlock">Next chained block to process.</param>
+        /// <param name="disposeMode">This is <c>true</c> if <see cref="BlockStoreLoop.Flush"/> was called.</param>
+        /// <param name="cancellationToken">Cancellation token to check.</param>
         /// <returns>BlockStoreLoopStepResult</returns>
         internal async Task<StepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode, CancellationToken cancellationToken)
         {

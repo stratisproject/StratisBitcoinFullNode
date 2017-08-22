@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,25 +12,30 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     ///<para>
     ///<list>
     /// There are two operations:
-    ///     <item>1: FindBlocks() to download by asking them from the BlockPuller.</item>
-    ///     <item>2: DownloadBlocks() and persisting them as a batch to the BlockRepository.</item>
+    ///     <item>1: <see cref="BlockStoreInnerStepAskBlocks"/> to ask the block puller to download the blocks.</item>
+    ///     <item>2: <see cref="BlockStoreInnerStepReadBlocks"/> to persist the blocks in a batch to the <see cref="BlockRepository"/>.</item>
     /// </list>
     /// </para> 
     /// <para>
-    /// After a "Stop" condition is found the FindBlocksTask will be removed from 
-    /// the <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the 
-    /// <see cref="BlockStoreInnerStepReadBlocks"/> will continue to execute until the DownloadStack is empty.
+    /// After a "Stop" condition is found the AskBlocksTask will be removed from
+    /// <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the 
+    /// <see cref="BlockStoreInnerStepReadBlocks"/> task will continue to execute 
+    /// until the DownloadStack is empty.
     /// </para>   
     /// </summary>
     internal sealed class DownloadBlockStep : BlockStoreLoopStep
     {
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+        internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
             : base(blockStoreLoop, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
         }
 
         /// <inheritdoc/>
@@ -43,7 +49,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return StepResult.Stop;
             }
 
-            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory);
+            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory, this.dateTimeProvider);
 
             while (!token.IsCancellationRequested)
             {

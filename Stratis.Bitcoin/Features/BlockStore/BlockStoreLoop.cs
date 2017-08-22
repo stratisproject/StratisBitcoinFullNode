@@ -18,6 +18,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class BlockStoreLoop
     {
+        /// <summary>Maximum number of bytes the block puller can download before the downloaded blocks are stored to the disk.</summary>
+        internal const uint MaxInsertBlockSize = 20 * 1024 * 1024;
+
+        /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
+        internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -36,6 +42,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly NodeSettings nodeArgs;
         private readonly INodeLifetime nodeLifetime;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
 
@@ -44,19 +53,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
-        /// <summary>The highest stored block in the repository</summary>
-        internal ChainedBlock StoreTip { get; private set; }
-
-        /// <summary>TODO: Should be configurable?</summary>
-        internal uint InsertBlockSizeThreshold = 1000000 * 5;
-
-        /// <summary>TODO: Should be configurable?</summary>
+        /// <summary>The amount blocks that can be stored in pending storage before we stop processing them.</summary>
         internal int PendingStorageBatchThreshold = 5;
 
-        /// <summary>TODO: Should be configurable?</summary>
-        internal int BatchDownloadSize = 1000;
-
-        private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
+        /// <summary>The highest stored block in the repository.</summary>
+        internal ChainedBlock StoreTip { get; private set; }
 
         internal readonly TimeSpan PushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
@@ -69,7 +70,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainState chainState,
             NodeSettings nodeArgs,
             INodeLifetime nodeLifetime,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.BlockPuller = blockPuller;
@@ -80,6 +82,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeArgs = nodeArgs;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
             this.loggerFactory = loggerFactory;
+            this.dateTimeProvider = dateTimeProvider;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
             this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.logger);
@@ -149,7 +152,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new CheckNextChainedBlockExistStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new ProcessPendingStorageStep(this, this.loggerFactory));
-            this.stepChain.SetNextStep(new DownloadBlockStep(this, this.loggerFactory));
+            this.stepChain.SetNextStep(new DownloadBlockStep(this, this.loggerFactory, this.dateTimeProvider));
 
             StartLoop();
 
@@ -159,7 +162,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Adds a block to Pending Storage
         /// <para>
-        /// The BlockStoreSignaler calls AddToPending. Only add the block to pending storage if:
+        /// The <see cref="BlockStoreSignaled"/> calls this method when a new block is available. Only add the block to pending storage if:
         /// </para>
         /// <list>
         ///     <item>1: The block does exist on the chain.</item>
