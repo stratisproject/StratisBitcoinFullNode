@@ -2,13 +2,13 @@
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using System.Collections.Generic;
-using System.Linq; 
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Downloads blocks from the BlockPuller removes block from the DownloadStack.
+    /// Reads blocks from the BlockPuller and removes block from the DownloadStack.
     /// <para>
     /// If the block exists in the puller add the the downloaded block to the store to
     /// push to the repository. If the <see cref="BlockStoreLoop.InsertBlockSizeThreshold"/> has been reached
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// If a block is stalled or lost to the downloader, start again after a threshold <see cref="BlockStoreLoop.StallCount"/>
     /// </para>
     /// </summary>
-    public sealed class BlockStoreInnerStepDownloadBlocks : BlockStoreInnerStep
+    public sealed class BlockStoreInnerStepReadBlocks : BlockStoreInnerStep
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// Initializes new instance of the object.
         /// </summary>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public BlockStoreInnerStepDownloadBlocks(ILoggerFactory loggerFactory)
+        public BlockStoreInnerStepReadBlocks(ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
         }
@@ -41,18 +41,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogTrace("()");
 
+            if (!context.DownloadStack.Any())
+            {
+                this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
+                return InnerStepResult.Stop;
+            }
+
             BlockPuller.DownloadedBlock downloadedBlock;
 
             ChainedBlock nextBlock = context.DownloadStack.Peek();
             if (context.BlockStoreLoop.BlockPuller.TryGetBlock(nextBlock, out downloadedBlock))
             {
                 this.logger.LogTrace("Puller provided block '{0}/{1}', length {2}.", nextBlock.HashBlock, nextBlock.Height, downloadedBlock.Length);
+
                 ChainedBlock chainedBlockToDownload = context.DownloadStack.Dequeue();
                 context.Store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToDownload));
                 context.InsertBlockSize += downloadedBlock.Length;
                 context.StallCount = 0;
 
                 this.logger.LogTrace("Insert block size is {0} bytes, download stack contains {1} more blocks to download.", context.InsertBlockSize, context.DownloadStack.Count);
+
                 if (context.InsertBlockSize > context.BlockStoreLoop.InsertBlockSizeThreshold || !context.DownloadStack.Any())
                 {
                     List<Block> blocksToStore = context.Store.Select(bp => bp.Block).ToList();

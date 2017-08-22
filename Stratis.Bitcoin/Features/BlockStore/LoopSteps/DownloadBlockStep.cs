@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <para>
     /// After a "Stop" condition is found the FindBlocksTask will be removed from 
     /// the <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the 
-    /// <see cref="BlockStoreInnerStepDownloadBlocks"/> will continue to execute until the DownloadStack is empty.
+    /// <see cref="BlockStoreInnerStepReadBlocks"/> will continue to execute until the DownloadStack is empty.
     /// </para>   
     /// </summary>
     internal sealed class DownloadBlockStep : BlockStoreLoopStep
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
             : base(blockStoreLoop, loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
         }
 
         /// <inheritdoc/>
@@ -43,9 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return StepResult.Stop;
             }
 
-            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, this.loggerFactory).Initialize(nextChainedBlock);
-
-            this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
+            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory);
 
             while (!token.IsCancellationRequested)
             {
