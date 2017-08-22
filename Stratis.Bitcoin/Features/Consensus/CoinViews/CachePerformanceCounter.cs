@@ -45,9 +45,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         public CachePerformanceSnapshot Snapshot()
         {
-#if !(PORTABLE || NETCORE)
-            Thread.MemoryBarrier();
-#endif
             var snap = new CachePerformanceSnapshot(this.missCount, this.hitCount)
             {
                 Start = this.Start,

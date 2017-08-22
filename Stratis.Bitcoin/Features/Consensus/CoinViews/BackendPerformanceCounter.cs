@@ -153,9 +153,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         public BackendPerformanceSnapshot Snapshot()
         {
-#if !(PORTABLE || NETCORE)
-            Thread.MemoryBarrier();
-#endif
             var snap = new BackendPerformanceSnapshot(this.insertedEntities, this.insertTime, this.queriedEntities, this.queryTime)
             {
                 Start = this.Start,
