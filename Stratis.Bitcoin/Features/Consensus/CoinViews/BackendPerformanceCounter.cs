@@ -7,80 +7,51 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     public class BackendPerformanceSnapshot
     {
+        private readonly long totalQueriedEntities;
+        public long TotalQueriedEntities { get { return this.totalQueriedEntities; } }
+
+        private readonly long totalQueryTime;
+        public TimeSpan TotalQueryTime { get { return TimeSpan.FromTicks(this.totalQueryTime); } }
+
+        private readonly long totalInsertTime;
+        public TimeSpan TotalInsertTime { get { return TimeSpan.FromTicks(this.totalInsertTime); } }
+
+        readonly long totalInsertedEntities;
+        public long TotalInsertedEntities { get { return this.totalInsertedEntities; } }
+
+        /// <remarks>TODO: Change to IDateTimeProvider.</remarks>
+        public DateTime Start { get; set; }
+
+        /// <remarks>TODO: Change to IDateTimeProvider.</remarks>
+        public DateTime Taken { get; set; }
+
         public BackendPerformanceSnapshot(long insertedEntities, long insertTime, long queriedEntities, long queryTime)
         {
-            this._TotalInsertedEntities = insertedEntities;
-            this._TotalInsertTime = insertTime;
-            this._TotalQueryTime = queryTime;
-            this._TotalQueriedEntities = queriedEntities;
-        }
-
-        private readonly long _TotalQueriedEntities;
-        public long TotalQueriedEntities
-        {
-            get
-            {
-                return this._TotalQueriedEntities;
-            }
-        }
-
-        private readonly long _TotalQueryTime;
-        public TimeSpan TotalQueryTime
-        {
-            get
-            {
-                return TimeSpan.FromTicks(this._TotalQueryTime);
-            }
-        }
-
-        private readonly long _TotalInsertTime;
-        public TimeSpan TotalInsertTime
-        {
-            get
-            {
-                return TimeSpan.FromTicks(this._TotalInsertTime);
-            }
-        }
-
-        readonly long _TotalInsertedEntities;
-        public long TotalInsertedEntities
-        {
-            get
-            {
-                return this._TotalInsertedEntities;
-            }
-        }
-
-        public DateTime Start
-        {
-            get;
-            set;
-        }
-
-        public DateTime Taken
-        {
-            get;
-            set;
+            this.totalInsertedEntities = insertedEntities;
+            this.totalInsertTime = insertTime;
+            this.totalQueryTime = queryTime;
+            this.totalQueriedEntities = queriedEntities;
         }
 
         public static BackendPerformanceSnapshot operator -(BackendPerformanceSnapshot end, BackendPerformanceSnapshot start)
         {
             if (end.Start != start.Start)
-            {
                 throw new InvalidOperationException("Performance snapshot should be taken from the same point of time");
-            }
+
             if (end.Taken < start.Taken)
-            {
                 throw new InvalidOperationException("The difference of snapshot can't be negative");
-            }
-            return new BackendPerformanceSnapshot(end._TotalInsertedEntities - start._TotalInsertedEntities,
-                                            end._TotalInsertTime - start._TotalInsertTime,
-                                            end._TotalQueriedEntities - start._TotalQueriedEntities,
-                                            end._TotalQueryTime - start._TotalQueryTime)
+
+            long insertedEntities = end.totalInsertedEntities - start.totalInsertedEntities;
+            long insertTime = end.totalInsertTime - start.totalInsertTime;
+            long queriedEntities = end.totalQueriedEntities - start.totalQueriedEntities;
+            long queryTime = end.totalQueryTime - start.totalQueryTime;
+            var snapshot = new BackendPerformanceSnapshot(insertedEntities, insertTime, queriedEntities, queryTime)
             {
                 Start = start.Taken,
                 Taken = end.Taken
             };
+
+            return snapshot;
         }
 
         public TimeSpan Elapsed
@@ -96,36 +67,59 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             StringBuilder builder = new StringBuilder();
             if (this.TotalInsertedEntities > 0)
                 builder.AppendLine("Insert speed:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalInsertTime.TotalMilliseconds / this.TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
+
             builder.AppendLine("Insert time:".PadRight(LoggingConfiguration.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalInsertTime));
             builder.AppendLine("Inserted UTXO:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalInsertedEntities);
+
             if (this.TotalQueriedEntities > 0)
                 builder.AppendLine("Query speed:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalQueryTime.TotalMilliseconds / this.TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
+
             builder.AppendLine("Query time:".PadRight(LoggingConfiguration.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalQueryTime));
             builder.AppendLine("Queried UTXO:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalQueriedEntities);
             return builder.ToString();
         }
     }
+
     public class BackendPerformanceCounter
     {
-        public BackendPerformanceCounter()
-        {
-            this._Start = DateTime.UtcNow;
-        }
+        private readonly DateTime start;
+        public DateTime Start { get { return this.start; } }
 
-        DateTime _Start;
-        public DateTime Start
-        {
-            get
-            {
-                return this._Start;
-            }
-        }
+        private long insertedEntities;
+        public long InsertedEntities { get { return this.insertedEntities; } }
+
+        private long queriedEntities;
+        public long QueriedEntities { get { return this.queriedEntities; } }
+
         public TimeSpan Elapsed
         {
             get
             {
                 return DateTime.UtcNow - this.Start;
             }
+        }
+
+        private long insertTime;
+        public TimeSpan InsertTime
+        {
+            get
+            {
+                return TimeSpan.FromTicks(this.insertTime);
+            }
+        }
+
+        private long queryTime;
+        public TimeSpan QueryTime
+        {
+            get
+            {
+                return TimeSpan.FromTicks(this.queryTime);
+            }
+        }
+
+        public BackendPerformanceCounter()
+        {
+            this.start = DateTime.UtcNow;
         }
 
         public override string ToString()
@@ -135,55 +129,22 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         public void AddInsertTime(long count)
         {
-            Interlocked.Add(ref this._InsertTime, count);
-        }
-        private long _InsertTime;
-        public TimeSpan InsertTime
-        {
-            get
-            {
-                return TimeSpan.FromTicks(this._InsertTime);
-            }
+            Interlocked.Add(ref this.insertTime, count);
         }
 
         public void AddInsertedEntities(long count)
         {
-            Interlocked.Add(ref this._InsertedEntities, count);
-        }
-        private long _InsertedEntities;
-        public long InsertedEntities
-        {
-            get
-            {
-                return this._InsertedEntities;
-            }
+            Interlocked.Add(ref this.insertedEntities, count);
         }
 
         public void AddQueryTime(long count)
         {
-            Interlocked.Add(ref this._QueryTime, count);
-        }
-
-        private long _QueryTime;
-        public TimeSpan QueryTime
-        {
-            get
-            {
-                return TimeSpan.FromTicks(this._QueryTime);
-            }
+            Interlocked.Add(ref this.queryTime, count);
         }
 
         public void AddQueriedEntities(long count)
         {
-            Interlocked.Add(ref this._QueriedEntities, count);
-        }
-        private long _QueriedEntities;
-        public long QueriedEntities
-        {
-            get
-            {
-                return this._QueriedEntities;
-            }
+            Interlocked.Add(ref this.queriedEntities, count);
         }
 
         public BackendPerformanceSnapshot Snapshot()
@@ -191,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 #if !(PORTABLE || NETCORE)
             Thread.MemoryBarrier();
 #endif
-            var snap = new BackendPerformanceSnapshot(this._InsertedEntities, this._InsertTime, this._QueriedEntities, this._QueryTime)
+            var snap = new BackendPerformanceSnapshot(this.insertedEntities, this.insertTime, this.queriedEntities, this.queryTime)
             {
                 Start = this.Start,
                 Taken = DateTime.UtcNow
