@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using System;
 using System.Collections.Generic;
 using System.Linq; 
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// Downloads blocks from the BlockPuller removes block from the DownloadStack.
     /// <para>
     /// If the block exists in the puller add the the downloaded block to the store to
-    /// push to the repository. If the <see cref="BlockStoreLoop.InsertBlockSizeThreshold"/> has been reached
+    /// push to the repository. If the <see cref="BlockStoreLoop.MaxInsertBlockSize"/> has been reached
     /// push the blocks in the context's Store to the repository.
     /// </para> 
     /// <para>
@@ -52,14 +53,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 context.InsertBlockSize += downloadedBlock.Length;
                 context.StallCount = 0;
 
-                this.logger.LogTrace("Insert block size is {0} bytes, download stack contains {1} more blocks to download.", context.InsertBlockSize, context.DownloadStack.Count);
-                if (context.InsertBlockSize > context.BlockStoreLoop.InsertBlockSizeThreshold || !context.DownloadStack.Any())
+                DateTime now = context.DateTimeProvider.GetUtcNow();
+                uint lastFlushDiff = (uint)(now - context.LastDownloadStackFlushTime).TotalMilliseconds;
+                this.logger.LogTrace("Insert block size is {0} bytes, download stack contains {1} more blocks to download, last flush time was {2} ms ago.", context.InsertBlockSize, context.DownloadStack.Count, lastFlushDiff);
+
+                bool flushBufferSizeReached = context.InsertBlockSize > BlockStoreLoop.MaxInsertBlockSize;
+                bool downloadStackEmpty = !context.DownloadStack.Any();
+                bool flushTimeReached = lastFlushDiff > BlockStoreInnerStepContext.MaxDownloadStackFlushTimeMs;
+
+                if (flushBufferSizeReached || flushTimeReached || downloadStackEmpty)
                 {
                     List<Block> blocksToStore = context.Store.Select(bp => bp.Block).ToList();
                     await context.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, blocksToStore);
                     context.BlockStoreLoop.SetStoreTip(chainedBlockToDownload);
                     context.InsertBlockSize = 0;
                     context.Store.Clear();
+                    context.LastDownloadStackFlushTime = context.DateTimeProvider.GetUtcNow();
 
                     if (!context.DownloadStack.Any())
                     {
@@ -70,14 +79,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             }
             else
             {
-                if (context.StallCount > 10000)
+                if (context.StallCount > context.StallCountThreshold)
                 {
-                    this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
+                    // Increase limit by 10 % to allow adjustments for low speed connections.
+                    // Eventually, the limit be high enough to allow normal operation.
+                    context.StallCountThreshold += context.StallCountThreshold / 10;
+                    this.logger.LogTrace("(-):{0},{1}={2}", InnerStepResult.Stop, nameof(context.StallCountThreshold), context.StallCountThreshold);
                     return InnerStepResult.Stop;
                 }
 
-                this.logger.LogTrace("Block '{0}/{1}' not available, stall count is {2}, waiting 100ms...", nextBlock.HashBlock, nextBlock.Height, context.StallCount);
-                await Task.Delay(100, context.CancellationToken);
+                this.logger.LogTrace("Block '{0}/{1}' not available, stall count is {2}, waiting {3} ms...", nextBlock.HashBlock, nextBlock.Height, context.StallCount, BlockStoreInnerStepContext.StallDelayMs);
+                await Task.Delay(BlockStoreInnerStepContext.StallDelayMs, context.CancellationToken);
 
                 context.StallCount++;
             }
