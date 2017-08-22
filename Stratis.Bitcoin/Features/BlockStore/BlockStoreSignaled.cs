@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
@@ -12,6 +13,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         private readonly BlockStoreLoop storeLoop;
         private readonly ConcurrentChain chain;
         private readonly NodeSettings nodeArgs;
@@ -33,6 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeLifetime nodeLifetime, 
             IAsyncLoopFactory asyncLoopFactory, 
             IBlockRepository blockRepository,
+            ILoggerFactory loggerFactory,
             string name = "BlockStore")
         {
             this.storeLoop = storeLoop;
@@ -43,6 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
             this.blockRepository = blockRepository;
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
             this.name = name;
 
             this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
@@ -50,16 +56,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected override void OnNextCore(Block value)
         {
+            this.logger.LogTrace("()");
             if (this.nodeArgs.Store.Prune)
+            {
+                this.logger.LogTrace("(-)[PRUNE]");
                 return;
+            }
 
             // ensure the block is written to disk before relaying
             this.storeLoop.AddToPending(value);
 
             if (this.chainState.IsInitialBlockDownload)
+            {
+                this.logger.LogTrace("(-)[IBD]");
                 return;
+            }
 
-            this.blockHashesToAnnounce.TryAdd(value.GetHash(), value.GetHash());
+            uint256 blockHash = value.GetHash();
+            this.logger.LogTrace("Block hash is '{0}'.", blockHash);
+            this.blockHashesToAnnounce.TryAdd(blockHash, blockHash);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -82,15 +99,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </remarks>
         public void RelayWorker()
         {
+            this.logger.LogTrace("()");
+
             this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
             {
-                var blocks = this.blockHashesToAnnounce.Keys.ToList();
+                this.logger.LogTrace("()");
+                List<uint256> blocks = this.blockHashesToAnnounce.Keys.ToList();
 
                 if (!blocks.Any())
+                {
+                    this.logger.LogTrace("(-)[NO_BLOCKS]");
                     return;
+                }
                 
                 var broadcastItems = new List<uint256>();
-                foreach (var blockHash in blocks)
+                foreach (uint256 blockHash in blocks)
                 {
                     // The first block that is not in disk will abort the loop.
                     if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
@@ -112,12 +135,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         broadcastItems.Add(hashToBroadcast);
                 }
 
-                if(!broadcastItems.Any())
+                if (!broadcastItems.Any())
+                {
+                    this.logger.LogTrace("(-)[NO_BROADCAST_ITEMS]");
                     return;
+                }
 
                 var nodes = this.connection.ConnectedNodes;
                 if (!nodes.Any())
+                {
+                    this.logger.LogTrace("(-)[NO_NODES]");
                     return;
+                }
 
                 // Announce the blocks to each of the peers.
                 var behaviours = nodes.Select(s => s.Behavior<BlockStoreBehavior>());
@@ -127,6 +156,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.FiveSeconds);
+
+            this.logger.LogTrace("(-)");
         }
     }
 }

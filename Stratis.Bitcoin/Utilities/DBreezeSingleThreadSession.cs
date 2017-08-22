@@ -1,12 +1,12 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Linq;
-using DBreeze;
+﻿using DBreeze;
 using DBreeze.Utils;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -72,13 +72,21 @@ namespace Stratis.Bitcoin.Utilities
             Guard.NotEmpty(folder, nameof(folder));
 
             this.singleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
-            new Task(() =>
+            var task = new Task(() =>
             {
                 DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
                 DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
                 this.engine = new DBreezeEngine(folder);
                 this.transaction = this.engine.GetTransaction();
-            }).Start(this.singleThread);
+            });
+
+            task.Start(this.singleThread);
+
+            // Features are loaded sequentially, this change will wait (block execution) 
+            // after dispatching a new Task (thread) to initialize the dbreeze db.
+            // Node: The 'DBreezeEngine' instance is not thread safe as there are 
+            // static initializers happening internally when creating a new instance.
+            task.GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -86,7 +94,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="obj">Object to be serialized.</param>
         /// <returns>Binary data representing the serialized object.</returns>
-		internal static byte[] NBitcoinSerialize(object obj)
+        internal static byte[] NBitcoinSerialize(object obj)
         {
             IBitcoinSerializable serializable = obj as IBitcoinSerializable;
             if (serializable != null)
@@ -118,7 +126,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="bytes">Binary data representing a serialized object.</param>
         /// <param name="type">Type of the serialized object.</param>
         /// <returns>Deserialized object.</returns>
-		internal static object NBitcoinDeserialize(byte[] bytes, Type type)
+        internal static object NBitcoinDeserialize(byte[] bytes, Type type)
         {
             if (type == typeof(Coins))
             {
@@ -160,7 +168,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-		public Task Execute(Action act)
+        public Task Execute(Action act)
         {
             Guard.NotNull(act, nameof(act));
 
@@ -175,7 +183,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-		public Task<T> Execute<T>(Func<T> act)
+        public Task<T> Execute<T>(Func<T> act)
         {
             Guard.NotNull(act, nameof(act));
 
@@ -192,7 +200,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Throws exception if the instance of the object has been disposed.
         /// </summary>
-		private void AssertNotDisposed()
+        private void AssertNotDisposed()
         {
             if (this.disposed)
                 throw new ObjectDisposedException("DBreezeSession");
@@ -206,7 +214,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Disposes the object via a special disposing task that is executed with the exclusive scheduler.
         /// </summary>
-		public void Dispose()
+        public void Dispose()
         {
             this.disposed = true;
             if (this.singleThread == null)

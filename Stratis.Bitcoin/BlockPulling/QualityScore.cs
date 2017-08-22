@@ -1,16 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Text;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
     /// Single historic sample item for quality score calculations.
     /// </summary>
-    public class PeerSample
+    public struct PeerSample
     {
         /// <summary>Peer who provided the sample.</summary>
         public IBlockPullerBehavior peer { get; set; }
@@ -42,7 +41,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Lock object to protect access to samples statistics.</summary>
         private readonly object lockObject = new object();
 
-        /// <summary>Average time of a block download among up to last <see cref="samplesCount"/> blocks.</summary>
+        /// <summary>Average time of a block download among the samples kept in <see cref="samples"/> array.</summary>
         /// <remarks>
         /// Write access to this object has to be protected by <see cref="lockObject"/>.
         /// <para>
@@ -51,17 +50,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// </remarks>
         public double AverageBlockTimePerKb { get; private set; }
 
-        /// <summary>Number of block time samples available in <see cref="samples"/>.</summary>
+        /// <summary>Circular array of recent block times in milliseconds per KB.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private int samplesCount { get; set; }
-
-        /// <summary>Index in <see cref="samples"/> array where the next sample will be stored.</summary>
-        /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private int samplesIndex { get; set; }
-
-        /// <summary>Circular array of recent block times in milliseconds per KB, which contains <see cref="samplesCount"/> samples.</summary>
-        /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private readonly PeerSample[] samples;
+        private readonly CircularArray<PeerSample> samples;
 
         /// <summary>Reference counter for peers. This is used for calculating how many peers contributed to the sample history we keep.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
@@ -80,9 +71,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.samples = new PeerSample[maxSampleCount];
-            for (int i = 0; i < this.samples.Length; i++)
-                this.samples[i] = new PeerSample();
+            this.samples = new CircularArray<PeerSample>(maxSampleCount);
 
             this.AverageBlockTimePerKb = 0.0;
             this.peerReferenceCounter = new Dictionary<IBlockPullerBehavior, int>();
@@ -103,29 +92,28 @@ namespace Stratis.Bitcoin.BlockPulling
 
             lock (this.lockObject)
             {
-                // If we reached the maximum number of samples, we need to remove oldest sample.
-                if (this.samplesCount == this.samples.Length)
-                {
-                    PeerSample oldSample = this.samples[this.samplesIndex];
+                // Add new sample to the mix.
+                PeerSample newSample = new PeerSample();
+                newSample.timePerKb = timePerKb;
+                newSample.peer = peer;
+
+                if (this.peerReferenceCounter.ContainsKey(peer)) this.peerReferenceCounter[peer]++;
+                else this.peerReferenceCounter.Add(peer, 1);
+
+                PeerSample oldSample;
+                if (this.samples.Add(newSample, out oldSample))
+                { 
+                  // If we reached the maximum number of samples, we need to remove oldest sample.
                     this.samplesSum -= oldSample.timePerKb;
                     this.peerReferenceCounter[oldSample.peer]--;
 
                     if (this.peerReferenceCounter[oldSample.peer] == 0)
                         this.peerReferenceCounter.Remove(oldSample.peer);
                 }
-                else this.samplesCount++;
-
-                // Add new sample to the mix.
-                this.samples[this.samplesIndex].timePerKb = timePerKb;
-                this.samples[this.samplesIndex].peer = peer;
-                this.samplesIndex = (this.samplesIndex + 1) % this.samples.Length;
-
-                if (this.peerReferenceCounter.ContainsKey(peer)) this.peerReferenceCounter[peer]++;
-                else this.peerReferenceCounter.Add(peer, 1);
 
                 // Update the sum and the average with the latest data.
                 this.samplesSum += timePerKb;
-                this.AverageBlockTimePerKb = this.samplesSum / this.samplesCount;
+                this.AverageBlockTimePerKb = this.samplesSum / this.samples.Count;
             }
 
             this.logger.LogTrace("(-):{0}={1}", nameof(this.AverageBlockTimePerKb), this.AverageBlockTimePerKb);

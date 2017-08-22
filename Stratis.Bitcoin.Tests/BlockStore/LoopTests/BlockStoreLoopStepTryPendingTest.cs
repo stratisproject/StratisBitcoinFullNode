@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
-                var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop);
+                var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
                 processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);

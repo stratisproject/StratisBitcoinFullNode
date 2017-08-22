@@ -24,8 +24,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly INodeLifetime nodeLifetime;
         protected readonly IConnectionManager connectionManager;
         protected readonly NodeSettings nodeSettings;
-        protected readonly ILogger storeLogger;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
+
         protected readonly string name;
 
         public BlockStoreFeature(
@@ -55,17 +60,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.connectionManager = connectionManager;
             this.nodeSettings = nodeSettings;
-            this.storeLogger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
         }
 
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
         {
-            return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.storeLogger);
+            return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory);
         }
 
         public override void Start()
         {
+            this.logger.LogTrace("()");
+
             this.connectionManager.Parameters.TemplateBehaviors.Add(BlockStoreBehaviorFactory());
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
@@ -77,15 +84,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockRepository.Initialize().GetAwaiter().GetResult();
             this.blockStoreSignaled.RelayWorker();
             this.blockStoreLoop.Initialize().GetAwaiter().GetResult();
+
+            this.logger.LogTrace("(-)");
         }
 
         public override void Stop()
         {
-            this.storeLogger.LogInformation($"Flushing {this.name}...");
+            this.logger.LogTrace("()");
+
+            this.logger.LogInformation("Flushing {0}...", this.name);
             this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
 
             this.blockStoreCache.Dispose();
             this.blockRepository.Dispose();
+
+            this.logger.LogTrace("(-)");
         }
     }
 

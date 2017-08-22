@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,18 +23,27 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     internal sealed class DownloadBlockStep : BlockStoreLoopStep
     {
-        internal DownloadBlockStep(BlockStoreLoop blockStoreLoop)
-            : base(blockStoreLoop)
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
+            : base(blockStoreLoop, loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken token, bool disposeMode)
         {
-            if (disposeMode)
-                return StepResult.Stop;
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
 
-            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop).Initialize(nextChainedBlock);
+            if (disposeMode)
+            {
+                this.logger.LogTrace("(-):{0}", StepResult.Stop);
+                return StepResult.Stop;
+            }
+
+            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, this.loggerFactory).Initialize(nextChainedBlock);
 
             this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
 
@@ -43,10 +53,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 {
                     InnerStepResult innerStepResult = await innerStep.ExecuteAsync(context);
                     if (innerStepResult == InnerStepResult.Stop)
+                    {
+                        this.logger.LogTrace("(-):{0}", StepResult.Next);
                         return StepResult.Next;
+                    }
                 }
             }
 
+            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }

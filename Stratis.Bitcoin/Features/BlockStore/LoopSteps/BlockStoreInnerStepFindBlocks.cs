@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
@@ -22,15 +23,31 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     public sealed class BlockStoreInnerStepFindBlocks : BlockStoreInnerStep
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>
+        /// Initializes new instance of the object.
+        /// </summary>
+        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        public BlockStoreInnerStepFindBlocks(ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+        }
+
         /// <inheritdoc/>
         public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
+            this.logger.LogTrace("()");
             context.GetNextBlock();
 
             if (await ShouldStopFindingBlocks(context))
             {
                 if (!context.DownloadStack.Any())
+                {
+                    this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
                     return InnerStepResult.Stop;
+                }
 
                 context.StopFindingBlocks();
             }
@@ -43,27 +60,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     context.StopFindingBlocks();
             }
 
+            this.logger.LogTrace("(-):{0}", InnerStepResult.Next);
             return InnerStepResult.Next;
         }
 
         private async Task<bool> ShouldStopFindingBlocks(BlockStoreInnerStepContext context)
         {
-            if (context.NextChainedBlock == null)
-                return true;
+            this.logger.LogTrace("()");
 
-            if (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock)
-                return true;
+            bool res = (context.NextChainedBlock == null)
+                || (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock)
+                || (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+                || (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
+                || (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock));
 
-            if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
-                return true;
-
-            if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
-                return true;
-
-            if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
-                return true;
-
-            return false;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
     }
 }

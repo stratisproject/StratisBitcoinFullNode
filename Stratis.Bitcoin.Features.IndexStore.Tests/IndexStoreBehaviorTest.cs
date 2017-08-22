@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Stratis.Bitcoin.Features.IndexStore;
 using Xunit;
 using IIndexRepository = Stratis.Bitcoin.Features.IndexStore.IIndexRepository;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {
@@ -18,14 +19,16 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 		private Mock<IIndexStoreCache> indexCache;
 		private Mock<IIndexRepository> indexRepository;
 		private ConcurrentChain chain;
+        private readonly ILoggerFactory loggerFactory;
 
-		public IndexStoreBehaviorTest()
+        public IndexStoreBehaviorTest()
 		{
-			this.chain = new ConcurrentChain();
+            this.chain = new ConcurrentChain();
 			this.indexRepository = new Mock<IIndexRepository>();
 			this.indexCache = new Mock<IIndexStoreCache>();
+            this.loggerFactory = new LoggerFactory();
 
-			this.behavior = new IndexStoreBehavior(this.chain, this.indexRepository.Object, this.indexCache.Object, NullLogger.Instance);
+            this.behavior = new IndexStoreBehavior(this.chain, this.indexRepository.Object, this.indexCache.Object, this.loggerFactory);
 		}
 
 		[Fact]

@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -50,13 +51,13 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return indexTablePrefix + indexName;
         }
 
-        public IndexRepository(Network network, DataFolder dataFolder)
-            : this(network, dataFolder.IndexPath)
+        public IndexRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.IndexPath, loggerFactory)
         {
         }
 
-        public IndexRepository(Network network, string folder):
-            base(network, new IndexSession("DBreeze IndexRepository", folder))
+        public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory):
+            base(network, new IndexSession("DBreeze IndexRepository", folder), loggerFactory)
         {
             this.tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
             this.Indexes = new Dictionary<string, Index>();
