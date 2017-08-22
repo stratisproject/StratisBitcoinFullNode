@@ -15,8 +15,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
     public class MempoolFeature : FullNodeFeature, IFeatureStats
     {
-        #region Fields
-
         /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
 
@@ -34,10 +32,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Logger for the memory pool component.</summary>
         private readonly ILogger mempoolLogger;
-
-        #endregion
-
-        #region Constructors
 
         /// <summary>
         /// Constructs a memory pool feature.
@@ -74,10 +68,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
         }
 
-        #endregion
-
-        #region FullNodeFeature Overrides
-
         /// <inheritdoc />
         public override void Start()
         {
@@ -105,8 +95,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
         }
-
-        #endregion
     }
 
     /// <summary>

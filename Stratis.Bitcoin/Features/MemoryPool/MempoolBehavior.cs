@@ -19,8 +19,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolBehavior : NodeBehavior
     {
-        #region Fields
-
         /// <summary>
         /// Average delay between trickled inventory transmissions in seconds.
         /// Blocks and whitelisted receivers bypass this, outbound peers get half this delay. 
@@ -65,10 +63,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// State that is local to the behavior.
         /// </summary>
         private readonly Dictionary<uint256, uint256> filterInventoryKnown;
-
-        #endregion
-
-        #region Constructors
 
         /// <summary>
         /// Constructs an instance of memory pool behavior.
@@ -124,10 +118,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
         }
 
-        #endregion
-
-        #region Properties
-
         /// <summary>Time of last memory pool request in unix time.</summary>
         public long LastMempoolReq { get; private set; }
 
@@ -157,10 +147,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
         }
 
-        #endregion
-
-        #region NodeBehavior Overrides
-
         /// <inheritdoc />
         protected override void AttachCore()
         {
@@ -178,10 +164,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState, this.signals, this.logger);
         }
-
-        #endregion
-
-        #region Message Handlers
 
         /// <summary>
         /// Handler for processing incoming message from node.
@@ -246,10 +228,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             return Task.CompletedTask;
         }
-
-        #endregion
-
-        #region Message Processing
 
         /// <summary>
         /// Send the memory pool payload to the attached node.
@@ -445,10 +423,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
         }
 
-        #endregion
-
-        #region Operations
-
         /// <summary>
         /// Relays a transaction to the connected nodes.
         /// </summary>
@@ -516,7 +490,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (sends.Any())
                 await this.SendAsTxInventory(this.AttachedNode, sends);
         }
-
-        #endregion
     }
 }

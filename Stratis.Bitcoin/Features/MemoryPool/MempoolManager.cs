@@ -22,8 +22,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolManager
     {
-        #region Fields
-
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
         private IMempoolPersistence mempoolPersistence;
 
@@ -32,10 +30,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly TxMempool memPool;
-
-        #endregion
-
-        #region Constructors
 
         /// <summary>
         /// Constructs an instance of a memory pool manager object.
@@ -68,10 +62,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        #endregion
-
-        #region Properties
-
         /// <summary>Lock for memory pool access.</summary>
         public MempoolAsyncLock MempoolLock { get; }
 
@@ -89,10 +79,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Access to memory pool validator performance counter.</summary>
         public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
-
-        #endregion
-
-        #region Operations
 
         /// <summary>
         /// Gets the memory pool transactions.
@@ -249,7 +235,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.Validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
             });
         }
-
-        #endregion
     }
 }
