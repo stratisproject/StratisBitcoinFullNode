@@ -18,8 +18,9 @@ namespace Stratis.Bitcoin.Features.IndexStore
             IndexStoreCache cache,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
-            ILoggerFactory loggerFactory) :
-            base(asyncLoopFactory, blockPuller, indexRepository, cache, chain, chainState, nodeArgs, nodeLifetime, loggerFactory)
+            ILoggerFactory loggerFactory, 
+            IDateTimeProvider dateTimeProvider) :
+            base(asyncLoopFactory, blockPuller, indexRepository, cache, chain, chainState, nodeArgs, nodeLifetime, loggerFactory, dateTimeProvider)
         {
             nodeArgs.Store.TxIndex = true;
         }

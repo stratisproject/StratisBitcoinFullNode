@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory, DateTimeProvider.Default).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory, DateTimeProvider.Default).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -114,7 +115,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 fluent.Loop.PendingStorage.TryAdd(blocks[2].GetHash(), new BlockPair(blocks[2], nextChainedBlock));
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory, DateTimeProvider.Default).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -151,7 +152,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory, DateTimeProvider.Default).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -189,7 +190,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory, DateTimeProvider.Default).Initialize(nextChainedBlock);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
@@ -226,7 +227,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory, DateTimeProvider.Default).Initialize(nextChainedBlock);
                 context.DownloadStack.Clear();
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);

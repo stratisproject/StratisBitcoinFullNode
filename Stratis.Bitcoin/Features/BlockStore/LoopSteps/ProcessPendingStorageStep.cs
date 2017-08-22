@@ -11,20 +11,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// Check if the next block is in pending storage i.e. first process pending storage blocks
     /// before find and downloading more blocks.
     /// <para>
-    /// Remove the BlockPair from PendingStorage and return for further processing
+    /// Remove the BlockPair from PendingStorage and return for further processing.
     /// If the next chained block does not exist in pending storage
-    /// return a Next() result which cause the BlockStoreLoop to execute
+    /// return a Next result which cause the <see cref="BlockStoreLoop"/> to execute
     /// the next step <see cref="DownloadBlockStep"/>.
     /// </para>
     /// <para>
     /// If in IBD (Initial Block Download) and batch count is not yet reached, 
-    /// return a Break() result causing the BlockStoreLoop to break out of the while loop
+    /// return a Break result causing the <see cref="BlockStoreLoop"/> to break out of the while loop
     /// and start again.
     /// </para>
     /// <para>
     /// Loop over the pending blocks and push to the repository in batches.
     /// if a stop condition is met break from the inner loop and return a Continue() result.
-    /// This will cause the BlockStoreLoop to skip over  <see cref="DownloadBlockStep"/> and start
+    /// This will cause the <see cref="BlockStoreLoop"/> to skip over <see cref="DownloadBlockStep"/> and start
     /// the loop again. 
     /// </para>
     /// </summary>
@@ -63,16 +63,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             var pendingBlockPairsToStore = new List<BlockPair>();
             pendingBlockPairsToStore.Add(this.pendingBlockPairToStore);
-            var pendingStorageBatchSize = this.pendingBlockPairToStore.Block.GetSerializedSize();
+            int pendingStorageBatchSize = this.pendingBlockPairToStore.Block.GetSerializedSize();
 
-            var lastFoundChainedBlock = nextChainedBlock;
+            ChainedBlock lastFoundChainedBlock = nextChainedBlock;
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                var inputChainedBlock = nextChainedBlock;
+                ChainedBlock inputChainedBlock = nextChainedBlock;
                 nextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(nextChainedBlock.Height + 1);
 
-                var breakExecution = ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
+                bool breakExecution = ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
                 if (!breakExecution && !this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
                     breakExecution = true;
 
@@ -88,9 +88,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     lastFoundChainedBlock = nextChainedBlock;
                 }
 
-                if (pendingStorageBatchSize > this.BlockStoreLoop.InsertBlockSizeThreshold || breakExecution)
+                // TODO: breakExecution here is always false.
+                if ((pendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize) || breakExecution)
                 {
-                    var result = await PushPendingBlocksToRepository(pendingStorageBatchSize, pendingBlockPairsToStore, lastFoundChainedBlock, cancellationToken, breakExecution);
+                    StepResult result = await PushPendingBlocksToRepository(pendingStorageBatchSize, pendingBlockPairsToStore, lastFoundChainedBlock, cancellationToken, breakExecution);
                     if (result == StepResult.Stop)
                         break;
 
