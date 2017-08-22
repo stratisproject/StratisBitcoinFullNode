@@ -19,10 +19,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         readonly long totalInsertedEntities;
         public long TotalInsertedEntities { get { return this.totalInsertedEntities; } }
 
-        /// <remarks>TODO: Change to IDateTimeProvider.</remarks>
+        // TODO: Change to IDateTimeProvider.
         public DateTime Start { get; set; }
 
-        /// <remarks>TODO: Change to IDateTimeProvider.</remarks>
+        // TODO: Change to IDateTimeProvider.
         public DateTime Taken { get; set; }
 
         public BackendPerformanceSnapshot(long insertedEntities, long insertTime, long queriedEntities, long queryTime)
@@ -82,7 +82,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
     public class BackendPerformanceCounter
     {
+        // TODO: Change to IDateTimeProvider.
         private readonly DateTime start;
+        // TODO: Change to IDateTimeProvider.
         public DateTime Start { get { return this.start; } }
 
         private long insertedEntities;
@@ -95,6 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             get
             {
+                // TODO: Change to IDateTimeProvider.</remarks>
                 return DateTime.UtcNow - this.Start;
             }
         }
@@ -119,6 +122,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         public BackendPerformanceCounter()
         {
+            // TODO: Change to IDateTimeProvider.
             this.start = DateTime.UtcNow;
         }
 
@@ -155,6 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             var snap = new BackendPerformanceSnapshot(this.insertedEntities, this.insertTime, this.queriedEntities, this.queryTime)
             {
                 Start = this.Start,
+                // TODO: Change to IDateTimeProvider.
                 Taken = DateTime.UtcNow
             };
             return snap;

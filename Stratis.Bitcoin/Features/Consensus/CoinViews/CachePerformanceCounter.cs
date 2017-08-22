@@ -7,50 +7,40 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     public class CachePerformanceCounter
     {
-        public CachePerformanceCounter()
-        {
-            this._Start = DateTime.UtcNow;
-        }
+        /// TODO: Change to IDateTimeProvider.
+        DateTime start;
+        /// TODO: Change to IDateTimeProvider.
+        public DateTime Start { get { return this.start; } }
 
-        DateTime _Start;
-        public DateTime Start
-        {
-            get
-            {
-                return this._Start;
-            }
-        }
+        private long missCount;
+        public long MissCount { get { return this.missCount; } }
+
+        private long hitCount;
+        public long HitCount { get { return this.hitCount; } }
+
         public TimeSpan Elapsed
         {
             get
             {
+                // TODO: Change to IDateTimeProvider.
                 return DateTime.UtcNow - this.Start;
             }
         }
 
+        public CachePerformanceCounter()
+        {
+            // TODO: Change to IDateTimeProvider.
+            this.start = DateTime.UtcNow;
+        }
+
         public void AddMissCount(long count)
         {
-            Interlocked.Add(ref this._MissCount, count);
+            Interlocked.Add(ref this.missCount, count);
         }
-        private long _MissCount;
-        public long MissCount
-        {
-            get
-            {
-                return this._MissCount;
-            }
-        }
+
         public void AddHitCount(long count)
         {
-            Interlocked.Add(ref this._HitCount, count);
-        }
-        private long _HitCount;
-        public long HitCount
-        {
-            get
-            {
-                return this._HitCount;
-            }
+            Interlocked.Add(ref this.hitCount, count);
         }
 
         public CachePerformanceSnapshot Snapshot()
@@ -58,9 +48,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 #if !(PORTABLE || NETCORE)
             Thread.MemoryBarrier();
 #endif
-            var snap = new CachePerformanceSnapshot(this._MissCount, this._HitCount)
+            var snap = new CachePerformanceSnapshot(this.missCount, this.hitCount)
             {
                 Start = this.Start,
+                // TODO: Change to IDateTimeProvider.
                 Taken = DateTime.UtcNow
             };
             return snap;
@@ -69,59 +60,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
     public class CachePerformanceSnapshot
     {
-        private readonly long _HitCount;
-        private readonly long _MissCount;
+        private readonly long hitCount;
+        private readonly long missCount;
 
-        public CachePerformanceSnapshot(long missCount, long hitCount)
-        {
-            this._MissCount = missCount;
-            this._HitCount = hitCount;
-        }
+        public long TotalHitCount { get { return this.hitCount; } }
 
-        public long TotalHitCount
-        {
-            get
-            {
-                return this._HitCount;
-            }
-        }
+        public long TotalMissCount { get { return this.missCount; } }
 
-        public long TotalMissCount
-        {
-            get
-            {
-                return this._MissCount;
-            }
-        }
+        // TODO: Change to IDateTimeProvider.
+        public DateTime Start { get; internal set; }
 
-        public DateTime Start
-        {
-            get;
-            internal set;
-        }
-        public DateTime Taken
-        {
-            get;
-            internal set;
-        }
-
-        public static CachePerformanceSnapshot operator -(CachePerformanceSnapshot end, CachePerformanceSnapshot start)
-        {
-            if (end.Start != start.Start)
-            {
-                throw new InvalidOperationException("Performance snapshot should be taken from the same point of time");
-            }
-            if (end.Taken < start.Taken)
-            {
-                throw new InvalidOperationException("The difference of snapshot can't be negative");
-            }
-            return new CachePerformanceSnapshot(end._MissCount - start._MissCount,
-                                            end._HitCount - start._HitCount)
-            {
-                Start = start.Taken,
-                Taken = end.Taken
-            };
-        }
+        // TODO: Change to IDateTimeProvider.
+        public DateTime Taken { get; internal set; }
 
         public TimeSpan Elapsed
         {
@@ -131,9 +81,32 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        public CachePerformanceSnapshot(long missCount, long hitCount)
+        {
+            this.missCount = missCount;
+            this.hitCount = hitCount;
+        }
+
+        public static CachePerformanceSnapshot operator -(CachePerformanceSnapshot end, CachePerformanceSnapshot start)
+        {
+            if (end.Start != start.Start)
+                throw new InvalidOperationException("Performance snapshot should be taken from the same point of time");
+
+            if (end.Taken < start.Taken)
+                throw new InvalidOperationException("The difference of snapshot can't be negative");
+
+            long missCount = end.missCount - start.missCount;
+            long hitCount = end.hitCount - start.hitCount;
+            return new CachePerformanceSnapshot(missCount, hitCount)
+            {
+                Start = start.Taken,
+                Taken = end.Taken
+            };
+        }
+
         public override string ToString()
         {
-            var total = this.TotalMissCount + this.TotalHitCount;
+            long total = this.TotalMissCount + this.TotalHitCount;
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("====Cache Stats(%)====");
             if (total != 0)
@@ -141,6 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 builder.AppendLine("Hit:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalHitCount * 100m / total).ToString("0.00") + " %");
                 builder.AppendLine("Miss:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalMissCount * 100m / total).ToString("0.00") + " %");
             }
+
             builder.AppendLine("========================");
             return builder.ToString();
         }
