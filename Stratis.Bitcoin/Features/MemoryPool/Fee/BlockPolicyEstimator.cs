@@ -335,6 +335,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// Write estimation data to a file.
         /// </summary>
         /// <param name="fileout">Stream to write to.</param>
+        /// <remarks>TODO: Implement write estimation</remarks>
         public void Write(Stream fileout)
         {
         }
@@ -344,6 +345,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         /// <param name="filein">Stream to read data from.</param>
         /// <param name="nFileVersion">Version number of the file.</param>
+        /// <remarks>TODO: Implement read estimation</remarks>
         public void Read(Stream filein, int nFileVersion)
         {
         }
@@ -353,6 +355,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// </summary>
         /// <param name="confTarget">The desired number of confirmations to be included in a block.</param>
         /// <returns>Estiamte of the priority.</returns>
+        /// <remarks>TODO: Implement priroity estimation</remarks>
         public double EstimatePriority(int confTarget)
         {
             return -1;

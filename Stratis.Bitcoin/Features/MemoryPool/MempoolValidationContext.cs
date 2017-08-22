@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
     /// <summary>
-    /// Current state of memory pool validation.
+    /// A state used when validating a new transaction.
+    /// A transaction must be validated before being added to the memory pool.
     /// </summary>
     public class MempoolValidationState
     {
