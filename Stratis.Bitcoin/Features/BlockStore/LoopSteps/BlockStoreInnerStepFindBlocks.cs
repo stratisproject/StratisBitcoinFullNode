@@ -54,45 +54,29 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogTrace("()");
 
+            bool result = false;
+
             if (context.NextChainedBlock == null)
-            {
-                this.logger.LogTrace("(-): {0} was null, return true", nameof(context.NextChainedBlock));
-                return true;
-            }
+                result = true;
 
             if (context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock))
-            {
-                this.logger.LogTrace("(-): {0} previous hash does not match {1} hash, return true.", nameof(context.NextChainedBlock), context.InputChainedBlock);
-                return true;
-            }
+                result = true;
 
             if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
-            {
-                this.logger.LogTrace("(-): {0} height was higher than {1}, return true.", nameof(context.NextChainedBlock), nameof(context.BlockStoreLoop.ChainState));
-                return true;
-            }
+                result = true;
 
             if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
-            {
-                this.logger.LogTrace("(-): {0} contains {1}, return true", nameof(context.BlockStoreLoop.PendingStorage), nameof(context.NextChainedBlock));
-                return true;
-            }
+                result = true;
 
             if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
-            {
-                this.logger.LogTrace("(-): {0} contains {1}, return true", nameof(context.BlockStoreLoop.BlockRepository), nameof(context.NextChainedBlock));
-                return true;
-            }
+                result = true;
 
-            if (context.DownloadStack.Count >= 10)
-            {
-                this.logger.LogTrace("(-): {0} threshold reached (10), return true", nameof(context.DownloadStack));
-                return true;
-            }
+            if (context.DownloadStack.Count >= BlockStoreInnerStepContext.DownloadStackThreshold)
+                result = true;
 
-            this.logger.LogTrace("(-):{0}", InnerStepResult.Next);
+            this.logger.LogTrace("(-):{0}:{1}", InnerStepResult.Next, result);
 
-            return false;
+            return result;
         }
     }
 }

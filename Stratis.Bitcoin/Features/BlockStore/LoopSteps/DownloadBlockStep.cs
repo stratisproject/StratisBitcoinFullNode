@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
             : base(blockStoreLoop, loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
         }
 

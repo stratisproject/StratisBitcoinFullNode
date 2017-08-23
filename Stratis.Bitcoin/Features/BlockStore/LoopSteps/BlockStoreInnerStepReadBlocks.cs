@@ -9,14 +9,14 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Reads blocks from the BlockPuller and removes block from the DownloadStack.
+    /// Reads blocks from the <see cref="BlockPuller"/> and removes block from the <see cref="BlockStoreInnerStepContext.DownloadStack"/>.
     /// <para>
     /// If the block exists in the puller add the the downloaded block to the store to
     /// push to the repository. If the <see cref="BlockStoreLoop.MaxInsertBlockSize"/> has been reached
     /// push the blocks in the context's Store to the repository.
     /// </para> 
     /// <para>
-    /// When the download stack is empty return a Break() result causing the BlockStoreLoop to
+    /// When the download stack is empty return a Break() result causing the <see cref="BlockStoreLoop"/> to
     /// start again.
     /// </para>
     /// <para>

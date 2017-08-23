@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height);
+            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height);
 
             this.BlockStoreLoop = blockStoreLoop;
             this.CancellationToken = cancellationToken;
@@ -66,6 +66,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>A queue of blocks to be downloaded.</summary>
         public Queue<ChainedBlock> DownloadStack { get; private set; }
 
+        /// <summary>The maximum number of blocks to ask for.</summary>
+        public const int DownloadStackThreshold = 10;
+
         public BlockStoreLoop BlockStoreLoop { get; private set; }
 
         /// <summary>The chained block the inner step starts on.</summary>
@@ -79,8 +82,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         public CancellationToken CancellationToken;
 
         /// <summary>
-        /// A store of blocks that will be pushed to the repository once
-        /// the <see cref="BlockStoreLoop.MaxInsertBlockSize"/> has been reached.
+        /// A store of blocks that will be pushed to the repository once the <see cref="BlockStoreLoop.MaxInsertBlockSize"/> has been reached.
         /// </summary>
         public List<BlockPair> Store;
 
