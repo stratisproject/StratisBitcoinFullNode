@@ -52,31 +52,25 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
         private async Task<bool> ShouldStopFindingBlocks(BlockStoreInnerStepContext context)
         {
-            this.logger.LogTrace("()");
-
-            bool result = false;
-
             if (context.NextChainedBlock == null)
-                result = true;
+                return true;
 
             if (context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock))
-                result = true;
+                return true;
 
             if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
-                result = true;
+                return true;
 
             if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
-                result = true;
+                return true;
 
             if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
-                result = true;
+                return true;
 
             if (context.DownloadStack.Count >= BlockStoreInnerStepContext.DownloadStackThreshold)
-                result = true;
+                return true;
 
-            this.logger.LogTrace("(-):{0}:{1}", InnerStepResult.Next, result);
-
-            return result;
+            return false;
         }
     }
 }
