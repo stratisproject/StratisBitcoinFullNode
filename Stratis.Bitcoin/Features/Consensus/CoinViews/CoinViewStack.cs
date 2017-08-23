@@ -4,10 +4,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     public class CoinViewStack
     {
+        public CoinView Top { get; private set; }
+
+        public CoinView Bottom { get; private set; }
+
         public CoinViewStack(CoinView top)
         {
             this.Top = top;
-            var current = top;
+            CoinView current = top;
             while (current is IBackedCoinView)
             {
                 current = ((IBackedCoinView)current).Inner;
@@ -17,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         public IEnumerable<CoinView> GetElements()
         {
-            var current = this.Top;
+            CoinView current = this.Top;
             while (current is IBackedCoinView)
             {
                 yield return current;
@@ -28,28 +32,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         public T Find<T>()
         {
-            var current = this.Top;
+            CoinView current = this.Top;
             if (current is T)
                 return (T)(object)current;
+
             while (current is IBackedCoinView)
             {
                 current = ((IBackedCoinView)current).Inner;
                 if (current is T)
                     return (T)(object)current;
             }
+
             return default(T);
-        }
-
-        public CoinView Top
-        {
-            get;
-            private set;
-        }
-
-        public CoinView Bottom
-        {
-            get;
-            private set;
         }
     }
 }
