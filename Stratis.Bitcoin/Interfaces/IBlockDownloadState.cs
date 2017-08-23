@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Stratis.Bitcoin
+namespace Stratis.Bitcoin.Interfaces
 {
-    public interface IConsensusFeature
+    public interface IBlockDownloadState
     {
         bool IsInitialBlockDownload();
     }

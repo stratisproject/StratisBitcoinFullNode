@@ -4,14 +4,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
 
@@ -26,21 +24,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
-            PowConsensusValidator consensusValidator = null,
             ConcurrentChain chain = null,
             ChainState chainState = null,
-            BlockStoreManager blockManager = null,
-            MempoolManager mempoolManager = null,
             Connection.IConnectionManager connectionManager = null)
             : base(
                   fullNode: fullNode,
                   nodeSettings: nodeSettings,
                   network: network,
-                  consensusValidator: consensusValidator,
                   chain: chain,
                   chainState: chainState,
-                  blockManager: blockManager,
-                  mempoolManager: mempoolManager,
                   connectionManager: connectionManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -64,10 +56,12 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            Transaction trx = (await this.MempoolManager?.InfoAsync(trxid))?.Trx;
+            Transaction trx = await this.FullNode.NodeService<IPooledTransaction>(true).GetTransaction(uint256.Zero);
 
             if (trx == null)
-                trx = await this.BlockManager?.BlockRepository?.GetTrxAsync(trxid);
+            {
+                trx = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxAsync(trxid);
+            }
 
             if (trx == null)
                 return null;
@@ -147,7 +141,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private async Task<ChainedBlock> GetTransactionBlock(uint256 trxid)
         {
             ChainedBlock block = null;
-            uint256 blockid = await this.BlockManager?.BlockRepository?.GetTrxBlockIdAsync(trxid);
+            uint256 blockid = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxBlockIdAsync(trxid);
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
             return block;
@@ -155,10 +149,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         private Target GetNetworkDifficulty()
         {
-            if (this.ConsensusValidator?.ConsensusParams != null && this.ChainState?.HighestValidatedPoW != null)
-                return Miner.PowMining.GetWorkRequired(this.ConsensusValidator.ConsensusParams, this.ChainState?.HighestValidatedPoW);
-            else
-                return null;
+            return this.FullNode.NodeService<INetworkDifficulty>(true)?.GetNetworkDifficulty();
         }
     }
 }

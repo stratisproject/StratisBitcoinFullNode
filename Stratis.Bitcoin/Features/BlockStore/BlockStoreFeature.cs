@@ -7,11 +7,13 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreFeature : FullNodeFeature
+    public class BlockStoreFeature : FullNodeFeature, IBlockStore
     {
         protected readonly ConcurrentChain chain;
         protected readonly Signals.Signals signals;
@@ -67,6 +69,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
         {
             return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory);
+        }
+
+        public Task<Transaction> GetTrxAsync(uint256 trxid)
+        {
+            return this.blockRepository.GetTrxAsync(trxid);
+        }
+
+        public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
+        {
+            return this.blockRepository.GetTrxBlockIdAsync(trxid);
         }
 
         public override void Start()

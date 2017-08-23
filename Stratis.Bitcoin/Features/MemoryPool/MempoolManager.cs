@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Includes querying information about the transactions in the memory pool.
     /// Also includes methods for persisting memory pool.
     /// </summary>
-    public class MempoolManager
+    public class MempoolManager: IPooledTransaction
     {
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
         private IMempoolPersistence mempoolPersistence;
@@ -79,6 +80,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Access to memory pool validator performance counter.</summary>
         public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
+
+        /// <inheritdoc />
+        public Task<Transaction> GetTransaction(uint256 trxid)
+        {
+            return Task.Run(() =>
+            {
+                return this.InfoAsync(trxid)?.GetAwaiter().GetResult()?.Trx;
+            });
+        }
 
         /// <summary>
         /// Gets the memory pool transactions.

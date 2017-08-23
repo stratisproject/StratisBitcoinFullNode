@@ -1,22 +1,20 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Interfaces;
+using System.Threading.Tasks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC.Controller
+namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class GetInfoActionTests : BaseRPCControllerTest
     {
         [Fact]
         public void CallWithDependencies()
         {
-            string dir = AssureEmptyDir("Stratis.Bitcoin.Tests/TestData/GetInfoActionTests/CallWithDependencies");
+            string dir = AssureEmptyDir("Stratis.Bitcoin.Features.RPC.Tests/TestData/GetInfoActionTests/CallWithDependencies");
             IFullNode fullNode = this.BuildServicedNode(dir);
             FullNodeController controller = fullNode.Services.ServiceProvider.GetService<FullNodeController>();
 
@@ -36,6 +34,5 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
             Assert.Equal(expectedRelayFee, info.relayfee);
             Assert.Empty(info.errors);
         }
-
     }
 }

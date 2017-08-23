@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
@@ -97,6 +98,21 @@ namespace Stratis.Bitcoin
                 return default(T);
 
             throw new InvalidOperationException($"The {typeof(T).ToString()} service is not supported");
+        }
+
+        public T NodeFeature<T>(bool failWithError = false)
+        {
+            if (this.Services != null)
+            {
+                var feature = this.Services.Features.OfType<T>().FirstOrDefault();
+                if (feature != null)
+                    return feature;
+            }
+
+            if (!failWithError)
+                return default(T);
+
+            throw new InvalidOperationException($"The {typeof(T).ToString()} feature is not supported");
         }
 
         /// <inheritdoc />
