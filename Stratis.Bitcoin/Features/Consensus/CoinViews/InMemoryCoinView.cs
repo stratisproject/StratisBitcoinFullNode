@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
 
                 this.blockHash = nextBlockHash;
-                foreach (var unspent in unspentOutputs)
+                foreach (UnspentOutputs unspent in unspentOutputs)
                 {
                     UnspentOutputs existing;
                     if (this.unspents.TryGetValue(unspent.TransactionId, out existing))
@@ -63,6 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.unspents.Remove(unspent.TransactionId);
                 }
             }
+
             return Task.FromResult(true);
         }
 
