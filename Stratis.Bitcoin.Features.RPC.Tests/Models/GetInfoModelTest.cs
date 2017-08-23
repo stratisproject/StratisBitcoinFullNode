@@ -7,7 +7,7 @@ using System.Text;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC.Models
+namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 {
     public class GetInfoModelTest : BaseRPCModelTest
     {

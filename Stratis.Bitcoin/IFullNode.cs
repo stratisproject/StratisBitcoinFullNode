@@ -30,5 +30,21 @@ namespace Stratis.Bitcoin
         /// Stops the full node and all its features.
         /// </summary>
         void Stop();
+
+        /// <summary>
+        /// Find a service of a particular type
+        /// </summary>
+        /// <typeparam name="T">Class of type</typeparam>
+        /// <param name="failWithDefault">Set to true to return null instead of throwing an error</param>
+        /// <returns></returns>
+        T NodeService<T>(bool failWithDefault = false);
+
+        /// <summary>
+        /// Find a feature of a particular type or having a given interface
+        /// </summary>
+        /// <typeparam name="T">Class of interface type</typeparam>
+        /// <param name="failWithError">Set to false to return null instead of throwing an error</param>
+        /// <returns></returns>
+        T NodeFeature<T>(bool failWithError = false);
     }
 }

@@ -5,6 +5,8 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Interfaces;
+using System.Threading.Tasks;
 using System.Text;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
@@ -134,6 +136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<IMempoolValidator, MempoolValidator>();
                         services.AddSingleton<MempoolOrphans>();
                         services.AddSingleton<MempoolManager>();
+                        services.AddSingleton<IPooledTransaction, MempoolManager>();
                         services.AddSingleton<MempoolBehavior>();
                         services.AddSingleton<MempoolSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
