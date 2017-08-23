@@ -20,13 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         private uint256 blockHash;
         private readonly BackendPerformanceCounter performanceCounter;
 
-        public BackendPerformanceCounter PerformanceCounter
-        {
-            get
-            {
-                return this.performanceCounter;
-            }
-        }
+        public BackendPerformanceCounter PerformanceCounter { get { return this.performanceCounter; } }
 
         public DBreezeCoinView(Network network, DataFolder dataFolder)
             : this(network, dataFolder.CoinViewPath)
