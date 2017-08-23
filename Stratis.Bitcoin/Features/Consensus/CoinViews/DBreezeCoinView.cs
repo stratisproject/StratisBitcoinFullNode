@@ -68,13 +68,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     uint256 blockHash = this.GetCurrentHash();
                     UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
-                    int i = 0;
                     this.PerformanceCounter.AddQueriedEntities(txIds.Length);
+
+                    int i = 0;
                     foreach (uint256 input in txIds)
                     {
                         Coins coin = this.session.Transaction.Select<byte[], Coins>("Coins", input.ToBytes(false))?.Value;
                         result[i++] = coin == null ? null : new UnspentOutputs(input, coin);
                     }
+
                     return new FetchCoinsResponse(result, blockHash);
                 }
             });

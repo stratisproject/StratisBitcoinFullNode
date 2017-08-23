@@ -5,19 +5,30 @@ using Stratis.Bitcoin.Configuration.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
+    /// <summary>
+    /// Performance statistics used to measure the time it takes for the DBreeze backend 
+    /// to perform database operations.
+    /// </summary>
     public class BackendPerformanceCounter
     {
+        /// <summary>UTC timestamp when the performance counter was created.</summary>
         // TODO: Change to IDateTimeProvider.
         private readonly DateTime start;
+        /// <summary>UTC timestamp when the performance counter was created.</summary>
         // TODO: Change to IDateTimeProvider.
         public DateTime Start { get { return this.start; } }
 
+        /// <summary>Number of entities inserted to the database.</summary>
         private long insertedEntities;
+        /// <summary>Number of entities inserted to the database.</summary>
         public long InsertedEntities { get { return this.insertedEntities; } }
 
+        /// <summary>Number of queried entities from the database.</summary>
         private long queriedEntities;
+        /// <summary>Number of queried entities from the database.</summary>
         public long QueriedEntities { get { return this.queriedEntities; } }
 
+        /// <summary>Time span since the performance counter was created.</summary>
         public TimeSpan Elapsed
         {
             get
@@ -27,7 +38,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <summary>Time in ticks it took the database to perform the insert operation.</summary>
         private long insertTime;
+        /// <summary>Time it took the database to perform the insert operation.</summary>
         public TimeSpan InsertTime
         {
             get
@@ -36,7 +49,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <summary>Time in ticks it took the database to perform a query operation.</summary>
         private long queryTime;
+        /// <summary>Time it took the database to perform a query operation.</summary>
         public TimeSpan QueryTime
         {
             get
@@ -45,12 +60,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
         public BackendPerformanceCounter()
         {
             // TODO: Change to IDateTimeProvider.
             this.start = DateTime.UtcNow;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return this.Snapshot().ToString();
@@ -76,6 +95,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             Interlocked.Add(ref this.queriedEntities, count);
         }
 
+        /// <summary>
+        /// Creates a snapshot of the current state of the performance counter.
+        /// </summary>
+        /// <returns>Newly created snapshot.</returns>
         public BackendPerformanceSnapshot Snapshot()
         {
             var snap = new BackendPerformanceSnapshot(this.insertedEntities, this.insertTime, this.queriedEntities, this.queryTime)
@@ -88,6 +111,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
     }
 
+    /// <summary>
+    /// Snapshot of a state of a performance counter taken at a certain time.
+    /// </summary>
     public class BackendPerformanceSnapshot
     {
         private readonly long totalQueriedEntities;

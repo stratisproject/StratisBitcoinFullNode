@@ -292,6 +292,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return hash;
         }
 
+        /// <summary>
+        /// Wait until flushing and rewinding task complete if any is in progress.
+        /// </summary>
+        /// <remarks>TODO: This is blocking call and is used in async methods, which quite 
+        /// strongly erases the goals of using async in those methods.</remarks>
         private void WaitOngoingTasks()
         {
             Task.WaitAll(this.flushingTask, this.rewindingTask);
