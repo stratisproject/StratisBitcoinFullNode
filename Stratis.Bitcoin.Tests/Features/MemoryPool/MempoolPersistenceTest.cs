@@ -13,7 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.MemoryPool
+namespace Stratis.Bitcoin.Tests.Features.MemoryPool
 {
     public class MempoolPersistenceTest : IDisposable
     {
