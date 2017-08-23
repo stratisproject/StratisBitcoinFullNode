@@ -115,11 +115,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     Dictionary<uint256, TxOut[]> unspentToOriginal = new Dictionary<uint256, TxOut[]>(all.Count);
                     if (originalOutputs != null)
                     {
-                        var originalEnumerator = originalOutputs.GetEnumerator();
-                        foreach (var u in all)
+                        IEnumerator<TxOut[]> originalEnumerator = originalOutputs.GetEnumerator();
+                        foreach (UnspentOutputs output in all)
                         {
                             originalEnumerator.MoveNext();
-                            unspentToOriginal.Add(u.TransactionId, originalEnumerator.Current);
+                            unspentToOriginal.Add(output.TransactionId, originalEnumerator.Current);
                         }
                     }
 
