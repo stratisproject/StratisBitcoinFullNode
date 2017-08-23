@@ -201,5 +201,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="account">The account to create the change address.</param>
         /// <returns>The new HD address.</returns>
         HdAddress GetOrCreateChangeAddress(HdAccount account);
+
+        /// <summary>
+        /// Gets the list of the wallet files names, along with the folder in which they're contained.
+        /// </summary>
+        /// <returns>The wallet files names, along with the folder in which they're contained.</returns>
+        (string folderPath, IEnumerable<string>) GetWalletsFiles();
     }
 }

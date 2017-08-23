@@ -1463,11 +1463,11 @@ namespace Stratis.Bitcoin.Tests.Wallet
             string dir = AssureEmptyDir("TestData/WalletControllerTest/ListWalletFilesWithExistingWalletFilesReturnsWalletFileModel");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            Directory.CreateDirectory(dir);
-            File.Create(dir + "/wallet1.wallet.json");
-            File.Create(dir + "/wallet2.wallet.json");
-
             var walletManager = new Mock<IWalletManager>();
+            walletManager.Setup(m => m.GetWalletsFiles())
+                .Returns((dataFolder.WalletPath, new[] { "wallet1.wallet.json", "wallet2.wallet.json" }));
+
+            //var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(m => m.GetWalletFileExtension()).Returns("wallet.json");
 
             var controller = new WalletController(walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
@@ -1478,7 +1478,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var model = viewResult.Value as WalletFileModel;
 
             Assert.NotNull(model);
-            Assert.Equal(new DirectoryInfo(dir).FullName, model.WalletsPath);
+            Assert.Equal(dir, model.WalletsPath);
             Assert.Equal(2, model.WalletsFiles.Count());
             Assert.EndsWith("wallet1.wallet.json", model.WalletsFiles.ElementAt(0));
             Assert.EndsWith("wallet2.wallet.json", model.WalletsFiles.ElementAt(1));
@@ -1490,7 +1490,11 @@ namespace Stratis.Bitcoin.Tests.Wallet
             string dir = AssureEmptyDir("TestData/WalletControllerTest/ListWalletFilesWithoutExistingWalletFilesReturnsWalletFileModel");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var controller = new WalletController(new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
+            var walletManager = new Mock<IWalletManager>();
+            walletManager.Setup(m => m.GetWalletsFiles())
+                .Returns((dataFolder.WalletPath, Enumerable.Empty<string>()));
+
+            var controller = new WalletController(walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
 
             IActionResult result = controller.ListWalletsFiles();
 
@@ -1498,7 +1502,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
             var model = viewResult.Value as WalletFileModel;
 
             Assert.NotNull(model);
-            Assert.Equal(new DirectoryInfo(dir).FullName, model.WalletsPath);
+            Assert.Equal(dataFolder.WalletPath, model.WalletsPath);
             Assert.Equal(0, model.WalletsFiles.Count());
         }
 
@@ -1507,8 +1511,12 @@ namespace Stratis.Bitcoin.Tests.Wallet
         {
             var dataFolder = new DataFolder(new NodeSettings { DataDir = "" });
 
-            var controller = new WalletController(new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
-
+            var walletManager = new Mock<IWalletManager>();
+            walletManager.Setup(m => m.GetWalletsFiles())
+                .Throws(new Exception("something happened."));
+            
+            var controller = new WalletController(walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
+            
             IActionResult result = controller.ListWalletsFiles();
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
@@ -1517,7 +1525,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.StartsWith("System.ArgumentException", error.Description);
+            Assert.Equal("something happened.", error.Message);
         }
 
         [Fact]
