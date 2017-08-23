@@ -24,19 +24,6 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Prepares and invokes a download task for a single block.
-        /// </summary>
-        /// <param name="downloadRequest">Description of a block to download.</param>
-        public void AskBlock(ChainedBlock downloadRequest)
-        {
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(downloadRequest), downloadRequest.HashBlock, downloadRequest.Height);
-
-            base.AskBlocks(new ChainedBlock[] { downloadRequest });
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
         /// Prepares and invokes a download task for mulitple blocks.
         /// </summary>
         public void AskForMultipleBlocks(ChainedBlock[] downloadRequests)

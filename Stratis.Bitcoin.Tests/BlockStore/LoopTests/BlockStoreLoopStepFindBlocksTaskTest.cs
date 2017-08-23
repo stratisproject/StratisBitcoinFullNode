@@ -9,10 +9,10 @@ using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
 {
-    public sealed class BlockStoreLoopStepAskBlocksTaskTest : BlockStoreLoopStepBaseTest
+    public sealed class BlockStoreLoopStepFindBlocksTaskTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void BlockStoreInnerStepAskBlocks_WithBlocksFound_AddToDownloadStack()
+        public void BlockStoreInnerStepFindBlocks_WithBlocksFound_AddToDownloadStack()
         {
             var blocks = CreateBlocks(10);
 
@@ -35,13 +35,13 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 fluent.Loop.BlockPuller.InjectBlock(blocks[8].GetHash(), new DownloadedBlock() { Length = blocks[8].GetSerializedSize(), Block = blocks[8] }, new CancellationToken());
                 fluent.Loop.BlockPuller.InjectBlock(blocks[9].GetHash(), new DownloadedBlock() { Length = blocks[9].GetSerializedSize(), Block = blocks[9] }, new CancellationToken());
 
-                // Start asking for blocks from block[5]
+                // Start finding blocks from block[5]
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 // Create Task Context
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepAskBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // Block[5] through Block[9] should be in the DownloadStack
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         }
 
         [Fact]
-        public void BlockStoreInnerStepAskBlocks_CanRemoveTaskFromRoutine_DownloadStackSizeReached()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_DownloadStackSizeReached()
         {
             var blocks = CreateBlocks(15);
 
@@ -71,13 +71,13 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 // Create block store loop
                 fluent.Create(chain);
 
-                // Start asking for blocks from Block[2]
+                // Start finding blocks from Block[2]
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[2].GetHash());
 
                 // Create Task Context
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepAskBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // Block[2] through Block[11] should be in the DownloadStack
@@ -93,15 +93,15 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[10].GetHash()));
                 Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[11].GetHash()));
 
-                // The AskBlocks() task should be removed from the routine
+                // The FindBlocks() task should be removed from the routine
                 // as the batch download size is reached
                 Assert.Equal(1, context.InnerSteps.Count());
-                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepAskBlocks>().Any());
+                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
         [Fact]
-        public void BlockStoreInnerStepAskBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage()
         {
             var blocks = CreateBlocks(3);
 
@@ -120,28 +120,28 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 // Add block[2] to Pending Storage
                 fluent.Loop.PendingStorage.TryAdd(blocks[2].GetHash(), new BlockPair(blocks[2], fluent.Loop.Chain.GetBlock(blocks[2].GetHash())));
 
-                // Start asking for blocks from Block[1]
+                // Start finding blocks from Block[1]
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepAskBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain Block[1]
                 Assert.Equal(1, context.DownloadStack.Count());
                 Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == nextChainedBlock.HashBlock));
 
-                // The AskBlocks() task should be removed from the routine
+                // The FindBlocks() task should be removed from the routine
                 // as the next chained block exists in PendingStorage
                 Assert.Equal(1, context.InnerSteps.Count());
-                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepAskBlocks>().Any());
+                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
         [Fact]
-        public void BlockStoreInnerStepAskBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository()
         {
             var blocks = CreateBlocks(3);
 
@@ -157,28 +157,28 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 // Create block store loop
                 fluent.Create(chain);
 
-                //Start asking for blocks from Block[1]
+                // Start finding blocks from Block[1]
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepAskBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain Block[1]
                 Assert.Equal(0, context.DownloadStack.Count());
 
-                // The AskBlocks() task should be removed from the routine
+                // The FindBlocks() task should be removed from the routine
                 // as the next chained block exist in the BlockRepository
                 // causing a stop condition
                 Assert.Equal(1, context.InnerSteps.Count());
-                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepAskBlocks>().Any());
+                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
 
         [Fact]
-        public void BlockStoreInnerStepAskBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull()
+        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull()
         {
             var blocks = CreateBlocks(3);
 
@@ -194,23 +194,23 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 // Create block store loop
                 fluent.Create(chain);
 
-                //Start asking for blocks from Block[2]
+                // Start finding blocks from Block[2]
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[2].GetHash());
 
                 // Create Task Context
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
-                var task = new BlockStoreInnerStepAskBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain nextChainedBlock
                 Assert.Equal(1, context.DownloadStack.Count());
                 Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == nextChainedBlock.HashBlock));
 
-                // The AskBlocks() task should be removed from the routine
+                // The FindBlocks() task should be removed from the routine
                 // as the next chained block is null
                 Assert.Equal(1, context.InnerSteps.Count());
-                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepAskBlocks>().Any());
+                Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
     }

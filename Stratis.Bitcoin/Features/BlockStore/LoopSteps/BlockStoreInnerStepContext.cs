@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Context for the inner steps, <see cref="BlockStoreInnerStepAskBlocks"/> and <see cref="BlockStoreInnerStepReadBlocks"/>.
+    /// Context for the inner steps, <see cref="BlockStoreInnerStepFindBlocks"/> and <see cref="BlockStoreInnerStepReadBlocks"/>.
     /// <para>
     /// The context also initializes the inner step <see cref="InnerSteps"/>.
     /// </para>
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.CancellationToken = cancellationToken;
             this.DateTimeProvider = dateTimeProvider;
             this.DownloadStack = new Queue<ChainedBlock>();
-            this.InnerSteps = new List<BlockStoreInnerStep>() { new BlockStoreInnerStepAskBlocks(this.loggerFactory), new BlockStoreInnerStepReadBlocks(this.loggerFactory) };
+            this.InnerSteps = new List<BlockStoreInnerStep>() { new BlockStoreInnerStepFindBlocks(this.loggerFactory), new BlockStoreInnerStepReadBlocks(this.loggerFactory) };
             this.InsertBlockSize = 0;
             this.LastDownloadStackFlushTime = this.DateTimeProvider.GetUtcNow();
             this.NextChainedBlock = nextChainedBlock;
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogTrace("()");
 
-            this.InnerSteps.Remove(this.InnerSteps.OfType<BlockStoreInnerStepAskBlocks>().First());
+            this.InnerSteps.Remove(this.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().First());
 
             this.logger.LogTrace("(-)");
         }

@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     ///<para>
     ///<list>
     /// There are two operations:
-    ///     <item>1: <see cref="BlockStoreInnerStepAskBlocks"/> to ask the block puller to download the blocks.</item>
+    ///     <item>1: <see cref="BlockStoreInnerStepFindBlocks"/> to ask the block puller to download the blocks.</item>
     ///     <item>2: <see cref="BlockStoreInnerStepReadBlocks"/> to persist the blocks in a batch to the <see cref="BlockRepository"/>.</item>
     /// </list>
     /// </para> 

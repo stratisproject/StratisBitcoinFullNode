@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
     /// <summary>
-    /// Ask blocks to download by asking the BlockPuller.
+    /// Find blocks to download by asking the BlockPuller.
     /// <para>
-    /// Ask for blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> copntains 10 blocks.
+    /// Find blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> contains 10 blocks.
     /// </para>
     /// <para>
     /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// the read blocks inner step <see cref="BlockStoreInnerStepReadBlocks"/>.
     /// </para> 
     /// </summary>
-    public sealed class BlockStoreInnerStepAskBlocks : BlockStoreInnerStep
+    public sealed class BlockStoreInnerStepFindBlocks : BlockStoreInnerStep
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// Initializes new instance of the object.
         /// </summary>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public BlockStoreInnerStepAskBlocks(ILoggerFactory loggerFactory)
+        public BlockStoreInnerStepFindBlocks(ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
         }
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
             {
-                this.logger.LogTrace("(-): {0} containts {1}, return true", nameof(context.BlockStoreLoop.PendingStorage), nameof(context.NextChainedBlock));
+                this.logger.LogTrace("(-): {0} contains {1}, return true", nameof(context.BlockStoreLoop.PendingStorage), nameof(context.NextChainedBlock));
                 return true;
             }
 
