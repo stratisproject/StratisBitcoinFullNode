@@ -2,14 +2,16 @@
 
 namespace Stratis.Bitcoin.Tests.Features.MemoryPool
 {
+    /// <summary>
+    /// Unit tests for the memory pool validator.
+    /// </summary>
+    /// <remarks>TODO: Currently only stubs - need to complete</remarks>
     public class MempoolValidatorTest
     {
-        #region CheckFinalTransaction
-
         [Fact]
         public void CheckFinalTransaction_WithStandardLockTimeAndValidTxTime_ReturnsTrue()
         {
-            //TODO: Implement test
+            // TODO: Implement test
         }
 
         [Fact]
@@ -29,10 +31,6 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         {
             // TODO: Implement test
         }
-
-        #endregion
-
-        #region CheckSequenceLocks
 
         [Fact]
         public void CheckSequenceLocks_WithExistingLockPointAndValidChain_ReturnsTrue()
@@ -58,12 +56,8 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public void CheckSequenceLocks_WithExistingLockPointAndBadHeight_Fails()
         {
-            //TODO: Test case - lock point height exceeds chain height
+            // TODO: Test case - lock point height exceeds chain height
         }
-
-        #endregion
-
-        #region GetTransactionWeight
 
         [Fact]
         void GetTransactionWeight_WitnessTx_ReturnsWeight()
@@ -77,10 +71,6 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         {
             // TODO: Test getting tx weight on transaction without witness
         }
-
-        #endregion
-
-        #region CalculateModifiedSize
 
         [Fact]
         public void CalculateModifiedSize_CalcWeightWithTxIns_ReturnsSize()
@@ -96,10 +86,6 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             // Test weight calculation by passing in weight as nTxSize, nTxSize can be computed with GetTransactionWeight()
         }
 
-        #endregion
-
-        #region AcceptToMemoryPool
-
         [Fact]
         public void AcceptToMemoryPool_TxIsCoinbase_ReturnsFalse()
         {
@@ -107,15 +93,51 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         }
 
         [Fact]
-        public void AcceptToMemoryPool_TxIsNonStandard_ReturnsFalse()
+        public void AcceptToMemoryPool_TxIsNonStandardVersionUnsupported_ReturnsFalse()
         {
-            // TODO:Test the caeses in PreMempoolChecks CheckStandardTransaction
+            // TODO:Test the cases in PreMempoolChecks CheckStandardTransaction
             // - Check version number
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxIsNonStandardTransactionSizeInvalid_ReturnsFalse()
+        {
+            // TODO:Test the cases in PreMempoolChecks CheckStandardTransaction
             // - Check transaction size
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxIsNonStandardInputScriptSigsLengthInvalid_ReturnsFalse()
+        {
+            // TODO:Test the cases in PreMempoolChecks CheckStandardTransaction
             // - Check input scriptsig lengths
-            // - Check input scriptsig push only
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxIsNonStandardScriptSigIsPushOnly_ReturnsFalse()
+        {
+            // TODO:Test the cases in PreMempoolChecks CheckStandardTransaction
+            // - Check input scriptsig push only            
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxIsNonStandardScriptTemplateIsNull_ReturnsFalse()
+        {
+            // TODO:Test the casses in PreMempoolChecks CheckStandardTransaction
             // - Check output scripttemplate == null
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxIsNonStandardOutputIsDust_ReturnsFalse()
+        {
+            // TODO:Test the cases in PreMempoolChecks CheckStandardTransaction
             // - Check output dust
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxIsNonStandardOutputNotSingleReturn_ReturnsFalse()
+        {
+            // TODO:Test the cases in PreMempoolChecks CheckStandardTransaction
             // - Checkout output single return
         }
 
@@ -174,29 +196,111 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         }
 
         [Fact]
-        public void AcceptToMemoryPool_TxFeeInvalid_ReturnsFalse()
+        public void AcceptToMemoryPool_TxFeeInvalidLessThanMin_ReturnsFalse()
         {
-            // TODO: Execute failure cases for CheckFee
+            // TODO: Execute failure case for CheckFee
             // - less than minimum fee
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxFeeInvalidInsufficentPriorityForFree_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckFee
             // - Insufficient priority for free transaction
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxFeeInvalidAbsurdlyHighFee_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckFee
             // - Absurdly high fee
         }
 
         [Fact]
-        public void AcceptToMemoryPool_TxAncestorsInvalid_ReturnsFalse()
+        public void AcceptToMemoryPool_TxTooManyAncestors_ReturnsFalse()
         {
             // TODO: Execute failure cases for CheckAncestors
             // - Too many ancestors
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxAncestorsConflictSpend_ReturnsFalse()
+        {
+            // TODO: Execute failure cases for CheckAncestors
             // - conflicting spend transaction
         }
 
         [Fact]
         public void AcceptToMemoryPool_TxReplacementInsufficientFees_ReturnsFalse()
         {
-            // TODO: Execute failure case for CheckReplacement
+            // TODO: Execute failure case for CheckReplacement InsufficientFees
+            // - three separate logic checks inside CheckReplacement
         }
 
-        #endregion
+        [Fact]
+        public void AcceptToMemoryPool_TxReplacementTooManyReplacements_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckReplacement TooManyPotentialReplacements
+        }
 
+        [Fact]
+        public void AcceptToMemoryPool_TxReplacementAddsUnconfirmed_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckReplacement ReplacementAddsUnconfirmed
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxPowConsensusCheckInputNegativeOrOverflow_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckAllInputs CheckInputs PowConsensusValidator.CheckInputs BadTransactionInputValueOutOfRange
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxPowConsensusCheckInputBadTransactionInBelowOut_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckAllInputs CheckInputs PowConsensusValidator.CheckInputs BadTransactionInBelowOut
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxPowConsensusCheckInputNegativeFee_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckAllInputs CheckInputs PowConsensusValidator.CheckInputs NegativeFee
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxPowConsensusCheckInputFeeOutOfRange_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckAllInputs CheckInputs PowConsensusValidator.CheckInputs FeeOutOfRange
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxVerifyStandardScriptConsensusFailure_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckAllInputs CheckInputs VerifyScriptConsensus for ScriptVerify.Standard
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxContextVerifyStandardScriptFailure_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckAllInputs CheckInputs ctx.VerifyScript for ScriptVerify.Standard
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxVerifyP2SHScriptConsensusFailure_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckAllInputs CheckInputs VerifyScriptConsensus for ScriptVerify.P2SH
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_TxContextVerifyP2SHScriptFailure_ReturnsFalse()
+        {
+            // TODO: Execute failure case for CheckAllInputs CheckInputs ctx.VerifyScript for ScriptVerify.P2SH
+        }
+
+        [Fact]
+        public void AcceptToMemoryPool_MemPoolFull_ReturnsFalse()
+        {
+            // TODO: Execute failure case for this check after trimming mempool !this.memPool.Exists(context.TransactionHash)
+        }
     }
 }
