@@ -56,13 +56,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            var transactionProvider = this.FullNode.Services?.Features.OfType<IPooledTransaction>()?.FirstOrDefault();
-            Transaction trx = await transactionProvider?.GetTransaction(trxid);
+            Transaction trx = await this.FullNode.NodeService<IPooledTransaction>(true).GetTransaction(uint256.Zero);
 
             if (trx == null)
             {
-                var blockStoreProvider = this.FullNode.Services?.Features.OfType<IBlockStore>()?.FirstOrDefault();
-                trx = await blockStoreProvider?.GetTrxAsync(trxid);
+                trx = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxAsync(trxid);
             }
 
             if (trx == null)
@@ -143,8 +141,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private async Task<ChainedBlock> GetTransactionBlock(uint256 trxid)
         {
             ChainedBlock block = null;
-            var blockStoreProvider = this.FullNode.Services?.Features.OfType<IBlockStore>()?.FirstOrDefault();
-            uint256 blockid = await blockStoreProvider?.GetTrxBlockIdAsync(trxid);
+            uint256 blockid = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxBlockIdAsync(trxid);
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
             return block;
@@ -152,9 +149,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         private Target GetNetworkDifficulty()
         {
-            var difficultyProvider = this.FullNode.Services?.Features.OfType<INetworkDifficulty>().FirstOrDefault(); // No hard failure if not present
-
-            return difficultyProvider?.GetNetworkDifficulty();
+            return this.FullNode.NodeService<INetworkDifficulty>(true)?.GetNetworkDifficulty();
         }
     }
 }

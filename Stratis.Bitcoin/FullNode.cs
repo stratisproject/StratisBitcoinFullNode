@@ -100,6 +100,21 @@ namespace Stratis.Bitcoin
             throw new InvalidOperationException($"The {typeof(T).ToString()} service is not supported");
         }
 
+        public T NodeFeature<T>(bool failWithError = false)
+        {
+            if (this.Services != null)
+            {
+                var feature = this.Services.Features.OfType<T>().FirstOrDefault();
+                if (feature != null)
+                    return feature;
+            }
+
+            if (!failWithError)
+                return default(T);
+
+            throw new InvalidOperationException($"The {typeof(T).ToString()} feature is not supported");
+        }
+
         /// <inheritdoc />
         public Version Version
         {

@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Base
                     this.lastupdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks; // sample every minute
 
                     // if consensus is no present IBD has no meaning. Set to false to match legacy code.                    
-                    var IBDStateProvider = this.fullNode.Services?.Features.OfType<IBlockDownloadState>().FirstOrDefault(); // No hard failure if not present
+                    var IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
                     this.lastresult = (IBDStateProvider == null)?false:IBDStateProvider.IsInitialBlockDownload();
                 }
                 return this.lastresult;

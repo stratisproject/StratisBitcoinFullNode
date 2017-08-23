@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Transaction memory pool feature for the Full Node.
     /// </summary>
     /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
-    public class MempoolFeature : FullNodeFeature, IFeatureStats, IPooledTransaction
+    public class MempoolFeature : FullNodeFeature, IFeatureStats
     {
         #region Fields
 
@@ -74,14 +74,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 benchLogs.AppendLine("======Mempool======");
                 benchLogs.AppendLine(this.mempoolManager.PerformanceCounter.ToString());
             }
-        }
-
-        public Task<Transaction> GetTransaction(uint256 trxid)
-        {
-            return Task.Run(() =>
-            {
-                return this.mempoolManager?.InfoAsync(trxid)?.GetAwaiter().GetResult().Trx;
-            });
         }
 
         #endregion
@@ -144,6 +136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<IMempoolValidator, MempoolValidator>();
                         services.AddSingleton<MempoolOrphans>();
                         services.AddSingleton<MempoolManager>();
+                        services.AddSingleton<IPooledTransaction, MempoolManager>();
                         services.AddSingleton<MempoolBehavior>();
                         services.AddSingleton<MempoolSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();

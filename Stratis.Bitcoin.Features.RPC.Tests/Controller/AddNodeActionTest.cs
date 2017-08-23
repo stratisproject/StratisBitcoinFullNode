@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CanCall()
         {
-            string dir = AssureEmptyDir("Stratis.Bitcoin.Tests/TestData/AddNodeActionTest/CanCall");
+            string dir = AssureEmptyDir("Stratis.Bitcoin.Features.RPC.Tests/TestData/AddNodeActionTest/CanCall");
             IFullNode fullNode = this.BuildServicedNode(dir);
             ConnectionManagerController controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
 

@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
         public ConsensusActionTests()
         {
-            string dir = "Stratis.Bitcoin.Tests/TestData/ConsensusActionTests";
+            string dir = "Stratis.Bitcoin.Features.RPC.Tests/TestData/ConsensusActionTests";
             this.fullNode = this.BuildServicedNode(dir);
             this.controller = this.fullNode.Services.ServiceProvider.GetService<ConsensusController>();
         }
