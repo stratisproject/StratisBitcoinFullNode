@@ -38,9 +38,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
-        /// <summary>Time in ticks it took the database to perform the insert operation.</summary>
+        /// <summary>Time in ticks it took the database to perform insert operations.</summary>
         private long insertTime;
-        /// <summary>Time it took the database to perform the insert operation.</summary>
+        /// <summary>Time it took the database to perform insert operations.</summary>
         public TimeSpan InsertTime
         {
             get
@@ -49,9 +49,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
-        /// <summary>Time in ticks it took the database to perform a query operation.</summary>
+        /// <summary>Time in ticks it took the database to perform query operations.</summary>
         private long queryTime;
-        /// <summary>Time it took the database to perform a query operation.</summary>
+        /// <summary>Time it took the database to perform query operations.</summary>
         public TimeSpan QueryTime
         {
             get
@@ -75,21 +75,37 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return this.Snapshot().ToString();
         }
 
+        /// <summary>
+        /// Adds sample for database insert operation to the performance counter.
+        /// </summary>
+        /// <param name="count">Time in ticks it took the database to perform the insert operation.</param>
         public void AddInsertTime(long count)
         {
             Interlocked.Add(ref this.insertTime, count);
         }
 
+        /// <summary>
+        /// Increases the number of inserted entities in the performance counter.
+        /// </summary>
+        /// <param name="count">Number of newly inserted entities to add.</param>
         public void AddInsertedEntities(long count)
         {
             Interlocked.Add(ref this.insertedEntities, count);
         }
 
+        /// <summary>
+        /// Adds sample for database query operation to the performance counter.
+        /// </summary>
+        /// <param name="count">Time in ticks it took the database to perform the query operation.</param>
         public void AddQueryTime(long count)
         {
             Interlocked.Add(ref this.queryTime, count);
         }
 
+        /// <summary>
+        /// Increases the number of queried entities in the performance counter.
+        /// </summary>
+        /// <param name="count">Number of newly queried entities to add.</param>
         public void AddQueriedEntities(long count)
         {
             Interlocked.Add(ref this.queriedEntities, count);
@@ -105,6 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 Start = this.Start,
                 // TODO: Change to IDateTimeProvider.
+                // TODO: Would it not be better for these two guys to be part of the constructor? Either implicitly or explicitly.
                 Taken = DateTime.UtcNow
             };
             return snap;
@@ -116,24 +133,41 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// </summary>
     public class BackendPerformanceSnapshot
     {
+        /// <summary>Number of queried entities from the database.</summary>
         private readonly long totalQueriedEntities;
+        /// <summary>Number of queried entities from the database.</summary>
         public long TotalQueriedEntities { get { return this.totalQueriedEntities; } }
 
+        /// <summary>Time in ticks it took the database to perform query operations.</summary>
         private readonly long totalQueryTime;
+        /// <summary>Time it took the database to perform query operations.</summary>
         public TimeSpan TotalQueryTime { get { return TimeSpan.FromTicks(this.totalQueryTime); } }
 
+        /// <summary>Time in ticks it took the database to perform insert operations.</summary>
         private readonly long totalInsertTime;
+        /// <summary>Time it took the database to perform insert operations.</summary>
         public TimeSpan TotalInsertTime { get { return TimeSpan.FromTicks(this.totalInsertTime); } }
 
+        /// <summary>Number of entities inserted to the database.</summary>
         readonly long totalInsertedEntities;
+        /// <summary>Number of entities inserted to the database.</summary>
         public long TotalInsertedEntities { get { return this.totalInsertedEntities; } }
 
+        /// <summary>UTC timestamp when the snapshotted performance counter was created.</summary>
         // TODO: Change to IDateTimeProvider.
         public DateTime Start { get; set; }
 
+        /// <summary>UTC timestamp when the snapshot was taken.</summary>
         // TODO: Change to IDateTimeProvider.
         public DateTime Taken { get; set; }
 
+        /// <summary>
+        /// Initializes the instance of the object.
+        /// </summary>
+        /// <param name="insertedEntities">Number of entities inserted to the database.</param>
+        /// <param name="insertTime">Time in ticks it took the database to perform insert operations.</param>
+        /// <param name="queriedEntities">Number of queried entities from the database.</param>
+        /// <param name="queryTime">Time it took the database to perform query operations.</param>
         public BackendPerformanceSnapshot(long insertedEntities, long insertTime, long queriedEntities, long queryTime)
         {
             this.totalInsertedEntities = insertedEntities;
@@ -142,6 +176,17 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.totalQueriedEntities = queriedEntities;
         }
 
+        /// <summary>
+        /// Creates a snapshot based on difference of two performance counter snapshots.
+        /// <para>
+        /// This is used to obtain statistic information about performance of the backend 
+        /// during certain period.</para>
+        /// </summary>
+        /// <param name="end">Newer performance counter snapshot.</param>
+        /// <param name="start">Older performance counter snapshot.</param>
+        /// <returns>Snapshot of the difference between the two performance counter snapshots.</returns>
+        /// <remarks>The two snapshot should be taken from a single performance counter.
+        /// Otherwise the start times of the snapshots will be different, which is not allowed.</remarks>
         public static BackendPerformanceSnapshot operator -(BackendPerformanceSnapshot end, BackendPerformanceSnapshot start)
         {
             if (end.Start != start.Start)
@@ -163,6 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return snapshot;
         }
 
+        /// <summary>Time span between the creation of the performance counter and before the creation of its snapshot.</summary>
         public TimeSpan Elapsed
         {
             get
@@ -171,6 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
