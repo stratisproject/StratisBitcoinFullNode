@@ -139,19 +139,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const ulong MempoolDumpVersion = 0;
 
         /// <summary>The default filename used for memory pool persistence.</summary>
-        public const string defaultFilename = "mempool.dat";
+        public const string DefaultFilename = "mempool.dat";
 
         /// <summary>Data directory to save persisted memory pool to.</summary>
         private readonly string dataDir;
 
-        /// <summary>Logger for the memory pool persistence object.</summary>
+        /// <summary>Instance logger for the memory pool persistence object.</summary>
         private readonly ILogger mempoolLogger;
 
         /// <summary>
         /// Constructs an instance of an object for persisting memory pool transactions.
         /// </summary>
         /// <param name="settings">Node settings used for getting the data directory.</param>
-        /// <param name="loggerFactory">Logger factory for creating logger for this object.</param>
+        /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolPersistence(NodeSettings settings, ILoggerFactory loggerFactory)
         {
             this.dataDir = settings?.DataDir;
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public MemPoolSaveResult Save(TxMempool memPool, string fileName = null)
         {
-            fileName = fileName ?? defaultFilename;
+            fileName = fileName ?? DefaultFilename;
             IEnumerable<MempoolPersistenceEntry> toSave = memPool.MapTx.Values.ToArray().Select(tx => MempoolPersistenceEntry.FromTxMempoolEntry(tx));
             return this.Save(toSave, fileName);
         }
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public IEnumerable<MempoolPersistenceEntry> Load(string fileName = null)
         {
-            fileName = fileName ?? defaultFilename;
+            fileName = fileName ?? DefaultFilename;
             Guard.NotEmpty(this.dataDir, nameof(this.dataDir));
             Guard.NotEmpty(fileName, nameof(fileName));
 

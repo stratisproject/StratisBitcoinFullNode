@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Settings from the node.</summary>
         private readonly NodeSettings nodeArgs;
 
-        /// <summary>Logger for the memory pool.</summary>
+        /// <summary>Instance logger for the memory pool.</summary>
         private readonly ILogger mempoolLogger;
 
         /// <summary>Dictionary of orphan transactions keyed by transaction hash.</summary>
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="nodeArgs">Settings from the node.</param>
-        /// <param name="loggerFactory">Factory for creating logger for this object.</param>
+        /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
             MempoolAsyncLock mempoolLock, 
             TxMempool memPool, 
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //CInv _inv(MSG_TX | nFetchFlags, txin.prevout.hash);
                 //behavior.AttachedNode.Behaviors.Find<RelayBehaviour>() pfrom->AddInventoryKnown(_inv);
                 //if (!await this.AlreadyHave(txin.PrevOut.Hash))
-                //	from. pfrom->AskFor(_inv);
+                //  from. pfrom->AskFor(_inv);
             }
             var ret = await this.AddOrphanTx(from.PeerVersion.Nonce, tx);
 

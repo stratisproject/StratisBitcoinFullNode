@@ -28,7 +28,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public long FeeDelta { get; set; }
     };
 
-
     /// <summary>
     /// Memory pool of pending transactions.
     /// </summary>
@@ -170,7 +169,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>All tx witness hashes/entries in mapTx, in random order.</summary>
         private Dictionary<TxMempoolEntry, uint256> vTxHashes;
 
-        /// <summary>Logger for the memory pool.</summary>
+        /// <summary>Instance logger for the memory pool.</summary>
         private readonly ILogger logger;
 
         /// <summary>
@@ -179,7 +178,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="minReasonableRelayFee">The fee rate for a minimum reasonable relay fee.</param>
         /// <param name="dateTimeProvider">The data and time provider for accessing current date and time.</param>
         /// <param name="blockPolicyEstimator">The block policy estimator object.</param>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
+        /// <param name="loggerFactory">Factory for creating instance logger.</param>
         public TxMempool(FeeRate minReasonableRelayFee, IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory)
         {
             this.MapTx = new IndexedTransactionSet();
@@ -433,7 +432,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="it">Memory pool entry.</param>
         /// <param name="setAncestors">Transaction ancestors.</param>
-        void UpdateEntryForAncestors(TxMempoolEntry it, SetEntries setAncestors)
+        private void UpdateEntryForAncestors(TxMempoolEntry it, SetEntries setAncestors)
         {
             long updateCount = setAncestors.Count;
             long updateSize = 0;
@@ -777,10 +776,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //vTxHashes[it].second->vTxHashesIdx = it->vTxHashesIdx;
                 //vTxHashes.pop_back();
                 //if (vTxHashes.size() * 2 < vTxHashes.capacity())
-                //	vTxHashes.shrink_to_fit();
+                //  vTxHashes.shrink_to_fit();
             }
             //else
-            //	vTxHashes.clear();
+            //  vTxHashes.clear();
 
             this.totalTxSize -= it.GetTxSize();
             this.cachedInnerUsage -= it.DynamicMemoryUsage();
@@ -1098,7 +1097,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
 
-            double ret =  Math.Max(this.rollingMinimumFeeRate, this.minReasonableRelayFee.FeePerK.Satoshi);
+            double ret = Math.Max(this.rollingMinimumFeeRate, this.minReasonableRelayFee.FeePerK.Satoshi);
             return new FeeRate(new Money((int)ret));
         }
 
@@ -1298,7 +1297,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 /// </summary>
                 /// <param name="a">Memory pool entry.</param>
                 /// <returns>Whether to use descendant score.</returns>
-                bool UseDescendantScore(TxMempoolEntry a)
+                private bool UseDescendantScore(TxMempoolEntry a)
                 {
                     double f1 = (double)a.ModifiedFee * a.SizeWithDescendants;
                     double f2 = (double)a.ModFeesWithDescendants.Satoshi * a.GetTxSize();

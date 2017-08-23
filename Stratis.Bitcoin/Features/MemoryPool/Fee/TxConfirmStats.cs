@@ -11,11 +11,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
     /// </summary>
     public class TxConfirmStats
     {
-        /// <summary>Logger for logging messages for this object.</summary>
+        /// <summary>Instance logger for logging messages.</summary>
         private readonly ILogger logger;
 
         /// <summary>
-        /// Sum the total feerate of all tx's in each bucket.
+        /// Moving average of total fee rate of all transactions in each bucket.
         /// </summary>
         /// <remarks>
         /// Track the historical moving average of this total over blocks.
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <summary>
         /// Constructs an instance of the transaction confirmation stats object.
         /// </summary>
-        /// <param name="logger">Logger to use for message logging.</param>
+        /// <param name="logger">Instance logger to use for message logging.</param>
         public TxConfirmStats(ILogger logger)
         {
             this.logger = logger;
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 
         /// <summary>
         /// Update our estimates by decaying our historical moving average and updating
-        //	with the data gathered from the current block. 
+        /// with the data gathered from the current block.
         /// </summary>
         public void UpdateMovingAverages()
         {

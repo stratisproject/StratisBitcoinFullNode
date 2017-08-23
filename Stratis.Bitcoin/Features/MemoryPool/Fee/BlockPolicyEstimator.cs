@@ -177,8 +177,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.feeStats.UpdateMovingAverages();
 
             // TODO: this makes too  much noise right now, put it back when logging is can be switched on by categories (and also consider disabling during IBD)
-            //Logging.Logs.EstimateFee.LogInformation(
-            //	$"Blockpolicy after updating estimates for {countedTxs} of {entries.Count} txs in block, since last block {trackedTxs} of {trackedTxs + untrackedTxs} tracked, new mempool map size {mapMemPoolTxs.Count}");
+            // Logging.Logs.EstimateFee.LogInformation(
+            // $"Blockpolicy after updating estimates for {countedTxs} of {entries.Count} txs in block, since last block {trackedTxs} of {trackedTxs + untrackedTxs} tracked, new mempool map size {mapMemPoolTxs.Count}");
 
             this.trackedTxs = 0;
             this.untrackedTxs = 0;
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// Remove a transaction from the mempool tracking stats.
         /// </summary>
         /// <param name="hash">Transaction hash.</param>
-        /// <returns>Whether successfully removed transaction.</returns>
+        /// <returns>Whether the transaction was successfully removed.</returns>
         /// <remarks>
         /// This function is called from TxMemPool.RemoveUnchecked to ensure
         /// txs removed from the mempool for any reason are no longer
@@ -354,8 +354,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// Return an estimate of the priority.
         /// </summary>
         /// <param name="confTarget">The desired number of confirmations to be included in a block.</param>
-        /// <returns>Estiamte of the priority.</returns>
-        /// <remarks>TODO: Implement priroity estimation</remarks>
+        /// <returns>Estimate of the priority.</returns>
+        /// <remarks>TODO: Implement priority estimation</remarks>
         public double EstimatePriority(int confTarget)
         {
             return -1;
@@ -371,7 +371,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         public double EstimateSmartPriority(int confTarget, TxMempool pool, out int answerFoundAtTarget)
         {
             answerFoundAtTarget = confTarget;
-
 
             // If mempool is limiting txs, no priority txs are allowed
             Money minPoolFee = pool.GetMinFee(this.nodeArgs.Mempool.MaxMempool * 1000000).FeePerK;

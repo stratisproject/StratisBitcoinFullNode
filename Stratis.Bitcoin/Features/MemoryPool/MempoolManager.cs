@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
         private IMempoolPersistence mempoolPersistence;
 
-        /// <summary>Memory pool manager logger.</summary>
+        /// <summary>Instance logger for memory pool manager.</summary>
         private readonly ILogger mempoolLogger;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="nodeArgs">Settings from the node.</param>
         /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
-        /// <param name="loggerFactory">Logger factory for creating logger.</param>
+        /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolManager(
             MempoolAsyncLock mempoolLock, 
             TxMempool memPool,
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public Task RemoveForBlock(Block block, int blockHeight)
         {
             //if (this.IsInitialBlockDownload)
-            //	return Task.CompletedTask;
+            //  return Task.CompletedTask;
 
             return this.MempoolLock.WriteAsync(() =>
             {
