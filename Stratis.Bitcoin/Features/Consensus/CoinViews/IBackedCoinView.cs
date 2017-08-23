@@ -2,9 +2,6 @@
 {
     public interface IBackedCoinView
     {
-        CoinView Inner
-        {
-            get;
-        }
+        CoinView Inner { get; }
     }
 }

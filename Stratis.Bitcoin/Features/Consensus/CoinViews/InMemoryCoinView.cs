@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 if (this.blockHash != null && oldBlockHash != this.blockHash)
                     return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
+
                 this.blockHash = nextBlockHash;
                 foreach (var unspent in unspentOutputs)
                 {
@@ -57,6 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         existing = unspent.Clone();
                         this.unspents.Add(unspent.TransactionId, existing);
                     }
+
                     if (existing.IsPrunable)
                         this.unspents.Remove(unspent.TransactionId);
                 }
