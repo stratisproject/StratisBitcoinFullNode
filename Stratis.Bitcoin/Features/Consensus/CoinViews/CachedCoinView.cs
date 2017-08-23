@@ -18,31 +18,48 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             public TxOut[] OriginalOutputs;
         }
 
+        /// <summary>
+        /// Hashes of transactions that have been put into multiple blocks before fully spent.
+        /// <para>
+        /// Historically, these two transactions violated rules that are currently applied 
+        /// in Bitcoin consensus. This was only possible for coinbase transactions when the miner 
+        /// used the same target address to receive the reward.
+        /// </para>
+        /// <para>
+        /// BIP 0030 and BIP 0034 were then introduced to limit such behavior in the future.
+        /// </para>
+        /// </summary>
+        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki"/>
+        /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki"/>
         private static readonly uint256[] duplicateTransactions = new[] 
         {
             new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"),
             new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")
         };
 
-        private const int CacheMaxItemsDefault = 100000;
+        /// <summary>Default maximum number of transactions in the cache.</summary>
+        public const int CacheMaxItemsDefault = 100000;
+
+        /// <summary>Maximum number of transactions in the cache.</summary>
+        public int MaxItems { get; set; }
+
+        /// <summary>Statistics of hits and misses in the cache.</summary>
+        public CachePerformanceCounter PerformanceCounter { get; set; }
+
         private readonly ReaderWriterLock lockobj;
-        private readonly Dictionary<uint256, CacheItem> unspents;
         private uint256 blockHash;
         private uint256 innerBlockHash;
 
         private readonly CoinView inner;
         public CoinView Inner { get { return this.inner; } }
 
-        private Task flushingTask = Task.CompletedTask;
-        private Task rewindingTask = Task.CompletedTask;
-
         private readonly StakeChainStore stakeChainStore;
 
+        private readonly Dictionary<uint256, CacheItem> unspents;
         public int CacheEntryCount { get { return this.unspents.Count; } }
 
-        public int MaxItems { get; set; }
-
-        public CachePerformanceCounter PerformanceCounter { get; set; }
+        private Task flushingTask = Task.CompletedTask;
+        private Task rewindingTask = Task.CompletedTask;
 
         public CachedCoinView(DBreezeCoinView inner, StakeChainStore stakeChainStore = null) :
             this(stakeChainStore)
