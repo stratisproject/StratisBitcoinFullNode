@@ -15,7 +15,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Tests.Logging;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC
+namespace Stratis.Bitcoin.Features.RPC.Tests
 {
 	public class RPCMiddlewareTest : LogsTestBase
 	{

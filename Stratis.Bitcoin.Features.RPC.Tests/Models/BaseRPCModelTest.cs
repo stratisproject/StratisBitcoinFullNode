@@ -6,7 +6,7 @@ using System.IO;
 using System.Text;
 using Stratis.Bitcoin.Features.RPC;
 
-namespace Stratis.Bitcoin.Tests.RPC.Models
+namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 {
     public class BaseRPCModelTest
     {

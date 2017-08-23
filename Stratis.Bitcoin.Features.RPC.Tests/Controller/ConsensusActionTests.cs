@@ -1,14 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using Stratis.Bitcoin.Builder;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC.Controller
+namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class ConsensusActionTests : BaseRPCControllerTest
     {
@@ -17,7 +12,7 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
 
         public ConsensusActionTests()
         {
-            string dir = "Stratis.Bitcoin.Tests/TestData/ConsensusActionTests";
+            string dir = "Stratis.Bitcoin.Features.RPC.Tests/TestData/ConsensusActionTests";
             this.fullNode = this.BuildServicedNode(dir);
             this.controller = this.fullNode.Services.ServiceProvider.GetService<ConsensusController>();
         }

@@ -219,7 +219,8 @@ namespace Stratis.Bitcoin.Tests.Builder
                 .UseConsensus()
                 .UseBlockStore()
                 .UseMempool()
-                .AddRPC()
+                // TODO: Re-factor by moving to Stratis.Bitcoin.Features.RPC.Tests or Stratis.Bitcoin.IntegrationTests
+                //.AddRPC()
                 .Build();
 
             IServiceProvider serviceProvider = fullNode.Services.ServiceProvider;
