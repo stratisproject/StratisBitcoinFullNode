@@ -5,81 +5,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
-    public class BackendPerformanceSnapshot
-    {
-        private readonly long totalQueriedEntities;
-        public long TotalQueriedEntities { get { return this.totalQueriedEntities; } }
-
-        private readonly long totalQueryTime;
-        public TimeSpan TotalQueryTime { get { return TimeSpan.FromTicks(this.totalQueryTime); } }
-
-        private readonly long totalInsertTime;
-        public TimeSpan TotalInsertTime { get { return TimeSpan.FromTicks(this.totalInsertTime); } }
-
-        readonly long totalInsertedEntities;
-        public long TotalInsertedEntities { get { return this.totalInsertedEntities; } }
-
-        // TODO: Change to IDateTimeProvider.
-        public DateTime Start { get; set; }
-
-        // TODO: Change to IDateTimeProvider.
-        public DateTime Taken { get; set; }
-
-        public BackendPerformanceSnapshot(long insertedEntities, long insertTime, long queriedEntities, long queryTime)
-        {
-            this.totalInsertedEntities = insertedEntities;
-            this.totalInsertTime = insertTime;
-            this.totalQueryTime = queryTime;
-            this.totalQueriedEntities = queriedEntities;
-        }
-
-        public static BackendPerformanceSnapshot operator -(BackendPerformanceSnapshot end, BackendPerformanceSnapshot start)
-        {
-            if (end.Start != start.Start)
-                throw new InvalidOperationException("Performance snapshot should be taken from the same point of time");
-
-            if (end.Taken < start.Taken)
-                throw new InvalidOperationException("The difference of snapshot can't be negative");
-
-            long insertedEntities = end.totalInsertedEntities - start.totalInsertedEntities;
-            long insertTime = end.totalInsertTime - start.totalInsertTime;
-            long queriedEntities = end.totalQueriedEntities - start.totalQueriedEntities;
-            long queryTime = end.totalQueryTime - start.totalQueryTime;
-            var snapshot = new BackendPerformanceSnapshot(insertedEntities, insertTime, queriedEntities, queryTime)
-            {
-                Start = start.Taken,
-                Taken = end.Taken
-            };
-
-            return snapshot;
-        }
-
-        public TimeSpan Elapsed
-        {
-            get
-            {
-                return this.Taken - this.Start;
-            }
-        }
-
-        public override string ToString()
-        {
-            StringBuilder builder = new StringBuilder();
-            if (this.TotalInsertedEntities > 0)
-                builder.AppendLine("Insert speed:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalInsertTime.TotalMilliseconds / this.TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
-
-            builder.AppendLine("Insert time:".PadRight(LoggingConfiguration.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalInsertTime));
-            builder.AppendLine("Inserted UTXO:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalInsertedEntities);
-
-            if (this.TotalQueriedEntities > 0)
-                builder.AppendLine("Query speed:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalQueryTime.TotalMilliseconds / this.TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
-
-            builder.AppendLine("Query time:".PadRight(LoggingConfiguration.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalQueryTime));
-            builder.AppendLine("Queried UTXO:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalQueriedEntities);
-            return builder.ToString();
-        }
-    }
-
     public class BackendPerformanceCounter
     {
         // TODO: Change to IDateTimeProvider.
@@ -160,6 +85,81 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 Taken = DateTime.UtcNow
             };
             return snap;
+        }
+    }
+
+    public class BackendPerformanceSnapshot
+    {
+        private readonly long totalQueriedEntities;
+        public long TotalQueriedEntities { get { return this.totalQueriedEntities; } }
+
+        private readonly long totalQueryTime;
+        public TimeSpan TotalQueryTime { get { return TimeSpan.FromTicks(this.totalQueryTime); } }
+
+        private readonly long totalInsertTime;
+        public TimeSpan TotalInsertTime { get { return TimeSpan.FromTicks(this.totalInsertTime); } }
+
+        readonly long totalInsertedEntities;
+        public long TotalInsertedEntities { get { return this.totalInsertedEntities; } }
+
+        // TODO: Change to IDateTimeProvider.
+        public DateTime Start { get; set; }
+
+        // TODO: Change to IDateTimeProvider.
+        public DateTime Taken { get; set; }
+
+        public BackendPerformanceSnapshot(long insertedEntities, long insertTime, long queriedEntities, long queryTime)
+        {
+            this.totalInsertedEntities = insertedEntities;
+            this.totalInsertTime = insertTime;
+            this.totalQueryTime = queryTime;
+            this.totalQueriedEntities = queriedEntities;
+        }
+
+        public static BackendPerformanceSnapshot operator -(BackendPerformanceSnapshot end, BackendPerformanceSnapshot start)
+        {
+            if (end.Start != start.Start)
+                throw new InvalidOperationException("Performance snapshot should be taken from the same point of time");
+
+            if (end.Taken < start.Taken)
+                throw new InvalidOperationException("The difference of snapshot can't be negative");
+
+            long insertedEntities = end.totalInsertedEntities - start.totalInsertedEntities;
+            long insertTime = end.totalInsertTime - start.totalInsertTime;
+            long queriedEntities = end.totalQueriedEntities - start.totalQueriedEntities;
+            long queryTime = end.totalQueryTime - start.totalQueryTime;
+            var snapshot = new BackendPerformanceSnapshot(insertedEntities, insertTime, queriedEntities, queryTime)
+            {
+                Start = start.Taken,
+                Taken = end.Taken
+            };
+
+            return snapshot;
+        }
+
+        public TimeSpan Elapsed
+        {
+            get
+            {
+                return this.Taken - this.Start;
+            }
+        }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            if (this.TotalInsertedEntities > 0)
+                builder.AppendLine("Insert speed:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalInsertTime.TotalMilliseconds / this.TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
+
+            builder.AppendLine("Insert time:".PadRight(LoggingConfiguration.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalInsertTime));
+            builder.AppendLine("Inserted UTXO:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalInsertedEntities);
+
+            if (this.TotalQueriedEntities > 0)
+                builder.AppendLine("Query speed:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalQueryTime.TotalMilliseconds / this.TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
+
+            builder.AppendLine("Query time:".PadRight(LoggingConfiguration.ColumnLength) + ConsensusPerformanceSnapshot.ToTimespan(this.TotalQueryTime));
+            builder.AppendLine("Queried UTXO:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalQueriedEntities);
+            return builder.ToString();
         }
     }
 }
