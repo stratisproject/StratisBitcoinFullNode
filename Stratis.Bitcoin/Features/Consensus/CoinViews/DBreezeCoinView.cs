@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     if (rewindData != null)
                     {
                         int nextRewindIndex = this.GetRewindIndex() + 1;
-                        this.session.Transaction.Insert<int, RewindData>("Rewind", nextRewindIndex, rewindData);
+                        this.session.Transaction.Insert("Rewind", nextRewindIndex, rewindData);
                     }
 
                     insertedEntities += all.Count;

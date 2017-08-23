@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetBlockHashAsync().ConfigureAwait(false);
 
-            Task<uint256> rewindinginner = null;
+            Task<uint256> rewindingInner = null;
             using (this.lockobj.LockWrite())
             {
                 this.WaitOngoingTasks();
@@ -278,12 +278,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
                 else
                 {
-                    rewindinginner = this.inner.Rewind();
-                    this.rewindingTask = rewindinginner;
+                    rewindingInner = this.inner.Rewind();
+                    this.rewindingTask = rewindingInner;
                 }
             }
 
-            uint256 hash = await rewindinginner.ConfigureAwait(false);
+            uint256 hash = await rewindingInner.ConfigureAwait(false);
             using (this.lockobj.LockWrite())
             {
                 this.innerBlockHash = hash;
