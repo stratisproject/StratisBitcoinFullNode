@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
-        /// <summary>The amount blocks that can be stored in pending storage before we stop processing them.</summary>
+        /// <summary>Number of blocks that can be stored in pending storage before we stop processing them.</summary>
         internal int PendingStorageBatchThreshold = 5;
 
         /// <summary>The highest stored block in the repository.</summary>

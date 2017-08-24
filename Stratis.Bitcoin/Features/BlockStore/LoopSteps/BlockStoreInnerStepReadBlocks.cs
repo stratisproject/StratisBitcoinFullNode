@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// push the blocks in the context's Store to the repository.
     /// </para> 
     /// <para>
-    /// When the download stack is empty return a Break() result causing the <see cref="BlockStoreLoop"/> to
+    /// When the download stack is empty return a <see cref="InnerStepResult.Stop"/> result causing the <see cref="BlockStoreLoop"/> to
     /// start again.
     /// </para>
     /// <para>
@@ -51,6 +51,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             BlockPuller.DownloadedBlock downloadedBlock;
 
             ChainedBlock nextBlock = context.DownloadStack.Peek();
+
             if (context.BlockStoreLoop.BlockPuller.TryGetBlock(nextBlock, out downloadedBlock))
             {
                 this.logger.LogTrace("Puller provided block '{0}/{1}', length {2}.", nextBlock.HashBlock, nextBlock.Height, downloadedBlock.Length);

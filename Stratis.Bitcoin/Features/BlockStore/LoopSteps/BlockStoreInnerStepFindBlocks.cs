@@ -7,7 +7,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Find blocks to download by asking the BlockPuller.
     /// <para>
-    /// Find blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> contains 10 blocks.
+    /// Find blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> contains 
+    /// <see cref="BlockStoreInnerStepContext.DownloadStackThreshold"/> blocks.
     /// </para>
     /// <para>
     /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
@@ -55,6 +56,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (context.NextChainedBlock == null)
                 return true;
 
+            if (context.DownloadStack.Count >= BlockStoreInnerStepContext.DownloadStackThreshold)
+                return true;
+
             if (context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock))
                 return true;
 
@@ -65,9 +69,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return true;
 
             if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
-                return true;
-
-            if (context.DownloadStack.Count >= BlockStoreInnerStepContext.DownloadStackThreshold)
                 return true;
 
             return false;

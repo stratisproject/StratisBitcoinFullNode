@@ -17,10 +17,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </list>
     /// </para> 
     /// <para>
-    /// After a "Stop" condition is found the AskBlocksTask will be removed from
+    /// After a "Stop" condition is found the <see cref="BlockStoreInnerStepFindBlocks"/> will be removed from
     /// <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the 
     /// <see cref="BlockStoreInnerStepReadBlocks"/> task will continue to execute 
-    /// until the DownloadStack is empty.
+    /// until the <see cref="BlockStoreInnerStepContext.DownloadStack"/> is empty.
     /// </para>   
     /// </summary>
     internal sealed class DownloadBlockStep : BlockStoreLoopStep
