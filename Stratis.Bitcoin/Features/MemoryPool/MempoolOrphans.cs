@@ -17,8 +17,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolOrphans
     {
-        #region Fields
-
         /// <summary>Expiration time for orphan transactions in seconds.</summary>
         private const long OrphanTxExpireTime = 20 * 60;
 
@@ -49,7 +47,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Settings from the node.</summary>
         private readonly NodeSettings nodeArgs;
 
-        /// <summary>Logger for the memory pool.</summary>
+        /// <summary>Instance logger for the memory pool.</summary>
         private readonly ILogger mempoolLogger;
 
         /// <summary>Dictionary of orphan transactions keyed by transaction hash.</summary>
@@ -70,10 +68,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Location on chain when rejects are validated.</summary>
         private uint256 hashRecentRejectsChainTip;
 
-        #endregion
-
-        #region Constructors
-
         /// <summary>
         /// Constructs a memory pool orphan manager object.
         /// </summary>
@@ -86,7 +80,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="nodeArgs">Settings from the node.</param>
-        /// <param name="loggerFactory">Factory for creating logger for this object.</param>
+        /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
             MempoolAsyncLock mempoolLock, 
             TxMempool memPool, 
@@ -116,19 +110,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        #endregion
-
-        #region Properties
-
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
         public MempoolAsyncLock MempoolLock { get; }
 
         /// <summary>Memory pool validator for validating transactions.</summary>
         public IMempoolValidator Validator { get; } // public for testing
-
-        #endregion
-
-        #region Operations
 
         /// <summary>
         /// Object representing an orphan transaction information.
@@ -288,7 +274,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //CInv _inv(MSG_TX | nFetchFlags, txin.prevout.hash);
                 //behavior.AttachedNode.Behaviors.Find<RelayBehaviour>() pfrom->AddInventoryKnown(_inv);
                 //if (!await this.AlreadyHave(txin.PrevOut.Hash))
-                //	from. pfrom->AskFor(_inv);
+                //  from. pfrom->AskFor(_inv);
             }
             var ret = await this.AddOrphanTx(from.PeerVersion.Nonce, tx);
 
@@ -450,7 +436,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //return true;
             }).Unwrap();
         }
-
-        #endregion
     }
 }

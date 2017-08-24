@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Interfaces;
-using System.Threading.Tasks;
 using System.Text;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
@@ -17,8 +16,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
     public class MempoolFeature : FullNodeFeature, IFeatureStats
     {
-        #region Fields
-
         /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
 
@@ -34,12 +31,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Memory pool manager for managing external access to memory pool.</summary>
         private readonly MempoolManager mempoolManager;
 
-        /// <summary>Logger for the memory pool component.</summary>
+        /// <summary>Instance logger for the memory pool component.</summary>
         private readonly ILogger mempoolLogger;
-
-        #endregion
-
-        #region Constructors
 
         /// <summary>
         /// Constructs a memory pool feature.
@@ -49,7 +42,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolSignaled">Observes block signal notifications from signals.</param>
         /// <param name="mempoolBehavior">Memory pool node behavior for managing attached node messages.</param>
         /// <param name="mempoolManager">Memory pool manager for managing external access to memory pool.</param>
-        /// <param name="loggerFactory">Logger factory for creating loggers.</param>
+        /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolFeature(
             IConnectionManager connectionManager,
             Signals.Signals signals,
@@ -75,10 +68,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 benchLogs.AppendLine(this.mempoolManager.PerformanceCounter.ToString());
             }
         }
-
-        #endregion
-
-        #region FullNodeFeature Overrides
 
         /// <inheritdoc />
         public override void Start()
@@ -107,8 +96,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
         }
-
-        #endregion
     }
 
     /// <summary>

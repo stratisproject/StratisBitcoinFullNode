@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Tests.MemoryPool
             }
 
             Assert.True(actualStreamLength > 0);
-            Assert.Equal(MempoolPersistence.MEMPOOL_DUMP_VERSION, actualVersion);
+            Assert.Equal(MempoolPersistence.MempoolDumpVersion, actualVersion);
             Assert.Equal(numTx, actualCount);
             Assert.Equal(loaded, toSave.ToArray());
         }

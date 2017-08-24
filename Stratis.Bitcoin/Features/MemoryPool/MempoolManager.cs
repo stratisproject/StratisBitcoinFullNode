@@ -23,20 +23,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolManager: IPooledTransaction
     {
-        #region Fields
-
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
         private IMempoolPersistence mempoolPersistence;
 
-        /// <summary>Memory pool manager logger.</summary>
+        /// <summary>Instance logger for memory pool manager.</summary>
         private readonly ILogger mempoolLogger;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly TxMempool memPool;
-
-        #endregion
-
-        #region Constructors
 
         /// <summary>
         /// Constructs an instance of a memory pool manager object.
@@ -48,7 +42,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="nodeArgs">Settings from the node.</param>
         /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
-        /// <param name="loggerFactory">Logger factory for creating logger.</param>
+        /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolManager(
             MempoolAsyncLock mempoolLock, 
             TxMempool memPool,
@@ -69,20 +63,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public Task<Transaction> GetTransaction(uint256 trxid)
-        {
-            return Task.Run(() =>
-            {
-                return this.InfoAsync(trxid)?.GetAwaiter().GetResult()?.Trx;
-            });
-        }
-
-    #endregion
-
-    #region Properties
-
-    /// <summary>Lock for memory pool access.</summary>
-    public MempoolAsyncLock MempoolLock { get; }
+        /// <summary>Lock for memory pool access.</summary>
+        public MempoolAsyncLock MempoolLock { get; }
 
         /// <summary>Memory pool validator for validating transactions.</summary>
         public IMempoolValidator Validator { get; } // public for testing
@@ -99,9 +81,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Access to memory pool validator performance counter.</summary>
         public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;
 
-        #endregion
-
-        #region Operations
+        /// <inheritdoc />
+        public Task<Transaction> GetTransaction(uint256 trxid)
+        {
+            return Task.Run(() =>
+            {
+                return this.InfoAsync(trxid)?.GetAwaiter().GetResult()?.Trx;
+            });
+        }
 
         /// <summary>
         /// Gets the memory pool transactions.
@@ -248,7 +235,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public Task RemoveForBlock(Block block, int blockHeight)
         {
             //if (this.IsInitialBlockDownload)
-            //	return Task.CompletedTask;
+            //  return Task.CompletedTask;
 
             return this.MempoolLock.WriteAsync(() =>
             {
@@ -258,7 +245,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.Validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
             });
         }
-
-        #endregion
     }
 }

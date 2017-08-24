@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			{
 				Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.EstimateFee(i).FeePerK);
 				Assert.True(mpool.EstimateSmartFee(i, out answerFound).FeePerK >= mpool.GetMinFee(1).FeePerK);
-				Assert.True(mpool.EstimateSmartPriority(i, out answerFound) == BlockPolicyEstimator.INF_PRIORITY);
+				Assert.True(mpool.EstimateSmartPriority(i, out answerFound) == BlockPolicyEstimator.InfPriority);
 			}
 		}
     }
