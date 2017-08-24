@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests.BlockStore
 {
-    public class BlockRepositoryInMemory : Features.BlockStore.IBlockRepository
+    public class BlockRepositoryInMemory : Bitcoin.Features.BlockStore.IBlockRepository
     {
         private ConcurrentDictionary<uint256, Block> store;
         public uint256 BlockHash { get; private set; }

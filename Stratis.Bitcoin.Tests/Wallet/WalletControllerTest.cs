@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void RecoverWalletSuccessfullyReturnsWalletModel()
         {
-            Features.Wallet.Wallet wallet = new Features.Wallet.Wallet
+            Bitcoin.Features.Wallet.Wallet wallet = new Bitcoin.Features.Wallet.Wallet
             {
                 Name = "myWallet",
                 Network = WalletHelpers.GetNetwork("mainnet")
@@ -530,7 +530,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void LoadWalletSuccessfullyReturnsWalletModel()
         {
-            Features.Wallet.Wallet wallet = new Features.Wallet.Wallet
+            Bitcoin.Features.Wallet.Wallet wallet = new Bitcoin.Features.Wallet.Wallet
             {
                 Name = "myWallet",
                 Network = WalletHelpers.GetNetwork("mainnet")
@@ -676,7 +676,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetGeneralInfoSuccessfullyReturnsWalletGeneralInfoModel()
         {
-            Features.Wallet.Wallet wallet = new Features.Wallet.Wallet
+            Bitcoin.Features.Wallet.Wallet wallet = new Bitcoin.Features.Wallet.Wallet
             {
                 Name = "myWallet",
                 Network = WalletHelpers.GetNetwork("mainnet"),
@@ -724,7 +724,7 @@ namespace Stratis.Bitcoin.Tests.Wallet
         [Fact]
         public void GetGeneralInfoWithModelStateErrorReturnsBadRequest()
         {
-            Features.Wallet.Wallet wallet = new Features.Wallet.Wallet
+            Bitcoin.Features.Wallet.Wallet wallet = new Bitcoin.Features.Wallet.Wallet
             {
                 Name = "myWallet",
             };
