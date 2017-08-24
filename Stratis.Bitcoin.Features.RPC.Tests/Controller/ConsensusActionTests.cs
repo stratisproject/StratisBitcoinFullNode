@@ -1,14 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using Stratis.Bitcoin.Builder;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Interfaces;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC.Controller
+namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class ConsensusActionTests : BaseRPCControllerTest
     {
@@ -17,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
 
         public ConsensusActionTests()
         {
-            string dir = "Stratis.Bitcoin.Tests/TestData/ConsensusActionTests";
+            string dir = "Stratis.Bitcoin.Features.RPC.Tests/TestData/ConsensusActionTests";
             this.fullNode = this.BuildServicedNode(dir);
             this.controller = this.fullNode.Services.ServiceProvider.GetService<ConsensusController>();
         }
@@ -36,6 +32,14 @@ namespace Stratis.Bitcoin.Tests.RPC.Controller
             uint256 result = this.controller.GetBlockHash(0);
 
             Assert.Null(result);
+        }
+
+        [Fact]
+        public void CanCall_IsInitialBlockDownload()
+        {
+            var isIBDProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
+            Assert.NotNull(isIBDProvider);
+            Assert.True(isIBDProvider.IsInitialBlockDownload());       
         }
     }
 }

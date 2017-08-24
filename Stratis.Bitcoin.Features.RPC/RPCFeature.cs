@@ -5,8 +5,11 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Utilities;
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -28,7 +31,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public override void Start()
         {
             if (this.nodeSettings.RPC != null)
-            {                
+            {
                 // TODO: The web host wants to create IServiceProvider, so build (but not start) 
                 // earlier, if you want to use dependency injection elsewhere
                 this.fullNode.RPCHost = new WebHostBuilder()
@@ -90,9 +93,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 service.AddSingleton<FullNodeController>();
                 service.AddSingleton<ConnectionManagerController>();
-                service.AddSingleton<ConsensusController>();
-                service.AddSingleton<MempoolController>();
-           });
+            });
 
             return fullNodeBuilder;
         }

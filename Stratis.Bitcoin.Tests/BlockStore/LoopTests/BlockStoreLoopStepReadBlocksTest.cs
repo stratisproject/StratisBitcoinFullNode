@@ -1,4 +1,3 @@
-﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
@@ -12,10 +11,11 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     public sealed class BlockStoreLoopStepDownloadBlocksTest : BlockStoreLoopStepBaseTest
     {
         /// <summary>
-        /// This test executes DownloadBlockStep (DownloadBlocks() and FindBlocks() tasks)
+        /// This test executes DownloadBlockStep the <see cref="BlockStoreInnerStepFindBlocks"/> and 
+        /// <see cref="BlockStoreInnerStepReadBlocks"/> inner steps via <see cref="DownloadBlockStep"/>
         /// </summary>
         [Fact]
-        public void DownloadBlockStep_WithBlocksToFindAndDownload_PushToRepository()
+        public void BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_PushToRepository()
         {
             var blocks = CreateBlocks(10);
 
@@ -49,43 +49,11 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             }
         }
 
-        [Fact]
-        public void DownloadBlockStep_WithBlocksToFindAndDownload_EnsureNextChainedBlockIsAskedForOnStartUp()
-        {
-            var blocks = CreateBlocks(3);
-
-            using (var fluent = new FluentBlockStoreLoop())
-            {
-                // The chain has 3 blocks appended
-                var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
-
-                fluent.Create(chain);
-
-                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
-
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory, DateTimeProvider.Default).Initialize(nextChainedBlock);
-                Assert.Equal(1, context.DownloadStack.Count());
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == nextChainedBlock.HashBlock));
-
-                // Push blocks[1] to the downloaded blocks collection
-                fluent.Loop.BlockPuller.InjectBlock(blocks[1].GetHash(), new DownloadedBlock() { Length = blocks[1].GetSerializedSize(), Block = blocks[1] }, new CancellationToken());
-                Assert.Equal(1, context.BlockStoreLoop.BlockPuller.DownloadedBlocksCount);
-
-                // TryGetBlock should return NextChainedBlock
-                DownloadedBlock downloadedBlock = null;
-                context.BlockStoreLoop.BlockPuller.TryGetBlock(context.DownloadStack.Peek(), out downloadedBlock);
-
-                Assert.NotNull(downloadedBlock);
-                Assert.Equal(downloadedBlock.Block.GetHash(), nextChainedBlock.HashBlock);
-            }
-        }
-
         /// <summary>
-        /// Test only DownloadBlocks() task
+        /// Test only BlockStoreInnerStepReadBlocks() inner step
         /// </summary>
         [Fact]
-        public void DownloadBlockStep_WithBlocksToFindAndDownload_CanBreakExecutionOnStallCountReached()
+        public void BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_CanBreakExecutionOnStallCountReached()
         {
             var blocks = CreateBlocks(3);
 
@@ -105,12 +73,43 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
 
                 // Create Task Context
-                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, this.loggerFactory, DateTimeProvider.Default).Initialize(nextChainedBlock);
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                context.DownloadStack.Enqueue(nextChainedBlock);
                 context.StallCount = 10001;
 
-                var task = new BlockStoreInnerStepDownloadBlocks(this.loggerFactory);
+                var task = new BlockStoreInnerStepReadBlocks(this.loggerFactory);
                 var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
 
+                Assert.Equal(InnerStepResult.Stop, result);
+            }
+        }
+
+        [Fact]
+        public void BlockStoreInnerStepReadBlocks_CanBreakExecution_DownloadStackIsEmpty()
+        {
+            var blocks = CreateBlocks(2);
+
+            using (var fluent = new FluentBlockStoreLoop())
+            {
+                // Push 2 blocks to the repository
+                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+
+                // The chain has 2 blocks appended
+                var chain = new ConcurrentChain(blocks[0].Header);
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
+
+                // Create block store loop
+                fluent.Create(chain);
+
+                //Start finding blocks from Block[1]
+                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[1].GetHash());
+
+                // Create Task Context
+                var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
+                context.StallCount = 10001;
+
+                var task = new BlockStoreInnerStepReadBlocks(this.loggerFactory);
+                var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
                 Assert.Equal(InnerStepResult.Stop, result);
             }
         }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC
+namespace Stratis.Bitcoin.Features.RPC.Tests
 {
     public class RPCAuthorizationTest
     {

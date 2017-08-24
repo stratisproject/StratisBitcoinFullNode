@@ -7,19 +7,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// <summary>
     /// Find blocks to download by asking the BlockPuller.
     /// <para>
-    /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
-    /// there aren't blocks to download anymore, return a Break() result causing the 
-    /// BlockStoreLoop to break execution and start again.
+    /// Find blocks until <see cref="BlockStoreInnerStepContext.DownloadStack"/> contains 
+    /// <see cref="BlockStoreInnerStepContext.DownloadStackThreshold"/> blocks.
     /// </para>
     /// <para>
     /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
     /// there are still blocks to download, stop finding new blocks and only execute
-    /// the download blocks inner step.
+    /// the read blocks inner step <see cref="BlockStoreInnerStepReadBlocks"/>.
     /// </para> 
-    /// <para>
-    /// If a stop condition is not found ask the block puller for the next blocks.
-    /// If the BatchDownloadSize has been reached, also stop finding new blocks.
-    /// </para>
     /// </summary>
     public sealed class BlockStoreInnerStepFindBlocks : BlockStoreInnerStep
     {
@@ -39,43 +34,44 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
             this.logger.LogTrace("()");
-            context.GetNextBlock();
 
-            if (await ShouldStopFindingBlocks(context))
+            while (await ShouldStopFindingBlocks(context) == false)
             {
-                if (!context.DownloadStack.Any())
-                {
-                    this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
-                    return InnerStepResult.Stop;
-                }
-
-                context.StopFindingBlocks();
-            }
-            else
-            {
-                context.BlockStoreLoop.BlockPuller.AskBlock(context.NextChainedBlock);
                 context.DownloadStack.Enqueue(context.NextChainedBlock);
-
-                if (context.DownloadStack.Count == context.BlockStoreLoop.BatchDownloadSize)
-                    context.StopFindingBlocks();
+                context.GetNextBlock();
             }
+
+            context.StopFindingBlocks();
+
+            if (context.DownloadStack.Any())
+                context.BlockStoreLoop.BlockPuller.AskForMultipleBlocks(context.DownloadStack.ToArray());
 
             this.logger.LogTrace("(-):{0}", InnerStepResult.Next);
+
             return InnerStepResult.Next;
         }
 
         private async Task<bool> ShouldStopFindingBlocks(BlockStoreInnerStepContext context)
         {
-            this.logger.LogTrace("()");
+            if (context.NextChainedBlock == null)
+                return true;
 
-            bool res = (context.NextChainedBlock == null)
-                || (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock)
-                || (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
-                || (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
-                || (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock));
+            if (context.DownloadStack.Count >= BlockStoreInnerStepContext.DownloadStackThreshold)
+                return true;
 
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
+            if (context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock))
+                return true;
+
+            if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+                return true;
+
+            if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
+                return true;
+
+            if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
+                return true;
+
+            return false;
         }
     }
 }

@@ -2,20 +2,22 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.RPC.Controllers
+namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusController : BaseRPCController
     {
         private readonly ILogger logger;
+        public ConsensusLoop ConsensusLoop { get; private set; }
 
         public ConsensusController(ILoggerFactory loggerFactory, ChainState chainState = null,
             ConsensusLoop consensusLoop = null, ConcurrentChain chain = null)
-            : base(chainState: chainState, consensusLoop: consensusLoop, chain: chain)
+            : base(chainState: chainState, chain: chain)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.ConsensusLoop = consensusLoop;
         }
 
         [ActionName("getbestblockhash")]

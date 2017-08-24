@@ -2,16 +2,20 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
-using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.RPC.Controllers
+namespace Stratis.Bitcoin.Features.MemoryPool
 {
     public class MempoolController : BaseRPCController
     {
-        public MempoolController(MempoolManager mempoolManager) : base(mempoolManager: mempoolManager)
+        public MempoolManager MempoolManager { get; private set; }
+
+        public MempoolController(MempoolManager mempoolManager) : base()
         {
-            Guard.NotNull(this.MempoolManager, nameof(this.MempoolManager));
+            Guard.NotNull(mempoolManager, nameof(mempoolManager));
+
+            this.MempoolManager = mempoolManager;
         }
 
         [ActionName("getrawmempool")]

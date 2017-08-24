@@ -13,22 +13,23 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     ///<list>
     /// There are two operations:
     ///     <item>1: <see cref="BlockStoreInnerStepFindBlocks"/> to ask the block puller to download the blocks.</item>
-    ///     <item>2: <see cref="BlockStoreInnerStepDownloadBlocks"/> to persist the blocks in a batch to the <see cref="BlockRepository"/>.</item>
+    ///     <item>2: <see cref="BlockStoreInnerStepReadBlocks"/> to persist the blocks in a batch to the <see cref="BlockRepository"/>.</item>
     /// </list>
     /// </para> 
     /// <para>
-    /// After a "Stop" condition is found the FindBlocksTask will be removed from 
-    /// the <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the 
-    /// <see cref="BlockStoreInnerStepDownloadBlocks"/> will continue to execute until the <see cref="BlockStoreInnerStepContext.DownloadStack"/> is empty.
+    /// After a "Stop" condition is found the <see cref="BlockStoreInnerStepFindBlocks"/> will be removed from
+    /// <see cref="BlockStoreInnerStepContext.InnerSteps"/> and only the 
+    /// <see cref="BlockStoreInnerStepReadBlocks"/> task will continue to execute 
+    /// until the <see cref="BlockStoreInnerStepContext.DownloadStack"/> is empty.
     /// </para>   
     /// </summary>
     internal sealed class DownloadBlockStep : BlockStoreLoopStep
     {
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         internal DownloadBlockStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)
             : base(blockStoreLoop, loggerFactory)
@@ -48,9 +49,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return StepResult.Stop;
             }
 
-            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, this.loggerFactory, this.dateTimeProvider).Initialize(nextChainedBlock);
-
-            this.BlockStoreLoop.BlockPuller.AskBlock(nextChainedBlock);
+            var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory, this.dateTimeProvider);
 
             while (!token.IsCancellationRequested)
             {

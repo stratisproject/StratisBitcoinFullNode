@@ -17,7 +17,7 @@ using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.RPC
+namespace Stratis.Bitcoin.Features.RPC.Tests
 {
 	public class RPCJsonOutputFormatterTest
 	{

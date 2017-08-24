@@ -19,8 +19,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolBehavior : NodeBehavior
     {
-        #region Fields
-
         /// <summary>
         /// Average delay between trickled inventory transmissions in seconds.
         /// Blocks and whitelisted receivers bypass this, outbound peers get half this delay. 
@@ -51,7 +49,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
 
-        /// <summary>Logger for the memory pool component.</summary>
+        /// <summary>Instance logger for the memory pool component.</summary>
         private readonly ILogger logger;
 
         /// <summary>
@@ -66,10 +64,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         private readonly Dictionary<uint256, uint256> filterInventoryKnown;
 
-        #endregion
-
-        #region Constructors
-
         /// <summary>
         /// Constructs an instance of memory pool behavior.
         /// </summary>
@@ -79,7 +73,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="connectionManager">Connection manager for managing node connections.</param>
         /// <param name="chainState">Current block chain state.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
-        /// <param name="logger">Memory pool behavior logger.</param>
+        /// <param name="logger">Instance logger for memory pool behavior.</param>
         public MempoolBehavior(
             IMempoolValidator validator,
             MempoolManager manager,
@@ -124,10 +118,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
         }
 
-        #endregion
-
-        #region Properties
-
         /// <summary>Time of last memory pool request in unix time.</summary>
         public long LastMempoolReq { get; private set; }
 
@@ -157,10 +147,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
         }
 
-        #endregion
-
-        #region NodeBehavior Overrides
-
         /// <inheritdoc />
         protected override void AttachCore()
         {
@@ -178,10 +164,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return new MempoolBehavior(this.validator, this.manager, this.orphans, this.connectionManager, this.chainState, this.signals, this.logger);
         }
-
-        #endregion
-
-        #region Message Handlers
 
         /// <summary>
         /// Handler for processing incoming message from node.
@@ -247,10 +229,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return Task.CompletedTask;
         }
 
-        #endregion
-
-        #region Message Processing
-
         /// <summary>
         /// Send the memory pool payload to the attached node.
         /// Gets the transaction info from the memory pool and sends to the attached node.
@@ -266,16 +244,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             //if (!(pfrom->GetLocalServices() & NODE_BLOOM) && !pfrom->fWhitelisted)
             //{
-            //	LogPrint("net", "mempool request with bloom filters disabled, disconnect peer=%d\n", pfrom->GetId());
-            //	pfrom->fDisconnect = true;
-            //	return true;
+            //  LogPrint("net", "mempool request with bloom filters disabled, disconnect peer=%d\n", pfrom->GetId());
+            //  pfrom->fDisconnect = true;
+            //  return true;
             //}
 
             //if (connman.OutboundTargetReached(false) && !pfrom->fWhitelisted)
             //{
-            //	LogPrint("net", "mempool request with bandwidth limit reached, disconnect peer=%d\n", pfrom->GetId());
-            //	pfrom->fDisconnect = true;
-            //	return true;
+            //  LogPrint("net", "mempool request with bandwidth limit reached, disconnect peer=%d\n", pfrom->GetId());
+            //  pfrom->fDisconnect = true;
+            //  return true;
             //}
 
             List<TxMempoolInfo> vtxinfo = await this.manager.InfoAllAsync();
@@ -283,8 +261,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // TODO: implement minFeeFilter
             //{
-            //	LOCK(pto->cs_feeFilter);
-            //	filterrate = pto->minFeeFilter;
+            //  LOCK(pto->cs_feeFilter);
+            //  filterrate = pto->minFeeFilter;
             //}
 
             List<TxMempoolInfo> sends = await this.manager.MempoolLock.WriteAsync(() =>
@@ -445,10 +423,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
         }
 
-        #endregion
-
-        #region Operations
-
         /// <summary>
         /// Relays a transaction to the connected nodes.
         /// </summary>
@@ -506,7 +480,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         continue;
                     //if (filterrate && txinfo.feeRate.GetFeePerK() < filterrate) // TODO:filterrate
                     //{
-                    //	continue;
+                    //  continue;
                     //}
                     ret.Add(hash);
                 }
@@ -516,7 +490,5 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (sends.Any())
                 await this.SendAsTxInventory(this.AttachedNode, sends);
         }
-
-        #endregion
     }
 }

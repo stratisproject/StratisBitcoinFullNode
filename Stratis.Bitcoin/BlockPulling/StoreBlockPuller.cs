@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -25,14 +24,13 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Prepares and invokes download task for a single block.
+        /// Prepares and invokes a download task for multiple blocks.
         /// </summary>
-        /// <param name="downloadRequest">Description of a block to download.</param>
-        public void AskBlock(ChainedBlock downloadRequest)
+        public void AskForMultipleBlocks(ChainedBlock[] downloadRequests)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(downloadRequest), downloadRequest.HashBlock, downloadRequest.Height);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(downloadRequests), nameof(downloadRequests.Length), downloadRequests.Length);
 
-            base.AskBlocks(new ChainedBlock[] { downloadRequest });
+            base.AskBlocks(downloadRequests);
 
             this.logger.LogTrace("(-)");
         }

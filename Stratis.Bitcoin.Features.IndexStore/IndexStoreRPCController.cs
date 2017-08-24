@@ -14,12 +14,13 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
     {
         private readonly ILogger logger;
         protected IndexStoreManager IndexManager;
+        public MempoolManager MempoolManager { get; private set; }
 
         public IndexStoreRPCController(
             ILoggerFactory loggerFactory,
             IndexStoreManager indexManager,
             MempoolManager mempoolManager = null)
-            : base(mempoolManager:mempoolManager)
+            : base()
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.IndexManager = indexManager;
