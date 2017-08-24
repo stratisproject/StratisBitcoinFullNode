@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
+using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -211,6 +212,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusManager>();
                     services.AddSingleton<IBlockDownloadState, ConsensusManager>();
                     services.AddSingleton<INetworkDifficulty, ConsensusManager>();
+                    services.AddSingleton<ConsensusController>();
                 });
             });
 
@@ -241,6 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<StakeChainStore>().AddSingleton<StakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<StakeValidator>();
                         services.AddSingleton<ConsensusManager>();
+                        services.AddSingleton<ConsensusController>();
                     });
             });
 

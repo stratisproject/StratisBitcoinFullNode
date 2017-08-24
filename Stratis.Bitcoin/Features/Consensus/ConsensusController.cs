@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.RPC.Controllers
+namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusController : BaseRPCController
     {

@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            Transaction trx = await this.FullNode.NodeService<IPooledTransaction>(true).GetTransaction(uint256.Zero);
+            Transaction trx = await this.FullNode.NodeService<IPooledTransaction>(true)?.GetTransaction(trxid);
 
             if (trx == null)
             {
