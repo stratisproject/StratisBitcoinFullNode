@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Utilities.FileStorage
         /// Gets the names of files with the specified extension.
         /// </summary>
         /// <param name="fileExtension">The file extension.</param>
-        /// <returns>A list of file names with the specified extension.</returns>
+        /// <returns>A list of filenames with the specified extension.</returns>
         public IEnumerable<string> GetFilesNames(string fileExtension)
         {
             Guard.NotEmpty(fileExtension, nameof(fileExtension));
