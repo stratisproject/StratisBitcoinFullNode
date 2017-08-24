@@ -18,6 +18,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             IFullNode fullNode = this.BuildServicedNode(dir);
             FullNodeController controller = fullNode.Services.ServiceProvider.GetService<FullNodeController>();
 
+            Assert.NotNull(fullNode.NodeService<INetworkDifficulty>(true));
+
             GetInfoModel info = controller.GetInfo();
 
             uint expectedProtocolVersion = (uint)NodeSettings.Default().ProtocolVersion;
