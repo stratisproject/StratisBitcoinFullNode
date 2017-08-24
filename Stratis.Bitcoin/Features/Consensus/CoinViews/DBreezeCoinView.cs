@@ -12,14 +12,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     public class DBreezeCoinView : CoinView, IDisposable
     {
+        /// <summary>Database key under which the block hash of the coin view's current tip is stored.</summary>
         private static readonly byte[] blockHashKey = new byte[0];
         private static readonly UnspentOutputs[] noOutputs = new UnspentOutputs[0];
 
         private readonly DBreezeSingleThreadSession session;
-        private readonly Network network;
-        private uint256 blockHash;
-        private readonly BackendPerformanceCounter performanceCounter;
 
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
+        private readonly Network network;
+
+        /// <summary>Hash of the block which is currently the tip of the coinview.</summary>
+        private uint256 blockHash;
+
+        /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
+        private readonly BackendPerformanceCounter performanceCounter;
+        /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         public BackendPerformanceCounter PerformanceCounter { get { return this.performanceCounter; } }
 
         public DBreezeCoinView(Network network, DataFolder dataFolder)
@@ -60,6 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return Task.WhenAll(new[] { sync, hash });
         }
 
+        /// <inheritdoc />
         public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
         {
             return this.session.Execute(() =>
@@ -88,12 +96,17 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return this.blockHash;
         }
 
+        /// <summary>
+        /// Set's the tip of the coinview to a new block hash.
+        /// </summary>
+        /// <param name="nextBlockHash">Hash of the block to become the new tip.</param>
         private void SetBlockHash(uint256 nextBlockHash)
         {
             this.blockHash = nextBlockHash;
             this.session.Transaction.Insert<byte[], uint256>("BlockHash", blockHashKey, nextBlockHash);
         }
 
+        /// <inheritdoc />
         public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             return this.session.Execute(() =>
@@ -131,13 +144,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             unspentToOriginal.TryGetValue(coin.TransactionId, out original);
                             if (original == null)
                             {
-                                // This one did not existed before, if we rewind, delete it.
+                                // This one haven't existed before, if we rewind, delete it.
                                 rewindData.TransactionsToRemove.Add(coin.TransactionId);
                             }
                             else
                             {
                                 // We'll need to restore the original outputs.
                                 UnspentOutputs clone = coin.Clone();
+                                // TODO: Can we remove this line? before is not used anywhere and clone.UnspentCount does not seem to have side effects?
                                 int before = clone.UnspentCount;
                                 clone._Outputs = original.ToArray();
                                 rewindData.OutputsToRestore.Add(clone);
@@ -167,6 +181,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return first == null ? -1 : first.Key;
         }
 
+        /// <inheritdoc />
         public override Task<uint256> Rewind()
         {
             return this.session.Execute(() =>
