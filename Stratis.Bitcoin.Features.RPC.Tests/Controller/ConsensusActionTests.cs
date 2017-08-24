@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Interfaces;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
@@ -31,6 +32,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             uint256 result = this.controller.GetBlockHash(0);
 
             Assert.Null(result);
+        }
+
+        [Fact]
+        public void CanCall_IsInitialBlockDownload()
+        {
+            var isIBDProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
+            Assert.NotNull(isIBDProvider);
+            Assert.True(isIBDProvider.IsInitialBlockDownload());       
         }
     }
 }
