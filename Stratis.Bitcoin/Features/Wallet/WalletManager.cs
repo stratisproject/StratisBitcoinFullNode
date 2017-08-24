@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.FileStorage;
 using Transaction = NBitcoin.Transaction;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -34,12 +33,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
         private readonly NodeSettings settings;
-        private readonly DataFolder dataFolder;
         private readonly IWalletFeePolicy walletFeePolicy;
         private readonly IMempoolValidator mempoolValidator;
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
+        private readonly FileStorage<Wallet> fileStorage;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -83,11 +82,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.coinType = (CoinType) network.Consensus.CoinType;
             this.chain = chain;
             this.settings = settings;
-            this.dataFolder = dataFolder;
             this.walletFeePolicy = walletFeePolicy;
             this.mempoolValidator = mempoolValidator;
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
+            this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
@@ -96,11 +95,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Initialize()
         {
             // find wallets and load them in memory
-            foreach (var path in this.GetWalletFilesPaths())
-            {
-                this.Load(this.DeserializeWallet(path));
-            }
+            var wallets = this.fileStorage.LoadByFileExtension(WalletFileExtension);
 
+            foreach (var wallet in wallets)
+            {
+                this.Wallets.Add(wallet);
+            }
+            
             // load data in memory for faster lookups
             this.LoadKeysLookup();
 
@@ -166,11 +167,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(name, nameof(name));
 
-            var walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.{WalletFileExtension}");
-
             // load the file from the local system
-            Wallet wallet = this.DeserializeWallet(walletFilePath);
-
+            Wallet wallet = this.fileStorage.LoadByFileName($"{name}.{WalletFileExtension}");
+            
             this.Load(wallet);
             return wallet;
         }
@@ -297,6 +296,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return changeAddress;
+        }
+
+        /// <inheritdoc />
+        public (string folderPath, IEnumerable<string>) GetWalletsFiles()
+        {
+            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
         }
 
         /// <inheritdoc />
@@ -721,18 +726,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             throw new NotImplementedException();
         }
-
-        private IEnumerable<string> GetWalletFilesPaths()
-        {
-            // TODO look in user-chosen folder as well.
-            // maybe the api can maintain a list of wallet paths it knows about
-            var defaultFolderPath = this.dataFolder.WalletPath;
-
-            // create the directory if it doesn't exist
-            Directory.CreateDirectory(defaultFolderPath);
-            return Directory.EnumerateFiles(defaultFolderPath, $"*.{WalletFileExtension}", SearchOption.TopDirectoryOnly);
-        }
-
+        
         /// <inheritdoc />
         public void SaveToFile()
         {
@@ -747,8 +741,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(wallet, nameof(wallet));
 
-            var walletfile = Path.Combine(this.dataFolder.WalletPath, $"{wallet.Name}.{WalletFileExtension}");
-            File.WriteAllText(walletfile, JsonConvert.SerializeObject(wallet, Formatting.Indented));
+            this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}");
         }
 
         /// <inheritdoc />
@@ -810,10 +803,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <exception cref="System.NotSupportedException"></exception>
         private Wallet GenerateWalletFile(string password, string name, ExtKey extendedKey, DateTimeOffset? creationTime = null)
         {
-            string walletFilePath = Path.Combine(this.dataFolder.WalletPath, $"{name}.{WalletFileExtension}");
-
-            if (File.Exists(walletFilePath))
-                throw new InvalidOperationException($"Wallet already exists at {walletFilePath}");
+            if (this.fileStorage.Exists($"{name}.{WalletFileExtension}"))
+            {
+                throw new InvalidOperationException($"Wallet with name '{name}.{WalletFileExtension}' already exists.");
+            }
 
             Wallet walletFile = new Wallet
             {
@@ -826,25 +819,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             };
 
             // create a folder if none exists and persist the file
-            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(walletFilePath)));
-            File.WriteAllText(walletFilePath, JsonConvert.SerializeObject(walletFile, Formatting.Indented));
-
+            this.fileStorage.SaveToFile(walletFile, $"{name}.{WalletFileExtension}");
             return walletFile;
-        }
-
-        /// <summary>
-        /// Gets the wallet located at the specified path.
-        /// </summary>
-        /// <param name="walletFilePath">The wallet file path.</param>
-        /// <returns></returns>
-        /// <exception cref="System.IO.FileNotFoundException"></exception>
-        private Wallet DeserializeWallet(string walletFilePath)
-        {
-            if (!File.Exists(walletFilePath))
-                throw new FileNotFoundException($"No wallet file found at {walletFilePath}");
-
-            // load the file from the local system
-            return JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletFilePath));
         }
 
         /// <summary>
