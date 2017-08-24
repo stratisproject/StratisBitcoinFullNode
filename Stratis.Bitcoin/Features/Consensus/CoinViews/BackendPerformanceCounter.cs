@@ -161,6 +161,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         // TODO: Change to IDateTimeProvider.
         public DateTime Taken { get; set; }
 
+        /// <summary>Time span between the creation of the performance counter and the creation of its snapshot.</summary>
+        public TimeSpan Elapsed
+        {
+            get
+            {
+                return this.Taken - this.Start;
+            }
+        }
+
         /// <summary>
         /// Initializes the instance of the object.
         /// </summary>
@@ -185,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="end">Newer performance counter snapshot.</param>
         /// <param name="start">Older performance counter snapshot.</param>
         /// <returns>Snapshot of the difference between the two performance counter snapshots.</returns>
-        /// <remarks>The two snapshot should be taken from a single performance counter.
+        /// <remarks>The two snapshots should be taken from a single performance counter.
         /// Otherwise the start times of the snapshots will be different, which is not allowed.</remarks>
         public static BackendPerformanceSnapshot operator -(BackendPerformanceSnapshot end, BackendPerformanceSnapshot start)
         {
@@ -206,15 +215,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             };
 
             return snapshot;
-        }
-
-        /// <summary>Time span between the creation of the performance counter and before the creation of its snapshot.</summary>
-        public TimeSpan Elapsed
-        {
-            get
-            {
-                return this.Taken - this.Start;
-            }
         }
 
         /// <inheritdoc />

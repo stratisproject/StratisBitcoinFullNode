@@ -5,19 +5,29 @@ using Stratis.Bitcoin.Configuration.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
+    /// <summary>
+    /// Statistics to measure the hit rate of the cache.
+    /// </summary>
     public class CachePerformanceCounter
     {
-        /// TODO: Change to IDateTimeProvider.
+        /// <summary>UTC timestamp when the performance counter was created.</summary>
+        // TODO: Change to IDateTimeProvider.
         DateTime start;
-        /// TODO: Change to IDateTimeProvider.
+        /// <summary>UTC timestamp when the performance counter was created.</summary>
+        // TODO: Change to IDateTimeProvider.
         public DateTime Start { get { return this.start; } }
 
+        /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
         private long missCount;
+        /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
         public long MissCount { get { return this.missCount; } }
 
+        /// <summary>Number of cache queries for which the result was found in the cache.</summary>
         private long hitCount;
+        /// <summary>Number of cache queries for which the result was found in the cache.</summary>
         public long HitCount { get { return this.hitCount; } }
 
+        /// <summary>Time span since the performance counter was created.</summary>
         public TimeSpan Elapsed
         {
             get
@@ -27,49 +37,74 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
         public CachePerformanceCounter()
         {
             // TODO: Change to IDateTimeProvider.
             this.start = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Adds new sample to the number of missed cache queries.
+        /// </summary>
+        /// <param name="count">Number of missed queries to add.</param>
         public void AddMissCount(long count)
         {
             Interlocked.Add(ref this.missCount, count);
         }
 
+        /// <summary>
+        /// Adds new sample to the number of hit cache queries.
+        /// </summary>
+        /// <param name="count">Number of hit queries to add.</param>
         public void AddHitCount(long count)
         {
             Interlocked.Add(ref this.hitCount, count);
         }
 
+        /// <summary>
+        /// Creates a snapshot of the current state of the performance counter.
+        /// </summary>
+        /// <returns>Newly created snapshot.</returns>
         public CachePerformanceSnapshot Snapshot()
         {
             var snap = new CachePerformanceSnapshot(this.missCount, this.hitCount)
             {
                 Start = this.Start,
                 // TODO: Change to IDateTimeProvider.
+                // TODO: Would it not be better for these two guys to be part of the constructor? Either implicitly or explicitly.
                 Taken = DateTime.UtcNow
             };
             return snap;
         }
     }
 
+    /// <summary>
+    /// Snapshot of a state of a performance counter taken at a certain time.
+    /// </summary>
     public class CachePerformanceSnapshot
     {
+        /// <summary>Number of cache queries for which the result was found in the cache.</summary>
         private readonly long hitCount;
-        private readonly long missCount;
-
+        /// <summary>Number of cache queries for which the result was found in the cache.</summary>
         public long TotalHitCount { get { return this.hitCount; } }
 
+        /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
+        private readonly long missCount;
+        /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
         public long TotalMissCount { get { return this.missCount; } }
 
+        /// <summary>UTC timestamp when the snapshotted performance counter was created.</summary>
         // TODO: Change to IDateTimeProvider.
         public DateTime Start { get; internal set; }
 
+        /// <summary>UTC timestamp when the snapshot was taken.</summary>
         // TODO: Change to IDateTimeProvider.
         public DateTime Taken { get; internal set; }
 
+        /// <summary>Time span between the creation of the performance counter and the creation of its snapshot.</summary>
         public TimeSpan Elapsed
         {
             get
@@ -78,12 +113,28 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <summary>
+        /// Initializes the instance of the object.
+        /// </summary>
+        /// <param name="missCount">Number of cache queries for which the result was not found in the cache.</param>
+        /// <param name="hitCount">Number of cache queries for which the result was found in the cache.</param>
         public CachePerformanceSnapshot(long missCount, long hitCount)
         {
             this.missCount = missCount;
             this.hitCount = hitCount;
         }
 
+        /// <summary>
+        /// Creates a snapshot based on difference of two performance counter snapshots.
+        /// <para>
+        /// This is used to obtain statistic information about performance of the cache 
+        /// during certain period.</para>
+        /// </summary>
+        /// <param name="end">Newer performance counter snapshot.</param>
+        /// <param name="start">Older performance counter snapshot.</param>
+        /// <returns>Snapshot of the difference between the two performance counter snapshots.</returns>
+        /// <remarks>The two snapshots should be taken from a single performance counter.
+        /// Otherwise the start times of the snapshots will be different, which is not allowed.</remarks>
         public static CachePerformanceSnapshot operator -(CachePerformanceSnapshot end, CachePerformanceSnapshot start)
         {
             if (end.Start != start.Start)
@@ -101,6 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             };
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             long total = this.TotalMissCount + this.TotalHitCount;
