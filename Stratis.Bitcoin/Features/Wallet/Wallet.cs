@@ -812,14 +812,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public Money SpendableAmount(bool confirmedOnly)
         {
-            // this method only returns a UTXO that has no spending output.
-            // if a spending output exists (even if its not confirmed) this 
-            // will return as zero balance.
-
+            // This method only returns a UTXO that has no spending output.
+            // If a spending output exists (even if its not confirmed) this will return as zero balance.
             if (this.IsSpendable())
             {
-                // if the 'confirmedOnly' flag is set check 
-                // that the UTXO is confirmed.
+                // If the 'confirmedOnly' flag is set check that the UTXO is confirmed.
                 if (confirmedOnly && !this.IsConfirmed())
                 {
                     return Money.Zero;
