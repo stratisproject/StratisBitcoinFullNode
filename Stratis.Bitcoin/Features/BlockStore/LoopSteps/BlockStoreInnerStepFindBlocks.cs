@@ -1,9 +1,8 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
@@ -40,13 +39,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             var batchSize = BlockStoreInnerStepContext.DownloadStackThreshold - context.DownloadStack.Count;
             var batchList = new List<ChainedBlock>(batchSize);
-			while (batchList.Count < batchSize)
+            while (batchList.Count < batchSize)
             {
-	            if (await ShouldStopFindingBlocks(context))
-	            {
-					context.StopFindingBlocks();
-	                break;
-	            }
+                if (await this.ShouldStopFindingBlocks(context))
+                {
+                    context.StopFindingBlocks();
+                    break;
+                }
 
                 batchList.Add(context.NextChainedBlock);
                 context.DownloadStack.Enqueue(context.NextChainedBlock);
@@ -54,7 +53,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             }
 
             if (batchList.Any())
+            {
+                this.logger.LogTrace("{0} blocks send to the puller", batchList.Count);
                 context.BlockStoreLoop.BlockPuller.AskForMultipleBlocks(batchList.ToArray());
+            }
 
             this.logger.LogTrace("(-):{0}", InnerStepResult.Next);
 

@@ -33,8 +33,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private BlockPair pendingBlockPairToStore;
-
         internal ProcessPendingStorageStep(BlockStoreLoop blockStoreLoop, ILoggerFactory loggerFactory)
             : base(blockStoreLoop, loggerFactory)
         {
@@ -46,24 +44,25 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height, nameof(disposeMode), disposeMode);
 
-            if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
+            //if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
+            //{
+            //    if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold)
+            //    {
+            //        this.logger.LogTrace("(-):{0}", StepResult.Stop);
+            //        return StepResult.Stop;
+            //    }
+            //}
+
+            BlockPair pendingBlockPairToStore;
+            if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out pendingBlockPairToStore))
             {
                 this.logger.LogTrace("(-):{0}", StepResult.Next);
                 return StepResult.Next;
             }
 
-            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
-            {
-                if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold)
-                {
-                    this.logger.LogTrace("(-):{0}", StepResult.Stop);
-                    return StepResult.Stop;
-                }
-            }
-
             var pendingBlockPairsToStore = new List<BlockPair>();
-            pendingBlockPairsToStore.Add(this.pendingBlockPairToStore);
-            int pendingStorageBatchSize = this.pendingBlockPairToStore.Block.GetSerializedSize();
+            pendingBlockPairsToStore.Add(pendingBlockPairToStore);
+            int pendingStorageBatchSize = pendingBlockPairToStore.Block.GetSerializedSize();
 
             ChainedBlock lastFoundChainedBlock = nextChainedBlock;
 
@@ -72,8 +71,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 ChainedBlock inputChainedBlock = nextChainedBlock;
                 nextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(nextChainedBlock.Height + 1);
 
-                bool breakExecution = ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
-                if (!breakExecution && !this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out this.pendingBlockPairToStore))
+                bool breakExecution = this.ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
+                if (!breakExecution && !this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out pendingBlockPairToStore))
                     breakExecution = true;
 
                 if (breakExecution)
@@ -83,14 +82,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 }
                 else
                 {
-                    pendingBlockPairsToStore.Add(this.pendingBlockPairToStore);
-                    pendingStorageBatchSize += this.pendingBlockPairToStore.Block.GetSerializedSize(); // TODO: add the size to the result coming from the signaler	
+                    pendingBlockPairsToStore.Add(pendingBlockPairToStore);
+                    pendingStorageBatchSize += pendingBlockPairToStore.Block.GetSerializedSize(); // TODO: add the size to the result coming from the signaler	
                     lastFoundChainedBlock = nextChainedBlock;
                 }
 
                 if ((pendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize) || breakExecution)
                 {
-                    StepResult result = await PushPendingBlocksToRepository(pendingStorageBatchSize, pendingBlockPairsToStore, lastFoundChainedBlock, cancellationToken, breakExecution);
+                    StepResult result = await this.PushPendingBlocksToRepository(pendingStorageBatchSize, pendingBlockPairsToStore, lastFoundChainedBlock, cancellationToken, breakExecution);
                     if (result == StepResult.Stop)
                         break;
 
@@ -101,11 +100,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                         await Task.Delay(this.BlockStoreLoop.PushIntervalIBD, cancellationToken);
                 }
             }
-
-            pendingBlockPairsToStore.Clear();
-            pendingBlockPairsToStore = null;
-
-            this.pendingBlockPairToStore = null;
 
             this.logger.LogTrace("(-):{0}", StepResult.Continue);
             return StepResult.Continue;
