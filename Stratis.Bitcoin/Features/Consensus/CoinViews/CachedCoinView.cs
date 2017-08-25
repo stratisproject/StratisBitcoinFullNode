@@ -8,13 +8,27 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
+    /// <summary>
+    /// Cache layer for coinview prevents too frequent updates of the data in the underlaying storage.
+    /// </summary>
     public class CachedCoinView : CoinView, IBackedCoinView
     {
+        /// <summary>
+        /// Item of the coinview cache that holds information about the unspent outputs 
+        /// as well as the status of the item in relation to the underlaying storage.
+        /// </summary>
         private class CacheItem
         {
+            /// <summary>Information about transaction's outputs. Spent outputs are nulled.</summary>
             public UnspentOutputs UnspentOutputs;
+
+            /// <summary><c>true</c> if the unspent output information is stored in the underlaying storage, <c>false</c> otherwise.</summary>
             public bool ExistInInner;
+
+            /// <summary><c>true</c> if the information in the cache is different than the information in the underlaying storage.</summary>
             public bool IsDirty;
+
+            /// <summary>Original state of the transaction outputs before the change. This is used for rewinding to previous state.</summary>
             public TxOut[] OriginalOutputs;
         }
 
@@ -46,21 +60,44 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Statistics of hits and misses in the cache.</summary>
         public CachePerformanceCounter PerformanceCounter { get; set; }
 
+        /// <summary>Lock object to protect access to <see cref="unspents"/>, <see cref="blockHash"/>, and <see cref="innerBlockHash"/>.</summary>
         private readonly ReaderWriterLock lockobj;
+
+        /// <summary>Hash of the block headers of the tip of the coinview.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 blockHash;
+
+        /// <summary>Hash of the block headers of the tip of the underlaying coinview.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 innerBlockHash;
 
+
+        /// <summary>Coin view at one layer below this implementaiton.</summary>
         private readonly CoinView inner;
+        /// <inheritdoc />
         public CoinView Inner { get { return this.inner; } }
 
+        /// <summary>Storage of POS block information.</summary>
         private readonly StakeChainStore stakeChainStore;
 
+        /// <summary>Information about cached items mapped by transaction IDs the cached item's unspent outputs belong to.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private readonly Dictionary<uint256, CacheItem> unspents;
+
+        /// <summary>Number of items in the cache.</summary>
+        /// <remarks>The getter violates the lock contract on <see cref="unspents"/>, but the lock here is unnecessary as the <see cref="unspents"/> is marked as readonly.</remarks>
         public int CacheEntryCount { get { return this.unspents.Count; } }
 
+        /// <summary>Task that handles persisting of unsaved changes to the underlaying coinview. Used for synchronization.</summary>
         private Task flushingTask = Task.CompletedTask;
+        /// <summary>Task that handles rewinding of the the underlaying coinview. Used for synchronization.</summary>
         private Task rewindingTask = Task.CompletedTask;
 
+        /// <summary>
+        /// Initializes instance of the object based on DBreeze based coinview.
+        /// </summary>
+        /// <param name="inner">Underlaying coinview with database storage.</param>
+        /// <param name="stakeChainStore">Storage of POS block information.</param>
         public CachedCoinView(DBreezeCoinView inner, StakeChainStore stakeChainStore = null) :
             this(stakeChainStore)
         {
@@ -69,9 +106,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <summary>
+        /// Initializes instance of the object based on memory based coinview.
+        /// </summary>
+        /// <param name="inner">Underlaying coinview with memory based storage.</param>
+        /// <param name="stakeChainStore">Storage of POS block information.</param>
+        /// <remarks>
         /// This is used for testing the coinview.
         /// It allows a coin view that only has in-memory entries.
-        /// </summary>
+        /// </remarks>
         public CachedCoinView(InMemoryCoinView inner, StakeChainStore stakeChainStore = null) :
             this(stakeChainStore)
         {
@@ -79,6 +121,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.inner = inner;
         }
 
+        /// <summary>
+        /// Initializes instance of the object based.
+        /// </summary>
+        /// <param name="stakeChainStore">Storage of POS block information.</param>
         private CachedCoinView(StakeChainStore stakeChainStore = null)
         {
             this.stakeChainStore = stakeChainStore;
@@ -88,6 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.PerformanceCounter = new CachePerformanceCounter();
         }
 
+        /// <inheritdoc />
         public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
         {
             Guard.NotNull(txIds, nameof(txIds));
@@ -160,6 +207,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return result;
         }
 
+        /// <summary>
+        /// Finds all changed records in the cache and persists them to the underlaying coinview.
+        /// </summary>
         public async Task FlushAsync()
         {
             // Before flushing the coinview persist the stake store
@@ -201,6 +251,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             await this.flushingTask.ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Deletes some items from the cache to free space for new items. 
+        /// Only items that are persisted in the underlaying storage can be deleted from the cache.
+        /// </summary>
         private void Evict()
         {
             using (this.lockobj.LockWrite())
@@ -218,6 +272,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <inheritdoc />
         public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
@@ -253,10 +308,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     if (existing.UnspentOutputs.IsPrunable && !existing.ExistInInner)
                         this.unspents.Remove(unspent.TransactionId);
                 }
+
                 return Task.FromResult(true);
             }
         }
 
+        /// <inheritdoc />
         public override async Task<uint256> Rewind()
         {
             if (this.innerBlockHash == null)

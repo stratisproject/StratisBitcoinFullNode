@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// <remarks>Rewinding is not supported in this implementation.</remarks>
     public class InMemoryCoinView : CoinView
     {
-        /// <summary>Lock object to protect access to <see cref="unspents"/>.</summary>
+        /// <summary>Lock object to protect access to <see cref="unspents"/> and <see cref="blockHash"/>.</summary>
         private readonly ReaderWriterLock lockobj = new ReaderWriterLock();
 
         /// <summary>Information about unspent outputs mapped by transaction IDs the outputs belong to.</summary>
