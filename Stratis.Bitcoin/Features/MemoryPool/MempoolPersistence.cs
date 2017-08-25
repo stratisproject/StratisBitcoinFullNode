@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// Object used for persisting memory pool transactions.
     /// </summary>
-    internal class MempoolPersistence : IMempoolPersistence
+    public class MempoolPersistence : IMempoolPersistence
     {
         /// <summary>Current memory pool version number for persistence.</summary>
         public const ulong MempoolDumpVersion = 0;
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="toSave">List of persistence transactions to save.</param>
         /// <param name="fileName">The filename to persist transactions to.</param>
         /// <returns>The save result.</returns>
-        internal MemPoolSaveResult Save(IEnumerable<MempoolPersistenceEntry> toSave, string fileName)
+        public MemPoolSaveResult Save(IEnumerable<MempoolPersistenceEntry> toSave, string fileName)
         {
             Guard.NotEmpty(this.dataDir, nameof(this.dataDir));
             Guard.NotEmpty(fileName, nameof(fileName));
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="toSave">Collection of memory pool transations to save.</param>
         /// <param name="stream">Stream to write transactions to.</param>
-        internal void DumpToStream(IEnumerable<MempoolPersistenceEntry> toSave, Stream stream)
+        public void DumpToStream(IEnumerable<MempoolPersistenceEntry> toSave, Stream stream)
         {
             var bitcoinWriter = new BitcoinStream(stream, true);
 

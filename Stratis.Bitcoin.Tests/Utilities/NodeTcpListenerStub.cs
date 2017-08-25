@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {
-    internal class NodeTcpListenerStub : IDisposable
+    public class NodeTcpListenerStub : IDisposable
     {
         private TcpListener listener;
 

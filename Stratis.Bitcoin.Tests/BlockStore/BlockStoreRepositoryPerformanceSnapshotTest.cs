@@ -4,7 +4,7 @@ using System.Text;
 using Stratis.Bitcoin.Features.BlockStore;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.BlockStore
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class BlockStoreRepositoryPerformanceSnapshotTest
     {
