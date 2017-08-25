@@ -1,6 +1,6 @@
-﻿using Stratis.Bitcoin.Features.BlockStore;
+﻿using Stratis.Bitcoin.Tests;
 
-namespace Stratis.Bitcoin.Tests.BlockStore
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     using DBreeze;
     using Moq;

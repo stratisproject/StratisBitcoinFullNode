@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 using Microsoft.Extensions.Logging;
 
-namespace Stratis.Bitcoin.Tests.BlockStore
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class BlockStoreCacheTest
     {

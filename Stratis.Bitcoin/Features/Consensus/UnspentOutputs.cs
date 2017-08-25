@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this._Outputs = unspent._Outputs.ToArray();
 		}
 
-		internal TxOut[] _Outputs;
+		public TxOut[] _Outputs;
 
 
 		private uint256 _TransactionId;

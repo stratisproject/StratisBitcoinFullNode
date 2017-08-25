@@ -13,6 +13,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             var nodeSettings = NodeSettings.Default();
             nodeSettings.DataDir = dir;
+            // Best set the data folder again, yes?
+            nodeSettings.DataFolder = new DataFolder(nodeSettings);
+
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UseConsensus()

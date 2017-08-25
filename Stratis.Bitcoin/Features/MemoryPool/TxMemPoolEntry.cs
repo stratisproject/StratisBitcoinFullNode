@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <remarks>
         /// Used for determining the priority of the transaction for mining in a block.
         /// </remarks>
-        internal long feeDelta { get; private set; }
+        public long feeDelta { get; private set; }
 
         /// <summary>
         /// Gets the priority of the memory pool entry given the current chain height.

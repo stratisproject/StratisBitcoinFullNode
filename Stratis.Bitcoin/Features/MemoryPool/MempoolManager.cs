@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Loads the memory pool asynchronously from a file.
         /// </summary>
         /// <param name="fileName">Filename to load from.</param>
-        internal async Task LoadPool(string fileName = null)
+        public async Task LoadPool(string fileName = null)
         {
             if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
             {
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Saves the memory pool to persistent storage.
         /// </summary>
         /// <returns>Memory pool save result.</returns>
-        internal MemPoolSaveResult SavePool()
+        public MemPoolSaveResult SavePool()
         {
             if (this.mempoolPersistence == null)
                 return MemPoolSaveResult.NonSuccess;

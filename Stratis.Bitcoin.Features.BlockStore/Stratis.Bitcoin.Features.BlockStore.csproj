@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>Stratis Bitcoin FullNode</Description>
-    <AssemblyTitle>Stratis.Bitcoin</AssemblyTitle>
+    <Description>Stratis Bitcoin Features BlockStore</Description>
+    <AssemblyTitle>Stratis.Bitcoin.Features.BlockStore</AssemblyTitle>
     <TargetFramework>netstandard1.6</TargetFramework>
-    <AssemblyName>Stratis.Bitcoin</AssemblyName>
-    <PackageId>Stratis.Bitcoin</PackageId>
+    <AssemblyName>Stratis.Bitcoin.Features.BlockStore</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Features.BlockStore</PackageId>
     <PackageTargetFallback>$(PackageTargetFallback);netcore50</PackageTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -18,6 +18,12 @@
     <Version>1.0.2-alpha</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Features\**" />
+    <EmbeddedResource Remove="Features\**" />
+    <None Remove="Features\**" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="DBreeze" Version="1.85.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.3.1" />
@@ -43,10 +49,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Features\RPC\" />
+    <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

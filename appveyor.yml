@@ -80,6 +80,10 @@ test_script:
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.IndexStore.Tests/Stratis.Bitcoin.Features.IndexStore.Tests.csproj
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.WatchOnlyWallet.Tests/Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.csproj
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.RPC.Tests/Stratis.Bitcoin.Features.RPC.Tests.csproj
+      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.Wallet.Tests/Stratis.Bitcoin.Features.Wallet.Tests.csproj
+      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.MemoryPool.Tests/Stratis.Bitcoin.Features.MemoryPool.Tests.csproj
+      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.Miner.Tests/Stratis.Bitcoin.Features.Miner.Tests.csproj
+      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.BlockStore.Tests/Stratis.Bitcoin.Features.BlockStore.Tests.csproj
       
       Write-Host "[$env:configuration] FINISHED dotnet test" -foregroundcolor "magenta"
       if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
