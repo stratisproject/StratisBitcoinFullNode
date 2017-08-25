@@ -777,11 +777,23 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Script ScriptPubKey { get; set; }
 
         /// <summary>
+        /// Hexadecimal representation of this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
+        public string Hex { get; set; }
+
+        /// <summary>
+        /// Gets or sets the full transaction object.
+        /// </summary>
+        [JsonIgnore]
+        public Transaction Transaction => Transaction.Parse(this.Hex);
+
+        /// <summary>
         /// The details of the transaction in which the output referenced in this transaction is spent.
         /// </summary>
         [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
         public SpendingDetails SpendingDetails { get; set; }
-
+        
         /// <summary>
         /// Determines whether this transaction is confirmed.
         /// </summary>    
@@ -800,14 +812,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public Money SpendableAmount(bool confirmedOnly)
         {
-            // this method only returns a UTXO that has no spending output.
-            // if a spending output exists (even if its not confirmed) this 
-            // will return as zero balance.
-
+            // This method only returns a UTXO that has no spending output.
+            // If a spending output exists (even if its not confirmed) this will return as zero balance.
             if (this.IsSpendable())
             {
-                // if the 'confirmedOnly' flag is set check 
-                // that the UTXO is confirmed.
+                // If the 'confirmedOnly' flag is set check that the UTXO is confirmed.
                 if (confirmedOnly && !this.IsConfirmed())
                 {
                     return Money.Zero;
@@ -878,6 +887,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         [JsonProperty(PropertyName = "creationTime")]
         [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset CreationTime { get; set; }
+
+        /// <summary>
+        /// Hexadecimal representation of this spending transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "hex", NullValueHandling = NullValueHandling.Ignore)]
+        public string Hex { get; set; }
+
+        /// <summary>
+        /// Gets or sets the full transaction object.
+        /// </summary>
+        [JsonIgnore]
+        public Transaction Transaction => Transaction.Parse(this.Hex);
 
         /// <summary>
         /// Determines whether this transaction being spent is confirmed.
