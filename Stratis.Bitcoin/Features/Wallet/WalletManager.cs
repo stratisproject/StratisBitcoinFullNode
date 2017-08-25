@@ -73,7 +73,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
-
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new ConcurrentBag<Wallet>();
 
@@ -522,7 +521,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // check if the outputs contain one of our addresses
                 if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
                 {
-                    this.AddTransactionToWallet(hash, transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
+                    this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
                 }
             }
 
@@ -552,7 +551,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     return !addr.IsChangeAddress();
                 });
 
-                this.AddSpendingTransactionToWallet(hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
+                this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
             }
         }
 
@@ -566,7 +565,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="script">The script.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        private void AddTransactionToWallet(uint256 transactionHash, uint time, int index, Money amount, Script script,
+        /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
+        private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, int index, Money amount, Script script,
             int? blockHeight = null, Block block = null)
         {
             // get the collection of transactions to add to.
@@ -586,7 +586,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     Id = transactionHash,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     Index = index,
-                    ScriptPubKey = script
+                    ScriptPubKey = script,
+                    Hex = transactionHex
                 };
 
                 // add the Merkle proof to the (non-spending) transaction
@@ -633,7 +634,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="spendingTransactionIndex">The index of the output in the transaction being referenced, if this is a spending transaction.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        private void AddSpendingTransactionToWallet(uint256 transactionHash, uint time, IEnumerable<TxOut> paidToOutputs,
+        /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
+        private void AddSpendingTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, IEnumerable<TxOut> paidToOutputs,
             uint256 spendingTransactionId, int? spendingTransactionIndex, int? blockHeight = null, Block block = null)
         {
             // get the transaction being spent
@@ -664,13 +666,14 @@ namespace Stratis.Bitcoin.Features.Wallet
                     TransactionId = transactionHash,
                     Payments = payments,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
-                    BlockHeight = blockHeight
+                    BlockHeight = blockHeight,
+                    Hex = transactionHex
                 };
 
                 spentTransaction.SpendingDetails = spendingDetails;
                 spentTransaction.MerkleProof = null;
             }
-            else // if this spending transaction is being comfirmed in a block
+            else // if this spending transaction is being confirmed in a block
             {
                 // update the block height
                 if (spentTransaction.SpendingDetails.BlockHeight == null && blockHeight != null)
