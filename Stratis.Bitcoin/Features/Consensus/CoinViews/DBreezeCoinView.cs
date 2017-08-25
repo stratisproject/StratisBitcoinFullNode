@@ -10,12 +10,18 @@ using DBreeze.DataTypes;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
+    /// <summary>
+    /// Persistent implementation of coinview using DBreeze database.
+    /// </summary>
     public class DBreezeCoinView : CoinView, IDisposable
     {
         /// <summary>Database key under which the block hash of the coin view's current tip is stored.</summary>
         private static readonly byte[] blockHashKey = new byte[0];
+
+        /// TODO: Can we removed this? It is not used anywhere.
         private static readonly UnspentOutputs[] noOutputs = new UnspentOutputs[0];
 
+        /// <summary>Session providing access to DBreeze database.</summary>
         private readonly DBreezeSingleThreadSession session;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
@@ -29,11 +35,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         public BackendPerformanceCounter PerformanceCounter { get { return this.performanceCounter; } }
 
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="dataFolder">Information about path locations to important folders and files on disk.</param>
         public DBreezeCoinView(Network network, DataFolder dataFolder)
             : this(network, dataFolder.CoinViewPath)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="folder">Path to the folder with coinview database files.</param>
         public DBreezeCoinView(Network network, string folder)
         {
             Guard.NotNull(network, nameof(network));
@@ -44,6 +60,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.performanceCounter = new BackendPerformanceCounter();
         }
 
+        /// <summary>
+        /// Initializes the database tables used by the coinview.
+        /// </summary>
         public Task Initialize()
         {
             Block genesis = this.network.GetGenesis();
@@ -90,6 +109,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             });
         }
 
+        /// <summary>
+        /// Obtains a block header hash of the coinview's current tip.
+        /// </summary>
+        /// <returns>Block header hash of the coinview's current tip.</returns>
         private uint256 GetCurrentHash()
         {
             this.blockHash = this.blockHash ?? this.session.Transaction.Select<byte[], uint256>("BlockHash", blockHashKey)?.Value;
@@ -173,6 +196,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             });
         }
 
+        /// <summary>
+        /// Obtains order number of the last saved rewind state in the database.
+        /// </summary>
+        /// <returns>Order number of the last saved rewind state, or <c>-1</c> if no rewind state is found in the database.</returns>
+        /// <remarks>TODO: Using <c>-1</c> is hacky here, and <see cref="SaveChangesAsync"/> exploits that in a way that if no such rewind data exist 
+        /// the order number of the first rewind data is -1 + 1 = 0.</remarks>
         private int GetRewindIndex()
         {
             this.session.Transaction.ValuesLazyLoadingIsOn = true;
@@ -186,6 +215,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             return this.session.Execute(() =>
             {
+                // TODO: Why the result of this.GetRewindIndex() is not reused in the else branch - i.e. why do we call SelectBackward again there to get that very same number?
                 if (this.GetRewindIndex() == -1)
                 {
                     this.session.Transaction.RemoveAllKeys("Coins", true);
@@ -215,6 +245,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             });
         }
 
+        /// <summary>
+        /// Persists unsaved POS blocks information to the database.
+        /// </summary>
+        /// <param name="stakeEntries">List of POS block information to be examined and persists if unsaved.</param>
         public Task PutStake(IEnumerable<StakeItem> stakeEntries)
         {
             return this.session.Execute(() =>
@@ -224,6 +258,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             });
         }
 
+        /// <summary>
+        /// Persists unsaved POS blocks information to the database.
+        /// </summary>
+        /// <param name="stakeEntries">List of POS block information to be examined and persists if unsaved.</param>
         private void PutStakeInternal(IEnumerable<StakeItem> stakeEntries)
         {
             foreach (StakeItem stakeEntry in stakeEntries)
@@ -236,6 +274,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <summary>
+        /// Retrieves POS blocks information from the database.
+        /// </summary>
+        /// <param name="blocklist">List of partially initialized POS block information that is to be fully initialized with the values from the database.</param>
         public Task GetStake(IEnumerable<StakeItem> blocklist)
         {
             return this.session.Execute(() =>
@@ -249,12 +291,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             });
         }
 
+        /// TODO: Do we need this method? 
         public Task DeleteStake(uint256 blockid, BlockStake blockStake)
         {
             // TODO: Implement delete stake on rewind.
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.session.Dispose();
