@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -54,6 +55,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Default maximum number of transactions in the cache.</summary>
         public const int CacheMaxItemsDefault = 100000;
 
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>Maximum number of transactions in the cache.</summary>
         public int MaxItems { get; set; }
 
@@ -97,9 +101,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Initializes instance of the object based on DBreeze based coinview.
         /// </summary>
         /// <param name="inner">Underlaying coinview with database storage.</param>
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
-        public CachedCoinView(DBreezeCoinView inner, StakeChainStore stakeChainStore = null) :
-            this(stakeChainStore)
+        public CachedCoinView(DBreezeCoinView inner, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null) :
+            this(loggerFactory, stakeChainStore)
         {
             Guard.NotNull(inner, nameof(inner));
             this.inner = inner;
@@ -109,13 +114,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Initializes instance of the object based on memory based coinview.
         /// </summary>
         /// <param name="inner">Underlaying coinview with memory based storage.</param>
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
         /// <remarks>
         /// This is used for testing the coinview.
         /// It allows a coin view that only has in-memory entries.
         /// </remarks>
-        public CachedCoinView(InMemoryCoinView inner, StakeChainStore stakeChainStore = null) :
-            this(stakeChainStore)
+        public CachedCoinView(InMemoryCoinView inner, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null) :
+            this(loggerFactory, stakeChainStore)
         {
             Guard.NotNull(inner, nameof(inner));
             this.inner = inner;
@@ -124,9 +130,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Initializes instance of the object based.
         /// </summary>
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
-        private CachedCoinView(StakeChainStore stakeChainStore = null)
+        private CachedCoinView(ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChainStore = stakeChainStore;
             this.MaxItems = CacheMaxItemsDefault;
             this.lockobj = new ReaderWriterLock();
@@ -138,6 +146,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
         {
             Guard.NotNull(txIds, nameof(txIds));
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds.Length);
 
             FetchCoinsResponse result = null;
             UnspentOutputs[] outputs = new UnspentOutputs[txIds.Length];
@@ -151,11 +160,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     CacheItem cache;
                     if (!this.unspents.TryGetValue(txIds[i], out cache))
                     {
+                        this.logger.LogTrace("Cache missed for transaction ID '{0}'.", txIds[i]);
                         miss.Add(i);
                         missedTxIds.Add(txIds[i]);
                     }
                     else
                     {
+                        this.logger.LogTrace("Cache hit for transaction ID '{0}'.", txIds[i]);
                         outputs[i] = cache.UnspentOutputs == null ? null :
                                      cache.UnspentOutputs.IsPrunable ? null :
                                      cache.UnspentOutputs.Clone();
@@ -166,6 +177,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.PerformanceCounter.AddHitCount(txIds.Length - miss.Count);
             }
 
+            this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlaying coinview.", missedTxIds.Count);
             FetchCoinsResponse fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
             using (this.lockobj.LockWrite())
             {
@@ -193,17 +205,22 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 result = new FetchCoinsResponse(outputs, this.blockHash);
             }
 
-            if (this.CacheEntryCount > this.MaxItems)
+            int cacheEntryCount = this.CacheEntryCount;
+            if (cacheEntryCount > this.MaxItems)
             {
+                this.logger.LogTrace("Cache is full now with {0} entries, evicting ...", cacheEntryCount);
                 this.Evict();
-                if (this.CacheEntryCount > this.MaxItems)
+
+                cacheEntryCount = this.CacheEntryCount;
+                if (cacheEntryCount > this.MaxItems)
                 {
+                    this.logger.LogTrace("Cache is still full with {0} entries, flusing and evicting ...", cacheEntryCount);
                     await this.FlushAsync().ConfigureAwait(false);
                     this.Evict();
                 }
-
             }
 
+            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}.{3}={4}", nameof(result.BlockHash), result.BlockHash, nameof(result.UnspentOutputs), nameof(result.UnspentOutputs.Length), result.UnspentOutputs.Length);
             return result;
         }
 
@@ -212,6 +229,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         public async Task FlushAsync()
         {
+            this.logger.LogTrace("()");
+
             // Before flushing the coinview persist the stake store
             // the stake store depends on the last block hash
             // to be stored after the stake store is persisted.
@@ -225,7 +244,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 this.WaitOngoingTasks();
                 if (this.innerBlockHash == null)
+                {
+                    this.logger.LogTrace("(-)[NULL_INNER_TIP]");
                     return;
+                }
 
                 KeyValuePair<uint256, CacheItem>[] unspent = this.unspents.Where(u => u.Value.IsDirty).ToArray();
 
@@ -249,6 +271,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             // Can't await inside a lock.
             await this.flushingTask.ConfigureAwait(false);
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -257,6 +280,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         private void Evict()
         {
+            this.logger.LogTrace("()");
+
             using (this.lockobj.LockWrite())
             {
                 // TODO: Do not create new random source every time.
@@ -266,10 +291,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     if (!entry.Value.IsDirty)
                     {
                         if (rand.Next() % 3 == 0)
+                        {
+                            this.logger.LogTrace("Transaction ID '{0}' selected to be removed from the cache.", entry.Key);
                             this.unspents.Remove(entry.Key);
+                        }
                     }
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -278,12 +308,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
+            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), unspentOutputs.Count(), nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
             using (this.lockobj.LockWrite())
             {
                 this.WaitOngoingTasks();
                 if ((this.blockHash != null) && (oldBlockHash != this.blockHash))
+                {
+                    this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
                     return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
+                }
 
                 this.blockHash = nextBlockHash;
                 foreach (UnspentOutputs unspent in unspentOutputs)
@@ -291,11 +325,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     CacheItem existing;
                     if (this.unspents.TryGetValue(unspent.TransactionId, out existing))
                     {
+                        this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
                         if (existing.UnspentOutputs != null) existing.UnspentOutputs.Spend(unspent);
                         else existing.UnspentOutputs = unspent;
                     }
                     else
                     {
+                        this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspent.TransactionId);
                         existing = new CacheItem();
                         existing.ExistInInner = !unspent.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
                         existing.ExistInInner |= duplicateTransactions.Any(t => unspent.TransactionId == t);
@@ -306,16 +342,22 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     existing.IsDirty = true;
                     // Inner does not need to know pruned unspent that it never saw.
                     if (existing.UnspentOutputs.IsPrunable && !existing.ExistInInner)
+                    {
+                        this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and not in underlaying coinview, removing from cache.", unspent.TransactionId);
                         this.unspents.Remove(unspent.TransactionId);
+                    }
                 }
-
-                return Task.FromResult(true);
             }
+
+            this.logger.LogTrace("(-)");
+            return Task.FromResult(true);
         }
 
         /// <inheritdoc />
         public override async Task<uint256> Rewind()
         {
+            this.logger.LogTrace("()");
+
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetBlockHashAsync().ConfigureAwait(false);
 
@@ -331,6 +373,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     // More intelligent version can restore without throwing away the cache. (as the rewind data is in the cache).
                     this.unspents.Clear();
                     this.blockHash = this.innerBlockHash;
+
+                    this.logger.LogTrace("(-)[REWOUND_TO_INNER]:'{0}'", this.blockHash);
                     return this.blockHash;
                 }
                 else
@@ -346,6 +390,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
             }
+
+            this.logger.LogTrace("(-):'{0}'", hash);
             return hash;
         }
 
