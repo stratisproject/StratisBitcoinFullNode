@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
     public class TextFileConfigurationTests
     {
         /// <summary>
-        /// Assert that command line arguments with no value assigned default to "1"
+        /// Assert that command line arguments with no value assigned default to "1".
         /// </summary>
         [Fact]
         public void GetAllWithArrayArgs()
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         }
 
         /// <summary>
-        /// Assert that we can get all the default values of command line arguments with or without a dash prefixing the key
+        /// Assert that we can get all the default values of command line arguments with or without a dash prefixing the key.
         /// </summary>
         [Fact]
         public void GetAllWithArrayArgsNoAssignment()
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         }
 
         /// <summary>
-        /// Assert that the parsing of command line arguments does not support spaces on each side of the = sign
+        /// Assert that the parsing of command line arguments does not support spaces on each side of the = sign.
         /// </summary>
         [Fact]
         public void FailsToGetAllKeysWithArrayArgsAssignmentWithSpaces()
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         }
 
         /// <summary>
-        /// Assert that we can get all the assigned values of command line arguments with or without a dash prefixing the key
+        /// Assert that we can get all the assigned values of command line arguments with or without a dash prefixing the key.
         /// </summary>
         [Fact]
         public void GetAllKeysWithArrayArgsAssignment_NoSpace_()
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         }
 
         /// <summary>
-        /// Assert that we can get all the assigned values of arguments contained in a file with or without a dash prefixing the key
+        /// Assert that we can get all the assigned values of arguments contained in a file with or without a dash prefixing the key.
         /// </summary>
         [Fact]
         public void GetAllSuccessMultipleKeysWithStringArgs()
