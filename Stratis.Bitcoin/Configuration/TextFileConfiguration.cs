@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Retrieves all values of a specific argument name. This looks up for both with and without dash prefix.
+        /// Retrieves all values of a specific argument name. This looks up for the argument name with and without a dash prefix.
         /// </summary>
         /// <param name="key">Name of the argument.</param>
         /// <returns>Values for the specified argument.</returns>
@@ -148,10 +148,10 @@ namespace Stratis.Bitcoin.Configuration
         {
             List<string> values;
             List<string> dashValues;
-            // get the values without the - prefix
+            // Get the values without the - prefix.
             if (!this.args.TryGetValue(key, out values))
                 values = new List<string>();
-            // get the values with the - prefix
+            // Get the values with the - prefix.
             if (!this.args.TryGetValue($"-{key}", out dashValues))
                 dashValues = new List<string>();
 
