@@ -37,14 +37,13 @@ namespace Stratis.Bitcoin.Configuration
         public TextFileConfiguration(string[] args)
         {
             this.args = new Dictionary<string, List<string>>();
-            foreach (var arg in args)
+            foreach (string arg in args)
             {
                 string[] splitted = arg.Split('=');
-                // we must also trim in case the CL commands has spaces: test = testValue1
                 if (splitted.Length == 2)
-                    this.Add(splitted[0].Trim(), splitted[1].Trim());
+                    this.Add(splitted[0], splitted[1]);
                 if (splitted.Length == 1)
-                    this.Add(splitted[0].Trim(), "1");
+                    this.Add(splitted[0], "1");
             }
         }
 
@@ -141,20 +140,22 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Retrieves all values of a specific argument name.
+        /// Retrieves all values of a specific argument name. This looks up for both with and without dash prefix.
         /// </summary>
-        /// <param name="key">Name of the argument. If it is not found, an alternative argument name with additional '-' prefix will be checked.</param>
+        /// <param name="key">Name of the argument.</param>
         /// <returns>Values for the specified argument.</returns>
         public string[] GetAll(string key)
         {
             List<string> values;
             List<string> dashValues;
             // get the values without the - prefix
-            this.args.TryGetValue(key, out values);
+            if (!this.args.TryGetValue(key, out values))
+                values = new List<string>();
             // get the values with the - prefix
-            this.args.TryGetValue($"-{key}", out dashValues);
-            // concat those
-            return (values ?? new List<string>()).Concat(dashValues ?? new List<string>()).ToArray();
+            if (!this.args.TryGetValue($"-{key}", out dashValues))
+                dashValues = new List<string>();
+
+            return values.Concat(dashValues).ToArray();
         }
 
         /// <summary>
