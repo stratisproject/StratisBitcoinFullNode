@@ -134,9 +134,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns><c>true</c> if the list of arguments contains <paramref name="key"/>.</returns>
         public bool Contains(string key)
         {
-            List<string> values;
-            return this.args.TryGetValue(key, out values)
-                || this.args.TryGetValue($"-{key}", out values);
+            return this.args.ContainsKey(key)
+                || this.args.ContainsKey($"-{key}");
         }
 
         /// <summary>
