@@ -57,9 +57,13 @@ namespace Stratis.Bitcoin.Configuration.Logging
             { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
             { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" },
             { "consensus", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.*" },
-            { "mining", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Miner)}.*" },
             { "wallet", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Wallet)}.*" },
         };
+
+        public static void RegisterLoggingConfiguration(string key, string classNameSpace)
+        {
+            keyCategories[key] = classNameSpace;
+        }
 
         /// <summary>Configuration of console logger.</summary>
         private static ConsoleLoggerSettings consoleSettings;
