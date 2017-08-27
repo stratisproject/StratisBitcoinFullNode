@@ -63,11 +63,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>The number of blocks pushed to repository. This gets reset when the next 
+        /// set of blocks are asked from the puller</summary>
+        public int BlocksPushedCount { get; set; }
+
         /// <summary>A queue of blocks to be downloaded.</summary>
         public Queue<ChainedBlock> DownloadStack { get; private set; }
 
         /// <summary>The maximum number of blocks to ask for.</summary>
         public const int DownloadStackThreshold = 50;
+
+        /// <summary>The maximum number of blocks to read from the puller before asking for blocks again.</summary>
+        public const int DownloadStackPushThreshold = 25;
 
         public BlockStoreLoop BlockStoreLoop { get; private set; }
 

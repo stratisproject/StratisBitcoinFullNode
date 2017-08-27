@@ -20,13 +20,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     public sealed class BlockStoreInnerStepFindBlocks : BlockStoreInnerStep
     {
-        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>
-        /// Initializes new instance of the object.
-        /// </summary>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public BlockStoreInnerStepFindBlocks(ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
@@ -39,9 +34,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             var batchSize = BlockStoreInnerStepContext.DownloadStackThreshold - context.DownloadStack.Count;
             var batchList = new List<ChainedBlock>(batchSize);
+
             while (batchList.Count < batchSize)
             {
-                if (await this.ShouldStopFindingBlocks(context))
+                if (await ShouldStopFindingBlocks(context))
                 {
                     context.StopFindingBlocks();
                     break;
@@ -52,9 +48,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 context.GetNextBlock();
             }
 
+
             if (batchList.Any())
             {
-                this.logger.LogTrace("{0} blocks send to the puller", batchList.Count);
+                this.logger.LogTrace("{0} blocks requested to be downloaded by the puller.", batchList.Count);
                 context.BlockStoreLoop.BlockPuller.AskForMultipleBlocks(batchList.ToArray());
             }
 

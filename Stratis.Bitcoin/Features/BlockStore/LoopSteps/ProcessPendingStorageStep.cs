@@ -44,15 +44,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height, nameof(disposeMode), disposeMode);
 
-            //if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && !disposeMode)
-            //{
-            //    if (this.BlockStoreLoop.PendingStorage.Skip(0).Count() < this.BlockStoreLoop.PendingStorageBatchThreshold)
-            //    {
-            //        this.logger.LogTrace("(-):{0}", StepResult.Stop);
-            //        return StepResult.Stop;
-            //    }
-            //}
-
             BlockPair pendingBlockPairToStore;
             if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out pendingBlockPairToStore))
             {
