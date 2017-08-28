@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NBitcoin;
 using NBitcoin.JsonConverters;
+using Stratis.Bitcoin.Configuration.Settings;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -46,11 +47,12 @@ namespace Stratis.Bitcoin.Features.RPC
 			var cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
 			File.WriteAllText(fullNode.DataFolder.RPCCookieFile, cookieStr);
 			authorizedAccess.Authorized.Add(cookieStr);
-			if(fullNode.Settings.RPC.RpcPassword != null)
+            var settings = fullNode.NodeService<RpcSettings>();
+            if (settings.RpcPassword != null)
 			{
-				authorizedAccess.Authorized.Add(fullNode.Settings.RPC.RpcUser + ":" + fullNode.Settings.RPC.RpcPassword);
+				authorizedAccess.Authorized.Add(settings.RpcUser + ":" + settings.RpcPassword);
 			}
-			authorizedAccess.AllowIp.AddRange(fullNode.Settings.RPC.AllowIp);
+			authorizedAccess.AllowIp.AddRange(settings.AllowIp);
 
 			var options = GetMVCOptions(serviceProvider);
 			Serializer.RegisterFrontConverters(options.SerializerSettings, fullNode.Network);
