@@ -1,11 +1,7 @@
-﻿using NBitcoin;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -41,7 +37,7 @@ namespace Stratis.Bitcoin.Configuration
         public TextFileConfiguration(string[] args)
         {
             this.args = new Dictionary<string, List<string>>();
-            foreach (var arg in args)
+            foreach (string arg in args)
             {
                 string[] splitted = arg.Split('=');
                 if (splitted.Length == 2)
@@ -138,23 +134,27 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns><c>true</c> if the list of arguments contains <paramref name="key"/>.</returns>
         public bool Contains(string key)
         {
-            List<string> values;
-            return this.args.TryGetValue(key, out values)
-                || this.args.TryGetValue($"-{key}", out values);
+            return this.args.ContainsKey(key)
+                || this.args.ContainsKey($"-{key}");
         }
 
         /// <summary>
-        /// Retrieves all values of a specific argument name.
+        /// Retrieves all values of a specific argument name. This looks up for the argument name with and without a dash prefix.
         /// </summary>
-        /// <param name="key">Name of the argument. If it is not found, an alternative argument name with additional '-' prefix will be checked.</param>
+        /// <param name="key">Name of the argument.</param>
         /// <returns>Values for the specified argument.</returns>
         public string[] GetAll(string key)
         {
             List<string> values;
+            List<string> dashValues;
+            // Get the values without the - prefix.
             if (!this.args.TryGetValue(key, out values))
-                if (!this.args.TryGetValue($"-{key}", out values))
-                    return new string[0];
-            return values.ToArray();
+                values = new List<string>();
+            // Get the values with the - prefix.
+            if (!this.args.TryGetValue($"-{key}", out dashValues))
+                dashValues = new List<string>();
+
+            return values.Concat(dashValues).ToArray();
         }
 
         /// <summary>

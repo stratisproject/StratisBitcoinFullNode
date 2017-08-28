@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, new LoggerFactory()));
             this.blockNotification.Notify();
-            this.chainState.HighestValidatedPoW = this.chain.Genesis;
+            this.chainState.HighestValidatedPoW = this.chain.Tip;
         }
     }
 
