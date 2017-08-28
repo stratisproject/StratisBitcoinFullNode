@@ -47,7 +47,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height);
 
             this.BlockStoreLoop = blockStoreLoop;
             this.CancellationToken = cancellationToken;
@@ -59,8 +58,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.NextChainedBlock = nextChainedBlock;
             this.StallCount = 0;
             this.Store = new List<BlockPair>();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>The number of blocks pushed to repository. This gets reset when the next 
@@ -99,12 +96,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary> Sets the next chained block to process.</summary>
         internal void GetNextBlock()
         {
-            this.logger.LogTrace("()");
-
             this.InputChainedBlock = this.NextChainedBlock;
             this.NextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(this.InputChainedBlock.Height + 1);
 
-            this.logger.LogTrace("(-):{0}='{1}/{2}'", nameof(this.NextChainedBlock), this.NextChainedBlock?.HashBlock, this.NextChainedBlock?.Height);
+            this.logger.LogTrace("{0}='{1}/{2}'", nameof(this.NextChainedBlock), this.NextChainedBlock?.HashBlock, this.NextChainedBlock?.Height);
         }
 
         /// <summary> Removes BlockStoreInnerStepFindBlocks from the routine.</summary>

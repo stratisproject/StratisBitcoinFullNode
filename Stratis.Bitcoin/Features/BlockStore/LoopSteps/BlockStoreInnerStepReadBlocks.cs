@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// </summary>
     public sealed class BlockStoreInnerStepReadBlocks : BlockStoreInnerStep
     {
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         public BlockStoreInnerStepReadBlocks(ILoggerFactory loggerFactory)
@@ -34,11 +35,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <inheritdoc/>
         public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
-            this.logger.LogTrace("()");
-
             if (!context.DownloadStack.Any())
             {
-                this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
+                this.logger.LogTrace("(-):{0} empty.", nameof(context.DownloadStack));
                 return InnerStepResult.Stop;
             }
 
@@ -59,7 +58,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
                         if (!context.DownloadStack.Any())
                         {
-                            this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
+                            this.logger.LogTrace("(-):{0} empty.", nameof(context.DownloadStack));
                             return InnerStepResult.Stop;
                         }
                     }
@@ -91,14 +90,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary> Adds the downloaded block to the store and resets the stall count.</summary>
         private ChainedBlock AddDownloadedBlockToStore(BlockStoreInnerStepContext context, DownloadedBlock downloadedBlock)
         {
-            this.logger.LogTrace("()");
-
             ChainedBlock chainedBlockToStore = context.DownloadStack.Dequeue();
             context.Store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToStore));
             context.InsertBlockSize += downloadedBlock.Length;
             context.StallCount = 0;
 
-            this.logger.LogTrace("(-):{0} / {1} added to the store.", nameof(downloadedBlock), downloadedBlock.Block.Header.GetHash());
+            this.logger.LogTrace("{0}='{1}/{2}' added to the store.", nameof(chainedBlockToStore), chainedBlockToStore.HashBlock, chainedBlockToStore.Height);
             return chainedBlockToStore;
         }
 
@@ -106,8 +103,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// to push (persist) the downloaded blocks to the repository.</summary>
         private bool ShouldBlocksBePushedToRepository(BlockStoreInnerStepContext context)
         {
-            this.logger.LogTrace("()");
-
             var now = context.DateTimeProvider.GetUtcNow();
             uint lastFlushDiff = (uint)(now - context.LastDownloadStackFlushTime).TotalMilliseconds;
 
@@ -117,7 +112,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             var downloadStackEmpty = !context.DownloadStack.Any();
             var pushTimeReached = lastFlushDiff > BlockStoreInnerStepContext.MaxDownloadStackFlushTimeMs;
 
-            this.logger.LogTrace("(-):{0}={1} / {2}={3} / {4}={5}", nameof(pushBufferSizeReached), pushBufferSizeReached, nameof(downloadStackEmpty), downloadStackEmpty, nameof(pushTimeReached), pushTimeReached);
+            this.logger.LogTrace("{0}={1} / {2}={3} / {4}={5}", nameof(pushBufferSizeReached), pushBufferSizeReached, nameof(downloadStackEmpty), downloadStackEmpty, nameof(pushTimeReached), pushTimeReached);
             return pushBufferSizeReached || downloadStackEmpty || pushTimeReached;
         }
 
@@ -127,8 +122,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <param name="lastDownloadedBlock">Last block in the list to store, also used to set the store tip.</param>
         private async Task PushBlocksToRepository(BlockStoreInnerStepContext context, ChainedBlock lastDownloadedBlock)
         {
-            this.logger.LogTrace("()");
-
             var blocksToStore = context.Store.Select(bp => bp.Block).ToList();
             await context.BlockStoreLoop.BlockRepository.PutAsync(lastDownloadedBlock.HashBlock, blocksToStore);
             context.BlocksPushedCount += blocksToStore.Count;
@@ -139,8 +132,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             context.LastDownloadStackFlushTime = context.DateTimeProvider.GetUtcNow();
 
             context.Store.Clear();
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

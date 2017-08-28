@@ -46,10 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             BlockPair pendingBlockPairToStore;
             if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out pendingBlockPairToStore))
-            {
-                this.logger.LogTrace("(-):{0}", StepResult.Next);
                 return StepResult.Next;
-            }
 
             var pendingBlockPairsToStore = new List<BlockPair>();
             pendingBlockPairsToStore.Add(pendingBlockPairToStore);
@@ -92,7 +89,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 }
             }
 
-            this.logger.LogTrace("(-):{0}", StepResult.Continue);
             return StepResult.Continue;
         }
 
@@ -109,12 +105,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.BlockStoreLoop.SetStoreTip(lastFoundChainedBlock);
 
             if (breakExecution)
-            {
-                this.logger.LogTrace("(-):{0}", StepResult.Stop);
                 return StepResult.Stop;
-            }
 
-            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
 

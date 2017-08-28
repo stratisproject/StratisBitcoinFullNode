@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using System.Linq;
@@ -45,10 +44,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
 
             if (disposeMode)
-            {
-                this.logger.LogTrace("(-):{0}", StepResult.Stop);
                 return StepResult.Stop;
-            }
 
             var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory, this.dateTimeProvider);
             while (!token.IsCancellationRequested)
@@ -57,14 +53,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 {
                     InnerStepResult innerStepResult = await innerStep.ExecuteAsync(context);
                     if (innerStepResult == InnerStepResult.Stop)
-                    {
-                        this.logger.LogTrace("(-):{0}", StepResult.Next);
                         return StepResult.Next;
-                    }
                 }
             }
 
-            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }
