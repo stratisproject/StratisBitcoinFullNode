@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
@@ -83,6 +84,9 @@ namespace Stratis.Bitcoin.Features.RPC
     {
         public static IFullNodeBuilder AddRPC(this IFullNodeBuilder fullNodeBuilder, Action<RpcSettings> setup = null)
         {
+            LoggingConfiguration.RegisterLoggingConfiguration("rpc",
+                $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.RPC)}.*"); 
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features

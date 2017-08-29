@@ -46,7 +46,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
             //{ "prune", "" }, 
             //{ "rand", "" }, 
             //{ "reindex", "" }, 
-            { "rpc", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.RPC)}.*" }, 
             //{ "qt", "" },
             //{ "selectcoins", "" }, 
             //{ "tor", "" }, 
