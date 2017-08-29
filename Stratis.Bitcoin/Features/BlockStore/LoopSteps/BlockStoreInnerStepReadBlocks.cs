@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
@@ -41,65 +42,69 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
             this.logger.LogTrace("()");
-
-            if (!context.DownloadStack.Any())
+			if (!context.DownloadStack.Any())
             {
                 this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
                 return InnerStepResult.Stop;
             }
+            
 
-            BlockPuller.DownloadedBlock downloadedBlock;
+            var loopCount = BlockStoreInnerStepContext.DownloadStackThreshold;
 
-            ChainedBlock nextBlock = context.DownloadStack.Peek();
-
-            if (context.BlockStoreLoop.BlockPuller.TryGetBlock(nextBlock, out downloadedBlock))
+            while (--loopCount > 0)
             {
-                this.logger.LogTrace("Puller provided block '{0}/{1}', length {2}.", nextBlock.HashBlock, nextBlock.Height, downloadedBlock.Length);
+                BlockPuller.DownloadedBlock downloadedBlock;
+                ChainedBlock nextBlock = context.DownloadStack.Peek();
 
-                ChainedBlock chainedBlockToDownload = context.DownloadStack.Dequeue();
-                context.Store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToDownload));
-                context.InsertBlockSize += downloadedBlock.Length;
-                context.StallCount = 0;
-
-                DateTime now = context.DateTimeProvider.GetUtcNow();
-                uint lastFlushDiff = (uint)(now - context.LastDownloadStackFlushTime).TotalMilliseconds;
-                this.logger.LogTrace("Insert block size is {0} bytes, download stack contains {1} more blocks to download, last flush time was {2} ms ago.", context.InsertBlockSize, context.DownloadStack.Count, lastFlushDiff);
-
-                bool flushBufferSizeReached = context.InsertBlockSize > BlockStoreLoop.MaxInsertBlockSize;
-                bool downloadStackEmpty = !context.DownloadStack.Any();
-                bool flushTimeReached = lastFlushDiff > BlockStoreInnerStepContext.MaxDownloadStackFlushTimeMs;
-
-                if (flushBufferSizeReached || flushTimeReached || downloadStackEmpty)
+                if (context.BlockStoreLoop.BlockPuller.TryGetBlock(nextBlock, out downloadedBlock))
                 {
-                    List<Block> blocksToStore = context.Store.Select(bp => bp.Block).ToList();
-                    await context.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, blocksToStore);
-                    context.BlockStoreLoop.SetStoreTip(chainedBlockToDownload);
-                    context.InsertBlockSize = 0;
-                    context.Store.Clear();
-                    context.LastDownloadStackFlushTime = context.DateTimeProvider.GetUtcNow();
+                    this.logger.LogTrace("Puller provided block '{0}/{1}', length {2}.", nextBlock.HashBlock, nextBlock.Height, downloadedBlock.Length);
 
-                    if (!context.DownloadStack.Any())
+                    ChainedBlock chainedBlockToDownload = context.DownloadStack.Dequeue();
+                    context.Store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToDownload));
+                    context.InsertBlockSize += downloadedBlock.Length;
+                    context.StallCount = 0;
+
+                    DateTime now = context.DateTimeProvider.GetUtcNow();
+                    uint lastFlushDiff = (uint)(now - context.LastDownloadStackFlushTime).TotalMilliseconds;
+                    this.logger.LogTrace("Insert block size is {0} bytes, download stack contains {1} more blocks to download, last flush time was {2} ms ago.", context.InsertBlockSize, context.DownloadStack.Count, lastFlushDiff);
+
+                    bool flushBufferSizeReached = context.InsertBlockSize > BlockStoreLoop.MaxInsertBlockSize;
+                    bool downloadStackEmpty = !context.DownloadStack.Any();
+                    bool flushTimeReached = lastFlushDiff > BlockStoreInnerStepContext.MaxDownloadStackFlushTimeMs;
+
+                    if (flushBufferSizeReached || flushTimeReached || downloadStackEmpty)
                     {
-                        this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
-                        return InnerStepResult.Stop;
+                        List<Block> blocksToStore = context.Store.Select(bp => bp.Block).ToList();
+                        await context.BlockStoreLoop.BlockRepository.PutAsync(chainedBlockToDownload.HashBlock, blocksToStore);
+                        context.BlockStoreLoop.SetStoreTip(chainedBlockToDownload);
+                        context.InsertBlockSize = 0;
+                        context.Store.Clear();
+                        context.LastDownloadStackFlushTime = context.DateTimeProvider.GetUtcNow();
+
+                        if (!context.DownloadStack.Any())
+                        {
+                            this.logger.LogTrace("(-):{0}", InnerStepResult.Stop);
+                            return InnerStepResult.Stop;
+                        }
                     }
                 }
-            }
-            else
-            {
-                if (context.StallCount > context.StallCountThreshold)
+                else
                 {
-                    // Increase limit by 10 % to allow adjustments for low speed connections.
-                    // Eventually, the limit be high enough to allow normal operation.
-                    context.StallCountThreshold += context.StallCountThreshold / 10;
-                    this.logger.LogTrace("(-):{0},{1}={2}", InnerStepResult.Stop, nameof(context.StallCountThreshold), context.StallCountThreshold);
-                    return InnerStepResult.Stop;
+                    if (context.StallCount > context.StallCountThreshold)
+                    {
+                        // Increase limit by 10 % to allow adjustments for low speed connections.
+                        // Eventually, the limit be high enough to allow normal operation.
+                        context.StallCountThreshold += context.StallCountThreshold / 10;
+                        this.logger.LogTrace("(-):{0},{1}={2}", InnerStepResult.Stop, nameof(context.StallCountThreshold), context.StallCountThreshold);
+                        return InnerStepResult.Stop;
+                    }
+
+                    this.logger.LogTrace("Block '{0}/{1}' not available, stall count is {2}, waiting {3} ms...", nextBlock.HashBlock, nextBlock.Height, context.StallCount, BlockStoreInnerStepContext.StallDelayMs);
+                    await Task.Delay(BlockStoreInnerStepContext.StallDelayMs, context.CancellationToken);
+
+                    context.StallCount++;
                 }
-
-                this.logger.LogTrace("Block '{0}/{1}' not available, stall count is {2}, waiting {3} ms...", nextBlock.HashBlock, nextBlock.Height, context.StallCount, BlockStoreInnerStepContext.StallDelayMs);
-                await Task.Delay(BlockStoreInnerStepContext.StallDelayMs, context.CancellationToken);
-
-                context.StallCount++;
             }
 
             this.logger.LogTrace("(-):{0}", InnerStepResult.Next);

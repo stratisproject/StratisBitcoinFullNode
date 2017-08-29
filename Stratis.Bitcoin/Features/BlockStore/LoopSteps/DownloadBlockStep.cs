@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using System.Linq;
@@ -50,7 +51,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             }
 
             var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory, this.dateTimeProvider);
-
             while (!token.IsCancellationRequested)
             {
                 foreach (var innerStep in context.InnerSteps.ToList())

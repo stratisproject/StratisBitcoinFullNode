@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
 		public async Task Flush(bool disposeMode)
 		{
-			var count = this.items.Count;
+			var count = this.items.Skip(0).Count();
 			if (disposeMode || count > this.trashold)
 			{
 				// push to store all items that are not already persisted
