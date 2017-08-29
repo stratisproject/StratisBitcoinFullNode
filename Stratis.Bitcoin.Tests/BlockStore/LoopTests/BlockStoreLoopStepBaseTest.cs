@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
     {
         private IAsyncLoopFactory asyncLoopFactory;
         private StoreBlockPuller blockPuller;
-        internal Features.BlockStore.IBlockRepository BlockRepository { get; private set; }
+        internal Bitcoin.Features.BlockStore.IBlockRepository BlockRepository { get; private set; }
         private Mock<ChainState> chainState;
         private Mock<IConnectionManager> connectionManager;
         private DataFolder dataFolder;
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                     null,
                     chain,
                     this.chainState.Object,
-                    NodeSettings.FromArguments(new string[] { $"-datadir={dataFolder.WalletPath}" }),
+                    NodeSettings.FromArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" }),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
                     DateTimeProvider.Default);

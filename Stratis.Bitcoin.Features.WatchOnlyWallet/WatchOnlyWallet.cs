@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
     }
 
     /// <summary>
-    /// An object contaning a <see cref="Script"/> being watched along with any transactions affecting it.
+    /// An object containing a <see cref="Script"/> being watched along with any transactions affecting it.
     /// </summary>
     public class WatchedAddress
     {
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// A base58 address being watched for transactions affecting it.
         /// </summary>
         /// <remarks>
-        /// This is a convenience property whose intrisic value is equal to <see cref="WatchedAddress.Script"/>.
+        /// This is a convenience property whose intrinsic value is equal to <see cref="WatchedAddress.Script"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }

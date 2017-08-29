@@ -75,7 +75,12 @@ test_script:
 - ps: |
       Write-Host "[$env:configuration] STARTED dotnet test" -foregroundcolor "magenta"
       cd $env:APPVEYOR_BUILD_FOLDER
+      
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests.csproj
+      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.IndexStore.Tests/Stratis.Bitcoin.Features.IndexStore.Tests.csproj
+      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.WatchOnlyWallet.Tests/Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.csproj
+      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.RPC.Tests/Stratis.Bitcoin.Features.RPC.Tests.csproj
+      
       Write-Host "[$env:configuration] FINISHED dotnet test" -foregroundcolor "magenta"
       if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
 

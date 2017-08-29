@@ -10,13 +10,15 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
+using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Threading;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusFeature : FullNodeFeature, IConsensusFeature
+    public class ConsensusFeature : FullNodeFeature
     {
         private readonly DBreezeCoinView dBreezeCoinView;
         private readonly Network network;
@@ -35,6 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
         private readonly IDateTimeProvider dateTimeProvider;
+        private readonly ConsensusManager consensusManager;
 
         public ConsensusFeature(
             DBreezeCoinView dBreezeCoinView,
@@ -52,6 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider,
+            ConsensusManager consensusManager,
             StakeChainStore stakeChain = null)
         {
             this.dBreezeCoinView = dBreezeCoinView;
@@ -71,27 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
-        }
-
-        /// <summary>
-        /// Checks whether the node is currently in the process of initial block download.
-        /// </summary>
-        /// <returns><c>true</c> if the node is currently doing IBD, <c>false</c> otherwise.</returns>
-        public bool IsInitialBlockDownload()
-        {
-            if (this.consensusLoop == null)
-                return false;
-
-            if (this.consensusLoop.Tip == null)
-                return true;
-
-            if (this.consensusLoop.Tip.ChainWork < (this.network.Consensus.MinimumChainWork ?? uint256.Zero))
-                return true;
-
-            if (this.consensusLoop.Tip.Header.BlockTime.ToUnixTimeSeconds() < (this.dateTimeProvider.GetTime() - this.nodeSettings.MaxTipAge))
-                return true;
-
-            return false;
+            this.consensusManager = consensusManager;
         }
 
         public override void Start()
@@ -225,6 +209,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>();
                     services.AddSingleton<ConsensusLoop>();
+                    services.AddSingleton<ConsensusManager>();
+                    services.AddSingleton<IBlockDownloadState, ConsensusManager>();
+                    services.AddSingleton<INetworkDifficulty, ConsensusManager>();
+                    services.AddSingleton<ConsensusController>();
                 });
             });
 
@@ -254,6 +242,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusLoop>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<StakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<StakeValidator>();
+                        services.AddSingleton<ConsensusManager>();
+                        services.AddSingleton<ConsensusController>();
                     });
             });
 

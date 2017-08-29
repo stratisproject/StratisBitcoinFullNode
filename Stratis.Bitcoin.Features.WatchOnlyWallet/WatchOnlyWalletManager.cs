@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.IO;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Utilities.FileStorage;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
@@ -27,15 +26,15 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 
         private readonly CoinType coinType;
         private readonly Network network;
-        private readonly DataFolder dataFolder;
         private readonly ILogger logger;
+        private readonly FileStorage<WatchOnlyWallet> fileStorage;
 
         public WatchOnlyWalletManager(ILoggerFactory loggerFactory, Network network, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
-            this.dataFolder = dataFolder;
+            this.fileStorage = new FileStorage<WatchOnlyWallet>(dataFolder.WalletPath);
         }
 
         /// <inheritdoc />
@@ -122,30 +121,29 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public void SaveWatchOnlyWallet()
         {
-            File.WriteAllText(this.GetWalletFilePath(), JsonConvert.SerializeObject(this.Wallet, Formatting.Indented));
+            this.fileStorage.SaveToFile(this.Wallet, WalletFileName);
         }
 
         /// <inheritdoc />
         public WatchOnlyWallet LoadWatchOnlyWallet()
         {
-            string walletFilePath = this.GetWalletFilePath();
-            if (!File.Exists(walletFilePath))
+            if (this.fileStorage.Exists(WalletFileName))
             {
-                this.Wallet = new WatchOnlyWallet
-                {
-                    Network = this.network,
-                    CoinType = this.coinType,
-                    CreationTime = DateTimeOffset.Now,
-                    WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>()
-                };
-
-                this.SaveWatchOnlyWallet();
+                return this.fileStorage.LoadByFileName(WalletFileName);
             }
 
-            // Load the file from the local system.
-            return JsonConvert.DeserializeObject<WatchOnlyWallet>(File.ReadAllText(walletFilePath));
-        }
+            WatchOnlyWallet watchOnlyWallet = new WatchOnlyWallet
+            {
+                Network = this.network,
+                CoinType = this.coinType,
+                CreationTime = DateTimeOffset.Now,
+                WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>()
+            };
 
+            this.fileStorage.SaveToFile(watchOnlyWallet, WalletFileName);
+            return watchOnlyWallet;
+        }
+        
         /// <summary>
         /// Gets the watch-only wallet.
         /// </summary>
@@ -153,15 +151,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public WatchOnlyWallet GetWatchOnlyWallet()
         {
             return this.Wallet;
-        }
-
-        /// <summary>
-        /// Gets the file path where the watch-only wallet is saved.
-        /// </summary>
-        /// <returns>The watch-only wallet path in the file system.</returns>
-        private string GetWalletFilePath()
-        {
-            return Path.Combine(this.dataFolder.WalletPath, WalletFileName);
         }
     }
 }
