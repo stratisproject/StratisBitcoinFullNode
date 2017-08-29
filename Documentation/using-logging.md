@@ -91,10 +91,10 @@ will be deleted.
 
 ### Debug Option
 
-You can specify `-debug` command line option, which works similarly to how it works in Bitcoin Core. This enables logging of selected or all classes on trace level and this 
-setting is only for the main log file, not the console. To enable trace level for all classes, you use `-debug=1`. If you want to enable trace level just for some classes, you use `-debug=pattern1,pattern2,...`. 
+You can specify `-debug` command line option, which works similarly to how it works in Bitcoin Core. This enables logging of selected or all classes on DEBUG level. 
+To enable DEBUG level for all classes, you use `-debug=1`. If you want to enable DEBUG level just for some classes, you use `-debug=pattern1,pattern2,...`. 
 There are several shortcuts preset for most common components. For example `rpc` is a shortcut pattern for `Stratis.Bitcoin.Features.RPC.*`. This means setting `-debug=rpc` is 
-the same as setting `-debug=Stratis.Bitcoin.Features.RPC.*`, which means that all classes under `Stratis.Bitcoin.Features.RPC` namespaces will log on trace level. Similarly, 
+the same as setting `-debug=Stratis.Bitcoin.Features.RPC.*`, which means that all classes under `Stratis.Bitcoin.Features.RPC` namespaces will log on DEBUG level. Similarly, 
 you can use `consensus` as a shortcut for `Stratis.Bitcoin.Features.Consensus.*`. The full list of shortcuts is available in `Stratis.Bitcoin.Logging.LogsExtension.cs`. 
 If a shortcut does not exist, you can simply use the full name of a class or a namespace. You have to use `.*` suffix for namespaces to include all its classes.
 
