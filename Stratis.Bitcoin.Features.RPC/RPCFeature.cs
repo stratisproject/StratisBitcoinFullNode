@@ -7,9 +7,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -59,17 +56,6 @@ namespace Stratis.Bitcoin.Features.RPC
                                 collection.Add(service);
                             }
                         }
-
-                        // Identify all the assemblies to so that the action provider knows where to look
-                        var extraAssemblies = new HashSet<Assembly>();
-                        foreach (var serviceType in this.fullNodeBuilder.Services.Select(x => x.ServiceType).Where(y => y.Name.EndsWith("Controller")))
-                        {
-                            extraAssemblies.Add(serviceType.GetTypeInfo().Assembly);
-                        }
-
-                        // Register the assemblies for perusal by action discovery
-                        foreach (var assembly in extraAssemblies)
-                            collection.AddMvcCore().AddApplicationPart(assembly);
                     }
                 })
                 .UseStartup<RPC.Startup>()
