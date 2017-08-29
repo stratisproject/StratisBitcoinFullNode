@@ -6,9 +6,14 @@
     public class CacheSettings
     {
         /// <summary>Maximum number of items in <see cref="Features.Consensus.CoinViews.CachedCoinView"/>.</summary>
-        public int MaxItems
+        public int MaxItems { get; set; } 
+
+        /// <summary>
+        /// Initializes properties with default values.
+        /// </summary>
+        public CacheSettings()
         {
-            get; set;
-        } = 100000;
+            this.MaxItems = Features.Consensus.CoinViews.CachedCoinView.CacheMaxItemsDefault;
+        }
     }
 }
