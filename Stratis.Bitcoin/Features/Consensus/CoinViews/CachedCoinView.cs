@@ -37,7 +37,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <para>
         /// Historically, these two transactions violated rules that are currently applied 
         /// in Bitcoin consensus. This was only possible for coinbase transactions when the miner 
-        /// used the same target address to receive the reward.
+        /// used the same target address to receive the reward. Miners were not required to add 
+        /// an additional entropy (block height) to the coinbase transaction, which could result 
+        /// in the same hash output.
         /// </para>
         /// <para>
         /// BIP 0030 and BIP 0034 were then introduced to limit such behavior in the future.
