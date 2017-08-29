@@ -8,11 +8,8 @@ namespace Stratis.Bitcoin.Features.Miner
 {
     public class MiningFeature : FullNodeFeature
     {
-        public MiningRPCController Controller { get; private set; }
-
-        public MiningFeature(MiningRPCController controller = null)
+        public MiningFeature()
         {
-            this.Controller = controller;
         }
 
         ///<inheritdoc />
