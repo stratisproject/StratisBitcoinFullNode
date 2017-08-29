@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 });
 
                 // Include all feature assemblies for action discovery otherwise RPC actions will not execute
+                // https://stackoverflow.com/questions/37725934/asp-net-core-mvc-controllers-in-separate-assembly
                 foreach (var assembly in fullNode.Services.Features.OfType<FullNodeFeature>().Select(x => x.GetType().GetTypeInfo().Assembly).Distinct())
                     mvcBuilder.AddApplicationPart(assembly);
             });
