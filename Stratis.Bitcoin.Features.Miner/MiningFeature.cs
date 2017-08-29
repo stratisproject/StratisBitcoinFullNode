@@ -42,8 +42,7 @@ namespace Stratis.Bitcoin.Features.Miner
     {
         public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder)
         {
-            LoggingConfiguration.RegisterLoggingConfiguration("mining", 
-                $"{ nameof(Stratis)}.{ nameof(Stratis.Bitcoin)}.{ nameof(Stratis.Bitcoin.Features)}.{ nameof(Stratis.Bitcoin.Features.Miner)}.*");
+            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -62,6 +61,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features

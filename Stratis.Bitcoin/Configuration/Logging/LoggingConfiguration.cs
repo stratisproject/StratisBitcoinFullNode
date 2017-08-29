@@ -60,9 +60,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
             { "wallet", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Wallet)}.*" },
         };
 
-        public static void RegisterLoggingConfiguration(string key, string classNameSpace)
+        public static void RegisterFeatureNamespace<T>(string key)
         {
-            keyCategories[key] = classNameSpace;
+            keyCategories[key] = typeof(T).Namespace + ".*";
         }
 
         /// <summary>Configuration of console logger.</summary>
