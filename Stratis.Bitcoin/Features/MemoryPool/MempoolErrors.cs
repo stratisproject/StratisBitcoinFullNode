@@ -123,7 +123,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         #endregion
 
-
         /// <summary>'coinbase' error returns a <see cref="RejectInvalid"/> reject code.</summary>
         public static MempoolError Coinbase = new MempoolError(RejectInvalid, "coinbase");
 

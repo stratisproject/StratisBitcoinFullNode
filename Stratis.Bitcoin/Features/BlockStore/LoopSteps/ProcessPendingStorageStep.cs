@@ -88,7 +88,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     lastFoundChainedBlock = nextChainedBlock;
                 }
 
-                // TODO: breakExecution here is always false.
                 if ((pendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize) || breakExecution)
                 {
                     StepResult result = await PushPendingBlocksToRepository(pendingStorageBatchSize, pendingBlockPairsToStore, lastFoundChainedBlock, cancellationToken, breakExecution);

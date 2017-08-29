@@ -42,7 +42,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this._Unspents.AddOrReplace(tx.GetHash(), new UnspentOutputs((uint)height, tx));
 		}
 
-		public void SetCoins(FetchCoinsResponse coins)
+        // TODO: coins argument should be of type UnspentOutputs[], not FetchCoinsResponse
+        public void SetCoins(FetchCoinsResponse coins)
 		{
             this._Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
 			foreach(var coin in coins.UnspentOutputs)
@@ -52,7 +53,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 			}
 		}
 
-		public void TrySetCoins(FetchCoinsResponse coins)
+        // TODO: coins argument should be of type UnspentOutputs[], not FetchCoinsResponse
+        public void TrySetCoins(FetchCoinsResponse coins)
 		{
             this._Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
 			foreach (var coin in coins.UnspentOutputs)

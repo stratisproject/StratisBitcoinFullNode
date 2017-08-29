@@ -53,16 +53,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
-        /// <summary>The highest stored block in the repository</summary>
-        internal ChainedBlock StoreTip { get; private set; }
-
-        /// <summary>TODO: Should be configurable?</summary>
+        /// <summary>Number of blocks that can be stored in pending storage before we stop processing them.</summary>
         internal int PendingStorageBatchThreshold = 5;
 
-        /// <summary>TODO: Should be configurable?</summary>
-        internal int BatchDownloadSize = 1000;
-
-        private TimeSpan pushInterval = TimeSpan.FromSeconds(10);
+        /// <summary>The highest stored block in the repository.</summary>
+        internal ChainedBlock StoreTip { get; private set; }
 
         internal readonly TimeSpan PushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
@@ -75,7 +70,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainState chainState,
             NodeSettings nodeArgs,
             INodeLifetime nodeLifetime,
-            ILoggerFactory loggerFactory, 
+            ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider)
         {
             this.asyncLoopFactory = asyncLoopFactory;

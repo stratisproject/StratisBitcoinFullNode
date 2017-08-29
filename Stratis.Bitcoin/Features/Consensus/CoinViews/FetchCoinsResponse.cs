@@ -2,24 +2,35 @@
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
+    /// <summary>
+    /// Return value of <see cref="CoinView.FetchCoinsAsync(uint256[])"/>,
+    /// contains the coinview tip's hash and information about unspent coins in the requested transactions.
+    /// </summary>
     public class FetchCoinsResponse
     {
-		public FetchCoinsResponse()
-		{
+        /// <summary>Hash of the block header for which <see cref="UnspentOutputs"/> is related.</summary>
+        public uint256 BlockHash { get; set; }
 
-		}
-		public FetchCoinsResponse(UnspentOutputs[] unspent, uint256 blockHash)
-		{
-			this.BlockHash = blockHash;
+        /// <summary>Unspent outputs of the requested transactions.</summary>
+        public UnspentOutputs[] UnspentOutputs { get; set; }
+
+        /// <summary>
+        /// Parameterless constructor.
+        /// </summary>
+        /// <remarks>TODO: This does not seem to be used anywhere by anything, can we remove it?</remarks>
+        public FetchCoinsResponse()
+        {
+        }
+
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        /// <param name="unspent">Unspent outputs of the requested transactions.</param>
+        /// <param name="blockHash">Block hash of the coinview's current tip.</param>
+        public FetchCoinsResponse(UnspentOutputs[] unspent, uint256 blockHash)
+        {
+            this.BlockHash = blockHash;
             this.UnspentOutputs = unspent;
-		}
-		public UnspentOutputs[] UnspentOutputs
-		{
-			get; set;
-		}
-		public uint256 BlockHash
-		{
-			get; set;
-		}
-	}
+        }
+    }
 }
