@@ -11,6 +11,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class PosConsensusValidator : PowConsensusValidator
     {
+        // To decrease granularity of timestamp.
+        // Supposed to be 2^n-1.
         public const uint StaleTimestampMask = 15;
 
         public StakeValidator StakeValidator { get { return this.stakeValidator; } }
