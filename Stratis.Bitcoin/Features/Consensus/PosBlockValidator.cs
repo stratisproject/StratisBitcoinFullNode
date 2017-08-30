@@ -8,9 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public static bool IsCanonicalBlockSignature(Block block, bool checkLowS)
         {
             if (BlockStake.IsProofOfWork(block))
-            {
                 return block.BlockSignatur.IsEmpty();
-            }
 
             return checkLowS ?
                 ScriptEvaluationContext.IsLowDerSignature(block.BlockSignatur.Signature) :
