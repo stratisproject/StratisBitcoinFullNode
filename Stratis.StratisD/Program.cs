@@ -24,8 +24,8 @@ namespace Stratis.StratisD
             if (NodeSettings.PrintHelp(args, Network.StratisMain))
                 return;
 
-            var network = args.Contains("-testnet") ? InitStratisTest() : Network.StratisMain;
-            var nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
+            Network network = args.Contains("-testnet") ? InitStratisTest() : Network.StratisMain;
+            NodeSettings nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
 
             // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
 
@@ -42,7 +42,7 @@ namespace Stratis.StratisD
             Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith(t =>
             {
                 //TryStartPowMiner(args, node);
-                //TryStartPosMiner(args, node);
+                TryStartPosMiner(args, node);
             });
 
             node.Run();
@@ -50,30 +50,30 @@ namespace Stratis.StratisD
 
         private static void TryStartPowMiner(string[] args, IFullNode node)
         {
-            // mining can be called from either RPC or on start
-            // to manage the on strat we need to get an address to the mining code
-            var mine = args.FirstOrDefault(a => a.Contains("mine="));
+            // Mining can be called from either RPC or on start
+            // to manage the on strat we need to get an address to the mining code.
+            string mine = args.FirstOrDefault(a => a.Contains("mine="));
             if (mine != null)
             {
                 // get the address to mine to
-                var addres = mine.Replace("mine=", string.Empty);
-                var pubkey = BitcoinAddress.Create(addres, node.Network);
+                string addres = mine.Replace("mine=", string.Empty);
+                BitcoinAddress pubkey = BitcoinAddress.Create(addres, node.Network);
                 node.Services.ServiceProvider.GetService<PowMining>().Mine(pubkey.ScriptPubKey);
             }
         }
 
         private static void TryStartPosMiner(string[] args, IFullNode node)
         {
-            // mining can be called from either RPC or on start
-            // to manage the on strat we need to get an address to the mining code
-            var mine = args.FirstOrDefault(a => a.Contains("mine="));
-            var walletNameArg = args.FirstOrDefault(a => a.Contains("walletname="));
-            var walletPasswordArg = args.FirstOrDefault(a => a.Contains("walletpassword="));
+            // Mining can be called from either RPC or on start
+            // to manage the on strat we need to get an address to the mining code.
+            string mine = args.FirstOrDefault(a => a.Contains("mine="));
+            string walletNameArg = args.FirstOrDefault(a => a.Contains("walletname="));
+            string walletPasswordArg = args.FirstOrDefault(a => a.Contains("walletpassword="));
 
-            if (mine != null && walletNameArg != null && walletPasswordArg != null)
+            if ((mine != null) && (walletNameArg != null) && (walletPasswordArg != null))
             {
-                var walletName = walletNameArg.Replace("walletname=", string.Empty);
-                var walletPassword = walletPasswordArg.Replace("walletpassword=", string.Empty);
+                string walletName = walletNameArg.Replace("walletname=", string.Empty);
+                string walletPassword = walletPasswordArg.Replace("walletpassword=", string.Empty);
 
                 node.Services.ServiceProvider.GetService<PosMinting>().Mine(new PosMinting.WalletSecret()
                 {
@@ -88,7 +88,7 @@ namespace Stratis.StratisD
             Block.BlockSignature = true;
             Transaction.TimeStamp = true;
 
-            var consensus = Network.StratisMain.Consensus.Clone();
+            Consensus consensus = Network.StratisMain.Consensus.Clone();
             consensus.PowLimit = new Target(uint256.Parse("0000ffff00000000000000000000000000000000000000000000000000000000"));
 
             // The message start string is designed to be unlikely to occur in normal data.
@@ -99,9 +99,9 @@ namespace Stratis.StratisD
             pchMessageStart[1] = 0x31;
             pchMessageStart[2] = 0x21;
             pchMessageStart[3] = 0x11;
-            var magic = BitConverter.ToUInt32(pchMessageStart, 0); //0x5223570; 
+            var magic = BitConverter.ToUInt32(pchMessageStart, 0); // 0x5223570 
 
-            var genesis = Network.StratisMain.GetGenesis().Clone();
+            Block genesis = Network.StratisMain.GetGenesis().Clone();
             genesis.Header.Time = 1493909211;
             genesis.Header.Nonce = 2433759;
             genesis.Header.Bits = consensus.PowLimit;
