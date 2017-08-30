@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Configuration
             set;
         }
 
-        /// <summary>Path to the folder with coin view database files.</summary>
+        /// <summary>Path to the folder with coinview database files.</summary>
         /// <seealso cref="Features.Consensus.CoinViews.DBreezeCoinView.DBreezeCoinView"/>
         public string CoinViewPath
         {
