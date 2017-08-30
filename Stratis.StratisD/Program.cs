@@ -2,6 +2,7 @@
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Api;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -35,6 +36,7 @@ namespace Stratis.StratisD
                 .UseMempool()
                 .UseWallet()
                 .AddPowPosMining()
+                .UseApi()
                 .Build();
 
             Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith(t =>
