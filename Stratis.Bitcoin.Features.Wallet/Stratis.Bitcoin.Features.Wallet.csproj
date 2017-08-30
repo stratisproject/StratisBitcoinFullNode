@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>Stratis Bitcoin Features WatchOnlyWallet</Description>
-    <AssemblyTitle>Stratis.Bitcoin.Features.WatchOnlyWallet</AssemblyTitle>
+    <Description>Stratis Bitcoin Features Wallet</Description>
+    <AssemblyTitle>Stratis.Bitcoin.Features.Wallet</AssemblyTitle>
     <TargetFramework>netstandard1.6</TargetFramework>
-    <AssemblyName>Stratis.Bitcoin.Features.WatchOnlyWallet</AssemblyName>
-    <PackageId>Stratis.Bitcoin.Features.WatchOnlyWallet</PackageId>
+    <AssemblyName>Stratis.Bitcoin.Features.Wallet</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Features.Wallet</PackageId>
     <PackageTargetFallback>$(PackageTargetFallback);netcore50</PackageTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -18,6 +18,12 @@
     <Version>1.0.2-alpha</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Stratis.Bitcoin.Features.Wallet\**" />
+    <EmbeddedResource Remove="Stratis.Bitcoin.Features.Wallet\**" />
+    <None Remove="Stratis.Bitcoin.Features.Wallet\**" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="DBreeze" Version="1.85.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.3.1" />
@@ -43,7 +49,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 
