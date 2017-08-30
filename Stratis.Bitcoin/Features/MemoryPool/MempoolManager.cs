@@ -7,6 +7,9 @@ using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using System;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -21,7 +24,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Includes querying information about the transactions in the memory pool.
     /// Also includes methods for persisting memory pool.
     /// </summary>
-    public class MempoolManager: IPooledTransaction
+    public class MempoolManager: IPooledTransaction, IPooledGetUnspentTransaction
     {
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
         private IMempoolPersistence mempoolPersistence;
@@ -31,6 +34,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly TxMempool memPool;
+
+        /// <summary>Coin view of the memory pool.</summary>
+        private readonly CoinView coinView;
 
         /// <summary>
         /// Constructs an instance of a memory pool manager object.
@@ -51,6 +57,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IDateTimeProvider dateTimeProvider, 
             NodeSettings nodeArgs, 
             IMempoolPersistence mempoolPersistence,
+            CoinView coinView,
             ILoggerFactory loggerFactory)
         {
             this.MempoolLock = mempoolLock;
@@ -60,6 +67,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.Orphans = orphans;
             this.Validator = validator;
             this.mempoolPersistence = mempoolPersistence;
+            this.coinView = coinView;
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -244,6 +252,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.Validator.PerformanceCounter.SetMempoolSize(this.memPool.Size);
                 this.Validator.PerformanceCounter.SetMempoolDynamicSize(this.memPool.DynamicMemoryUsage());
             });
+        }
+
+        /// <inheritdoc />
+        public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
+        {
+            var txInfo = await this.InfoAsync(trxid);
+            if(txInfo == null)
+            {
+                return null;
+            }
+            var memPoolCoinView = new MempoolCoinView(this.coinView, this.memPool, this.MempoolLock, this.Validator);
+            await memPoolCoinView.LoadView(txInfo.Trx);
+            return memPoolCoinView.GetCoins(trxid);
         }
     }
 }

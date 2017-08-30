@@ -209,6 +209,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<LookaheadBlockPuller>();
                     services.AddSingleton<ConsensusLoop>();
                     services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
+                    services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                     services.AddSingleton<ConsensusController>();
                 });
             });
