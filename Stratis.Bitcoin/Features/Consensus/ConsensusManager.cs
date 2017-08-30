@@ -1,7 +1,11 @@
 ﻿using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -49,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public Target GetNetworkDifficulty()
         {
             if (this.ConsensusValidator?.ConsensusParams != null && this.ChainState?.HighestValidatedPoW != null)
-                return Miner.PowMining.GetWorkRequired(this.ConsensusValidator.ConsensusParams, this.ChainState?.HighestValidatedPoW);
+                return this.ChainState?.HighestValidatedPoW?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
             else
                 return null;
         }

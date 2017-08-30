@@ -11,8 +11,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
     {
         public IFullNode BuildServicedNode(string dir)
         {
-            var nodeSettings = NodeSettings.Default();
-            nodeSettings.DataDir = dir;
+            var nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dir}" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UseConsensus()
