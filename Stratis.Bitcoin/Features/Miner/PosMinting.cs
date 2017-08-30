@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Key key = null;
             Transaction txCoinStake = new Transaction();
 
-            txCoinStake.Time &= ~PosConsensusValidator.STAKE_TIMESTAMP_MASK;
+            txCoinStake.Time &= ~PosConsensusValidator.StaleTimestampMask;
 
             long searchTime = txCoinStake.Time; // search to current time
 
@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                         var timemaskceck = txNew.Time - n;
 
-                        if ((timemaskceck & PosConsensusValidator.STAKE_TIMESTAMP_MASK) != 0)
+                        if ((timemaskceck & PosConsensusValidator.StaleTimestampMask) != 0)
                             continue;
 
                         if (context.Stake.HashProofOfStake != null)
