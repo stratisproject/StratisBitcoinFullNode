@@ -21,9 +21,9 @@ namespace Stratis.Bitcoin.Features.RPC.Models
                 var output = unspentOutputs.TryGetOutput(vout);
                 this.bestblock = tip.HashBlock;
                 this.coinbase = unspentOutputs.IsCoinbase;
+                this.confirmations = TxMempool.MempoolHeight == unspentOutputs.Height ? 0 : tip.Height - (int)unspentOutputs.Height + 1;
                 if (output != null)
                 {
-                    this.confirmations = TxMempool.MempoolHeight == unspentOutputs.Height ? 0 : tip.Height - (int)unspentOutputs.Height + 1;
                     this.value = output.Value;
                     this.scriptPubKey = new ScriptPubKey(output.ScriptPubKey, network);
                 }
