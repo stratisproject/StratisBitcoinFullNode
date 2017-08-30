@@ -90,21 +90,21 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            UnspentOutputs uo = null;
+            UnspentOutputs unspentOutputs = null;
             if(includeMemPool)
             {
-                uo = await this.FullNode.NodeService<IPooledGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
+                unspentOutputs = await this.FullNode.NodeService<IPooledGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
             else
             {
-                uo = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
+                unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
             
-            if(uo == null)
+            if(unspentOutputs == null)
             {
                 return null;
             }
-            return new GetTxOutModel(uo, vout, this.Network, this.Chain.Tip);
+            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.Chain.Tip);
         }
 
 

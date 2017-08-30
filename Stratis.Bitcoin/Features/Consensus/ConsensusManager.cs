@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
             var outputs =  await this.ConsensusLoop.UTXOSet?.FetchCoinsAsync(new[] { trxid });
-            return outputs == null || outputs.UnspentOutputs == null || outputs.UnspentOutputs.Length == 0 ? null : outputs.UnspentOutputs[0];
+            return outputs?.UnspentOutputs?.SingleOrDefault();
         }
     }
 }

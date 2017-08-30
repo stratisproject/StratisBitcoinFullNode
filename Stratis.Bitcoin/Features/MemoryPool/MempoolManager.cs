@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            var txInfo = await InfoAsync(trxid);
+            var txInfo = await this.InfoAsync(trxid);
             if(txInfo == null)
             {
                 return null;
