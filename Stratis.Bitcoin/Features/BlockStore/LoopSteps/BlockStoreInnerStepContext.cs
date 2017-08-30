@@ -68,10 +68,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         public Queue<ChainedBlock> DownloadStack { get; private set; }
 
         /// <summary>The maximum number of blocks to ask for.</summary>
-        public const int DownloadStackThreshold = 50;
+        public const int DownloadStackThreshold = 100;
 
         /// <summary>The maximum number of blocks to read from the puller before asking for blocks again.</summary>
-        public const int DownloadStackPushThreshold = 25;
+        public const int DownloadStackPushThreshold = 50;
 
         public BlockStoreLoop BlockStoreLoop { get; private set; }
 

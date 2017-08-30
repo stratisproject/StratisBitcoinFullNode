@@ -92,10 +92,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             ChainedBlock chainedBlockToStore = context.DownloadStack.Dequeue();
             context.Store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToStore));
+
             context.InsertBlockSize += downloadedBlock.Length;
             context.StallCount = 0;
 
-            this.logger.LogTrace("{0}='{1}/{2}' added to the store.", nameof(chainedBlockToStore), chainedBlockToStore.HashBlock, chainedBlockToStore.Height);
+            this.logger.LogTrace("{0}='{1}/{2}' added to the store.", nameof(chainedBlockToStore), chainedBlockToStore.HashBlock, chainedBlockToStore.Height, context.BlocksPushedCount);
             return chainedBlockToStore;
         }
 
