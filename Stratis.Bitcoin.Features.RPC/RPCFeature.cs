@@ -84,8 +84,7 @@ namespace Stratis.Bitcoin.Features.RPC
     {
         public static IFullNodeBuilder AddRPC(this IFullNodeBuilder fullNodeBuilder, Action<RpcSettings> setup = null)
         {
-            LoggingConfiguration.RegisterLoggingConfiguration("rpc",
-                $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.RPC)}.*"); 
+            LoggingConfiguration.RegisterFeatureNamespace<RPCFeature>("rpc");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
