@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Miner
     [Controller]
     public class MiningRPCController : BaseRPCController
     {
-        public MiningRPCController(PowMining mining)
+        public MiningRPCController(PowMining mining, IFullNode fullNode) : base(fullNode: fullNode)
         {
             this.Mining = mining;
         }
