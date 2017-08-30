@@ -39,11 +39,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
                 this.BlockStoreLoop.SetStoreTip(nextChainedBlock);
 
-                this.logger.LogTrace("(-):{0}", StepResult.Continue);
                 return StepResult.Continue;
             }
 
-            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }
