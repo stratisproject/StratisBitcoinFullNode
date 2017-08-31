@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 		public readonly static ConsensusError StakeTimeViolation = new ConsensusError("stake-time-violation", "stake time violation");
 		public readonly static ConsensusError BadStakeBlock = new ConsensusError("bad-stake-block", "bad stake block");
 		public readonly static ConsensusError PrevStakeNull = new ConsensusError("prev-stake-null", "previous stake is not found");
-		public readonly static ConsensusError StakeHashInvalidTarget = new ConsensusError("proof-of-stake-hash-invalid-target", "proof-of-stake hash did not meets target protocol");
+		public readonly static ConsensusError StakeHashInvalidTarget = new ConsensusError("proof-of-stake-hash-invalid-target", "proof-of-stake hash did not meet target protocol");
 
 		public readonly static ConsensusError ModifierNotFound = new ConsensusError("modifier-not-found", "unable to get last modifier");
 		public readonly static ConsensusError FailedSelectBlock = new ConsensusError("failed-select-block", "unable to select block at round");
