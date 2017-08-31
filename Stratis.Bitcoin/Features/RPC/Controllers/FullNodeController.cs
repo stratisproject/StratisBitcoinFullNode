@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
@@ -74,6 +75,38 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             else
                 return new TransactionBriefModel(trx);
         }
+
+        /// <summary>
+        /// Implements gettextout RPC call.
+        /// </summary>
+        /// <param name="txid">The transaction id</param>
+        /// <param name="vout">The vout number</param>
+        /// <param name="includeMemPool">Whether to include the mempool</param>
+        /// <returns>The GetTxOut rpc format</returns>
+        [ActionName("gettxout")]
+        public async Task<GetTxOutModel> GetTxOut(string txid, uint vout, bool includeMemPool = true)
+        {
+            uint256 trxid;
+            if (!uint256.TryParse(txid, out trxid))
+                throw new ArgumentException(nameof(txid));
+
+            UnspentOutputs unspentOutputs = null;
+            if(includeMemPool)
+            {
+                unspentOutputs = await this.FullNode.NodeService<IPooledGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
+            }
+            else
+            {
+                unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
+            }
+            
+            if(unspentOutputs == null)
+            {
+                return null;
+            }
+            return new GetTxOutModel(unspentOutputs, vout, this.Network, this.Chain.Tip);
+        }
+
 
         [ActionName("getblockcount")]
         public int GetBlockCount()
