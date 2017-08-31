@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
 using Transaction = NBitcoin.Transaction;
 
-[assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
