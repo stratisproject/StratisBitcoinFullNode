@@ -562,6 +562,12 @@ namespace Stratis.Bitcoin.Features.Miner
                     break;
             }
 
+            if (nCredit == 0)
+            {
+                this.logger.LogTrace("(-)[KERNEL_NOT_FOUND]:false");
+                return false;
+            }
+
             // TODO: This seems to be wrong because we found kernel
             // for a particular UTXO and now if we find out that its 
             // value is too big, such that we would not have our reserve
@@ -574,7 +580,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Maybe it shouldn't even occur as SelectCoinsForStaking 
             // should avoid selecting coins that would violate the reserve.
             // But that does not currently happen.
-            if ((nCredit == 0) || (nCredit > (nBalance - this.reserveBalance)))
+            if (nCredit > (nBalance - this.reserveBalance))
             {
                 this.logger.LogTrace("(-)[RESERVE]:false");
                 return false;
