@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -56,7 +55,6 @@ namespace Breeze.Daemon
                         .UseBlockStore()
                         .UseMempool()
                         .UseWallet()
-                        .AddPowPosMining()
                         .UseApi();
                 }
             }
