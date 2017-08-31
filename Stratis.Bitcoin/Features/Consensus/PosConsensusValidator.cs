@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         // To decrease granularity of timestamp.
         // Supposed to be 2^n-1.
-        public const uint StaleTimestampMask = 15;
+        public const uint StakeTimestampMask = 15;
 
         public StakeValidator StakeValidator { get { return this.stakeValidator; } }
         private readonly StakeValidator stakeValidator;
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public static bool CheckCoinStakeTimestamp(int nHeight, long nTimeBlock, long nTimeTx)
         {
             if (StakeValidator.IsProtocolV2(nHeight))
-                return (nTimeBlock == nTimeTx) && ((nTimeTx & StaleTimestampMask) == 0);
+                return (nTimeBlock == nTimeTx) && ((nTimeTx & StakeTimestampMask) == 0);
             else
                 return (nTimeBlock == nTimeTx);
         }
