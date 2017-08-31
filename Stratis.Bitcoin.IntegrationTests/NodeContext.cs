@@ -14,14 +14,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
 	public class NodeContext : IDisposable
 	{
-		List<IDisposable> _CleanList = new List<IDisposable>();
+        /// <summary>Factory for creating loggers.</summary>
+        protected readonly ILoggerFactory loggerFactory;
+
+        List<IDisposable> _CleanList = new List<IDisposable>();
 		TestDirectory _TestDirectory;
 		public NodeContext(string name, Network network, bool clean)
 		{
 			network = network ?? Network.RegTest;
-			this._Network = network;
+            this.loggerFactory = new LoggerFactory();
+            this._Network = network;
 			this._TestDirectory = TestDirectory.Create(name, clean);
-			this._PersistentCoinView = new DBreezeCoinView(network, this._TestDirectory.FolderName);
+			this._PersistentCoinView = new DBreezeCoinView(network, this._TestDirectory.FolderName, this.loggerFactory);
 			this._PersistentCoinView.Initialize().GetAwaiter().GetResult();
             this._CleanList.Add(this._PersistentCoinView);
 		}
@@ -79,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			this._PersistentCoinView.Dispose();
 			this._CleanList.Remove(this._PersistentCoinView);
-			this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName);
+			this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName, this.loggerFactory);
 			this._PersistentCoinView.Initialize().GetAwaiter().GetResult();
             this._CleanList.Add(this._PersistentCoinView);
 		}		

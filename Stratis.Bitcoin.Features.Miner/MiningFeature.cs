@@ -1,12 +1,17 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
     public class MiningFeature : FullNodeFeature
     {
+        public MiningFeature()
+        {
+        }
+
         ///<inheritdoc />
         public override void Start()
         {
@@ -34,6 +39,8 @@ namespace Stratis.Bitcoin.Features.Miner
     {
         public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -42,14 +49,17 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         services.AddSingleton<PowMining>();
                         services.AddSingleton<AssemblerFactory, PowAssemblerFactory>();
+                        services.AddSingleton<MiningRPCController>();
                     });
             });
-
+            
             return fullNodeBuilder;
         }
 
         public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -59,6 +69,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<PowMining>();
                         services.AddSingleton<PosMinting>();
                         services.AddSingleton<AssemblerFactory, PosAssemblerFactory>();
+                        services.AddSingleton<MiningRPCController>();
                     });
             });
 

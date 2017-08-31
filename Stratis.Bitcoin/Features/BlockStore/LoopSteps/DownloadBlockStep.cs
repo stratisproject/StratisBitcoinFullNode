@@ -44,27 +44,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
 
             if (disposeMode)
-            {
-                this.logger.LogTrace("(-):{0}", StepResult.Stop);
                 return StepResult.Stop;
-            }
 
             var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory, this.dateTimeProvider);
-
             while (!token.IsCancellationRequested)
             {
                 foreach (var innerStep in context.InnerSteps.ToList())
                 {
                     InnerStepResult innerStepResult = await innerStep.ExecuteAsync(context);
                     if (innerStepResult == InnerStepResult.Stop)
-                    {
-                        this.logger.LogTrace("(-):{0}", StepResult.Next);
                         return StepResult.Next;
-                    }
                 }
             }
 
-            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }

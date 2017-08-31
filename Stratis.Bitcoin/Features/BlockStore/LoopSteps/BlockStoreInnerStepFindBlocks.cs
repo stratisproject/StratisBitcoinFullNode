@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,10 +23,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>
-        /// Initializes new instance of the object.
-        /// </summary>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public BlockStoreInnerStepFindBlocks(ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
@@ -33,20 +31,28 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <inheritdoc/>
         public override async Task<InnerStepResult> ExecuteAsync(BlockStoreInnerStepContext context)
         {
-            this.logger.LogTrace("()");
+            var batchSize = BlockStoreInnerStepContext.DownloadStackThreshold - context.DownloadStack.Count;
+            var batchList = new List<ChainedBlock>(batchSize);
 
-            while (await ShouldStopFindingBlocks(context) == false)
+            while (batchList.Count < batchSize)
             {
+                if (await ShouldStopFindingBlocks(context))
+                {
+                    context.StopFindingBlocks();
+                    break;
+                }
+
+                batchList.Add(context.NextChainedBlock);
                 context.DownloadStack.Enqueue(context.NextChainedBlock);
                 context.GetNextBlock();
             }
 
-            context.StopFindingBlocks();
 
-            if (context.DownloadStack.Any())
-                context.BlockStoreLoop.BlockPuller.AskForMultipleBlocks(context.DownloadStack.ToArray());
-
-            this.logger.LogTrace("(-):{0}", InnerStepResult.Next);
+            if (batchList.Any())
+            {
+                this.logger.LogTrace("{0} blocks requested to be downloaded by the puller.", batchList.Count);
+                context.BlockStoreLoop.BlockPuller.AskForMultipleBlocks(batchList.ToArray());
+            }
 
             return InnerStepResult.Next;
         }
@@ -54,22 +60,34 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         private async Task<bool> ShouldStopFindingBlocks(BlockStoreInnerStepContext context)
         {
             if (context.NextChainedBlock == null)
+            {
+                this.logger.LogTrace("{0} is null", nameof(context.NextChainedBlock));
                 return true;
-
-            if (context.DownloadStack.Count >= BlockStoreInnerStepContext.DownloadStackThreshold)
-                return true;
+            }
 
             if (context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock))
+            {
+                this.logger.LogTrace("{0} != {1}", nameof(context.NextChainedBlock.Header.HashPrevBlock), nameof(context.InputChainedBlock.HashBlock));
                 return true;
+            }
 
             if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+            {
+                this.logger.LogTrace("{0} height > {1} height", nameof(context.NextChainedBlock), nameof(context.BlockStoreLoop.ChainState.HighestValidatedPoW));
                 return true;
+            }
 
             if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
+            {
+                this.logger.LogTrace("{0}='{1}/{2}' exists in pending storage.", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
                 return true;
+            }
 
             if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
+            {
+                this.logger.LogTrace("{0}='{1}/{2}' exists in the repository.", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
                 return true;
+            }
 
             return false;
         }

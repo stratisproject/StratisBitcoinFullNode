@@ -5,11 +5,8 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Utilities;
 using System;
-using System.Collections.Generic;
-using System.Reflection;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
