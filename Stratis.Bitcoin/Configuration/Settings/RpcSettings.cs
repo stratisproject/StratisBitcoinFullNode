@@ -13,7 +13,24 @@ namespace Stratis.Bitcoin.Configuration.Settings
     /// </summary>
     public class RpcSettings
     {
+        /// <summary>Indicates whether the RPC server is being used</summary>
         public bool server { get; private set; }
+
+        /// <summary>User name for RPC authorization.</summary>
+        public string RpcUser { get; set; }
+
+        /// <summary>Password for RPC authorization.</summary>
+        public string RpcPassword { get; set; }
+
+        /// <summary>TCP port for RPC interface.</summary>
+        public int RPCPort { get; set; }
+
+        /// <summary>List of network endpoints that the node will listen and provide RPC on.</summary>
+        public List<IPEndPoint> Bind { get; set; }
+
+        /// <summary>List of IP addresses that are allowed to connect to RPC interfaces.</summary>
+        public List<IPAddress> AllowIp { get; set; }
+
         private Action<RpcSettings> callback = null;
 
         /// <summary>
@@ -37,7 +54,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <param name="config">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
-            var config = nodeSettings.config;
+            var config = nodeSettings.ConfigReader;
 
             this.server = config.GetOrDefault<bool>("server", false);
             if (!this.server)
@@ -107,36 +124,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-rpcallowip=<ip>          Allow JSON-RPC connections from specified source. This option can be specified multiple times.");
 
             defaults.Logger.LogInformation(builder.ToString());
-        }
-
-        /// <summary>User name for RPC authorization.</summary>
-        public string RpcUser
-        {
-            get; set;
-        }
-
-        /// <summary>Password for RPC authorization.</summary>
-        public string RpcPassword
-        {
-            get; set;
-        }
-
-        /// <summary>TCP port for RPC interface.</summary>
-        public int RPCPort
-        {
-            get; set;
-        }
-
-        /// <summary>List of network endpoints that the node will listen and provide RPC on.</summary>
-        public List<IPEndPoint> Bind
-        {
-            get; set;
-        }
-
-        /// <summary>List of IP addresses that are allowed to connect to RPC interfaces.</summary>
-        public List<IPAddress> AllowIp
-        {
-            get; set;
         }
 
         /// <summary>Obtains a list of HTTP URLs to RPC interfaces.</summary>

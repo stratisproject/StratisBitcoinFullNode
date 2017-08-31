@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
 
-        public TextFileConfiguration config { get; private set; }
+        public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Configuration
 
             var consoleConfig = new TextFileConfiguration(args);
             var config = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
-            nodeSettings.config = config;
+            nodeSettings.ConfigReader = config;
             consoleConfig.MergeInto(config);
 
             nodeSettings.DataFolder = new DataFolder(nodeSettings);
