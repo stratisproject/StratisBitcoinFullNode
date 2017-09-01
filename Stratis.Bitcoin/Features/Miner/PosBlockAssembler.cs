@@ -7,7 +7,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-
     public class PosBlockAssembler : PowBlockAssembler
     {
         private readonly StakeChain stakeChain;
@@ -27,7 +26,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakeChain = stakeChain;
         }
 
-
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
@@ -36,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.coinbase.Outputs[0].Value = Money.Zero;
 
             PosConsensusValidator posValidator = this.consensusLoop.Validator as PosConsensusValidator;
-            Guard.NotNull(posValidator, "posvalidator");
+            Guard.NotNull(posValidator, nameof(posValidator));
 
             // TODO: add this code
             // Timestamp limit
