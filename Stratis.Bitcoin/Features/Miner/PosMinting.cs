@@ -74,6 +74,8 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly WalletManager walletManager;
         private readonly PosConsensusValidator posConsensusValidator;
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         private Task mining;
