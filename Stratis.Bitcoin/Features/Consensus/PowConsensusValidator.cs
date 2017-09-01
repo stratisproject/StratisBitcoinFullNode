@@ -7,6 +7,7 @@ using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -14,6 +15,9 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         // Used as the flags parameter to sequence and nLocktime checks in non-consensus code. 
         public static Transaction.LockTimeFlags StandardLocktimeVerifyFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         private readonly NBitcoin.Consensus consensusParams;
         public NBitcoin.Consensus ConsensusParams { get { return this.consensusParams; } }
@@ -25,11 +29,12 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public bool UseConsensusLib { get; set; }
 
-        public PowConsensusValidator(Network network)
+        public PowConsensusValidator(Network network, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(network.Consensus.Option<PowConsensusOptions>(), nameof(network.Consensus.Options));
 
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.consensusParams = network.Consensus;
             this.consensusOptions = network.Consensus.Option<PowConsensusOptions>();
             this.PerformanceCounter = new ConsensusPerformanceCounter();
@@ -46,6 +51,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public virtual void ContextualCheckBlock(ContextInformation context)
         {
+            this.logger.LogTrace("()");
+
             Block block = context.BlockResult.Block;
             ConsensusFlags consensusFlags = context.Flags;
 
@@ -60,7 +67,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             foreach (Transaction transaction in block.Transactions)
             {
                 if (!transaction.IsFinal(nLockTimeCutoff, nHeight))
+                {
+                    this.logger.LogTrace("(-)[TX_NON_FINAL]");
                     ConsensusErrors.BadTransactionNonFinal.Throw();
+                }
             }
 
             // Enforce rule that the coinbase starts with serialized block height.
@@ -69,7 +79,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 Script expect = new Script(Op.GetPushOp(nHeight));
                 Script actual = block.Transactions[0].Inputs[0].ScriptSig;
                 if (!this.StartWith(actual.ToBytes(true), expect.ToBytes(true)))
+                {
+                    this.logger.LogTrace("(-)[BAD_COINBASE_HEIGHT]");
                     ConsensusErrors.BadCoinbaseHeight.Throw();
+                }
             }
 
             // Validation for witness commitments.
@@ -94,7 +107,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // witness tree.
                     WitScript witness = block.Transactions[0].Inputs[0].WitScript;
                     if ((witness.PushCount != 1) || (witness.Pushes.First().Length != 32))
+                    {
+                        this.logger.LogTrace("(-)[BAD_WITNESS_NONCE_SIZE]");
                         ConsensusErrors.BadWitnessNonceSize.Throw();
+                    }
 
                     byte[] hashed = new byte[64];
                     Buffer.BlockCopy(hashWitness.ToBytes(), 0, hashed, 0, 32);
@@ -102,7 +118,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     hashWitness = Hashes.Hash256(hashed);
 
                     if (!this.EqualsArray(hashWitness.ToBytes(), block.Transactions[0].Outputs[commitpos].ScriptPubKey.ToBytes(true).Skip(6).ToArray(), 32))
+                    {
+                        this.logger.LogTrace("(-)[WITNESS_MERKLE_MISMATCH]");
                         ConsensusErrors.BadWitnessMerkleMatch.Throw();
+                    }
 
                     fHaveWitness = true;
                 }
@@ -113,7 +132,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 for (int i = 0; i < block.Transactions.Count; i++)
                 {
                     if (block.Transactions[i].HasWitness)
+                    {
+                        this.logger.LogTrace("(-)[UNEXPECTED_WITNESS]");
                         ConsensusErrors.UnexpectedWitness.Throw();
+                    }
                 }
             }
 
@@ -124,11 +146,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             // the block hash, so we couldn't mark the block as permanently
             // failed).
             if (this.GetBlockWeight(block) > this.consensusOptions.MAX_BLOCK_WEIGHT)
-                ConsensusErrors.BadCoinbaseHeight.Throw();
+            {
+                this.logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
+                ConsensusErrors.BadBlockWeight.Throw();
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         public virtual void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
         {
+            this.logger.LogTrace("()");
+
             Block block = context.BlockResult.Block;
             ChainedBlock index = context.BlockResult.ChainedBlock;
             ConsensusFlags flags = context.Flags;
@@ -142,7 +171,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     UnspentOutputs coins = view.AccessCoins(tx.GetHash());
                     if ((coins != null) && !coins.IsPrunable)
+                    {
+                        this.logger.LogTrace("(-)[BAD_TX_BIP_30]");
                         ConsensusErrors.BadTransactionBIP30.Throw();
+                    }
                 }
             }
 
@@ -158,7 +190,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     int[] prevheights;
 
                     if (!view.HaveInputs(tx))
+                    {
+                        this.logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
                         ConsensusErrors.BadTransactionMissingInput.Throw();
+                    }
 
                     prevheights = new int[tx.Inputs.Count];
                     // Check that transaction is BIP68 final.
@@ -170,8 +205,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     }
 
                     if (!tx.CheckSequenceLocks(prevheights, index, flags.LockTimeFlags))
+                    {
+                        this.logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
                         ConsensusErrors.BadTransactionNonFinal.Throw();
-
+                    }
                 }
                 // GetTransactionSigOpCost counts 3 types of sigops:
                 // * legacy (always),
@@ -221,36 +258,62 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             bool passed = checkInputs.All(c => c.GetAwaiter().GetResult());
             if (!passed)
+            {
+                this.logger.LogTrace("(-)[BAD_TX_SCRIPT]");
                 ConsensusErrors.BadTransactionScriptError.Throw();
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         protected virtual void UpdateCoinView(ContextInformation context, Transaction tx)
         {
+            this.logger.LogTrace("()");
+
             ChainedBlock index = context.BlockResult.ChainedBlock;
             UnspentOutputSet view = context.Set;
 
             view.Update(tx, index.Height);
+
+            this.logger.LogTrace("(-)");
         }
 
         public virtual void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
         {
+            this.logger.LogTrace("()");
+
             Money blockReward = nFees + this.GetProofOfWorkReward(chainedBlock.Height);
             if (block.Transactions[0].TotalOut > blockReward)
+            {
+                this.logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
                 ConsensusErrors.BadCoinbaseAmount.Throw();
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         protected virtual void CheckMaturity(UnspentOutputs coins, int nSpendHeight)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(nSpendHeight), nSpendHeight);
+
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinbase)
             {
                 if ((nSpendHeight - coins.Height) < this.consensusOptions.COINBASE_MATURITY)
+                {
+                    this.logger.LogTrace("Coinbase transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, nSpendHeight, this.consensusOptions.COINBASE_MATURITY);
+                    this.logger.LogTrace("(-)[COINBASE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
+                }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         public virtual void CheckInputs(Transaction tx, UnspentOutputSet inputs, int nSpendHeight)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(nSpendHeight), nSpendHeight);
+
             if (!inputs.HaveInputs(tx))
                 ConsensusErrors.BadTransactionMissingInput.Throw();
 
@@ -263,23 +326,37 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 this.CheckMaturity(coins, nSpendHeight);
 
-                // Check for negative or overflow input values
+                // Check for negative or overflow input values.
                 nValueIn += coins.TryGetOutput(prevout.N).Value;
                 if (!this.MoneyRange(coins.TryGetOutput(prevout.N).Value) || !this.MoneyRange(nValueIn))
+                {
+                    this.logger.LogTrace("(-)[BAD_TX_INPUT_VALUE]");
                     ConsensusErrors.BadTransactionInputValueOutOfRange.Throw();
+                }
             }
 
             if (nValueIn < tx.TotalOut)
+            {
+                this.logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
                 ConsensusErrors.BadTransactionInBelowOut.Throw();
+            }
 
-            // Tally transaction fees
+            // Tally transaction fees.
             Money nTxFee = nValueIn - tx.TotalOut;
             if (nTxFee < 0)
+            {
+                this.logger.LogTrace("(-)[NEGATIVE_FEE]");
                 ConsensusErrors.BadTransactionNegativeFee.Throw();
+            }
 
             nFees += nTxFee;
             if (!this.MoneyRange(nFees))
+            {
+                this.logger.LogTrace("(-)[BAD_FEE]");
                 ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         public virtual Money GetProofOfWorkReward(int nHeight)
@@ -375,19 +452,26 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public virtual void CheckBlock(ContextInformation context)
         {
+            this.logger.LogTrace("()");
+
             Block block = context.BlockResult.Block;
 
             bool mutated = false;
             uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, ref mutated);
             if (context.CheckMerkleRoot && (block.Header.HashMerkleRoot != hashMerkleRoot2))
+            {
+                this.logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
                 ConsensusErrors.BadMerkleRoot.Throw();
+            }
 
             // Check for merkle tree malleability (CVE-2012-2459): repeating sequences
             // of transactions in a block without affecting the merkle root of a block,
             // while still invalidating it.
             if (mutated)
+            {
+                this.logger.LogTrace("(-)[BAD_TX_DUP]");
                 ConsensusErrors.BadTransactionDuplicate.Throw();
-
+            }
 
             // All potential-corruption validation must be done before we do any
             // transaction validation, as otherwise we may mark the header as invalid
@@ -395,17 +479,28 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Note that witness malleability is checked in ContextualCheckBlock, so no
             // checks that use witness data may be performed here.
 
-            // Size limits
-            if (block.Transactions.Count == 0 || block.Transactions.Count > this.consensusOptions.MAX_BLOCK_BASE_SIZE || this.GetSize(block, TransactionOptions.None) > this.consensusOptions.MAX_BLOCK_BASE_SIZE)
+            // Size limits.
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > this.consensusOptions.MAX_BLOCK_BASE_SIZE) || (this.GetSize(block, TransactionOptions.None) > this.consensusOptions.MAX_BLOCK_BASE_SIZE))
+            {
+                this.logger.LogTrace("(-)[BAD_BLOCK_LEN]");
                 ConsensusErrors.BadBlockLength.Throw();
+            }
 
             // First transaction must be coinbase, the rest must not be
-            if (block.Transactions.Count == 0 || !block.Transactions[0].IsCoinBase)
+            if ((block.Transactions.Count == 0) || !block.Transactions[0].IsCoinBase)
+            {
+                this.logger.LogTrace("(-)[NO_COINBASE]");
                 ConsensusErrors.BadCoinbaseMissing.Throw();
+            }
 
             for (int i = 1; i < block.Transactions.Count; i++)
+            {
                 if (block.Transactions[i].IsCoinBase)
+                {
+                    this.logger.LogTrace("(-)[MULTIPLE_COINBASE]");
                     ConsensusErrors.BadMultipleCoinbase.Throw();
+                }
+            }
 
             // Check transactions
             foreach (Transaction tx in block.Transactions)
@@ -416,7 +511,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                 nSigOps += this.GetLegacySigOpCount(tx);
 
             if ((nSigOps * this.consensusOptions.WITNESS_SCALE_FACTOR) > this.consensusOptions.MAX_BLOCK_SIGOPS_COST)
+            {
+                this.logger.LogTrace("(-)[BAD_BLOCK_SIGOPS]");
                 ConsensusErrors.BadBlockSigOps.Throw();
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         private long GetLegacySigOpCount(Transaction tx)
@@ -433,30 +533,50 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public virtual void CheckTransaction(Transaction tx)
         {
+            this.logger.LogTrace("()");
+
             // Basic checks that don't depend on any context.
             if (tx.Inputs.Count == 0)
+            {
+                this.logger.LogTrace("(-)[TX_NO_INPUT]");
                 ConsensusErrors.BadTransactionNoInput.Throw();
+            }
 
             if (tx.Outputs.Count == 0)
+            {
+                this.logger.LogTrace("(-)[TX_NO_OUTPUT]");
                 ConsensusErrors.BadTransactionNoOutput.Throw();
-            
+            }
+
             // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability).
             if (this.GetSize(tx, TransactionOptions.None) > this.consensusOptions.MAX_BLOCK_BASE_SIZE)
+            {
+                this.logger.LogTrace("(-)[TX_OVERSIZE]");
                 ConsensusErrors.BadTransactionOversize.Throw();
+            }
 
             // Check for negative or overflow output values
             long nValueOut = 0;
             foreach (TxOut txout in tx.Outputs)
             {
                 if (txout.Value.Satoshi < 0)
+                {
+                    this.logger.LogTrace("(-)[TX_OUTPUT_NEGATIVE]");
                     ConsensusErrors.BadTransactionNegativeOutput.Throw();
+                }
 
                 if (txout.Value.Satoshi > this.consensusOptions.MAX_MONEY)
+                {
+                    this.logger.LogTrace("(-)[TX_OUTPUT_TOO_LARGE]");
                     ConsensusErrors.BadTransactionTooLargeOutput.Throw();
+                }
 
                 nValueOut += txout.Value;
                 if (!this.MoneyRange(nValueOut))
+                {
+                    this.logger.LogTrace("(-)[TX_TOTAL_OUTPUT_TOO_LARGE]");
                     ConsensusErrors.BadTransactionTooLargeTotalOutput.Throw();
+                }
             }
 
             // Check for duplicate inputs.
@@ -464,22 +584,35 @@ namespace Stratis.Bitcoin.Features.Consensus
             foreach (TxIn txin in tx.Inputs)
             {
                 if (vInOutPoints.Contains(txin.PrevOut))
+                {
+                    this.logger.LogTrace("(-)[TX_DUP_INPUTS]");
                     ConsensusErrors.BadTransactionDuplicateInputs.Throw();
+                }
 
                 vInOutPoints.Add(txin.PrevOut);
             }
 
             if (tx.IsCoinBase)
             {
-                if (tx.Inputs[0].ScriptSig.Length < 2 || tx.Inputs[0].ScriptSig.Length > 100)
+                if ((tx.Inputs[0].ScriptSig.Length < 2) || (tx.Inputs[0].ScriptSig.Length > 100))
+                {
+                    this.logger.LogTrace("(-)[BAD_COINBASE_SIZE]");
                     ConsensusErrors.BadCoinbaseSize.Throw();
+                }
             }
             else
             {
                 foreach (TxIn txin in tx.Inputs)
+                {
                     if (txin.PrevOut.IsNull)
+                    {
+                        this.logger.LogTrace("(-)[TX_NULL_PREVOUT]");
                         ConsensusErrors.BadTransactionNullPrevout.Throw();
+                    }
+                }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         private bool MoneyRange(long nValue)
@@ -706,29 +839,44 @@ namespace Stratis.Bitcoin.Features.Consensus
         public virtual void ContextualCheckBlockHeader(ContextInformation context)
         {
             Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
+            this.logger.LogTrace("()");
 
             BlockHeader header = context.BlockResult.Block.Header;
 
             int nHeight = context.BestBlock.Height + 1;
 
-            // Check proof of work
+            // Check proof of work.
             if (header.Bits != context.NextWorkRequired)
+            {
+                this.logger.LogTrace("(-)[BAD_DIFF_BITS]");
                 ConsensusErrors.BadDiffBits.Throw();
+            }
 
-            // Check timestamp against prev
+            // Check timestamp against prev.
             if (header.BlockTime <= context.BestBlock.MedianTimePast)
+            {
+                this.logger.LogTrace("(-)[TIME_TOO_OLD]");
                 ConsensusErrors.TimeTooOld.Throw();
+            }
 
-            // Check timestamp
+            // Check timestamp.
             if (header.BlockTime > (context.Time + TimeSpan.FromHours(2)))
+            {
+                this.logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
+            }
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
-            // check for version 2, 3 and 4 upgrades
+            // check for version 2, 3 and 4 upgrades.
             if (((header.Version < 2) && (nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
                ((header.Version < 3) && (nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
                ((header.Version < 4) && (nHeight >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
+            {
+                this.logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();
+            }
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
