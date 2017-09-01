@@ -242,9 +242,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Weighted target.
             long nValueIn = txPrev._Outputs[prevout.N].Value.Satoshi;
             BigInteger bnWeight = BigInteger.ValueOf(nValueIn);
-            bnTarget = bnTarget.Multiply(bnWeight);
+            BigInteger bnWeightedTarget = bnTarget.Multiply(bnWeight);
 
-            context.Stake.TargetProofOfStake = ToUInt256(bnTarget);
+            context.Stake.TargetProofOfStake = ToUInt256(bnWeightedTarget);
             this.logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", ToUInt256(bnTarget), nValueIn, context.Stake.TargetProofOfStake);
 
             ulong nStakeModifier = prevBlockStake.StakeModifier; //pindexPrev.Header.BlockStake.StakeModifier;
@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Now check if proof-of-stake hash meets target protocol.
             BigInteger hashProofOfStakeTarget = new BigInteger(1, context.Stake.HashProofOfStake.ToBytes(false));
-            if (hashProofOfStakeTarget.CompareTo(bnTarget) > 0)
+            if (hashProofOfStakeTarget.CompareTo(bnWeightedTarget) > 0)
             {
                 this.logger.LogTrace("(-)[TARGET_MISSED]");
                 ConsensusErrors.StakeHashInvalidTarget.Throw();
