@@ -1,33 +1,20 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using NBitcoin.BitcoinCore;
-using NBitcoin.DataEncoders;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
-using static NBitcoin.Transaction;
-using System.Diagnostics;
-using System.IO;
-using System.Collections.Concurrent;
-using System.Threading;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockPulling;
-using System.Net.Http;
-using System.Collections;
 using NBitcoin.Crypto;
-using Stratis.Bitcoin.Utilities;
-using NBitcoin.RPC;
-using System.Net;
-using Stratis.Bitcoin.Configuration;
-using Microsoft.Extensions.Logging.Console;
+using NBitcoin.DataEncoders;
+using static NBitcoin.Transaction;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -339,7 +326,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				Flags = consensusFlags,
 			};
 			Network.Main.Consensus.Options = new PowConsensusOptions();
-			var validator = new PowConsensusValidator(Network.Main);
+			var validator = new PowConsensusValidator(Network.Main, new LoggerFactory());
 			//validator.CheckBlockHeader(context);
 			validator.ContextualCheckBlock(context);
 			validator.CheckBlock(context);
