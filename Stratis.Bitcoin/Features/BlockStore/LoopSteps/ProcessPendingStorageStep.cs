@@ -80,10 +80,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task PushPendingBlocksToRepository(ProcessPendingStorageContext context)
         {
-            BlockPair lastBlock;
-            context.PendingBlockPairsToStore.TryPop(out lastBlock);
-            await this.BlockStoreLoop.BlockRepository.PutAsync(lastBlock.ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
-            this.BlockStoreLoop.SetStoreTip(lastBlock.ChainedBlock);
+            await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairsToStore.First().ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
+            this.BlockStoreLoop.SetStoreTip(context.PendingBlockPairsToStore.First().ChainedBlock);
 
             this.logger.LogTrace("({0}.{1}:{2} pushed to the repository.')", nameof(context.PendingBlockPairsToStore), nameof(context.PendingBlockPairsToStore.Count), context.PendingBlockPairsToStore?.Count);
         }
