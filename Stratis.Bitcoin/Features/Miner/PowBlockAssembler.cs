@@ -213,6 +213,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /** Construct a new block template with coinbase to scriptPubKeyIn */
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn, nameof(fMineWitnessTx), fMineWitnessTx);
+
             long nTimeStart = DateTime.UtcNow.Ticks / TicksPerMicrosecond;
             this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
             this.scriptPubKeyIn = scriptPubKeyIn;
@@ -270,6 +272,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             //LogPrint(BCLog::BENCH, "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n", 0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1), 0.001 * (nTime2 - nTimeStart));
 
+            this.logger.LogTrace("(-)");
             return this.pblocktemplate;
         }
 
@@ -292,20 +295,25 @@ namespace Stratis.Bitcoin.Features.Miner
             this.pblock.AddTransaction(this.coinbase);
             this.pblocktemplate.VTxFees.Add(-1); // Updated at end.
             this.pblocktemplate.TxSigOpsCost.Add(-1); // Updated at end.
-
         }
 
         protected virtual void UpdateHeaders()
         {
+            this.logger.LogTrace("()");
+            
             // Fill in header.
             this.pblock.Header.HashPrevBlock = this.pindexPrev.HashBlock;
             this.pblock.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.chain.Tip);
             this.pblock.Header.Bits = this.pblock.Header.GetWorkRequired(this.network, this.chain.Tip);
             this.pblock.Header.Nonce = 0;
+
+            this.logger.LogTrace("(-)");
         }
 
         protected virtual void TestBlockValidity()
         {
+            this.logger.LogTrace("()");
+
             var context = new ContextInformation(new BlockResult { Block = this.pblock }, this.network.Consensus)
             {
                 CheckPow = false,
@@ -314,11 +322,15 @@ namespace Stratis.Bitcoin.Features.Miner
             };
 
             this.consensusLoop.AcceptBlock(context);
+
+            this.logger.LogTrace("(-)");
         }
 
         // Add a tx to the block.
         private void AddToBlock(TxMempoolEntry iter)
         {
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(iter), nameof(iter.TransactionHash), iter.TransactionHash);
+
             this.pblock.AddTransaction(iter.Transaction);
 
             this.pblocktemplate.VTxFees.Add(iter.Fee);
@@ -341,6 +353,7 @@ namespace Stratis.Bitcoin.Features.Miner
             //  iter->GetTx().GetHash().ToString());
 
             //}
+            this.logger.LogTrace("(-)");
         }
 
         // Methods for how to add transactions to a block.
@@ -359,18 +372,20 @@ namespace Stratis.Bitcoin.Features.Miner
         // transaction package to work on next.
         protected virtual void AddTransactions(int nPackagesSelected, int nDescendantsUpdated)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(nPackagesSelected), nPackagesSelected, nameof(nDescendantsUpdated), nDescendantsUpdated);
+            
             // mapModifiedTx will store sorted packages after they are modified
-            // because some of their txs are already in the block
+            // because some of their txs are already in the block.
             var mapModifiedTx = new Dictionary<uint256, TxMemPoolModifiedEntry>();
 
             //var mapModifiedTxRes = this.mempoolScheduler.ReadAsync(() => mempool.MapTx.Values).GetAwaiter().GetResult();
             // mapModifiedTxRes.Select(s => new TxMemPoolModifiedEntry(s)).OrderBy(o => o, new CompareModifiedEntry());
 
-            // Keep track of entries that failed inclusion, to avoid duplicate work
+            // Keep track of entries that failed inclusion, to avoid duplicate work.
             TxMempool.SetEntries failedTx = new TxMempool.SetEntries();
 
             // Start by adding all descendants of previously added txs to mapModifiedTx
-            // and modifying them for their already included ancestors
+            // and modifying them for their already included ancestors.
             this.UpdatePackagesForAdded(this.inBlock, mapModifiedTx);
 
             List<TxMempoolEntry> ancestorScoreList = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
@@ -385,7 +400,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     // Skip entries in mapTx that are already in a block or are present
                     // in mapModifiedTx (which implies that the mapTx ancestor state is
-                    // stale due to ancestor inclusion in the block)
+                    // stale due to ancestor inclusion in the block).
                     // Also skip transactions that we've already failed to add. This can happen if
                     // we consider a transaction in mapModifiedTx and it fails: we can then
                     // potentially consider it again while walking mapTx.  It's currently
@@ -516,6 +531,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 // Update transactions that depend on each of these
                 nDescendantsUpdated += this.UpdatePackagesForAdded(ancestors, mapModifiedTx);
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         // Remove confirmed (inBlock) entries from given set 
@@ -531,10 +548,10 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        // Test if a new package would "fit" in the block 
+        // Test if a new package would "fit" in the block.
         private bool TestPackage(long packageSize, long packageSigOpsCost)
         {
-            // TODO: switch to weight-based accounting for packages instead of vsize-based accounting.
+            // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
             if (this.blockWeight + this.network.Consensus.Option<PowConsensusOptions>().WITNESS_SCALE_FACTOR * packageSize >= this.blockMaxWeight)
                 return false;
 
