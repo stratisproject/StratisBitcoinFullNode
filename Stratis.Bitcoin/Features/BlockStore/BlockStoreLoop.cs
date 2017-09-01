@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public StoreBlockPuller BlockPuller { get; }
         public IBlockRepository BlockRepository { get; }
-        public virtual string StoreName { get { return GetType().Name; } }
+        public virtual string StoreName { get { return "BlockStore"; } }
 
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly BlockStoreStats blockStoreStats;

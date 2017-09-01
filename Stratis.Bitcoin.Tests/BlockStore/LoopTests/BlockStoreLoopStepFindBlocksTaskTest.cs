@@ -57,22 +57,22 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         [Fact]
         public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_DownloadStackSizeReached()
         {
-            var blocks = CreateBlocks(15);
+            var blocks = CreateBlocks(55);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
-                // Push 2 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(2).Last().GetHash(), blocks.Take(2).ToList()).GetAwaiter().GetResult();
+                // Push 45 blocks to the repository
+                fluent.BlockRepository.PutAsync(blocks.Take(45).Last().GetHash(), blocks.Take(45).ToList()).GetAwaiter().GetResult();
 
-                // The chain has 15 blocks appended
+                // The chain has 55 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(14).ToList());
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(54).ToList());
 
                 // Create block store loop
                 fluent.Create(chain);
 
-                // Start finding blocks from Block[2]
-                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[2].GetHash());
+                // Start finding blocks from Block[45]
+                var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[45].GetHash());
 
                 // Create Task Context
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
@@ -80,18 +80,18 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
-                // Block[2] through Block[11] should be in the DownloadStack
+                // Block[45] through Block[50] should be in the DownloadStack
                 Assert.Equal(10, context.DownloadStack.Count());
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[2].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[3].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[4].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[5].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[6].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[7].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[8].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[9].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[10].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[11].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[45].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[46].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[47].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[48].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[49].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[50].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[51].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[52].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[53].GetHash()));
+                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[54].GetHash()));
 
                 // The FindBlocks() task should be removed from the routine
                 // as the batch download size is reached

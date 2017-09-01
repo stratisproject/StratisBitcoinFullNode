@@ -14,6 +14,18 @@ using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
+    internal static class NormalizeDirectorySeparatorExt
+    {
+        /// <summary>
+        /// Fixes incorrect directory separator characters in path (if any)
+        /// </summary>
+        public static string NormalizeDirectorySeparator(this string path)
+        {
+            // Replace incorrect with correct
+            return path.Replace((Path.DirectorySeparatorChar == '/') ? '\\' : '/', Path.DirectorySeparatorChar);
+        }
+    }
+
     /// <summary>
     /// Node configuration complied from both the application command line arguments and the configuration file.
     /// </summary>
@@ -30,9 +42,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; private set; }
-
-        /// <summary>Configuration related to RPC interface.</summary>
-        public RpcSettings RPC { get; set; }
 
         /// <summary>Configuration of cache limits.</summary>
         public CacheSettings Cache { get; set; }
@@ -81,6 +90,8 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
+
+        public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -137,17 +148,17 @@ namespace Stratis.Bitcoin.Configuration
                 nodeSettings.Network = innerNetwork;
 
             nodeSettings.ProtocolVersion = protocolVersion;
+            nodeSettings.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+            nodeSettings.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
 
-            nodeSettings.ConfigurationFile = args.GetValueOf("-conf");
-            nodeSettings.DataDir = args.GetValueOf("-datadir");
+            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
             if (nodeSettings.DataDir != null && nodeSettings.ConfigurationFile != null)
             {
                 bool isRelativePath = Path.GetFullPath(nodeSettings.ConfigurationFile).Length > nodeSettings.ConfigurationFile.Length;
                 if (isRelativePath)
-                {
                     nodeSettings.ConfigurationFile = Path.Combine(nodeSettings.DataDir, nodeSettings.ConfigurationFile);
-                }
             }
+
             nodeSettings.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
             nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
 
@@ -178,6 +189,7 @@ namespace Stratis.Bitcoin.Configuration
 
             var consoleConfig = new TextFileConfiguration(args);
             var config = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
+            nodeSettings.ConfigReader = config;
             consoleConfig.MergeInto(config);
 
             nodeSettings.DataFolder = new DataFolder(nodeSettings);
@@ -196,57 +208,6 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
             nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:5000"));
 
-            nodeSettings.RPC = config.GetOrDefault<bool>("server", false) ? new RpcSettings() : null;
-            if (nodeSettings.RPC != null)
-            {
-                nodeSettings.RPC.RpcUser = config.GetOrDefault<string>("rpcuser", null);
-                nodeSettings.RPC.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
-                if (nodeSettings.RPC.RpcPassword == null && nodeSettings.RPC.RpcUser != null)
-                    throw new ConfigurationException("rpcpassword should be provided");
-                if (nodeSettings.RPC.RpcUser == null && nodeSettings.RPC.RpcPassword != null)
-                    throw new ConfigurationException("rpcuser should be provided");
-
-                var defaultPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
-                nodeSettings.RPC.RPCPort = defaultPort;
-                try
-                {
-                    nodeSettings.RPC.Bind = config
-                                    .GetAll("rpcbind")
-                                    .Select(p => ConvertToEndpoint(p, defaultPort))
-                                    .ToList();
-                }
-                catch (FormatException)
-                {
-                    throw new ConfigurationException("Invalid rpcbind value");
-                }
-
-                try
-                {
-                    nodeSettings.RPC.AllowIp = config
-                                    .GetAll("rpcallowip")
-                                    .Select(p => IPAddress.Parse(p))
-                                    .ToList();
-                }
-                catch (FormatException)
-                {
-                    throw new ConfigurationException("Invalid rpcallowip value");
-                }
-
-                if (nodeSettings.RPC.AllowIp.Count == 0)
-                {
-                    nodeSettings.RPC.Bind.Clear();
-                    nodeSettings.RPC.Bind.Add(new IPEndPoint(IPAddress.Parse("::1"), defaultPort));
-                    nodeSettings.RPC.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), defaultPort));
-                    if (config.Contains("rpcbind"))
-                        nodeSettings.Logger.LogWarning("WARNING: option -rpcbind was ignored because -rpcallowip was not specified, refusing to allow everyone to connect");
-                }
-
-                if (nodeSettings.RPC.Bind.Count == 0)
-                {
-                    nodeSettings.RPC.Bind.Add(new IPEndPoint(IPAddress.Parse("::"), defaultPort));
-                    nodeSettings.RPC.Bind.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), defaultPort));
-                }
-            }
 
             try
             {
@@ -470,12 +431,6 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-regtest                  Use the regtestnet chain.");
                 builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {defaults.RequireStandard}.");
                 builder.AppendLine($"-maxtipage=<number>       Max tip age. Default {DefaultMaxTipAge}.");
-                builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default {defaults.RPC != null}.");
-                builder.AppendLine($"-rpcuser=<string>         Username for JSON-RPC connections");
-                builder.AppendLine($"-rpcpassword=<string>     Password for JSON-RPC connections");
-                builder.AppendLine($"-rpcport=<0-65535>        Listen for JSON-RPC connections on <port>. Default: {mainNet.RPCPort} or (reg)testnet: {Network.TestNet.RPCPort}");
-                builder.AppendLine($"-rpcbind=<ip:port>        Bind to given address to listen for JSON-RPC connections. This option can be specified multiple times. Default: bind to all interfaces");
-                builder.AppendLine($"-rpcallowip=<ip>          Allow JSON-RPC connections from specified source. This option can be specified multiple times.");
                 builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
                 builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
                 builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");

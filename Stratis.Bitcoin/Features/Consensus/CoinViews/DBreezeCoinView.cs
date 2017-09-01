@@ -7,6 +7,7 @@ using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using DBreeze.DataTypes;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -20,6 +21,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// TODO: Can we removed this? It is not used anywhere.
         private static readonly UnspentOutputs[] noOutputs = new UnspentOutputs[0];
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         /// <summary>Session providing access to DBreeze database.</summary>
         private readonly DBreezeSingleThreadSession session;
@@ -40,8 +44,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="dataFolder">Information about path locations to important folders and files on disk.</param>
-        public DBreezeCoinView(Network network, DataFolder dataFolder)
-            : this(network, dataFolder.CoinViewPath)
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
+        public DBreezeCoinView(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.CoinViewPath, loggerFactory)
         {
         }
 
@@ -50,11 +55,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="folder">Path to the folder with coinview database files.</param>
-        public DBreezeCoinView(Network network, string folder)
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
+        public DBreezeCoinView(Network network, string folder, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
 
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
             this.network = network;
             this.performanceCounter = new BackendPerformanceCounter();
@@ -65,6 +72,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         public Task Initialize()
         {
+            this.logger.LogTrace("()");
+
             Block genesis = this.network.GetGenesis();
 
             Task sync = this.session.Execute(() =>
@@ -83,6 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
             });
 
+            this.logger.LogTrace("(-)");
             return Task.WhenAll(new[] { sync, hash });
         }
 
@@ -91,6 +101,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             return this.session.Execute(() =>
             {
+                this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds?.Length);
+
+                FetchCoinsResponse res = null;
                 using (StopWatch.Instance.Start(o => this.PerformanceCounter.AddQueryTime(o)))
                 {
                     uint256 blockHash = this.GetCurrentHash();
@@ -104,8 +117,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         result[i++] = coin == null ? null : new UnspentOutputs(input, coin);
                     }
 
-                    return new FetchCoinsResponse(result, blockHash);
+                    res = new FetchCoinsResponse(result, blockHash);
                 }
+
+                this.logger.LogTrace("(-):*.{0}='{1}',*.{2}.{3}={4}", nameof(res.BlockHash), res.BlockHash, nameof(res.UnspentOutputs), nameof(res.UnspentOutputs.Length), res.UnspentOutputs.Length);
+                return res;
             });
         }
 
@@ -125,8 +141,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="nextBlockHash">Hash of the block to become the new tip.</param>
         private void SetBlockHash(uint256 nextBlockHash)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(nextBlockHash), nextBlockHash);
+
             this.blockHash = nextBlockHash;
             this.session.Transaction.Insert<byte[], uint256>("BlockHash", blockHashKey, nextBlockHash);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -134,13 +154,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             return this.session.Execute(() =>
             {
+                this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), unspentOutputs?.Count(), nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
+
                 RewindData rewindData = originalOutputs == null ? null : new RewindData(oldBlockHash);
                 int insertedEntities = 0;
                 using (new StopWatch().Start(o => this.PerformanceCounter.AddInsertTime(o)))
                 {
                     uint256 current = this.GetCurrentHash();
                     if (current != oldBlockHash)
+                    {
+                        this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
                         throw new InvalidOperationException("Invalid oldBlockHash");
+                    }
 
                     this.SetBlockHash(nextBlockHash);
                     List<UnspentOutputs> all = unspentOutputs.ToList();
@@ -158,6 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     all.Sort(UnspentOutputsComparer.Instance);
                     foreach (UnspentOutputs coin in all)
                     {
+                        this.logger.LogTrace("Outputs of transaction ID '{0}' are {1} and will be {2} to the database.", coin.TransactionId, coin.IsPrunable ? "PRUNABLE" : "NOT PRUNABLE", coin.IsPrunable ? "removed" : "inserted");
                         if (coin.IsPrunable) this.session.Transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
                         else this.session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 
@@ -185,6 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     if (rewindData != null)
                     {
                         int nextRewindIndex = this.GetRewindIndex() + 1;
+                        this.logger.LogTrace("Rewind state #{0} created.", nextRewindIndex);
                         this.session.Transaction.Insert("Rewind", nextRewindIndex, rewindData);
                     }
 
@@ -193,6 +220,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
 
                 this.PerformanceCounter.AddInsertedEntities(insertedEntities);
+                this.logger.LogTrace("(-)");
             });
         }
 
@@ -215,12 +243,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             return this.session.Execute(() =>
             {
+                this.logger.LogTrace("()");
+
                 // TODO: Why the result of this.GetRewindIndex() is not reused in the else branch - i.e. why do we call SelectBackward again there to get that very same number?
                 if (this.GetRewindIndex() == -1)
                 {
                     this.session.Transaction.RemoveAllKeys("Coins", true);
                     this.SetBlockHash(this.network.GenesisHash);
                     this.session.Transaction.Commit();
+
+                    this.logger.LogTrace("(-)[REWOUND_TO_GENESIS]:'{0}'", this.network.GenesisHash);
                     return this.network.GenesisHash;
                 }
                 else
@@ -229,17 +261,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.session.Transaction.RemoveKey("Rewind", first.Key);
                     this.SetBlockHash(first.Value.PreviousBlockHash);
 
-                    foreach (var txId in first.Value.TransactionsToRemove)
+                    foreach (uint256 txId in first.Value.TransactionsToRemove)
                     {
+                        this.logger.LogTrace("Outputs of transaction ID '{0}' will be removed.", txId);
                         this.session.Transaction.RemoveKey("Coins", txId.ToBytes(false));
                     }
 
-                    foreach (var coin in first.Value.OutputsToRestore)
+                    foreach (UnspentOutputs coin in first.Value.OutputsToRestore)
                     {
+                        this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", coin.TransactionId);
                         this.session.Transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
                     }
 
                     this.session.Transaction.Commit();
+
+                    this.logger.LogTrace("(-):'{0}'", first.Value.PreviousBlockHash);
                     return first.Value.PreviousBlockHash;
                 }
             });
@@ -253,8 +289,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             return this.session.Execute(() =>
             {
+                this.logger.LogTrace("({0}.Count():{1})", nameof(stakeEntries), stakeEntries.Count());
+
                 this.PutStakeInternal(stakeEntries);
                 this.session.Transaction.Commit();
+
+                this.logger.LogTrace("(-)");
             });
         }
 
@@ -282,12 +322,17 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             return this.session.Execute(() =>
             {
+                this.logger.LogTrace("({0}.Count():{1})", nameof(blocklist), blocklist.Count());
+
                 foreach (StakeItem blockStake in blocklist)
                 {
+                    this.logger.LogTrace("Loading POS block hash '{0}' from the database.", blockStake.BlockId);
                     Row<byte[], BlockStake> stake = this.session.Transaction.Select<byte[], BlockStake>("Stake", blockStake.BlockId.ToBytes(false));
                     blockStake.BlockStake = stake.Value;
                     blockStake.InStore = true;
                 }
+
+                this.logger.LogTrace("(-)");
             });
         }
 

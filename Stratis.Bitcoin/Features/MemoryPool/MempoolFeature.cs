@@ -125,6 +125,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<MempoolOrphans>();
                         services.AddSingleton<MempoolManager>();
                         services.AddSingleton<IPooledTransaction, MempoolManager>();
+                        services.AddSingleton<IPooledGetUnspentTransaction, MempoolManager>();
                         services.AddSingleton<MempoolBehavior>();
                         services.AddSingleton<MempoolSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();

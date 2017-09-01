@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -13,6 +14,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
 using Transaction = NBitcoin.Transaction;
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
@@ -45,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
-
+        
         internal Dictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
@@ -846,7 +848,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Loads the keys and transactions we're tracking in memory for faster lookups.
         /// </summary>
         /// <returns></returns>
-        internal void LoadKeysLookup()
+        public void LoadKeysLookup()
         {
             var lookup = new Dictionary<Script, HdAddress>();
             foreach (var wallet in this.Wallets)
