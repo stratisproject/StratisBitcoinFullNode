@@ -136,7 +136,11 @@ namespace Stratis.Bitcoin.Utilities
 
                 if (uncatchException != null)
                 {
-                    this.logger.LogCritical(new EventId(0), uncatchException, "{0} threw an unhandled exception", this.Name);
+                    // WARNING: Do NOT touch this line unless you want to fix weird AsyncLoop tests.
+                    // The following line has to be called EXACTLY as it is.
+                    this.logger.LogCritical(new EventId(0), uncatchException, this.Name + " threw an unhandled exception");
+
+                    // You can touch this one.
                     this.logger.LogDebug("{0} threw an unhandled exception: {1}", this.Name, uncatchException.ToString());
                 }
             }, cancellation);
