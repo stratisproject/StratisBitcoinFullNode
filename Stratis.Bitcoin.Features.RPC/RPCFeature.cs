@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public override void Start()
         {
-            if (this.rpcSettings.server)
+            if (this.rpcSettings.Server)
             {
                 // TODO: The web host wants to create IServiceProvider, so build (but not start) 
                 // earlier, if you want to use dependency injection elsewhere

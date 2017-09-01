@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
     public class RpcSettings
     {
         /// <summary>Indicates whether the RPC server is being used</summary>
-        public bool server { get; private set; }
+        public bool Server { get; private set; }
 
         /// <summary>User name for RPC authorization.</summary>
         public string RpcUser { get; set; }
@@ -56,8 +56,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
         {
             var config = nodeSettings.ConfigReader;
 
-            this.server = config.GetOrDefault<bool>("server", false);
-            if (!this.server)
+            this.Server = config.GetOrDefault<bool>("server", false);
+            if (!this.Server)
                 return;
 
             this.RpcUser = config.GetOrDefault<string>("rpcuser", null);
