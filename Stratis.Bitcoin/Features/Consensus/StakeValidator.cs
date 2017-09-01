@@ -6,6 +6,8 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -23,15 +25,28 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private const int MedianTimeSpan = 11;
 
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Class logger.</summary>
+        private static readonly ILogger clogger;
+
         private readonly Network network;
         private readonly StakeChain stakeChain;
         private readonly ConcurrentChain chain;
         private readonly CoinView coinView;
         private readonly PosConsensusOptions consensusOptions;
 
-        public StakeValidator(Network network,
-            StakeChain stakeChain, ConcurrentChain chain, CoinView coinView)
+        static StakeValidator()
         {
+            ILoggerFactory loggerFactory = new LoggerFactory();
+            loggerFactory.AddNLog();
+            clogger = loggerFactory.CreateLogger(typeof(StakeValidator).FullName);
+        }
+
+        public StakeValidator(Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.stakeChain = stakeChain;
             this.chain = chain;
@@ -41,8 +56,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void CheckProofOfStake(ContextInformation context, ChainedBlock pindexPrev, BlockStake prevBlockStake, Transaction tx, uint nBits)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}:{6:X})", nameof(pindexPrev), pindexPrev.HashBlock, nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(nBits), nBits);
+
             if (!tx.IsCoinStake)
+            {
+                this.logger.LogTrace("(-)[NO_COINSTAKE]");
                 ConsensusErrors.NonCoinstake.Throw();
+            }
 
             // Kernel (input 0) must match the stake hash target per coin age (nBits).
             TxIn txIn = tx.Inputs[0];
@@ -57,13 +77,19 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Verify signature.
             if (!this.VerifySignature(prevUtxo, tx, 0, ScriptVerify.None))
+            {
+                this.logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
+            }
 
             // Min age requirement.
             if (IsProtocolV3((int)tx.Time))
             {
                 if (IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
+                {
+                    this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
                     ConsensusErrors.InvalidStakeDepth.Throw();
+                }
             }
             else
             {
@@ -73,20 +99,25 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, txIn.PrevOut, tx.Time);
+
+            this.logger.LogTrace("(-)");
         }
 
-        private static bool IsConfirmedInNPrevBlocks(UnspentOutputs utxoSet, ChainedBlock pindexFrom, long maxDepth)
+        private bool IsConfirmedInNPrevBlocks(UnspentOutputs utxoSet, ChainedBlock pindexFrom, long maxDepth)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}',{6}:{7})", nameof(utxoSet), utxoSet.TransactionId, utxoSet.Height, nameof(pindexFrom), pindexFrom.HashBlock, pindexFrom.Height, nameof(maxDepth), maxDepth);
+            
             int actualDepth = pindexFrom.Height - (int)utxoSet.Height;
+            bool res = actualDepth < maxDepth;
 
-            if (actualDepth < maxDepth)
-                return true;
-
-            return false;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
 
         private bool VerifySignature(UnspentOutputs txFrom, Transaction txTo, int txToInN, ScriptVerify flagScriptVerify)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4},{5}:{6})", nameof(txFrom), txFrom.TransactionId, txFrom.Height, nameof(txToInN), txToInN, nameof(flagScriptVerify), flagScriptVerify);
+
             TxIn input = txTo.Inputs[txToInN];
 
             if (input.PrevOut.N >= txFrom._Outputs.Length)
@@ -101,7 +132,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);
             var ctx = new ScriptEvaluationContext { ScriptVerify = flagScriptVerify };
 
-            return ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
+            bool res = ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
 
         private void CheckStakeKernelHash(ContextInformation context, ChainedBlock pindexPrev, uint nBits, ChainedBlock blockFrom,
@@ -186,8 +219,17 @@ namespace Stratis.Bitcoin.Features.Consensus
         private void CheckStakeKernelHashV2(ContextInformation context, ChainedBlock pindexPrev, uint nBits, uint nTimeBlockFrom,
             BlockStake prevBlockStake, UnspentOutputs txPrev, OutPoint prevout, uint nTimeTx)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}.{8}:'{9}',{10}:'{11}/{12}',{13}:'{14}/{15}',{16}:{17})",
+                nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height, nameof(nBits), nBits, nameof(nTimeBlockFrom), nTimeBlockFrom, 
+                nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(txPrev), txPrev.TransactionId, txPrev.Height,
+                nameof(prevout), prevout.Hash, prevout.N, nameof(nTimeTx), nTimeTx);
+
             if (nTimeTx < txPrev.Time)
+            {
+                this.logger.LogTrace("Coinstake transaction timestamp {0} is lower than its own UTXO timestamp {1}.", nTimeTx, txPrev.Time);
+                this.logger.LogTrace("(-)[BAD_STAKE_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
+            }
 
             // Base target.
             BigInteger bnTarget = new Target(nBits).ToBigInteger();
@@ -203,6 +245,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             bnTarget = bnTarget.Multiply(bnWeight);
 
             context.Stake.TargetProofOfStake = ToUInt256(bnTarget);
+            this.logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", ToUInt256(bnTarget), nValueIn, context.Stake.TargetProofOfStake);
 
             ulong nStakeModifier = prevBlockStake.StakeModifier; //pindexPrev.Header.BlockStake.StakeModifier;
             uint256 bnStakeModifierV2 = prevBlockStake.StakeModifierV2; //pindexPrev.Header.BlockStake.StakeModifierV2;
@@ -231,6 +274,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.Stake.HashProofOfStake = Hashes.Hash256(ms.ToArray());
             }
 
+            this.logger.LogTrace("Stake modifiers are {0} and '{1}', hash POS is '{2}'.", nStakeModifier, bnStakeModifierV2, context.Stake.HashProofOfStake);
+
+
             //LogPrintf("CheckStakeKernelHash() : using modifier 0x%016x at height=%d timestamp=%s for block from timestamp=%s\n",
             //    nStakeModifier, nStakeModifierHeight,
             //    DateTimeStrFormat(nStakeModifierTime),
@@ -245,7 +291,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Now check if proof-of-stake hash meets target protocol.
             BigInteger hashProofOfStakeTarget = new BigInteger(1, context.Stake.HashProofOfStake.ToBytes(false));
             if (hashProofOfStakeTarget.CompareTo(bnTarget) > 0)
+            {
+                this.logger.LogTrace("(-)[TARGET_MISSED]");
                 ConsensusErrors.StakeHashInvalidTarget.Throw();
+            }
 
             //  if (fDebug && !fPrintProofOfStake)
             //  {
@@ -260,10 +309,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             //        nTimeBlockFrom, txPrev.nTime, prevout.n, nTimeTx,
             //        hashProofOfStake.ToString());
             //  }
+            this.logger.LogTrace("(-)");
         }
 
         public void ComputeStakeModifier(ChainBase chainIndex, ChainedBlock pindex, BlockStake blockStake)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}.{4}:'{5}')", nameof(pindex), pindex.HashBlock, pindex.Height, nameof(blockStake), nameof(blockStake.HashProof), blockStake.HashProof);
+
             ChainedBlock pindexPrev = pindex.Previous;
             BlockStake blockStakePrev = pindexPrev == null ? null : this.stakeChain.Get(pindexPrev.HashBlock);
 
@@ -272,8 +324,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.ComputeNextStakeModifier(chainIndex, pindexPrev, stakeContext);
 
             blockStake.SetStakeModifier(stakeContext.StakeModifier, stakeContext.GeneratedStakeModifier);
-            blockStake.StakeModifierV2 = this.ComputeStakeModifierV2(
-                pindexPrev, blockStakePrev, blockStake.IsProofOfWork() ? pindex.HashBlock : blockStake.PrevoutStake.Hash);
+            blockStake.StakeModifierV2 = this.ComputeStakeModifierV2(pindexPrev, blockStakePrev, blockStake.IsProofOfWork() ? pindex.HashBlock : blockStake.PrevoutStake.Hash);
+
+            this.logger.LogTrace("(-):{0}={1},{2}='{3}'", nameof(blockStake.StakeModifier), blockStake.StakeModifier, nameof(blockStake.StakeModifierV2), blockStake.StakeModifierV2);
         }
 
         // Stake Modifier (hash modifier of proof-of-stake):
@@ -571,9 +624,15 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void CheckKernel(ContextInformation context, ChainedBlock pindexPrev, uint nBits, long nTime, OutPoint prevout, ref long pBlockTime)
         {
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}:'{8}.{9}')", nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height, 
+                nameof(nBits), nBits, nameof(nTime), nTime, nameof(prevout), prevout.Hash, prevout.N);
+
             FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).GetAwaiter().GetResult();
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
+            {
+                this.logger.LogTrace("(-)[READ_PREV_TX_FAILED]");
                 ConsensusErrors.ReadTxPrevFailed.Throw();
+            }
 
             ChainedBlock prevBlock = this.chain.GetBlock(coins.BlockHash);
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
@@ -591,7 +650,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (IsProtocolV3((int)nTime))
             {
                 if (IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
+                {
+                    this.logger.LogTrace("(-)[LOW_COIN_AGE]");
                     ConsensusErrors.InvalidStakeDepth.Throw();
+                }
             }
             else
             {
@@ -602,12 +664,16 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             BlockStake prevBlockStake = this.stakeChain.Get(pindexPrev.HashBlock);
             if (prevBlockStake == null)
+            {
+                this.logger.LogTrace("(-)[BAD_STAKE_BLOCK]");
                 ConsensusErrors.BadStakeBlock.Throw();
+            }
 
             //if (pBlockTime)
             pBlockTime = prevBlock.Header.Time;
 
             this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, prevout, (uint)nTime);
+            this.logger.LogTrace("(-)");
         }
 
         public static bool IsProtocolV2(int height)
@@ -625,6 +691,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (index == null)
                 throw new ArgumentNullException(nameof(index));
 
+            clogger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(index), index.HashBlock, index.Height, nameof(proofOfStake), proofOfStake);
+
             BlockStake blockStake = stakeChain.Get(index.HashBlock);
 
             while ((index.Previous != null) && (blockStake.IsProofOfStake() != proofOfStake))
@@ -633,14 +701,20 @@ namespace Stratis.Bitcoin.Features.Consensus
                 blockStake = stakeChain.Get(index.HashBlock);
             }
 
+            clogger.LogTrace("(-):{0}", index);
             return index;
         }
 
         public static Target GetNextTargetRequired(StakeChain stakeChain, ChainedBlock indexLast, NBitcoin.Consensus consensus, bool proofOfStake)
         {
+            clogger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(indexLast), indexLast.HashBlock, indexLast.Height, nameof(proofOfStake), proofOfStake);
+
             // Genesis block.
             if (indexLast == null)
+            {
+                clogger.LogTrace("(-)[GENESIS]:'{0}'", consensus.PowLimit);
                 return consensus.PowLimit;
+            }
 
             // Find the last two blocks that correspond to the mining algo 
             // (i.e if this is a POS block we need to find the last two POS blocks).
@@ -651,13 +725,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             // First block.
             ChainedBlock pindexPrev = GetLastBlockIndex(stakeChain, indexLast, proofOfStake);
             if (pindexPrev.Previous == null)
-                return new Target(targetLimit);
+            {
+                var res = new Target(targetLimit);
+                clogger.LogTrace("(-)[FIRST_BLOCK]:'{0}'", res);
+                return res;
+            }
 
             // Second block.
             ChainedBlock pindexPrevPrev = GetLastBlockIndex(stakeChain, pindexPrev.Previous, proofOfStake);
             if (pindexPrevPrev.Previous == null)
-                return new Target(targetLimit);
-
+            {
+                var res = new Target(targetLimit);
+                clogger.LogTrace("(-)[SECOND_BLOCK]:'{0}'", res);
+                return res;
+            }
 
             int targetSpacing = GetTargetSpacing(indexLast.Height);
             int actualSpacing = (int)(pindexPrev.Header.Time - pindexPrevPrev.Header.Time);
@@ -669,7 +750,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Target change every block
             // retarget with exponential moving toward target spacing.
-            int targetTimespan = 16 * 60; // 16 mins
+            int targetTimespan = 16 * 60; // 16 mins.
             BigInteger target = pindexPrev.Header.Bits.ToBigInteger();
 
             int interval = targetTimespan / targetSpacing;
@@ -679,7 +760,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(targetLimit) >= 1))
                 target = targetLimit;
 
-            return new Target(target);
+            var finalTarget = new Target(target);
+            clogger.LogTrace("(-):'{0}'", finalTarget);
+            return finalTarget;
         }
 
         private static BigInteger GetProofOfStakeLimit(NBitcoin.Consensus consensus, int height)
