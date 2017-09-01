@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Utilities
                 if (uncatchException != null)
                 {
                     this.logger.LogCritical(new EventId(0), uncatchException, "{0} threw an unhandled exception", this.Name);
-                    this.logger.LogTrace("{0} threw an unhandled exception: {1}", this.Name, uncatchException.ToString());
+                    this.logger.LogDebug("{0} threw an unhandled exception: {1}", this.Name, uncatchException.ToString());
                 }
             }, cancellation);
         }

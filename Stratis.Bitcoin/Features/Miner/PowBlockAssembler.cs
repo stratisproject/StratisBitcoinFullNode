@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.pblocktemplate.TotalFee = this.fees;
 
             int nSerializeSize = this.pblock.GetSerializedSize();
-            this.logger.LogInformation("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.consensusLoop.Validator.GetBlockWeight(this.pblock), this.blockTx, this.fees, this.blockSigOpsCost);
+            this.logger.LogDebug("Serialized size is {0} bytes, block weight is {1}, number of txs is {2}, tx fees are {3}, number of sigops is {4}.", nSerializeSize, this.consensusLoop.Validator.GetBlockWeight(this.pblock), this.blockTx, this.fees, this.blockSigOpsCost);
 
             this.UpdateHeaders();
 
