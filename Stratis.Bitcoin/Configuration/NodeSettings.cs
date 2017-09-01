@@ -14,6 +14,18 @@ using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
+    internal static class NormalizeDirectorySeparatorExt
+    {
+        /// <summary>
+        /// Fixes incorrect directory separator characters in path (if any)
+        /// </summary>
+        public static string NormalizeDirectorySeparator(this string path)
+        {
+            // Replace incorrect with correct
+            return path.Replace((Path.DirectorySeparatorChar == '/') ? '\\' : '/', Path.DirectorySeparatorChar);
+        }
+    }
+
     /// <summary>
     /// Node configuration complied from both the application command line arguments and the configuration file.
     /// </summary>
@@ -136,17 +148,17 @@ namespace Stratis.Bitcoin.Configuration
                 nodeSettings.Network = innerNetwork;
 
             nodeSettings.ProtocolVersion = protocolVersion;
+            nodeSettings.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+            nodeSettings.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
 
-            nodeSettings.ConfigurationFile = args.GetValueOf("-conf");
-            nodeSettings.DataDir = args.GetValueOf("-datadir");
+            // If the configuration file is relative then assume it is relative to the data folder and combine the paths
             if (nodeSettings.DataDir != null && nodeSettings.ConfigurationFile != null)
             {
                 bool isRelativePath = Path.GetFullPath(nodeSettings.ConfigurationFile).Length > nodeSettings.ConfigurationFile.Length;
                 if (isRelativePath)
-                {
                     nodeSettings.ConfigurationFile = Path.Combine(nodeSettings.DataDir, nodeSettings.ConfigurationFile);
-                }
             }
+
             nodeSettings.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
             nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
 
