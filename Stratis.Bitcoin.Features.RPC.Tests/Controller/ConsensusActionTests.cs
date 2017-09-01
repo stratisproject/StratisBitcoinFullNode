@@ -8,20 +8,19 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class ConsensusActionTests : BaseRPCControllerTest
     {
-        private IFullNode fullNode;
-        private ConsensusController controller;
-
         public ConsensusActionTests()
         {
-            string dir = "Stratis.Bitcoin.Features.RPC.Tests/TestData/ConsensusActionTests";
-            this.fullNode = this.BuildServicedNode(dir);
-            this.controller = this.fullNode.Services.ServiceProvider.GetService<ConsensusController>();
         }
 
         [Fact]
         public void CanCall_GetBestBlockHash()
         {
-            uint256 result = this.controller.GetBestBlockHash();
+            string dir = AssureEmptyDir("TestData/ConsensusActionTests/CanCall_GetBestBlockHash");
+
+            var fullNode = this.BuildServicedNode(dir);
+            var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
+
+            uint256 result = controller.GetBestBlockHash();
 
             Assert.Null(result);
         }
@@ -29,7 +28,12 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CanCall_GetBlockHash()
         {
-            uint256 result = this.controller.GetBlockHash(0);
+            string dir = AssureEmptyDir("TestData/ConsensusActionTests/CanCall_GetBlockHash");
+
+            var fullNode = this.BuildServicedNode(dir);
+            var controller = fullNode.Services.ServiceProvider.GetService<ConsensusController>();
+
+            uint256 result = controller.GetBlockHash(0);
 
             Assert.Null(result);
         }
@@ -37,7 +41,11 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CanCall_IsInitialBlockDownload()
         {
-            var isIBDProvider = this.fullNode.NodeService<IBlockDownloadState>(true);
+            string dir = AssureEmptyDir("TestData/ConsensusActionTests/CanCall_IsInitialBlockDownload");
+
+            var fullNode = this.BuildServicedNode(dir);
+            var isIBDProvider = fullNode.NodeService<IBlockDownloadState>(true);
+
             Assert.NotNull(isIBDProvider);
             Assert.True(isIBDProvider.IsInitialBlockDownload());       
         }

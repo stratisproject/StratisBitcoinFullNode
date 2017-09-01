@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Utilities
                     eventArgs.Cancel = true;
                 };
 
-                node.Run(cts.Token, "Application started. Press Ctrl+C to shut down.");
+                node.Run(cts.Token, "Application started. Press Ctrl+C to shut down.", "Application stopped.");
                 done.Set();
             }
         }
@@ -61,7 +61,8 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="node">Full node to run.</param>
         /// <param name="cancellationToken">Cancellation token that triggers when the node should be shut down.</param>
         /// <param name="shutdownMessage">Message to display on the console to instruct the user on how to invoke the shutdown.</param>
-        public static void Run(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage)
+        /// <param name="shutdownCompleteMessage">Message to display on the console when the shutdown is complete.</param>
+        public static void Run(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
         {
             using (node)
             {
@@ -91,6 +92,13 @@ namespace Stratis.Bitcoin.Utilities
                 waitForStop.Task.GetAwaiter().GetResult();
 
                 node.Stop();
+
+                if (!string.IsNullOrEmpty(shutdownCompleteMessage))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(shutdownCompleteMessage);
+                    Console.WriteLine();
+                }
             }
         }
     }

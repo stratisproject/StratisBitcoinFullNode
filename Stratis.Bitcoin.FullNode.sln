@@ -46,6 +46,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.RP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.RPC.Tests", "Stratis.Bitcoin.Features.RPC.Tests\Stratis.Bitcoin.Features.RPC.Tests.csproj", "{1B33E5B8-7162-4DA9-834F-4BE5E236CEBD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Miner", "Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj", "{22B296FE-26B4-4B84-8CF5-614F9D3716A6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Wallet", "Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj", "{6650A6CC-3B56-4D86-8DAA-FD0C8830113A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Wallet.Tests", "Stratis.Bitcoin.Features.Wallet.Tests\Stratis.Bitcoin.Features.Wallet.Tests.csproj", "{42F81858-3CE9-4C9B-BA36-378FE36600E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -116,10 +122,18 @@ Global
 		{1B33E5B8-7162-4DA9-834F-4BE5E236CEBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B33E5B8-7162-4DA9-834F-4BE5E236CEBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B33E5B8-7162-4DA9-834F-4BE5E236CEBD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{061AD6F2-E1A0-4359-983F-416AF02DA065}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{061AD6F2-E1A0-4359-983F-416AF02DA065}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{061AD6F2-E1A0-4359-983F-416AF02DA065}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{061AD6F2-E1A0-4359-983F-416AF02DA065}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22B296FE-26B4-4B84-8CF5-614F9D3716A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22B296FE-26B4-4B84-8CF5-614F9D3716A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22B296FE-26B4-4B84-8CF5-614F9D3716A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22B296FE-26B4-4B84-8CF5-614F9D3716A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6650A6CC-3B56-4D86-8DAA-FD0C8830113A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6650A6CC-3B56-4D86-8DAA-FD0C8830113A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6650A6CC-3B56-4D86-8DAA-FD0C8830113A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6650A6CC-3B56-4D86-8DAA-FD0C8830113A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42F81858-3CE9-4C9B-BA36-378FE36600E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42F81858-3CE9-4C9B-BA36-378FE36600E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42F81858-3CE9-4C9B-BA36-378FE36600E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42F81858-3CE9-4C9B-BA36-378FE36600E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

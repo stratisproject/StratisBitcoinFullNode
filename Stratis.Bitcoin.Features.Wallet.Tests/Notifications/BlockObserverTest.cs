@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Wallet.Notifications
+namespace Stratis.Bitcoin.Features.Wallet.Tests.Notifications
 {
     public class BlockObserverTest
     {

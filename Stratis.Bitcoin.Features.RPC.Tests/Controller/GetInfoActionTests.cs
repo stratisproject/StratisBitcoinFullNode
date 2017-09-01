@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void CallWithDependencies()
         {
-            string dir = AssureEmptyDir("Stratis.Bitcoin.Features.RPC.Tests/TestData/GetInfoActionTests/CallWithDependencies");
+            string dir = AssureEmptyDir("TestData/GetInfoActionTests/CallWithDependencies");
             IFullNode fullNode = this.BuildServicedNode(dir);
             FullNodeController controller = fullNode.Services.ServiceProvider.GetService<FullNodeController>();
 

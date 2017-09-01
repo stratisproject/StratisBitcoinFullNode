@@ -78,6 +78,7 @@ test_script:
       
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests.csproj
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.IndexStore.Tests/Stratis.Bitcoin.Features.IndexStore.Tests.csproj
+      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.Wallet.Tests/Stratis.Bitcoin.Features.Wallet.Tests.csproj
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.WatchOnlyWallet.Tests/Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.csproj
       dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.RPC.Tests/Stratis.Bitcoin.Features.RPC.Tests.csproj
       
