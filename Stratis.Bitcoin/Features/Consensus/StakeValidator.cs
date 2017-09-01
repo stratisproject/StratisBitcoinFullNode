@@ -107,10 +107,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         private void CheckStakeKernelHash(ContextInformation context, ChainedBlock pindexPrev, uint nBits, ChainedBlock blockFrom,
             UnspentOutputs txPrev, BlockStake prevBlockStake, OutPoint prevout, uint nTimeTx)
         {
-            if (IsProtocolV2(pindexPrev.Height + 1))
-                this.CheckStakeKernelHashV2(context, pindexPrev, nBits, blockFrom.Header.Time, prevBlockStake, txPrev, prevout, nTimeTx);
-            else
-                this.CheckStakeKernelHashV1();
+            if (IsProtocolV2(pindexPrev.Height + 1)) this.CheckStakeKernelHashV2(context, pindexPrev, nBits, blockFrom.Header.Time, prevBlockStake, txPrev, prevout, nTimeTx);
+            else this.CheckStakeKernelHashV1();
         }
 
         // Stratis kernel protocol
@@ -153,9 +151,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             if (missingZero > 0)
-            {
                 array = new byte[missingZero].Concat(array).ToArray();
-            }
 
             return new uint256(array, false);
         }
@@ -187,8 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         //   quantities so as to generate blocks faster, degrading the system back into
         //   a proof-of-work situation.
         //
-        private void CheckStakeKernelHashV2(ContextInformation context, ChainedBlock pindexPrev, uint nBits,
-            uint nTimeBlockFrom,
+        private void CheckStakeKernelHashV2(ContextInformation context, ChainedBlock pindexPrev, uint nBits, uint nTimeBlockFrom,
             BlockStake prevBlockStake, UnspentOutputs txPrev, OutPoint prevout, uint nTimeTx)
         {
             if (nTimeTx < txPrev.Time)
@@ -269,8 +264,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void ComputeStakeModifier(ChainBase chainIndex, ChainedBlock pindex, BlockStake blockStake)
         {
-            var pindexPrev = pindex.Previous;
-            var blockStakePrev = pindexPrev == null ? null : this.stakeChain.Get(pindexPrev.HashBlock);
+            ChainedBlock pindexPrev = pindex.Previous;
+            BlockStake blockStakePrev = pindexPrev == null ? null : this.stakeChain.Get(pindexPrev.HashBlock);
 
             // compute stake modifier
             var stakeContext = new StakeModifierContext();
@@ -336,15 +331,15 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // add an interval section to the current selection round
                 nSelectionIntervalStop += this.GetStakeModifierSelectionIntervalSection(nRound);
 
-                // select a block from the candidates of current round
+                // Select a block from the candidates of current round.
                 BlockStake blockStake;
                 if (!this.SelectBlockFromCandidates(sorted, mapSelectedBlocks, nSelectionIntervalStop, stakeModifier.StakeModifier, out pindex, out blockStake))
                     ConsensusErrors.FailedSelectBlock.Throw();
 
-                // write the entropy bit of the selected block
+                // Write the entropy bit of the selected block.
                 nStakeModifierNew |= ((ulong)blockStake.GetStakeEntropyBit() << nRound);
 
-                // add the selected block from candidates to selected list
+                // Add the selected block from candidates to selected list.
                 mapSelectedBlocks.Add(pindex.HashBlock, pindex);
 
                 //LogPrint("stakemodifier", "ComputeNextStakeModifier: selected round %d stop=%s height=%d bit=%d\n", nRound, DateTimeStrFormat(nSelectionIntervalStop), pindex->nHeight, pindex->GetStakeEntropyBit());
@@ -389,7 +384,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public uint256 ComputeStakeModifierV2(ChainedBlock pindexPrev, BlockStake blockStakePrev, uint256 kernel)
         {
             if (pindexPrev == null)
-                return 0; // genesis block's modifier is 0
+                return 0; // Genesis block's modifier is 0.
 
             uint256 stakeModifier;
             using (var ms = new MemoryStream())
@@ -434,6 +429,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             long nSelectionInterval = 0;
             for (int nSection = 0; nSection < 64; nSection++)
                 nSelectionInterval += this.GetStakeModifierSelectionIntervalSection(nSection);
+
             return nSelectionInterval;
         }
 
@@ -442,6 +438,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (!((nSection >= 0) && (nSection < 64)))
                 throw new ArgumentOutOfRangeException();
+
             return (this.consensusOptions.StakeModifierInterval * 63 / (63 + ((63 - nSection) * (ModifierIntervalRatio - 1))));
         }
 
@@ -515,7 +512,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         // age (trust score) of competing branches.
         public bool GetCoinAge(ConcurrentChain chain, CoinView coinView, Transaction trx, ChainedBlock pindexPrev, out ulong nCoinAge)
         {
-
             BigInteger bnCentSecond = BigInteger.Zero;  // coin age in the unit of cent-seconds
             nCoinAge = 0;
 
@@ -628,6 +624,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (index == null)
                 throw new ArgumentNullException(nameof(index));
+
             BlockStake blockStake = stakeChain.Get(index.HashBlock);
 
             while ((index.Previous != null) && (blockStake.IsProofOfStake() != proofOfStake))
@@ -664,15 +661,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             int targetSpacing = GetTargetSpacing(indexLast.Height);
             int actualSpacing = (int)(pindexPrev.Header.Time - pindexPrevPrev.Header.Time);
-            if (IsProtocolV1RetargetingFixed(indexLast.Height))
-            {
-                if (actualSpacing < 0) actualSpacing = targetSpacing;
-            }
+            if (IsProtocolV1RetargetingFixed(indexLast.Height) && (actualSpacing < 0))
+                actualSpacing = targetSpacing;
 
-            if (IsProtocolV3((int)indexLast.Header.Time))
-            {
-                if (actualSpacing > targetSpacing * 10) actualSpacing = targetSpacing * 10;
-            }
+            if (IsProtocolV3((int)indexLast.Header.Time) && (actualSpacing > targetSpacing * 10))
+                actualSpacing = targetSpacing * 10;
 
             // Target change every block
             // retarget with exponential moving toward target spacing.
@@ -683,8 +676,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             target = target.Multiply(BigInteger.ValueOf(((interval - 1) * targetSpacing + actualSpacing + actualSpacing)));
             target = target.Divide(BigInteger.ValueOf(((interval + 1) * targetSpacing)));
 
-            if (target.CompareTo(BigInteger.Zero) <= 0 || target.CompareTo(targetLimit) >= 1)
-                //if (target <= 0 || target > targetLimit)
+            if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(targetLimit) >= 1))
                 target = targetLimit;
 
             return new Target(target);
@@ -707,10 +699,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public static uint GetPastTimeLimit(ChainedBlock chainedBlock)
         {
-            if (IsProtocolV2(chainedBlock.Height))
-                return chainedBlock.Header.Time;
-            else
-                return GetMedianTimePast(chainedBlock);
+            return IsProtocolV2(chainedBlock.Height) ? chainedBlock.Header.Time : GetMedianTimePast(chainedBlock);
         }
 
         public static uint GetMedianTimePast(ChainedBlock chainedBlock)
