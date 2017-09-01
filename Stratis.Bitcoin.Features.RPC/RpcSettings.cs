@@ -1,12 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
 
-namespace Stratis.Bitcoin.Configuration.Settings
+namespace Stratis.Bitcoin.Features.RPC
 {
     /// <summary>
     /// Configuration related to RPC interface.
