@@ -3,7 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Wallet
+namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletHelpersTest
     {

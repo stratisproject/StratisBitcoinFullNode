@@ -1,25 +1,50 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.BitcoinCore;
-using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Xunit;
 using static NBitcoin.Transaction;
+using System.Diagnostics;
+using System.IO;
+using System.Collections.Concurrent;
+using System.Threading;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.BlockPulling;
+using System.Net.Http;
+using System.Collections;
+using NBitcoin.Crypto;
+using Stratis.Bitcoin.Utilities;
+using NBitcoin.RPC;
+using System.Net;
+using Stratis.Bitcoin.Configuration;
+using Microsoft.Extensions.Logging.Console;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
-using System;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CoinViewTests
 	{
+        /// <summary>Factory for creating loggers.</summary>
+        protected readonly ILoggerFactory loggerFactory;
+
+        /// <summary>
+        /// Initializes logger factory for tests in this class.
+        /// </summary>
+        public CoinViewTests()
+        {
+            this.loggerFactory = new LoggerFactory();
+        }
+
         [Fact]
 		public void TestDBreezeSerialization()
 		{
@@ -52,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 				var genesis = ctx.Network.GetGenesis();
 				var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
 				var chained = MakeNext(genesisChainedBlock);
-				var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView);
+				var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, loggerFactory);
 
 				cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
 				Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
@@ -84,7 +109,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			using(NodeContext ctx = NodeContext.Create())
 			{
-				var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView);
+				var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, this.loggerFactory);
 				var tester = new CoinViewTester(cacheCoinView);
 
 				var coins = tester.CreateCoins(5);

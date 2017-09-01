@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 
@@ -31,15 +28,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             var account = this.GetAccount();
             return uint256.Zero;
-        }
-
-        [ActionName("generate")]
-        public List<uint256> Generate(int nBlock)
-        {
-            var mining = this.serviceProvider.GetRequiredService<PowMining>();
-            var account = this.GetAccount();
-            var address = this.WalletManager.GetUnusedAddress(account);
-            return mining.GenerateBlocks(new ReserveScript(address.Pubkey), (ulong)nBlock, int.MaxValue);
         }
 
 

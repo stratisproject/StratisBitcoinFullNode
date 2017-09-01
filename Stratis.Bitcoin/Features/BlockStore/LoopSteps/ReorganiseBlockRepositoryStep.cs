@@ -46,10 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (this.BlockStoreLoop.StoreTip.HashBlock != nextChainedBlock.Header.HashPrevBlock)
             {
                 if (disposeMode)
-                {
-                    this.logger.LogTrace("(-):{0}", StepResult.Stop);
                     return StepResult.Stop;
-                }
 
                 var blocksToDelete = new List<uint256>();
                 var blockToDelete = this.BlockStoreLoop.StoreTip;
@@ -64,11 +61,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
                 this.BlockStoreLoop.SetStoreTip(blockToDelete);
 
-                this.logger.LogTrace("(-):{0}", StepResult.Stop);
                 return StepResult.Stop;
             }
 
-            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }
