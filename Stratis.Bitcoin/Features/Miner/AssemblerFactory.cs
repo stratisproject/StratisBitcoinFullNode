@@ -20,7 +20,12 @@ namespace Stratis.Bitcoin.Features.Miner
 		protected readonly TxMempool mempool;
 		protected readonly IDateTimeProvider dateTimeProvider;
 		protected readonly StakeChain stakeChain;
-	    private readonly ILogger logger;
+
+        /// <summary>Factory for creating loggers.</summary>
+        protected readonly ILoggerFactory loggerFactory;
+        
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         public PowAssemblerFactory(
             ConsensusLoop consensusLoop, 
@@ -39,12 +44,13 @@ namespace Stratis.Bitcoin.Features.Miner
 		    this.mempool = mempool;
 		    this.dateTimeProvider = dateTimeProvider;
 		    this.stakeChain = stakeChain;
-	        this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.loggerFactory = loggerFactory;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
 	    public override BlockAssembler Create(AssemblerOptions options = null)
 	    {
-		    return new PowBlockAssembler(this.consensusLoop, this.network, this.chain, this.mempoolLock, this.mempool, this.dateTimeProvider, this.logger, options);
+		    return new PowBlockAssembler(this.consensusLoop, this.network, this.chain, this.mempoolLock, this.mempool, this.dateTimeProvider, this.loggerFactory, options);
 	    }
 	}
 
