@@ -635,6 +635,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             ChainedBlock prevBlock = this.chain.GetBlock(coins.BlockHash);
+            if (prevBlock == null)
+            {
+                this.logger.LogTrace("(-)[REORG]");
+                ConsensusErrors.ReadTxPrevFailed.Throw();
+            }
+
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
 
             //var txPrev = trasnactionStore.Get(prevout.Hash);
