@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
                 if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
                 {
-                    this.logger.LogTrace("({0}:{1})", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                    this.logger.LogTrace("{0}:{1} [maxpendinginsertblocksize_reached]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
                     break;
                 }
 
@@ -80,12 +80,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task PushPendingBlocksToRepository(ProcessPendingStorageContext context)
         {
-            this.logger.LogTrace("({0}.{1}:{2}')", nameof(context.PendingBlockPairsToStore), nameof(context.PendingBlockPairsToStore.Count), context.PendingBlockPairsToStore?.Count);
-
             BlockPair lastBlock;
             context.PendingBlockPairsToStore.TryPop(out lastBlock);
             await this.BlockStoreLoop.BlockRepository.PutAsync(lastBlock.ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
             this.BlockStoreLoop.SetStoreTip(lastBlock.ChainedBlock);
+
+            this.logger.LogTrace("({0}.{1}:{2} pushed to the repository.')", nameof(context.PendingBlockPairsToStore), nameof(context.PendingBlockPairsToStore.Count), context.PendingBlockPairsToStore?.Count);
         }
 
         /// <summary>
@@ -97,15 +97,25 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private bool ShouldBreakExecution(ProcessPendingStorageContext context)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}')", nameof(context.InputChainedBlock), context.InputChainedBlock?.HashBlock, context.InputChainedBlock?.Height, nameof(context.NextChainedBlock), context.NextChainedBlock?.HashBlock, context.NextChainedBlock?.Height);
+            if (context.NextChainedBlock == null)
+            {
+                this.logger.LogTrace("{0}:'{1}/{2}' [nextchainedblock_null]", nameof(context.NextChainedBlock), context.NextChainedBlock?.HashBlock, context.NextChainedBlock?.Height);
+                return true;
+            }
 
-            bool result =
-                (context.NextChainedBlock == null) ||
-                (context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock)) ||
-                (context.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
+            if ((context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock)))
+            {
+                this.logger.LogTrace("{0}:'{1}/{2}' [invalid_previous_block]", nameof(context.NextChainedBlock.Header.HashPrevBlock), context.NextChainedBlock.Header.HashPrevBlock, context.InputChainedBlock.HashBlock);
+                return true;
+            }
 
-            this.logger.LogTrace("(-):{0}", result);
-            return result;
+            if (context.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+            {
+                this.logger.LogTrace("{0}:{1} / {2}:{3}' [store_at_tip]", nameof(context.NextChainedBlock), context.NextChainedBlock.Height, nameof(this.BlockStoreLoop.ChainState.HighestValidatedPoW), this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
+                return true;
+            }
+
+            return false;
         }
     }
 
