@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Stratis.Bitcoin.Features.Wallet;
 
-namespace Stratis.Bitcoin.Tests.Wallet
+namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletTestBase
     {
