@@ -117,6 +117,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
     }
 
+
+    /// <summary>
+    /// Context class that's used by <see cref="ProcessPendingStorageStep"/> 
+    /// </summary>
     internal sealed class ProcessPendingStorageContext
     {
         internal ProcessPendingStorageContext(BlockStoreLoop blockStoreLoop, ChainedBlock nextChainedBlock)
@@ -126,12 +130,29 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         internal BlockStoreLoop BlockStoreLoop { get; private set; }
+
+        /// <summary>
+        /// Used to check if we should break execution when the next block's previous has doesn't
+        /// match this block's hash.
+        /// </summary>
         internal ChainedBlock InputChainedBlock { get; private set; }
+
+        /// <summary>
+        /// The block currently being processed.
+        /// </summary>
         internal ChainedBlock NextChainedBlock { get; private set; }
+
+        /// <summary>
+        /// If this value reaches <see cref="BlockStoreLoop.MaxPendingInsertBlockSize" the step will exit./>
+        /// </summary>
         internal int PendingStorageBatchSize = 0;
+
         internal BlockPair PendingBlockPairToStore;
         internal ConcurrentStack<BlockPair> PendingBlockPairsToStore = new ConcurrentStack<BlockPair>();
 
+        /// <summary>
+        /// Gets the next block to process.
+        /// </summary>
         internal void GetNextBlock()
         {
             this.InputChainedBlock = this.NextChainedBlock;
