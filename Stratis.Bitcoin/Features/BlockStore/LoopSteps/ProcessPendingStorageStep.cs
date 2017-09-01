@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,70 +44,48 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height, nameof(disposeMode), disposeMode);
 
-            BlockPair pendingBlockPairToStore;
-            if (!this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out pendingBlockPairToStore))
-                return StepResult.Next;
-
-            var pendingBlockPairsToStore = new List<BlockPair>();
-            pendingBlockPairsToStore.Add(pendingBlockPairToStore);
-            int pendingStorageBatchSize = pendingBlockPairToStore.Block.GetSerializedSize();
-
-            ChainedBlock lastFoundChainedBlock = nextChainedBlock;
+            var context = new ProcessPendingStorageContext(this.BlockStoreLoop, nextChainedBlock);
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                ChainedBlock inputChainedBlock = nextChainedBlock;
-                nextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(nextChainedBlock.Height + 1);
+                if (!this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore))
+                    return StepResult.Next;
 
-                bool breakExecution = this.ShouldBreakExecution(inputChainedBlock, nextChainedBlock);
-                if (!breakExecution && !this.BlockStoreLoop.PendingStorage.TryRemove(nextChainedBlock.HashBlock, out pendingBlockPairToStore))
-                    breakExecution = true;
+                context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
 
-                if (breakExecution)
+                if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload == false)
+                    break;
+
+                context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
+                if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
                 {
-                    if (!pendingBlockPairsToStore.Any())
-                        break;
-                }
-                else
-                {
-                    pendingBlockPairsToStore.Add(pendingBlockPairToStore);
-                    pendingStorageBatchSize += pendingBlockPairToStore.Block.GetSerializedSize(); // TODO: add the size to the result coming from the signaler	
-                    lastFoundChainedBlock = nextChainedBlock;
+                    this.logger.LogTrace("({0}:{1})", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                    break;
                 }
 
-                if ((pendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize) || breakExecution)
-                {
-                    StepResult result = await this.PushPendingBlocksToRepository(pendingStorageBatchSize, pendingBlockPairsToStore, lastFoundChainedBlock, cancellationToken, breakExecution);
-                    if (result == StepResult.Stop)
-                        break;
+                context.GetNextBlock();
 
-                    pendingBlockPairsToStore.Clear();
-                    pendingStorageBatchSize = 0;
-
-                    if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload) // this can be tweaked if insert is effecting the consensus speed
-                        await Task.Delay(this.BlockStoreLoop.PushIntervalIBD, cancellationToken);
-                }
+                if (ShouldBreakExecution(context))
+                    break;
             }
+
+            await PushPendingBlocksToRepository(context);
 
             return StepResult.Continue;
         }
 
         /// <summary>
         /// Store missing blocks and remove them from pending blocks
-        /// Set the Store's tip to <see cref="lastFoundChainedBlock"/>
+        /// Set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedBlock"/>
         /// </summary>
-        private async Task<StepResult> PushPendingBlocksToRepository(int pendingStorageBatchSize, List<BlockPair> pendingBlockPairsToStore, ChainedBlock lastFoundChainedBlock, CancellationToken cancellationToken, bool breakExecution)
+        private async Task PushPendingBlocksToRepository(ProcessPendingStorageContext context)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:{4},{5}:'{6}/{7}',{8}:{9})", nameof(pendingStorageBatchSize), pendingStorageBatchSize, nameof(pendingBlockPairsToStore), nameof(pendingBlockPairsToStore.Count), pendingBlockPairsToStore?.Count, nameof(lastFoundChainedBlock), lastFoundChainedBlock?.HashBlock, lastFoundChainedBlock?.Height, nameof(breakExecution), breakExecution);
+            this.logger.LogTrace("({0}.{1}:{2}')", nameof(context.PendingBlockPairsToStore), nameof(context.PendingBlockPairsToStore.Count), context.PendingBlockPairsToStore?.Count);
 
-            await this.BlockStoreLoop.BlockRepository.PutAsync(lastFoundChainedBlock.HashBlock, pendingBlockPairsToStore.Select(b => b.Block).ToList());
-
-            this.BlockStoreLoop.SetStoreTip(lastFoundChainedBlock);
-
-            if (breakExecution)
-                return StepResult.Stop;
-
-            return StepResult.Next;
+            BlockPair lastBlock;
+            context.PendingBlockPairsToStore.TryPop(out lastBlock);
+            await this.BlockStoreLoop.BlockRepository.PutAsync(lastBlock.ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
+            this.BlockStoreLoop.SetStoreTip(lastBlock.ChainedBlock);
         }
 
         /// <summary>
@@ -117,16 +95,39 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         ///     <item>2: Block is already in store or pending insertion</item>
         /// </list>
         /// </summary>
-        private bool ShouldBreakExecution(ChainedBlock inputChainedBlock, ChainedBlock nextChainedBlock)
+        private bool ShouldBreakExecution(ProcessPendingStorageContext context)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}')", nameof(inputChainedBlock), inputChainedBlock?.HashBlock, inputChainedBlock?.Height, nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height);
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}')", nameof(context.InputChainedBlock), context.InputChainedBlock?.HashBlock, context.InputChainedBlock?.Height, nameof(context.NextChainedBlock), context.NextChainedBlock?.HashBlock, context.NextChainedBlock?.Height);
 
-            bool res = (nextChainedBlock == null)
-                || (nextChainedBlock.Header.HashPrevBlock != inputChainedBlock.HashBlock)
-                || (nextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
+            bool result =
+                (context.NextChainedBlock == null) ||
+                (context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock)) ||
+                (context.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
 
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
+            this.logger.LogTrace("(-):{0}", result);
+            return result;
+        }
+    }
+
+    internal sealed class ProcessPendingStorageContext
+    {
+        internal ProcessPendingStorageContext(BlockStoreLoop blockStoreLoop, ChainedBlock nextChainedBlock)
+        {
+            this.BlockStoreLoop = blockStoreLoop;
+            this.NextChainedBlock = nextChainedBlock;
+        }
+
+        internal BlockStoreLoop BlockStoreLoop { get; private set; }
+        internal ChainedBlock InputChainedBlock { get; private set; }
+        internal ChainedBlock NextChainedBlock { get; private set; }
+        internal int PendingStorageBatchSize = 0;
+        internal BlockPair PendingBlockPairToStore;
+        internal ConcurrentStack<BlockPair> PendingBlockPairsToStore = new ConcurrentStack<BlockPair>();
+
+        internal void GetNextBlock()
+        {
+            this.InputChainedBlock = this.NextChainedBlock;
+            this.NextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(this.NextChainedBlock.Height + 1);
         }
     }
 }
