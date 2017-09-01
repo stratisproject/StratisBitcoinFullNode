@@ -46,17 +46,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             var context = new ProcessPendingStorageContext(this.BlockStoreLoop, nextChainedBlock);
 
+            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload)
+                ProcessWhenInIBD(context, cancellationToken);
+            else
+                ProcessWhenNotInIBD(context, cancellationToken);
+
+            await PushBlocksToRepository(context);
+
+            return StepResult.Continue;
+        }
+
+        private StepResult ProcessWhenInIBD(ProcessPendingStorageContext context, CancellationToken cancellationToken)
+        {
             while (!cancellationToken.IsCancellationRequested)
             {
                 if (!this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore))
                     return StepResult.Next;
 
                 context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
-
-                if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload == false)
-                    break;
-
                 context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
+
                 if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
                 {
                     this.logger.LogTrace("{0}:{1} [maxpendinginsertblocksize_reached]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
@@ -69,16 +78,26 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     break;
             }
 
-            await PushPendingBlocksToRepository(context);
+            return StepResult.Next;
+        }
 
-            return StepResult.Continue;
+        private StepResult ProcessWhenNotInIBD(ProcessPendingStorageContext context, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                return StepResult.Next;
+
+            if (!this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore))
+                return StepResult.Next;
+
+            context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
+
+            return StepResult.Next;
         }
 
         /// <summary>
-        /// Store missing blocks and remove them from pending blocks
-        /// Set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedBlock"/>
+        /// Store missing blocks and remove them from pending blocks and set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedBlock"/>
         /// </summary>
-        private async Task PushPendingBlocksToRepository(ProcessPendingStorageContext context)
+        private async Task PushBlocksToRepository(ProcessPendingStorageContext context)
         {
             await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairsToStore.First().ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
             this.BlockStoreLoop.SetStoreTip(context.PendingBlockPairsToStore.First().ChainedBlock);
@@ -116,7 +135,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             return false;
         }
     }
-
 
     /// <summary>
     /// Context class that's used by <see cref="ProcessPendingStorageStep"/> 
