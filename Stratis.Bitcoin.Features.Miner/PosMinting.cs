@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 foreach (UnspentOutputReference infoTransaction in spendable)
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
-                    TxOut utxo = set?._Outputs[infoTransaction.Transaction.Index];
+                    TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set._Outputs.Length) ? set._Outputs[infoTransaction.Transaction.Index] : null;
 
                     if ((utxo != null) && (utxo.Value > Money.Zero))
                     {
