@@ -208,6 +208,9 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (tryToSync)
                 {
                     tryToSync = false;
+                    // TODO: This condition to have at least 3 peers is disqualifying us on testnet quite often.
+                    // Yet the 60 secs delay does not prevent us to mine because tryToSync will be false next time we are here
+                    // unless we are completely disconnected. So this is weird logic.
                     bool fewPeers = this.connection.ConnectedNodes.Count() < 3;
                     bool lastBlockTooOld = this.chain.Tip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
                     if (fewPeers || lastBlockTooOld)
@@ -216,7 +219,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", this.chain.Tip.Header.Time);
 
                         Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
-                        //this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
                         continue;
                     }
                 }
