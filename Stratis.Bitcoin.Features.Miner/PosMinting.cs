@@ -79,14 +79,12 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         private Task mining;
-        private readonly long lastCoinStakeSearchTime;
         private Money reserveBalance;
         private readonly int minimumInputValue;
         private readonly int minerSleep;
 
-        
-        public long LastCoinStakeSearchInterval;
-        public long LastCoinStakeSearchTime;
+        private long lastCoinStakeSearchTime;
+        private long lastCoinStakeSearchInterval;
 
         public PosMinting(
             ConsensusLoop consensusLoop, 
@@ -159,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public void GenerateBlocks(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
-            this.LastCoinStakeSearchInterval = 0;
+            this.lastCoinStakeSearchInterval = 0;
 
             BlockTemplate pblocktemplate = null;
             bool tryToSync = true;
@@ -177,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
-                    this.LastCoinStakeSearchInterval = 0;
+                    this.lastCoinStakeSearchInterval = 0;
                     tryToSync = true;
                     Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 }
@@ -196,6 +194,8 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
                         if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", this.chain.Tip.Header.Time);
+
+                        Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                         //this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
                         continue;
                     }
@@ -409,9 +409,9 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 else this.logger.LogTrace("Unable to create coinstake transaction.");
 
-                this.LastCoinStakeSearchInterval = searchTime - this.LastCoinStakeSearchTime;
-                this.LastCoinStakeSearchTime = searchTime;
-                this.logger.LogTrace("Last coinstake search interval set to {0}, last coinstake search timestamp set to {1}.", this.LastCoinStakeSearchInterval, this.LastCoinStakeSearchTime);
+                this.lastCoinStakeSearchInterval = searchTime - this.lastCoinStakeSearchTime;
+                this.lastCoinStakeSearchTime = searchTime;
+                this.logger.LogTrace("Last coinstake search interval set to {0}, last coinstake search timestamp set to {1}.", this.lastCoinStakeSearchInterval, this.lastCoinStakeSearchTime);
             }
             else this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", searchTime, this.lastCoinStakeSearchTime);
 
