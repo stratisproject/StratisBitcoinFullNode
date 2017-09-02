@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("()");
             this.lastCoinStakeSearchInterval = 0;
 
-            BlockTemplate pblocktemplate = null;
+            BlockTemplate pblockTemplate = null;
             bool tryToSync = true;
 
             while (true)
@@ -223,10 +223,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     }
                 }
 
-                if (pblocktemplate == null)
-                    pblocktemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                if (pblockTemplate == null)
+                    pblockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
-                Block pblock = pblocktemplate.Block;
+                Block pblock = pblockTemplate.Block;
                 ChainedBlock pindexPrev = this.consensusLoop.Tip;
 
                 var stakeTxes = new List<StakeTx>();
@@ -256,13 +256,13 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // Trying to sign a block.
-                if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblocktemplate.TotalFee))
+                if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblockTemplate.TotalFee))
                 {
                     this.logger.LogTrace("POS block signed successfully.");
                     var blockResult = new BlockResult { Block = pblock };
                     this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), pindexPrev);
 
-                    pblocktemplate = null;
+                    pblockTemplate = null;
                 }
                 else
                 {
@@ -497,12 +497,18 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (StakeTx coin in setCoins)
             {
                 this.logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
-                int maxStakeSearchInterval = 60;
                 bool fKernelFound = false;
+                long minimumAllowedTime = pindexBest.Header.Time + 1;
 
-                for (uint n = 0; n < Math.Min(nSearchInterval, maxStakeSearchInterval) && !fKernelFound; n++)
+                for (uint n = 0; (n < nSearchInterval) && !fKernelFound; n++)
                 {
                     uint txTime = txNew.Time - n;
+
+                    // Once we reach previous block time + 1, we can't go any lower
+                    // because it is required that the block time is greater than the previous block time.
+                    if (txTime < minimumAllowedTime)
+                        break;
+
                     if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
                         continue;
 
