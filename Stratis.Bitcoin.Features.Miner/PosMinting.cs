@@ -495,12 +495,20 @@ namespace Stratis.Bitcoin.Features.Miner
             // it sorts the coins from heighest weight.
             setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
 
-            this.logger.LogTrace("Trying to find staking solution among {0} transactions.", setCoins.Count);
+            long minimalAllowedTime = pindexBest.Header.Time + 1;
+            // If the time after applying the mask is lower than minimal allowed time,
+            // it is simply too early for us to mine, there can't be any valid solution.
+            if ((txNew.Time & PosConsensusValidator.StakeTimestampMask) < minimalAllowedTime)
+            {
+                this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
+                return false;
+            }
+
+            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}.", setCoins.Count, minimalAllowedTime);
             foreach (StakeTx coin in setCoins)
             {
                 this.logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
                 bool fKernelFound = false;
-                long minimumAllowedTime = pindexBest.Header.Time + 1;
 
                 for (uint n = 0; (n < nSearchInterval) && !fKernelFound; n++)
                 {
@@ -508,7 +516,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     // Once we reach previous block time + 1, we can't go any lower
                     // because it is required that the block time is greater than the previous block time.
-                    if (txTime < minimumAllowedTime)
+                    if (txTime < minimalAllowedTime)
                         break;
 
                     if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
