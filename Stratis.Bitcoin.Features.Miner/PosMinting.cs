@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 if (this.chain.Tip != this.consensusLoop.Tip)
                 {
-                    this.logger.LogTrace("(-)[REORG]");
+                    this.logger.LogTrace("(-)[SYNC_OR_REORG]");
                     return;
                 }
 
@@ -500,15 +500,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 for (uint n = 0; n < Math.Min(nSearchInterval, maxStakeSearchInterval) && !fKernelFound; n++)
                 {
+                    uint txTime = txNew.Time - n;
+                    if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
+                        continue;
+
                     if (pindexPrev != this.chain.Tip)
                     {
                         this.logger.LogTrace("(-)[REORG]:false");
                         return false;
                     }
-
-                    uint txTime = txNew.Time - n;
-                    if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
-                        continue;
 
                     this.logger.LogTrace("Trying with transaction time {0}...", txTime);
                     try
