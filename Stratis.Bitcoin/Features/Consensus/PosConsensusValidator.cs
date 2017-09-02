@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         // To decrease granularity of timestamp.
         // Supposed to be 2^n-1.
-        public const uint StakeTimestampMask = 15;
+        public const uint StakeTimestampMask = 0x0000000F;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;

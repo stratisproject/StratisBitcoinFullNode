@@ -496,15 +496,16 @@ namespace Stratis.Bitcoin.Features.Miner
             setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
 
             long minimalAllowedTime = pindexBest.Header.Time + 1;
+            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, txNew.Time);
+
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
-            if ((txNew.Time & PosConsensusValidator.StakeTimestampMask) < minimalAllowedTime)
+            if ((txNew.Time & ~PosConsensusValidator.StakeTimestampMask) < minimalAllowedTime)
             {
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
             }
 
-            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}.", setCoins.Count, minimalAllowedTime);
             foreach (StakeTx coin in setCoins)
             {
                 this.logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
