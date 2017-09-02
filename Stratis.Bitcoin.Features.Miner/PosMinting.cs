@@ -200,11 +200,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 }
 
-                // TODO: What is the purpose of this conditional block?
-                // It seems that if it ends with continue, the next round of the loop will just 
-                // not execute the above while loop and it won't even enter this block again,
-                // so it seems like no operation.
-                // In StratisX there is the wait uncommented. Then it makes sense. Why we have it commented?
                 if (tryToSync)
                 {
                     tryToSync = false;
