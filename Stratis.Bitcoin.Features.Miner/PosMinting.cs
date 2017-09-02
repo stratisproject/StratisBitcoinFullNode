@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     // unless we are completely disconnected. So this is weird logic.
                     bool fewPeers = this.connection.ConnectedNodes.Count() < 3;
                     bool lastBlockTooOld = this.chain.Tip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
-                    if (fewPeers || lastBlockTooOld)
+                    if ((fewPeers && !this.network.IsTest()) || lastBlockTooOld)
                     {
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
                         if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", this.chain.Tip.Header.Time);
