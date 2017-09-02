@@ -507,6 +507,9 @@ namespace Stratis.Bitcoin.Features.Miner
                     }
 
                     uint txTime = txNew.Time - n;
+                    if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
+                        continue;
+
                     this.logger.LogTrace("Trying with transaction time {0}...", txTime);
                     try
                     {
@@ -516,13 +519,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         var context = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
                         context.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(context, pindexPrev, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
-
-                        // TODO: Do this check as a first thing in the loop, not after checking kernel.
-                        if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
-                        {
-                            this.logger.LogTrace("Trying with transaction time {0}...", txTime);
-                            continue;
-                        }
 
                         // TODO: This is always true - CheckKernel either throws or fills in POS hash.
                         if (context.Stake.HashProofOfStake != null)
