@@ -141,7 +141,27 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogTrace("()");
 
-                this.GenerateBlocks(walletSecret);
+                try
+                {
+                    this.GenerateBlocks(walletSecret);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Application stopping, nothing to do as the loop will be stopped.
+                }
+                catch (ConsensusErrorException cee)
+                {
+                    // All consensus exceptions should be ignored. It means that the miner 
+                    // possibly mined a block that was not accepted or is even invalid,
+                    // but it should not halted the mining operation.
+                    this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogDebug("Exception occurred in miner loop: {0}", e.ToString());
+                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                    throw e;
+                }
 
                 this.logger.LogTrace("(-)");
                 return Task.CompletedTask;
