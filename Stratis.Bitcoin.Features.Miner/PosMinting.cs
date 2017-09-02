@@ -149,10 +149,17 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     // Application stopping, nothing to do as the loop will be stopped.
                 }
+                catch (MinerException me)
+                {
+                    // Miner rexceptions should be ignored. It means that the miner 
+                    // possibly mined a block that was not accepted by peers or is even invalid,
+                    // but it should not halted the mining operation.
+                    this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                }
                 catch (ConsensusErrorException cee)
                 {
                     // All consensus exceptions should be ignored. It means that the miner 
-                    // possibly mined a block that was not accepted or is even invalid,
+                    // run into problems while constructing block or verifying it
                     // but it should not halted the mining operation.
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                 }
