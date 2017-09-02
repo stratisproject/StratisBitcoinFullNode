@@ -396,6 +396,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Search to current time.
             long searchTime = txCoinStake.Time;
 
+            // TODO: It would be great to move this condition to GenerateBlocks.
             if (searchTime > this.lastCoinStakeSearchTime)
             {
                 long searchInterval = searchTime - this.lastCoinStakeSearchTime;
