@@ -5,7 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Script = NBitcoin.Script;
 
-namespace Stratis.Bitcoin.Tests.Wallet
+namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     /// <summary>
     /// Helper class containing a bunch of methods used for testing the wallet functionality.

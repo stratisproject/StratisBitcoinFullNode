@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp1.1</TargetFramework>
-    <AssemblyName>Stratis.Bitcoin.Tests</AssemblyName>
-    <PackageId>Stratis.Bitcoin.Tests</PackageId>
+    <AssemblyName>Stratis.Bitcoin.Features.Wallet.Tests</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Features.Wallet.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <PackageTargetFallback>$(PackageTargetFallback);netcore50</PackageTargetFallback>
     <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
@@ -22,9 +22,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Stratis.Bitcoin.Tests\**" />
-    <EmbeddedResource Remove="Stratis.Bitcoin.Tests\**" />
-    <None Remove="Stratis.Bitcoin.Tests\**" />
+    <Compile Remove="Stratis.Bitcoin.Features.Wallet.Tests\**" />
+    <EmbeddedResource Remove="Stratis.Bitcoin.Features.Wallet.Tests\**" />
+    <None Remove="Stratis.Bitcoin.Features.Wallet.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,18 +38,20 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.RPC\Stratis.Bitcoin.Features.RPC.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Tests\Stratis.Bitcoin.Tests.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
 </Project>

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -19,10 +20,13 @@ namespace Stratis.BitcoinD
 	{
 		public static void Main(string[] args)
 		{
-			if (NodeSettings.PrintHelp(args, Network.Main))
-				return;
-			
-			NodeSettings nodeSettings = NodeSettings.FromArguments(args);
+            if (NodeSettings.PrintHelp(args, Network.Main))
+            {
+                RpcSettings.PrintHelp(Network.Main);
+                return;
+            }
+
+            NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
 			var node = new FullNodeBuilder()
 				.UseNodeSettings(nodeSettings)

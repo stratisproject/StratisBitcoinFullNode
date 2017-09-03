@@ -182,10 +182,10 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override void Stop()
         {
-            this.logger.LogInformation("FlushAddressManager stopped");
+            this.logger.LogInformation("Flushing address manager");
             this.flushAddressManagerTask?.RunOnce();
 
-            this.logger.LogInformation("FlushChain stopped");
+            this.logger.LogInformation("Flushing headers chain");
             this.flushChainTask?.RunOnce();
 
             foreach (var disposable in this.disposableResources)
