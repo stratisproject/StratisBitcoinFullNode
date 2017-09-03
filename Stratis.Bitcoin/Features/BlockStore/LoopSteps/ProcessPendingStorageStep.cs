@@ -46,52 +46,62 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             var context = new ProcessPendingStorageContext(this.BlockStoreLoop, nextChainedBlock);
 
-            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload)
-                ProcessWhenInIBD(context, cancellationToken);
-            else
-                ProcessWhenNotInIBD(context, cancellationToken);
+            //Next block does not exist in pending storage, continue onto the download blocks step.
+            if (!this.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
+                return StepResult.Next;
 
-            await PushBlocksToRepository(context);
+            //If pending storage has not yet reached the threshold or the node is in IDB, stop the loop and wait for more blocks.
+            if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold && this.BlockStoreLoop.ChainState.IsInitialBlockDownload == true)
+                return StepResult.Stop;
 
-            return StepResult.Continue;
-        }
-
-        private StepResult ProcessWhenInIBD(ProcessPendingStorageContext context, CancellationToken cancellationToken)
-        {
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (!this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore))
-                    return StepResult.Next;
+                var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
+                if (blockIsInPendingStorage == false)
+                {
+                    if (context.PendingBlockPairsToStore.Count == 0)
+                        return StepResult.Next;
 
-                context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
-                context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
+                    if (context.PendingBlockPairsToStore.Any())
+                    {
+                        this.logger.LogTrace("[FLUSH_NEXTBLOCKNOTINPENDING]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                        await PushBlocksToRepository(context);
+                        break;
+                    }
+                }
+                else
+                {
+                    context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
+                    context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
+                }
 
                 if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
                 {
-                    this.logger.LogTrace("{0}:{1} [maxpendinginsertblocksize_reached]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                    this.logger.LogTrace("{0}:{1} [FLUSH_BATCHSIZE_REACHED]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                    await PushBlocksToRepository(context);
+                    break;
+                }
+
+                if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload == false)
+                {
+                    this.logger.LogTrace("[FLUSH_NOT_IN_IBD]");
+                    await PushBlocksToRepository(context);
                     break;
                 }
 
                 context.GetNextBlock();
 
-                if (ShouldBreakExecution(context))
+                var shouldBreak = ShouldBreakExecution(context);
+                if (shouldBreak)
+                {
+                    if (context.PendingBlockPairsToStore.Any())
+                        await PushBlocksToRepository(context);
+
                     break;
+                }
             }
 
-            return StepResult.Next;
-        }
-
-        private StepResult ProcessWhenNotInIBD(ProcessPendingStorageContext context, CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                return StepResult.Next;
-
-            if (!this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore))
-                return StepResult.Next;
-
-            context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
-
-            return StepResult.Next;
+            return StepResult.Continue;
         }
 
         /// <summary>
@@ -102,7 +112,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairsToStore.First().ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
             this.BlockStoreLoop.SetStoreTip(context.PendingBlockPairsToStore.First().ChainedBlock);
 
-            this.logger.LogTrace("({0}.{1}:{2} pushed to the repository.')", nameof(context.PendingBlockPairsToStore), nameof(context.PendingBlockPairsToStore.Count), context.PendingBlockPairsToStore?.Count);
+            this.logger.LogTrace("({0}:{1} / {2}.{3}:{4} / {5}:{6}')", nameof(context.BlockStoreLoop.ChainState.IsInitialBlockDownload), context.BlockStoreLoop.ChainState.IsInitialBlockDownload, nameof(context.PendingBlockPairsToStore), nameof(context.PendingBlockPairsToStore.Count), context.PendingBlockPairsToStore?.Count, nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
         }
 
         /// <summary>
@@ -116,19 +126,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             if (context.NextChainedBlock == null)
             {
-                this.logger.LogTrace("{0}:'{1}/{2}' [nextchainedblock_null]", nameof(context.NextChainedBlock), context.NextChainedBlock?.HashBlock, context.NextChainedBlock?.Height);
+                this.logger.LogTrace("{0}:'{1}/{2}' [NEXTBLOCKNOTINPENDING_NULL]", nameof(context.NextChainedBlock), context.NextChainedBlock?.HashBlock, context.NextChainedBlock?.Height);
                 return true;
             }
 
             if ((context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock)))
             {
-                this.logger.LogTrace("{0}:'{1}/{2}' [invalid_previous_block]", nameof(context.NextChainedBlock.Header.HashPrevBlock), context.NextChainedBlock.Header.HashPrevBlock, context.InputChainedBlock.HashBlock);
+                this.logger.LogTrace("{0}:'{1}/{2}' [INVALID_PREVIOUS]", nameof(context.NextChainedBlock.Header.HashPrevBlock), context.NextChainedBlock.Header.HashPrevBlock, context.InputChainedBlock.HashBlock);
                 return true;
             }
 
             if (context.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
             {
-                this.logger.LogTrace("{0}:{1} / {2}:{3}' [store_at_tip]", nameof(context.NextChainedBlock), context.NextChainedBlock.Height, nameof(this.BlockStoreLoop.ChainState.HighestValidatedPoW), this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
+                this.logger.LogTrace("{0}:{1} / {2}:{3}' [STORE_AT_TIP]", nameof(context.NextChainedBlock), context.NextChainedBlock.Height, nameof(this.BlockStoreLoop.ChainState.HighestValidatedPoW), this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
                 return true;
             }
 
