@@ -253,6 +253,71 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             Directory.Delete(dataDir, true);
         }
 
+        /// <summary>
+        /// Validate P2SH transaction in memory pool.
+        /// Transaction scenario adapted from code project article referenced below.
+        /// </summary>
+        /// <seealso cref="https://www.codeproject.com/Articles/835098/NBitcoin-Build-Them-All"/>
+        [Fact]
+        public async void AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfull()
+        {
+            string dataDir = $"TestData\\{nameof(MempoolValidatorTest)}\\{nameof(AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfull)}";
+            Directory.CreateDirectory(dataDir);
+
+            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            ITestChainContext context = TestChainFactory.Create(Network.RegTest, miner.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            BitcoinSecret alice = new BitcoinSecret(new Key(), Network.RegTest);
+            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+            BitcoinSecret satoshi = new BitcoinSecret(new Key(), Network.RegTest);
+            BitcoinSecret nico = new BitcoinSecret(new Key(), Network.RegTest);
+
+            // corp needs two out of three of alice, bob, nico
+            Script corpMultiSig = PayToMultiSigTemplate
+                        .Instance
+                        .GenerateScriptPubKey(2, new[] { alice.PubKey, bob.PubKey, nico.PubKey });
+
+            // P2SH address for corp multi-sig
+            BitcoinScriptAddress corpRedeemAddress = corpMultiSig.GetScriptAddress(Network.RegTest);
+
+            // Fund corp
+            // 50 Coins come from first tx on chain - send corp 42 and change back to miner
+            Coin coin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.ScriptPubKey);
+            TransactionBuilder txBuilder = new TransactionBuilder();
+            Transaction fundP2shTx = txBuilder
+                .AddCoins(new List<Coin> { coin })
+                .AddKeys(miner)
+                .Send(corpRedeemAddress, "42.00")
+                .SendFees("0.001")
+                .SetChange(miner.GetAddress())
+                .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(fundP2shTx)); //check fully signed
+            MempoolValidationState state = new MempoolValidationState(false);
+            Assert.True(await validator.AcceptToMemoryPool(state, fundP2shTx), $"Transaction: {nameof(fundP2shTx)} failed mempool validation.");
+
+            // AliceBobNico corp. send 20 to Satoshi
+            Coin[] corpCoins = fundP2shTx.Outputs
+                        .Where(o => o.ScriptPubKey == corpRedeemAddress.ScriptPubKey)
+                        .Select(o => new ScriptCoin(new OutPoint(fundP2shTx.GetHash(), fundP2shTx.Outputs.IndexOf(o)), o, corpMultiSig))
+                        .ToArray();
+
+            txBuilder = new TransactionBuilder();
+            Transaction p2shSpendTx = txBuilder
+                    .AddCoins(corpCoins)
+                    .AddKeys(alice, bob)
+                    .Send(satoshi.GetAddress(), "20")
+                    .SendFees("0.001")
+                    .SetChange(corpRedeemAddress)
+                    .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(p2shSpendTx));
+
+            Assert.True(await validator.AcceptToMemoryPool(state, p2shSpendTx), $"Transaction: {nameof(p2shSpendTx)} failed mempool validation.");
+
+            Directory.Delete(dataDir, true);
+        }
+
         [Fact]
         public void AcceptToMemoryPool_TxIsCoinbase_ReturnsFalse()
         {
