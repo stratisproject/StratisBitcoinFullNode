@@ -21,7 +21,11 @@ namespace Stratis.StratisD
         public static void Main(string[] args)
         {
             if (NodeSettings.PrintHelp(args, Network.StratisMain))
+            {
+                // NOTE: Add this if .AddRPC is added below
+                // RPCSettings.PrintHelp(Network.StratisMain);
                 return;
+            }
 
             var network = args.Contains("-testnet") ? InitStratisTest() : Network.StratisMain;
             var nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);

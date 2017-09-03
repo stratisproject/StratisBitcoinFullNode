@@ -1,4 +1,6 @@
-﻿using Xunit;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Features.MemoryPool
 {
@@ -84,6 +86,25 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         {
             // TODO: Test GetTransactionWeight - InputSizes = CalculateModifiedSize
             // Test weight calculation by passing in weight as nTxSize, nTxSize can be computed with GetTransactionWeight()
+        }
+
+        [Fact]
+        public async void AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfull()
+        {
+            BitcoinSecret minerSecret = new BitcoinSecret(new Key(), Network.RegTest);
+            ITestChainContext context = TestChainFactory.Create(Network.RegTest, minerSecret.PubKey.Hash.ScriptPubKey);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            BitcoinSecret destSecret = new BitcoinSecret(new Key(), Network.RegTest);
+            Transaction tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
+            tx.AddOutput(new TxOut(new Money(Money.CENT * 11), destSecret.PubKeyHash));
+            tx.Sign(minerSecret, false);
+
+            MempoolValidationState state = new MempoolValidationState(false);
+            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
+            Assert.True(isSuccess, "P2PKH tx not valid.");
         }
 
         [Fact]
