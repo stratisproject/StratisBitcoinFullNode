@@ -501,12 +501,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
-            // Replace this with staking weight.
             this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value))); 
-
-            // Note: I would expect to see coins sorted by weight on the original implementation
-            // it sorts the coins from heighest weight.
-            setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
 
             long minimalAllowedTime = pindexBest.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, txNew.Time);
@@ -518,6 +513,10 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
             }
+
+            // Sort coins by amount, so that highest amounts are tried first
+            // because they have greater chance to succeed and thus saving some work.
+            setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
 
             // Inputs to coinstake transaction.
             // First we are looking for the input that will meet the POS target with its hash.
