@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Found a solution.
             if (block.Header.HashPrevBlock != this.chain.Tip.HashBlock)
             {
-                this.logger.LogTrace("(-)[REORG]");
+                this.logger.LogTrace("(-)[SOLUTION_FOUND]");
                 return;
             }
             
