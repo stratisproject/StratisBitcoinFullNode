@@ -530,6 +530,14 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
                 bool fKernelFound = false;
 
+                scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
+                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
+                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+                {
+                    this.logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
+                    continue;
+                }
+
                 for (uint n = 0; (n < nSearchInterval) && !fKernelFound; n++)
                 {
                     uint txTime = txNew.Time - n;
@@ -559,30 +567,10 @@ namespace Stratis.Bitcoin.Features.Miner
                         this.posConsensusValidator.StakeValidator.CheckKernel(context, previousBlock, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 
                         this.logger.LogTrace("Kernel found with solution hash '{0}'.", context.Stake.HashProofOfStake);
-                        scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
 
-                        key = null;
-                        // Calculate the key type.
-                        // TODO: Why there are two if blocks with same body?
-                        // Can't we simply make OR condition with one block?
-                        // Also these checks could probably precede CheckKernel call as it does not affact TxOut.ScriptPubKey.
-                        if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
-                        {
-                            BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-                            Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
-                            key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
-                        }
-                        else if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
-                        {
-                            BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-                            Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
-                            key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
-                        }
-                        else
-                        {
-                            this.logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
-                            break;
-                        }
+                        BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
+                        Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
+                        key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
 
                         // Create a pubkey script form the current script.
                         Script scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(key.PubKey); // scriptPubKeyKernel
