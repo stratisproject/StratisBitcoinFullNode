@@ -6,11 +6,14 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests")]
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreFeature : FullNodeFeature, IBlockStore
@@ -121,6 +124,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<BlockStoreFeature>("db");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
