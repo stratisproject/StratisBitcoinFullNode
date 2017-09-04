@@ -852,55 +852,65 @@ namespace Stratis.Bitcoin.Features.Miner
             return true;
         }
 
-        private List<StakeOutput> AvailableCoinsForStaking(List<StakeTx> stakeTxes, uint nSpendTime)
+        /// <summary>
+        /// Selects coins that are suitable for staking. 
+        /// <para>
+        /// Such a coin has to be confirmed with enough confirmations - i.e. has suitable depth,
+        /// and it also has to be mature and meet requirement for minimal value.
+        /// </para>
+        /// </summary>
+        /// <param name="stakeTxes">List of coins that are candidates for being used for staking.</param>
+        /// <param name="spendTime">Timestamp of the coinstake transaction.</param>
+        /// <returns>List of coins that meet the requirements together with their depths.</returns>
+        private List<StakeOutput> AvailableCoinsForStaking(List<StakeTx> stakeTxes, uint spendTime)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(nSpendTime), nSpendTime);
-            var vCoins = new List<StakeOutput>();
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(spendTime), spendTime);
+            var res = new List<StakeOutput>();
 
             long requiredDepth = this.network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations;
-            foreach (StakeTx pcoin in stakeTxes)
+            foreach (StakeTx stakeTx in stakeTxes)
             {
-                int nDepth = this.GetDepthInMainChain(pcoin);
-                this.logger.LogTrace("Checking if UTXO '{0}/{1}' value {2} can be added, its depth is {3}.", pcoin.OutPoint.Hash, pcoin.OutPoint.N, pcoin.TxOut.Value, nDepth);
+                int depth = this.GetDepthInMainChain(stakeTx);
+                this.logger.LogTrace("Checking if UTXO '{0}/{1}' value {2} can be added, its depth is {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, depth);
 
-                if (nDepth < 1)
+                if (depth < 1)
                 {
                     this.logger.LogTrace("UTXO '{0}/{1}' is new or reorg happened.");
                     continue;
                 }
 
-                if (BlockValidator.IsProtocolV3((int)nSpendTime))
+                if (BlockValidator.IsProtocolV3((int)spendTime))
                 {
-                    if (nDepth < requiredDepth)
+                    if (depth < requiredDepth)
                     {
-                        this.logger.LogTrace("UTXO '{0}/{1}' depth {2} is lower than required minimum depth {3}.", pcoin.OutPoint.Hash, pcoin.OutPoint.N, nDepth, requiredDepth);
+                        this.logger.LogTrace("UTXO '{0}/{1}' depth {2} is lower than required minimum depth {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, depth, requiredDepth);
                         continue;
                     }
                 }
                 else
                 {
                     // Filtering by tx timestamp instead of block timestamp may give false positives but never false negatives.
-                    if (pcoin.UtxoSet.Time + this.network.Consensus.Option<PosConsensusOptions>().StakeMinAge > nSpendTime)
+                    if (stakeTx.UtxoSet.Time + this.network.Consensus.Option<PosConsensusOptions>().StakeMinAge > spendTime)
                         continue;
                 }
 
-                if (this.GetBlocksToMaturity(pcoin) > 0)
+                if (this.GetBlocksToMaturity(stakeTx) > 0)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because it is not mature.", pcoin.OutPoint.Hash, pcoin.OutPoint.N);
+                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because it is not mature.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
                     continue;
                 }
 
-                if (pcoin.TxOut.Value >= this.minimumInputValue)
+                if (stakeTx.TxOut.Value >= this.minimumInputValue)
                 {
                     // Check if the coin is already staking.
-                    this.logger.LogTrace("UTXO '{0}/{1}' accepted.", pcoin.OutPoint.Hash, pcoin.OutPoint.N);
-                    vCoins.Add(new StakeOutput { Depth = nDepth, StakeTx = pcoin });
+                    this.logger.LogTrace("UTXO '{0}/{1}' accepted.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
+                    res.Add(new StakeOutput { Depth = depth, StakeTx = stakeTx });
                 }
-                else this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its value {2} is below required minimum value {3}.", pcoin.OutPoint.Hash, pcoin.OutPoint.N, pcoin.TxOut.Value, this.minimumInputValue);
+                else this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its value {2} is below required minimum value {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, this.minimumInputValue);
             }
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(vCoins.Count), vCoins.Count);
-            return vCoins;
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
+            return res;
         }
 
         private int GetBlocksToMaturity(StakeTx stakeTx)
