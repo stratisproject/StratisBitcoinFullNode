@@ -83,8 +83,25 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly int minimumInputValue;
         private readonly int minerSleep;
 
+        /// <summary>
+        /// Timestamp of the last attempt to search for POS solution.
+        /// <para>
+        /// It is used to prevent searching for solutions that were already proved wrong in the past.
+        /// If there is no new block since last time we searched for the solution, it does not make 
+        /// sense to try timestamps earlier than this value.
+        /// </para>
+        /// </summary>
         private long lastCoinStakeSearchTime;
-        private long lastCoinStakeSearchInterval;
+
+        /// <summary>
+        /// Hash of the block headers of the block that was at the tip of the chain during our last 
+        /// search for POS solution.
+        /// <para>
+        /// It is used to prevent searching for solutions that were already proved wrong in the past.
+        /// If the tip changes, <see cref="lastCoinStakeSearchTime"/> is set to the new tip's header hash.
+        /// </para>
+        /// </summary>
+        private uint256 lastCoinStakeSearchPrevBlockHash;
 
         public PosMinting(
             ConsensusLoop consensusLoop, 
@@ -122,6 +139,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
             this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
+            this.lastCoinStakeSearchPrevBlockHash = 0;
             this.reserveBalance = 0; // TOOD:settings.ReserveBalance 
             this.minimumInputValue = 0;
 
@@ -184,7 +202,6 @@ namespace Stratis.Bitcoin.Features.Miner
         public void GenerateBlocks(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
-            this.lastCoinStakeSearchInterval = 0;
 
             BlockTemplate pblockTemplate = null;
             bool tryToSync = true;
@@ -202,7 +219,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
-                    this.lastCoinStakeSearchInterval = 0;
                     tryToSync = true;
                     Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 }
@@ -395,6 +411,12 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Search to current time.
             long searchTime = txCoinStake.Time;
+            if (this.lastCoinStakeSearchPrevBlockHash != pindexBest.HashBlock)
+            {
+                this.lastCoinStakeSearchPrevBlockHash = pindexBest.HashBlock;
+                this.lastCoinStakeSearchTime = pindexBest.Header.Time;
+                this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", pindexBest.HashBlock, pindexBest.Height, pindexBest.Header.Time);
+            }
 
             // TODO: It would be great to move this condition to GenerateBlocks.
             if (searchTime > this.lastCoinStakeSearchTime)
@@ -434,9 +456,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 else this.logger.LogTrace("Unable to create coinstake transaction.");
 
-                this.lastCoinStakeSearchInterval = searchTime - this.lastCoinStakeSearchTime;
                 this.lastCoinStakeSearchTime = searchTime;
-                this.logger.LogTrace("Last coinstake search interval set to {0}, last coinstake search timestamp set to {1}.", this.lastCoinStakeSearchInterval, this.lastCoinStakeSearchTime);
+                this.logger.LogTrace("Last coinstake search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
             }
             else this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", searchTime, this.lastCoinStakeSearchTime);
 
