@@ -180,7 +180,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
                 // thrown so that the node and all the disposables can stop gracefully.
+                this.logger.LogDebug("Exception occurred in consensus loop: {0}", ex.ToString());
                 this.logger.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + this.consensusLoop.Tip?.Height + ")");
+                NLog.LogManager.Flush();
                 throw;
             }
         }
