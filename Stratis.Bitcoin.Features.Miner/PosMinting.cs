@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.GenerateBlocks(walletSecret);
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
                     // Application stopping, nothing to do as the loop will be stopped.
                 }
