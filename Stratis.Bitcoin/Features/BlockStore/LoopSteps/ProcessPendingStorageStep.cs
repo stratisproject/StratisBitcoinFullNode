@@ -51,7 +51,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return StepResult.Next;
 
             //If pending storage has not yet reached the threshold or the node is in IDB, stop the loop and wait for more blocks.
-            if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold && this.BlockStoreLoop.ChainState.IsInitialBlockDownload == true)
+            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload == true &&
+                disposeMode == false &&
+                this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
                 return StepResult.Stop;
 
             while (!cancellationToken.IsCancellationRequested)
@@ -65,7 +67,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     if (context.PendingBlockPairsToStore.Any())
                     {
                         this.logger.LogTrace("[FLUSH_NEXTBLOCKNOTINPENDING]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
-                        await PushBlocksToRepository(context);
+                        await this.PushBlocksToRepository(context);
                         break;
                     }
                 }
@@ -75,17 +77,24 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
                 }
 
+                if (disposeMode)
+                {
+                    this.logger.LogTrace("{0}:{1} [FLUSH_BLOCKSTORE_DISPOSING]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                    await this.PushBlocksToRepository(context);
+                    break;
+                }
+
                 if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
                 {
                     this.logger.LogTrace("{0}:{1} [FLUSH_BATCHSIZE_REACHED]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
-                    await PushBlocksToRepository(context);
+                    await this.PushBlocksToRepository(context);
                     break;
                 }
 
                 if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload == false)
                 {
                     this.logger.LogTrace("[FLUSH_NOT_IN_IBD]");
-                    await PushBlocksToRepository(context);
+                    await this.PushBlocksToRepository(context);
                     break;
                 }
 
@@ -95,7 +104,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 if (shouldBreak)
                 {
                     if (context.PendingBlockPairsToStore.Any())
-                        await PushBlocksToRepository(context);
+                        await this.PushBlocksToRepository(context);
 
                     break;
                 }
