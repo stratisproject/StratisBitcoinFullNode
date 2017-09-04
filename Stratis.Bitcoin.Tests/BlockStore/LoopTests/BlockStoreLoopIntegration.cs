@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
         {
             var blocks = CreateBlocks(15);
 
-            using (var fluent = new FluentBlockStoreLoop())
+            using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
                 fluent.WithConcreteRepository(TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\ProcessPendingStorage_Integration"));
                 // Push 5 blocks to the repository

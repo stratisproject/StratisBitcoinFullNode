@@ -29,13 +29,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
         public BlockStoreSignaled(
-            BlockStoreLoop storeLoop, 
-            ConcurrentChain chain, 
-            NodeSettings nodeArgs, 
-            ChainState chainState, 
-            IConnectionManager connection, 
-            INodeLifetime nodeLifetime, 
-            IAsyncLoopFactory asyncLoopFactory, 
+            BlockStoreLoop storeLoop,
+            ConcurrentChain chain,
+            NodeSettings nodeArgs,
+            ChainState chainState,
+            IConnectionManager connection,
+            INodeLifetime nodeLifetime,
+            IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             string name = "BlockStore")
@@ -80,10 +80,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// A loop method that continuously relays blocks found in <see cref="BlockStoreSignaled.blockHashesToAnnounce"/> to connected peers on the network.
+        /// A loop method that continuously relays blocks found in <see cref="blockHashesToAnnounce"/> to connected peers on the network.
         /// </summary>
         /// <remarks>
-        /// The dictionary <see cref="BlockStoreSignaled.blockHashesToAnnounce"/> contains 
+        /// The dictionary <see cref="blockHashesToAnnounce"/> contains 
         /// hashes of blocks that were validated by the consensus rules.
         /// 
         /// This block hashes need to be relayed to connected peers. A peer that does not have a block 
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// 
         /// Before relaying, verify the block is still in the best chain else discard it.
         /// 
-        /// TODO: consider moving the relay logic to the <see cref="ProcessPendingStorageStep.PushPendingBlocksToRepository"/>.
+        /// TODO: consider moving the relay logic to the <see cref="LoopSteps.ProcessPendingStorageStep"/>.
         /// </remarks>
         public void RelayWorker()
         {
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogTrace("(-)[NO_BLOCKS]");
                     return;
                 }
-                
+
                 var broadcastItems = new List<uint256>();
                 foreach (uint256 blockHash in blocks)
                 {
