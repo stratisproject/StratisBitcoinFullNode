@@ -14,7 +14,7 @@ using System;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreFeature : FullNodeFeature, IBlockStore
