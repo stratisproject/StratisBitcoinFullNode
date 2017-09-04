@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly BlockStoreStats blockStoreStats;
-        private readonly NodeSettings nodeArgs;
+        private readonly StoreSettings storeSettings;
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Provider of time functions.</summary>
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IBlockStoreCache cache,
             ConcurrentChain chain,
             ChainState chainState,
-            NodeSettings nodeArgs,
+            StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider)
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.Chain = chain;
             this.ChainState = chainState;
             this.nodeLifetime = nodeLifetime;
-            this.nodeArgs = nodeArgs;
+            this.storeSettings = storeSettings;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            if (this.nodeArgs.Store.ReIndex)
+            if (this.storeSettings.ReIndex)
                 throw new NotImplementedException();
 
             this.StoreTip = this.Chain.GetBlock(this.BlockRepository.BlockHash);
@@ -137,13 +137,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogWarning("{0} Initialize recovering to block height = {1}, hash = {2}.", this.StoreName, newTip.Height, newTip.HashBlock);
             }
 
-            if (this.nodeArgs.Store.TxIndex != this.BlockRepository.TxIndex)
+            if (this.storeSettings.TxIndex != this.BlockRepository.TxIndex)
             {
                 if (this.StoreTip != this.Chain.Genesis)
                     throw new BlockStoreException($"You need to rebuild the {this.StoreName} database using -reindex-chainstate to change -txindex");
 
-                if (this.nodeArgs.Store.TxIndex)
-                    await this.BlockRepository.SetTxIndex(this.nodeArgs.Store.TxIndex);
+                if (this.storeSettings.TxIndex)
+                    await this.BlockRepository.SetTxIndex(this.storeSettings.TxIndex);
             }
 
             SetHighestPersistedBlock(this.StoreTip);

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly BlockStoreLoop storeLoop;
         private readonly ConcurrentChain chain;
-        private readonly NodeSettings nodeArgs;
+        private readonly StoreSettings storeSettings;
         private readonly ChainState chainState;
         private readonly IConnectionManager connection;
         private readonly INodeLifetime nodeLifetime;
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public BlockStoreSignaled(
             BlockStoreLoop storeLoop, 
             ConcurrentChain chain, 
-            NodeSettings nodeArgs, 
+            StoreSettings storeSettings, 
             ChainState chainState, 
             IConnectionManager connection, 
             INodeLifetime nodeLifetime, 
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.storeLoop = storeLoop;
             this.chain = chain;
-            this.nodeArgs = nodeArgs;
+            this.storeSettings = storeSettings;
             this.chainState = chainState;
             this.connection = connection;
             this.nodeLifetime = nodeLifetime;
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected override void OnNextCore(Block value)
         {
             this.logger.LogTrace("()");
-            if (this.nodeArgs.Store.Prune)
+            if (this.storeSettings.Prune)
             {
                 this.logger.LogTrace("(-)[PRUNE]");
                 return;

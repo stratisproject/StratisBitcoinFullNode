@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
                     null,
                     chain,
                     this.chainState.Object,
-                    NodeSettings.FromArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" }),
+                    new StoreSettings(NodeSettings.FromArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" })),
                     this.nodeLifeTime.Object,
                     this.loggerFactory.Object,
                     DateTimeProvider.Default);

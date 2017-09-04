@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using System;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly INodeLifetime nodeLifetime;
         protected readonly IConnectionManager connectionManager;
         protected readonly NodeSettings nodeSettings;
+        protected readonly StoreSettings storeSettings;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -51,6 +53,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeLifetime nodeLifetime, 
             NodeSettings nodeSettings, 
             ILoggerFactory loggerFactory, 
+            StoreSettings storeSettings,
             string name = "BlockStore")
         {
             this.name = name;
@@ -67,6 +70,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeSettings = nodeSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
+            storeSettings.Load(nodeSettings);
+            this.storeSettings = storeSettings;
         }
 
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
@@ -92,7 +97,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             // signal to peers that this node can serve blocks
-            this.connectionManager.Parameters.Services = (this.nodeSettings.Store.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
+            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NodeServices.Nothing : NodeServices.Network) | NodeServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 
@@ -122,7 +127,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public static partial class IFullNodeBuilderExtensions
     {
-        public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder, Action<StoreSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<BlockStoreFeature>("db");
 
@@ -138,6 +143,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<BlockStoreLoop>();
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();
+                        services.AddSingleton<StoreSettings>(new StoreSettings(setup));
                     });
             });
 
