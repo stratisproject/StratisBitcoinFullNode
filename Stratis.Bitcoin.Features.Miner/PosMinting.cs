@@ -561,57 +561,52 @@ namespace Stratis.Bitcoin.Features.Miner
                         context.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(context, pindexPrev, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 
-                        // TODO: This is always true - CheckKernel either throws or fills in POS hash.
-                        if (context.Stake.HashProofOfStake != null)
+                        this.logger.LogTrace("Kernel found with solution hash '{0}'.", context.Stake.HashProofOfStake);
+                        scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
+
+                        key = null;
+                        // Calculate the key type.
+                        // TODO: Why there are two if blocks with same body?
+                        // Can't we simply make OR condition with one block?
+                        // Also these checks could probably precede CheckKernel call as it does not affact TxOut.ScriptPubKey.
+                        if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
                         {
-                            this.logger.LogTrace("Kernel found with solution hash '{0}'.", context.Stake.HashProofOfStake);
-                            scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
-
-                            key = null;
-                            // Calculate the key type.
-                            // TODO: Why there are two if blocks with same body?
-                            // Can't we simply make OR condition with one block?
-                            // Also these checks could probably precede CheckKernel call as it does not affact TxOut.ScriptPubKey.
-                            if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
-                            {
-                                BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-                                Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
-                                key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
-                            }
-                            else if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
-                            {
-                                BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-                                Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
-                                key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
-                            }
-                            else
-                            {
-                                this.logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
-                                break;
-                            }
-
-                            // Create a pubkey script form the current script.
-                            Script scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(key.PubKey); // scriptPubKeyKernel
-
-                            coin.Key = key;
-                            txNew.Time = txTime;
-                            txNew.AddInput(new TxIn(prevoutStake));
-                            nCredit += coin.TxOut.Value;
-                            vwtxPrev.Add(coin);
-                            txNew.Outputs.Add(new TxOut(0, scriptPubKeyOut));
-
-                            this.logger.LogTrace("Kernel accepted.");
-                            fKernelFound = true;
+                            BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
+                            Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
+                            key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
+                        }
+                        else if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+                        {
+                            BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
+                            Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
+                            key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
+                        }
+                        else
+                        {
+                            this.logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
                             break;
                         }
-                        else this.logger.LogTrace("Kernel found, but no POS hash provided.");
+
+                        // Create a pubkey script form the current script.
+                        Script scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(key.PubKey); // scriptPubKeyKernel
+
+                        coin.Key = key;
+                        txNew.Time = txTime;
+                        txNew.AddInput(new TxIn(prevoutStake));
+                        nCredit += coin.TxOut.Value;
+                        vwtxPrev.Add(coin);
+                        txNew.Outputs.Add(new TxOut(0, scriptPubKeyOut));
+
+                        this.logger.LogTrace("Kernel accepted.");
+                        fKernelFound = true;
+                        break;
                     }
                     catch (ConsensusErrorException cex)
                     {
                         this.logger.LogTrace("Checking kernel failed with exception: {0}.", cex.Message);
                         if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
                             continue;
-                        
+
                         throw;
                     }
                 }
