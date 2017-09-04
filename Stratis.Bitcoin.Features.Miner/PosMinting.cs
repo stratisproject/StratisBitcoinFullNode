@@ -810,41 +810,41 @@ namespace Stratis.Bitcoin.Features.Miner
             return money;
         }
 
-        private bool SelectCoinsForStaking(List<StakeTx> stakeTxes, long nTargetValue, uint nSpendTime, out List<StakeTx> setCoinsRet, out long nValueRet)
+        private bool SelectCoinsForStaking(List<StakeTx> stakeTxes, long targetValue, uint nSpendTime, out List<StakeTx> setCoinsRet, out long valueRet)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(nTargetValue), nTargetValue, nameof(nSpendTime), nSpendTime);
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(targetValue), targetValue, nameof(nSpendTime), nSpendTime);
 
             List<StakeOutput> coins = this.AvailableCoinsForStaking(stakeTxes, nSpendTime);
             setCoinsRet = new List<StakeTx>();
-            nValueRet = 0;
+            valueRet = 0;
 
             foreach (StakeOutput output in coins)
             {
                 this.logger.LogTrace("Checking if UTXO '{0}/{1}' value {2} can be added.", output.StakeTx.OutPoint.Hash, output.StakeTx.OutPoint.N, output.StakeTx.TxOut.Value);
-                StakeTx pcoin = output.StakeTx;
+                StakeTx stakeTx = output.StakeTx;
 
                 // Stop if we've chosen enough inputs.
-                if (nValueRet >= nTargetValue)
+                if (valueRet >= targetValue)
                 {
                     this.logger.LogTrace("Target amount reached, exiting loop.");
                     break;
                 }
 
-                Money n = pcoin.TxOut.Value;
-                if (n >= nTargetValue)
+                Money amount = stakeTx.TxOut.Value;
+                if (amount >= targetValue)
                 {
                     // If input value is greater or equal to target then simply insert
                     // it into the current subset and exit.
-                    setCoinsRet.Add(pcoin);
-                    nValueRet += n;
+                    setCoinsRet.Add(stakeTx);
+                    valueRet += amount;
                     this.logger.LogTrace("UTXO '{0}/{1}' value {2} can be added and is large enough to reach the target.", output.StakeTx.OutPoint.Hash, output.StakeTx.OutPoint.N, output.StakeTx.TxOut.Value);
                     break;
                 }
-                else if (n < (nTargetValue + BlockValidator.CENT))
+                else if (amount < (targetValue + BlockValidator.CENT))
                 {
-                    setCoinsRet.Add(pcoin);
-                    nValueRet += n;
-                    this.logger.LogTrace("UTXO '{0}/{1}' value {2} can be added, we now have {3}.", output.StakeTx.OutPoint.Hash, output.StakeTx.OutPoint.N, output.StakeTx.TxOut.Value, nValueRet);
+                    setCoinsRet.Add(stakeTx);
+                    valueRet += amount;
+                    this.logger.LogTrace("UTXO '{0}/{1}' value {2} can be added, we now have {3}.", output.StakeTx.OutPoint.Hash, output.StakeTx.OutPoint.N, output.StakeTx.TxOut.Value, valueRet);
                 }
             }
 
