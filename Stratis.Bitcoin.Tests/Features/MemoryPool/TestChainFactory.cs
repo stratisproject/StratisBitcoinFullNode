@@ -58,9 +58,14 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         /// <param name="network">Network to create the chain on.</param>
         /// <param name="scriptPubKey">Public key to create blocks/txs with.</param>
         /// <returns>Context object representing the test chain.</returns>
-        public static ITestChainContext Create(Network network, Script scriptPubKey)
+        public static ITestChainContext Create(Network network, Script scriptPubKey, string dataDir)
         {
-            NodeSettings nodeSettings = NodeSettings.Default();
+            NodeSettings nodeSettings = NodeSettings.Default(network);
+            if (dataDir != null)
+            {
+                nodeSettings.DataDir = dataDir;
+            }
+
             LoggerFactory loggerFactory = new LoggerFactory();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 

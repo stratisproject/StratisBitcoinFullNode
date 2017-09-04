@@ -18,11 +18,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class BlockStoreLoop
     {
-        /// <summary>Maximum number of bytes the block puller can download before the downloaded blocks are stored to the disk.</summary>
-        internal const uint MaxInsertBlockSize = 20 * 1024 * 1024;
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+        public StoreBlockPuller BlockPuller { get; }
+        public IBlockRepository BlockRepository { get; }
+        private readonly BlockStoreStats blockStoreStats;
 
-        /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
-        internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
+        /// <summary> Best chain of block headers.</summary>
+        internal readonly ConcurrentChain Chain;
+
+        public ChainState ChainState { get; }
+
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -30,36 +37,28 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
-        /// <summary> Best chain of block headers.</summary>
-        internal readonly ConcurrentChain Chain;
+        /// <summary>Maximum number of bytes the block puller can download before the downloaded blocks are stored to the disk.</summary>
+        internal const uint MaxInsertBlockSize = 20 * 1024 * 1024;
 
-        public StoreBlockPuller BlockPuller { get; }
-        public IBlockRepository BlockRepository { get; }
-        public virtual string StoreName { get { return "BlockStore"; } }
+        /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
+        internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
 
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly BlockStoreStats blockStoreStats;
         private readonly NodeSettings nodeArgs;
         private readonly INodeLifetime nodeLifetime;
-
-        /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
-        /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
-        private BlockStoreStepChain stepChain;
-
-        public ChainState ChainState { get; }
 
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
-        /// <summary>Number of blocks that can be stored in pending storage before we stop processing them.</summary>
-        internal int PendingStorageBatchThreshold = 5;
+        /// <summary>The minimum amount of blocks that can be stored in Pending Storage before they get processed.</summary>
+        public const int PendingStorageBatchThreshold = 5;
+
+        /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
+        private BlockStoreStepChain stepChain;
+
+        public virtual string StoreName { get { return "BlockStore"; } }
 
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
-
-        internal readonly TimeSpan PushIntervalIBD = TimeSpan.FromMilliseconds(100);
 
         /// <summary>Public constructor for unit testing</summary>
         public BlockStoreLoop(IAsyncLoopFactory asyncLoopFactory,

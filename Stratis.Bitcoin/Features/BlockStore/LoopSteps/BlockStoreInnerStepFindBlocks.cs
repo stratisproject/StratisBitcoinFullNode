@@ -47,7 +47,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 context.GetNextBlock();
             }
 
-
             if (batchList.Any())
             {
                 this.logger.LogTrace("{0} blocks requested to be downloaded by the puller.", batchList.Count);
