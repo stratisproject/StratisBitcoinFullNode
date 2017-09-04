@@ -470,8 +470,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}/{5}',{6}:{7},{8}:{9})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(pindexBest), pindexBest.HashBlock, pindexBest.Height, nameof(nSearchInterval), nSearchInterval, nameof(fees), fees);
 
-            ChainedBlock pindexPrev = pindexBest;
-            var bnTargetPerCoinDay = new Target(block.Header.Bits).ToCompact();
+            ChainedBlock previousBlock = pindexBest;
 
             txNew.Inputs.Clear();
             txNew.Outputs.Clear();
@@ -479,27 +478,16 @@ namespace Stratis.Bitcoin.Features.Miner
             // Mark coinstake transaction.
             txNew.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
-            // Choose coins to use.
-            long nBalance = this.GetBalance(stakeTxes).Satoshi;
-
-            if (nBalance <= this.reserveBalance)
+            long balance = this.GetBalance(stakeTxes).Satoshi;
+            if (balance <= this.reserveBalance)
             {
-                this.logger.LogTrace("Total balance of available UTXOs is {0}, which is lower than reserve balance {1}.", nBalance, this.reserveBalance);
+                this.logger.LogTrace("Total balance of available UTXOs is {0}, which is lower than reserve balance {1}.", balance, this.reserveBalance);
                 this.logger.LogTrace("(-)[BELOW_RESERVE]:false");
                 return false;
             }
 
-            List<StakeTx> vwtxPrev = new List<StakeTx>();
-
-            List<StakeTx> setCoins;
-            long nValueIn = 0;
-
             // Select coins with suitable depth.
-            if (!this.SelectCoinsForStaking(stakeTxes, nBalance - this.reserveBalance, txNew.Time, out setCoins, out nValueIn))
-            {
-                this.logger.LogTrace("(-)[SELECTION_FAILED]:false");
-                return false;
-            }
+            List<StakeTx> setCoins = this.SelectSuitableCoinsForStaking(stakeTxes, txNew.Time, balance - this.reserveBalance);
 
             if (!setCoins.Any())
             {
@@ -510,9 +498,6 @@ namespace Stratis.Bitcoin.Features.Miner
             // Replace this with staking weight.
             this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value))); 
 
-            long nCredit = 0;
-            Script scriptPubKeyKernel = null;
-            
             // Note: I would expect to see coins sorted by weight on the original implementation
             // it sorts the coins from heighest weight.
             setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
@@ -527,6 +512,18 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
             }
+
+            // Inputs to coinstake transaction.
+            // First we are looking for the input that will meet the POS target with its hash.
+            // Once this is done we try to add additional small inputs that we can sign with the same key
+            // in order to reduce the number of UTXOs.
+            List<StakeTx> coinstakeInputs = new List<StakeTx>();
+
+            // Script of the first coinstake input.
+            Script scriptPubKeyKernel = null;
+
+            // Total amount of input values in coinstake transaction.
+            long coinstakeInputsValue = 0;
 
             foreach (StakeTx coin in setCoins)
             {
@@ -545,7 +542,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
                         continue;
 
-                    if (pindexPrev != this.chain.Tip)
+                    if (previousBlock != this.chain.Tip)
                     {
                         this.logger.LogTrace("(-)[REORG]:false");
                         return false;
@@ -559,7 +556,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                         var context = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
                         context.SetStake();
-                        this.posConsensusValidator.StakeValidator.CheckKernel(context, pindexPrev, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
+                        this.posConsensusValidator.StakeValidator.CheckKernel(context, previousBlock, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 
                         this.logger.LogTrace("Kernel found with solution hash '{0}'.", context.Stake.HashProofOfStake);
                         scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
@@ -593,8 +590,8 @@ namespace Stratis.Bitcoin.Features.Miner
                         coin.Key = key;
                         txNew.Time = txTime;
                         txNew.AddInput(new TxIn(prevoutStake));
-                        nCredit += coin.TxOut.Value;
-                        vwtxPrev.Add(coin);
+                        coinstakeInputsValue = coin.TxOut.Value;
+                        coinstakeInputs.Add(coin);
                         txNew.Outputs.Add(new TxOut(0, scriptPubKeyOut));
 
                         this.logger.LogTrace("Kernel accepted.");
@@ -616,97 +613,69 @@ namespace Stratis.Bitcoin.Features.Miner
                     break;
             }
 
-            if (nCredit == 0)
+            if (coinstakeInputsValue == 0)
             {
                 this.logger.LogTrace("(-)[KERNEL_NOT_FOUND]:false");
                 return false;
             }
 
-            // TODO: This seems to be wrong because we found kernel
-            // for a particular UTXO and now if we find out that its 
-            // value is too big, such that we would not have our reserve
-            // if we use it, we end the whole process completely here,
-            // but this should disqualify only the particular transaction
-            // there could be other transactions we have not even tried
-            // and they could satisfy the target and have lower amount
-            // to satisfy the reserve condition.
-            //
-            // Maybe it shouldn't even occur as SelectCoinsForStaking 
-            // should avoid selecting coins that would violate the reserve.
-            // But that does not currently happen.
-            if (nCredit > (nBalance - this.reserveBalance))
-            {
-                this.logger.LogTrace("(-)[RESERVE]:false");
-                return false;
-            }
-
             this.logger.LogTrace("Trying to reduce our staking UTXO set by adding additional inputs to coinstake transaction...");
-            foreach (StakeTx coin in setCoins)
+            foreach (StakeTx stakeTx in setCoins)
             {
-                StakeTx cointrx = coin;
-
                 // Attempt to add more inputs.
                 // Only add coins of the same key/address as kernel.
                 if ((txNew.Outputs.Count == 2)
-                    && ((cointrx.TxOut.ScriptPubKey == scriptPubKeyKernel) || (cointrx.TxOut.ScriptPubKey == txNew.Outputs[1].ScriptPubKey))
-                    && (cointrx.UtxoSet.TransactionId != txNew.Inputs[0].PrevOut.Hash))
+                    && ((stakeTx.TxOut.ScriptPubKey == scriptPubKeyKernel) || (stakeTx.TxOut.ScriptPubKey == txNew.Outputs[1].ScriptPubKey))
+                    && (stakeTx.UtxoSet.TransactionId != txNew.Inputs[0].PrevOut.Hash))
                 {
-                    this.logger.LogTrace("Found candidate UTXO '{0}/{1}' with {2} coins.", cointrx.OutPoint.Hash, cointrx.OutPoint.N, cointrx.TxOut.Value);
+                    this.logger.LogTrace("Found candidate UTXO '{0}/{1}' with {2} coins.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value);
 
-                    long nTimeWeight = BlockValidator.GetWeight((long)cointrx.UtxoSet.Time, (long)txNew.Time);
+                    long timeWeight = BlockValidator.GetWeight((long)stakeTx.UtxoSet.Time, (long)txNew.Time);
+
+                    // Don't add inputs that would violate the reserve limit.
+                    if ((coinstakeInputsValue + stakeTx.TxOut.Value) > (balance - this.reserveBalance))
+                    {
+                        this.logger.LogTrace("UTXO '{0}/{1}' rejected because if it was added, we would not have required reserve anymore. Its value is {2}, we already used {3}, our total balance is {4} and reserve is {5}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, coinstakeInputsValue, balance, this.reserveBalance);
+                        continue;
+                    }
+
+                    // Do not add additional significant input.
+                    if (stakeTx.TxOut.Value >= GetStakeCombineThreshold())
+                    {
+                        this.logger.LogTrace("UTXO '{0}/{1}' rejected because its value is too big.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
+                        continue;
+                    }
+
+                    // Do not add input that is still too young.
+                    // V3 case is properly handled by selection function.
+                    if (!BlockValidator.IsProtocolV3((int)txNew.Time))
+                    {
+                        if (timeWeight < BlockValidator.StakeMinAge)
+                            continue;
+                    }
+
+                    txNew.Inputs.Add(new TxIn(new OutPoint(stakeTx.UtxoSet.TransactionId, stakeTx.OutputIndex)));
+
+                    coinstakeInputsValue += stakeTx.TxOut.Value;
+                    coinstakeInputs.Add(stakeTx);
+
+                    this.logger.LogTrace("UTXO '{0}/{1}' joined to coinstake transaction.");
 
                     // Stop adding more inputs if already too many inputs.
-                    // TODO: This should rather be after txNew.Inputs.Add() below.
                     if (txNew.Inputs.Count >= 100)
                     {
                         this.logger.LogTrace("Number of coinstake inputs reached the limit of 100.");
                         break;
                     }
-
-                    // Stop adding inputs if reached reserve limit.
-                    // TODO: This should only disqualify this one coin, not all coins
-                    // maybe there are other coins that could be joined with their inputs?
-                    if ((nCredit + cointrx.TxOut.Value) > (nBalance - this.reserveBalance))
-                    {
-                        this.logger.LogTrace("UTXO '{0}/{1}' rejected because if it was added, we would not have required reserve anymore. Its value is {2}, we already used {3}, our total balance is {4} and reserve is {5}.", cointrx.OutPoint.Hash, cointrx.OutPoint.N, cointrx.TxOut.Value, nCredit, nBalance, this.reserveBalance);
-                        break;
-                    }
-
-                    // Do not add additional significant input.
-                    if (cointrx.TxOut.Value >= GetStakeCombineThreshold())
-                    {
-                        this.logger.LogTrace("UTXO '{0}/{1}' rejected because its value is too big.", cointrx.OutPoint.Hash, cointrx.OutPoint.N);
-                        continue;
-                    }
-
-                    // Do not add input that is still too young.
-                    if (BlockValidator.IsProtocolV3((int)txNew.Time))
-                    {
-                        // Properly handled by selection function.
-                    }
-                    else
-                    {
-                        if (nTimeWeight < BlockValidator.StakeMinAge)
-                            continue;
-                    }
-
-                    txNew.Inputs.Add(new TxIn(new OutPoint(cointrx.UtxoSet.TransactionId, cointrx.OutputIndex)));
-
-                    nCredit += cointrx.TxOut.Value;
-                    vwtxPrev.Add(coin);
-
-                    this.logger.LogTrace("UTXO '{0}/{1}' joined to coinstake transaction.");
                 }
             }
 
             // Calculate coin age reward.
-            // TODO: This is not used  anywhere, delete it?
-            ulong nCoinAge;
-            if (!this.posConsensusValidator.StakeValidator.GetCoinAge(this.chain, this.coinView, txNew, pindexPrev, out nCoinAge))
+            if (!this.posConsensusValidator.StakeValidator.GetCoinAge(this.chain, this.coinView, txNew, previousBlock, out ulong coinAge))
                 return false; //error("CreateCoinStake : failed to calculate coin age");
 
-            long nReward = fees + this.posConsensusValidator.GetProofOfStakeReward(pindexPrev.Height);
-            if (nReward <= 0)
+            long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(previousBlock.Height);
+            if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
                 // If this can happen over time then this check could be done much sooner
@@ -715,10 +684,10 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
-            nCredit += nReward;
+            coinstakeInputsValue += reward;
 
             // Split stake if above threshold.
-            if (nCredit >= GetStakeSplitThreshold())
+            if (coinstakeInputsValue >= GetStakeSplitThreshold())
             {
                 this.logger.LogTrace("Coinstake UTXO will be split to two.");
                 txNew.Outputs.Add(new TxOut(0, txNew.Outputs[1].ScriptPubKey));
@@ -727,18 +696,18 @@ namespace Stratis.Bitcoin.Features.Miner
             // Set output amount.
             if (txNew.Outputs.Count == 3)
             {
-                txNew.Outputs[1].Value = (nCredit / 2 / BlockValidator.CENT) * BlockValidator.CENT;
-                txNew.Outputs[2].Value = nCredit - txNew.Outputs[1].Value;
+                txNew.Outputs[1].Value = (coinstakeInputsValue / 2 / BlockValidator.CENT) * BlockValidator.CENT;
+                txNew.Outputs[2].Value = coinstakeInputsValue - txNew.Outputs[1].Value;
                 this.logger.LogTrace("Coinstake first output value is {0}, second is {2}.", txNew.Outputs[1].Value, txNew.Outputs[2].Value);
             }
             else
             {
-                txNew.Outputs[1].Value = nCredit;
+                txNew.Outputs[1].Value = coinstakeInputsValue;
                 this.logger.LogTrace("Coinstake output value is {0}.", txNew.Outputs[1].Value);
             }
 
             // Sign.
-            foreach (StakeTx walletTx in vwtxPrev)
+            foreach (StakeTx walletTx in coinstakeInputs)
             {
                 if (!this.SignSignature(walletTx, txNew))
                 {
@@ -748,10 +717,10 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Limit size.
-            int nBytes = txNew.GetSerializedSize(ProtocolVersion.ALT_PROTOCOL_VERSION, SerializationType.Network);
-            if (nBytes >= MaxBlockSizeGen / 5)
+            int serializedSize = txNew.GetSerializedSize(ProtocolVersion.ALT_PROTOCOL_VERSION, SerializationType.Network);
+            if (serializedSize >= (MaxBlockSizeGen / 5))
             {
-                this.logger.LogTrace("Coinstake size {0} bytes exceeded limit {1} bytes.", nBytes, MaxBlockSizeGen / 5);
+                this.logger.LogTrace("Coinstake size {0} bytes exceeded limit {1} bytes.", serializedSize, MaxBlockSizeGen / 5);
                 this.logger.LogTrace("(-)[SIZE_EXCEEDED]:false");
                 return false;
             }
@@ -800,7 +769,7 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (StakeTx stakeTx in stakeTxes)
             {
                 // Must wait until coinbase is safely deep enough in the chain before valuing it.
-                if ((stakeTx.UtxoSet.IsCoinbase || stakeTx.UtxoSet.IsCoinstake) && this.GetBlocksToMaturity(stakeTx) > 0)
+                if ((stakeTx.UtxoSet.IsCoinbase || stakeTx.UtxoSet.IsCoinstake) && (this.GetBlocksToMaturity(stakeTx) > 0))
                     continue;
 
                 money += stakeTx.TxOut.Value;
@@ -808,48 +777,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.logger.LogTrace("(-):{0}", money);
             return money;
-        }
-
-        private bool SelectCoinsForStaking(List<StakeTx> stakeTxes, long targetValue, uint nSpendTime, out List<StakeTx> setCoinsRet, out long valueRet)
-        {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(targetValue), targetValue, nameof(nSpendTime), nSpendTime);
-
-            List<StakeOutput> coins = this.AvailableCoinsForStaking(stakeTxes, nSpendTime);
-            setCoinsRet = new List<StakeTx>();
-            valueRet = 0;
-
-            foreach (StakeOutput output in coins)
-            {
-                this.logger.LogTrace("Checking if UTXO '{0}/{1}' value {2} can be added.", output.StakeTx.OutPoint.Hash, output.StakeTx.OutPoint.N, output.StakeTx.TxOut.Value);
-                StakeTx stakeTx = output.StakeTx;
-
-                // Stop if we've chosen enough inputs.
-                if (valueRet >= targetValue)
-                {
-                    this.logger.LogTrace("Target amount reached, exiting loop.");
-                    break;
-                }
-
-                Money amount = stakeTx.TxOut.Value;
-                if (amount >= targetValue)
-                {
-                    // If input value is greater or equal to target then simply insert
-                    // it into the current subset and exit.
-                    setCoinsRet.Add(stakeTx);
-                    valueRet += amount;
-                    this.logger.LogTrace("UTXO '{0}/{1}' value {2} can be added and is large enough to reach the target.", output.StakeTx.OutPoint.Hash, output.StakeTx.OutPoint.N, output.StakeTx.TxOut.Value);
-                    break;
-                }
-                else if (amount < (targetValue + BlockValidator.CENT))
-                {
-                    setCoinsRet.Add(stakeTx);
-                    valueRet += amount;
-                    this.logger.LogTrace("UTXO '{0}/{1}' value {2} can be added, we now have {3}.", output.StakeTx.OutPoint.Hash, output.StakeTx.OutPoint.N, output.StakeTx.TxOut.Value, valueRet);
-                }
-            }
-
-            this.logger.LogTrace("(-):true");
-            return true;
         }
 
         /// <summary>
@@ -861,11 +788,12 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="stakeTxes">List of coins that are candidates for being used for staking.</param>
         /// <param name="spendTime">Timestamp of the coinstake transaction.</param>
-        /// <returns>List of coins that meet the requirements together with their depths.</returns>
-        private List<StakeOutput> AvailableCoinsForStaking(List<StakeTx> stakeTxes, uint spendTime)
+        /// <param name="maxValue">Maximal amount of coins that can be used for staking.</param>
+        /// <returns>List of coins that meet the requirements.</returns>
+        private List<StakeTx> SelectSuitableCoinsForStaking(List<StakeTx> stakeTxes, uint spendTime, long maxValue)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(spendTime), spendTime);
-            var res = new List<StakeOutput>();
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(spendTime), spendTime, nameof(maxValue), maxValue);
+            var res = new List<StakeTx>();
 
             long requiredDepth = this.network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations;
             foreach (StakeTx stakeTx in stakeTxes)
@@ -900,13 +828,20 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                if (stakeTx.TxOut.Value >= this.minimumInputValue)
+                if (stakeTx.TxOut.Value < this.minimumInputValue)
                 {
-                    // Check if the coin is already staking.
-                    this.logger.LogTrace("UTXO '{0}/{1}' accepted.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
-                    res.Add(new StakeOutput { Depth = depth, StakeTx = stakeTx });
+                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its value {2} is lower than required minimal value {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, this.minimumInputValue);
+                    continue;
                 }
-                else this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its value {2} is below required minimum value {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, this.minimumInputValue);
+
+                if (stakeTx.TxOut.Value > maxValue)
+                {
+                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its value {2} is greater than required maximal value {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, maxValue);
+                    continue;
+                }
+
+                this.logger.LogTrace("UTXO '{0}/{1}' accepted.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
+                res.Add(stakeTx);
             }
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
