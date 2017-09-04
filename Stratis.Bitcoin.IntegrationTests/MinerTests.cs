@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		    options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
 		    options.BlockMinFeeRate = blockMinFeeRate;
 
-		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.mempoolLock, testContext.mempool, testContext.date, NullLogger.Instance, options);
+		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.mempoolLock, testContext.mempool, testContext.date, new LoggerFactory(), options);
 	    }
 		public class Blockinfo
 		{
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			    this.chain = new ConcurrentChain(this.network);
 			    this.network.Consensus.Options = new PowConsensusOptions();
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), new LoggerFactory());
-			    this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network));
+			    this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network, new LoggerFactory()), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network));
 			    this.consensus.Initialize();
 
 				this.entry.Fee(11);

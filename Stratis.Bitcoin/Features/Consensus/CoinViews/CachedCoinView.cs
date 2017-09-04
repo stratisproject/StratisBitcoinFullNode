@@ -77,7 +77,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 innerBlockHash;
 
-
         /// <summary>Coin view at one layer below this implementaiton.</summary>
         private readonly CoinView inner;
         /// <inheritdoc />
