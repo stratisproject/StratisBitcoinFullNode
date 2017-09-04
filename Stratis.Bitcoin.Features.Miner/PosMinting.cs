@@ -241,11 +241,30 @@ namespace Stratis.Bitcoin.Features.Miner
                     }
                 }
 
+                ChainedBlock pindexPrev = this.consensusLoop.Tip;
+
+                if (this.lastCoinStakeSearchPrevBlockHash != pindexPrev.HashBlock)
+                {
+                    this.lastCoinStakeSearchPrevBlockHash = pindexPrev.HashBlock;
+                    this.lastCoinStakeSearchTime = pindexPrev.Header.Time;
+                    this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", pindexPrev.HashBlock, pindexPrev.Height, pindexPrev.Header.Time);
+                }
+
+                // TODO: This has to be changed once 
+                // https://github.com/stratisproject/StratisBitcoinFullNode/issues/382
+                // is implemented.
+                uint coinstakeTimestamp = Utils.DateTimeToUnixTime(DateTime.UtcNow) & ~PosConsensusValidator.StakeTimestampMask;
+                if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
+                {
+                    this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", coinstakeTimestamp, this.lastCoinStakeSearchTime);
+                    this.logger.LogTrace("(-)[NOTHING_TO_DO]");
+                    return;
+                }
+
                 if (pblockTemplate == null)
-                    pblockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                pblockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
                 Block pblock = pblockTemplate.Block;
-                ChainedBlock pindexPrev = this.consensusLoop.Tip;
 
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
@@ -274,7 +293,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // Trying to sign a block.
-                if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblockTemplate.TotalFee))
+                if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblockTemplate.TotalFee, coinstakeTimestamp))
                 {
                     this.logger.LogTrace("POS block signed successfully.");
                     var blockResult = new BlockResult { Block = pblock };
@@ -386,9 +405,9 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        private bool SignBlock(List<StakeTx> stakeTxes, Block block, ChainedBlock pindexBest, long fees)
+        private bool SignBlock(List<StakeTx> stakeTxes, Block block, ChainedBlock pindexBest, long fees, uint coinstakeTimestamp)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}/{5}',{6}:{7})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(pindexBest), pindexBest.HashBlock, pindexBest.Height, nameof(fees), fees);
+            this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}/{5}',{6}:{7},{8}:{9})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(pindexBest), pindexBest.HashBlock, pindexBest.Height, nameof(fees), fees, nameof(coinstakeTimestamp), coinstakeTimestamp);
 
             // If we are trying to sign something except proof-of-stake block template.
             if (!block.Transactions[0].Outputs[0].IsEmpty)
@@ -406,60 +425,48 @@ namespace Stratis.Bitcoin.Features.Miner
 
             Key key = null;
             Transaction txCoinStake = new Transaction();
+            txCoinStake.Time = coinstakeTimestamp;
 
-            txCoinStake.Time &= ~PosConsensusValidator.StakeTimestampMask;
-
-            // Search to current time.
+            // Search to current coinstake time.
             long searchTime = txCoinStake.Time;
-            if (this.lastCoinStakeSearchPrevBlockHash != pindexBest.HashBlock)
-            {
-                this.lastCoinStakeSearchPrevBlockHash = pindexBest.HashBlock;
-                this.lastCoinStakeSearchTime = pindexBest.Header.Time;
-                this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", pindexBest.HashBlock, pindexBest.Height, pindexBest.Header.Time);
-            }
 
-            // TODO: It would be great to move this condition to GenerateBlocks.
-            if (searchTime > this.lastCoinStakeSearchTime)
+            long searchInterval = searchTime - this.lastCoinStakeSearchTime;
+            this.lastCoinStakeSearchTime = searchTime;
+            this.logger.LogTrace("Search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
+
+            if (this.CreateCoinStake(stakeTxes, pindexBest, block, searchInterval, fees, ref txCoinStake, ref key))
             {
-                long searchInterval = searchTime - this.lastCoinStakeSearchTime;
-                if (this.CreateCoinStake(stakeTxes, pindexBest, block, searchInterval, fees, ref txCoinStake, ref key))
+                uint minTimestamp = BlockValidator.GetPastTimeLimit(pindexBest) + 1;
+                if (txCoinStake.Time >= minTimestamp)
                 {
-                    uint minTimestamp = BlockValidator.GetPastTimeLimit(pindexBest) + 1;
-                    if (txCoinStake.Time >= minTimestamp)
+                    // Make sure coinstake would meet timestamp protocol
+                    // as it would be the same as the block timestamp.
+                    block.Transactions[0].Time = block.Header.Time = txCoinStake.Time;
+
+                    // We have to make sure that we have no future timestamps in
+                    // our transactions set.
+                    foreach (Transaction transaction in block.Transactions)
                     {
-                        // Make sure coinstake would meet timestamp protocol
-                        // as it would be the same as the block timestamp.
-                        block.Transactions[0].Time = block.Header.Time = txCoinStake.Time;
-
-                        // We have to make sure that we have no future timestamps in
-                        // our transactions set.
-                        foreach (Transaction transaction in block.Transactions)
+                        if (transaction.Time > block.Header.Time)
                         {
-                            if (transaction.Time > block.Header.Time)
-                            {
-                                this.logger.LogTrace("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", transaction.Time, block.Header.Time);
-                                block.Transactions.Remove(transaction);
-                            }
+                            this.logger.LogTrace("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", transaction.Time, block.Header.Time);
+                            block.Transactions.Remove(transaction);
                         }
-
-                        block.Transactions.Insert(1, txCoinStake);
-                        block.UpdateMerkleRoot();
-
-                        // Append a signature to our block.
-                        ECDSASignature signature = key.Sign(block.GetHash());
-
-                        block.BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
-                        this.logger.LogTrace("(-):true");
-                        return true;
                     }
-                    else this.logger.LogTrace("Coinstake transaction created with too early timestamp {0}, minimal timestamp is {1}.", txCoinStake.Time, minTimestamp);
-                }
-                else this.logger.LogTrace("Unable to create coinstake transaction.");
 
-                this.lastCoinStakeSearchTime = searchTime;
-                this.logger.LogTrace("Last coinstake search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
+                    block.Transactions.Insert(1, txCoinStake);
+                    block.UpdateMerkleRoot();
+
+                    // Append a signature to our block.
+                    ECDSASignature signature = key.Sign(block.GetHash());
+
+                    block.BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
+                    this.logger.LogTrace("(-):true");
+                    return true;
+                }
+                else this.logger.LogTrace("Coinstake transaction created with too early timestamp {0}, minimal timestamp is {1}.", txCoinStake.Time, minTimestamp);
             }
-            else this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", searchTime, this.lastCoinStakeSearchTime);
+            else this.logger.LogTrace("Unable to create coinstake transaction.");
 
             this.logger.LogTrace("(-):false");
             return false;
