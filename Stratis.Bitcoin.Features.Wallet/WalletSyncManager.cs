@@ -1,11 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -18,19 +18,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected readonly ILogger logger;
         private readonly IBlockStoreCache blockStoreCache;
         private readonly StoreSettings storeSettings;
+        private readonly INodeLifetime nodeLifetime;
 
         protected ChainedBlock walletTip;
 
         public ChainedBlock WalletTip => this.walletTip;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, 
-            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings)
+            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
             this.walletManager = walletManager as WalletManager;
             this.chain = chain;
             this.blockStoreCache = blockStoreCache;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.storeSettings = storeSettings;
+            this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -70,62 +72,66 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public virtual void ProcessBlock(Block block)
         {
-            // if the new block previous hash is the same as the 
-            // wallet hash then just pass the block to the manager 
+            // If the new block previous hash is the same as the 
+            // wallet hash then just pass the block to the manager. 
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
-                // if previous block does not match there might have 
-                // been a reorg, check if the wallet is still on the main chain
+                // If previous block does not match there might have 
+                // been a reorg, check if the wallet is still on the main chain.
                 ChainedBlock inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
                 if (inBestChain == null)
                 {
-                    // the current wallet hash was not found on the main chain
-                    // a reorg happenend so bring the wallet back top the last known fork
+                    // The current wallet hash was not found on the main chain.
+                    // A reorg happenend so bring the wallet back top the last known fork.
 
                     var fork = this.walletTip;
 
-                    // we walk back the chained block object to find the fork
+                    // We walk back the chained block object to find the fork.
                     while (this.chain.GetBlock(fork.HashBlock) == null)
                         fork = fork.Previous;
 
-                    Guard.Assert(fork.HashBlock == block.Header.HashPrevBlock);
                     this.walletManager.RemoveBlocks(fork);
                 }
-                else
+
+                ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
+                if (incomingBlock.Height > this.walletTip.Height)
                 {
-                    ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
-                    if (incomingBlock.Height > this.walletTip.Height)
+                    // The wallet is falling behind we need to catch up.
+                    var next = this.walletTip;
+                    while(next != incomingBlock)
                     {
-                        // the wallet is falling behind we need to catch up
-                        var next = this.walletTip;
-                        while(next != incomingBlock)
+                        // While the wallet is catching up the entire node will wait
+                        // if a wallet recovers to a date in the past consensus 
+                        // will stop till the wallet is up to date.
+
+                        // TODO: This code should be replaced with a different approach
+                        // similar to BlockStore the wallet should be standalone and not depend on consensus
+                        // the block should be put in a queue and pushed to the wallet in an async way
+                        // if the wallet is behind it will just read blocks from store (or download in case of a pruned node).
+
+                        next = this.chain.GetBlock(next.Height +1);
+                        Block nextblock = null;
+                        var token = this.nodeLifetime.ApplicationStopping;
+                        while (!token.IsCancellationRequested)
                         {
-                            // while the wallet is catching up the entire node will hult
-                            // if a wallet recoveres to a date in the past consensus 
-                            // will stop til the wallet is up to date.
-
-                            next = this.chain.GetBlock(next.Height +1);
-                            Block nextblock = null;
-                            while (true) //replace with cancelation token
+                            nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            if (nextblock == null)
                             {
-                                nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
-                                if (nextblock == null)
-                                {
-                                    // really ugly hack to let store catch up
-                                    // this will block the entire consensus pulling
-                                    this.logger.LogInformation("Wallet is behind the best chain and the next block is not found in store");
-                                    Thread.Sleep(100);
-                                    continue;
-                                }
-                                
-                                break;
+                                // Really ugly hack to let store catch up
+                                // this will block the entire consensus pulling.
+                                this.logger.LogInformation("Wallet is behind the best chain and the next block is not found in store");
+                                Thread.Sleep(100);
+                                continue;
                             }
-
-                            this.walletTip = next;
-                            this.walletManager.ProcessBlock(nextblock, next);
+                                
+                            break;
                         }
+
+                        this.walletTip = next;
+                        this.walletManager.ProcessBlock(nextblock, next);
                     }
                 }
+                
             }
 
             this.walletTip = this.chain.GetBlock(block.GetHash());
