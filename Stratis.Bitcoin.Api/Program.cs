@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Stratis.Bitcoin.Api
 {

@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using NBitcoin.Protocol;
+using System.Collections.Generic;
 using System.Linq;
-using NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.Utilities
 {

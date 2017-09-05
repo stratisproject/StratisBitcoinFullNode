@@ -1,9 +1,5 @@
 ﻿using Moq;
 using NBitcoin;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Xunit;
 

@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using NBitcoin;
+﻿using NBitcoin;
+using System.ComponentModel.DataAnnotations;
 
 namespace Stratis.Bitcoin.Features.Wallet.Validations
 {

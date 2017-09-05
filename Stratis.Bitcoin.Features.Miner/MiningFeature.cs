@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         ///<inheritdoc />
         public override void ValidateDependencies(IFullNodeServiceProvider services)
-        {            
+        {
             if (services.ServiceProvider.GetService<PosMinting>() != null)
             {
                 services.Features.EnsureFeature<WalletFeature>();
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MiningRPCController>();
                     });
             });
-            
+
             return fullNodeBuilder;
         }
 

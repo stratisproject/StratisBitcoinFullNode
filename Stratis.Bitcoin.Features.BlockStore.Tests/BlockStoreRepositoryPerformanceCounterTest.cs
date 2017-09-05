@@ -1,8 +1,8 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
-{
-    using System;
-    using Xunit;
+﻿using System;
+using Xunit;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
+{
     public class BlockStoreRepositoryPerformanceCounterTest
     {
         private BlockStoreRepositoryPerformanceCounter performanceCounter;
@@ -93,6 +93,6 @@
             Assert.Equal(16, snapshot2.TotalRepositoryMissCount);
             Assert.Equal(9, snapshot2.TotalRepositoryDeleteCount);
             Assert.Equal(68, snapshot2.TotalRepositoryInsertCount);
-        }        
+        }
     }
 }

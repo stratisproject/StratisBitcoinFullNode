@@ -1,12 +1,12 @@
-﻿using System;
-using System.Text;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Configuration.Logging;
+using System;
+using System.Text;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -27,11 +27,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         public ConsensusStats(
-            CoinViewStack stack, 
-            CoinView coinView, 
-            ConsensusLoop consensusLoop, 
-            ChainState chainState, 
-            ConcurrentChain chain, 
+            CoinViewStack stack,
+            CoinView coinView,
+            ConsensusLoop consensusLoop,
+            ChainState chainState,
+            ConcurrentChain chain,
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory)
         {

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Api.Models;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Api
 {
@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Api
     /// Provides an Api to the full node
     /// </summary>
     public class ApiFeature : FullNodeFeature
-    {		
+    {
         private readonly IFullNodeBuilder fullNodeBuilder;
         private readonly FullNode fullNode;
         private readonly ApiFeatureOptions apiFeatureOptions;
@@ -21,9 +21,9 @@ namespace Stratis.Bitcoin.Api
         private readonly ILogger logger;
 
         public ApiFeature(
-            IFullNodeBuilder fullNodeBuilder, 
-            FullNode fullNode, 
-            ApiFeatureOptions apiFeatureOptions, 
+            IFullNodeBuilder fullNodeBuilder,
+            FullNode fullNode,
+            ApiFeatureOptions apiFeatureOptions,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
         {
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Api
 
         public void Keepalive(TimeSpan timeSpan)
         {
-            this.KeepaliveMonitor = new KeepaliveMonitor {KeepaliveInterval = timeSpan};
+            this.KeepaliveMonitor = new KeepaliveMonitor { KeepaliveInterval = timeSpan };
         }
     }
 
@@ -100,5 +100,5 @@ namespace Stratis.Bitcoin.Api
 
             return fullNodeBuilder;
         }
-    }	
+    }
 }

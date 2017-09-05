@@ -1,7 +1,7 @@
-﻿using System.Linq;
-using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
+using System.Reflection;
 
 namespace Stratis.Bitcoin.Api
 {
@@ -14,15 +14,15 @@ namespace Stratis.Bitcoin.Api
         /// <param name="services">The services to look into</param>
         /// <returns>The Mvc builder</returns>
         public static IMvcBuilder AddControllers(this IMvcBuilder builder, IServiceCollection services)
-        {			
+        {
             var controllerTypes = services.Where(s => s.ServiceType.GetTypeInfo().BaseType == typeof(Controller));
             foreach (var controllerType in controllerTypes)
-            {				
+            {
                 builder.AddApplicationPart(controllerType.ServiceType.GetTypeInfo().Assembly);
             }
 
             builder.AddControllersAsServices();
             return builder;
-        }		
+        }
     }
 }

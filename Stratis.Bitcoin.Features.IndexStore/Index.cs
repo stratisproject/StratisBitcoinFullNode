@@ -1,12 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Collections.Generic;
-using DBreeze.Utils;
-using NBitcoin;
+﻿using DBreeze.Utils;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
+using NBitcoin;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -54,8 +54,8 @@ namespace Stratis.Bitcoin.Features.IndexStore
         }
     }
 
-    public class Index:IndexExpression
-    {     
+    public class Index : IndexExpression
+    {
         public class Comparer : IEqualityComparer<byte[]>
         {
             public bool Equals(byte[] a, byte[] b)
@@ -89,15 +89,15 @@ namespace Stratis.Bitcoin.Features.IndexStore
         private Comparer comparer = new Comparer();
         private ByteListComparer byteListComparer = new ByteListComparer();
 
-        public Index(IndexRepository repository) 
-            :base(false, null)
+        public Index(IndexRepository repository)
+            : base(false, null)
         {
             this.repository = repository;
             this.session = repository.GetSession();
         }
 
         public Index(IndexRepository repository, string name, bool multiValue, string builder, string[] dependencies = null)
-            :base(multiValue, builder, dependencies)
+            : base(multiValue, builder, dependencies)
         {
             this.repository = repository;
             this.session = repository.GetSession();
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 throw new IndexStoreException("Could not compile index '" + name + "': " + e.Message);
             }
         }
-        
+
         public static Index Parse(IndexRepository repository, string json, string table = null)
         {
             var index = new Index(repository);
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             {
                 var blockId = block.GetHash();
                 var trxId = transaction.GetHash();
-                
+
                 foreach (object[] kv in this.compiled(transaction, block, this.repository.GetNetwork()))
                 {
                     var key = kv[0].ToBytes();

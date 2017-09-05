@@ -1,6 +1,6 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using System;
 
 namespace Stratis.Bitcoin.Features.Wallet.Helpers
 {
@@ -18,12 +18,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
         {
             Guard.NotEmpty(network, nameof(network));
 
-	        var selectNetwork =  Network.GetNetwork(network.ToLowerInvariant());
+            var selectNetwork = Network.GetNetwork(network.ToLowerInvariant());
 
-			if (selectNetwork == null)
-				throw new ArgumentException($"Network '{network}' is not a valid network.");
+            if (selectNetwork == null)
+                throw new ArgumentException($"Network '{network}' is not a valid network.");
 
-	        return selectNetwork;
+            return selectNetwork;
         }
 
     }

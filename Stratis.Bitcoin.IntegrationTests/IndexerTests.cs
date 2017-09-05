@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using NBitcoin.RPC;
-using Xunit;
-
-namespace Stratis.Bitcoin.IntegrationTests
+﻿namespace Stratis.Bitcoin.IntegrationTests
 {
     // Disable for now as not to impact NBitcoin.
     /*

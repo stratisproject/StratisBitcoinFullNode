@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
                     .AddKeys(alice)
                     .Send(satoshi.GetAddress(), "4.5")
                     .SendFees("0.001")
-                    .SetChange(corpMultiSig)                    
+                    .SetChange(corpMultiSig)
                     .BuildTransaction(true);
             Assert.True(!txBuilder.Verify(multiSigTx)); //Well, only one signature on the two required...
 
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
                     .AddKeys(nico)
                     .SignTransaction(multiSigTx);
             Assert.True(txBuilder.Verify(multiSigTx));
-             
+
             Assert.True(await validator.AcceptToMemoryPool(state, multiSigTx), $"Transaction: {nameof(multiSigTx)} failed mempool validation.");
 
             Directory.Delete(dataDir, true);

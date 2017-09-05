@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System;
+using System.Collections.Generic;
+using System.Net;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
 {

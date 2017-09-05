@@ -5,7 +5,6 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -27,7 +26,7 @@ namespace Stratis.Bitcoin.Features.RPC
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             rpcSettings.Load(nodeSettings);
-            this.rpcSettings = rpcSettings;            
+            this.rpcSettings = rpcSettings;
         }
 
         public override void Start()
@@ -98,8 +97,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 service.AddSingleton<FullNodeController>();
                 service.AddSingleton<ConnectionManagerController>();
                 service.AddSingleton<RpcSettings>(new RpcSettings(setup));
-            });   
-            
+            });
+
             return fullNodeBuilder;
         }
     }

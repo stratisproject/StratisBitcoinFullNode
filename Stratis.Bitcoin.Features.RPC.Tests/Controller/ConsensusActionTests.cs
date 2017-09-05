@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             var isIBDProvider = fullNode.NodeService<IBlockDownloadState>(true);
 
             Assert.NotNull(isIBDProvider);
-            Assert.True(isIBDProvider.IsInitialBlockDownload());       
+            Assert.True(isIBDProvider.IsInitialBlockDownload());
         }
     }
 }

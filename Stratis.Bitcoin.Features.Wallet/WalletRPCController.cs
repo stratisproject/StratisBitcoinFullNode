@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Controllers;
+using System;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
             var w = this.WalletManager.GetWalletsNames().FirstOrDefault();
-            if(w == null)
+            if (w == null)
                 throw new RPCServerException(NBitcoin.RPC.RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
             var account = this.WalletManager.GetAccounts(w).FirstOrDefault();
             return new WalletAccountReference(w, account.Name);

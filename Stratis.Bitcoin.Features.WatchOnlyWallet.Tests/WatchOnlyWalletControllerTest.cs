@@ -1,10 +1,10 @@
-﻿using System;
-using System.Net;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Models;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System;
+using System.Net;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Equal(1, errorResponse.Errors.Count);
             Assert.NotNull(errorResult.StatusCode);
-            Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);            
+            Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
         }
 
         [Fact]

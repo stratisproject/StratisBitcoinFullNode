@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         /// <summary>
         /// Memory pool validator interface;
         /// </summary>
-        IMempoolValidator MempoolValidator { get;  }
+        IMempoolValidator MempoolValidator { get; }
 
         /// <summary>
         /// List of the source transactions in the test chain.
@@ -45,10 +45,10 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         public List<Transaction> SrcTxs { get; set; }
     }
 
-   /// <summary>
-   /// Factory for creating the test chain.
-   /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
-   /// </summary>
+    /// <summary>
+    /// Factory for creating the test chain.
+    /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
+    /// </summary>
     internal class TestChainFactory
     {
         /// <summary>

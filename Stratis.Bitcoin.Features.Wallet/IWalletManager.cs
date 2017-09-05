@@ -1,6 +1,6 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
         List<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0);
-        
+
         /// <summary>
         /// Creates a wallet and persist it as a file on the local system.
         /// </summary>
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         /// <returns>An unused account.</returns>
         HdAccount GetUnusedAccount(Wallet wallet, string password);
-        
+
         /// <summary>
         /// Gets an address that contains no transaction.
         /// </summary>
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <returns>A collection of the wallets' names.</returns>
         string[] GetWalletsNames();
-        
+
         /// <summary>
         /// Updates the wallet with the height of the last block synced.
         /// </summary>

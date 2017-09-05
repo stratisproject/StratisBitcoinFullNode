@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -21,11 +21,11 @@ namespace Stratis.Bitcoin.Features.IndexStore
         Task<List<byte[]>> Lookup(string indexName, List<byte[]> keys);
     }
 
-    public class IndexSession:DBreezeSingleThreadSession
+    public class IndexSession : DBreezeSingleThreadSession
     {
-        public IndexSession(string threadName, string folder):
+        public IndexSession(string threadName, string folder) :
             base(threadName, folder)
-        {            
+        {
         }
 
         public List<string> GetIndexTables()
@@ -56,12 +56,12 @@ namespace Stratis.Bitcoin.Features.IndexStore
         {
         }
 
-        public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory):
+        public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory) :
             base(network, new IndexSession("DBreeze IndexRepository", folder), loggerFactory)
         {
             this.tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
             this.Indexes = new Dictionary<string, Index>();
- 
+
             this.session.Execute(() =>
             {
                 // Discover and add indexes to dictionary and tables to syncronize
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
                 return true;
             });
-        }        
+        }
 
         public IndexSession GetSession()
         {
@@ -247,12 +247,12 @@ namespace Stratis.Bitcoin.Features.IndexStore
             foreach (var index in this.Indexes.Values)
                 index.IndexTransactionDetails(transactions);
         }
-        
+
         protected override void OnDeleteTransactions(List<(Transaction, Block)> transactions)
         {
             foreach (var index in this.Indexes.Values)
                 index.IndexTransactionDetails(transactions, true);
             base.OnDeleteTransactions(transactions);
-        }       
+        }
     }
 }

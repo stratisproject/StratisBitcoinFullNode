@@ -1,8 +1,6 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
@@ -11,8 +9,9 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
@@ -91,7 +90,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 throw new ArgumentException(nameof(txid));
 
             UnspentOutputs unspentOutputs = null;
-            if(includeMemPool)
+            if (includeMemPool)
             {
                 unspentOutputs = await this.FullNode.NodeService<IPooledGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
@@ -99,8 +98,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
-            
-            if(unspentOutputs == null)
+
+            if (unspentOutputs == null)
             {
                 return null;
             }

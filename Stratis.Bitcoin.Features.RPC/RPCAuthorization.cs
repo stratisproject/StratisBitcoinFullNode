@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Stratis.Bitcoin.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
 {

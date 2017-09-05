@@ -1,14 +1,14 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
-{
-    using NBitcoin;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-    using Stratis.Bitcoin.Tests;
-    using System.Linq;
-    using System.Threading;
-    using Xunit;
-    using static Stratis.Bitcoin.BlockPulling.BlockPuller;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Tests;
+using System.Linq;
+using System.Threading;
+using Xunit;
+using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
+{
     public sealed class BlockStoreLoopIntegration : BlockStoreLoopStepBaseTest
     {
         /// <summary>

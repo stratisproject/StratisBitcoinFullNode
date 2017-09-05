@@ -1,5 +1,5 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
+using System;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// </summary>
         /// <returns>A watch-only wallet.</returns>
         WatchOnlyWallet GetWatchOnlyWallet();
-        
+
         /// <summary>
         /// Adds this base58 encoded address to the watch-only wallet so that transactions affecting it will be monitored.
         /// </summary>
@@ -48,6 +48,6 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// Loads a stored watch-only wallet.
         /// </summary>
         /// <returns>The stored watch-only wallet.</returns>
-        WatchOnlyWallet LoadWatchOnlyWallet();        
+        WatchOnlyWallet LoadWatchOnlyWallet();
     }
 }

@@ -1,8 +1,7 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -35,25 +34,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetCoinTypeWithoutHdPathThrowsArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException> (() =>
-            {
-                var account = new HdAccount();
-                account.HdPath = null;
+            Assert.Throws<ArgumentNullException>(() =>
+           {
+               var account = new HdAccount();
+               account.HdPath = null;
 
-                account.GetCoinType();
-            });
+               account.GetCoinType();
+           });
         }
 
         [Fact]
         public void GetCoinTypeWithEmptyHdPathThrowsArgumentException()
         {
-            Assert.Throws<ArgumentException> (() =>
-            {
-                var account = new HdAccount();
-                account.HdPath = string.Empty;
+            Assert.Throws<ArgumentException>(() =>
+           {
+               var account = new HdAccount();
+               account.HdPath = string.Empty;
 
-                account.GetCoinType();
-            });
+               account.GetCoinType();
+           });
         }
 
         [Fact]

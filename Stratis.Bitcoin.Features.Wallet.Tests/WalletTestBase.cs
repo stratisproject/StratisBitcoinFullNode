@@ -1,8 +1,6 @@
 ﻿using NBitcoin;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {

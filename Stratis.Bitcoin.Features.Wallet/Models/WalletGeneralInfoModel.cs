@@ -1,7 +1,7 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
+using System;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         [JsonProperty(PropertyName = "walletFilePath")]
         public string WalletFilePath { get; set; }
-        
+
         [JsonProperty(PropertyName = "network")]
         [JsonConverter(typeof(NetworkConverter))]
         public Network Network { get; set; }

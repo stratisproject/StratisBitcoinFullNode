@@ -1,8 +1,7 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet;
 using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -52,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             }
 
             return new TransactionData()
-            {                
+            {
                 Amount = amount,
                 Id = id,
                 CreationTime = creationTime.Value,
@@ -96,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             }
             return last;
         }
-        
+
         internal static (ChainedBlock ChainedBlock, Block Block) AppendBlock(ChainedBlock previous, ConcurrentChain chain)
         {
             ChainedBlock last = null;
@@ -195,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             return tx;
         }
-        
+
         internal static void AddAddressesToWallet(WalletManager walletManager, int count)
         {
             foreach (var wallet in walletManager.Wallets)
@@ -355,7 +354,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             return addresses;
         }
-        
+
         internal static TransactionData CreateTransactionDataFromFirstBlock((ConcurrentChain chain, uint256 blockHash, Block block) chainInfo)
         {
             var transaction = chainInfo.block.Transactions[0];

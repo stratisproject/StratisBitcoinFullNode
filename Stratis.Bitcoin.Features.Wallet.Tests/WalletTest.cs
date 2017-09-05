@@ -1,9 +1,5 @@
 ﻿using NBitcoin;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Stratis.Bitcoin.Features.Wallet;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -128,13 +124,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 
-            Assert.Equal(0, result.Count);            
+            Assert.Equal(0, result.Count);
         }
 
         [Fact]
         public void GetAllPubKeysByCoinTypeWithoutAccountRootsReturnsEmptyList()
         {
-            var wallet = new Bitcoin.Features.Wallet.Wallet();            
+            var wallet = new Bitcoin.Features.Wallet.Wallet();
 
             var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 

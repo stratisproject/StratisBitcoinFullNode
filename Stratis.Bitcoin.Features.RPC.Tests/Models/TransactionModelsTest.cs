@@ -1,13 +1,9 @@
 ﻿using NBitcoin;
-using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using System.IO;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC.Models;
+using System;
+using System.Linq;
+using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Models
 {
@@ -170,6 +166,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             Assert.Equal(0, actualLastNdx);
             Assert.Equal(4294967295, actualLastSequence);
             Assert.Equal(expectedPropertyNameOrder, actualPropertyNameOrder);
-        }      
+        }
     }
 }

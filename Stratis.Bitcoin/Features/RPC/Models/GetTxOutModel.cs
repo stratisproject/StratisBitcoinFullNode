@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         public GetTxOutModel(UnspentOutputs unspentOutputs, uint vout, Network network, ChainedBlock tip)
         {
-            if(unspentOutputs != null)
+            if (unspentOutputs != null)
             {
                 var output = unspentOutputs.TryGetOutput(vout);
                 this.bestblock = tip.HashBlock;

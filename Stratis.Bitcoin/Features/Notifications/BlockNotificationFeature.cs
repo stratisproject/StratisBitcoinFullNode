@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         private readonly ChainState chainState;
         private readonly ConcurrentChain chain;
 
-        public BlockNotificationFeature(BlockNotification blockNotification, IConnectionManager connectionManager, 
+        public BlockNotificationFeature(BlockNotification blockNotification, IConnectionManager connectionManager,
             LookaheadBlockPuller blockPuller, ChainState chainState, ConcurrentChain chain)
         {
             this.blockNotification = blockNotification;

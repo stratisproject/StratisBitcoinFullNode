@@ -1,8 +1,7 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -65,15 +64,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsChangeAddressWithEmptyHdPathThrowsArgumentException()
         {
-            Assert.Throws<ArgumentException> (() =>
-            {
-                var address = new HdAddress()
-                {
-                    HdPath = string.Empty
-                };
+            Assert.Throws<ArgumentException>(() =>
+           {
+               var address = new HdAddress()
+               {
+                   HdPath = string.Empty
+               };
 
-                var result = address.IsChangeAddress();
-            });
+               var result = address.IsChangeAddress();
+           });
         }
 
         [Fact]

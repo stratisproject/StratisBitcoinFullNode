@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -9,6 +8,7 @@ using Stratis.Bitcoin.Features.Notifications.Controllers;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Notifications
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
         }
-        
+
         [Fact]
         public void Given_SyncActionIsCalled_When_ABlockHeightIsSpecified_Then_TheChainIsSyncedFromTheHash()
         {

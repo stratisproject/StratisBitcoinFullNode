@@ -1,12 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
@@ -25,12 +25,12 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public ChainedBlock WalletTip => this.walletTip;
 
         public LightWalletSyncManager(
-            ILoggerFactory loggerFactory, 
-            IWalletManager walletManager, 
-            ConcurrentChain chain, 
+            ILoggerFactory loggerFactory,
+            IWalletManager walletManager,
+            ConcurrentChain chain,
             Network network,
-            BlockNotification blockNotification, 
-            Signals.Signals signals, 
+            BlockNotification blockNotification,
+            Signals.Signals signals,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory)
         {
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             }
             return Task.CompletedTask;
         }
-        
+
         /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     TimeSpans.FiveSeconds);
             }
             else
-            {               
+            {
                 this.StartSync(this.chain.GetHeightAtTime(date));
             }
         }

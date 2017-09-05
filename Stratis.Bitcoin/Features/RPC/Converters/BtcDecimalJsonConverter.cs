@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Globalization;
 using System.Linq;
-using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.RPC.Converters
 {

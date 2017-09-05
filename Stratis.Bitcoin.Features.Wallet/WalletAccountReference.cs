@@ -1,5 +1,5 @@
-﻿using System;
-using Stratis.Bitcoin.Utilities;
+﻿using Stratis.Bitcoin.Utilities;
+using System;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -32,15 +32,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         public override bool Equals(object obj)
         {
             WalletAccountReference item = obj as WalletAccountReference;
-            if(item == null)
+            if (item == null)
                 return false;
             return this.GetId().Equals(item.GetId());
         }
         public static bool operator ==(WalletAccountReference a, WalletAccountReference b)
         {
-            if(System.Object.ReferenceEquals(a, b))
+            if (System.Object.ReferenceEquals(a, b))
                 return true;
-            if(((object)a == null) || ((object)b == null))
+            if (((object)a == null) || ((object)b == null))
                 return false;
             return a.GetId().Equals(b.GetId());
         }

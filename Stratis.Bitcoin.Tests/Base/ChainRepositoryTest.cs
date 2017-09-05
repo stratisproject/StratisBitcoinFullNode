@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using DBreeze;
+﻿using DBreeze;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Base
@@ -64,11 +64,11 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var repo = new ChainRepository(dir))
             {
-				var testChain = new ConcurrentChain(Network.RegTest);
+                var testChain = new ConcurrentChain(Network.RegTest);
                 repo.Load(testChain).GetAwaiter().GetResult();
                 Assert.Equal(tip, testChain.Tip);
             }
-        }        
+        }
 
         public ChainedBlock AppendBlock(ChainedBlock previous, params ConcurrentChain[] chains)
         {

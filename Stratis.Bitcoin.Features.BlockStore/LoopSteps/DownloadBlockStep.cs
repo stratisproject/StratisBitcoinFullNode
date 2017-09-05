@@ -1,13 +1,12 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Base;
-
     /// <summary>
     /// Continuously find and download blocks until a stop condition is found.
     ///<para>

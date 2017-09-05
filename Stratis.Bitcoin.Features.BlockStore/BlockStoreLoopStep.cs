@@ -1,13 +1,12 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Utilities;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Utilities;
-
     /// <summary>
     /// The chain of block store loop steps that is executed when the
     /// BlockStoreLoop's DownloadAndStoreBlocks is called.

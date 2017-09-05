@@ -1,11 +1,11 @@
-﻿using System;
-using Stratis.Bitcoin.Features.BlockStore;
+﻿using Stratis.Bitcoin.Features.BlockStore;
+using System;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
     public class IndexStoreCachePerformanceCounter : BlockStoreCachePerformanceCounter
     {
-        public IndexStoreCachePerformanceCounter():
+        public IndexStoreCachePerformanceCounter() :
             base("IndexStore")
         {
 
@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
         public override BlockStoreCachePerformanceSnapshot Snapshot()
         {
 #if !(PORTABLE || NETCORE)
-			Thread.MemoryBarrier();
+            Thread.MemoryBarrier();
 #endif
             var snap = new IndexStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount)
             {
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             {
                 Start = diff.Start,
                 Taken = diff.Taken
-            };    
+            };
         }
     }
 }

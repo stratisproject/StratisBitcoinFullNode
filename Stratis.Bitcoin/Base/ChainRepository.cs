@@ -1,10 +1,10 @@
-﻿using System;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
 {

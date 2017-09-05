@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Stratis.Bitcoin.Utilities;
+using System;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Signals
 {
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Signals
         /// Initializes a new signaler with newly created subject.
         /// </summary>
         public Signaler() : this(new Subject<T>())
-        {            
+        {
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Signals
             Guard.NotNull(subject, nameof(subject));
 
             this.subject = subject;
-            this.subject = Subject.Synchronize(this.subject);            
+            this.subject = Subject.Synchronize(this.subject);
             this.observable = this.subject.AsObservable();
         }
 

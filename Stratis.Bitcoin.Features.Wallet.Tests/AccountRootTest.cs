@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.Wallet;
-using Xunit;
+﻿using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
@@ -50,20 +46,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void GetAccountByNameWithMatchingNameReturnsAccount()
         {
-            var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);            
-            
+            var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
+
             var result = accountRoot.GetAccountByName("Test");
 
-            Assert.NotNull(result);            
+            Assert.NotNull(result);
             Assert.Equal("Test", result.Name);
         }
 
         [Fact]
         public void GetAccountByNameWithNonMatchingNameThrowsException()
-        {            
+        {
             var accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
 
-            Assert.Throws<WalletException>(() => { accountRoot.GetAccountByName("test"); });           
+            Assert.Throws<WalletException>(() => { accountRoot.GetAccountByName("test"); });
         }
     }
 }

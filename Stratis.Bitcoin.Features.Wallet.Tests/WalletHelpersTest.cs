@@ -1,6 +1,6 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
+using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetMainNetworkRetuirnsNetworkMain()
         {
             Network network = WalletHelpers.GetNetwork("main");
-            Assert.Equal(Network.Main, network);            
+            Assert.Equal(Network.Main, network);
         }
 
         [Fact]

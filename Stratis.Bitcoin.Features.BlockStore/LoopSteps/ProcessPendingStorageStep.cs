@@ -1,13 +1,12 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
-    using System.Collections.Concurrent;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-
     /// <summary>
     /// Check if the next block is in pending storage i.e. first process pending storage blocks
     /// before find and downloading more blocks.

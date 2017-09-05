@@ -1,19 +1,19 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
-{
-    using Microsoft.Extensions.Logging;
-    using Moq;
-    using NBitcoin;
-    using NBitcoin.Protocol;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.BlockPulling;
-    using Stratis.Bitcoin.Configuration;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Tests;
-    using Stratis.Bitcoin.Utilities;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
+using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Tests;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
+{
     /// <summary>
     /// Base test class for all the BlockStoreLoop tests.
     /// </summary>

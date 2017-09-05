@@ -82,14 +82,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="nodeArgs">Settings from the node.</param>
         /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
-            MempoolAsyncLock mempoolLock, 
-            TxMempool memPool, 
-            ConcurrentChain chain, 
-            Signals.Signals signals, 
-            IMempoolValidator validator, 
-            PowConsensusValidator consensusValidator, 
-            CoinView coinView, 
-            IDateTimeProvider dateTimeProvider, 
+            MempoolAsyncLock mempoolLock,
+            TxMempool memPool,
+            ConcurrentChain chain,
+            Signals.Signals signals,
+            IMempoolValidator validator,
+            PowConsensusValidator consensusValidator,
+            CoinView coinView,
+            IDateTimeProvider dateTimeProvider,
             NodeSettings nodeArgs,
             ILoggerFactory loggerFactory)
         {

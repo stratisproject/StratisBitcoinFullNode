@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Stratis.Bitcoin.Configuration.Logging;
+using System;
 using System.Text;
 using System.Threading;
-using Stratis.Bitcoin.Configuration.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {

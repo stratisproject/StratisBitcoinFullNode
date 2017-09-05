@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
@@ -13,8 +9,12 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
-using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
         public const int DefaultBlockMinTxFee = 1000;
-        
+
         // Default for -blockmaxsize, which controls the maximum size of block the mining code will create 
         public const int DefaultBlockMaxSize = 750000;
 
@@ -104,19 +104,19 @@ namespace Stratis.Bitcoin.Features.Miner
         private uint256 lastCoinStakeSearchPrevBlockHash;
 
         public PosMinting(
-            ConsensusLoop consensusLoop, 
-            ConcurrentChain chain, 
-            Network network, 
+            ConsensusLoop consensusLoop,
+            ConcurrentChain chain,
+            Network network,
             IConnectionManager connection,
-            IDateTimeProvider dateTimeProvider, 
-            AssemblerFactory blockAssemblerFactory, 
+            IDateTimeProvider dateTimeProvider,
+            AssemblerFactory blockAssemblerFactory,
             IBlockRepository blockRepository,
-            ChainState chainState, 
+            ChainState chainState,
             Signals.Signals signals, INodeLifetime nodeLifetime,
-            NodeSettings settings, 
-            CoinView coinView, 
-            StakeChain stakeChain, 
-            IWalletManager wallet, 
+            NodeSettings settings,
+            CoinView coinView,
+            StakeChain stakeChain,
+            IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
         {
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("(-)[REORG]");
                 return;
             }
-            
+
             // Validate the block.
             this.consensusLoop.AcceptBlock(context);
 
@@ -513,11 +513,11 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Replace this with staking weight.
-            this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value))); 
+            this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value)));
 
             long nCredit = 0;
             Script scriptPubKeyKernel = null;
-            
+
             // Note: I would expect to see coins sorted by weight on the original implementation
             // it sorts the coins from heighest weight.
             setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
@@ -616,7 +616,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         this.logger.LogTrace("Checking kernel failed with exception: {0}.", cex.Message);
                         if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
                             continue;
-                        
+
                         throw;
                     }
                 }

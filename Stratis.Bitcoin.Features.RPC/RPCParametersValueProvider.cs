@@ -1,78 +1,78 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Utilities;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
-	public interface IRPCParametersValueProvider : IValueProvider, IValueProviderFactory
-	{
-	}
+    public interface IRPCParametersValueProvider : IValueProvider, IValueProviderFactory
+    {
+    }
 
-	public class RPCParametersValueProvider : IRPCParametersValueProvider
-	{
-		public RPCParametersValueProvider()
-		{
-			
-		}
+    public class RPCParametersValueProvider : IRPCParametersValueProvider
+    {
+        public RPCParametersValueProvider()
+        {
 
-		public RPCParametersValueProvider(ValueProviderFactoryContext context)
-		{
-			Guard.NotNull(context, nameof(context));
+        }
 
-			this.context = context;
-		}
+        public RPCParametersValueProvider(ValueProviderFactoryContext context)
+        {
+            Guard.NotNull(context, nameof(context));
 
-		ValueProviderFactoryContext context;
-		public bool ContainsPrefix(string prefix)
-		{
-			Guard.NotNull(prefix, nameof(prefix));
+            this.context = context;
+        }
 
-			return this.GetValueCore(prefix) != null;
-		}
+        ValueProviderFactoryContext context;
+        public bool ContainsPrefix(string prefix)
+        {
+            Guard.NotNull(prefix, nameof(prefix));
 
-		public Task CreateValueProviderAsync(ValueProviderFactoryContext context)
-		{
-			Guard.NotNull(context, nameof(context));
-			Guard.NotNull(context.ValueProviders, nameof(context.ValueProviders));
+            return this.GetValueCore(prefix) != null;
+        }
 
-			context.ValueProviders.Clear();
-			context.ValueProviders.Add(new RPCParametersValueProvider(context));
-			return Task.CompletedTask;
-		}
+        public Task CreateValueProviderAsync(ValueProviderFactoryContext context)
+        {
+            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(context.ValueProviders, nameof(context.ValueProviders));
 
-		public ValueProviderResult GetValue(string key)
-		{
-			Guard.NotNull(key, nameof(key));
+            context.ValueProviders.Clear();
+            context.ValueProviders.Add(new RPCParametersValueProvider(context));
+            return Task.CompletedTask;
+        }
 
-			//context.ActionContext.ActionDescriptor.Parameters.First().BindingInfo.
-			return new ValueProviderResult(new Microsoft.Extensions.Primitives.StringValues(this.GetValueCore(key)));
-		}
+        public ValueProviderResult GetValue(string key)
+        {
+            Guard.NotNull(key, nameof(key));
 
-		private string GetValueCore(string key)
-		{
-			if (key == null)
-				return null;
-			if (this.context.ActionContext.RouteData == null)
-				return null;
-			if (this.context.ActionContext.RouteData.Values == null || this.context.ActionContext.RouteData.Values.Count == 0)
-				return null;
-			var req = this.context.ActionContext.RouteData.Values["req"] as JObject;
-			if(req == null)
-				return null;
-			if (this.context.ActionContext.ActionDescriptor == null || this.context.ActionContext.ActionDescriptor.Parameters == null)
-				return null;
+            //context.ActionContext.ActionDescriptor.Parameters.First().BindingInfo.
+            return new ValueProviderResult(new Microsoft.Extensions.Primitives.StringValues(this.GetValueCore(key)));
+        }
 
-			var parameter = this.context.ActionContext.ActionDescriptor.Parameters.FirstOrDefault(p => p.Name == key);
-			if(parameter == null)
-				return null;
-			var index = this.context.ActionContext.ActionDescriptor.Parameters.IndexOf(parameter);
-			var parameters = (JArray)req["params"];
-			if(index < 0 || index >= parameters.Count)
-				return null;
-			var jtoken = parameters[index];
-			return jtoken == null ? null : jtoken.ToString();
-		}		
-	}
+        private string GetValueCore(string key)
+        {
+            if (key == null)
+                return null;
+            if (this.context.ActionContext.RouteData == null)
+                return null;
+            if (this.context.ActionContext.RouteData.Values == null || this.context.ActionContext.RouteData.Values.Count == 0)
+                return null;
+            var req = this.context.ActionContext.RouteData.Values["req"] as JObject;
+            if (req == null)
+                return null;
+            if (this.context.ActionContext.ActionDescriptor == null || this.context.ActionContext.ActionDescriptor.Parameters == null)
+                return null;
+
+            var parameter = this.context.ActionContext.ActionDescriptor.Parameters.FirstOrDefault(p => p.Name == key);
+            if (parameter == null)
+                return null;
+            var index = this.context.ActionContext.ActionDescriptor.Parameters.IndexOf(parameter);
+            var parameters = (JArray)req["params"];
+            if (index < 0 || index >= parameters.Count)
+                return null;
+            var jtoken = parameters[index];
+            return jtoken == null ? null : jtoken.ToString();
+        }
+    }
 }

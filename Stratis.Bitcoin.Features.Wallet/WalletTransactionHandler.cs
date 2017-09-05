@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -60,17 +60,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly ILogger logger;
 
         public WalletTransactionHandler(
-            ILoggerFactory loggerFactory, 
-            ConcurrentChain chain, 
-            IWalletManager walletManager, 
-            IWalletFeePolicy walletFeePolicy, 
+            ILoggerFactory loggerFactory,
+            ConcurrentChain chain,
+            IWalletManager walletManager,
+            IWalletFeePolicy walletFeePolicy,
             Network network)
         {
             this.chain = chain;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.network = network;
-            this.coinType = (CoinType)network.Consensus.CoinType;            
+            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(accountReference, nameof(accountReference));
             Guard.NotEmpty(accountReference.WalletName, nameof(accountReference.WalletName));
             Guard.NotEmpty(accountReference.AccountName, nameof(accountReference.AccountName));
-            
+
             // Get the total value of spendable coins in the account.
             var maxSpendableAmount = this.walletManager.GetSpendableTransactionsInAccount(accountReference, allowUnconfirmed ? 0 : 1).Sum(x => x.Transaction.Amount);
 
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // Create a recipient with a dummy destination address as it's required by NBitcoin's transaction builder.
-            List<Recipient> recipients = new[] {new Recipient {Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey}}.ToList();
+            List<Recipient> recipients = new[] { new Recipient { Amount = new Money(maxSpendableAmount), ScriptPubKey = new Key().ScriptPubKey } }.ToList();
             Money fee;
 
             try
@@ -194,8 +194,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (NotEnoughFundsException e)
             {
-                fee = (Money) e.Missing;
-            }            
+                fee = (Money)e.Missing;
+            }
 
             return (maxSpendableAmount - fee, fee);
         }
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         private void AddSecrets(TransactionBuildContext context)
         {
-            if(!context.Sign)
+            if (!context.Sign)
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
@@ -219,9 +219,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             var added = new HashSet<HdAddress>();
             foreach (var unspentOutputsItem in context.UnspentOutputs)
             {
-                if(added.Contains(unspentOutputsItem.Address))
+                if (added.Contains(unspentOutputsItem.Address))
                     continue;
-                
+
                 var address = unspentOutputsItem.Address;
                 ExtKey addressExtKey = seedExtKey.Derive(new KeyPath(address.HdPath));
                 BitcoinExtKey addressPrivateKey = addressExtKey.GetWif(wallet.Network);
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 var availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
-                if(!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
+                if (!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
                     throw new WalletException($"Not all the inputs in 'SelectedInputs' were found on the wallet.");
 
                 if (!context.AllowOtherInputs)

@@ -1,5 +1,5 @@
-﻿using System;
-using Stratis.Bitcoin.Utilities;
+﻿using Stratis.Bitcoin.Utilities;
+using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities

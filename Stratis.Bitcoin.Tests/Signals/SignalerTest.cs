@@ -1,8 +1,8 @@
-﻿using System;
-using System.Reactive.Subjects;
-using Moq;
+﻿using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Signals;
+using System;
+using System.Reactive.Subjects;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Signals
@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Tests.Signals
     public class SignalerTest
     {
         public SignalerTest()
-        {            
+        {
         }
 
         /// <remarks>
@@ -21,12 +21,12 @@ namespace Stratis.Bitcoin.Tests.Signals
         public void SubscribeRegistersObserverWithObservable()
         {
             var block = new Block();
-            var subject = new Mock<ISubject<Block>>();            
-            var observer = new Mock<IObserver<Block>>();            
+            var subject = new Mock<ISubject<Block>>();
+            var observer = new Mock<IObserver<Block>>();
             subject.Setup(s => s.Subscribe(It.IsAny<IObserver<Block>>()))
                 .Callback<IObserver<Block>>((o) =>
                 {
-                    o.OnNext(block);                    
+                    o.OnNext(block);
                 });
 
             var signaler = new Signaler<Block>(subject.Object);
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         public void BroadcastSignalsSubject()
         {
             var block = new Block();
-            var subject = new Mock<ISubject<Block>>();            
+            var subject = new Mock<ISubject<Block>>();
             var signaler = new Signaler<Block>(subject.Object);
 
             signaler.Broadcast(block);

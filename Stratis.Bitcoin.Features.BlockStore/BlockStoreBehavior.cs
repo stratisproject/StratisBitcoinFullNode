@@ -1,18 +1,17 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Protocol;
+using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using NBitcoin.Protocol;
-    using NBitcoin.Protocol.Behaviors;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Utilities;
-
     public interface IBlockStoreBehavior : INodeBehavior
     {
         bool CanRespondeToGetDataPayload { get; set; }
@@ -47,9 +46,9 @@
         private bool preferHeaderAndIDs;
 
         public BlockStoreBehavior(
-            ConcurrentChain chain, 
-            BlockRepository blockRepository, 
-            IBlockStoreCache blockStoreCache, 
+            ConcurrentChain chain,
+            BlockRepository blockRepository,
+            IBlockStoreCache blockStoreCache,
             ILoggerFactory loggerFactory)
             : this(chain, blockRepository as IBlockRepository, blockStoreCache, loggerFactory)
         {

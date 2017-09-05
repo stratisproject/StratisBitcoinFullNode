@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Utilities.FileStorage;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Stratis.Bitcoin.Tests.Logging;
-using Stratis.Bitcoin.Utilities.FileStorage;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities
@@ -59,28 +59,28 @@ namespace Stratis.Bitcoin.Tests.Utilities
             string dir = GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
             fileStorage.SaveToFile(testObject, "savedTestObject.json");
-            
+
             // Act
             bool result = fileStorage.Exists("savedTestObject.json");
 
             // Assert
             Assert.True(result);
         }
-        
+
         [Fact]
         public void GivenExistsIsCalled_WhenTheFileDoesntExist_ThenFalseIsreturned()
         {
             // Arrange
             string dir = GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
-            
+
             // Act
             bool result = fileStorage.Exists("savedTestObject.json");
 
             // Assert
             Assert.False(result);
         }
-        
+
         [Fact]
         public void GivenGetFilesPathsIsCalled_WhenFilesWithTheRightExtensionExist_ThenTheFilesAreReturned()
         {
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.False(filesPaths.Contains(Path.Combine(dir, "savedTestObject1.json")));
             Assert.False(filesPaths.Contains(Path.Combine(dir, "savedTestObject2.json")));
         }
-        
+
         [Fact]
         public void GivenGetFilesNamesIsCalled_WhenNoFilesWithTheRightExtensionExist_ThenNoFilesAreReturned()
         {
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.False(filesPaths.Contains("savedTestObject1.json"));
             Assert.False(filesPaths.Contains("savedTestObject2.json"));
         }
-        
+
         [Fact]
         public void GivenGetFilesNamesIsCalled_WhenFilesWithTheRightExtensionExist_ThenFilesAreReturned()
         {
@@ -168,11 +168,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
             // Arrange
             string dir = GetFolderPathForTestExecution();
             FileStorage<TestObject> fileStorage = new FileStorage<TestObject>(dir);
-            
+
             // Act
             Assert.Throws<FileNotFoundException>(() => fileStorage.LoadByFileName("myfile.txt"));
         }
-        
+
         [Fact]
         public void GivenLoadByFileNameIsCalled_WhenAFileWithTheNameExist_ThenTheObjectIsReturned()
         {
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.Equal(testObject1.Property1, loadedObject.Property1);
             Assert.Equal(testObject1.Property2, loadedObject.Property2);
         }
-        
+
         [Fact]
         public void GivenLoadByFileExtensionIsCalled_WhenFilesExist_ThenTheObjectsAreReturned()
         {
@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Assert.True(loadedObjects.Any(o => o.Property1 == testObject1.Property1 && o.Property2 == testObject1.Property2));
             Assert.True(loadedObjects.Any(o => o.Property1 == testObject2.Property1 && o.Property2 == testObject2.Property2));
         }
-        
+
         [Fact]
         public void GivenLoadByFileExtensionIsCalled_WhenFilesDontExist_ThenNoObjectsIsReturned()
         {

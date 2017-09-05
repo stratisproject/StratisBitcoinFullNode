@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private bool IsConfirmedInNPrevBlocks(UnspentOutputs utxoSet, ChainedBlock pindexFrom, long maxDepth)
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}',{6}:{7})", nameof(utxoSet), utxoSet.TransactionId, utxoSet.Height, nameof(pindexFrom), pindexFrom.HashBlock, pindexFrom.Height, nameof(maxDepth), maxDepth);
-            
+
             int actualDepth = pindexFrom.Height - (int)utxoSet.Height;
             bool res = actualDepth < maxDepth;
 
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             BlockStake prevBlockStake, UnspentOutputs txPrev, OutPoint prevout, uint nTimeTx)
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}.{8}:'{9}',{10}:'{11}/{12}',{13}:'{14}/{15}',{16}:{17})",
-                nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height, nameof(nBits), nBits, nameof(nTimeBlockFrom), nTimeBlockFrom, 
+                nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height, nameof(nBits), nBits, nameof(nTimeBlockFrom), nTimeBlockFrom,
                 nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(txPrev), txPrev.TransactionId, txPrev.Height,
                 nameof(prevout), prevout.Hash, prevout.N, nameof(nTimeTx), nTimeTx);
 
@@ -624,7 +624,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void CheckKernel(ContextInformation context, ChainedBlock pindexPrev, uint nBits, long nTime, OutPoint prevout, ref long pBlockTime)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}:'{8}.{9}')", nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height, 
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}:'{8}.{9}')", nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height,
                 nameof(nBits), nBits, nameof(nTime), nTime, nameof(prevout), prevout.Hash, prevout.N);
 
             // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/397

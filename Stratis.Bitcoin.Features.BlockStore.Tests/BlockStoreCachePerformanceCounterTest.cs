@@ -1,8 +1,8 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
-{
-    using System;
-    using Xunit;
+﻿using System;
+using Xunit;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
+{
     public class BlockStoreCachePerformanceCounterTest
     {
         private BlockStoreCachePerformanceCounter performanceCounter;
@@ -93,6 +93,6 @@
             Assert.Equal(16, snapshot2.TotalCacheMissCount);
             Assert.Equal(9, snapshot2.TotalCacheRemoveCount);
             Assert.Equal(68, snapshot2.TotalCacheSetCount);
-        }        
+        }
     }
 }

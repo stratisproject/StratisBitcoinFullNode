@@ -165,12 +165,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolValidator(
-            TxMempool memPool, 
+            TxMempool memPool,
             MempoolAsyncLock mempoolLock,
-            PowConsensusValidator consensusValidator, 
-            IDateTimeProvider dateTimeProvider, 
+            PowConsensusValidator consensusValidator,
+            IDateTimeProvider dateTimeProvider,
             NodeSettings nodeArgs,
-            ConcurrentChain chain, 
+            ConcurrentChain chain,
             CoinView coinView,
             ILoggerFactory loggerFactory)
         {
@@ -433,7 +433,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             await context.View.LoadView(context.Transaction).ConfigureAwait(false);
 
             // adding to the mem pool can only be done sequentially
-             // use the sequential scheduler for that.
+            // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
                 // is it already in the memory pool?
@@ -454,11 +454,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.CheckAncestors(context);
                 this.CheckReplacment(context);
                 this.CheckAllInputs(context);
-            
+
                 // Remove conflicting transactions from the mempool
                 foreach (var it in context.AllConflicting)
                     this.logger.LogInformation($"replacing tx {it.TransactionHash} with {context.TransactionHash} for {context.ModifiedFees - context.ConflictingFees} BTC additional fees, {context.EntrySize - context.ConflictingSize} delta bytes");
-                
+
                 this.memPool.RemoveStaged(context.AllConflicting, false);
 
                 // This transaction should only count for fee estimation if
@@ -940,7 +940,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (!this.memPool.CalculateMemPoolAncestors(context.Entry, context.SetAncestors, nLimitAncestors,
                 nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, out errString))
             {
-                context.State.Fail( MempoolErrors.TooLongMempoolChain, errString).Throw();
+                context.State.Fail(MempoolErrors.TooLongMempoolChain, errString).Throw();
             }
 
             // A transaction that spends outputs that would be replaced by it is invalid. Now
@@ -1072,7 +1072,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     if (this.consensusValidator.UseConsensusLib)
                     {
                         Script.BitcoinConsensusError error;
-                        return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint) iiIntput, scriptVerify, out error);
+                        return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint)iiIntput, scriptVerify, out error);
                     }
                     else
                     {

@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
+using System;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Connection
 
             // 80% of current max connections, the last 20% will only 
             // connect to nodes ahead of the current best chain
-            this.dropTreshold = 0.8M; 
+            this.dropTreshold = 0.8M;
         }
 
         private void AttachedNodeOnMessageReceived(Node node, IncomingMessage message)

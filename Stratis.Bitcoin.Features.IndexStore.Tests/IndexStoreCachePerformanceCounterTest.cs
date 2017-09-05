@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using Stratis.Bitcoin.Features.IndexStore;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.IndexStore.Tests
@@ -97,6 +93,6 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
             Assert.Equal(16, snapshot2.TotalCacheMissCount);
             Assert.Equal(9, snapshot2.TotalCacheRemoveCount);
             Assert.Equal(68, snapshot2.TotalCacheSetCount);
-        }        
+        }
     }
 }

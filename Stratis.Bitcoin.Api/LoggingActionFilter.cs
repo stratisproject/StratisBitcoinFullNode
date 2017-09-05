@@ -1,10 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Api
 {
@@ -24,17 +24,17 @@ namespace Stratis.Bitcoin.Api
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             HttpRequest request = context.HttpContext.Request;
-            
+
             // get the body
             var body = string.Empty;
             var arguments = context.ActionArguments;
             if (request.ContentLength != null && arguments != null && arguments.Any())
             {
-               body = string.Join(Environment.NewLine, arguments.Values);
+                body = string.Join(Environment.NewLine, arguments.Values);
             }
 
             this.logger.LogDebug($"Received {request.Method} {request.GetDisplayUrl()}. Body: '{body}'");
-            await next();            
+            await next();
         }
     }
 }

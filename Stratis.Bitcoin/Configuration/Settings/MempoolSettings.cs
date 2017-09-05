@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>Maximum size in kB of descendants any ancestor can have in mempool (including itself).</summary>
         public int LimitDescendantSize { get; set; }
-        
+
         /// <summary><c>true</c> to enable transaction replacement in the memory pool.</summary>
         public bool EnableReplacement { get; set; }
 

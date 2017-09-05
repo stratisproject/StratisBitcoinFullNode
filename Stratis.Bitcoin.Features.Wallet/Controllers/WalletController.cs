@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Security;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
@@ -12,6 +6,12 @@ using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -456,7 +456,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 var context = new TransactionBuildContext(
                     new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] {new Recipient {Amount = request.Amount, ScriptPubKey = destination}}.ToList(),
+                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
                     request.Password)
                 {
                     FeeType = FeeParser.Parse(request.FeeType),

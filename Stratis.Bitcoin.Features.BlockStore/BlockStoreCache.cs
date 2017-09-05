@@ -1,13 +1,12 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Threading.Tasks;
+
+namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System;
-    using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Utilities;
-
     public interface IBlockStoreCache : IDisposable
     {
         void Expire(uint256 blockid);
