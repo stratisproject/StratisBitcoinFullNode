@@ -1,16 +1,13 @@
 ﻿using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusManager:IBlockDownloadState, INetworkDifficulty, IGetUnspentTransaction
+    public class ConsensusManager : IBlockDownloadState, INetworkDifficulty, IGetUnspentTransaction
     {
         public ConsensusLoop ConsensusLoop { get; private set; }
         public IDateTimeProvider DateTimeProvider { get; private set; }
@@ -62,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            var outputs =  await this.ConsensusLoop.UTXOSet?.FetchCoinsAsync(new[] { trxid });
+            var outputs = await this.ConsensusLoop.UTXOSet?.FetchCoinsAsync(new[] { trxid });
             return outputs?.UnspentOutputs?.SingleOrDefault();
         }
     }

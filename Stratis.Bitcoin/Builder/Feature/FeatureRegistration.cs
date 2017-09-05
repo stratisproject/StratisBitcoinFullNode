@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Builder.Feature
 {

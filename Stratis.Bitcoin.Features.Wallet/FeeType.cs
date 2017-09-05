@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             bool isParsed = Enum.TryParse<FeeType>(value, true, out var result);
             if (!isParsed)
-            {                
+            {
                 throw new FormatException($"FeeType {value} is not a valid FeeType");
             }
 

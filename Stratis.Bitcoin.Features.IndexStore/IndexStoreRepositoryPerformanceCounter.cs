@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             {
                 Start = diff.Start,
                 Taken = diff.Taken
-            };            
+            };
         }
     }
 }

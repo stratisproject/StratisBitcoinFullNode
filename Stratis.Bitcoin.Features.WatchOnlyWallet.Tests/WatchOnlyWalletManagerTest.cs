@@ -11,7 +11,7 @@ using Xunit;
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
 {
     public class WatchOnlyWalletManagerTest : LogsTestBase
-    {        
+    {
         [Fact]
         [Trait("Module", "WatchOnlyWalletManager")]
         public void Given_AWalletIsPresent_When_GetWatchOnlyWalletIsCalled_ThenthewalletIsreturned()
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             string dir = AssureEmptyDir("TestData/WatchOnlyWalletManagerTest/Given_AWalletIsPresent_When_GetWatchOnlyWalletIsCalled_ThenthewalletIsreturned");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
             var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
-            
+
             var walletManager = new WatchOnlyWalletManager(this.LoggerFactory.Object, Network.Main, dataFolder);
             walletManager.Initialize();
 

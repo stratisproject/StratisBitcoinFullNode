@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Threading;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Utilities
             });
             t.IsBackground = true;
             t.Name = this.name;
-            t.Start();            
+            t.Start();
             return this;
         }
 

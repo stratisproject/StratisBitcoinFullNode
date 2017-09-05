@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             // Get the accounts root for this type of coin.
             var accountsRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
-            
+
             if (accountsRoot.Accounts.Any())
             {
                 // Get an unused account.
@@ -793,7 +793,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "spendingDetails", NullValueHandling = NullValueHandling.Ignore)]
         public SpendingDetails SpendingDetails { get; set; }
-        
+
         /// <summary>
         /// Determines whether this transaction is confirmed.
         /// </summary>    

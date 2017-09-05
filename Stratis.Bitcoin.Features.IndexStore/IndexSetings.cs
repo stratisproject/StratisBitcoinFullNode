@@ -7,17 +7,17 @@ namespace Stratis.Bitcoin.Features.IndexStore
     /// <summary>
     /// Configuration related to storage of transactions.
     /// </summary>
-    public class IndexSettings:StoreSettings
+    public class IndexSettings : StoreSettings
     {
         private Action<IndexSettings> callback = null;
 
         public IndexSettings()
-            :base()
+            : base()
         {
         }
 
         public IndexSettings(Action<IndexSettings> callback)
-            :this()
+            : this()
         {
             this.callback = callback;
         }

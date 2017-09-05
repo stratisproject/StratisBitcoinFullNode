@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities.FileStorage;
+using System;
+using System.Collections.Concurrent;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             this.fileStorage.SaveToFile(watchOnlyWallet, WalletFileName);
             return watchOnlyWallet;
         }
-        
+
         /// <summary>
         /// Gets the watch-only wallet.
         /// </summary>

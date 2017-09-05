@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </remarks>
         public double GetPriority(int currentHeight)
         {
-            double deltaPriority = ((double) (currentHeight - this.EntryHeight)* this.InChainInputValue.Satoshi)/ this.nModSize;
+            double deltaPriority = ((double)(currentHeight - this.EntryHeight) * this.InChainInputValue.Satoshi) / this.nModSize;
             double dResult = this.entryPriority + deltaPriority;
             if (dResult < 0) // This should only happen if it was called with a height below entry height
                 dResult = 0;
@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>The transaction size.</returns>
         public long GetTxSize()
         {
-            return (long) this.Transaction.GetVirtualSize();
+            return (long)this.Transaction.GetVirtualSize();
         }
 
         /// <summary>

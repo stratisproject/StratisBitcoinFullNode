@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// Memory pool error state.
     /// </summary>
-    public class MempoolError 
+    public class MempoolError
     {
         /// <summary>
         /// Default constructor for a memory pool error.
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public static MempoolError NonBIP68Final = new MempoolError(RejectNonstandard, "non-BIP68-final");
 
         /// <summary>'mempool-min-fee-not-met' error returns a <see cref="RejectInsufficientfee"/> reject code.</summary>
-        public static MempoolError MinFeeNotMet = new MempoolError(RejectInsufficientfee,"mempool-min-fee-not-met");
+        public static MempoolError MinFeeNotMet = new MempoolError(RejectInsufficientfee, "mempool-min-fee-not-met");
 
         /// <summary>'insufficient-priority' error returns a <see cref="RejectInsufficientfee"/> reject code.</summary>
         public static MempoolError InsufficientPriority = new MempoolError(RejectInsufficientfee, "insufficient-priority");

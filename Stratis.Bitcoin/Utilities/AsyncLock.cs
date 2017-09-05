@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -94,8 +89,8 @@ namespace Stratis.Bitcoin.Utilities
         public AsyncLock(CancellationTokenSource cancellation = null, int maxItemsPerTask = 5)
         {
             this.cancellation = cancellation ?? new CancellationTokenSource();
-            int defaultMaxConcurrencyLevel = Environment.ProcessorCount; 
-            int defaultMaxItemsPerTask = maxItemsPerTask; 
+            int defaultMaxConcurrencyLevel = Environment.ProcessorCount;
+            int defaultMaxItemsPerTask = maxItemsPerTask;
             var schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, defaultMaxConcurrencyLevel, defaultMaxItemsPerTask);
             this.concurrentFactory = new TaskFactory(schedulerPair.ConcurrentScheduler);
             this.exclusiveFactory = new TaskFactory(schedulerPair.ExclusiveScheduler);

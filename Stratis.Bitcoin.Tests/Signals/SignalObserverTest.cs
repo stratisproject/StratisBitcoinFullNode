@@ -1,14 +1,14 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
+using System;
 
 namespace Stratis.Bitcoin.Tests.Signals
 {
     public class SignalObserverTest : LogsTestBase
     {
-        SignalObserver<Block> observer;               
+        SignalObserver<Block> observer;
 
         public SignalObserverTest() : base()
         {
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.Signals
             this.observer.OnError(exception);
 
             this.AssertLog(this.FullNodeLogger, LogLevel.Error, exception.ToString());
-        }            
+        }
 
         private class TestBlockSignalObserver : SignalObserver<Block>
         {

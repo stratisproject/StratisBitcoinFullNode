@@ -1,8 +1,8 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Stratis.Bitcoin.Features.Wallet.Validations;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
-        
+
         [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
 
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [Required]
         public string WalletName { get; set; }
-        
+
         /// <summary>
         /// The name of the account for which to get the address.
         /// </summary>
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [Required]
         public string WalletName { get; set; }
-        
+
         /// <summary>
         /// The password for this wallet.
         /// </summary>

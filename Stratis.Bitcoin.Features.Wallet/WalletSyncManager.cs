@@ -1,12 +1,11 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Utilities;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -23,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public ChainedBlock WalletTip => this.walletTip;
 
-        public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, 
+        public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings)
         {
             this.walletManager = walletManager as WalletManager;
@@ -98,13 +97,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         // the wallet is falling behind we need to catch up
                         var next = this.walletTip;
-                        while(next != incomingBlock)
+                        while (next != incomingBlock)
                         {
                             // while the wallet is catching up the entire node will hult
                             // if a wallet recoveres to a date in the past consensus 
                             // will stop til the wallet is up to date.
 
-                            next = this.chain.GetBlock(next.Height +1);
+                            next = this.chain.GetBlock(next.Height + 1);
                             Block nextblock = null;
                             while (true) //replace with cancelation token
                             {
@@ -117,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                                     Thread.Sleep(100);
                                     continue;
                                 }
-                                
+
                                 break;
                             }
 
@@ -146,8 +145,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         public virtual void SyncFrom(int height)
         {
             var chainedBlock = this.chain.GetBlock(height);
-            if(chainedBlock == null)
-                throw  new WalletException("Invalid block height");
+            if (chainedBlock == null)
+                throw new WalletException("Invalid block height");
             this.walletTip = chainedBlock;
             this.walletManager.WalletTipHash = chainedBlock.HashBlock;
         }

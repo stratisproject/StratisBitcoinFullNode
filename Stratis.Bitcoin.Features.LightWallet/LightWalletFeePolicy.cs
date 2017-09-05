@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.LightWallet

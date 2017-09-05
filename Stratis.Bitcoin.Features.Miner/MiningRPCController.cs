@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.Wallet;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -16,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.Mining = mining;
         }
-        
+
         public PowMining Mining
         {
             get; set;

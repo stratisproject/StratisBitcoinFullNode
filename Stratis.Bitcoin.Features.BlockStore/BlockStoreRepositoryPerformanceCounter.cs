@@ -1,11 +1,10 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
+﻿using Stratis.Bitcoin.Configuration.Logging;
+using System;
+using System.Text;
+using System.Threading;
+
+namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System;
-    using System.Text;
-    using System.Threading;
-
-    using Stratis.Bitcoin.Configuration.Logging;
-
     public class BlockStoreRepositoryPerformanceCounter
     {
         private long repositoryInsertCount;
@@ -13,7 +12,7 @@
         private long repositoryHitCount;
         private long repositoryMissCount;
         public string Name { get; private set; }
-        public DateTime Start {get; private set; }
+        public DateTime Start { get; private set; }
 
         public BlockStoreRepositoryPerformanceCounter(string name = "BlockStore")
         {
@@ -107,7 +106,7 @@
         private readonly long repositoryDeleteCount;
         private readonly long repositoryInsertCount;
         public string Name { get; private set; }
-        public DateTime Start { get; set; }    
+        public DateTime Start { get; set; }
         public DateTime Taken { get; set; }
 
         public BlockStoreRepositoryPerformanceSnapshot(long repositoryHitCount, long repositoryMissCount, long repositoryDeleteCount, long repositoryInsertCount, string name = "BlockStore")

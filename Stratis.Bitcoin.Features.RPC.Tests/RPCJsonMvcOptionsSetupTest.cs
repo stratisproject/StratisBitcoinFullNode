@@ -1,8 +1,7 @@
-﻿using System.Buffers;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.RPC;
+using System.Buffers;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests

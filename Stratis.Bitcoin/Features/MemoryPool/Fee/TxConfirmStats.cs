@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         // Track the historical moving average of theses totals over blocks.
 
         /// <summary>Confirmation average. confAvg[Y][X].</summary>
-        private List<List<double>> confAvg; 
+        private List<List<double>> confAvg;
 
         /// <summary>Current block confirmations. curBlockConf[Y][X].</summary>
         private List<List<int>> curBlockConf;
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// <summary>Transactions still unconfirmed after MAX_CONFIRMS for each bucket</summary>
         private List<int> oldUnconfTxs;
 
-          /// <summary>
+        /// <summary>
         /// Historical moving average of transaction counts.
         /// </summary>
         /// <remarks>
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// that are unconfirmed for each possible confirmation value Y
         /// unconfTxs[Y][X]
         /// </remarks>
-        private List<List<int>> unconfTxs; 
+        private List<List<int>> unconfTxs;
 
         /// <summary>
         /// Constructs an instance of the transaction confirmation stats object.

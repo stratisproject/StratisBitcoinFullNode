@@ -1,6 +1,6 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Base;
+using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Base

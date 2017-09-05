@@ -1,15 +1,15 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.Utilities;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
+namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+{
     /// <summary>
     /// Context for the inner steps, <see cref="BlockStoreInnerStepFindBlocks"/> and <see cref="BlockStoreInnerStepReadBlocks"/>.
     /// <para>

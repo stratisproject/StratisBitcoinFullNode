@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
-using Stratis.Bitcoin.Utilities;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki"/>
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki"/>
-        private static readonly uint256[] duplicateTransactions = new[] 
+        private static readonly uint256[] duplicateTransactions = new[]
         {
             new uint256("e3bf3d07d4b0375638d5f1db5255fe07ba2c4cb067cd81b84ee974b6585fb468"),
             new uint256("d5d27987d2a3dfc724e359870c6644b40e497bdc0589a033220fe15429d88599")

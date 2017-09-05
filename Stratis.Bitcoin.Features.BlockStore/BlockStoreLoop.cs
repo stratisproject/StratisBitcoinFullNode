@@ -1,18 +1,17 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.BlockPulling;
-    using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-    using Stratis.Bitcoin.Utilities;
-
     /// <summary>
     /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
     /// </summary>

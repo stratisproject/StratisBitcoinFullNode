@@ -2,8 +2,6 @@
 using Moq;
 using Stratis.Bitcoin.BlockPulling;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockPulling
@@ -148,19 +146,19 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 peers[i].Setup(b => b.QualityScore).Returns(peerScores[i]);
             }
 
-            qualityScore.AddSample(peers[0].Object, 30, 2048); 
+            qualityScore.AddSample(peers[0].Object, 30, 2048);
             Assert.False(qualityScore.IsPenaltyDiscarded());
 
-            qualityScore.AddSample(peers[1].Object, 50, 1024); 
+            qualityScore.AddSample(peers[1].Object, 50, 1024);
             Assert.False(qualityScore.IsPenaltyDiscarded());
 
-            qualityScore.AddSample(peers[2].Object, 40, 1024); 
+            qualityScore.AddSample(peers[2].Object, 40, 1024);
             Assert.True(qualityScore.IsPenaltyDiscarded());
 
-            qualityScore.AddSample(peers[0].Object, 30, 2048); 
+            qualityScore.AddSample(peers[0].Object, 30, 2048);
             Assert.True(qualityScore.IsPenaltyDiscarded());
 
-            qualityScore.AddSample(peers[0].Object, 30, 3072); 
+            qualityScore.AddSample(peers[0].Object, 30, 3072);
             Assert.True(qualityScore.IsPenaltyDiscarded());
 
             qualityScore.AddSample(peers[0].Object, 30, 2048);

@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             features.Add(new FeatureA());
 
             features.EnsureFeature<FeatureA>();
-            Assert.Throws<MissingDependencyException>(() => features.EnsureFeature<FeatureB>());           
+            Assert.Throws<MissingDependencyException>(() => features.EnsureFeature<FeatureB>());
         }
 
         #endregion

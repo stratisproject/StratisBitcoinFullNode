@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             get; set;
         }
     }
-    
+
     public class ConsensusLoop
     {
         public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, StakeChain stakeChain = null)
@@ -59,10 +59,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         public void Initialize()
         {
             var utxoHash = this.UTXOSet.GetBlockHashAsync().GetAwaiter().GetResult();
-            while(true)
+            while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
-                if(this.Tip != null)
+                if (this.Tip != null)
                     break;
                 utxoHash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
             }
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public IEnumerable<BlockResult> Execute(CancellationToken cancellationToken)
         {
-            while(true)
+            while (true)
             {
                 yield return this.ExecuteNextBlock(cancellationToken);
             }
@@ -82,20 +82,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             BlockResult result = new BlockResult();
             try
             {
-                using(this.watch.Start(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
+                using (this.watch.Start(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
                 {
-                    while(true)
+                    while (true)
                     {
                         result.Block = this.Puller.NextBlock(cancellationToken);
-                        if(result.Block != null)
+                        if (result.Block != null)
                             break;
                         else
                         {
-                            while(true)
+                            while (true)
                             {
                                 var hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
                                 var rewinded = this.Chain.GetBlock(hash);
-                                if(rewinded == null)
+                                if (rewinded == null)
                                     continue;
                                 this.Tip = rewinded;
                                 this.Puller.SetLocation(rewinded);
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 this.AcceptBlock(new ContextInformation(result, this.Validator.ConsensusParams));
             }
-            catch(ConsensusErrorException ex)
+            catch (ConsensusErrorException ex)
             {
                 result.Error = ex.ConsensusError;
             }
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.SetBestBlock();
 
                 // == validation flow ==
-                
+
                 // check the block hedaer is correct
                 this.Validator.CheckBlockHeader(context);
                 this.Validator.ContextualCheckBlockHeader(context);
@@ -190,10 +190,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         private Task TryPrefetchAsync(ConsensusFlags flags)
         {
             Task prefetching = Task.FromResult<bool>(true);
-            if(this.UTXOSet is CachedCoinView)
+            if (this.UTXOSet is CachedCoinView)
             {
                 var nextBlock = this.Puller.TryGetLookahead(0);
-                if(nextBlock != null)
+                if (nextBlock != null)
                     prefetching = this.UTXOSet.FetchCoinsAsync(GetIdsToFetch(nextBlock, flags.EnforceBIP30));
             }
             return prefetching;
@@ -202,15 +202,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         public static uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
         {
             HashSet<uint256> ids = new HashSet<uint256>();
-            foreach(var tx in block.Transactions)
+            foreach (var tx in block.Transactions)
             {
-                if(enforceBIP30)
+                if (enforceBIP30)
                 {
                     var txId = tx.GetHash();
                     ids.Add(txId);
                 }
-                if(!tx.IsCoinBase)
-                    foreach(var input in tx.Inputs)
+                if (!tx.IsCoinBase)
+                    foreach (var input in tx.Inputs)
                     {
                         ids.Add(input.PrevOut.Hash);
                     }

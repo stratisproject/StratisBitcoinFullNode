@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -149,7 +147,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>true if the instance of the object has been disposed.</summary>
         private bool disposed;
-        
+
         /// <summary>
         /// Disposes the object, triggers the cancallation token.
         /// </summary>

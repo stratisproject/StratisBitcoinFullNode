@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
+using System;
+using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {

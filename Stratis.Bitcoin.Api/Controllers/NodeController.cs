@@ -1,7 +1,5 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
-using Stratis.Bitcoin;
-using Stratis.Bitcoin.Builder;
+﻿using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace Stratis.Bitcoin.Api.Controllers
 {
@@ -51,7 +49,7 @@ namespace Stratis.Bitcoin.Api.Controllers
         public IActionResult Keepalive()
         {
             if (this.apiFeatureOptions.KeepaliveMonitor == null)
-                return new ObjectResult("Keepalive Disabled") {StatusCode = 405}; // (405) Method Not Allowed 
+                return new ObjectResult("Keepalive Disabled") { StatusCode = 405 }; // (405) Method Not Allowed 
 
             this.apiFeatureOptions.KeepaliveMonitor.LastBeat = DateTime.UtcNow;
 

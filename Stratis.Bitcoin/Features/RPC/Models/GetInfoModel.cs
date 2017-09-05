@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         [JsonProperty(Order = 13, DefaultValueHandling = DefaultValueHandling.Ignore)]
         public decimal? paytxfee { get; set; }
-        
+
         #endregion
     }
 }

@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         /// </summary>
         [JsonProperty(PropertyName = "bytesrecv")]
         public long BytesReceived { get; internal set; }
-        
+
         /// <summary>
         /// The connection time in seconds since epoch.
         /// Currently not populated.
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         /// </summary>
         [JsonProperty(PropertyName = "banscore")]
         public int BanScore { get; internal set; }
-            
+
         /// <summary>
         /// The last header we have in common with this peer.
         /// Currently not populated.

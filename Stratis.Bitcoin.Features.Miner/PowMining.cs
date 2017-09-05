@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Miner
     {
         // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code.
         public const int DefaultBlockMinTxFee = 1000;
-        
+
         // Default for -blockmaxsize, which controls the maximum size of block the mining code will create.
         public const int DefaultBlockMaxSize = 750000;
 
@@ -54,15 +54,15 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         public PowMining(
-            ConsensusLoop consensusLoop, 
-            ConcurrentChain chain, 
+            ConsensusLoop consensusLoop,
+            ConcurrentChain chain,
             Network network,
-            IDateTimeProvider dateTimeProvider, 
-            AssemblerFactory blockAssemblerFactory, 
+            IDateTimeProvider dateTimeProvider,
+            AssemblerFactory blockAssemblerFactory,
             IBlockRepository blockRepository,
-            ChainState chainState, 
-            Signals.Signals signals, 
-            INodeLifetime nodeLifetime, 
+            ChainState chainState,
+            Signals.Signals signals,
+            INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
         {
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.mining = this.asyncLoopFactory.Run("PowMining.Mine", token =>
             {
-                this.GenerateBlocks(new ReserveScript {reserveSfullNodecript = reserveScript}, int.MaxValue, int.MaxValue);
+                this.GenerateBlocks(new ReserveScript { reserveSfullNodecript = reserveScript }, int.MaxValue, int.MaxValue);
                 this.mining = null;
                 return Task.CompletedTask;
             },
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     this.chain.SetTip(newChain);
 
-                    var blockResult = new BlockResult {Block = pblock};
+                    var blockResult = new BlockResult { Block = pblock };
                     this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
                     this.consensusLoop.Puller.SetLocation(newChain);
                     this.consensusLoop.FlushAsync().GetAwaiter().GetResult();

@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 PeerSample oldSample;
                 if (this.samples.Add(newSample, out oldSample))
-                { 
-                  // If we reached the maximum number of samples, we need to remove oldest sample.
+                {
+                    // If we reached the maximum number of samples, we need to remove oldest sample.
                     this.samplesSum -= oldSample.timePerKb;
                     this.peerReferenceCounter[oldSample.peer]--;
 

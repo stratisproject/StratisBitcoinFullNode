@@ -1,17 +1,13 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.BlockStore;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
-using NBitcoin;
-using NBitcoin.BitcoinCore;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
 using Xunit;
 using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -116,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
 
                     // delete
-                    blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] {lst.ElementAt(2).GetHash()}.ToList());
+                    blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] { lst.ElementAt(2).GetHash() }.ToList());
                     var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
                     Assert.Null(deleted);
                 }
@@ -209,7 +205,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 newNodeInstance.Start();
 
                 // check that store recovered to be the same as the best chain.
-               Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
+                Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.ChainBehaviorState.HighestPersistedBlock.HashBlock);
                 //TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
             }
         }

@@ -2,14 +2,13 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using System;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -24,7 +23,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Includes querying information about the transactions in the memory pool.
     /// Also includes methods for persisting memory pool.
     /// </summary>
-    public class MempoolManager: IPooledTransaction, IPooledGetUnspentTransaction
+    public class MempoolManager : IPooledTransaction, IPooledGetUnspentTransaction
     {
         /// <summary>Memory pool persistence methods for loading and saving from storage.</summary>
         private IMempoolPersistence mempoolPersistence;
@@ -50,12 +49,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolManager(
-            MempoolAsyncLock mempoolLock, 
+            MempoolAsyncLock mempoolLock,
             TxMempool memPool,
-            IMempoolValidator validator, 
-            MempoolOrphans orphans, 
-            IDateTimeProvider dateTimeProvider, 
-            NodeSettings nodeArgs, 
+            IMempoolValidator validator,
+            MempoolOrphans orphans,
+            IDateTimeProvider dateTimeProvider,
+            NodeSettings nodeArgs,
             IMempoolPersistence mempoolPersistence,
             CoinView coinView,
             ILoggerFactory loggerFactory)
@@ -258,7 +257,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
             var txInfo = await this.InfoAsync(trxid);
-            if(txInfo == null)
+            if (txInfo == null)
             {
                 return null;
             }

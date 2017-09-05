@@ -2,8 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.RPC.ModelBinders;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 
 namespace Stratis.Bitcoin.Features.RPC
 {

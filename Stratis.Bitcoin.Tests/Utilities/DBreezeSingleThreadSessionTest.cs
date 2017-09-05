@@ -1,12 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using DBreeze;
+﻿using DBreeze;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Linq;
+using System.Text;
+using System.Threading;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
         [Fact]
         public void DoAbleToAccessExistingTransactionData()
-        {            
+        {
             var dir = AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoAbleToAccessExistingTransactionData");
             uint256[] data = SetupTransactionData(dir);
 

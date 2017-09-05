@@ -1,10 +1,10 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
-{
-    using Microsoft.Extensions.Caching.Memory;
-    using System;
-    using System.Collections.Generic;
-    using Microsoft.Extensions.Primitives;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
+using System;
+using System.Collections.Generic;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
+{
     internal class CacheEntryStub : ICacheEntry
     {
         private object key;
@@ -23,7 +23,7 @@
 
         public TimeSpan? AbsoluteExpirationRelativeToNow
         {
-            get;set;
+            get; set;
         }
 
         public IList<IChangeToken> ExpirationTokens

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
@@ -12,6 +6,12 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Transaction = NBitcoin.Transaction;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
-        
+
         internal Dictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
@@ -56,11 +56,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
         public WalletManager(
-            ILoggerFactory loggerFactory, 
-            IConnectionManager connectionManager, 
+            ILoggerFactory loggerFactory,
+            IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder, 
+            NodeSettings settings, DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.connectionManager = connectionManager;
             this.network = network;
-            this.coinType = (CoinType) network.Consensus.CoinType;
+            this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.settings = settings;
             this.walletFeePolicy = walletFeePolicy;
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.Wallets.Add(wallet);
             }
-            
+
             // load data in memory for faster lookups
             this.LoadKeysLookup();
 
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // load the file from the local system
             Wallet wallet = this.fileStorage.LoadByFileName($"{name}.{WalletFileExtension}");
-            
+
             this.Load(wallet);
             return wallet;
         }
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.SaveToFile(wallet);
             return newAccount;
         }
-        
+
         /// <inheritdoc />
         public HdAddress GetUnusedAddress(WalletAccountReference accountReference)
         {
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
         }
-        
+
         /// <inheritdoc />
         public Wallet GetWallet(string walletName)
         {
@@ -398,7 +398,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(walletAccountReference.WalletName);
             HdAccount account = wallet.GetAccountByCoinType(walletAccountReference.AccountName, this.coinType);
-            
+
             if (account == null)
             {
                 throw new WalletException($"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
@@ -406,7 +406,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
         }
-        
+
         /// <inheritdoc />
         public bool SendTransaction(string transactionHex)
         {
@@ -731,7 +731,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             throw new NotImplementedException();
         }
-        
+
         /// <inheritdoc />
         public void SaveToFile()
         {
@@ -843,7 +843,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.Wallets.Add(wallet);
         }
-        
+
         /// <summary>
         /// Loads the keys and transactions we're tracking in memory for faster lookups.
         /// </summary>
@@ -886,7 +886,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
     }
-    
+
     public class TransactionFoundEventArgs : EventArgs
     {
         public Script Script { get; set; }

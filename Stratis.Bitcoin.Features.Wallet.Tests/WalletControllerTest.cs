@@ -1,27 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Security;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletControllerTest : LogsTestBase
-    {        
+    {
         [Fact]
         public void GenerateMnemonicWithoutParametersCreatesMnemonicWithDefaults()
         {
@@ -691,7 +690,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             var concurrentChain = new ConcurrentChain(Network.Main);
-            ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, new [] {concurrentChain});
+            ChainedBlock tip = WalletTestsHelpers.AppendBlock(null, new[] { concurrentChain });
 
             var connectionManagerMock = new Mock<IConnectionManager>();
             connectionManagerMock.Setup(c => c.ConnectedNodes)
@@ -1514,9 +1513,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(m => m.GetWalletsFiles())
                 .Throws(new Exception("something happened."));
-            
+
             var controller = new WalletController(walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder);
-            
+
             IActionResult result = controller.ListWalletsFiles();
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);

@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         private const long TicksPerMicrosecond = 10;
-        
+
         // Limit the number of attempts to add transactions to the block when it is
         // close to full; this is just a simple heuristic to finish quickly if the
         // mempool has a lot of entries.
@@ -159,13 +159,13 @@ namespace Stratis.Bitcoin.Features.Miner
 
             options = options ?? new AssemblerOptions();
             this.blockMinFeeRate = options.BlockMinFeeRate;
-            
+
             // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity.
             this.blockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, options.BlockMaxWeight));
-            
+
             // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity.
             this.blockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE - 1000, options.BlockMaxSize));
-            
+
             // Whether we need to account for byte usage (in addition to weight usage).
             this.needSizeAccounting = (this.blockMaxSize < network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE - 1000);
 
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected virtual void UpdateHeaders()
         {
             this.logger.LogTrace("()");
-            
+
             // Fill in header.
             this.pblock.Header.HashPrevBlock = this.pindexPrev.HashBlock;
             this.pblock.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.chain.Tip);
@@ -373,7 +373,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected virtual void AddTransactions(int nPackagesSelected, int nDescendantsUpdated)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(nPackagesSelected), nPackagesSelected, nameof(nDescendantsUpdated), nDescendantsUpdated);
-            
+
             // mapModifiedTx will store sorted packages after they are modified
             // because some of their txs are already in the block.
             var mapModifiedTx = new Dictionary<uint256, TxMemPoolModifiedEntry>();

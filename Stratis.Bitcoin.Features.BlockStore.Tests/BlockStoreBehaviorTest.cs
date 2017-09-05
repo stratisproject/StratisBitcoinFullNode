@@ -1,14 +1,12 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
-{
-    using Microsoft.Extensions.Logging;
-    using Moq;
-    using NBitcoin;
-    using Stratis.Bitcoin.Features.BlockStore;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Xunit;
-    using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
+using NBitcoin;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xunit;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
+{
     public class BlockStoreBehaviorTest
     {
         private BlockStoreBehavior behavior;

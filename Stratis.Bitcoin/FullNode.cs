@@ -12,10 +12,10 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace Stratis.Bitcoin
 {
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin
                 // Now display the other stats
                 foreach (var feature in this.Services.Features.OfType<IFeatureStats>())
                     feature.AddFeatureStats(benchLogs);
-                
+
                 benchLogs.AppendLine("======Connection======");
                 benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
                 this.logger.LogInformation(benchLogs.ToString());

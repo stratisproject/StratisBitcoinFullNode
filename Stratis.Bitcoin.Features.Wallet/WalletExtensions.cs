@@ -1,5 +1,5 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
+using System;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {

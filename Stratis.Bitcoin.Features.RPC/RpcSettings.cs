@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         public RpcSettings(Action<RpcSettings> callback)
-            :base()
+            : base()
         {
             this.callback = callback;
         }

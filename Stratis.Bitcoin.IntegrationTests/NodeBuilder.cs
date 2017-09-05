@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private HashSet<string> options;
 
-        public StratisBitcoinRunner(HashSet<string> options = null):base()
+        public StratisBitcoinRunner(HashSet<string> options = null) : base()
         {
             this.options = options;
         }
@@ -103,8 +103,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         public void Start(string dataDir)
-        {			
-            var args = NodeSettings.FromArguments(new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
+        {
+            var args = NodeSettings.FromArguments(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
 
             var node = BuildFullNode(args, this.options);
 
@@ -460,7 +460,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </summary>
         public FullNode FullNode
         {
-            get { return ((StratisBitcoinRunner) this._Runner).FullNode; }
+            get { return ((StratisBitcoinRunner)this._Runner).FullNode; }
         }
 
         private void CleanFolder()
@@ -582,16 +582,16 @@ namespace Stratis.Bitcoin.IntegrationTests
             int i = 0;
             while (i < ports.Length)
             {
-                var port = RandomUtils.GetUInt32()%4000;
+                var port = RandomUtils.GetUInt32() % 4000;
                 port = port + 10000;
                 if (ports.Any(p => p == port))
                     continue;
                 try
                 {
-                    TcpListener l = new TcpListener(IPAddress.Loopback, (int) port);
+                    TcpListener l = new TcpListener(IPAddress.Loopback, (int)port);
                     l.Start();
                     l.Stop();
-                    ports[i] = (int) port;
+                    ports[i] = (int)port;
                     i++;
                 }
                 catch (SocketException)
@@ -802,7 +802,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     //try
                     //{
-                        
+
 
                     //	var blockResult = new BlockResult { Block = block };
                     //	fullNode.ConsensusLoop.AcceptBlock(blockResult);
@@ -833,7 +833,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void BroadcastBlocks(Block[] blocks)
         {
-            using(var node = CreateNodeClient())
+            using (var node = CreateNodeClient())
             {
                 node.VersionHandshake();
                 BroadcastBlocks(blocks, node);
@@ -843,7 +843,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void BroadcastBlocks(Block[] blocks, Node node)
         {
             Block lastSent = null;
-            foreach(var block in blocks)
+            foreach (var block in blocks)
             {
                 node.SendMessageAsync(new InvPayload(block));
                 node.SendMessageAsync(new BlockPayload(block));
@@ -872,31 +872,31 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private List<Transaction> Reorder(List<Transaction> transactions)
         {
-            if(transactions.Count == 0)
+            if (transactions.Count == 0)
                 return transactions;
             var result = new List<Transaction>();
             var dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
-            foreach(var transaction in dictionary.Select(d => d.Value))
+            foreach (var transaction in dictionary.Select(d => d.Value))
             {
-                foreach(var input in transaction.Transaction.Inputs)
+                foreach (var input in transaction.Transaction.Inputs)
                 {
                     var node = dictionary.TryGet(input.PrevOut.Hash);
-                    if(node != null)
+                    if (node != null)
                     {
                         transaction.DependsOn.Add(node);
                     }
                 }
             }
-            while(dictionary.Count != 0)
+            while (dictionary.Count != 0)
             {
-                foreach(var node in dictionary.Select(d => d.Value).ToList())
+                foreach (var node in dictionary.Select(d => d.Value).ToList())
                 {
-                    foreach(var parent in node.DependsOn.ToList())
+                    foreach (var parent in node.DependsOn.ToList())
                     {
-                        if(!dictionary.ContainsKey(parent.Hash))
+                        if (!dictionary.ContainsKey(parent.Hash))
                             node.DependsOn.Remove(parent);
                     }
-                    if(node.DependsOn.Count == 0)
+                    if (node.DependsOn.Count == 0)
                     {
                         result.Add(node.Transaction);
                         dictionary.Remove(node.Hash);
@@ -908,10 +908,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private BitcoinSecret GetFirstSecret(RPCClient rpc)
         {
-            if(this.MinerSecret != null)
+            if (this.MinerSecret != null)
                 return this.MinerSecret;
             var dest = rpc.ListSecrets().FirstOrDefault();
-            if(dest == null)
+            if (dest == null)
             {
                 var address = rpc.GetNewAddress();
                 dest = rpc.DumpPrivKey(address);

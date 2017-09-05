@@ -1,11 +1,7 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Utilities;
+﻿using Stratis.Bitcoin.Utilities;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {

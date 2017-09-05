@@ -1,8 +1,8 @@
-﻿using System.Threading.Tasks;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {

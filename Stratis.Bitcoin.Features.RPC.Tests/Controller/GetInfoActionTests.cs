@@ -4,7 +4,6 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Controller

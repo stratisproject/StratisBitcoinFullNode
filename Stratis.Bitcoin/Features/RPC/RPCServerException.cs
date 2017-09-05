@@ -1,5 +1,5 @@
-﻿using System;
-using NBitcoin.RPC;
+﻿using NBitcoin.RPC;
+using System;
 
 namespace Stratis.Bitcoin.Features.RPC
 {

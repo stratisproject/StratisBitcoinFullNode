@@ -1,7 +1,6 @@
-﻿using System;
-using Microsoft.Extensions.Caching.Memory;
-using Stratis.Bitcoin.Features.BlockStore;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Features.BlockStore;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -16,7 +15,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
         }
 
         public IndexStoreCache(IIndexRepository indexRepository, IMemoryCache memoryCache, ILoggerFactory loggerFactory)
-            :base(indexRepository, memoryCache, loggerFactory)
+            : base(indexRepository, memoryCache, loggerFactory)
         {
         }
 

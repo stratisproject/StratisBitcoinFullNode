@@ -1,14 +1,13 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
-{
-    using Microsoft.Extensions.Caching.Memory;
-    using Microsoft.Extensions.Logging;
-    using Moq;
-    using NBitcoin;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Xunit;
-    using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Moq;
+using NBitcoin;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xunit;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
+{
     public class BlockStoreCacheTest
     {
         private Mock<IBlockRepository> blockRepository;
@@ -57,7 +56,8 @@
             object block = null;
             uint256 blockId = new uint256(2389704);
             this.cache.Setup(c => c.TryGetValue(blockId, out block))
-                .Callback(() => {
+                .Callback(() =>
+                {
                     block = new Block();
                     ((Block)block).Header.Version = 1513;
                 })

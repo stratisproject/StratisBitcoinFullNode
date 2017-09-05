@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using NBitcoin;
+﻿using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
+using System;
+using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
 {
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Models
         {
             this.Transactions = new List<TransactionVerboseModel>();
         }
-        
+
         /// <summary>
         /// A base58 address being watched for transactions affecting it.        
         /// </summary>

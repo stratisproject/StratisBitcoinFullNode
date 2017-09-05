@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Moq;
+﻿using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Signals;
+using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Notifications
-{    
+{
     public class TransactionNotificationTest
     {
         [Fact]
@@ -36,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
         {
             var exception = Record.Exception(() => new TransactionNotification(null));
             Assert.NotNull(exception);
-            Assert.IsType<ArgumentNullException>(exception);            
+            Assert.IsType<ArgumentNullException>(exception);
         }
     }
 }

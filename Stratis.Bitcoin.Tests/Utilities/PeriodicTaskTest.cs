@@ -1,10 +1,10 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             periodicTask.Start(new CancellationTokenSource(100).Token, TimeSpan.FromMilliseconds(33));
 
-            Thread.Sleep(120);            
+            Thread.Sleep(120);
             this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestTask starting");
             this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestTask stopping");
         }
