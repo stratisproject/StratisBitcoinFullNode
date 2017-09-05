@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn, nameof(fMineWitnessTx), fMineWitnessTx);
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
 
             base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
 

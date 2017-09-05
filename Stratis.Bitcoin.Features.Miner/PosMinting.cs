@@ -79,14 +79,29 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ILogger logger;
 
         private Task mining;
-        private readonly long lastCoinStakeSearchTime;
         private Money reserveBalance;
         private readonly int minimumInputValue;
         private readonly int minerSleep;
 
-        
-        public long LastCoinStakeSearchInterval;
-        public long LastCoinStakeSearchTime;
+        /// <summary>
+        /// Timestamp of the last attempt to search for POS solution.
+        /// <para>
+        /// It is used to prevent searching for solutions that were already proved wrong in the past.
+        /// If there is no new block since last time we searched for the solution, it does not make 
+        /// sense to try timestamps earlier than this value.
+        /// </para>
+        /// </summary>
+        private long lastCoinStakeSearchTime;
+
+        /// <summary>
+        /// Hash of the block headers of the block that was at the tip of the chain during our last 
+        /// search for POS solution.
+        /// <para>
+        /// It is used to prevent searching for solutions that were already proved wrong in the past.
+        /// If the tip changes, <see cref="lastCoinStakeSearchTime"/> is set to the new tip's header hash.
+        /// </para>
+        /// </summary>
+        private uint256 lastCoinStakeSearchPrevBlockHash;
 
         public PosMinting(
             ConsensusLoop consensusLoop, 
@@ -124,6 +139,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
             this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
+            this.lastCoinStakeSearchPrevBlockHash = 0;
             this.reserveBalance = 0; // TOOD:settings.ReserveBalance 
             this.minimumInputValue = 0;
 
@@ -143,7 +159,34 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogTrace("()");
 
-                this.GenerateBlocks(walletSecret);
+                try
+                {
+                    this.GenerateBlocks(walletSecret);
+                }
+                catch (TaskCanceledException)
+                {
+                    // Application stopping, nothing to do as the loop will be stopped.
+                }
+                catch (MinerException me)
+                {
+                    // Miner rexceptions should be ignored. It means that the miner 
+                    // possibly mined a block that was not accepted by peers or is even invalid,
+                    // but it should not halted the mining operation.
+                    this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                }
+                catch (ConsensusErrorException cee)
+                {
+                    // All consensus exceptions should be ignored. It means that the miner 
+                    // run into problems while constructing block or verifying it
+                    // but it should not halted the mining operation.
+                    this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogDebug("Exception occurred in miner loop: {0}", e.ToString());
+                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                    throw e;
+                }
 
                 this.logger.LogTrace("(-)");
                 return Task.CompletedTask;
@@ -159,16 +202,15 @@ namespace Stratis.Bitcoin.Features.Miner
         public void GenerateBlocks(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
-            this.LastCoinStakeSearchInterval = 0;
 
-            BlockTemplate pblocktemplate = null;
+            BlockTemplate pblockTemplate = null;
             bool tryToSync = true;
 
             while (true)
             {
                 if (this.chain.Tip != this.consensusLoop.Tip)
                 {
-                    this.logger.LogTrace("(-)[REORG]");
+                    this.logger.LogTrace("(-)[SYNC_OR_REORG]");
                     return;
                 }
 
@@ -177,7 +219,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
-                    this.LastCoinStakeSearchInterval = 0;
                     tryToSync = true;
                     Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 }
@@ -190,21 +231,25 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (tryToSync)
                 {
                     tryToSync = false;
+                    // TODO: This condition to have at least 3 peers is disqualifying us on testnet quite often.
+                    // Yet the 60 secs delay does not prevent us to mine because tryToSync will be false next time we are here
+                    // unless we are completely disconnected. So this is weird logic.
                     bool fewPeers = this.connection.ConnectedNodes.Count() < 3;
                     bool lastBlockTooOld = this.chain.Tip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
-                    if (fewPeers || lastBlockTooOld)
+                    if ((fewPeers && !this.network.IsTest()) || lastBlockTooOld)
                     {
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
                         if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", this.chain.Tip.Header.Time);
-                        //this.cancellationProvider.Cancellation.Token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(60000));
+
+                        Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                         continue;
                     }
                 }
 
-                if (pblocktemplate == null)
-                    pblocktemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                if (pblockTemplate == null)
+                    pblockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
-                Block pblock = pblocktemplate.Block;
+                Block pblock = pblockTemplate.Block;
                 ChainedBlock pindexPrev = this.consensusLoop.Tip;
 
                 var stakeTxes = new List<StakeTx>();
@@ -215,7 +260,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 foreach (UnspentOutputReference infoTransaction in spendable)
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
-                    TxOut utxo = set?._Outputs[infoTransaction.Transaction.Index];
+                    TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set._Outputs.Length) ? set._Outputs[infoTransaction.Transaction.Index] : null;
 
                     if ((utxo != null) && (utxo.Value > Money.Zero))
                     {
@@ -234,13 +279,13 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // Trying to sign a block.
-                if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblocktemplate.TotalFee))
+                if (this.SignBlock(stakeTxes, pblock, pindexPrev, pblockTemplate.TotalFee))
                 {
                     this.logger.LogTrace("POS block signed successfully.");
                     var blockResult = new BlockResult { Block = pblock };
                     this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), pindexPrev);
 
-                    pblocktemplate = null;
+                    pblockTemplate = null;
                 }
                 else
                 {
@@ -371,7 +416,14 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Search to current time.
             long searchTime = txCoinStake.Time;
+            if (this.lastCoinStakeSearchPrevBlockHash != pindexBest.HashBlock)
+            {
+                this.lastCoinStakeSearchPrevBlockHash = pindexBest.HashBlock;
+                this.lastCoinStakeSearchTime = pindexBest.Header.Time;
+                this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", pindexBest.HashBlock, pindexBest.Height, pindexBest.Header.Time);
+            }
 
+            // TODO: It would be great to move this condition to GenerateBlocks.
             if (searchTime > this.lastCoinStakeSearchTime)
             {
                 long searchInterval = searchTime - this.lastCoinStakeSearchTime;
@@ -409,9 +461,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 else this.logger.LogTrace("Unable to create coinstake transaction.");
 
-                this.LastCoinStakeSearchInterval = searchTime - this.LastCoinStakeSearchTime;
-                this.LastCoinStakeSearchTime = searchTime;
-                this.logger.LogTrace("Last coinstake search interval set to {0}, last coinstake search timestamp set to {1}.", this.LastCoinStakeSearchInterval, this.LastCoinStakeSearchTime);
+                this.lastCoinStakeSearchTime = searchTime;
+                this.logger.LogTrace("Last coinstake search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
             }
             else this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", searchTime, this.lastCoinStakeSearchTime);
 
@@ -471,22 +522,40 @@ namespace Stratis.Bitcoin.Features.Miner
             // it sorts the coins from heighest weight.
             setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
 
-            this.logger.LogTrace("Trying to find staking solution among {0} transactions.", setCoins.Count);
+            long minimalAllowedTime = pindexBest.Header.Time + 1;
+            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, txNew.Time);
+
+            // If the time after applying the mask is lower than minimal allowed time,
+            // it is simply too early for us to mine, there can't be any valid solution.
+            if ((txNew.Time & ~PosConsensusValidator.StakeTimestampMask) < minimalAllowedTime)
+            {
+                this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
+                return false;
+            }
+
             foreach (StakeTx coin in setCoins)
             {
                 this.logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
-                int maxStakeSearchInterval = 60;
                 bool fKernelFound = false;
 
-                for (uint n = 0; n < Math.Min(nSearchInterval, maxStakeSearchInterval) && !fKernelFound; n++)
+                for (uint n = 0; (n < nSearchInterval) && !fKernelFound; n++)
                 {
+                    uint txTime = txNew.Time - n;
+
+                    // Once we reach previous block time + 1, we can't go any lower
+                    // because it is required that the block time is greater than the previous block time.
+                    if (txTime < minimalAllowedTime)
+                        break;
+
+                    if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
+                        continue;
+
                     if (pindexPrev != this.chain.Tip)
                     {
                         this.logger.LogTrace("(-)[REORG]:false");
                         return false;
                     }
 
-                    uint txTime = txNew.Time - n;
                     this.logger.LogTrace("Trying with transaction time {0}...", txTime);
                     try
                     {
@@ -496,13 +565,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         var context = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
                         context.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(context, pindexPrev, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
-
-                        // TODO: Do this check as a first thing in the loop, not after checking kernel.
-                        if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
-                        {
-                            this.logger.LogTrace("Trying with transaction time {0}...", txTime);
-                            continue;
-                        }
 
                         // TODO: This is always true - CheckKernel either throws or fills in POS hash.
                         if (context.Stake.HashProofOfStake != null)

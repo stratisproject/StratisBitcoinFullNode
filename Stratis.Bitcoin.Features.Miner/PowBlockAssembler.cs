@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /** Construct a new block template with coinbase to scriptPubKeyIn */
         public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn, nameof(fMineWitnessTx), fMineWitnessTx);
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
 
             long nTimeStart = DateTime.UtcNow.Ticks / TicksPerMicrosecond;
             this.pblock = this.pblocktemplate.Block; // Pointer for convenience.

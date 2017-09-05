@@ -680,7 +680,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             pBlockTime = prevBlock.Header.Time;
 
             this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, prevout, (uint)nTime);
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):{0}={1}", nameof(pBlockTime), pBlockTime);
         }
 
         public static bool IsProtocolV2(int height)

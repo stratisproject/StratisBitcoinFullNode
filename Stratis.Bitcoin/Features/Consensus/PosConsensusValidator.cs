@@ -10,11 +10,28 @@ using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
+    /// <summary>
+    /// TODO
+    /// </summary>
+    /// <remarks>
+    /// These are the criteria for a new block to be accepted as a valid POS block:
+    /// <list type="bullet">
+    /// <item>New block's timestamp has to be strictly greater than previous block's timestamp.</item>
+    /// <item>TODO</item>
+    /// <item>TODO</item>
+    /// <item>TODO</item>
+    /// <item>TODO</item>
+    /// <item>TODO</item>
+    /// <item>TODO</item>
+    /// <item>TODO</item>
+    /// <item>TODO</item>
+    /// </list>
+    /// </remarks>
     public class PosConsensusValidator : PowConsensusValidator
     {
         // To decrease granularity of timestamp.
         // Supposed to be 2^n-1.
-        public const uint StakeTimestampMask = 15;
+        public const uint StakeTimestampMask = 0x0000000F;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
