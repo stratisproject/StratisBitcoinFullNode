@@ -23,18 +23,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             settings1.Load(nodeSettings);
 
-            Assert.False(settings1.TxIndex);
+            Assert.False(settings1.ReIndex);
 
             var node2 = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
-                .UseBlockStore(x => x.TxIndex = true)
+                .UseBlockStore(x => x.ReIndex = true)
                 .Build();
 
             var settings2 = node2.NodeService<StoreSettings>();
 
             settings2.Load(nodeSettings);
 
-            Assert.True(settings2.TxIndex);
+            Assert.True(settings2.ReIndex);
         }
     }
 }

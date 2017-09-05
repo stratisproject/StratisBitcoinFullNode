@@ -45,14 +45,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.Prune = config.GetOrDefault("prune", 0) != 0;
             this.TxIndex = config.GetOrDefault("txindex", 0) != 0;
+            this.ReIndex = config.GetOrDefault("reindex", 0) != 0;
+
+            this.callback?.Invoke(this);
+
             if (this.Prune && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
 
-            this.ReIndex = config.GetOrDefault("reindex", 0) != 0;
-
             // TODO: --reindex
 
-            this.callback?.Invoke(this);
         }
     }
 }
