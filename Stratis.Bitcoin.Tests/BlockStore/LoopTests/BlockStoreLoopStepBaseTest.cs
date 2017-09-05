@@ -116,6 +116,12 @@ namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
             this.nodeLifeTime = new Mock<INodeLifetime>();
         }
 
+        internal FluentBlockStoreLoop AsIBD()
+        {
+            this.chainState.Object.SetIsInitialBlockDownload(true, DateTime.Today.AddDays(1));
+            return this;
+        }
+
         internal FluentBlockStoreLoop WithConcreteLoopFactory()
         {
             this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory.Object);

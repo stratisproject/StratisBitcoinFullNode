@@ -58,14 +58,19 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         /// <param name="network">Network to create the chain on.</param>
         /// <param name="scriptPubKey">Public key to create blocks/txs with.</param>
         /// <returns>Context object representing the test chain.</returns>
-        public static ITestChainContext Create(Network network, Script scriptPubKey)
+        public static ITestChainContext Create(Network network, Script scriptPubKey, string dataDir)
         {
-            NodeSettings nodeSettings = NodeSettings.Default();
+            NodeSettings nodeSettings = NodeSettings.Default(network);
+            if (dataDir != null)
+            {
+                nodeSettings.DataDir = dataDir;
+            }
+
             LoggerFactory loggerFactory = new LoggerFactory();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new PowConsensusOptions();
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network);
+            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), loggerFactory);
 
@@ -213,9 +218,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            Mock<ILogger> logger = new Mock<ILogger>();
-
-            return new PowBlockAssembler(consensus, network, chain, mempoolLock, mempool, date, logger.Object, options);
+            return new PowBlockAssembler(consensus, network, chain, mempoolLock, mempool, date, new LoggerFactory(), options);
         }
     }
 }
