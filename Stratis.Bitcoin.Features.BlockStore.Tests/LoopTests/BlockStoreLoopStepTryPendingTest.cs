@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
+namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopStepTryPendingTest : BlockStoreLoopStepBaseTest
     {

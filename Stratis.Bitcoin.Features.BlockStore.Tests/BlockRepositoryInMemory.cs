@@ -1,11 +1,10 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Tests.BlockStore
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class BlockRepositoryInMemory : Bitcoin.Features.BlockStore.IBlockRepository
     {

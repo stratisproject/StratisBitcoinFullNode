@@ -1,11 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
+namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopStepReorganiseTest : BlockStoreLoopStepBaseTest
     {

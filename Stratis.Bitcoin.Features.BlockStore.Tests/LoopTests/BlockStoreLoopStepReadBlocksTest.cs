@@ -6,7 +6,7 @@ using System.Threading;
 using Xunit;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
-namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
+namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     public sealed class BlockStoreLoopStepDownloadBlocksTest : BlockStoreLoopStepBaseTest
     {

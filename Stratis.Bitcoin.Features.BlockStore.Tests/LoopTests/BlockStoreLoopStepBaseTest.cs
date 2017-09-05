@@ -6,13 +6,13 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Stratis.Bitcoin.Tests.BlockStore.LoopTests
+namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     /// <summary>
     /// Base test class for all the BlockStoreLoop tests.
