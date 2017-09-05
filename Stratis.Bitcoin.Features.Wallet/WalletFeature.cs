@@ -73,6 +73,8 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public static IFullNodeBuilder UseWallet(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<WalletFeature>("wallet");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features

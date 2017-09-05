@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -18,6 +14,9 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -34,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		    options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
 		    options.BlockMinFeeRate = blockMinFeeRate;
 
-		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.mempoolLock, testContext.mempool, testContext.date, NullLogger.Instance, options);
+		    return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.mempoolLock, testContext.mempool, testContext.date, new LoggerFactory(), options);
 	    }
 		public class Blockinfo
 		{
@@ -88,7 +87,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 			return MempoolValidator.CheckSequenceLocks(chainedBlock, context, flags, uselock, false);
 	    }
 
-		public class TestContext
+        // TODO: There may be an opportunity to share the logic for populating the chain (TestContext) using TestChainFactory in the mempool unit tests. 
+        //       Most of the logic for mempool's TestChainFactory was taken directly from the "TestContext" class that is embedded below.
+        public class TestContext
 		{
 			public List<Blockinfo> blockinfo;
 			public Network network;
@@ -128,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			    this.chain = new ConcurrentChain(this.network);
 			    this.network.Consensus.Options = new PowConsensusOptions();
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), new LoggerFactory());
-			    this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network));
+			    this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network, new LoggerFactory()), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network));
 			    this.consensus.Initialize();
 
 				this.entry.Fee(11);

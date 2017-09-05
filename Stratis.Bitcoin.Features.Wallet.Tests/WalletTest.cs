@@ -6,7 +6,7 @@ using System.Text;
 using Stratis.Bitcoin.Features.Wallet;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Wallet
+namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletTest : WalletTestBase
     {
