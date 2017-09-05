@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public StoreSettings(NodeSettings nodeSettings, Action<StoreSettings> callback = null)
             :this(callback)
         {
-            Load(nodeSettings);
+            this.Load(nodeSettings);
         }
 
         /// <summary>
