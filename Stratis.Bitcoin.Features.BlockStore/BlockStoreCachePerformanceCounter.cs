@@ -1,155 +1,159 @@
-﻿using Stratis.Bitcoin.Configuration.Logging;
-using System;
-using System.Text;
-using System.Threading;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
-	public class BlockStoreCachePerformanceCounter
-	{
-		private long cacheSetCount;
-		private long cacheRemoveCount;
-		private long cacheHitCount;
-		private long cacheMissCount;
+    using System;
+    using System.Text;
+    using System.Threading;
+
+    using Stratis.Bitcoin.Configuration.Logging;
+
+    public class BlockStoreCachePerformanceCounter
+    {
+        private long cacheSetCount;
+
+        private long cacheRemoveCount;
+
+        private long cacheHitCount;
+
+        private long cacheMissCount;
+
         public string Name { get; private set; }
         public DateTime Start { get; private set; }
 
         public BlockStoreCachePerformanceCounter(string name = "BlockStore")
-		{
+        {
             this.Name = name;
-			this.Start = DateTime.UtcNow;
-		}
+            this.Start = DateTime.UtcNow;
+        }
 
-		public TimeSpan Elapsed
-		{
-			get
-			{
-				return DateTime.UtcNow - this.Start;
-			}
-		}
+        public TimeSpan Elapsed
+        {
+            get
+            {
+                return DateTime.UtcNow - this.Start;
+            }
+        }
 
-		public long CacheSetCount
-		{
-			get
-			{
-				return this.cacheSetCount;
-			}
-		}
+        public long CacheSetCount
+        {
+            get
+            {
+                return this.cacheSetCount;
+            }
+        }
 
-		public long CacheRemoveCount
-		{
-			get
-			{
-				return this.cacheRemoveCount;
-			}
-		}
+        public long CacheRemoveCount
+        {
+            get
+            {
+                return this.cacheRemoveCount;
+            }
+        }
 
+        public long CacheHitCount
+        {
+            get
+            {
+                return this.cacheHitCount;
+            }
+        }
 
-		public long CacheHitCount
-		{
-			get
-			{
-				return this.cacheHitCount;
-			}
-		}
+        public long CacheMissCount
+        {
+            get
+            {
+                return this.cacheMissCount;
+            }
+        }
 
-		public long CacheMissCount
-		{
-			get
-			{
-				return this.cacheMissCount;
-			}
-		}
+        public void AddCacheHitCount(long count)
+        {
+            Interlocked.Add(ref this.cacheHitCount, count);
+        }
 
-		public void AddCacheHitCount(long count)
-		{
-			Interlocked.Add(ref this.cacheHitCount, count);
-		}
+        public void AddCacheRemoveCount(long count)
+        {
+            Interlocked.Add(ref this.cacheRemoveCount, count);
+        }
 
-		public void AddCacheRemoveCount(long count)
-		{
-			Interlocked.Add(ref this.cacheRemoveCount, count);
-		}
+        public void AddCacheMissCount(long count)
+        {
+            Interlocked.Add(ref this.cacheMissCount, count);
+        }
 
-		public void AddCacheMissCount(long count)
-		{
-			Interlocked.Add(ref this.cacheMissCount, count);
-		}
+        public void AddCacheSetCount(long count)
+        {
+            Interlocked.Add(ref this.cacheSetCount, count);
+        }
 
-		public void AddCacheSetCount(long count)
-		{
-			Interlocked.Add(ref this.cacheSetCount, count);
-		}
-
-		public virtual BlockStoreCachePerformanceSnapshot Snapshot()
-		{
+        public virtual BlockStoreCachePerformanceSnapshot Snapshot()
+        {
 #if !(PORTABLE || NETCORE)
-			Thread.MemoryBarrier();
+            Thread.MemoryBarrier();
 #endif
-			var snap = new BlockStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount, this.Name)
-			{
-				Start = this.Start,
-				Taken = DateTime.UtcNow
-			};
-			return snap;
-		}
+            var snap = new BlockStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount, this.Name)
+            {
+                Start = this.Start,
+                Taken = DateTime.UtcNow
+            };
+            return snap;
+        }
 
-		public override string ToString()
-		{
-			return this.Snapshot().ToString();
-		}
-	}
+        public override string ToString()
+        {
+            return this.Snapshot().ToString();
+        }
+    }
 
-	public class BlockStoreCachePerformanceSnapshot
-	{
-		private readonly long cacheHitCount;
-		private readonly long cacheMissCount;
-		private readonly long cacheRemoveCount;
-		private readonly long cacheSetCount;
+    public class BlockStoreCachePerformanceSnapshot
+    {
+        private readonly long cacheHitCount;
+        private readonly long cacheMissCount;
+        private readonly long cacheRemoveCount;
+        private readonly long cacheSetCount;
         public string Name { get; private set; }
         public DateTime Start { get; set; }
         public DateTime Taken { get; set; }
   
         public BlockStoreCachePerformanceSnapshot(long cacheHitCount, long cacheMissCount, long cacheRemoveCount, long cacheSetCount, string name = "BlockStore")
-		{
-			this.cacheHitCount = cacheHitCount;
-			this.cacheMissCount = cacheMissCount;
-			this.cacheRemoveCount = cacheRemoveCount;
+        {
+            this.cacheHitCount = cacheHitCount;
+            this.cacheMissCount = cacheMissCount;
+            this.cacheRemoveCount = cacheRemoveCount;
             this.cacheSetCount = cacheSetCount;
             this.Name = name;
-		}
+        }
 
-		public long TotalCacheHitCount
-		{
-			get
-			{
-				return this.cacheHitCount;
-			}
-		}
+        public long TotalCacheHitCount
+        {
+            get
+            {
+                return this.cacheHitCount;
+            }
+        }
 
-		public long TotalCacheMissCount
-		{
-			get
-			{
-				return this.cacheMissCount;
-			}
-		}
+        public long TotalCacheMissCount
+        {
+            get
+            {
+                return this.cacheMissCount;
+            }
+        }
 
-		public long TotalCacheRemoveCount
-		{
-			get
-			{
-				return this.cacheRemoveCount;
-			}
-		}
+        public long TotalCacheRemoveCount
+        {
+            get
+            {
+                return this.cacheRemoveCount;
+            }
+        }
 
-		public long TotalCacheSetCount
-		{
-			get
-			{
-				return this.cacheSetCount;
-			}
-		}
+        public long TotalCacheSetCount
+        {
+            get
+            {
+                return this.cacheSetCount;
+            }
+        }
 
         public TimeSpan Elapsed
         {
@@ -180,24 +184,24 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         public override string ToString()
-		{
-			StringBuilder builder = new StringBuilder();
+        {
+            StringBuilder builder = new StringBuilder();
 
-			builder.AppendLine($"===={this.Name} Cache Stats(%)====");			
-			builder.AppendLine("Hit Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheHitCount);			
-			builder.AppendLine("Miss Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheMissCount);
-			builder.AppendLine("Remove Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheRemoveCount);
-			builder.AppendLine("Set Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheSetCount);
+            builder.AppendLine($"===={this.Name} Cache Stats(%)====");
+            builder.AppendLine("Hit Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheHitCount);
+            builder.AppendLine("Miss Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheMissCount);
+            builder.AppendLine("Remove Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheRemoveCount);
+            builder.AppendLine("Set Count:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalCacheSetCount);
 
-			var total = this.TotalCacheMissCount + this.TotalCacheHitCount;
-			if (this.TotalCacheHitCount > 0 || this.TotalCacheMissCount > 0)
-			{
-				builder.AppendLine("Hit:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalCacheHitCount * 100m / total).ToString("0.00") + " %");
-				builder.AppendLine("Miss:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalCacheMissCount * 100m / total).ToString("0.00") + " %");
-			}			
-			builder.AppendLine("=================================");
+            var total = this.TotalCacheMissCount + this.TotalCacheHitCount;
+            if (this.TotalCacheHitCount > 0 || this.TotalCacheMissCount > 0)
+            {
+                builder.AppendLine("Hit:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalCacheHitCount * 100m / total).ToString("0.00") + " %");
+                builder.AppendLine("Miss:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.TotalCacheMissCount * 100m / total).ToString("0.00") + " %");
+            }
+            builder.AppendLine("=================================");
 
-			return builder.ToString();
-		}
-	}	
+            return builder.ToString();
+        }
+    }
 }

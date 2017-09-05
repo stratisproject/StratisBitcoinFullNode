@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Text;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
+    using System;
+    using System.Text;
+    using Microsoft.Extensions.Logging;
+
     public sealed class BlockStoreStats
     {
         /// <summary>Instance logger.</summary>

@@ -1,12 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
+    using System.Collections.Concurrent;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+
     /// <summary>
     /// Check if the next block is in pending storage i.e. first process pending storage blocks
     /// before find and downloading more blocks.
@@ -46,11 +47,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             var context = new ProcessPendingStorageContext(this.BlockStoreLoop, nextChainedBlock);
 
-            //Next block does not exist in pending storage, continue onto the download blocks step.
+            // Next block does not exist in pending storage, continue onto the download blocks step.
             if (!this.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
                 return StepResult.Next;
 
-            //If pending storage has not yet reached the threshold or the node is in IDB, stop the loop and wait for more blocks.
+            // If pending storage has not yet reached the threshold or the node is in IDB, stop the loop and wait for more blocks.
             if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload == true &&
                 disposeMode == false &&
                 this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)

@@ -1,8 +1,8 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Utilities;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
+    using NBitcoin;
+    using Stratis.Bitcoin.Utilities;
+
     public sealed class BlockPair
     {
         /// <summary>
@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         public Block Block { get; private set; }
+
         public ChainedBlock ChainedBlock { get; private set; }
     }
 }

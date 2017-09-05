@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using System.Linq;
-using System.Threading.Tasks;
-using static Stratis.Bitcoin.BlockPulling.BlockPuller;
-
-namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+    using static Stratis.Bitcoin.BlockPulling.BlockPuller;
+
     /// <summary>
     /// Reads blocks from the <see cref="BlockPuller"/> in a loop and removes block 
     /// from the <see cref="BlockStoreInnerStepContext.DownloadStack"/>.
@@ -50,11 +50,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 {
                     this.logger.LogTrace("Puller provided block '{0}/{1}', length {2}.", nextBlock.HashBlock, nextBlock.Height, downloadedBlock.Length);
 
-                    ChainedBlock lastBlockToPush = AddDownloadedBlockToStore(context, downloadedBlock);
+                    ChainedBlock lastBlockToPush = this.AddDownloadedBlockToStore(context, downloadedBlock);
 
-                    if (ShouldBlocksBePushedToRepository(context))
+                    if (this.ShouldBlocksBePushedToRepository(context))
                     {
-                        await PushBlocksToRepository(context, lastBlockToPush);
+                        await this.PushBlocksToRepository(context, lastBlockToPush);
 
                         if (!context.DownloadStack.Any())
                         {

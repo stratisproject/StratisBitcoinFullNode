@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+
     /// <summary>
     /// Find blocks to download by asking the BlockPuller.
     /// <para>

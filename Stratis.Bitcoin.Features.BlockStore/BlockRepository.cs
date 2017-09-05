@@ -1,15 +1,15 @@
-﻿using DBreeze.Utils;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
+    using DBreeze.Utils;
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+    using Stratis.Bitcoin.Configuration;
+    using Stratis.Bitcoin.Utilities;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+
     public interface IBlockRepository : IDisposable
     {
         Task Initialize();

@@ -1,18 +1,23 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Utilities;
-using System;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
+    using System;
+    using System.Threading.Tasks;
+
+    using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+    using Stratis.Bitcoin.Utilities;
+
     public interface IBlockStoreCache : IDisposable
     {
         void Expire(uint256 blockid);
+
         Task<Block> GetBlockAsync(uint256 blockid);
+
         Task<Block> GetBlockByTrxAsync(uint256 trxid);
+
         Task<Transaction> GetTrxAsync(uint256 trxid);
+
         void AddToCache(Block block);
     }
 
@@ -37,7 +42,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.blockRepository = blockRepository;
             this.cache = memoryCache;
-            this.PerformanceCounter = BlockStoreCachePerformanceCounterFactory();
+            this.PerformanceCounter = this.BlockStoreCachePerformanceCounterFactory();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 

@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+
     /// <summary>
     /// Reorganises the <see cref="BlockRepository"/>.
     /// <para>
@@ -46,7 +46,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (this.BlockStoreLoop.StoreTip.HashBlock != nextChainedBlock.Header.HashPrevBlock)
             {
                 if (disposeMode)
+                {
                     return StepResult.Stop;
+                }
 
                 var blocksToDelete = new List<uint256>();
                 var blockToDelete = this.BlockStoreLoop.StoreTip;

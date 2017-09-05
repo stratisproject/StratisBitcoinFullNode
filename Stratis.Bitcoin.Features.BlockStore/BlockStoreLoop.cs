@@ -1,17 +1,18 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+    using Stratis.Bitcoin.Base;
+    using Stratis.Bitcoin.BlockPulling;
+    using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+    using Stratis.Bitcoin.Utilities;
+
     /// <summary>
     /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
     /// </summary>
@@ -144,7 +145,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await this.BlockRepository.SetTxIndex(this.storeSettings.TxIndex);
             }
 
-            SetHighestPersistedBlock(this.StoreTip);
+            this.SetHighestPersistedBlock(this.StoreTip);
 
             this.stepChain = new BlockStoreStepChain();
             this.stepChain.SetNextStep(new ReorganiseBlockRepositoryStep(this, this.loggerFactory));
@@ -152,7 +153,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.stepChain.SetNextStep(new ProcessPendingStorageStep(this, this.loggerFactory));
             this.stepChain.SetNextStep(new DownloadBlockStep(this, this.loggerFactory, this.dateTimeProvider));
 
-            StartLoop();
+            this.StartLoop();
 
             this.logger.LogTrace("(-)");
         }
@@ -190,7 +191,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         ///<summary>Persists unsaved blocks to disk when the node shuts down.</summary>
         public Task Flush()
         {
-            return DownloadAndStoreBlocks(CancellationToken.None, true);
+            return this.DownloadAndStoreBlocks(CancellationToken.None, true);
         }
 
         /// <summary>
@@ -272,7 +273,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.StoreTip = chainedBlock;
 
-            SetHighestPersistedBlock(chainedBlock);
+            this.SetHighestPersistedBlock(chainedBlock);
 
             this.logger.LogTrace("(-)");
         }

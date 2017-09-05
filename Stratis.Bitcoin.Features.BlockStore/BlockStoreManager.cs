@@ -1,14 +1,15 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
+    using NBitcoin;
+    using Stratis.Bitcoin.Base;
+    using Stratis.Bitcoin.Configuration;
+    using Stratis.Bitcoin.Connection;
+
     public class BlockStoreManager
     {
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connection;
+
         public IBlockRepository BlockRepository { get; } // public for testing
         public BlockStoreLoop BlockStoreLoop { get; } // public for testing
 

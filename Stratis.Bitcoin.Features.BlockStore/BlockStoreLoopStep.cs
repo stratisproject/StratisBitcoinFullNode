@@ -1,12 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Utilities;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+    using Stratis.Bitcoin.Utilities;
+
     /// <summary>
     /// The chain of block store loop steps that is executed when the
     /// BlockStoreLoop's DownloadAndStoreBlocks is called.
@@ -17,6 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private List<BlockStoreLoopStep> steps = new List<BlockStoreLoopStep>();
 
         /// <summary>Set the next step to execute in the BlockStoreLoop.</summary>
+        /// <param name="step">The next step to execute.</param>
         internal void SetNextStep(BlockStoreLoopStep step)
         {
             this.steps.Add(step);

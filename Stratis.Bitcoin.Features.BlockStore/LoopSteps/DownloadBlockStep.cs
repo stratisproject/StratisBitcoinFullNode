@@ -1,12 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Base;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+    using Stratis.Bitcoin.Base;
+
     /// <summary>
     /// Continuously find and download blocks until a stop condition is found.
     ///<para>
@@ -44,7 +45,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
 
             if (disposeMode)
+            {
                 return StepResult.Stop;
+            }
 
             var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory, this.dateTimeProvider);
             while (!token.IsCancellationRequested)
@@ -53,7 +56,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 {
                     InnerStepResult innerStepResult = await innerStep.ExecuteAsync(context);
                     if (innerStepResult == InnerStepResult.Stop)
+                    {
                         return StepResult.Next;
+                    }
                 }
             }
 
