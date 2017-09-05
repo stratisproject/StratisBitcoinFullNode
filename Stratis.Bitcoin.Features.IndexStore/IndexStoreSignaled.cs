@@ -1,15 +1,15 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Utilities;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
-    public class IndexStoreSignaled: BlockStoreSignaled
+    public class IndexStoreSignaled : BlockStoreSignaled
     {
         public IndexStoreSignaled(IndexStoreLoop storeLoop, ConcurrentChain chain, IndexSettings indexSettings,
             ChainState chainState, IConnectionManager connection,
