@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new PowConsensusOptions();
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network);
+            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), loggerFactory);
 
@@ -218,9 +218,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            Mock<ILogger> logger = new Mock<ILogger>();
-
-            return new PowBlockAssembler(consensus, network, chain, mempoolLock, mempool, date, logger.Object, options);
+            return new PowBlockAssembler(consensus, network, chain, mempoolLock, mempool, date, new LoggerFactory(), options);
         }
     }
 }
