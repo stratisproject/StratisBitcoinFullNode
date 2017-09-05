@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected readonly CoinType coinType;
         protected readonly ILogger logger;
         private readonly IBlockStoreCache blockStoreCache;
-        private readonly NodeSettings nodeSettings;
+        private readonly StoreSettings storeSettings;
         private readonly INodeLifetime nodeLifetime;
 
         protected ChainedBlock walletTip;
@@ -25,12 +25,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         public ChainedBlock WalletTip => this.walletTip;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, 
+            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings)
             Network network, IBlockStoreCache blockStoreCache, NodeSettings nodeSettings, INodeLifetime nodeLifetime)
         {
             this.walletManager = walletManager as WalletManager;
             this.chain = chain;
             this.blockStoreCache = blockStoreCache;
             this.coinType = (CoinType)network.Consensus.CoinType;
+            this.storeSettings = storeSettings;
             this.nodeSettings = nodeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -43,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // if the wallet falls behind the block puller.
             // to support pruning the wallet will need to be 
             // able to download blocks from peers to catch up.
-            if (this.nodeSettings.Store.Prune)
+            if (this.storeSettings.Prune)
                 throw new WalletException("Wallet can not yet run on a pruned node");
 
             this.logger.LogInformation($"WalletSyncManager initialized. wallet at block {this.walletManager.LastBlockHeight()}.");

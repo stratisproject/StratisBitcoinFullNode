@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp1.1</TargetFramework>
-    <AssemblyName>Stratis.Bitcoin.Tests</AssemblyName>
-    <PackageId>Stratis.Bitcoin.Tests</PackageId>
+    <AssemblyName>Stratis.Bitcoin.Features.BlockStore.Tests</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Features.BlockStore.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <PackageTargetFallback>$(PackageTargetFallback);netcore50</PackageTargetFallback>
     <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
@@ -22,24 +22,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Stratis.Bitcoin.Tests\**" />
-    <EmbeddedResource Remove="Stratis.Bitcoin.Tests\**" />
-    <None Remove="Stratis.Bitcoin.Tests\**" />
+    <Compile Remove="Stratis.Bitcoin.BlockStore.Tests\**" />
+    <EmbeddedResource Remove="Stratis.Bitcoin.BlockStore.Tests\**" />
+    <None Remove="Stratis.Bitcoin.BlockStore.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DBreeze" Version="1.85.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170618-03" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.0-beta3-build3705" />
     <PackageReference Include="xunit" Version="2.3.0-beta3-build3705" />
-    <PackageReference Include="Microsoft.DotNet.InternalAbstractions" Version="1.0.500-preview2-1-003177" />
     <PackageReference Include="Moq" Version="4.7.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.BlockStore\Stratis.Bitcoin.Features.BlockStore.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Tests\Stratis.Bitcoin.Tests.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 
@@ -51,10 +49,6 @@
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="BlockStore\" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
@@ -60,7 +59,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         /// <returns>Context object representing the test chain.</returns>
         public static ITestChainContext Create(Network network, Script scriptPubKey, string dataDir)
         {
-            NodeSettings nodeSettings = NodeSettings.Default(network);
+            NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dataDir}" }, network.Name, network);
             if (dataDir != null)
             {
                 nodeSettings.DataDir = dataDir;
@@ -85,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             MempoolAsyncLock mempoolLock = new MempoolAsyncLock();
 
             // Simple block creation, nothing special yet:
-            PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider);
+            PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             BlockTemplate newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
             consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
@@ -125,7 +124,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             }
 
             // Just to make sure we can still make simple blocks
-            blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider);
+            blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
 
             MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, nodeSettings, chain, cachedCoinView, loggerFactory);
@@ -208,7 +207,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         /// <param name="mempool">Memory pool for transactions.</param>
         /// <param name="date">Date and time provider.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockAssembler CreatePowBlockAssembler(Network network, ConsensusLoop consensus, ConcurrentChain chain, MempoolAsyncLock mempoolLock, TxMempool mempool, IDateTimeProvider date)
+        private static PowBlockAssembler CreatePowBlockAssembler(Network network, ConsensusLoop consensus, ConcurrentChain chain, MempoolAsyncLock mempoolLock, TxMempool mempool, IDateTimeProvider date, LoggerFactory loggerFactory)
         {
             AssemblerOptions options = new AssemblerOptions();
 
@@ -218,7 +217,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(consensus, network, chain, mempoolLock, mempool, date, new LoggerFactory(), options);
+            return new PowBlockAssembler(consensus, network, chain, mempoolLock, mempool, date, loggerFactory, options);
         }
     }
 }
