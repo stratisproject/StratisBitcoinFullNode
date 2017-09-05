@@ -16,9 +16,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
     /// </summary>
-    public class BlockStoreLoop
+    public class BlockStoreLoop : IWaitUntilAsyncLoopCompletes, IDisposable
     {
-        private readonly IAsyncLoopFactory asyncLoopFactory;
+        public IAsyncLoopFactory AsyncLoopFactory { get; private set; }
         public StoreBlockPuller BlockPuller { get; }
         public IBlockRepository BlockRepository { get; }
         private readonly BlockStoreStats blockStoreStats;
@@ -36,6 +36,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Factory for creating loggers.</summary>
+        public Task LoopTask { get; private set; }
 
         /// <summary>Maximum number of bytes the block puller can download before the downloaded blocks are stored to the disk.</summary>
         internal const uint MaxInsertBlockSize = 20 * 1024 * 1024;
@@ -72,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.AsyncLoopFactory = asyncLoopFactory;
             this.BlockPuller = blockPuller;
             this.BlockRepository = blockRepository;
             this.Chain = chain;
@@ -189,7 +192,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         ///<summary>Persists unsaved blocks to disk when the node shuts down.</summary>
-        public Task Flush()
+        private Task Flush()
         {
             return DownloadAndStoreBlocks(CancellationToken.None, true);
         }
@@ -197,21 +200,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Executes DownloadAndStoreBlocks()
         /// </summary>
-        internal void StartLoop()
+        private void StartLoop()
         {
             this.logger.LogTrace("()");
 
-            this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
-                {
-                    this.logger.LogTrace("()");
-
-                    await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping);
-
-                    this.logger.LogTrace("(-)");
-                },
-                this.nodeLifetime.ApplicationStopping,
-                repeatEvery: TimeSpans.Second,
-                startAfter: TimeSpans.FiveSeconds);
+            this.LoopTask = this.AsyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
+                            {
+                                this.logger.LogTrace("()");
+                                await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping, false);
+                                this.logger.LogTrace("(-)");
+                            },
+                            this.nodeLifetime.ApplicationStopping,
+                            repeatEvery: TimeSpans.Second,
+                            startAfter: TimeSpans.FiveSeconds);
 
             this.logger.LogTrace("(-)");
         }
@@ -241,7 +242,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// a read is normally done when a peer is asking for the entire block (not just the key) 
         /// then if LazyLoadingOn = false the read will be faster on the entire block      
         /// </remarks>
-        private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode = false)
+        private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode)
         {
             this.logger.LogTrace("({0}:{1})", nameof(disposeMode), disposeMode);
 
@@ -278,6 +279,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>Set the chain state's <see cref="ChainState.HighestPersistedBlock"/>
         protected virtual void SetHighestPersistedBlock(ChainedBlock block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block?.HashBlock);
@@ -285,6 +287,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.ChainState.HighestPersistedBlock = block;
 
             this.logger.LogTrace("(-)");
+        }
+
+        public void Dispose()
+        {
+            Flush();
+
+            this.LoopTask.GetAwaiter().GetResult();
         }
     }
 }

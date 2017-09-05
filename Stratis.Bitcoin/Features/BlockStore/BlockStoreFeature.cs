@@ -13,6 +13,12 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
+    public interface IWaitUntilAsyncLoopCompletes
+    {
+        IAsyncLoopFactory AsyncLoopFactory { get; }
+        Task LoopTask { get; }
+    }
+
     public class BlockStoreFeature : FullNodeFeature, IBlockStore
     {
         protected readonly ConcurrentChain chain;
@@ -36,18 +42,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly string name;
 
         public BlockStoreFeature(
-            ConcurrentChain chain, 
-            IConnectionManager connectionManager, 
-            Signals.Signals signals, 
+            ConcurrentChain chain,
+            IConnectionManager connectionManager,
+            Signals.Signals signals,
             IBlockRepository blockRepository,
-            IBlockStoreCache blockStoreCache, 
-            StoreBlockPuller blockPuller, 
-            BlockStoreLoop blockStoreLoop, 
+            IBlockStoreCache blockStoreCache,
+            StoreBlockPuller blockPuller,
+            BlockStoreLoop blockStoreLoop,
             BlockStoreManager blockStoreManager,
-            BlockStoreSignaled blockStoreSignaled, 
-            INodeLifetime nodeLifetime, 
-            NodeSettings nodeSettings, 
-            ILoggerFactory loggerFactory, 
+            BlockStoreSignaled blockStoreSignaled,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            ILoggerFactory loggerFactory,
             string name = "BlockStore")
         {
             this.name = name;
@@ -104,11 +110,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.logger.LogInformation("Flushing {0}...", this.name);
-            this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
-
+            this.logger.LogInformation("Disposing {0}...", nameof(this.blockStoreManager.BlockStoreLoop));
+            this.blockStoreManager.BlockStoreLoop.Dispose();
+            this.logger.LogInformation("Disposing {0}...", nameof(this.blockStoreSignaled));
+            this.blockStoreSignaled.Dispose();
+            this.logger.LogInformation("Disposing {0}...", nameof(this.blockStoreCache));
             this.blockStoreCache.Dispose();
-            this.blockRepository.Dispose();
 
             this.logger.LogTrace("(-)");
         }

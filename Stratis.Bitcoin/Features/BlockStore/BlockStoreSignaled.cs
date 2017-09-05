@@ -8,23 +8,26 @@ using Stratis.Bitcoin.Utilities;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreSignaled : SignalObserver<Block>
+    public class BlockStoreSignaled : SignalObserver<Block>, IWaitUntilAsyncLoopCompletes
     {
+        public IAsyncLoopFactory AsyncLoopFactory { get; private set; }
+        private readonly IBlockRepository blockRepository;
+        private readonly BlockStoreLoop blockStoreLoop;
+        private readonly ConcurrentChain chain;
+        private readonly ChainState chainState;
+        private readonly IConnectionManager connection;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly BlockStoreLoop storeLoop;
-        private readonly ConcurrentChain chain;
-        private readonly NodeSettings nodeArgs;
-        private readonly ChainState chainState;
-        private readonly IConnectionManager connection;
-        private readonly INodeLifetime nodeLifetime;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly IBlockRepository blockRepository;
         private readonly string name;
+        private readonly NodeSettings nodeArgs;
+        private readonly INodeLifetime nodeLifetime;
+        public Task LoopTask { get; private set; }
 
         private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
@@ -40,16 +43,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             string name = "BlockStore")
         {
-            this.storeLoop = storeLoop;
+            this.AsyncLoopFactory = asyncLoopFactory;
+            this.blockRepository = blockRepository;
+            this.blockStoreLoop = storeLoop;
             this.chain = chain;
-            this.nodeArgs = nodeArgs;
             this.chainState = chainState;
             this.connection = connection;
-            this.nodeLifetime = nodeLifetime;
-            this.asyncLoopFactory = asyncLoopFactory;
-            this.blockRepository = blockRepository;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
             this.name = name;
+            this.nodeArgs = nodeArgs;
+            this.nodeLifetime = nodeLifetime;
 
             this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
         }
@@ -64,7 +67,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // ensure the block is written to disk before relaying
-            this.storeLoop.AddToPending(value);
+            this.blockStoreLoop.AddToPending(value);
 
             if (this.chainState.IsInitialBlockDownload)
             {
@@ -101,7 +104,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
+            this.LoopTask = this.AsyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
             {
                 this.logger.LogTrace("()");
                 List<uint256> blocks = this.blockHashesToAnnounce.Keys.ToList();
@@ -158,6 +161,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             startAfter: TimeSpans.FiveSeconds);
 
             this.logger.LogTrace("(-)");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!this.LoopTask.IsCompleted)
+                this.LoopTask.GetAwaiter().GetResult();
         }
     }
 }
