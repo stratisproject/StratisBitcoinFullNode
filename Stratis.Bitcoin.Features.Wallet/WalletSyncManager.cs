@@ -25,15 +25,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public ChainedBlock WalletTip => this.walletTip;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, 
-            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings)
-            Network network, IBlockStoreCache blockStoreCache, NodeSettings nodeSettings, INodeLifetime nodeLifetime)
+            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
             this.walletManager = walletManager as WalletManager;
             this.chain = chain;
             this.blockStoreCache = blockStoreCache;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.storeSettings = storeSettings;
-            this.nodeSettings = nodeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
