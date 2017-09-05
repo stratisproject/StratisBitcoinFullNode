@@ -1,12 +1,12 @@
-﻿using DBreeze;
-using NBitcoin;
-using Stratis.Bitcoin.Tests;
-using System.Collections.Generic;
-using System.Linq;
-using Xunit;
-
-namespace Stratis.Bitcoin.Features.BlockStore.Tests
+﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
+    using DBreeze;
+    using NBitcoin;
+    using Stratis.Bitcoin.Tests;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Xunit;
+
     public class BlockRepositoryTest : TestBase
     {
         [Fact]

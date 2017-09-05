@@ -1,10 +1,10 @@
-﻿using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Tests;
-using Xunit;
-
-namespace Stratis.Bitcoin.Features.BlockStore.Tests
+﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
+    using Stratis.Bitcoin.Builder;
+    using Stratis.Bitcoin.Configuration;
+    using Stratis.Bitcoin.Tests;
+    using Xunit;
+
     public class StoreSettingsTest : TestBase
     {
         [Fact]

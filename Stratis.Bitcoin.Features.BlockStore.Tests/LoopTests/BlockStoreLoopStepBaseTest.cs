@@ -1,19 +1,19 @@
-﻿using Microsoft.Extensions.Logging;
-using Moq;
-using NBitcoin;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Tests;
-using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
+﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
+    using Microsoft.Extensions.Logging;
+    using Moq;
+    using NBitcoin;
+    using NBitcoin.Protocol;
+    using Stratis.Bitcoin.Base;
+    using Stratis.Bitcoin.BlockPulling;
+    using Stratis.Bitcoin.Configuration;
+    using Stratis.Bitcoin.Connection;
+    using Stratis.Bitcoin.Tests;
+    using Stratis.Bitcoin.Utilities;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
     /// <summary>
     /// Base test class for all the BlockStoreLoop tests.
     /// </summary>
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             var blocks = new List<Block>();
             for (int i = 0; i < amount; i++)
             {
-                Block block = CreateBlock(i);
+                Block block = this.CreateBlock(i);
                 block.Header.HashPrevBlock = blocks.LastOrDefault()?.GetHash() ?? Network.Main.GenesisHash;
                 blocks.Add(block);
             }
@@ -101,8 +101,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
         internal FluentBlockStoreLoop()
         {
-            ConfigureLogger();
-            ConfigureConnectionManager();
+            this.ConfigureLogger();
+            this.ConfigureConnectionManager();
 
             this.BlockRepository = new BlockRepositoryInMemory();
             this.dataFolder = TestBase.AssureEmptyDirAsDataFolder($"{AppContext.BaseDirectory}\\BlockStoreLoop");
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
         public void Dispose()
         {
-            Dispose(true);
+            this.Dispose(true);
         }
 
         #endregion

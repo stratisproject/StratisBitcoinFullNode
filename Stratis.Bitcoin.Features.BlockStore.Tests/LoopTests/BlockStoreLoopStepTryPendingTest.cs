@@ -1,11 +1,11 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using System.Linq;
-using System.Threading;
-using Xunit;
-
-namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
+﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
+    using NBitcoin;
+    using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+    using System.Linq;
+    using System.Threading;
+    using Xunit;
+
     public sealed class BlockStoreLoopStepTryPendingTest : BlockStoreLoopStepBaseTest
     {
         /// <summary>

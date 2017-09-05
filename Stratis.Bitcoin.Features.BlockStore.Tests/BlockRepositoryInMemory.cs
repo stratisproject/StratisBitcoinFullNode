@@ -1,11 +1,11 @@
-﻿using NBitcoin;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore.Tests
+﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
+    using NBitcoin;
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+
     public class BlockRepositoryInMemory : Bitcoin.Features.BlockStore.IBlockRepository
     {
         private ConcurrentDictionary<uint256, Block> store;
