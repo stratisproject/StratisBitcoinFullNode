@@ -35,7 +35,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
             { "bench", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.{nameof(Stratis.Bitcoin.Features.Consensus.ConsensusStats)}" },
             //{ "cmpctblock", "" }
             //{ "coindb", "" },
-            { "db", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.BlockStore)}.*"}, 
             //{ "http", "" }, 
             //{ "libevent", "" }, 
             //{ "lock", "" }, 
