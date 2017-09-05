@@ -1,12 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Utilities;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -88,44 +87,47 @@ namespace Stratis.Bitcoin.Features.Wallet
                     while (this.chain.GetBlock(fork.HashBlock) == null)
                         fork = fork.Previous;
 
-                    Guard.Assert(fork.HashBlock == block.Header.HashPrevBlock);
                     this.walletManager.RemoveBlocks(fork);
                 }
-                else
+
+                ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
+                if (incomingBlock.Height > this.walletTip.Height)
                 {
-                    ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
-                    if (incomingBlock.Height > this.walletTip.Height)
+                    // the wallet is falling behind we need to catch up
+                    var next = this.walletTip;
+                    while(next != incomingBlock)
                     {
-                        // the wallet is falling behind we need to catch up
-                        var next = this.walletTip;
-                        while(next != incomingBlock)
+                        // while the wallet is catching up the entire node will wait
+                        // if a wallet recovers to a date in the past consensus 
+                        // will stop till the wallet is up to date.
+
+                        // TODO: This code should be replaced with a different approach
+                        // similar to BlockStore the wallet should be standalone and not depend on consensus
+                        // the block should be put in a queue and pushed to the wallet in an async way
+                        // if the wallet is behind it will just read blocks from store (or download in case of a pruned node)
+
+                        next = this.chain.GetBlock(next.Height +1);
+                        Block nextblock = null;
+                        while (true) //replace with cancelation token
                         {
-                            // while the wallet is catching up the entire node will hult
-                            // if a wallet recoveres to a date in the past consensus 
-                            // will stop til the wallet is up to date.
-
-                            next = this.chain.GetBlock(next.Height +1);
-                            Block nextblock = null;
-                            while (true) //replace with cancelation token
+                            nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            if (nextblock == null)
                             {
-                                nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
-                                if (nextblock == null)
-                                {
-                                    // really ugly hack to let store catch up
-                                    // this will block the entire consensus pulling
-                                    this.logger.LogInformation("Wallet is behind the best chain and the next block is not found in store");
-                                    Thread.Sleep(100);
-                                    continue;
-                                }
-                                
-                                break;
+                                // really ugly hack to let store catch up
+                                // this will block the entire consensus pulling
+                                this.logger.LogInformation("Wallet is behind the best chain and the next block is not found in store");
+                                Thread.Sleep(100);
+                                continue;
                             }
-
-                            this.walletTip = next;
-                            this.walletManager.ProcessBlock(nextblock, next);
+                                
+                            break;
                         }
+
+                        this.walletTip = next;
+                        this.walletManager.ProcessBlock(nextblock, next);
                     }
                 }
+                
             }
 
             this.walletTip = this.chain.GetBlock(block.GetHash());
