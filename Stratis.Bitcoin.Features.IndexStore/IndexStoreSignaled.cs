@@ -11,10 +11,10 @@ namespace Stratis.Bitcoin.Features.IndexStore
 {
     public class IndexStoreSignaled : BlockStoreSignaled
     {
-        public IndexStoreSignaled(IndexStoreLoop storeLoop, ConcurrentChain chain, NodeSettings nodeArgs,
+        public IndexStoreSignaled(IndexStoreLoop storeLoop, ConcurrentChain chain, IndexSettings indexSettings,
             ChainState chainState, IConnectionManager connection,
             INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, IBlockRepository blockRepository, ILoggerFactory loggerFactory) :
-            base(storeLoop, chain, nodeArgs, chainState, connection, nodeLifetime, asyncLoopFactory, blockRepository, loggerFactory, "IndexStore")
+            base(storeLoop, chain, indexSettings, chainState, connection, nodeLifetime, asyncLoopFactory, blockRepository, loggerFactory, "IndexStore")
         {
         }
     }

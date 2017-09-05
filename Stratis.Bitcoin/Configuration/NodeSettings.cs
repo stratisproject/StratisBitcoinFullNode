@@ -52,9 +52,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Configuration of mempool features and limits.</summary>
         public MempoolSettings Mempool { get; set; }
 
-        /// <summary>Configuration related to storage of transactions.</summary>
-        public StoreSettings Store { get; set; }
-
         /// <summary>Configuration related to logging.</summary>
         public LogSettings Log { get; set; }
 
@@ -102,7 +99,6 @@ namespace Stratis.Bitcoin.Configuration
             this.Cache = new CacheSettings();
             this.ConnectionManager = new ConnectionManagerSettings();
             this.Mempool = new MempoolSettings();
-            this.Store = new StoreSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new LoggerFactory();
         }
@@ -274,7 +270,6 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             nodeSettings.Mempool.Load(config);
-            nodeSettings.Store.Load(config);
 
             return nodeSettings;
         }
