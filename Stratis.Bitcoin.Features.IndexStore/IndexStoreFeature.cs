@@ -45,8 +45,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     services.AddSingleton<IndexStoreManager>();
                     services.AddSingleton<IndexStoreSignaled>();
                     services.AddSingleton<IndexStoreRPCController>();
-                    services.AddSingleton<StoreSettings>(new IndexSettings(setup));
-
+                    services.AddSingleton<IndexSettings>(new IndexSettings(setup));
                 });
             });
 
