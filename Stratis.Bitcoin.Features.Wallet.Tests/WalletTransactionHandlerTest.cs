@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 chain.Setup(c => c.Tip).Returns(new ChainedBlock(new BlockHeader(), 1));
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain.Object, NodeSettings.Default(),
-                       new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                       new DataFolder(new NodeSettings() { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain.Object, walletManager, new Mock<IWalletFeePolicy>().Object, Network.Main);
 
                 walletManager.Wallets.Add(wallet);
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 });
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
-                      new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletTransactionHandlerTest/BuildTransactionFeeTooLowThrowsWalletException" }), walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                      new DataFolder(new NodeSettings() { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionFeeTooLowThrowsWalletException" }), walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain, walletManager, walletFeePolicy.Object, Network.Main);
 
                 walletManager.Wallets.Add(wallet);

@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
+using System;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -15,9 +16,9 @@ namespace Stratis.Bitcoin.Features.IndexStore
     {
         public IndexStoreFeature(ConcurrentChain chain, IConnectionManager connectionManager, Signals.Signals signals, IndexRepository indexRepository,
             IndexStoreCache indexStoreCache, IndexBlockPuller blockPuller, IndexStoreLoop indexStoreLoop, IndexStoreManager indexStoreManager,
-            IndexStoreSignaled indexStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory) :
+            IndexStoreSignaled indexStoreSignaled, INodeLifetime nodeLifetime, NodeSettings nodeSettings, ILoggerFactory loggerFactory, IndexSettings indexSettings) :
             base(chain, connectionManager, signals, indexRepository, indexStoreCache, blockPuller, indexStoreLoop, indexStoreManager,
-                indexStoreSignaled, nodeLifetime, nodeSettings, loggerFactory, "IndexStore")
+                indexStoreSignaled, nodeLifetime, nodeSettings, loggerFactory, indexSettings, name: "IndexStore")
         {
         }
 
@@ -29,7 +30,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
     public static class IndexStoreBuilderExtension
     {
-        public static IFullNodeBuilder UseIndexStore(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseIndexStore(this IFullNodeBuilder fullNodeBuilder, Action<IndexSettings> setup = null)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -44,6 +45,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     services.AddSingleton<IndexStoreManager>();
                     services.AddSingleton<IndexStoreSignaled>();
                     services.AddSingleton<IndexStoreRPCController>();
+                    services.AddSingleton<IndexSettings>(new IndexSettings(setup));
                 });
             });
 

@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
+using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -257,6 +257,65 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var newsecondamount = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
                 Assert.Equal(newamount, newsecondamount);
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any(b => b.Transaction.BlockHeight == transaction2MinedHeight));
+            }
+        }
+
+        [Fact]
+        public void Given__TheNodeHadAReorg_And_ConensusTipIsdifferentFromWalletTip__When__ANewBlockArrives__Then__WalletCanRecover()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                var stratisSender = builder.CreateStratisNode();
+                var stratisReceiver = builder.CreateStratisNode();
+                var stratisReorg = builder.CreateStratisNode();
+
+                builder.StartAll();
+                stratisSender.NotInIBD();
+                stratisReceiver.NotInIBD();
+                stratisReorg.NotInIBD();
+
+                stratisSender.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisSender.FullNode.Network));
+                stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
+
+                stratisSender.GenerateStratisWithMiner(10);
+
+                // wait for block repo for block sync to work
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+
+                //// sync all nodes
+                stratisReceiver.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
+                stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+
+                // remove the reorg node
+                stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                stratisSender.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+
+                // create a reorg by mining on two different chains
+                // ================================================
+                // advance both chains, one chin is longer
+                stratisSender.GenerateStratisWithMiner(2);
+                stratisReorg.GenerateStratisWithMiner(10);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
+
+                // connect the reorg chain
+                stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                // wait for the chains to catch up
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+                Assert.Equal(20, stratisReceiver.FullNode.Chain.Tip.Height);
+
+                // rewind the wallet in the stratisReceiver node
+                (stratisReceiver.FullNode.NodeService<IWalletSyncManager>() as WalletSyncManager).SyncFrom(10);
+
+                stratisSender.GenerateStratisWithMiner(5);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+                Assert.Equal(25, stratisReceiver.FullNode.Chain.Tip.Height);
             }
         }
 

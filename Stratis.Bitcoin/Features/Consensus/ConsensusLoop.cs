@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 var ids = GetIdsToFetch(context.BlockResult.Block, context.Flags.EnforceBIP30);
                 var coins = this.UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
-                context.Set.SetCoins(coins);
+                context.Set.SetCoins(coins.UnspentOutputs);
             }
 
             // attempt to load in to cach the 
