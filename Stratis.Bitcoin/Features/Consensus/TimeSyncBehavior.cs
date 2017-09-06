@@ -104,19 +104,19 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>List of timestamp offset samples from peers that connected to our node.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private CircularArray<TimestampOffsetSample> inboundTimestampOffsets;
+        private readonly CircularArray<TimestampOffsetSample> inboundTimestampOffsets;
 
         /// <summary>List of timestamp offset samples from peers that our node connected to.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private CircularArray<TimestampOffsetSample> outboundTimestampOffsets;
+        private readonly CircularArray<TimestampOffsetSample> outboundTimestampOffsets;
 
         /// <summary>List of IP addresses of peers that provided samples in <see cref="inboundSampleSources"/>.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private HashSet<IPAddress> inboundSampleSources;
+        private readonly HashSet<IPAddress> inboundSampleSources;
 
         /// <summary>List of IP addresses of peers that provided samples in <see cref="outboundTimestampOffsets"/>.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private HashSet<IPAddress> outboundSampleSources;
+        private readonly HashSet<IPAddress> outboundSampleSources;
 
         /// <summary><c>true</c> if the warning loop has been started, <c>false</c> otherwise.</summary>
         public bool WarningLoopStarted { get; private set; }
@@ -144,9 +144,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.inboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxInboundSamples);
             this.outboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxOutboundSamples);
+            this.inboundSampleSources = new HashSet<IPAddress>();
+            this.outboundSampleSources = new HashSet<IPAddress>();
+
             this.timeOffset = TimeSpan.FromSeconds(0);
             this.WarningLoopStarted = false;
             this.SwitchedOff = false;
+            this.SwitchedOffLimitReached = false;
         }
 
         /// <inheritdoc />
