@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -49,6 +50,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         private readonly StakeValidator stakeValidator;
         public StakeValidator StakeValidator { get { return this.stakeValidator; } }
 
@@ -57,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly CoinView coinView;
         private readonly PosConsensusOptions consensusOptions;
 
-        public PosConsensusValidator(StakeValidator stakeValidator, Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
+        public PosConsensusValidator(StakeValidator stakeValidator, Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : base(network, loggerFactory)
         {
             Guard.NotNull(network.Consensus.Option<PosConsensusOptions>(), nameof(network.Consensus.Options));
@@ -68,6 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chain = chain;
             this.coinView = coinView;
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
+            this.dateTimeProvider = dateTimeProvider;
         }
 
         public override void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
@@ -129,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockResult.Block;
 
             // Check timestamp.
-            if (block.Header.Time > FutureDriftV2(DateTime.UtcNow.Ticks))
+            if (block.Header.Time > FutureDriftV2(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
                 ConsensusErrors.BlockTimestampTooFar.Throw();
 
             if (BlockStake.IsProofOfStake(block))
@@ -322,10 +327,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             return nTime + 10 * 60;
         }
 
-        // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/383
         private static long FutureDriftV2(long nTime)
         {
-            return nTime + 128 * 60 * 60;
+            return nTime + 15;
         }
 
         private static long FutureDrift(long nTime, int nHeight)
