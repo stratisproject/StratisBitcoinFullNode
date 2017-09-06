@@ -17,17 +17,6 @@ namespace Stratis.Bitcoin.Features.Consensus
     public interface ITimeSyncBehaviorState
     {
         /// <summary>
-        /// Calculates current adjusted UTC time.
-        /// <para>
-        /// Using timestamp samples collected from other network peers 
-        /// this method produces the current adjusted UTC timestamp
-        /// that is most likely to be accepted as a correct time on the network.
-        /// </para>
-        /// </summary>
-        /// <returns>Adjusted UTC timestamp.</returns>
-        DateTime GetAdjustedTime();
-
-        /// <summary>
         /// Adds a time offset sample to the internal database of samples.
         /// <para></para>
         /// </summary>
@@ -147,24 +136,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.inboundSampleSources = new HashSet<IPAddress>();
             this.outboundSampleSources = new HashSet<IPAddress>();
 
-            this.timeOffset = TimeSpan.FromSeconds(0);
+            this.timeOffset = TimeSpan.Zero;
             this.WarningLoopStarted = false;
             this.SwitchedOff = false;
             this.SwitchedOffLimitReached = false;
-        }
-
-        /// <inheritdoc />
-        public DateTime GetAdjustedTime()
-        {
-            DateTime res = this.dateTimeProvider.GetUtcNow();
-
-            lock (this.lockObject)
-            {
-                if (!this.SwitchedOff)
-                  res = res.Add(this.timeOffset);
-            }
-
-            return res;
         }
 
         /// <inheritdoc />
@@ -246,12 +221,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (median < MaxTimeOffsetSeconds)
                 {
                     this.timeOffset = TimeSpan.FromSeconds(median);
+                    this.dateTimeProvider.SetAdjustedTimeOffset(this.timeOffset);
                 }
                 else
                 {
-                    this.timeOffset = TimeSpan.FromSeconds(0);
                     this.SwitchedOff = true;
                     this.SwitchedOffLimitReached = true;
+                    this.dateTimeProvider.SetAdjustedTimeOffset(TimeSpan.Zero);
                 }
             }
             else this.logger.LogTrace("We have {0} unweighted samples, which is below required minimum of {1} samples.", unweightedSamplesCount, MinUnweightedSamplesCount);
