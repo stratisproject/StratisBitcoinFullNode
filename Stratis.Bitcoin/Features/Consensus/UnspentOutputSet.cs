@@ -42,22 +42,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             this._Unspents.AddOrReplace(tx.GetHash(), new UnspentOutputs((uint)height, tx));
 		}
 
-        // TODO: coins argument should be of type UnspentOutputs[], not FetchCoinsResponse
-        public void SetCoins(FetchCoinsResponse coins)
+        public void SetCoins(UnspentOutputs[] coins)
 		{
-            this._Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
-			foreach(var coin in coins.UnspentOutputs)
+            this._Unspents = new Dictionary<uint256, UnspentOutputs>(coins.Length);
+			foreach (UnspentOutputs coin in coins)
 			{
-				if(coin != null)
+				if (coin != null)
                     this._Unspents.Add(coin.TransactionId, coin);
 			}
 		}
 
-        // TODO: coins argument should be of type UnspentOutputs[], not FetchCoinsResponse
-        public void TrySetCoins(FetchCoinsResponse coins)
+        public void TrySetCoins(UnspentOutputs[] coins)
 		{
-            this._Unspents = new Dictionary<uint256, UnspentOutputs>(coins.UnspentOutputs.Length);
-			foreach (var coin in coins.UnspentOutputs)
+            this._Unspents = new Dictionary<uint256, UnspentOutputs>(coins.Length);
+			foreach (UnspentOutputs coin in coins)
 			{
 				if (coin != null)
                     this._Unspents.TryAdd(coin.TransactionId, coin);
