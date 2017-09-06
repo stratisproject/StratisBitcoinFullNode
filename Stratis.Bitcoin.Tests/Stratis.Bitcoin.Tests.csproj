@@ -22,8 +22,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="BlockStore\**" />
     <Compile Remove="Stratis.Bitcoin.Tests\**" />
+    <EmbeddedResource Remove="BlockStore\**" />
     <EmbeddedResource Remove="Stratis.Bitcoin.Tests\**" />
+    <None Remove="BlockStore\**" />
     <None Remove="Stratis.Bitcoin.Tests\**" />
   </ItemGroup>
 
@@ -51,10 +54,6 @@
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="BlockStore\" />
   </ItemGroup>
 
 </Project>

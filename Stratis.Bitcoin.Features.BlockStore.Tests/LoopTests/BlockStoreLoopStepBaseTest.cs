@@ -12,6 +12,7 @@
     using Stratis.Bitcoin.Utilities;
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
 
     /// <summary>
@@ -88,14 +89,12 @@
     {
         private IAsyncLoopFactory asyncLoopFactory;
         private StoreBlockPuller blockPuller;
-        internal Bitcoin.Features.BlockStore.IBlockRepository BlockRepository { get; private set; }
+        internal BlockStore.IBlockRepository BlockRepository { get; private set; }
         private Mock<ChainState> chainState;
         private Mock<IConnectionManager> connectionManager;
         private DataFolder dataFolder;
-        private Mock<ILogger> fullNodeLogger;
         private Mock<INodeLifetime> nodeLifeTime;
         private Mock<ILoggerFactory> loggerFactory;
-        private Mock<ILogger> rpcLogger;
 
         public BlockStoreLoop Loop { get; private set; }
 
@@ -105,7 +104,7 @@
             this.ConfigureConnectionManager();
 
             this.BlockRepository = new BlockRepositoryInMemory();
-            this.dataFolder = TestBase.AssureEmptyDirAsDataFolder($"{AppContext.BaseDirectory}\\BlockStoreLoop");
+            this.dataFolder = TestBase.AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "BlockStore"));
 
             var fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
@@ -137,12 +136,8 @@
 
         private void ConfigureLogger()
         {
-            this.fullNodeLogger = new Mock<ILogger>();
-            this.rpcLogger = new Mock<ILogger>();
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
-            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.FullNode")).Returns(this.fullNodeLogger.Object).Verifiable();
-            this.loggerFactory.Setup(l => l.CreateLogger("Stratis.Bitcoin.RPC")).Returns(this.rpcLogger.Object).Verifiable();
         }
 
         private void ConfigureConnectionManager()
