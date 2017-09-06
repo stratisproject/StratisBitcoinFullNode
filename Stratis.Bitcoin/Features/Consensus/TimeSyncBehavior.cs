@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -59,9 +60,18 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Maximal number of samples to keep inside <see cref="outboundTimestampOffsets"/>.</summary>
         private const int MaxOutboundSamples = 200;
 
-        /// <summaryRatio of weights of outbound timestamp offsets and inbound timestamp offsets. 
+        /// <summary>Ratio of weights of outbound timestamp offsets and inbound timestamp offsets. 
         /// Ratio of N means that a single outbound sample has equal weight as N inbound samples.</summary>
         private const int OutboundToInboundWeightRatio = 10;
+
+        /// <summary>Maximal value for <see cref="timeOffset"/> in seconds that does not trigger warnings to user.</summary>
+        private const int TimeOffsetWarningThresholdSeconds = 5 * 60;
+
+        /// <summary>
+        /// Maximal value for <see cref="timeOffset"/>. If the newly calculated value is over this limit, 
+        /// the time syncing feature will be switched off.
+        /// </summary>
+        private const int MaxTimeOffsetSeconds = 25 * 60;
 
         /// <summary>
         /// Number of unweighted samples required before <see cref="timeOffset"/> is changed. 
@@ -73,14 +83,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         private const int MinUnweightedSamplesCount = 40;
 
         /// <summary>Instance logger.</summary>
-        private ILogger logger;
+        private readonly ILogger logger;
 
         /// <summary>Provider of time functions.</summary>
-        private IDateTimeProvider dateTimeProvider;
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
+        private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Lock object to protect access to <see cref="timeOffset"/>, <see cref="inboundTimestampOffsets"/>, <see cref="outboundTimestampOffsets"/>,
         /// <see cref="inboundSampleSources"/>, <see cref="outboundSampleSources"/>.</summary>
-        private object lockObject = new object();
+        private readonly object lockObject = new object();
 
         /// <summary>Time difference that the behavior adds to the system time to form adjusted time.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
@@ -102,27 +118,49 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
         private HashSet<IPAddress> outboundSampleSources;
 
+        /// <summary><c>true</c> if the warning loop has been started, <c>false</c> otherwise.</summary>
+        public bool WarningLoopStarted { get; private set; }
+
+        /// <summary><c>true</c> if the time sync with peers has been switched off, <c>false</c> otherwise.</summary>
+        public bool SwitchedOff { get; private set; }
+
+        /// <summary>
+        /// <c>true</c> if the reason for switching the time sync feature off was that <see cref="timeOffset"/> 
+        /// went over the maximal allowed value, <c>false</c> otherwise.
+        /// </summary>
+        public bool SwitchedOffLimitReached { get; private set; }
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
+            this.nodeLifetime = nodeLifetime;
+            this.asyncLoopFactory = asyncLoopFactory;
+
             this.inboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxInboundSamples);
             this.outboundTimestampOffsets = new CircularArray<TimestampOffsetSample>(MaxOutboundSamples);
             this.timeOffset = TimeSpan.FromSeconds(0);
+            this.WarningLoopStarted = false;
+            this.SwitchedOff = false;
         }
 
         /// <inheritdoc />
         public DateTime GetAdjustedTime()
         {
+            DateTime res = this.dateTimeProvider.GetUtcNow();
+
             lock (this.lockObject)
             {
-                return this.dateTimeProvider.GetUtcNow().Add(this.timeOffset);
+                if (!this.SwitchedOff)
+                  res = res.Add(this.timeOffset);
             }
+
+            return res;
         }
 
         /// <inheritdoc />
@@ -134,27 +172,37 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             lock (this.lockObject)
             {
-                HashSet<IPAddress> sources = isInboundConnection ? this.inboundSampleSources : this.outboundSampleSources;
-                bool alreadyIncluded = sources.Contains(peerAddress);
-                if (!alreadyIncluded)
+                if (!this.SwitchedOff)
                 {
-                    CircularArray<TimestampOffsetSample> samples = isInboundConnection ? this.inboundTimestampOffsets : this.outboundTimestampOffsets;
-
-                    TimestampOffsetSample newSample = new TimestampOffsetSample();
-                    newSample.Source = peerAddress;
-                    newSample.TimeOffset = offsetSample;
-
-                    TimestampOffsetSample oldSample;
-                    if (samples.Add(newSample, out oldSample))
+                    HashSet<IPAddress> sources = isInboundConnection ? this.inboundSampleSources : this.outboundSampleSources;
+                    bool alreadyIncluded = sources.Contains(peerAddress);
+                    if (!alreadyIncluded)
                     {
-                        // If we reached the maximum number of samples, we need to remove oldest sample.
-                        sources.Remove(oldSample.Source);
-                        this.logger.LogTrace("Oldest sample {0} from peer '{1}' removed.", oldSample.TimeOffset, oldSample.Source);
-                    }
+                        CircularArray<TimestampOffsetSample> samples = isInboundConnection ? this.inboundTimestampOffsets : this.outboundTimestampOffsets;
 
-                    RecalculateTimeOffsetLocked();
+                        TimestampOffsetSample newSample = new TimestampOffsetSample();
+                        newSample.Source = peerAddress;
+                        newSample.TimeOffset = offsetSample;
+
+                        TimestampOffsetSample oldSample;
+                        if (samples.Add(newSample, out oldSample))
+                        {
+                            // If we reached the maximum number of samples, we need to remove oldest sample.
+                            sources.Remove(oldSample.Source);
+                            this.logger.LogTrace("Oldest sample {0} from peer '{1}' removed.", oldSample.TimeOffset, oldSample.Source);
+                        }
+
+                        RecalculateTimeOffsetLocked();
+
+                        if (!this.WarningLoopStarted && (this.timeOffset.TotalSeconds > TimeOffsetWarningThresholdSeconds))
+                        {
+                            StartWarningLoop();
+                            this.WarningLoopStarted = true;
+                        }
+                    }
+                    else this.logger.LogTrace("Sample from peer '{0}' is already included.", peerAddress);
                 }
-                else this.logger.LogTrace("Sample from peer '{0}' is already included.", peerAddress);
+                else this.logger.LogTrace("Time sync feature is switched off.");
             }
 
             this.logger.LogTrace("(-):{0}", res);
@@ -191,11 +239,85 @@ namespace Stratis.Bitcoin.Features.Consensus
                     allSamples.AddRange(outboundOffsets);
 
                 double median = outboundOffsets.Median();
-                this.timeOffset = TimeSpan.FromSeconds(median);
+                if (median < MaxTimeOffsetSeconds)
+                {
+                    this.timeOffset = TimeSpan.FromSeconds(median);
+                }
+                else
+                {
+                    this.timeOffset = TimeSpan.FromSeconds(0);
+                    this.SwitchedOff = true;
+                    this.SwitchedOffLimitReached = true;
+                }
             }
             else this.logger.LogTrace("We have {0} unweighted samples, which is below required minimum of {1} samples.", unweightedSamplesCount, MinUnweightedSamplesCount);
 
             this.logger.LogTrace("(-):{0}={1}", nameof(this.timeOffset), this.timeOffset.TotalSeconds);
+        }
+
+        /// <summary>
+        /// Starts a loop that warns user via console message about problems with system time settings.
+        /// </summary>
+        private void StartWarningLoop()
+        {
+            this.logger.LogTrace("()");
+
+            this.asyncLoopFactory.Run($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
+            {
+                this.logger.LogTrace("()");
+
+                if (!this.SwitchedOffLimitReached)
+                {
+                    bool timeOffsetWrong = false;
+                    double timeOffsetSeconds = 0;
+                    lock (this.lockObject)
+                    {
+                        timeOffsetSeconds = this.timeOffset.TotalSeconds;
+                        timeOffsetWrong = timeOffsetSeconds > TimeOffsetWarningThresholdSeconds;
+                    }
+
+                    if (timeOffsetWrong)
+                    {
+                        this.logger.LogCritical(
+                              "============================== W A R N I N G ! ==============================\n"
+                            + "Your system time is very different than the time of other network nodes.\n"
+                            + "To prevent problems, adjust your system time, or check -synctime command line argument.\n"
+                            + "Your time difference to the network median time is {0} seconds.\n"
+                            + "=============================================================================",
+                              timeOffsetSeconds);
+                    }
+                }
+                else
+                {
+                    this.logger.LogCritical(
+                          "============================== W A R N I N G ! ==============================\n"
+                        + "Your system time is VERY different than the time of other network nodes.\n"
+                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds."
+                        + "The time syncing feature has been as it is no longer considered safe.\n"
+                        + "It is likely that you will now reject new blocks or be unable to mine new block.\n"
+                        + "You need to adjust your system time or check -synctime command line argument."
+                        + "=============================================================================",
+                          MaxTimeOffsetSeconds);
+                }
+
+                this.logger.LogTrace("(-)");
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromSeconds(57.3), // Weird number to prevent collisions with some other periodic console outputs.
+            startAfter: TimeSpans.FiveSeconds);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.logger.LogTrace("()");
+
+            // TODO: Dispose async loop.
+
+            this.logger.LogTrace("(-)");
         }
     }
 
@@ -206,13 +328,13 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class TimeSyncBehavior : NodeBehavior
     {
         /// <summary>Factory for creating loggers.</summary>
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
-        private ILogger logger;
+        private readonly ILogger logger;
 
         /// <summary>Shared state among time sync behaviors that holds list of obtained samples.</summary>
-        private TimeSyncBehaviorState state;
+        private readonly TimeSyncBehaviorState state;
 
         /// <summary>
         /// Initializes a new instance of the object.
