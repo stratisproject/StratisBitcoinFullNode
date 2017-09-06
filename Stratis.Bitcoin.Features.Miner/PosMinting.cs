@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
-            this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
+            this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.reserveBalance = 0; // TOOD:settings.ReserveBalance 
             this.minimumInputValue = 0;
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 // TODO: This has to be changed once 
                 // https://github.com/stratisproject/StratisBitcoinFullNode/issues/382
                 // is implemented.
-                uint coinstakeTimestamp = Utils.DateTimeToUnixTime(DateTime.UtcNow) & ~PosConsensusValidator.StakeTimestampMask;
+                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
                 if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
                 {
                     this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", coinstakeTimestamp, this.lastCoinStakeSearchTime);
