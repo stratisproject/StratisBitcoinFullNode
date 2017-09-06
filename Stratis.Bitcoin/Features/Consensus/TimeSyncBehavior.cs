@@ -178,6 +178,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                             StartWarningLoop();
                             this.WarningLoopStarted = true;
                         }
+
+                        res = true;
                     }
                     else this.logger.LogTrace("Sample from peer '{0}' is already included.", peerAddress);
                 }
