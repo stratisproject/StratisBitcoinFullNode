@@ -22,13 +22,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Stratis.Bitcoin.BlockStore.Tests\**" />
-    <EmbeddedResource Remove="Stratis.Bitcoin.BlockStore.Tests\**" />
-    <None Remove="Stratis.Bitcoin.BlockStore.Tests\**" />
+    <Compile Remove="Stratis.Bitcoin.Features.BlockStore.Tests\**" />
+    <EmbeddedResource Remove="Stratis.Bitcoin.Features.BlockStore.Tests\**" />
+    <None Remove="Stratis.Bitcoin.Features.BlockStore.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DBreeze" Version="1.85.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170618-03" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.0-beta3-build3705" />
     <PackageReference Include="xunit" Version="2.3.0-beta3-build3705" />
     <PackageReference Include="Moq" Version="4.7.1" />
