@@ -643,17 +643,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
-
-            //var txPrev = trasnactionStore.Get(prevout.Hash);
-            //if (txPrev == null)
-            //    return false;
-
-            //// Read block header
-            //var blockHashPrev = mapStore.GetBlockHash(prevout.Hash);
-            //var block = blockHashPrev == null ? null : blockStore.GetBlock(blockHashPrev);
-            //if (block == null)
-            //    return false;
-
             if (IsProtocolV3((int)nTime))
             {
                 if (IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
@@ -676,7 +665,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadStakeBlock.Throw();
             }
 
-            //if (pBlockTime)
             pBlockTime = prevBlock.Header.Time;
 
             this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, prevout, (uint)nTime);
