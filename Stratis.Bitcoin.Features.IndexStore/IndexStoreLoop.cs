@@ -9,10 +9,10 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.IndexStore
 {
     public class IndexStoreLoop : BlockStoreLoop
-    {
+    {        
         public IndexStoreLoop(ConcurrentChain chain,
             IndexRepository indexRepository,
-            NodeSettings nodeArgs,
+            IndexSettings indexSettings,
             ChainState chainState,
             IndexBlockPuller blockPuller,
             IndexStoreCache cache,
@@ -20,11 +20,10 @@ namespace Stratis.Bitcoin.Features.IndexStore
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory, 
             IDateTimeProvider dateTimeProvider) :
-            base(asyncLoopFactory, blockPuller, indexRepository, cache, chain, chainState, nodeArgs, nodeLifetime, loggerFactory, dateTimeProvider)
+            base(asyncLoopFactory, blockPuller, indexRepository, cache, chain, chainState, indexSettings, nodeLifetime, loggerFactory, dateTimeProvider)
         {
-            nodeArgs.Store.TxIndex = true;
         }
-
+        
         public override string StoreName => GetType().Name;
 
         protected override void SetHighestPersistedBlock(ChainedBlock block)
