@@ -151,6 +151,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             bool res = false;
 
+            bool startWarningLoopNow = false;
             lock (this.lockObject)
             {
                 if (!this.SwitchedOff)
@@ -179,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         if (!this.WarningLoopStarted && (Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds))
                         {
-                            StartWarningLoop();
+                            startWarningLoopNow = true;
                             this.WarningLoopStarted = true;
                         }
 
@@ -189,6 +190,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
                 else this.logger.LogTrace("Time sync feature is switched off.");
             }
+
+            if (startWarningLoopNow)
+                StartWarningLoop();
 
             this.logger.LogTrace("(-):{0}", res);
             return res;
