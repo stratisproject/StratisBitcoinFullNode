@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                             this.logger.LogTrace("Oldest sample {0} from peer '{1}' removed.", oldSample.TimeOffset, oldSample.Source);
                         }
 
-                        RecalculateTimeOffsetLocked();
+                        this.RecalculateTimeOffsetLocked();
 
                         if (!this.WarningLoopStarted && (this.timeOffset.TotalSeconds > TimeOffsetWarningThresholdSeconds))
                         {
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// We require to have at least <see cref="MinUnweigtedSamplesCount"/> unweighted samples to change the value of <see cref="timeOffset"/>.
         /// </para>
         /// </remarks>
-        public void RecalculateTimeOffsetLocked()
+        private void RecalculateTimeOffsetLocked()
         {
             this.logger.LogTrace("()");
 
