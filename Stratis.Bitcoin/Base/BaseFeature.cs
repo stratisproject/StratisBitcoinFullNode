@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Base
             this.StartChain();
 
             var connectionParameters = this.connectionManager.Parameters;
-            connectionParameters.IsRelay = this.nodeSettings.Mempool.RelayTxes;
+            connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
             var timeSyncBehaviorState = new TimeSyncBehaviorState(this.dateTimeProvider, this.nodeLifetime, this.asyncLoopFactory, this.loggerFactory);

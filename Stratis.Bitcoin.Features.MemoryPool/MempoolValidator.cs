@@ -123,8 +123,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Date and time information provider.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Settings from the node.</summary>
-        private readonly NodeSettings nodeArgs;
+        /// <summary>Settings from the memory pool.</summary>
+        private readonly MempoolSettings mempoolSettings;
 
         /// <summary>Chain of block headers.</summary>
         private readonly ConcurrentChain chain;
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="consensusValidator">Proof of work consensus validator.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
-        /// <param name="nodeArgs">Settings from the node.</param>
+        /// <param name="mempoolSettings">Settings from the memory pool.</param>
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolAsyncLock mempoolLock,
             PowConsensusValidator consensusValidator, 
             IDateTimeProvider dateTimeProvider, 
-            NodeSettings nodeArgs,
+            MempoolSettings mempoolSettings,
             ConcurrentChain chain, 
             CoinView coinView,
             ILoggerFactory loggerFactory)
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLock = mempoolLock;
             this.consensusValidator = consensusValidator;
             this.dateTimeProvider = dateTimeProvider;
-            this.nodeArgs = nodeArgs;
+            this.mempoolSettings = mempoolSettings;;
             this.chain = chain;
             this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -472,7 +472,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // trim mempool and check if tx was trimmed
                 if (!state.OverrideMempoolLimit)
                 {
-                    this.LimitMempoolSize(this.nodeArgs.Mempool.MaxMempool * 1000000, this.nodeArgs.Mempool.MempoolExpiry * 60 * 60);
+                    this.LimitMempoolSize(this.mempoolSettings.MaxMempool * 1000000, this.mempoolSettings.MempoolExpiry * 60 * 60);
 
                     if (!this.memPool.Exists(context.TransactionHash))
                         state.Fail(MempoolErrors.Full).Throw();
@@ -518,7 +518,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         // unconfirmed ancestors anyway; doing otherwise is hopelessly
                         // insecure.
                         bool replacementOptOut = true;
-                        if (this.nodeArgs.Mempool.EnableReplacement)
+                        if (this.mempoolSettings.EnableReplacement)
                         {
                             foreach (TxIn txiner in ptxConflicting.Inputs)
                             {
@@ -561,7 +561,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //}
 
             // Rather not work on nonstandard transactions (unless -testnet/-regtest)
-            if (this.nodeArgs.RequireStandard)
+            if (this.mempoolSettings.NodeSettings.RequireStandard)
             {
                 this.CheckStandardTransaction(context, witnessEnabled);
             }
@@ -685,12 +685,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         private void CheckFee(MempoolValidationContext context)
         {
-            Money mempoolRejectFee = this.memPool.GetMinFee(this.nodeArgs.Mempool.MaxMempool * 1000000).GetFee(context.EntrySize);
+            Money mempoolRejectFee = this.memPool.GetMinFee(this.mempoolSettings.MaxMempool * 1000000).GetFee(context.EntrySize);
             if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
             {
                 context.State.Fail(MempoolErrors.MinFeeNotMet, $" {context.Fees} < {mempoolRejectFee}").Throw();
             }
-            else if (this.nodeArgs.Mempool.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
+            else if (this.mempoolSettings.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
                      !TxMempool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
             {
                 // Require that free transactions have sufficient priority to be mined in the next block.
@@ -734,7 +734,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(MempoolErrors.NonBIP68Final).Throw();
 
             // Check for non-standard pay-to-script-hash in inputs
-            if (this.nodeArgs.RequireStandard && !this.AreInputsStandard(context.Transaction, context.View))
+            if (this.mempoolSettings.NodeSettings.RequireStandard && !this.AreInputsStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardInputs).Throw();
 
             // TODO: Implement Witness Code
@@ -932,10 +932,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // Calculate in-mempool ancestors, up to a limit.
             context.SetAncestors = new TxMempool.SetEntries();
-            int nLimitAncestors = this.nodeArgs.Mempool.LimitAncestors;
-            int nLimitAncestorSize = this.nodeArgs.Mempool.LimitAncestorSize * 1000;
-            int nLimitDescendants = this.nodeArgs.Mempool.LimitDescendants;
-            int nLimitDescendantSize = this.nodeArgs.Mempool.LimitDescendantSize * 1000;
+            int nLimitAncestors = this.mempoolSettings.LimitAncestors;
+            int nLimitAncestorSize = this.mempoolSettings.LimitAncestorSize * 1000;
+            int nLimitDescendants = this.mempoolSettings.LimitDescendants;
+            int nLimitDescendantSize = this.mempoolSettings.LimitDescendantSize * 1000;
             string errString;
             if (!this.memPool.CalculateMemPoolAncestors(context.Entry, context.SetAncestors, nLimitAncestors,
                 nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, out errString))
@@ -1004,7 +1004,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private void CheckAllInputs(MempoolValidationContext context)
         {
             ScriptVerify scriptVerifyFlags = ScriptVerify.Standard;
-            if (!this.nodeArgs.RequireStandard)
+            if (!this.mempoolSettings.NodeSettings.RequireStandard)
             {
                 // TODO: implement -promiscuousmempoolflags
                 // scriptVerifyFlags = GetArg("-promiscuousmempoolflags", scriptVerifyFlags);

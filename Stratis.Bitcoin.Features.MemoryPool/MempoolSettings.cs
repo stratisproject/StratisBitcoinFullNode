@@ -1,6 +1,7 @@
-﻿using Stratis.Bitcoin.Features.MemoryPool;
+﻿using Stratis.Bitcoin.Configuration;
+using System;
 
-namespace Stratis.Bitcoin.Configuration.Settings
+namespace Stratis.Bitcoin.Features.MemoryPool
 {
     /// <summary>
     /// Configuration of mempool features and limits.
@@ -9,11 +10,11 @@ namespace Stratis.Bitcoin.Configuration.Settings
     {
         /// <summary>Default value for "blocksonly" option.</summary>
         /// <seealso cref="RelayTxes"/>
-        const bool DefaultBlocksOnly = false;
+        private const bool DefaultBlocksOnly = false;
 
         // Default value for "whitelistrelay" option.
         /// <seealso cref="WhiteListRelay"/>
-        const bool DefaultWhiteListRelay = true;
+        private const bool DefaultWhiteListRelay = true;
 
         /// <summary>Maximal size of the transaction memory pool in megabytes.</summary>
         public int MaxMempool { get; set; }
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>Maximum size in kB of descendants any ancestor can have in mempool (including itself).</summary>
         public int LimitDescendantSize { get; set; }
-        
+
         /// <summary><c>true</c> to enable transaction replacement in the memory pool.</summary>
         public bool EnableReplacement { get; set; }
 
@@ -51,12 +52,38 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary><c>true</c> to accept relayed transactions received from whitelisted peers even when not relaying transactions.</summary>
         public bool WhiteListRelay { get; set; }
 
+        public NodeSettings NodeSettings { get; private set; }
+
+        /// <summary>Records a script used for overriding loaded settings</summary>
+        private readonly Action<MempoolSettings> callback;
+
+        /// <summary>
+        /// Constructor for the mempool settings
+        /// </summary>
+        /// <param name="callback">Script applied during load to override configured settings</param>
+        public MempoolSettings(Action<MempoolSettings> callback)
+        {
+            this.callback = callback;
+        }
+
+        /// <summary>
+        /// Constructor for the mempool settings.
+        /// </summary>
+        /// <param name="nodeSettings">The node's configuration settings.</param>
+        /// <param name="callback">Script applied during load to override configured settings</param>
+        public MempoolSettings(NodeSettings nodeSettings, Action<MempoolSettings> callback = null)
+            :this(callback)
+        {
+            this.Load(nodeSettings);
+        }
+
         /// <summary>
         /// Loads the mempool settings from the application configuration.
         /// </summary>
-        /// <param name="config">Application configuration.</param>
-        public void Load(TextFileConfiguration config)
+        /// <param name="nodeSettings">Node configuration.</param>
+        public void Load(NodeSettings nodeSettings)
         {
+            var config = nodeSettings.ConfigReader;
             this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize);
             this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry);
             this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority);
@@ -69,6 +96,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly);
             this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay);
+
+            this.NodeSettings = nodeSettings;
+
+            this.callback?.Invoke(this);
         }
     }
 }

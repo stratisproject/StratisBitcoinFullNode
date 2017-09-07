@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			var dateTimeSet = new MemoryPoolTests.DateTimeProviderSet();
 	        var settings = NodeSettings.Default();
 	        TxMempool mpool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default,
-	            new BlockPolicyEstimator(new FeeRate(1000), settings, settings.LoggerFactory), settings.LoggerFactory);
+	            new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(settings), settings.LoggerFactory), settings.LoggerFactory);
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
 			Money basefee = new Money(2000);
 			Money deltaFee = new Money(100);
