@@ -373,13 +373,17 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>
         /// Event handler that is called when the attached node receives a network message.
-        /// <para>
-        /// This handler only cares about "verack" messages, which are only sent once per node 
-        /// and at the time they are sent the time offset information is parsed by underlaying logic.
-        /// </para>
         /// </summary>
         /// <param name="node">Node that received the message.</param>
         /// <param name="message">Received message.</param>
+        /// <remarks>
+        /// This handler only cares about "verack" messages, which are only sent once per node 
+        /// and at the time they are sent the time offset information is parsed by underlaying logic.
+        /// <para>
+        /// Note that it is not possible to use "version" message here as <see cref="Node"/> 
+        /// does not deliver this message for inbound peers to node behaviors.
+        /// </para>
+        /// </remarks>
         private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
