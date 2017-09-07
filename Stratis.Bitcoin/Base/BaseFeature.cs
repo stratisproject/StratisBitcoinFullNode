@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
             var timeSyncBehaviorState = new TimeSyncBehaviorState(this.dateTimeProvider, this.nodeLifetime, this.asyncLoopFactory, this.loggerFactory);
-            connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(timeSyncBehaviorState, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
 
             this.disposableResources.Add(timeSyncBehaviorState);
             this.disposableResources.Add(this.chainRepository);
