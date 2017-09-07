@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network));
             consensus.Initialize();
 
-            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new FeeRate(1000), nodeSettings, loggerFactory);
+            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(nodeSettings), loggerFactory);
             TxMempool mempool = new TxMempool(new FeeRate(1000), dateTimeProvider, blockPolicyEstimator, loggerFactory);
             MempoolAsyncLock mempoolLock = new MempoolAsyncLock();
 
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
             blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
 
-            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, nodeSettings, chain, cachedCoinView, loggerFactory);
+            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory);
 
             return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
         }

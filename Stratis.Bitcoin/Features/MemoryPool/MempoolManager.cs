@@ -47,6 +47,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="orphans">Memory pool orphans for managing orphan transactions.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="nodeArgs">Settings from the node.</param>
+        /// <param name="mempoolSettings">Settings for memory pool.</param>
         /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolManager(
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IMempoolValidator validator, 
             MempoolOrphans orphans, 
             IDateTimeProvider dateTimeProvider, 
-            NodeSettings nodeArgs, 
+            MempoolSettings mempoolSettings,
             IMempoolPersistence mempoolPersistence,
             CoinView coinView,
             ILoggerFactory loggerFactory)
@@ -63,7 +64,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.MempoolLock = mempoolLock;
             this.memPool = memPool;
             this.DateTimeProvider = dateTimeProvider;
-            this.NodeArgs = nodeArgs;
+            this.mempoolSettings = mempoolSettings;
             this.Orphans = orphans;
             this.Validator = validator;
             this.mempoolPersistence = mempoolPersistence;
@@ -83,8 +84,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Date and time information provider.</summary>
         public IDateTimeProvider DateTimeProvider { get; }
 
-        /// <summary>Settings from the node.</summary>
-        public NodeSettings NodeArgs { get; set; }
+        /// <summary>Settings for memory pool.</summary>
+        public MempoolSettings mempoolSettings { get; set; }
 
         /// <summary>Access to memory pool validator performance counter.</summary>
         public MempoolPerformanceCounter PerformanceCounter => this.Validator.PerformanceCounter;

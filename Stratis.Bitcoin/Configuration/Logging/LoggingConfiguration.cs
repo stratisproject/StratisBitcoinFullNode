@@ -38,7 +38,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
             //{ "http", "" }, 
             //{ "libevent", "" }, 
             //{ "lock", "" }, 
-            { "mempool", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.MemoryPool)}.*" }, 
             //{ "mempoolrej", "" }, 
             { "net", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Connection)}.*" }, 
             //{ "proxy", "" }, 
@@ -51,7 +50,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
             //{ "zmq", "" }, 
             
             // Short Names
-            { "estimatefee", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.MemoryPool)}.{nameof(Stratis.Bitcoin.Features.MemoryPool.Fee)}.*" },
             { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
             { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" },
             { "consensus", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.*" },
