@@ -54,13 +54,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         private const int OutboundToInboundWeightRatio = 10;
 
         /// <summary>Maximal value for <see cref="timeOffset"/> in seconds that does not trigger warnings to user.</summary>
-        private const int TimeOffsetWarningThresholdSeconds = 5 * 60;
+        public const int TimeOffsetWarningThresholdSeconds = 5 * 60;
 
         /// <summary>
         /// Maximal value for <see cref="timeOffset"/>. If the newly calculated value is over this limit, 
         /// the time syncing feature will be switched off.
         /// </summary>
-        private const int MaxTimeOffsetSeconds = 25 * 60;
+        public const int MaxTimeOffsetSeconds = 25 * 60;
 
         /// <summary>
         /// Number of unweighted samples required before <see cref="timeOffset"/> is changed. 
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         this.RecalculateTimeOffsetLocked();
 
-                        if (!this.WarningLoopStarted && (this.timeOffset.TotalSeconds > TimeOffsetWarningThresholdSeconds))
+                        if (!this.WarningLoopStarted && (Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds))
                         {
                             StartWarningLoop();
                             this.WarningLoopStarted = true;
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     allSamples.AddRange(outboundOffsets);
 
                 double median = allSamples.Median();
-                if (median < MaxTimeOffsetSeconds)
+                if (Math.Abs(median) < MaxTimeOffsetSeconds)
                 {
                     this.timeOffset = TimeSpan.FromSeconds(median);
                     this.dateTimeProvider.SetAdjustedTimeOffset(this.timeOffset);
