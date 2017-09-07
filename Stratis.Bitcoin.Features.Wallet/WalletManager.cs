@@ -141,7 +141,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             ExtKey extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
 
             // create a wallet file 
-            Wallet wallet = this.GenerateWalletFile(password, name, extendedKey);
+            string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
+            Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, extendedKey.ChainCode);
 
             // generate multiple accounts and addresses from the get-go
             for (int i = 0; i < WalletCreationAccountsCount; i++)
@@ -192,7 +193,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             ExtKey extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
 
             // create a wallet file 
-            Wallet wallet = this.GenerateWalletFile(password, name, extendedKey, creationTime);
+            string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
+            Wallet wallet = this.GenerateWalletFile(name, encryptedSeed, extendedKey.ChainCode, creationTime);
 
             // generate multiple accounts and addresses from the get-go
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
@@ -800,14 +802,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Generates the wallet file.
         /// </summary>
-        /// <param name="password">The password used to encrypt sensitive info.</param>
         /// <param name="name">The name of the wallet.</param>
-        /// <param name="extendedKey">The root key used to generate keys.</param>
+        /// <param name="encryptedSeed">The seed for this wallet, password encrypted.</param>
+        /// <param name="chainCode">The chain code.</param>
         /// <param name="creationTime">The time this wallet was created.</param>
         /// <returns></returns>
         /// <exception cref="System.NotSupportedException"></exception>
-        private Wallet GenerateWalletFile(string password, string name, ExtKey extendedKey, DateTimeOffset? creationTime = null)
+        private Wallet GenerateWalletFile(string name, string encryptedSeed, byte[] chainCode, DateTimeOffset? creationTime = null)
         {
+            Guard.NotEmpty(name, nameof(name));
+            Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
+            Guard.NotNull(chainCode, nameof(chainCode));
+
             if (this.fileStorage.Exists($"{name}.{WalletFileExtension}"))
             {
                 throw new InvalidOperationException($"Wallet with name '{name}.{WalletFileExtension}' already exists.");
@@ -816,8 +822,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet walletFile = new Wallet
             {
                 Name = name,
-                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif(),
-                ChainCode = extendedKey.ChainCode,
+                EncryptedSeed = encryptedSeed,
+                ChainCode = chainCode,
                 CreationTime = creationTime ?? DateTimeOffset.Now,
                 Network = this.network,
                 AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
