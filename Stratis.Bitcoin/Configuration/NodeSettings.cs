@@ -49,9 +49,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         public ConnectionManagerSettings ConnectionManager { get; set; }
 
-        /// <summary>Configuration of mempool features and limits.</summary>
-        public MempoolSettings Mempool { get; set; }
-
         /// <summary>Configuration related to logging.</summary>
         public LogSettings Log { get; set; }
 
@@ -98,7 +95,6 @@ namespace Stratis.Bitcoin.Configuration
         {
             this.Cache = new CacheSettings();
             this.ConnectionManager = new ConnectionManagerSettings();
-            this.Mempool = new MempoolSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new LoggerFactory();
         }
@@ -268,8 +264,6 @@ namespace Stratis.Bitcoin.Configuration
             {
                 nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
             }
-
-            nodeSettings.Mempool.Load(config);
 
             return nodeSettings;
         }

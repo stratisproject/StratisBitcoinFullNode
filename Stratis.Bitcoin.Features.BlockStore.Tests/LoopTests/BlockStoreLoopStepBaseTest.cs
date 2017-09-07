@@ -1,20 +1,20 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
-{
-    using Microsoft.Extensions.Logging;
-    using Moq;
-    using NBitcoin;
-    using NBitcoin.Protocol;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.BlockPulling;
-    using Stratis.Bitcoin.Configuration;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Tests;
-    using Stratis.Bitcoin.Utilities;
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
+using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Tests;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
+{
     /// <summary>
     /// Base test class for all the BlockStoreLoop tests.
     /// </summary>
@@ -127,10 +127,10 @@
             return this;
         }
 
-        internal FluentBlockStoreLoop WithConcreteRepository(DataFolder dataFolder)
+        internal FluentBlockStoreLoop WithConcreteRepository(string dataFolder)
         {
-            this.BlockRepository = new BlockRepository(Network.Main, dataFolder, this.loggerFactory.Object);
-            this.dataFolder = dataFolder;
+            this.dataFolder = TestBase.AssureEmptyDirAsDataFolder(dataFolder);
+            this.BlockRepository = new BlockRepository(Network.Main, this.dataFolder, this.loggerFactory.Object);
             return this;
         }
 
