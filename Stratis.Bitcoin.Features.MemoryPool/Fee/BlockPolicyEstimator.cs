@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         private int nBestSeenHeight;
 
         /// <summary>Setting for the node.</summary>
-        private readonly NodeSettings nodeArgs;
+        private readonly MempoolSettings mempoolSettings;
 
         /// <summary>Logger for logging on this object.</summary>
         private readonly ILogger logger;
@@ -125,12 +125,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
         /// Constructs an instance of the block policy estimator object.
         /// </summary>
         /// <param name="minRelayFee">Minimum relay fee rate.</param>
-        /// <param name="nodeArgs">Node settings.</param>
+        /// <param name="mempoolSettings">Mempool settings.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public BlockPolicyEstimator(FeeRate minRelayFee, NodeSettings nodeArgs, ILoggerFactory loggerFactory)
+        public BlockPolicyEstimator(FeeRate minRelayFee, MempoolSettings mempoolSettings, ILoggerFactory loggerFactory)
         {
             this.mapMemPoolTxs = new Dictionary<uint256, TxStatsInfo>();
-            this.nodeArgs = nodeArgs;
+            this.mempoolSettings = mempoolSettings;
             this.nBestSeenHeight = 0;
             this.trackedTxs = 0;
             this.untrackedTxs = 0;
@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             // If mempool is limiting txs , return at least the min feerate from the mempool
             if (pool != null)
             {
-                Money minPoolFee = pool.GetMinFee(this.nodeArgs.Mempool.MaxMempool * 1000000).FeePerK;
+                Money minPoolFee = pool.GetMinFee(this.mempoolSettings.MaxMempool * 1000000).FeePerK;
                 if (minPoolFee > 0 && minPoolFee.Satoshi > median)
                     return new FeeRate(minPoolFee);
             }
@@ -373,7 +373,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             answerFoundAtTarget = confTarget;
 
             // If mempool is limiting txs, no priority txs are allowed
-            Money minPoolFee = pool.GetMinFee(this.nodeArgs.Mempool.MaxMempool * 1000000).FeePerK;
+            Money minPoolFee = pool.GetMinFee(this.mempoolSettings.MaxMempool * 1000000).FeePerK;
             if (minPoolFee > 0)
                 return InfPriority;
 

@@ -10,6 +10,9 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     public static class NetworkExtensions
     {
+        /// <summary>Fake height value used in Coins to signify they are only in the memory pool (since 0.8).</summary>
+        public const int MempoolHeight = 0x7FFFFFFF;
+
         /// <summary>
         /// Determines whether this network is a test network.
         /// </summary>
