@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     public class TxMempool
     {
         /// <summary>Fake height value used in Coins to signify they are only in the memory pool (since 0.8).</summary>
-        public const int MempoolHeight = 0x7FFFFFFF;
+        public const int MempoolHeight = NetworkExtensions.MempoolHeight;
 
         /// <summary>The rolling fee's half life.</summary>
         public const int RollingFeeHalflife = 60 * 60 * 12; // public only for testing.
