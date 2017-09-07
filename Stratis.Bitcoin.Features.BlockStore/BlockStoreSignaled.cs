@@ -1,57 +1,63 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Linq;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Signals;
-    using Stratis.Bitcoin.Utilities;
-
-    public class BlockStoreSignaled : SignalObserver<Block>
+    public class BlockStoreSignaled : SignalObserver<Block>, IWaitUntilAsyncLoopCompletes
     {
+        public IAsyncLoopFactory AsyncLoopFactory { get; private set; }
+        private readonly IBlockRepository blockRepository;
+        private readonly BlockStoreLoop blockStoreLoop;
+        private readonly ConcurrentChain chain;
+        private readonly ChainState chainState;
+        private readonly IConnectionManager connection;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly BlockStoreLoop storeLoop;
-        private readonly ConcurrentChain chain;
-        private readonly StoreSettings storeSettings;
-        private readonly ChainState chainState;
-        private readonly IConnectionManager connection;
-        private readonly INodeLifetime nodeLifetime;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly IBlockRepository blockRepository;
+        /// <summary>
+        /// The async loop we have to wait on to complete before we dispose <see cref="BlockStoreSignaled"/>.
+        /// </summary>
+        public Task LoopTask { get; private set; }
+
         private readonly string name;
+        private readonly INodeLifetime nodeLifetime;
+        private readonly StoreSettings storeSettings;
 
         private readonly ConcurrentDictionary<uint256, uint256> blockHashesToAnnounce; // maybe replace with a task scheduler
 
         public BlockStoreSignaled(
-            BlockStoreLoop storeLoop, 
-            ConcurrentChain chain, 
-            StoreSettings storeSettings, 
-            ChainState chainState, 
-            IConnectionManager connection, 
-            INodeLifetime nodeLifetime, 
-            IAsyncLoopFactory asyncLoopFactory, 
+            BlockStoreLoop blockStoreLoop,
+            ConcurrentChain chain,
+            StoreSettings storeSettings,
+            ChainState chainState,
+            IConnectionManager connection,
+            INodeLifetime nodeLifetime,
+            IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             string name = "BlockStore")
         {
-            this.storeLoop = storeLoop;
+            this.AsyncLoopFactory = asyncLoopFactory;
+            this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
+            this.blockRepository = blockRepository;
+            this.blockStoreLoop = blockStoreLoop;
             this.chain = chain;
-            this.storeSettings = storeSettings;
             this.chainState = chainState;
             this.connection = connection;
-            this.nodeLifetime = nodeLifetime;
-            this.asyncLoopFactory = asyncLoopFactory;
-            this.blockRepository = blockRepository;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
             this.name = name;
-
-            this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
+            this.nodeLifetime = nodeLifetime;
+            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.storeSettings = storeSettings;
         }
 
         protected override void OnNextCore(Block value)
@@ -64,7 +70,7 @@
             }
 
             // ensure the block is written to disk before relaying
-            this.storeLoop.AddToPending(value);
+            this.blockStoreLoop.AddToPending(value);
 
             if (this.chainState.IsInitialBlockDownload)
             {
@@ -101,7 +107,7 @@
         {
             this.logger.LogTrace("()");
 
-            this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
+            this.LoopTask = this.AsyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
             {
                 this.logger.LogTrace("()");
                 List<uint256> blocks = this.blockHashesToAnnounce.Keys.ToList();
@@ -158,6 +164,12 @@
             startAfter: TimeSpans.FiveSeconds);
 
             this.logger.LogTrace("(-)");
+        }
+
+        public void ShutDown()
+        {
+            if (this.LoopTask.IsCompleted == false)
+                this.LoopTask.Wait();
         }
     }
 }

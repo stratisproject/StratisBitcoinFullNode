@@ -43,18 +43,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly string name;
 
         public BlockStoreFeature(
-            ConcurrentChain chain, 
-            IConnectionManager connectionManager, 
-            Signals.Signals signals, 
+            ConcurrentChain chain,
+            IConnectionManager connectionManager,
+            Signals.Signals signals,
             IBlockRepository blockRepository,
-            IBlockStoreCache blockStoreCache, 
-            StoreBlockPuller blockPuller, 
-            BlockStoreLoop blockStoreLoop, 
+            IBlockStoreCache blockStoreCache,
+            StoreBlockPuller blockPuller,
+            BlockStoreLoop blockStoreLoop,
             BlockStoreManager blockStoreManager,
-            BlockStoreSignaled blockStoreSignaled, 
-            INodeLifetime nodeLifetime, 
-            NodeSettings nodeSettings, 
-            ILoggerFactory loggerFactory, 
+            BlockStoreSignaled blockStoreSignaled,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            ILoggerFactory loggerFactory,
             StoreSettings storeSettings,
             string name = "BlockStore")
         {
@@ -115,7 +115,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             this.logger.LogInformation("Flushing {0}...", this.name);
-            this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
+
+            this.blockStoreSignaled.ShutDown();
+            this.blockStoreManager.BlockStoreLoop.ShutDown();
 
             this.blockStoreCache.Dispose();
             this.blockRepository.Dispose();

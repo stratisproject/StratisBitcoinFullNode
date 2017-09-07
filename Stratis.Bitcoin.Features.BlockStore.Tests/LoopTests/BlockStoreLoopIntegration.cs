@@ -1,7 +1,8 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using Stratis.Bitcoin.Tests;
+using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Xunit;
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
             using (var fluent = new FluentBlockStoreLoop())
             {
-                fluent.WithConcreteRepository(TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\CheckNextChainedBlockExists_Integration"));
+                fluent.WithConcreteRepository(Path.Combine(AppContext.BaseDirectory, "BlockStore", "CheckNextChainedBlockExists_Integration"));
 
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
             using (var fluent = new FluentBlockStoreLoop())
             {
-                fluent.WithConcreteRepository(TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\ReorganiseBlockRepository_Integration"));
+                fluent.WithConcreteRepository(Path.Combine(AppContext.BaseDirectory, "BlockStore", "ReorganiseBlockRepository_Integration"));
 
                 // Push 15 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
@@ -93,7 +94,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
-                fluent.WithConcreteRepository(TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\ProcessPendingStorage_Integration"));
+                fluent.WithConcreteRepository(Path.Combine(AppContext.BaseDirectory, "BlockStore", "ProcessPendingStorage_Integration"));
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
@@ -129,7 +130,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
             using (var fluent = new FluentBlockStoreLoop())
             {
-                fluent.WithConcreteRepository(TestBase.AssureEmptyDirAsDataFolder(@"BlockStore\DownloadBlocks_Integration"));
+                fluent.WithConcreteRepository(Path.Combine(AppContext.BaseDirectory, "BlockStore", "DownloadBlocks_Integration"));
 
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
