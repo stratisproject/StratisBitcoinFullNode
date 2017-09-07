@@ -56,8 +56,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         {
             // TODO: Test case - the lock point MinTime exceeds 0
         }
-
-
+        
         [Fact]
         public void CheckSequenceLocks_WithExistingLockPointAndBadHeight_Fails()
         {
@@ -65,14 +64,14 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         }
 
         [Fact]
-        void GetTransactionWeight_WitnessTx_ReturnsWeight()
+        public void GetTransactionWeight_WitnessTx_ReturnsWeight()
         {
             // TODO: Test getting tx weight on transaction with witness
 
         }
 
         [Fact]
-        void GetTransactionWeight_StandardTx_ReturnsWeight()
+        public void GetTransactionWeight_StandardTx_ReturnsWeight()
         {
             // TODO: Test getting tx weight on transaction without witness
         }
@@ -94,7 +93,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public async void AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfull()
         {
-            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfull));
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret minerSecret = new BitcoinSecret(new Key(), Network.RegTest);
@@ -123,7 +122,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public async void AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfull()
         {
-            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfull));
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
@@ -190,7 +189,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public async void AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfull()
         {
-            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfull));
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
@@ -261,7 +260,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public async void AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfull()
         {
-            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfull));
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
