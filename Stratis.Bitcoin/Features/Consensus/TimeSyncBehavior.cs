@@ -157,6 +157,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     bool alreadyIncluded = sources.Contains(peerAddress);
                     if (!alreadyIncluded)
                     {
+                        sources.Add(peerAddress);
+
                         CircularArray<TimestampOffsetSample> samples = isInboundConnection ? this.inboundTimestampOffsets : this.outboundTimestampOffsets;
 
                         TimestampOffsetSample newSample = new TimestampOffsetSample();
