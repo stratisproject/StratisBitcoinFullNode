@@ -123,6 +123,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
+        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory)
         {
@@ -215,6 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (unweightedSamplesCount >= MinUnweightedSamplesCount)
             {
+                this.logger.LogTrace("We have {0} unweighted samples.", unweightedSamplesCount);
                 List<double> allSamples = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
 
                 List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
@@ -320,15 +323,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Shared state among time sync behaviors that holds list of obtained samples.</summary>
         private readonly TimeSyncBehaviorState state;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="state">Shared state among time sync behaviors.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public TimeSyncBehavior(TimeSyncBehaviorState state, ILoggerFactory loggerFactory)
+        public TimeSyncBehavior(TimeSyncBehaviorState state, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
             this.state = state;
         }
 
@@ -357,7 +365,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            var res = new TimeSyncBehavior(this.state, this.loggerFactory);
+            var res = new TimeSyncBehavior(this.state, this.dateTimeProvider, this.loggerFactory);
 
             this.logger.LogTrace("(-)");
             return res;
@@ -366,9 +374,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Event handler that is called when the attached node receives a network message.
         /// <para>
-        /// This handler only cares about "version" messages, which are only sent once per node 
-        /// and contains time information, which is parsed by underlaying logic when the handler 
-        /// is called.
+        /// This handler only cares about "verack" messages, which are only sent once per node 
+        /// and at the time they are sent the time offset information is parsed by underlaying logic.
         /// </para>
         /// </summary>
         /// <param name="node">Node that received the message.</param>
@@ -377,15 +384,19 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
-            VersionPayload version = message.Message.Payload as VersionPayload;
-            if (version != null)
+            VerAckPayload verack = message.Message.Payload as VerAckPayload;
+            if (verack != null)
             {
                 IPAddress address = node.RemoteSocketAddress;
                 if (address != null)
                 {
-                    TimeSpan? timeOffset = node.TimeOffset;
-                    if (timeOffset != null) this.state.AddTimeData(address, timeOffset.Value, node.Inbound);
-                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);
+                    VersionPayload version = node.PeerVersion;
+                    if (version != null)
+                    {
+                        TimeSpan timeOffset = this.dateTimeProvider.GetUtcNow() - version.Timestamp;
+                        if (timeOffset != null) this.state.AddTimeData(address, timeOffset, node.Inbound);
+                    }
+                    else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);                    
                 }
                 else this.logger.LogTrace("Message received from unknown node's address.");
             }
