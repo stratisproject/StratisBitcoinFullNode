@@ -3,11 +3,16 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
-using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Interfaces;
+using System;
+using System.Runtime.CompilerServices;
 using System.Text;
+
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -35,6 +40,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Instance logger for the memory pool component.</summary>
         private readonly ILogger mempoolLogger;
 
+        /// <summary>Settings for the memory pool component.</summary>
+        private readonly MempoolSettings mempoolSettings;
+
         /// <summary>
         /// Constructs a memory pool feature.
         /// </summary>
@@ -50,7 +58,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolSignaled mempoolSignaled,
             MempoolBehavior mempoolBehavior,
             MempoolManager mempoolManager,
-            ILoggerFactory loggerFactory)
+            NodeSettings nodeSettings,
+            ILoggerFactory loggerFactory,
+            MempoolSettings mempoolSettings)
         {
             this.signals = signals;
             this.connectionManager = connectionManager;
@@ -58,6 +68,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolBehavior = mempoolBehavior;
             this.mempoolManager = mempoolManager;
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.mempoolSettings = mempoolSettings;
+            this.mempoolSettings.Load(nodeSettings);
         }
 
         public void AddFeatureStats(StringBuilder benchLogs)
@@ -109,8 +121,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="fullNodeBuilder">Full node builder.</param>
         /// <returns>Full node builder.</returns>
-        public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder, Action<MempoolSettings> setup = null)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<MempoolFeature>("mempool");
+            LoggingConfiguration.RegisterFeatureNamespace<BlockPolicyEstimator>("estimatefee");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -130,6 +145,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<MempoolSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
                         services.AddSingleton<MempoolController>();
+                        services.AddSingleton<MempoolSettings>(new MempoolSettings(setup));
                     });
             });
 

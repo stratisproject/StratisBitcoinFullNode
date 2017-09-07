@@ -44,8 +44,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Date and time information provider.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Settings from the node.</summary>
-        private readonly NodeSettings nodeArgs;
+        /// <summary>Settings from the memory pool.</summary>
+        private readonly MempoolSettings mempoolSettings;
 
         /// <summary>Instance logger for the memory pool.</summary>
         private readonly ILogger mempoolLogger;
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="consensusValidator">Proof of work consensus validator used for validating orphan transactions.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
-        /// <param name="nodeArgs">Settings from the node.</param>
+        /// <param name="mempoolSettings">Settings from the memory pool.</param>
         /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
             MempoolAsyncLock mempoolLock, 
@@ -89,8 +89,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IMempoolValidator validator, 
             PowConsensusValidator consensusValidator, 
             CoinView coinView, 
-            IDateTimeProvider dateTimeProvider, 
-            NodeSettings nodeArgs,
+            IDateTimeProvider dateTimeProvider,
+            MempoolSettings mempoolSettings,
             ILoggerFactory loggerFactory)
         {
             this.MempoolLock = mempoolLock;
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.consensusValidator = consensusValidator;
             this.coinView = coinView;
             this.dateTimeProvider = dateTimeProvider;
-            this.nodeArgs = nodeArgs;
+            this.mempoolSettings = mempoolSettings;
             this.Validator = validator;
 
             this.mapOrphanTransactions = new Dictionary<uint256, OrphanTx>();
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             var ret = await this.AddOrphanTx(from.PeerVersion.Nonce, tx);
 
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
-            int nMaxOrphanTx = this.nodeArgs.Mempool.MaxOrphanTx;
+            int nMaxOrphanTx = this.mempoolSettings.MaxOrphanTx;
             int nEvicted = await this.LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
                 this.mempoolLogger.LogInformation($"mapOrphan overflow, removed {nEvicted} tx");
