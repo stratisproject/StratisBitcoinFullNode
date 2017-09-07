@@ -213,9 +213,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (unweightedSamplesCount >= MinUnweightedSamplesCount)
             {
-                List<double> allSamples = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalMilliseconds).ToList();
+                List<double> allSamples = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
 
-                List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalMilliseconds).ToList();
+                List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
                 for (int i = 0; i < OutboundToInboundWeightRatio; i++)
                     allSamples.AddRange(outboundOffsets);
 
