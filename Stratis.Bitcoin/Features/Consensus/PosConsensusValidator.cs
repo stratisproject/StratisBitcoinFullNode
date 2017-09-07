@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private static bool IsDriftReduced(long nTime)
         {
             return nTime > 1479513600;
-        } 
+        }
 
         private static long FutureDriftV2(long nTime)
         {
