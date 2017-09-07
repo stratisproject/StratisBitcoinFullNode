@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (unweightedSamplesCount >= MinUnweightedSamplesCount)
             {
-                this.logger.LogTrace("We have {0} unweighted samples.", unweightedSamplesCount);
+                this.logger.LogTrace("We have {0} unweighted samples, {1} outbound samples and {2} inbound samples.", unweightedSamplesCount, this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
                 List<double> allSamples = this.inboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
 
                 List<double> outboundOffsets = this.outboundTimestampOffsets.Select(s => s.TimeOffset.TotalSeconds).ToList();
