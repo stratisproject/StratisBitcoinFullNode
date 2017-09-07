@@ -10,11 +10,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     {
         /// <summary>Default value for "blocksonly" option.</summary>
         /// <seealso cref="RelayTxes"/>
-        const bool DefaultBlocksOnly = false;
+        private const bool DefaultBlocksOnly = false;
 
         // Default value for "whitelistrelay" option.
         /// <seealso cref="WhiteListRelay"/>
-        const bool DefaultWhiteListRelay = true;
+        private const bool DefaultWhiteListRelay = true;
 
         /// <summary>Maximal size of the transaction memory pool in megabytes.</summary>
         public int MaxMempool { get; set; }
