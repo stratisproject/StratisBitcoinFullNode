@@ -135,7 +135,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Check timestamp.
             if (block.Header.Time > FutureDriftV2(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
+            {
+                this.logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
+            }
 
             if (BlockStake.IsProofOfStake(block))
             {
@@ -327,9 +330,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             return nTime + 10 * 60;
         }
 
+        private static bool IsDriftReduced(long nTime)
+        {
+            return nTime > 1479513600;
+        } 
+
         private static long FutureDriftV2(long nTime)
         {
-            return nTime + 15;
+            return IsDriftReduced(nTime) ? nTime + 15 : nTime + 128 * 60 * 60;
         }
 
         private static long FutureDrift(long nTime, int nHeight)
