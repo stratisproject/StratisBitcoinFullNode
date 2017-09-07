@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public async void AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfull()
         {
-            string dataDir = $"TestData\\{nameof(MempoolValidatorTest)}\\{nameof(AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfull)}";
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret minerSecret = new BitcoinSecret(new Key(), Network.RegTest);
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public async void AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfull()
         {
-            string dataDir = $"TestData\\{nameof(MempoolValidatorTest)}\\{nameof(AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfull)}";
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public async void AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfull()
         {
-            string dataDir = $"TestData\\{nameof(MempoolValidatorTest)}\\{nameof(AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfull)}";
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.Tests.Features.MemoryPool
         [Fact]
         public async void AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfull()
         {
-            string dataDir = $"TestData\\{nameof(MempoolValidatorTest)}\\{nameof(AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfull)}";
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
