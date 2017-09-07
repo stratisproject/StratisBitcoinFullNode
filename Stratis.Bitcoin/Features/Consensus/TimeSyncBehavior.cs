@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>Ratio of weights of outbound timestamp offsets and inbound timestamp offsets. 
         /// Ratio of N means that a single outbound sample has equal weight as N inbound samples.</summary>
-        private const int OutboundToInboundWeightRatio = 10;
+        public const int OutboundToInboundWeightRatio = 10;
 
         /// <summary>Maximal value for <see cref="timeOffset"/> in seconds that does not trigger warnings to user.</summary>
         public const int TimeOffsetWarningThresholdSeconds = 5 * 60;
