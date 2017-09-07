@@ -4,7 +4,6 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using System;
 using System.Collections.Generic;
@@ -13,7 +12,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Features.MemoryPool
+namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 {
     public class MempoolPersistenceTest : IDisposable
     {

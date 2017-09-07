@@ -1,11 +1,10 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Features.MemoryPool;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Features.MemoryPool
+namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 {
     /// <summary>
     /// Unit tests for the memory pool validator.
