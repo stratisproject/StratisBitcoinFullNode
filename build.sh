@@ -7,6 +7,7 @@ dotnet build -c Release ${path} -v m
 echo STARTED dotnet test
 dotnet test -c Release ./Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests.csproj -v m
 dotnet test -c Release ./Stratis.Bitcoin.Features.BlockStore.Tests/Stratis.Bitcoin.Features.BlockStore.Tests.csproj -v m
+dotnet test -c Release ./Stratis.Bitcoin.Features.MemoryPool.Tests/Stratis.Bitcoin.Features.MemoryPool.Tests.csproj -v m
 dotnet test -c Release ./Stratis.Bitcoin.Features.IndexStore.Tests/Stratis.Bitcoin.Features.IndexStore.Tests.csproj -v m
 dotnet test -c Release ./Stratis.Bitcoin.Features.Wallet.Tests/Stratis.Bitcoin.Features.Wallet.Tests.csproj -v m
 dotnet test -c Release ./Stratis.Bitcoin.Features.WatchOnlyWallet.Tests/Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.csproj -v m
