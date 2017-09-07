@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 for (int i = 0; i < OutboundToInboundWeightRatio; i++)
                     allSamples.AddRange(outboundOffsets);
 
-                double median = outboundOffsets.Median();
+                double median = allSamples.Median();
                 if (median < MaxTimeOffsetSeconds)
                 {
                     this.timeOffset = TimeSpan.FromSeconds(median);
