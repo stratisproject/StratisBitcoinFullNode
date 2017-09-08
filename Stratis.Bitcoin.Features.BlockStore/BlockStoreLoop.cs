@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary>The async loop we need to wait upon before  we can dispose this feature.</summary>
+        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop asyncLoop;
 
         public StoreBlockPuller BlockPuller { get; }

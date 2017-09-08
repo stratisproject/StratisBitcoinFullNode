@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary>The async loop we need to wait upon before  we can dispose this feature.</summary>
+        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop asyncLoop;
 
         private readonly IBlockRepository blockRepository;
@@ -163,6 +163,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// The async loop needs to complete its work before we can shut down this feature.
+        /// </summary>
         internal void ShutDown()
         {
             this.asyncLoop.Dispose();
