@@ -221,7 +221,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         this.RecalculateTimeOffsetLocked();
 
-                        if (!this.WarningLoopStarted && (Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds))
+                        // If SwitchedOffLimitReached is set, timeOffset is set to zero,
+                        // so we need to check both conditions here.
+                        if (!this.WarningLoopStarted 
+                            && ((Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds) || this.SwitchedOffLimitReached))
                         {
                             startWarningLoopNow = true;
                             this.WarningLoopStarted = true;
