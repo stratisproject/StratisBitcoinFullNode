@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Shared state among time sync behaviors that holds list of obtained samples.</summary>
-        private readonly TimeSyncBehaviorState state;
+        private readonly ITimeSyncBehaviorState state;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="state">Shared state among time sync behaviors.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public TimeSyncBehavior(TimeSyncBehaviorState state, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public TimeSyncBehavior(ITimeSyncBehaviorState state, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
