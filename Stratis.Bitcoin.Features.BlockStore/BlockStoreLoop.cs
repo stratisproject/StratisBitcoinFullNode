@@ -3,7 +3,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Concurrent;
@@ -16,9 +15,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
     /// </summary>
-    public class BlockStoreLoop : IWaitUntilAsyncLoopCompletes
+    public class BlockStoreLoop
     {
-        public IAsyncLoopFactory AsyncLoopFactory { get; private set; }
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>The async loop we need to wait upon before  we can dispose this feature.</summary>
+        private IAsyncLoop asyncLoop;
+
         public StoreBlockPuller BlockPuller { get; }
         public IBlockRepository BlockRepository { get; }
         private readonly BlockStoreStats blockStoreStats;
@@ -36,9 +39,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
-
-        /// <summary>Factory for creating loggers.</summary>
-        public Task LoopTask { get; private set; }
 
         /// <summary>Maximum number of bytes the block puller can download before the downloaded blocks are stored to the disk.</summary>
         internal const uint MaxInsertBlockSize = 20 * 1024 * 1024;
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider)
         {
-            this.AsyncLoopFactory = asyncLoopFactory;
+            this.asyncLoopFactory = asyncLoopFactory;
             this.BlockPuller = blockPuller;
             this.BlockRepository = blockRepository;
             this.Chain = chain;
@@ -192,10 +192,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        ///<summary>Persists unsaved blocks to disk when the node shuts down.</summary>
-        private Task Flush()
+        /// <summary>
+        /// Persists unsaved blocks to disk when the node shuts down.
+        /// <para>
+        /// Before we can shut down we need to ensure that the current async loop
+        /// has completed.
+        /// </para>
+        /// </summary>
+        internal void ShutDown()
         {
-            return this.DownloadAndStoreBlocks(CancellationToken.None, true);
+            this.asyncLoop.Dispose();
+            this.DownloadAndStoreBlocks(CancellationToken.None, true).Wait();
         }
 
         /// <summary>
@@ -203,13 +210,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         private void StartLoop()
         {
-            this.LoopTask = this.AsyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
-                            {
-                                await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping, false);
-                            },
-                            this.nodeLifetime.ApplicationStopping,
-                            repeatEvery: TimeSpans.Second,
-                            startAfter: TimeSpans.FiveSeconds);
+            this.asyncLoop = this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
+            {
+                await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping, false);
+            },
+             this.nodeLifetime.ApplicationStopping,
+             repeatEvery: TimeSpans.Second,
+             startAfter: TimeSpans.FiveSeconds);
         }
 
         /// <summary>
@@ -281,18 +288,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.ChainState.HighestPersistedBlock = block;
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// If the loop task has not yet completed, wait for it to complete
-        /// before flushing the block store.
-        /// </summary>
-        public void ShutDown()
-        {
-            if (this.LoopTask.IsCompleted == false)
-                this.LoopTask.Wait();
-
-            Flush().Wait();
         }
     }
 }

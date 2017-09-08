@@ -2,19 +2,21 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreSignaled : SignalObserver<Block>, IWaitUntilAsyncLoopCompletes
+    public class BlockStoreSignaled : SignalObserver<Block>
     {
-        public IAsyncLoopFactory AsyncLoopFactory { get; private set; }
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>The async loop we need to wait upon before  we can dispose this feature.</summary>
+        private IAsyncLoop asyncLoop;
+
         private readonly IBlockRepository blockRepository;
         private readonly BlockStoreLoop blockStoreLoop;
         private readonly ConcurrentChain chain;
@@ -23,11 +25,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-
-        /// <summary>
-        /// The async loop we have to wait on to complete before we dispose <see cref="BlockStoreSignaled"/>.
-        /// </summary>
-        public Task LoopTask { get; private set; }
 
         private readonly string name;
         private readonly INodeLifetime nodeLifetime;
@@ -47,7 +44,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             string name = "BlockStore")
         {
-            this.AsyncLoopFactory = asyncLoopFactory;
+            this.asyncLoopFactory = asyncLoopFactory;
             this.blockHashesToAnnounce = new ConcurrentDictionary<uint256, uint256>();
             this.blockRepository = blockRepository;
             this.blockStoreLoop = blockStoreLoop;
@@ -107,7 +104,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.LoopTask = this.AsyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
+            this.asyncLoop = this.asyncLoopFactory.Run($"{this.name}.RelayWorker", async token =>
             {
                 this.logger.LogTrace("()");
                 List<uint256> blocks = this.blockHashesToAnnounce.Keys.ToList();
@@ -166,10 +163,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        public void ShutDown()
+        internal void ShutDown()
         {
-            if (this.LoopTask.IsCompleted == false)
-                this.LoopTask.Wait();
+            this.asyncLoop.Dispose();
         }
     }
 }

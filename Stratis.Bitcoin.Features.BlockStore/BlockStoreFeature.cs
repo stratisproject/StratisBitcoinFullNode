@@ -1,24 +1,23 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using NBitcoin.Protocol;
-    using Stratis.Bitcoin.BlockPulling;
-    using Stratis.Bitcoin.Builder;
-    using Stratis.Bitcoin.Builder.Feature;
-    using Stratis.Bitcoin.Configuration;
-    using Stratis.Bitcoin.Configuration.Logging;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Interfaces;
-    using Stratis.Bitcoin.Utilities;
-    using System;
-    using System.Threading.Tasks;
-
     public class BlockStoreFeature : FullNodeFeature, IBlockStore
     {
         protected readonly ConcurrentChain chain;
@@ -112,17 +111,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override void Stop()
         {
-            this.logger.LogTrace("()");
+            this.logger.LogInformation("Stopping {0}...", this.name);
 
-            this.logger.LogInformation("Flushing {0}...", this.name);
-
-            this.blockStoreSignaled.ShutDown();
             this.blockStoreManager.BlockStoreLoop.ShutDown();
-
+            this.blockStoreSignaled.ShutDown();
             this.blockStoreCache.Dispose();
             this.blockRepository.Dispose();
-
-            this.logger.LogTrace("(-)");
         }
     }
 

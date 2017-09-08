@@ -6,12 +6,10 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
-
     public class LightWalletFeePolicy : IWalletFeePolicy
     {
         private readonly Money maxTxFee;
@@ -38,11 +36,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         public Task Initialize()
         {
-            return this.asyncLoopFactory.Run(nameof(LightWalletFeePolicy), async token =>
+            IAsyncLoop task = this.asyncLoopFactory.Run(nameof(LightWalletFeePolicy), async token =>
             {
-                HttpResponseMessage response =
-                    await this.httpClient.GetAsync(@"http://api.blockcypher.com/v1/btc/main", HttpCompletionOption.ResponseContentRead, token)
-                    .ConfigureAwait(false);
+                HttpResponseMessage response = await this.httpClient.GetAsync(@"http://api.blockcypher.com/v1/btc/main", HttpCompletionOption.ResponseContentRead, token).ConfigureAwait(false);
 
                 var json = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
                 this.lowTxFeePerKb = new FeeRate(new Money((int)(json.Value<decimal>("low_fee_per_kb")), MoneyUnit.Satoshi));
@@ -54,9 +50,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 var waitMinutes = new Random().Next(3, 10);
                 await Task.Delay(TimeSpan.FromMinutes(waitMinutes), token).ContinueWith(t => { }).ConfigureAwait(false);
             },
-                this.nodeLifetime.ApplicationStopping,
-                repeatEvery: TimeSpans.Second,
-                startAfter: TimeSpans.Second);
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.Second,
+            startAfter: TimeSpans.Second);
+
+            return task.RunningTask;
         }
 
         public Money GetRequiredFee(int txBytes)
