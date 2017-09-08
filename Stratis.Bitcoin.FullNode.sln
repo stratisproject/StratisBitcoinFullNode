@@ -60,6 +60,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Me
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.MemoryPool.Tests", "Stratis.Bitcoin.Features.MemoryPool.Tests\Stratis.Bitcoin.Features.MemoryPool.Tests.csproj", "{0735CA29-50F0-4D29-9CDD-8121437D8170}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Notifications", "Stratis.Bitcoin.Features.Notifications\Stratis.Bitcoin.Features.Notifications.csproj", "{5D10A9EE-C328-43EC-B9EF-A6B683AD44C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.Notifications.Tests", "Stratis.Bitcoin.Features.Notifications.Tests\Stratis.Bitcoin.Features.Notifications.Tests.csproj", "{4EB83447-271F-458D-8899-F2FB2C087CBE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -158,6 +162,14 @@ Global
 		{0735CA29-50F0-4D29-9CDD-8121437D8170}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0735CA29-50F0-4D29-9CDD-8121437D8170}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0735CA29-50F0-4D29-9CDD-8121437D8170}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D10A9EE-C328-43EC-B9EF-A6B683AD44C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D10A9EE-C328-43EC-B9EF-A6B683AD44C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D10A9EE-C328-43EC-B9EF-A6B683AD44C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D10A9EE-C328-43EC-B9EF-A6B683AD44C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4EB83447-271F-458D-8899-F2FB2C087CBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4EB83447-271F-458D-8899-F2FB2C087CBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4EB83447-271F-458D-8899-F2FB2C087CBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4EB83447-271F-458D-8899-F2FB2C087CBE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
