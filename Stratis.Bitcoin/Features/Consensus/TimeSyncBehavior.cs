@@ -29,6 +29,40 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Bitcoin introduced so called adjusted time, which is implemented as a time offset added 
+    /// to node's system time. The offset is result of time syncing feature with network peers that 
+    /// collects samples from "version" network message from anyone who connects with our node 
+    /// (in any direction). The median of the collected samples is used as the final time offset 
+    /// the node uses to calculate the adjusted time.
+    /// <para>
+    /// Bitcoin allowed up to 70 minutes of time adjustment to be made using this mechanism. 
+    /// However, Bitcoin also allowed the blocks to be mined with timestamps that are off by up 
+    /// to 2 hours. This is very unlike Stratis' POS, which uses very narrow windows for block 
+    /// timestamps. This is why we implemented our mechanism of time syncing with peers 
+    /// and adjusted time calculation slightly differently.
+    /// </para>
+    /// <para>
+    /// We also collect samples from network "version" messages and calculate time difference 
+    /// for every peer. We DO distinguish between inbound and outbound connections, however.
+    /// We consider inbound connections as less reliable sources of information and we introduce 
+    /// <see cref="OutboundToInboundWeightRatio"/> to reflect that. We keep outbound time offset 
+    /// samples separated from inbound samples. Our final offset is also a median of collected 
+    /// samples, but outbound samples have much greater weight in the median calculation 
+    /// as per the given ratio. 
+    /// </para>
+    /// <para>
+    /// Bitcoin's implementation only allows certain number of samples to be collected 
+    /// and once the limit is reached, no more samples are allowed. We do not replicate this 
+    /// behavior and we implement circular array to store the time offset samples. 
+    /// This means that once the limit is reached, we replace oldest samples with the new ones.
+    /// </para>
+    /// <para>
+    /// Finally, as the POS chain is much more sensitive to correct time settings, our user 
+    /// alerting mechanism is triggered much earlier (for much lower time difference) than 
+    /// the one in Bitcoin. 
+    /// </para>
+    /// </remarks>
     public class TimeSyncBehaviorState : ITimeSyncBehaviorState, IDisposable
     {
         /// <summary>
