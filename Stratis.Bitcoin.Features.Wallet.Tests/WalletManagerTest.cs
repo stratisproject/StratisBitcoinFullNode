@@ -11,7 +11,6 @@ using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Tests.Utilities;
@@ -112,7 +111,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Assert.Equal(expectedAddress.ToString(), actualAddress.Address);
                         Assert.Equal(expectedAddressPubKey.ScriptPubKey, actualAddress.Pubkey);
                         Assert.Equal($"m/44'/105'/{j}'/1/{k}", actualAddress.HdPath);
-                        Assert.Null(actualAddress.BlocksScanned);
                         Assert.Equal(0, actualAddress.Transactions.Count);
                     }
 
@@ -127,7 +125,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Assert.Equal(expectedAddress.ToString(), actualAddress.Address);
                         Assert.Equal(expectedAddressPubKey.ScriptPubKey, actualAddress.Pubkey);
                         Assert.Equal($"m/44'/105'/{j}'/0/{l}", actualAddress.HdPath);
-                        Assert.Null(actualAddress.BlocksScanned);
                         Assert.Equal(0, actualAddress.Transactions.Count);
                     }
                 }
@@ -226,7 +223,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Assert.Equal(expectedAddress.ToString(), actualAddress.Address);
                         Assert.Equal(expectedAddressPubKey.ScriptPubKey, actualAddress.Pubkey);
                         Assert.Equal($"m/44'/105'/{j}'/1/{k}", actualAddress.HdPath);
-                        Assert.Null(actualAddress.BlocksScanned);
                         Assert.Equal(0, actualAddress.Transactions.Count);
                     }
 
@@ -241,7 +237,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Assert.Equal(expectedAddress.ToString(), actualAddress.Address);
                         Assert.Equal(expectedAddressPubKey.ScriptPubKey, actualAddress.Pubkey);
                         Assert.Equal($"m/44'/105'/{j}'/0/{l}", actualAddress.HdPath);
-                        Assert.Null(actualAddress.BlocksScanned);
                         Assert.Equal(0, actualAddress.Transactions.Count);
                     }
                 }
@@ -432,7 +427,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Assert.Equal(expectedAddress.Address, recoveredAddress.Address);
                         Assert.Equal(expectedAddress.Pubkey, recoveredAddress.Pubkey);
                         Assert.Equal(expectedAddress.HdPath, recoveredAddress.HdPath);
-                        Assert.Equal(expectedAddress.BlocksScanned, recoveredAddress.BlocksScanned);
                         Assert.Equal(0, expectedAddress.Transactions.Count);
                         Assert.Equal(expectedAddress.Transactions.Count, recoveredAddress.Transactions.Count);
                     }
@@ -447,7 +441,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Assert.Equal(expectedAddress.Address, recoveredAddress.Address);
                         Assert.Equal(expectedAddress.Pubkey, recoveredAddress.Pubkey);
                         Assert.Equal(expectedAddress.HdPath, recoveredAddress.HdPath);
-                        Assert.Equal(expectedAddress.BlocksScanned, recoveredAddress.BlocksScanned);
                         Assert.Equal(0, expectedAddress.Transactions.Count);
                         Assert.Equal(expectedAddress.Transactions.Count, recoveredAddress.Transactions.Count);
                     }
@@ -526,7 +519,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Assert.Equal(expectedAddress.Address, recoveredAddress.Address);
                         Assert.Equal(expectedAddress.Pubkey, recoveredAddress.Pubkey);
                         Assert.Equal(expectedAddress.HdPath, recoveredAddress.HdPath);
-                        Assert.Equal(expectedAddress.BlocksScanned, recoveredAddress.BlocksScanned);
                         Assert.Equal(0, expectedAddress.Transactions.Count);
                         Assert.Equal(expectedAddress.Transactions.Count, recoveredAddress.Transactions.Count);
                     }
@@ -541,7 +533,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Assert.Equal(expectedAddress.Address, recoveredAddress.Address);
                         Assert.Equal(expectedAddress.Pubkey, recoveredAddress.Pubkey);
                         Assert.Equal(expectedAddress.HdPath, recoveredAddress.HdPath);
-                        Assert.Equal(expectedAddress.BlocksScanned, recoveredAddress.BlocksScanned);
                         Assert.Equal(0, expectedAddress.Transactions.Count);
                         Assert.Equal(expectedAddress.Transactions.Count, recoveredAddress.Transactions.Count);
                     }
@@ -1511,7 +1502,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -1522,7 +1512,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -1533,7 +1522,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -1603,7 +1591,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -1614,7 +1601,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -1625,7 +1611,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -1692,7 +1677,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -1703,7 +1687,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -1714,7 +1697,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationChangeAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -1786,7 +1768,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -1797,7 +1778,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -1808,7 +1788,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -1884,7 +1863,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -1895,7 +1873,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -1906,7 +1883,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -1981,7 +1957,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -1992,7 +1967,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -2003,7 +1977,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -2094,7 +2067,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -2105,7 +2077,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -2116,7 +2087,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -2215,7 +2185,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -2226,7 +2195,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -2237,7 +2205,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -2369,7 +2336,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var spendingAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -2380,7 +2346,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var destinationAddress = new HdAddress()
             {
                 Index = 1,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/1",
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
@@ -2391,7 +2356,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var changeAddress = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/1/0",
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
