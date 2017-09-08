@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
-            this.lastCoinStakeSearchTime = Utils.DateTimeToUnixTime(this.dateTimeProvider.GetTimeOffset()); // startup timestamp
+            this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.reserveBalance = 0; // TOOD:settings.ReserveBalance 
             this.minimumInputValue = 0;
@@ -254,10 +254,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", pindexPrev.HashBlock, pindexPrev.Height, pindexPrev.Header.Time);
                 }
 
-                // TODO: This has to be changed once 
-                // https://github.com/stratisproject/StratisBitcoinFullNode/issues/382
-                // is implemented.
-                uint coinstakeTimestamp = Utils.DateTimeToUnixTime(DateTime.UtcNow) & ~PosConsensusValidator.StakeTimestampMask;
+                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
                 if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
                 {
                     this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", coinstakeTimestamp, this.lastCoinStakeSearchTime);
@@ -516,7 +513,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Select coins with suitable depth.
-            List<StakeTx> setCoins = this.SelectSuitableCoinsForStaking(stakeTxes, coinstakeTx.Time, balance - this.reserveBalance);
+            List<StakeTx> setCoins = this.FindCoinsForStaking(stakeTxes, coinstakeTx.Time, balance - this.reserveBalance);
 
             if (!setCoins.Any())
             {
@@ -809,7 +806,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="spendTime">Timestamp of the coinstake transaction.</param>
         /// <param name="maxValue">Maximal amount of coins that can be used for staking.</param>
         /// <returns>List of coins that meet the requirements.</returns>
-        private List<StakeTx> SelectSuitableCoinsForStaking(List<StakeTx> stakeTxes, uint spendTime, long maxValue)
+        private List<StakeTx> FindCoinsForStaking(List<StakeTx> stakeTxes, uint spendTime, long maxValue)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(spendTime), spendTime, nameof(maxValue), maxValue);
             var res = new List<StakeTx>();

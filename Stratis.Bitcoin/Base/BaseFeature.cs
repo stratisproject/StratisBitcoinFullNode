@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -70,8 +71,17 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Manager of node's network peers.</summary>
         private AddressManager addressManager;
 
+        /// <summary>Provider of time functions.</summary>
+        private IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
         /// <summary>Logger for the node.</summary>
         private readonly ILogger logger;
+
+        /// <summary>Factory for creating loggers.</summary>
+        private ILoggerFactory loggerFactory;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -84,6 +94,8 @@ namespace Stratis.Bitcoin.Base
         /// <param name="chainState">Information about node's chain.</param>
         /// <param name="connectionManager">Manager of node's network connections.</param>
         /// <param name="chainRepository">Access to the database of blocks.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
+        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         public BaseFeature(
             NodeSettings nodeSettings,
@@ -94,6 +106,8 @@ namespace Stratis.Bitcoin.Base
             ChainState chainState,
             IConnectionManager connectionManager,
             ChainRepository chainRepository,
+            IDateTimeProvider dateTimeProvider,
+            IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -104,6 +118,9 @@ namespace Stratis.Bitcoin.Base
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
+            this.dateTimeProvider = dateTimeProvider;
+            this.asyncLoopFactory = asyncLoopFactory;
+            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -117,7 +134,10 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager));
+            var timeSyncBehaviorState = new TimeSyncBehaviorState(this.dateTimeProvider, this.nodeLifetime, this.asyncLoopFactory, this.loggerFactory);
+            connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
 
+            this.disposableResources.Add(timeSyncBehaviorState);
             this.disposableResources.Add(this.chainRepository);
             this.disposableResources.Add(this.connectionManager);
             this.disposableResources.Add(this.nodeSettings.LoggerFactory);
