@@ -315,25 +315,25 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (timeOffsetWrong)
                     {
-                        this.logger.LogCritical(
-                              "============================== W A R N I N G ! ==============================\n"
+                        this.logger.LogCritical("\n"
+                            + "============================== W A R N I N G ! ==============================\n"
                             + "Your system time is very different than the time of other network nodes.\n"
                             + "To prevent problems, adjust your system time, or check -synctime command line argument.\n"
                             + "Your time difference to the network median time is {0} seconds.\n"
-                            + "=============================================================================",
+                            + "=============================================================================\n",
                               timeOffsetSeconds);
                     }
                 }
                 else
                 {
-                    this.logger.LogCritical(
-                          "============================== W A R N I N G ! ==============================\n"
+                    this.logger.LogCritical("\n"
+                        + "============================== W A R N I N G ! ==============================\n"
                         + "Your system time is VERY different than the time of other network nodes.\n"
-                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds."
+                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds.\n"
                         + "The time syncing feature has been as it is no longer considered safe.\n"
                         + "It is likely that you will now reject new blocks or be unable to mine new block.\n"
-                        + "You need to adjust your system time or check -synctime command line argument."
-                        + "=============================================================================",
+                        + "You need to adjust your system time or check -synctime command line argument.\n"
+                        + "=============================================================================\n",
                           MaxTimeOffsetSeconds);
                 }
 
