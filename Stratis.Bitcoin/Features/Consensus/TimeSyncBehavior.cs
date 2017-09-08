@@ -28,13 +28,22 @@ namespace Stratis.Bitcoin.Features.Consensus
         bool AddTimeData(IPAddress peerAddress, TimeSpan offsetSample, bool isInboundConnection);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// State of time synchronization feature that stores collected data samples
+    /// and calculates adjustments to system time.
+    /// </summary>
     /// <remarks>
     /// Bitcoin introduced so called adjusted time, which is implemented as a time offset added 
     /// to node's system time. The offset is result of time syncing feature with network peers that 
     /// collects samples from "version" network message from anyone who connects with our node 
     /// (in any direction). The median of the collected samples is used as the final time offset 
     /// the node uses to calculate the adjusted time.
+    /// <para>
+    /// The actual source of adjusted time is <see cref="IDateTimeProvider"/>. It is the logic 
+    /// behind its calculation and collection of samples that resides in this class. This class 
+    /// modifies the date time provider using its interface every time a new time offset sample 
+    /// that affects the final offset is collected.
+    /// </para>
     /// <para>
     /// Bitcoin allowed up to 70 minutes of time adjustment to be made using this mechanism. 
     /// However, Bitcoin also allowed the blocks to be mined with timestamps that are off by up 
