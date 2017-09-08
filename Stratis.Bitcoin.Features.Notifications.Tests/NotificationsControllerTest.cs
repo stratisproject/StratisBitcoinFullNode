@@ -1,17 +1,16 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Notifications
+namespace Stratis.Bitcoin.Features.Notifications.Tests
 {
     public class NotificationsControllerTest : LogsTestBase
     {
@@ -78,7 +77,6 @@ namespace Stratis.Bitcoin.Tests.Notifications
             chain.Verify(c => c.GetBlock(heightLocation), Times.Never);
             blockNotification.Verify(b => b.SyncFrom(hash), Times.Once);
         }
-
 
         [Fact]
         public void Given_SyncActionIsCalled_When_AnInvalidBlockHashIsSpecified_Then_AnExceptionIsThrown()

@@ -101,10 +101,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         internal FluentBlockStoreLoop()
         {
             this.ConfigureLogger();
-            this.ConfigureConnectionManager();
 
             this.BlockRepository = new BlockRepositoryInMemory();
             this.dataFolder = TestBase.AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "BlockStore"));
+
+            this.ConfigureConnectionManager();
 
             var fullNode = new Mock<FullNode>().Object;
             fullNode.DateTimeProvider = new DateTimeProvider();
@@ -144,7 +145,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             this.connectionManager = new Mock<IConnectionManager>();
             this.connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
-            this.connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.Default());
+            this.connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.FromArguments(new string[] { $"-datadir={this.dataFolder.WalletPath}" }));
             this.connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
         }
 
