@@ -40,7 +40,6 @@ namespace Stratis.StratisD
                 .UseMempool()
                 .UseWallet()
                 .AddPowPosMining()
-                .UseApi()
                 .Build();
 
             Task.Delay(TimeSpan.FromMinutes(1)).ContinueWith(t =>

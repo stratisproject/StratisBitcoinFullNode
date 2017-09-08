@@ -42,11 +42,6 @@ namespace Stratis.Bitcoin.Features.Miner
             PosConsensusValidator posValidator = this.consensusLoop.Validator as PosConsensusValidator;
             Guard.NotNull(posValidator, nameof(posValidator));
 
-            // TODO: add this code
-            // Timestamp limit
-            // if (tx.nTime > GetAdjustedTime() || (fProofOfStake && tx.nTime > pblock->vtx[0].nTime))
-            //continue;
-
             this.logger.LogTrace("(-)");
             return this.pblocktemplate;
         }
