@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -136,18 +137,38 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 int i = 0;
                 if (entries != null)
                 {
+                    // tx timeout in seconds
+                    long expiryTimeout = this.mempoolSettings.MempoolExpiry * 60 * 60;
+
                     this.mempoolLogger.LogInformation($"...loaded {entries.Count()} cached entries.");
                     foreach (MempoolPersistenceEntry entry in entries)
                     {
                         Transaction trx = entry.Tx;
                         uint256 trxHash = trx.GetHash();
-                        if (!this.memPool.Exists(trxHash))
+                        bool isExpired = entry.Time + expiryTimeout <= this.DateTimeProvider.GetTime();
+                        bool isExists = this.memPool.Exists(trxHash);
+                        if (isExpired || isExists)
+                        {
+                            if (isExpired)
+                            {
+                                this.mempoolLogger.LogDebug("...transaction ID {0} not accepted to mempool due to age of {1:.##} days.", trxHash, new TimeSpan(this.DateTimeProvider.GetTime() - entry.Time).TotalDays);
+                            }
+                            if (isExists)
+                            {
+                                this.mempoolLogger.LogDebug("...transaction ID {0} not accepted to mempool because it already exists.", trxHash);
+                            }
+                        }
+                        else
                         {
                             MempoolValidationState state = new MempoolValidationState(false) { AcceptTime = entry.Time, OverrideMempoolLimit = true };
                             if (await this.Validator.AcceptToMemoryPoolWithTime(state, trx) && this.memPool.MapTx.ContainsKey(trxHash))
                             {
                                 i++;
                                 this.memPool.MapTx[trxHash].UpdateFeeDelta(entry.FeeDelta);
+                            }
+                            else
+                            {
+                                this.mempoolLogger.LogDebug("...transaction ID {0} not accepted to mempool because its invalid.", trxHash);
                             }
                         }
                     }
