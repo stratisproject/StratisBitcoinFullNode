@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Tests.Features.Consensus
                 IPAddress peerAddress = new IPAddress(i);
                 bool used = state.AddTimeData(peerAddress, TimeSpan.FromSeconds(i), true);
                 Assert.True(used);
-                if (i >= 100) inSamples.Add(i * 1000);
+                if (i >= inboundSamples - TimeSyncBehaviorState.MaxInboundSamples) inSamples.Add(i * 1000);
             }
 
             DateTime adjustedTime = dateTimeProvider.GetAdjustedTime();
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Tests.Features.Consensus
                 IPAddress peerAddress = new IPAddress(i);
                 bool used = state.AddTimeData(peerAddress, TimeSpan.FromSeconds(-i), false);
                 Assert.True(used);
-                if (i >= 100) outSamples.Add(-i * 1000);
+                if (i >= outboundSamples - TimeSyncBehaviorState.MaxOutboundSamples) outSamples.Add(-i * 1000);
             }
 
             var allSamples = new List<int>(inSamples);

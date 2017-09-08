@@ -44,10 +44,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>Maximal number of samples to keep inside <see cref="inboundTimestampOffsets"/>.</summary>
-        private const int MaxInboundSamples = 200;
+        public const int MaxInboundSamples = 200;
 
         /// <summary>Maximal number of samples to keep inside <see cref="outboundTimestampOffsets"/>.</summary>
-        private const int MaxOutboundSamples = 200;
+        public const int MaxOutboundSamples = 200;
 
         /// <summary>Ratio of weights of outbound timestamp offsets and inbound timestamp offsets. 
         /// Ratio of N means that a single outbound sample has equal weight as N inbound samples.</summary>
