@@ -10,7 +10,6 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -429,9 +428,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void RecoverWalletWithInvalidOperationExceptionReturnsConflict()
         {
+            string errorMessage = "An error occurred.";
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null))
-                .Throws(new InvalidOperationException("Invalid operation."));
+                .Throws(new InvalidOperationException(errorMessage));
 
             string dir = AssureEmptyDir("TestData/WalletControllerTest/RecoverWalletWithInvalidOperationExceptionReturnsConflict");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
@@ -457,7 +457,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(409, error.Status);
             Assert.StartsWith("System.InvalidOperationException", error.Description);
-            Assert.Equal("This wallet already exists.", error.Message);
+            Assert.Equal(errorMessage, error.Message);
         }
 
         [Fact]

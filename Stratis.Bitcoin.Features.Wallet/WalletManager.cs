@@ -816,7 +816,15 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (this.fileStorage.Exists($"{name}.{WalletFileExtension}"))
             {
-                throw new InvalidOperationException($"Wallet with name '{name}.{WalletFileExtension}' already exists.");
+                throw new InvalidOperationException($"Wallet with name '{name}' already exists.");
+            }
+
+            List<Wallet> similarWallets = this.Wallets.Where(w => w.EncryptedSeed == encryptedSeed).ToList();
+            if (similarWallets.Any())
+            {
+                throw new InvalidOperationException($"Cannot create this wallet as a wallet with the same private key already exists. If you want to restore your wallet from scratch, " +
+                                                    $"please remove the file {string.Join(", ", similarWallets.Select(w => w.Name))}.{WalletFileExtension} from '{this.fileStorage.FolderPath}' and try restoring the wallet again. " +
+                                                    $"Make sure you have your mnemonic and your password handy!");
             }
 
             Wallet walletFile = new Wallet
