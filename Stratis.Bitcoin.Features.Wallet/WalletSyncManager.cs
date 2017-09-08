@@ -96,9 +96,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
                 if (incomingBlock.Height > this.walletTip.Height)
                 {
-                    // The wallet is falling behind we need to catch up.
                     var token = this.nodeLifetime.ApplicationStopping;
 
+                    // The wallet is falling behind we need to catch up.
                     var next = this.walletTip;
                     while(next != incomingBlock)
                     {
