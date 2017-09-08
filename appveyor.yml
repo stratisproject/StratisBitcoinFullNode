@@ -76,17 +76,26 @@ test_script:
       Write-Host "[$env:configuration] STARTED dotnet test" -foregroundcolor "magenta"
       cd $env:APPVEYOR_BUILD_FOLDER
       
-      dotnet test -c $env:configuration ./Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests.csproj
-      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.BlockStore.Tests/Stratis.Bitcoin.Features.BlockStore.Tests.csproj
-      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.MemoryPool.Tests/Stratis.Bitcoin.Features.MemoryPool.Tests.csproj
-      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.IndexStore.Tests/Stratis.Bitcoin.Features.IndexStore.Tests.csproj
-      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.Wallet.Tests/Stratis.Bitcoin.Features.Wallet.Tests.csproj
-      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.WatchOnlyWallet.Tests/Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.csproj
-      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.RPC.Tests/Stratis.Bitcoin.Features.RPC.Tests.csproj
-      dotnet test -c $env:configuration ./Stratis.Bitcoin.Features.Notifications.Tests/Stratis.Bitcoin.Features.Notifications.Tests.csproj
+      $anyFailures = $FALSE;
       
+      foreach ($testFolder in ls *.Tests) {
+            if ($testFolder -like '*Integration.Tests*') { continue }
+            
+            Push-Location $testFolder
+
+            Write-Host "[$env:configuration] Running tests in $testFolder" -foregroundcolor "magenta"
+            dotnet test -c $env:configuration
+            
+            if ($LastExitCode -ne 0) { 
+                $anyFailures = $TRUE
+                Add-AppveyorMessage -Message "Some tests failed in $testFolder."
+            }
+    
+            Pop-Location
+      }  
+
       Write-Host "[$env:configuration] FINISHED dotnet test" -foregroundcolor "magenta"
-      if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
+      if ($anyFailures -eq $TRUE) { $host.SetShouldExit(1) }
 
 #---------------------------------#
 #      artifacts configuration    #
