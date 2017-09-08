@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Moq;
+﻿using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Signals;
+using System;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Notifications
+namespace Stratis.Bitcoin.Features.Notifications.Tests
 {    
     public class TransactionNotificationTest
     {

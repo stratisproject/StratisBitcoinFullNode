@@ -1,23 +1,22 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Tests.Logging;
-using Xunit;
-using Stratis.Bitcoin.Connection;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
+using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Notifications
+namespace Stratis.Bitcoin.Features.Notifications.Tests
 {
-	public class BlockNotificationFeatureTest : LogsTestBase
-	{
-		[Fact]
-		public void BlockNotificationFeatureCallsNotifyOnStart()
-		{
+    public class BlockNotificationFeatureTest : LogsTestBase
+    {
+        [Fact]
+        public void BlockNotificationFeatureCallsNotifyOnStart()
+        {
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectedNodes)
                 .Returns(new NodesCollection());
@@ -26,15 +25,15 @@ namespace Stratis.Bitcoin.Tests.Notifications
             connectionManager.Setup(c => c.Parameters)
                 .Returns(new NodeConnectionParameters());
             
-			var chain = new Mock<ConcurrentChain>();
-			var chainState = new Mock<ChainState>(new Mock<FullNode>().Object);
-			var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object, new LoggerFactory());
-			var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var chain = new Mock<ConcurrentChain>();
+            var chainState = new Mock<ChainState>(new Mock<FullNode>().Object);
+            var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object, new LoggerFactory());
+            var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
-			var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
-			blockNotificationFeature.Start();
+            var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
+            blockNotificationFeature.Start();
 
-			blockNotification.Verify(notif => notif.Notify(), Times.Once);
-		}
-	}
+            blockNotification.Verify(notif => notif.Notify(), Times.Once);
+        }
+    }
 }
