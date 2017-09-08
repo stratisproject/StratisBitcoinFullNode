@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Base
         private PeriodicTask flushChainTask;
 
         /// <summary>Periodic task to save list of peers to disk.</summary>
-        private PeriodicTask flushAddressManagerTask;
+        private ILoggerFactory loggerFactory;
 
         /// <summary>
         /// Initializes a new instance of the object.

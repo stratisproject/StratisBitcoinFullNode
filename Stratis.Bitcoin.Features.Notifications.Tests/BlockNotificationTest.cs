@@ -1,16 +1,15 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Utilities;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Features.Notifications;
-using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Notifications
+namespace Stratis.Bitcoin.Features.Notifications.Tests
 {
     public class BlockNotificationTest : LogsTestBase
     {
