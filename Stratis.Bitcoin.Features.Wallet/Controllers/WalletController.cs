@@ -126,10 +126,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 return this.Json(mnemonic.ToString());
             }
-            catch (InvalidOperationException e)
+            catch (WalletException e)
             {
                 // indicates that this wallet already exists
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, "This wallet already exists.", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
             }
             catch (NotSupportedException e)
             {
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 return this.Ok();
             }
-            catch (InvalidOperationException e)
+            catch (WalletException e)
             {
                 // indicates that this wallet already exists
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());

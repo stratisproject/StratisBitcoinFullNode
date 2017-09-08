@@ -806,7 +806,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="encryptedSeed">The seed for this wallet, password encrypted.</param>
         /// <param name="chainCode">The chain code.</param>
         /// <param name="creationTime">The time this wallet was created.</param>
-        /// <returns></returns>
+        /// <returns>The wallet object that was saved into the file system.</returns>
         /// <exception cref="System.NotSupportedException"></exception>
         private Wallet GenerateWalletFile(string name, string encryptedSeed, byte[] chainCode, DateTimeOffset? creationTime = null)
         {
@@ -816,13 +816,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (this.fileStorage.Exists($"{name}.{WalletFileExtension}"))
             {
-                throw new InvalidOperationException($"Wallet with name '{name}' already exists.");
+                throw new WalletException($"Wallet with name '{name}' already exists.");
             }
 
             List<Wallet> similarWallets = this.Wallets.Where(w => w.EncryptedSeed == encryptedSeed).ToList();
             if (similarWallets.Any())
             {
-                throw new InvalidOperationException($"Cannot create this wallet as a wallet with the same private key already exists. If you want to restore your wallet from scratch, " +
+                throw new WalletException($"Cannot create this wallet as a wallet with the same private key already exists. If you want to restore your wallet from scratch, " +
                                                     $"please remove the file {string.Join(", ", similarWallets.Select(w => w.Name))}.{WalletFileExtension} from '{this.fileStorage.FolderPath}' and try restoring the wallet again. " +
                                                     $"Make sure you have your mnemonic and your password handy!");
             }

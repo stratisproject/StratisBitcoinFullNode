@@ -298,10 +298,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void CreateWalletWithInvalidOperationExceptionReturnsConflict()
         {
+            string errorMessage = "An error occurred.";
             Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             var mockWalletCreate = new Mock<IWalletManager>();
             mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-                .Throws(new InvalidOperationException("Invalid operation"));
+                .Throws(new WalletException(errorMessage));
 
             string dir = AssureEmptyDir("TestData/WalletControllerTest/CreateWalletWithInvalidOperationExceptionReturnsConflict");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
@@ -325,8 +326,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(409, error.Status);
-            Assert.StartsWith("System.InvalidOperationException", error.Description);
-            Assert.Equal("This wallet already exists.", error.Message);
+            Assert.Equal(errorMessage, error.Message);
         }
 
         [Fact]
@@ -359,7 +359,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.StartsWith("System.NotSupportedException", error.Description);
             Assert.Equal("There was a problem creating a wallet.", error.Message);
         }
 
@@ -431,7 +430,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string errorMessage = "An error occurred.";
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null))
-                .Throws(new InvalidOperationException(errorMessage));
+                .Throws(new WalletException(errorMessage));
 
             string dir = AssureEmptyDir("TestData/WalletControllerTest/RecoverWalletWithInvalidOperationExceptionReturnsConflict");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
@@ -456,7 +455,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(409, error.Status);
-            Assert.StartsWith("System.InvalidOperationException", error.Description);
             Assert.Equal(errorMessage, error.Message);
         }
 
