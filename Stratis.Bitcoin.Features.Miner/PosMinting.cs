@@ -254,9 +254,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", pindexPrev.HashBlock, pindexPrev.Height, pindexPrev.Header.Time);
                 }
 
-                // TODO: This has to be changed once 
-                // https://github.com/stratisproject/StratisBitcoinFullNode/issues/382
-                // is implemented.
                 uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
                 if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
                 {
