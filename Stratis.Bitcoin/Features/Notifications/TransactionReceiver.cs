@@ -1,10 +1,10 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin.Protocol;
+using NBitcoin.Protocol.Behaviors;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
