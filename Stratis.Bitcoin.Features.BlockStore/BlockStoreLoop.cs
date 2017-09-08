@@ -1,24 +1,27 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.BlockPulling;
-    using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-    using Stratis.Bitcoin.Utilities;
-
     /// <summary>
     /// The BlockStoreLoop simultaneously finds and downloads blocks and stores them in the BlockRepository.
     /// </summary>
     public class BlockStoreLoop
     {
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
+        private IAsyncLoop asyncLoop;
+
         public StoreBlockPuller BlockPuller { get; }
         public IBlockRepository BlockRepository { get; }
         private readonly BlockStoreStats blockStoreStats;
@@ -43,7 +46,6 @@
         /// <summary>Maximum number of bytes the pending storage can hold until the downloaded blocks are stored to the disk.</summary>
         internal const uint MaxPendingInsertBlockSize = 5 * 1000 * 1000;
 
-        private readonly StoreSettings storeSettings;
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Blocks that in PendingStorage will be processed first before new blocks are downloaded.</summary>
@@ -56,6 +58,8 @@
         private BlockStoreStepChain stepChain;
 
         public virtual string StoreName { get { return "BlockStore"; } }
+
+        private readonly StoreSettings storeSettings;
 
         /// <summary>The highest stored block in the repository.</summary>
         internal ChainedBlock StoreTip { get; private set; }
@@ -188,32 +192,31 @@
             this.logger.LogTrace("(-)");
         }
 
-        ///<summary>Persists unsaved blocks to disk when the node shuts down.</summary>
-        public Task Flush()
+        /// <summary>
+        /// Persists unsaved blocks to disk when the node shuts down.
+        /// <para>
+        /// Before we can shut down we need to ensure that the current async loop
+        /// has completed.
+        /// </para>
+        /// </summary>
+        internal void ShutDown()
         {
-            return this.DownloadAndStoreBlocks(CancellationToken.None, true);
+            this.asyncLoop.Dispose();
+            this.DownloadAndStoreBlocks(CancellationToken.None, true).Wait();
         }
 
         /// <summary>
         /// Executes DownloadAndStoreBlocks()
         /// </summary>
-        internal void StartLoop()
+        private void StartLoop()
         {
-            this.logger.LogTrace("()");
-
-            this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
-                {
-                    this.logger.LogTrace("()");
-
-                    await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping);
-
-                    this.logger.LogTrace("(-)");
-                },
-                this.nodeLifetime.ApplicationStopping,
-                repeatEvery: TimeSpans.Second,
-                startAfter: TimeSpans.FiveSeconds);
-
-            this.logger.LogTrace("(-)");
+            this.asyncLoop = this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
+            {
+                await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping, false);
+            },
+             this.nodeLifetime.ApplicationStopping,
+             repeatEvery: TimeSpans.Second,
+             startAfter: TimeSpans.FiveSeconds);
         }
 
         /// <summary>
@@ -241,7 +244,7 @@
         /// a read is normally done when a peer is asking for the entire block (not just the key) 
         /// then if LazyLoadingOn = false the read will be faster on the entire block      
         /// </remarks>
-        private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode = false)
+        private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode)
         {
             this.logger.LogTrace("({0}:{1})", nameof(disposeMode), disposeMode);
 
@@ -272,12 +275,12 @@
             Guard.NotNull(chainedBlock, nameof(chainedBlock));
 
             this.StoreTip = chainedBlock;
-
             this.SetHighestPersistedBlock(chainedBlock);
 
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>Set the highest persisted block in the chain.</summary>
         protected virtual void SetHighestPersistedBlock(ChainedBlock block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block?.HashBlock);

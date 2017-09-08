@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
@@ -13,8 +9,12 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
-using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
         public const int DefaultBlockMinTxFee = 1000;
-        
+
         // Default for -blockmaxsize, which controls the maximum size of block the mining code will create 
         public const int DefaultBlockMaxSize = 750000;
 
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private Task mining;
+        private IAsyncLoop mining;
         private Money reserveBalance;
         private readonly int minimumInputValue;
         private readonly int minerSleep;
@@ -104,19 +104,19 @@ namespace Stratis.Bitcoin.Features.Miner
         private uint256 lastCoinStakeSearchPrevBlockHash;
 
         public PosMinting(
-            ConsensusLoop consensusLoop, 
-            ConcurrentChain chain, 
-            Network network, 
+            ConsensusLoop consensusLoop,
+            ConcurrentChain chain,
+            Network network,
             IConnectionManager connection,
-            IDateTimeProvider dateTimeProvider, 
-            AssemblerFactory blockAssemblerFactory, 
+            IDateTimeProvider dateTimeProvider,
+            AssemblerFactory blockAssemblerFactory,
             IBlockRepository blockRepository,
-            ChainState chainState, 
+            ChainState chainState,
             Signals.Signals signals, INodeLifetime nodeLifetime,
-            NodeSettings settings, 
-            CoinView coinView, 
-            StakeChain stakeChain, 
-            IWalletManager wallet, 
+            NodeSettings settings,
+            CoinView coinView,
+            StakeChain stakeChain,
+            IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
         {
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
         }
 
-        public Task Mine(WalletSecret walletSecret)
+        public IAsyncLoop Mine(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
             if (this.mining != null)
@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 if (pblockTemplate == null)
-                pblockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                    pblockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
                 Block pblock = pblockTemplate.Block;
 
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("(-)[SOLUTION_FOUND]");
                 return;
             }
-            
+
             // Validate the block.
             this.consensusLoop.AcceptBlock(context);
 
@@ -521,7 +521,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
-            this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value))); 
+            this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value)));
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeTx.Time);

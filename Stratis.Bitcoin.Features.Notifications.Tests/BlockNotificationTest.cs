@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
-            await notification.Notify();
+            await notification.Notify().RunningTask;
 
             signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(0));
         }
@@ -93,12 +93,12 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
                 .Returns((Block)null);
 
             var signals = new Mock<ISignals>();
-            
+
             var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             notification.SyncFrom(startBlockId);
-            await notification.Notify();            
-            
+            await notification.Notify().RunningTask;
+
             signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(2));
         }
     }
