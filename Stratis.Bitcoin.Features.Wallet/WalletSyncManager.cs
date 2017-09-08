@@ -97,9 +97,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (incomingBlock.Height > this.walletTip.Height)
                 {
                     // The wallet is falling behind we need to catch up.
+                    var token = this.nodeLifetime.ApplicationStopping;
+
                     var next = this.walletTip;
                     while(next != incomingBlock)
                     {
+                        token.ThrowIfCancellationRequested();
+
                         // While the wallet is catching up the entire node will wait
                         // if a wallet recovers to a date in the past consensus 
                         // will stop till the wallet is up to date.
@@ -111,19 +115,27 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                         next = this.chain.GetBlock(next.Height +1);
                         Block nextblock = null;
-                        var token = this.nodeLifetime.ApplicationStopping;
-                        while (!token.IsCancellationRequested)
+                        var index = 0;
+                        while (true)
                         {
+                            token.ThrowIfCancellationRequested();
+
                             nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
                             if (nextblock == null)
                             {
+                                // The idea in this abandoning of the loop is to release consensus to push the block
+                                // That will make the block available in the next push from conensus.
+                                index++;
+                                if (index > 10)
+                                    return;
+
                                 // Really ugly hack to let store catch up
                                 // this will block the entire consensus pulling.
-                                this.logger.LogInformation("Wallet is behind the best chain and the next block is not found in store");
+                                this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store");
                                 Thread.Sleep(100);
                                 continue;
                             }
-                                
+
                             break;
                         }
 
