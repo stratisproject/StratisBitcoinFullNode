@@ -1,13 +1,12 @@
-﻿using Moq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -79,7 +78,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 var address = new HdAddress()
                 {
                     Index = 0,
-                    BlocksScanned = new SortedList<int, int>(),
                     HdPath = $"m/44'/0'/0'/0/0",
                     Address = spendingKeys.Address.ToString(),
                     Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -101,7 +99,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 {
                     new HdAddress() {
                         Index = 0,
-                        BlocksScanned = new SortedList<int, int>(),
                         HdPath = $"m/44'/0'/0'/1/0",
                         Address = changeKeys.Address.ToString(),
                         Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -141,7 +138,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var address = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -221,7 +217,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var address = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,

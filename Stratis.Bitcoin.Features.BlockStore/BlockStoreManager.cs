@@ -1,10 +1,10 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
-{
-    using NBitcoin;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.Configuration;
-    using Stratis.Bitcoin.Connection;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
 
+namespace Stratis.Bitcoin.Features.BlockStore
+{
     public class BlockStoreManager
     {
         private readonly ConcurrentChain chain;

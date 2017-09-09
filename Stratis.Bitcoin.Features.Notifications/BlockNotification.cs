@@ -1,8 +1,8 @@
-﻿using System.Threading.Tasks;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         /// <summary>
         /// Notifies about blocks, starting from block with hash passed as parameter.
         /// </summary>
-        public virtual Task Notify()
+        public virtual IAsyncLoop Notify()
         {
             return this.asyncLoopFactory.Run("block notifier", token =>
             {

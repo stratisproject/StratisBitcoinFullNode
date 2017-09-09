@@ -1,24 +1,23 @@
-﻿using System.Runtime.CompilerServices;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using NBitcoin.Protocol;
-    using Stratis.Bitcoin.BlockPulling;
-    using Stratis.Bitcoin.Builder;
-    using Stratis.Bitcoin.Builder.Feature;
-    using Stratis.Bitcoin.Configuration;
-    using Stratis.Bitcoin.Configuration.Logging;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Interfaces;
-    using Stratis.Bitcoin.Utilities;
-    using System;
-    using System.Threading.Tasks;
-
     public class BlockStoreFeature : FullNodeFeature, IBlockStore
     {
         protected readonly ConcurrentChain chain;
@@ -43,18 +42,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly string name;
 
         public BlockStoreFeature(
-            ConcurrentChain chain, 
-            IConnectionManager connectionManager, 
-            Signals.Signals signals, 
+            ConcurrentChain chain,
+            IConnectionManager connectionManager,
+            Signals.Signals signals,
             IBlockRepository blockRepository,
-            IBlockStoreCache blockStoreCache, 
-            StoreBlockPuller blockPuller, 
-            BlockStoreLoop blockStoreLoop, 
+            IBlockStoreCache blockStoreCache,
+            StoreBlockPuller blockPuller,
+            BlockStoreLoop blockStoreLoop,
             BlockStoreManager blockStoreManager,
-            BlockStoreSignaled blockStoreSignaled, 
-            INodeLifetime nodeLifetime, 
-            NodeSettings nodeSettings, 
-            ILoggerFactory loggerFactory, 
+            BlockStoreSignaled blockStoreSignaled,
+            INodeLifetime nodeLifetime,
+            NodeSettings nodeSettings,
+            ILoggerFactory loggerFactory,
             StoreSettings storeSettings,
             string name = "BlockStore")
         {
@@ -112,15 +111,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override void Stop()
         {
-            this.logger.LogTrace("()");
+            this.logger.LogInformation("Stopping {0}...", this.name);
 
-            this.logger.LogInformation("Flushing {0}...", this.name);
-            this.blockStoreManager.BlockStoreLoop.Flush().GetAwaiter().GetResult();
-
+            this.blockStoreSignaled.ShutDown();
+            this.blockStoreManager.BlockStoreLoop.ShutDown();
             this.blockStoreCache.Dispose();
             this.blockRepository.Dispose();
-
-            this.logger.LogTrace("(-)");
         }
     }
 

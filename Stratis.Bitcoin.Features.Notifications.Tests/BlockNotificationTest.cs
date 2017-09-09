@@ -1,16 +1,15 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Utilities;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Features.Notifications;
-using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Notifications
+namespace Stratis.Bitcoin.Features.Notifications.Tests
 {
     public class BlockNotificationTest : LogsTestBase
     {
@@ -70,7 +69,7 @@ namespace Stratis.Bitcoin.Tests.Notifications
 
             var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
-            await notification.Notify();
+            await notification.Notify().RunningTask;
 
             signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(0));
         }
@@ -94,12 +93,12 @@ namespace Stratis.Bitcoin.Tests.Notifications
                 .Returns((Block)null);
 
             var signals = new Mock<ISignals>();
-            
+
             var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             notification.SyncFrom(startBlockId);
-            await notification.Notify();            
-            
+            await notification.Notify().RunningTask;
+
             signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(2));
         }
     }
