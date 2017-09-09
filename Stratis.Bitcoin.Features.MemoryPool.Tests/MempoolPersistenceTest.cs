@@ -125,7 +125,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             {
                 new MempoolPersistenceEntry{
                     Tx = tx1,
-                    Time = 1491948625,
+                    //Time = 1491948625,
+                    Time = mempoolManager.DateTimeProvider.GetTime(),
                     FeeDelta = expectedTx1FeeDelta
                 },
             };
