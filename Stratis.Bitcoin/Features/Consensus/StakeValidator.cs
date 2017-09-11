@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Min age requirement.
             if (IsProtocolV3((int)tx.Time))
             {
-                if (IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
+                if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
                 {
                     this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
                     ConsensusErrors.InvalidStakeDepth.Throw();
@@ -275,7 +275,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.logger.LogTrace("Stake modifiers are {0} and '{1}', hash POS is '{2}'.", nStakeModifier, bnStakeModifierV2, context.Stake.HashProofOfStake);
-
 
             //LogPrintf("CheckStakeKernelHash() : using modifier 0x%016x at height=%d timestamp=%s for block from timestamp=%s\n",
             //    nStakeModifier, nStakeModifierHeight,
@@ -555,7 +554,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             return fSelected;
         }
 
-
         // ppcoin: Total coin age spent in transaction, in the unit of coin-days.
         // Only those coins meeting minimum age requirement counts. As those
         // transactions not in main chain are not currently indexed so we
@@ -589,7 +587,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 if (IsProtocolV3((int)trx.Time))
                 {
-                    if (IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
+                    if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
                     {
                         //LogPrint("coinage", "coin age skip nSpendDepth=%d\n", nSpendDepth + 1);
                         continue; // only count coins meeting min confirmations requirement
@@ -645,7 +643,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
             if (IsProtocolV3((int)nTime))
             {
-                if (IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
+                if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
                 {
                     this.logger.LogTrace("(-)[LOW_COIN_AGE]");
                     ConsensusErrors.InvalidStakeDepth.Throw();
