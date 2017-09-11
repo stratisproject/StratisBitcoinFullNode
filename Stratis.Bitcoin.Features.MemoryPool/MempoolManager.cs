@@ -265,7 +265,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     Transaction trx = entry.Tx;
                     uint256 trxHash = trx.GetHash();
-                    bool isExpired = entry.Time + expiryTimeout <= this.DateTimeProvider.GetTime();
+                    long currentTime = this.DateTimeProvider.GetTime();
+                    bool isExpired = (entry.Time + expiryTimeout) <= currentTime;
                     bool isExists = this.memPool.Exists(trxHash);
                     if (isExpired || isExists)
                     {
