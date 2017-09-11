@@ -32,7 +32,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
         {
             //{ "addrman", "" },
             //{ "alert", "" },
-            { "bench", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.{nameof(Stratis.Bitcoin.Features.Consensus.ConsensusStats)}" },
             //{ "cmpctblock", "" }
             //{ "coindb", "" },
             //{ "http", "" }, 
@@ -52,12 +51,17 @@ namespace Stratis.Bitcoin.Configuration.Logging
             // Short Names
             { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
             { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" },
-            { "consensus", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.*" },
+
         };
 
         public static void RegisterFeatureNamespace<T>(string key)
         {
             keyCategories[key] = typeof(T).Namespace + ".*";
+        }
+
+        public static void RegisterFeatureClass<T>(string key)
+        {
+            keyCategories[key] = typeof(T).Namespace + "." + typeof(T).Name;
         }
 
         /// <summary>Configuration of console logger.</summary>
