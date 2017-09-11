@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
     public static class LoggingConfiguration
     {
         /// <summary>Width of a column for pretty console/log outputs.</summary>
-        public const int ColumnLength = 16;
+        public const int ColumnLength = 20;
 
         /// <summary>Currently used node's log settings.</summary>
         private static LogSettings logSettings;

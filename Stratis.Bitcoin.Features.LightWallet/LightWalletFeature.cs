@@ -1,19 +1,26 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
-    public class LightWalletFeature : FullNodeFeature
+    /// <summary>
+    /// Feature for a full-block SPV wallet.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
+    public class LightWalletFeature : FullNodeFeature, INodeStats
     {
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
@@ -24,6 +31,17 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly INodeLifetime nodeLifetime;
         private readonly IWalletFeePolicy walletFeePolicy;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LightWalletFeature"/> class.
+        /// </summary>
+        /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
+        /// <param name="walletManager">The wallet manager.</param>
+        /// <param name="connectionManager">The connection manager.</param>
+        /// <param name="chain">The chain of blocks.</param>
+        /// <param name="nodeDeployments">The node deployments.</param>
+        /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
+        /// <param name="nodeLifetime">The node lifetime.</param>
+        /// <param name="walletFeePolicy">The wallet fee policy.</param>
         public LightWalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, IConnectionManager connectionManager,
             ConcurrentChain chain, NodeDeployments nodeDeployments, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, IWalletFeePolicy walletFeePolicy)
         {
@@ -37,6 +55,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletFeePolicy = walletFeePolicy;
         }
 
+        /// <inheritdoc />
         public override void Start()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager));
@@ -74,12 +93,34 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 startAfter: TimeSpans.TenSeconds);
         }
 
+        /// <inheritdoc />
         public override void Stop()
         {
             base.Stop();
         }
+
+        /// <inheritdoc />
+        public void AddNodeStats(StringBuilder benchLog)
+        {
+            var manager = this.walletManager as WalletManager;
+
+            if (manager != null)
+            {
+                var height = manager.LastBlockHeight();
+                var block = this.chain.GetBlock(height);
+                var hashBlock = block == null ? 0 : block.HashBlock;
+
+                benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     height.ToString().PadRight(8) +
+                                     " LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     hashBlock);
+            }
+        }
     }
 
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
     public static class LightWalletFeatureExtension
     {
         public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder)
