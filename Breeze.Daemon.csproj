@@ -14,7 +14,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin.Api\Stratis.Bitcoin.Api.csproj" />
+    <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin.Features.BlockStore\Stratis.Bitcoin.Features.BlockStore.csproj" />
+    <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
     <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin.Features.LightWallet\Stratis.Bitcoin.Features.LightWallet.csproj" />
+    <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin.Features.Notifications\Stratis.Bitcoin.Features.Notifications.csproj" />
+    <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
     <ProjectReference Include="..\..\..\StratisBitcoinFullNode\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 
