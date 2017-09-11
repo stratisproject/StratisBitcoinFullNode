@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
@@ -6,9 +7,11 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.LightWallet
@@ -17,7 +20,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// Feature for a full-block SPV wallet.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
-    public class LightWalletFeature : FullNodeFeature
+    public class LightWalletFeature : FullNodeFeature, INodeStats
     {
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
@@ -94,6 +97,24 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public override void Stop()
         {
             base.Stop();
+        }
+
+        /// <inheritdoc />
+        public void AddNodeStats(StringBuilder benchLog)
+        {
+            var manager = this.walletManager as WalletManager;
+
+            if (manager != null)
+            {
+                var height = manager.LastBlockHeight();
+                var block = this.chain.GetBlock(height);
+                var hashBlock = block == null ? 0 : block.HashBlock;
+
+                benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     height.ToString().PadRight(8) +
+                                     " LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     hashBlock);
+            }
         }
     }
 
