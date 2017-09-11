@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Linq;
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return (this.UTXOSet as CachedCoinView)?.FlushAsync();
         }
 
-        private Task TryPrefetchAsync(ConsensusFlags flags)
+        private Task TryPrefetchAsync(DeploymentFlags flags)
         {
             Task prefetching = Task.FromResult<bool>(true);
             if(this.UTXOSet is CachedCoinView)
