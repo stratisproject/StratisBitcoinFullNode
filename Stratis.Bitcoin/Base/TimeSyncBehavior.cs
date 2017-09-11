@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Features.Consensus
+namespace Stratis.Bitcoin.Base
 {
     /// <summary>
     /// Methods related to network peers time synchronization feature.
@@ -171,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
@@ -238,7 +237,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             if (startWarningLoopNow)
-                StartWarningLoop();
+                this.StartWarningLoop();
 
             this.logger.LogTrace("(-):{0}", res);
             return res;
@@ -385,7 +384,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public TimeSyncBehavior(ITimeSyncBehaviorState state, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.state = state;
         }
