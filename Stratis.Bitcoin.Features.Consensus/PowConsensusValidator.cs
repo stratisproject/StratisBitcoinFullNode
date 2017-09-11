@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
-using Stratis.Bitcoin.Features.Consensus.Deployments;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
