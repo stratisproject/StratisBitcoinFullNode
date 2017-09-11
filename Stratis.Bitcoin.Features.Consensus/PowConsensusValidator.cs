@@ -620,7 +620,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             return ((nValue >= 0) && (nValue <= this.consensusOptions.MAX_MONEY));
         }
 
-
         public long GetBlockWeight(Block block)
         {
             // This implements the weight = (stripped_size * 4) + witness_size formula,
@@ -637,7 +636,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             data.ReadWrite(bms);
             return (int)bms.Counter.WrittenBytes;
         }
-
 
         private bool EqualsArray(byte[] a, byte[] b, int len)
         {

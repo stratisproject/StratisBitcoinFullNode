@@ -1,15 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using Moq;
-using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Features.Consensus
+namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
     /// <summary>
     /// Tests of <see cref="TimeSyncBehavior"/> and <see cref="TimeSyncBehaviorState"/> classes.

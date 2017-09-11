@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.StakeChain = stakeChain;
         }
 
-        StopWatch watch = new StopWatch();
+        private StopWatch watch = new StopWatch();
 
         public StakeChain StakeChain { get; }
         public LookaheadBlockPuller Puller { get; }
