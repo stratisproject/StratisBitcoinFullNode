@@ -1,17 +1,21 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Interfaces;
-using System;
-using System.Text;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    /// <summary>
+    /// Wallet feature for the full node.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
+    /// <seealso cref="Stratis.Bitcoin.Interfaces.INodeStats" />
     public class WalletFeature : FullNodeFeature, INodeStats
     {
         private readonly IWalletSyncManager walletSyncManager;
@@ -22,6 +26,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         private IDisposable transactionSubscriberdDisposable;
         private ConcurrentChain chain;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WalletFeature"/> class.
+        /// </summary>
+        /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
+        /// <param name="walletManager">The wallet manager.</param>
+        /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
+        /// <param name="chain">The chain of blocks.</param>
         public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain)
         {
             this.walletSyncManager = walletSyncManager;
@@ -30,6 +41,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.chain = chain;
         }
 
+        /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
             var walletManager = this.walletManager as WalletManager;
@@ -47,6 +59,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <inheritdoc />
         public override void Start()
         {
             // subscribe to receiving blocks and transactions
@@ -57,6 +70,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletSyncManager.Initialize();
         }
 
+        /// <inheritdoc />
         public override void Stop()
         {
             this.blockSubscriberdDisposable.Dispose();
