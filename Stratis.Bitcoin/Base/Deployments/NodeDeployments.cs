@@ -14,12 +14,12 @@ namespace Stratis.Bitcoin.Base.Deployments
         }
         public ThresholdConditionCache BIP9 { get; }
 
-        public virtual ConsensusFlags GetFlags(ChainedBlock block)
+        public virtual DeploymentFlags GetFlags(ChainedBlock block)
         {
             lock (this.BIP9)
             {
                 var states = this.BIP9.GetStates(block.Previous);
-                var flags = new ConsensusFlags(block, states, this.network.Consensus);
+                var flags = new DeploymentFlags(block, states, this.network.Consensus);
                 return flags;
             }
         }

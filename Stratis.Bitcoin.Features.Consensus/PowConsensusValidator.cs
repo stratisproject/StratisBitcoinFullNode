@@ -54,12 +54,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             Block block = context.BlockResult.Block;
-            ConsensusFlags consensusFlags = context.Flags;
+            DeploymentFlags deploymentFlags = context.Flags;
 
             int nHeight = context.BestBlock == null ? 0 : context.BestBlock.Height + 1;
 
             // Start enforcing BIP113 (Median Time Past) using versionbits logic.
-            DateTimeOffset nLockTimeCutoff = consensusFlags.LockTimeFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast) ?
+            DateTimeOffset nLockTimeCutoff = deploymentFlags.LockTimeFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast) ?
                 context.BestBlock.MedianTimePast :
                 block.Header.BlockTime;
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Enforce rule that the coinbase starts with serialized block height.
-            if (consensusFlags.EnforceBIP34)
+            if (deploymentFlags.EnforceBIP34)
             {
                 Script expect = new Script(Op.GetPushOp(nHeight));
                 Script actual = block.Transactions[0].Inputs[0].ScriptSig;
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             //   {0xaa, 0x21, 0xa9, 0xed}, and the following 32 bytes are SHA256^2(witness root, witness nonce). In case there are
             //   multiple, the last one is used.
             bool fHaveWitness = false;
-            if (consensusFlags.ScriptFlags.HasFlag(ScriptVerify.Witness))
+            if (deploymentFlags.ScriptFlags.HasFlag(ScriptVerify.Witness))
             {
                 int commitpos = this.GetWitnessCommitmentIndex(block);
                 if (commitpos != -1)
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             Block block = context.BlockResult.Block;
             ChainedBlock index = context.BlockResult.ChainedBlock;
-            ConsensusFlags flags = context.Flags;
+            DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
             this.PerformanceCounter.AddProcessedBlocks(1);
@@ -372,7 +372,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return nSubsidy;
         }
 
-        public long GetTransactionSigOpCost(Transaction tx, UnspentOutputSet inputs, ConsensusFlags flags)
+        public long GetTransactionSigOpCost(Transaction tx, UnspentOutputSet inputs, DeploymentFlags flags)
         {
             long nSigOps = this.GetLegacySigOpCount(tx) * this.consensusOptions.WITNESS_SCALE_FACTOR;
 
@@ -393,7 +393,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return nSigOps;
         }
 
-        private long CountWitnessSigOps(Script scriptSig, Script scriptPubKey, WitScript witness, ConsensusFlags flags)
+        private long CountWitnessSigOps(Script scriptSig, Script scriptPubKey, WitScript witness, DeploymentFlags flags)
         {
             witness = witness ?? WitScript.Empty;
             if (!flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return 0;
         }
 
-        private long WitnessSigOps(WitProgramParameters witParams, WitScript witScript, ConsensusFlags flags)
+        private long WitnessSigOps(WitProgramParameters witParams, WitScript witScript, DeploymentFlags flags)
         {
             if (witParams.Version == 0)
             {

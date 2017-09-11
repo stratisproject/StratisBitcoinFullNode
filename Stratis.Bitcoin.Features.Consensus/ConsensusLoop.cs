@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return (this.UTXOSet as CachedCoinView)?.FlushAsync();
         }
 
-        private Task TryPrefetchAsync(ConsensusFlags flags)
+        private Task TryPrefetchAsync(DeploymentFlags flags)
         {
             Task prefetching = Task.FromResult<bool>(true);
             if(this.UTXOSet is CachedCoinView)

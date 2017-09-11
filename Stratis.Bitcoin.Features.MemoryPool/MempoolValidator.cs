@@ -742,7 +742,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //  state.Invalid(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "bad-witness-nonstandard")).Throw();
 
             context.SigOpsCost = this.consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
-                new ConsensusFlags { ScriptFlags = ScriptVerify.Standard });
+                new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
 
             Money nValueIn = context.View.GetValueIn(context.Transaction);
 

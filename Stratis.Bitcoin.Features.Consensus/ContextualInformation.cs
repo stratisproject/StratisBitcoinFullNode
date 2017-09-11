@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             set;
         }
 
-        public ConsensusFlags Flags
+        public DeploymentFlags Flags
         {
             get;
             set;

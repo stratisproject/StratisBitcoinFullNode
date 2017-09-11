@@ -2,13 +2,13 @@
 
 namespace Stratis.Bitcoin.Base.Deployments
 {
-    public class ConsensusFlags
+    public class DeploymentFlags
     {
-        public ConsensusFlags()
+        public DeploymentFlags()
         {
 
         }
-        public ConsensusFlags(ChainedBlock nextBlock, ThresholdState[] prevBlockStates, NBitcoin.Consensus chainparams)
+        public DeploymentFlags(ChainedBlock nextBlock, ThresholdState[] prevBlockStates, NBitcoin.Consensus chainparams)
         {
             // Do not allow blocks that contain transactions which 'overwrite' older transactions,
             // unless those are already completely spent.
