@@ -43,9 +43,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; private set; }
 
-        /// <summary>Configuration of cache limits.</summary>
-        public CacheSettings Cache { get; set; }
-
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         public ConnectionManagerSettings ConnectionManager { get; set; }
 
@@ -93,7 +90,6 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         public NodeSettings()
         {
-            this.Cache = new CacheSettings();
             this.ConnectionManager = new ConnectionManagerSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new LoggerFactory();

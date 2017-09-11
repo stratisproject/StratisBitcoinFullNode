@@ -13,3 +13,4 @@ dotnet test -c Release ./Stratis.Bitcoin.Features.Wallet.Tests/Stratis.Bitcoin.F
 dotnet test -c Release ./Stratis.Bitcoin.Features.WatchOnlyWallet.Tests/Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.csproj -v m
 dotnet test -c Release ./Stratis.Bitcoin.Features.RPC.Tests/Stratis.Bitcoin.Features.RPC.Tests.csproj -v m
 dotnet test -c Release ./Stratis.Bitcoin.Features.Notifications.Tests/Stratis.Bitcoin.Features.Notifications.Tests.csproj -v m
+dotnet test -c Release ./Stratis.Bitcoin.Features.Consensus.Tests/Stratis.Bitcoin.Features.Consensus.Tests.csproj -v m
