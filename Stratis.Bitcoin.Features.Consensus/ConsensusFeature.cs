@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -13,8 +15,6 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Deployments;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Threading;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -252,6 +252,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<StakeValidator>();
                         services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
                         services.AddSingleton<ConsensusController>();
+                        services.AddSingleton<CacheSettings>(new CacheSettings());
                     });
             });
 
