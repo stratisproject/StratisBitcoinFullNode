@@ -4,13 +4,33 @@ echo STARTED dotnet restore
 dotnet restore -v m
 echo STARTED dotnet build
 dotnet build -c Release ${path} -v m
+
 echo STARTED dotnet test
-dotnet test -c Release ./Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests.csproj -v m
-dotnet test -c Release ./Stratis.Bitcoin.Features.BlockStore.Tests/Stratis.Bitcoin.Features.BlockStore.Tests.csproj -v m
-dotnet test -c Release ./Stratis.Bitcoin.Features.MemoryPool.Tests/Stratis.Bitcoin.Features.MemoryPool.Tests.csproj -v m
-dotnet test -c Release ./Stratis.Bitcoin.Features.IndexStore.Tests/Stratis.Bitcoin.Features.IndexStore.Tests.csproj -v m
-dotnet test -c Release ./Stratis.Bitcoin.Features.Wallet.Tests/Stratis.Bitcoin.Features.Wallet.Tests.csproj -v m
-dotnet test -c Release ./Stratis.Bitcoin.Features.WatchOnlyWallet.Tests/Stratis.Bitcoin.Features.WatchOnlyWallet.Tests.csproj -v m
-dotnet test -c Release ./Stratis.Bitcoin.Features.RPC.Tests/Stratis.Bitcoin.Features.RPC.Tests.csproj -v m
-dotnet test -c Release ./Stratis.Bitcoin.Features.Notifications.Tests/Stratis.Bitcoin.Features.Notifications.Tests.csproj -v m
-dotnet test -c Release ./Stratis.Bitcoin.Features.Consensus.Tests/Stratis.Bitcoin.Features.Consensus.Tests.csproj -v m
+
+ANYFAILURES=false
+for testProject in *.Tests; do
+
+# exclude integration tests
+if [[ "$testProject" == *"Integration.Tests"* ]] || [[ "$testProject" == *"IntegrationTests"* ]] ; then
+    continue
+fi
+
+echo "Processing $testProject file.."; 
+cd $testProject
+COMMAND="dotnet test --no-build -c Release -v m"
+$COMMAND
+EXITCODE=$?
+echo exit code for $testProject: $EXITCODE
+
+if [ $EXITCODE -ne 0 ] ; then
+    ANYFAILURES=true
+fi
+
+cd ..
+done
+
+echo FINISHED dotnet test
+if [[ $ANYFAILURES == "true" ]] ; then
+    exit 1
+fi
+$SHELL
