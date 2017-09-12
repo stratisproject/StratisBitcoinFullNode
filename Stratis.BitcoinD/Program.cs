@@ -14,11 +14,6 @@ namespace Stratis.BitcoinD
     {
         public static void Main(string[] args)
         {
-            if (NodeSettings.PrintHelp(args, Network.Main))
-            {
-                RpcSettings.PrintHelp(Network.Main);
-                return;
-            }
 
             NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
