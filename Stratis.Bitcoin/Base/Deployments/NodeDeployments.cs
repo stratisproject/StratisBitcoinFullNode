@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.Consensus.Deployments
+namespace Stratis.Bitcoin.Base.Deployments
 {
     public class NodeDeployments
     {
@@ -14,12 +14,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Deployments
         }
         public ThresholdConditionCache BIP9 { get; }
 
-        public virtual ConsensusFlags GetFlags(ChainedBlock block)
+        public virtual DeploymentFlags GetFlags(ChainedBlock block)
         {
             lock (this.BIP9)
             {
                 var states = this.BIP9.GetStates(block.Previous);
-                var flags = new ConsensusFlags(block, states, this.network.Consensus);
+                var flags = new DeploymentFlags(block, states, this.network.Consensus);
                 return flags;
             }
         }
