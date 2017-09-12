@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         public RpcSettings(Action<RpcSettings> callback)
-            :base()
+            :this()
         {
             this.callback = callback;
         }
@@ -58,58 +58,68 @@ namespace Stratis.Bitcoin.Features.RPC
             var config = nodeSettings.ConfigReader;
 
             this.Server = config.GetOrDefault<bool>("server", false);
-            if (!this.Server)
-                return;
 
-            this.RpcUser = config.GetOrDefault<string>("rpcuser", null);
-            this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
+            if (this.Server)
+            {
+                this.RpcUser = config.GetOrDefault<string>("rpcuser", null);
+                this.RpcPassword = config.GetOrDefault<string>("rpcpassword", null);
+
+                var defaultPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
+                this.RPCPort = defaultPort;
+
+                try
+                {
+                    this.AllowIp = config
+                        .GetAll("rpcallowip")
+                        .Select(p => IPAddress.Parse(p))
+                        .ToList();
+                }
+                catch (FormatException)
+                {
+                    throw new ConfigurationException("Invalid rpcallowip value");
+                }
+            }
+
+            this.callback?.Invoke(this);
+
             if (this.RpcPassword == null && this.RpcUser != null)
                 throw new ConfigurationException("rpcpassword should be provided");
             if (this.RpcUser == null && this.RpcPassword != null)
                 throw new ConfigurationException("rpcuser should be provided");
 
-            var defaultPort = config.GetOrDefault<int>("rpcport", nodeSettings.Network.RPCPort);
-            this.RPCPort = defaultPort;
-            try
-            {
-                this.Bind = config
-                    .GetAll("rpcbind")
-                    .Select(p => NodeSettings.ConvertToEndpoint(p, defaultPort))
-                    .ToList();
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid rpcbind value");
-            }
+            this.Server = true;
 
-            try
+            // If the "Bind" list has not been specified via callback..
+            if (this.Bind.Count == 0)
             {
-                this.AllowIp = config
-                    .GetAll("rpcallowip")
-                    .Select(p => IPAddress.Parse(p))
-                    .ToList();
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid rpcallowip value");
+                try
+                {
+                    this.Bind = config
+                        .GetAll("rpcbind")
+                        .Select(p => NodeSettings.ConvertToEndpoint(p, this.RPCPort))
+                        .ToList();
+                }
+                catch (FormatException)
+                {
+                    throw new ConfigurationException("Invalid rpcbind value");
+                }
             }
 
             if (this.AllowIp.Count == 0)
             {
+                if (this.Bind.Count > 0)
+                    nodeSettings.Logger.LogWarning("WARNING: RPC bind selection (-rpcbind) was ignored because allowed ip's (-rpcallowip) were not specified, refusing to allow everyone to connect");
+
                 this.Bind.Clear();
-                this.Bind.Add(new IPEndPoint(IPAddress.Parse("::1"), defaultPort));
-                this.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), defaultPort));
-                if (config.Contains("rpcbind"))
-                    nodeSettings.Logger.LogWarning("WARNING: option -rpcbind was ignored because -rpcallowip was not specified, refusing to allow everyone to connect");
+                this.Bind.Add(new IPEndPoint(IPAddress.Parse("::1"), this.RPCPort));
+                this.Bind.Add(new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.RPCPort));
             }
 
             if (this.Bind.Count == 0)
             {
-                this.Bind.Add(new IPEndPoint(IPAddress.Parse("::"), defaultPort));
-                this.Bind.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), defaultPort));
+                this.Bind.Add(new IPEndPoint(IPAddress.Parse("::"), this.RPCPort));
+                this.Bind.Add(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.RPCPort));
             }
-
-            this.callback?.Invoke(this);
         }
 
         public static void PrintHelp(Network mainNet)
