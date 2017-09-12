@@ -272,11 +272,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     {
                         if (isExpired)
                         {
-                            this.mempoolLogger.LogDebug("...transaction ID {0} not accepted to mempool due to age of {1:.##} days.", trxHash, new TimeSpan(this.DateTimeProvider.GetTime() - entry.Time).TotalDays);
+                            this.mempoolLogger.LogDebug("...transaction ID '{0}' not accepted to mempool due to age of {1:0.##} days.", trxHash, TimeSpan.FromSeconds(this.DateTimeProvider.GetTime() - entry.Time).TotalDays);
                         }
                         if (isExists)
                         {
-                            this.mempoolLogger.LogDebug("...transaction ID {0} not accepted to mempool because it already exists.", trxHash);
+                            this.mempoolLogger.LogDebug("...transaction ID '{0}' not accepted to mempool because it already exists.", trxHash);
                         }
                     }
                     else
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         }
                         else
                         {
-                            this.mempoolLogger.LogDebug("...transaction ID {0} not accepted to mempool because its invalid.", trxHash);
+                            this.mempoolLogger.LogDebug("...transaction ID '{0}' not accepted to mempool because its invalid.", trxHash);
                         }
                     }
                 }
