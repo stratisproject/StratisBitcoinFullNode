@@ -1,13 +1,13 @@
-﻿using System;
-using System.Text;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using System;
+using System.Text;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
     /// <summary>
-    /// Configuration related to RPC interface.
+    /// Configuration related to the miner interface.
     /// </summary>
     public class MinerSettings
     {
