@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
@@ -22,22 +23,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     public class WalletController : Controller
     {
         private readonly IWalletManager walletManager;
-
         private readonly IWalletTransactionHandler walletTransactionHandler;
-
         private readonly IWalletSyncManager walletSyncManager;
-
         private readonly CoinType coinType;
-
         private readonly Network network;
-
         private readonly IConnectionManager connectionManager;
-
         private readonly ConcurrentChain chain;
-
         private readonly DataFolder dataFolder;
+        private readonly ILogger logger;
 
-        public WalletController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IWalletSyncManager walletSyncManager, IConnectionManager connectionManager, Network network,
+        public WalletController(ILoggerFactory loggerFactory, IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IWalletSyncManager walletSyncManager, IConnectionManager connectionManager, Network network,
             ConcurrentChain chain, DataFolder dataFolder)
         {
             this.walletManager = walletManager;
@@ -48,6 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.dataFolder = dataFolder;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <summary>
@@ -287,18 +283,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     foreach (var transaction in address.Transactions.Where(t => !address.IsChangeAddress() || (address.IsChangeAddress() && !t.IsSpendable())))
                     {
-                        // add incoming fund transaction details
-                        TransactionItemModel receivedItem = new TransactionItemModel
+                        // Funds received in change addresses are not shown in transaction history.
+                        if (!address.IsChangeAddress())
                         {
-                            Type = TransactionItemType.Received,
-                            ToAddress = address.Address,
-                            Amount = transaction.Amount,
-                            Id = transaction.Id,
-                            Timestamp = transaction.CreationTime,
-                            ConfirmedInBlock = transaction.BlockHeight
-                        };
+                            // add incoming fund transaction details
+                            TransactionItemModel receivedItem = new TransactionItemModel
+                            {
+                                Type = TransactionItemType.Received,
+                                ToAddress = address.Address,
+                                Amount = transaction.Amount,
+                                Id = transaction.Id,
+                                Timestamp = transaction.CreationTime,
+                                ConfirmedInBlock = transaction.BlockHeight
+                            };
 
-                        model.TransactionsHistory.Add(receivedItem);
+                            model.TransactionsHistory.Add(receivedItem);
+                        }
 
                         // add outgoing fund transaction details
                         if (transaction.SpendingDetails != null)
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             sentItem.Fee = transaction.Amount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transactions.First(t => t.Id == transaction.SpendingDetails.TransactionId).Amount);
 
                             // mined/staked coins add more coins to the total out 
-                            // that makes the fee negative if thats the case ignore the fee
+                            // that makes the fee negative if that's the case ignore the fee
                             if (sentItem.Fee < 0)
                                 sentItem.Fee = 0;
 
