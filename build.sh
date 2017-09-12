@@ -33,4 +33,3 @@ echo FINISHED dotnet test
 if [[ $ANYFAILURES == "true" ]] ; then
     exit 1
 fi
-$SHELL
