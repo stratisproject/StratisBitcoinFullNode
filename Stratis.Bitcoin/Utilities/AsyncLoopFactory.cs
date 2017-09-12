@@ -5,9 +5,7 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Utilities
 {
-    /// <summary>
-    /// Factory for creating and also possibly starting application defined tasks inside async loop.
-    /// </summary>
+    /// <summary>Factory for creating and also possibly starting application defined tasks inside async loop.</summary>
     public interface IAsyncLoopFactory
     {
         /// <summary>
