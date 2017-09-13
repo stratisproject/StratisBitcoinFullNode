@@ -11,14 +11,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class StakeItem
-    {
-        public uint256 BlockId;
-        public BlockStake BlockStake;
-        public bool InStore;
-        public long Height;
-    }
-
     public class StakeChainStore : StakeChain
     {
         // The code to push to DBreezeCoinView can be included in CachedCoinView
