@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
             var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
             
-            var walletManager = new WatchOnlyWalletManager(this.LoggerFactory.Object, Network.Main, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(this.LoggerFactory.Object, Network.TestNet, dataFolder);
             walletManager.Initialize();
 
             // Retrieve the wallet.
@@ -39,12 +39,12 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
             var wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
-            var walletManager = new WatchOnlyWalletManager(this.LoggerFactory.Object, Network.Main, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(this.LoggerFactory.Object, Network.TestNet, dataFolder);
             walletManager.Initialize();
 
             // create the wallet
             Script newScript = new Key().ScriptPubKey;
-            string newAddress = newScript.GetDestinationAddress(Network.Main).ToString();
+            string newAddress = newScript.GetDestinationAddress(Network.TestNet).ToString();
             walletManager.WatchAddress(newAddress);
 
             var returnedWallet = walletManager.GetWatchOnlyWallet();
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             wallet.WatchedAddresses.AddOrReplace(script.ToString(), new WatchedAddress
             {
                 Script = script,
-                Address = script.GetDestinationAddress(Network.Main).ToString(),
+                Address = script.GetDestinationAddress(Network.TestNet).ToString(),
                 Transactions = new ConcurrentDictionary<string, TransactionData>()
             });
 
