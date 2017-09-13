@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public void ProcessTransaction(Transaction transaction, Block block = null)
         {
-            var hash = transaction.GetHash();
-            this.logger.LogDebug($"watch only wallet received transaction - hash: {hash}, coin: {this.coinType}");
+            var transactionHash = transaction.GetHash();
+            this.logger.LogDebug($"watch only wallet received transaction - hash: {transactionHash}, coin: {this.coinType}");
 
             // Check the transaction outputs for transactions we might be interested in.
             foreach (TxOut utxo in transaction.Outputs)
@@ -97,20 +97,35 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                 if (addressInWallet != null)
                 {
                     // Retrieve a transaction, if present.
-                    string transactionHash = transaction.GetHash().ToString();
-                    addressInWallet.Transactions.TryGetValue(transactionHash, out TransactionData existingTransaction);
+                    addressInWallet.Transactions.TryGetValue(transactionHash.ToString(), out TransactionData existingTransaction);
+
                     if (existingTransaction == null)
                     {
-                        addressInWallet.Transactions.TryAdd(transactionHash, new TransactionData
+                        TransactionData newTransaction = new TransactionData
                         {
+                            Id = transactionHash,
                             Hex = transaction.ToHex(),
                             BlockHash = block?.GetHash(),
-                        });
+                        };
+
+                        // Add the Merkle proof to the (non-spending) transaction.
+                        if (block != null)
+                        {
+                            newTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
+                        }
+
+                        addressInWallet.Transactions.TryAdd(transactionHash.ToString(), newTransaction);
                     }
                     else
                     {
                         // If there is a transaction already present, update the hash of the block containing it.
                         existingTransaction.BlockHash = block?.GetHash();
+                        
+                        // Add the Merkle proof now that the transaction is confirmed in a block.
+                        if (block != null && existingTransaction.MerkleProof == null)
+                        {
+                            existingTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
+                        }
                     }
 
                     this.SaveWatchOnlyWallet();
