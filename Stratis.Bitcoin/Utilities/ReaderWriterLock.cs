@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -11,7 +7,7 @@ namespace Stratis.Bitcoin.Utilities
     /// Wraps ReaderWriterLockSlim with disposable interface so that 
     /// it is possible to use using construct to avoid forgotten lock releases.
     /// </summary>
-    internal class ReaderWriterLock
+    public class ReaderWriterLock
     {
         /// <summary>Internal lock object that the class wraps around.</summary>
         private ReaderWriterLockSlim rwLock = new ReaderWriterLockSlim();
