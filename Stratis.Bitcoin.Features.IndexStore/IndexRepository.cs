@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
     public class IndexRepository : BlockRepository, IIndexRepository
     {
         public Dictionary<string, Index> Indexes;
-        public IndexSettings IndexSettings;
+        private Dictionary<string, IndexExpression> requiredIndexes;
 
         public static string indexTablePrefix { get { return "Index_"; } }
 
@@ -51,17 +51,17 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return indexTablePrefix + indexName;
         }
 
-        public IndexRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, IndexSettings indexSettings)
-            : this(network, dataFolder.IndexPath, loggerFactory)
+        public IndexRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, IndexSettings indexSettings = null)
+            : this(network, dataFolder.IndexPath, loggerFactory, indexSettings.indexes)
         {
-            this.IndexSettings = indexSettings;
         }
 
-        public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory):
+        public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory, Dictionary<string, IndexExpression> requiredIndexes = null):
             base(network, new IndexSession("DBreeze IndexRepository", folder), loggerFactory)
         {
             this.tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
             this.Indexes = new Dictionary<string, Index>();
+            this.requiredIndexes = requiredIndexes;
  
             this.session.Execute(() =>
             {
@@ -109,12 +109,15 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 }
 
                 // Create configured indexes that do not exist yet
-                foreach (var kv in this.IndexSettings.indexes)
+                if (this.requiredIndexes != null)
                 {
-                    if (!this.Indexes.ContainsKey(kv.Key))
+                    foreach (var kv in this.requiredIndexes)
                     {
-                        var index = kv.Value;
-                        this.CreateIndex(kv.Key, index.Many, index.Builder, index.Dependencies, this.session.Transaction);
+                        if (!this.Indexes.ContainsKey(kv.Key))
+                        {
+                            var index = kv.Value;
+                            this.CreateIndex(kv.Key, index.Many, index.Builder, index.Dependencies, this.session.Transaction);
+                        }
                     }
                 }
 
