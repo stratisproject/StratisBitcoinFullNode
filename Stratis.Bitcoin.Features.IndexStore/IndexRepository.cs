@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
     public class IndexRepository : BlockRepository, IIndexRepository
     {
         public Dictionary<string, Index> Indexes;
-        //public new BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
+        public IndexSettings IndexSettings;
 
         public static string indexTablePrefix { get { return "Index_"; } }
 
@@ -51,9 +51,10 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return indexTablePrefix + indexName;
         }
 
-        public IndexRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
+        public IndexRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, IndexSettings indexSettings)
             : this(network, dataFolder.IndexPath, loggerFactory)
         {
+            this.IndexSettings = indexSettings;
         }
 
         public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory):
@@ -107,10 +108,21 @@ namespace Stratis.Bitcoin.Features.IndexStore
                         DropIndex(name, this.session.Transaction);
                 }
 
+                // Create configured indexes that do not exist yet
+                foreach (var kv in this.IndexSettings.indexes)
+                {
+                    if (!this.Indexes.ContainsKey(kv.Key))
+                    {
+                        var index = kv.Value;
+                        this.CreateIndex(kv.Key, index.Many, index.Builder, index.Dependencies, this.session.Transaction);
+                    }
+                }
+
                 // One commit per execute
                 this.session.Transaction.Commit();
             }).GetAwaiter().GetResult();
 
+ 
             return Task.CompletedTask;
         }
 
@@ -152,44 +164,51 @@ namespace Stratis.Bitcoin.Features.IndexStore
         public Task<bool> CreateIndex(string name, bool multiValue, string builder, string[] dependencies = null)
         {
             Guard.NotNull(name, nameof(name));
+            Guard.NotNull(builder, nameof(builder));
 
             return this.session.Execute(() =>
             {
-                if (this.Indexes.ContainsKey(name))
-                    throw new IndexStoreException("The '" + name + "' index already exists");
+                this.CreateIndex(name, multiValue, builder, dependencies, this.session.Transaction);
 
-                var index = new Index(this, name, multiValue, builder, dependencies);
-                this.Indexes[name] = index;
-
-                var dbIndex = this.session.Transaction.Select<string, string>("Common", index.Table);
-                if (dbIndex.Exists)
-                    this.session.Transaction.RemoveAllKeys(index.Table, true);
-
-                if (!this.tableNames.Contains(index.Table))
-                    this.tableNames.Add(index.Table);
-
-                var transactions = new List<(Transaction, Block)>();
-                foreach (var row in this.session.Transaction.SelectForward<byte[], Block>("Block"))
-                {
-                    var block = row.Value;
-                    var key = block.GetHash().ToBytes();
-
-                    foreach (var transaction in block.Transactions)
-                        transactions.Add((transaction, block));
-
-                    if (transactions.Count >= 5000)
-                    {
-                        index.IndexTransactionDetails(transactions);
-                        transactions.Clear();
-                    }
-                }
-
-                index.IndexTransactionDetails(transactions);
-                this.session.Transaction.Insert<string, string>("Common", index.Table, index.ToString());
                 this.session.Transaction.Commit();
 
                 return true;
             });
+        }
+
+        private void CreateIndex(string name, bool multiValue, string builder, string[] dependencies, DBreeze.Transactions.Transaction transaction)
+        {
+            if (this.Indexes.ContainsKey(name))
+                throw new IndexStoreException("The '" + name + "' index already exists");
+
+            var index = new Index(this, name, multiValue, builder, dependencies);
+            this.Indexes[name] = index;
+
+            var dbIndex = transaction.Select<string, string>("Common", index.Table);
+            if (dbIndex.Exists)
+                transaction.RemoveAllKeys(index.Table, true);
+
+            if (!this.tableNames.Contains(index.Table))
+                this.tableNames.Add(index.Table);
+
+            var transactions = new List<(Transaction, Block)>();
+            foreach (var row in transaction.SelectForward<byte[], Block>("Block"))
+            {
+                var block = row.Value;
+                var key = block.GetHash().ToBytes();
+
+                foreach (var transaction2 in block.Transactions)
+                    transactions.Add((transaction2, block));
+
+                if (transactions.Count >= 5000)
+                {
+                    index.IndexTransactionDetails(transactions);
+                    transactions.Clear();
+                }
+            }
+
+            index.IndexTransactionDetails(transactions);
+            transaction.Insert<string, string>("Common", index.Table, index.ToString());            
         }        
 
         public IndexSession GetSession()
