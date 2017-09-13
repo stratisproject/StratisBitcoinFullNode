@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.Cli": {
+      "commandName": "Project",
+      "commandLineArgs": "stratistest generate"
+    }
+  }
+}
