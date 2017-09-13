@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public void RegisterIndex(string name, string builder, bool multiValue, string[] dependencies = null)
         {
-            this.indexes[name] = new Index(null, name, multiValue, builder, dependencies);
+            this.indexes[name] = new IndexExpression(multiValue, builder, dependencies);
         }
 
         /// <summary>
