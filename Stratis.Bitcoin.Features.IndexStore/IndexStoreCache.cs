@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
     public class IndexStoreCache : BlockStoreCache, IIndexStoreCache
     {
-        public IndexStoreCache(IndexRepository indexRepository, ILoggerFactory loggerFactory) : this(indexRepository, new MemoryCache(new MemoryCacheOptions()), loggerFactory)
+        public IndexStoreCache(IIndexRepository indexRepository, ILoggerFactory loggerFactory) : this(indexRepository, new MemoryCache(new MemoryCacheOptions()), loggerFactory)
         {
         }
 
