@@ -46,8 +46,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             periodicTask.Start(new CancellationTokenSource(800).Token, TimeSpan.FromMilliseconds(300));
 
-            Thread.Sleep(1000);
-            Assert.Equal(3, this.iterationCount);
+            Thread.Sleep(2000);
+            Assert.True(this.iterationCount > 1);
         }
 
         [Fact]
