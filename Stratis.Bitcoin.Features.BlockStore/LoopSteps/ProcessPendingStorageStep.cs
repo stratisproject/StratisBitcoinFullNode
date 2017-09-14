@@ -1,12 +1,11 @@
 ﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
     using System.Collections.Concurrent;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
 
     /// <summary>
     /// Check if the next block is in pending storage i.e. first process pending storage blocks
@@ -46,6 +45,9 @@
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height, nameof(disposeMode), disposeMode);
 
             var context = new ProcessPendingStorageContext(this.BlockStoreLoop, nextChainedBlock);
+
+            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && disposeMode == false)
+                return await ProcessWhenInIBD(cancellationToken, context);
 
             // Next block does not exist in pending storage, continue onto the download blocks step.
             if (!this.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
@@ -114,6 +116,60 @@
             return StepResult.Continue;
         }
 
+        private async Task<StepResult> ProcessWhenInIBD(CancellationToken cancellationToken, ProcessPendingStorageContext context)
+        {
+            if (this.BlockStoreLoop.PendingStorage.Count < 500)
+                return StepResult.Continue;
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
+                if (blockIsInPendingStorage == false)
+                {
+                    if (context.PendingBlockPairsToStore.Count == 0)
+                        return StepResult.Next;
+
+                    if (context.PendingBlockPairsToStore.Any())
+                    {
+                        this.logger.LogTrace("[FLUSH_NEXTBLOCKNOTINPENDING]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                        await this.PushBlocksToRepository(context);
+                        break;
+                    }
+                }
+                else
+                {
+                    context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
+                    context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
+                }
+
+                if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
+                {
+                    this.logger.LogTrace("{0}:{1} [FLUSH_BATCHSIZE_REACHED]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                    await this.PushBlocksToRepository(context);
+                    break;
+                }
+
+                context.GetNextBlock();
+
+                var shouldBreak = ShouldBreakExecutionForIBD(context);
+                if (shouldBreak)
+                {
+                    if (context.PendingBlockPairsToStore.Any())
+                        await this.PushBlocksToRepository(context);
+
+                    break;
+                }
+
+                if (context.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+                {
+                    this.logger.LogTrace("{0}:{1} / {2}:{3}' [STORE_AT_TIP]", nameof(context.NextChainedBlock), context.NextChainedBlock.Height, nameof(this.BlockStoreLoop.ChainState.HighestValidatedPoW), this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
+                    await Task.Delay(100);
+                }
+            }
+
+            return StepResult.Continue;
+        }
+
         /// <summary>
         /// Store missing blocks and remove them from pending blocks and set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedBlock"/>
         /// </summary>
@@ -149,6 +205,30 @@
             if (context.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
             {
                 this.logger.LogTrace("{0}:{1} / {2}:{3}' [STORE_AT_TIP]", nameof(context.NextChainedBlock), context.NextChainedBlock.Height, nameof(this.BlockStoreLoop.ChainState.HighestValidatedPoW), this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Break execution if:
+        /// <list>
+        ///     <item>1: At the tip</item>
+        ///     <item>2: Block is already in store or pending insertion</item>
+        /// </list>
+        /// </summary>
+        private bool ShouldBreakExecutionForIBD(ProcessPendingStorageContext context)
+        {
+            if (context.NextChainedBlock == null)
+            {
+                this.logger.LogTrace("{0}:'{1}/{2}' [NEXTBLOCKNOTINPENDING_NULL]", nameof(context.NextChainedBlock), context.NextChainedBlock?.HashBlock, context.NextChainedBlock?.Height);
+                return true;
+            }
+
+            if ((context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock)))
+            {
+                this.logger.LogTrace("{0}:'{1}/{2}' [INVALID_PREVIOUS]", nameof(context.NextChainedBlock.Header.HashPrevBlock), context.NextChainedBlock.Header.HashPrevBlock, context.InputChainedBlock.HashBlock);
                 return true;
             }
 
