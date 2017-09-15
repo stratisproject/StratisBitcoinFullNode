@@ -159,12 +159,6 @@
 
                     break;
                 }
-
-                if (context.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
-                {
-                    this.logger.LogTrace("{0}:{1} / {2}:{3}' [STORE_AT_TIP]", nameof(context.NextChainedBlock), context.NextChainedBlock.Height, nameof(this.BlockStoreLoop.ChainState.HighestValidatedPoW), this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height);
-                    await Task.Delay(100);
-                }
             }
 
             return StepResult.Continue;
