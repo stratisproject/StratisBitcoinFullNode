@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using DBreeze;
 using NBitcoin;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.RPC;
@@ -9,83 +10,89 @@ using Xunit;
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class IndexStoreTests
-    {
-        // Disable for now as not to impact NBitcoin.
-        /*
+    {     
+        private CoreNode CreateStratisNode(NodeBuilder builder)
+        {
+            return builder.CreateStratisNode(false, fullNodeBuilder =>
+            {
+                fullNodeBuilder
+                .UseConsensus()
+                .UseIndexStore()
+                .AddRPC();
+            });
+        }
+
         [Fact]
         public void CanCreateIndexFromRPC()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node = builder.CreateStratisNode();
+                var node = CreateStratisNode(builder);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
-                var hash = client.GetBestBlockHash();
-                bool response = client.CreateIndexAsync("Output", false, 
-                    "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })").GetAwaiter().GetResult();
+                var response = bool.Parse((string)client.SendCommand("createindex", "Output", false,
+                    "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })").Result);
 
                 Assert.True(response);
-            }
+            }            
         }
-
+        
         [Fact]
         public void CanDropIndexFromRPC()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node = builder.CreateStratisNode();
+                var node = CreateStratisNode(builder);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
-                var hash = client.GetBestBlockHash();
-                bool response1 = client.CreateIndexAsync("Output", false,
-                    "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })").GetAwaiter().GetResult();
-                bool response2 = client.DropIndex("Output").GetAwaiter().GetResult();
+                bool response1 = bool.Parse((string)client.SendCommand("createindex", "Output", false,
+                    "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })").Result);
+                bool response2 = bool.Parse((string)client.SendCommand("dropindex", "Output").Result);
 
-                Assert.True(response1 && response2);
+                Assert.True(response1);
+                Assert.True(response2);
             }
         }
-
+        
         [Fact]
         public void CanListIndexesFromRPC()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node = builder.CreateStratisNode();
+                var node = CreateStratisNode(builder);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
-                var hash = client.GetBestBlockHash();
-                bool response1 = client.CreateIndexAsync("Output", false,
-                    "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })").GetAwaiter().GetResult();
-                bool response2 = client.CreateIndexAsync("Script", true,
-                    "(t,b,n) => t.Outputs.Where(o => o.ScriptPubKey.GetDestinationAddress(n)!=null).Select((o, N) => new object[] { new uint160(o.ScriptPubKey.Hash.ToBytes()), new object[] { t.GetHash(), (uint)N } })").GetAwaiter().GetResult();
-                string[] indexes = client.ListIndexNames();
+                bool response1 = bool.Parse((string)client.SendCommand("createindex", "Output", false,
+                    "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })").Result);
+                bool response2 = bool.Parse((string)client.SendCommand("createindex", "Script", true,
+                    "(t,b,n) => t.Outputs.Select((o, N) => new { Item = o, Index = N }).Where(o => o.Item.ScriptPubKey.GetDestinationAddress(n) != null).Select(o => new object[] { new uint160(o.Item.ScriptPubKey.Hash.ToBytes()), new object[] { t.GetHash(), (uint)o.Index } })").Result);
+                var result = client.SendCommand("listindexnames").Result?.ToObject<JArray>();
 
                 Assert.True(response1);
                 Assert.True(response2);
-                Assert.True(indexes.Length == 2);
-                Assert.Equal("Output", indexes[0]);
-                Assert.Equal("Script", indexes[1]);
+                Assert.Equal(2, result?.Count);
+                Assert.Equal("Output", (string)result[0]);
+                Assert.Equal("Script", (string)result[1]);
             }
         }
-
+        
         [Fact]
         public void CanDescribeIndexFromRPC()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node = builder.CreateStratisNode();
+                var node = CreateStratisNode(builder);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
-                var hash = client.GetBestBlockHash();
-                bool response = client.CreateIndexAsync("Output", false,
-                    "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })").GetAwaiter().GetResult();
-                string description = client.DescribeIndex("Output");
+                var expr = "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })";
+                bool response = bool.Parse((string)client.SendCommand("createindex", "Output", false, expr).Result);
+                string description = (string)client.SendCommand("describeindex", "Output").Result?.ToObject<JArray>()?[0];
 
                 Assert.True(response);
-                Assert.Equal("{\"Name\":\"Output\",\"Table\":\"Index_Output\",\"Builder\":\"(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })\",\"Many\":false,\"Uses\":[\"System\",\"System.Linq\",\"System.Linq.Expressions\",\"System.Collections.Generic\",\"NBitcoin\"]}", description);
+                Assert.Equal("{\"Name\":\"Output\",\"Table\":\"Index_Output\",\"Builder\":\"" + expr + "\",\"Many\":false,\"Uses\":[\"System\",\"System.Linq\",\"System.Linq.Expressions\",\"System.Collections.Generic\",\"NBitcoin\"]}", description);
             }
         }
-        */
+        
         [Fact]
         public void CanRegisterSingleValueIndexFromIndexStoreSettings()
         {
