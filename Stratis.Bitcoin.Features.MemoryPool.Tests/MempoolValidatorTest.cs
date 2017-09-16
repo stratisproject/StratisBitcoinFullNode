@@ -365,7 +365,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
-
+            
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
             ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey);
@@ -394,7 +394,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Directory.CreateDirectory(dataDir);
 
             BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
-            ITestChainContext context = TestChainFactory.Create(Network.RegTest, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, dataDir);
+            ITestChainContext context = TestChainFactory.Create(Network.RegTest, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Fund Bob
             // 50 Coins come from first tx on chain - send bob 42 and change back to miner
-            ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey);
+            ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, miner.PubKey.ScriptPubKey);
             TransactionBuilder txBuilder = new TransactionBuilder();
             Transaction p2wshTx = txBuilder
                 .AddCoins(witnessCoin)
@@ -416,10 +416,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // remove witness data from tx
             Transaction segWitTx = p2wshTx.WithOptions(TransactionOptions.None);
 
+            Assert.Equal(p2wshTx.GetHash(), segWitTx.GetHash());
+            Assert.True(segWitTx.GetSerializedSize() < p2wshTx.GetSerializedSize());
+
             //TODO: Properly build segWitTx
-
             //Assert.True(txBuilder.Verify(segWitTx)); //check fully signed
-
             //MempoolValidationState state = new MempoolValidationState(false);
             //Assert.True(await validator.AcceptToMemoryPool(state, segWitTx), $"Transaction: {nameof(segWitTx)} failed mempool validation.");
 
