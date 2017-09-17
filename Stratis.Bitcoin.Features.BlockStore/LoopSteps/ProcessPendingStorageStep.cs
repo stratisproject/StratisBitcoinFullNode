@@ -1,12 +1,12 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
-{
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using System.Collections.Concurrent;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
+namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+{
     /// <summary>
     /// Check if the next block is in pending storage i.e. first process pending storage blocks
     /// before find and downloading more blocks.
@@ -42,16 +42,17 @@
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height, nameof(disposeMode), disposeMode);
-
             var context = new ProcessPendingStorageContext(this.BlockStoreLoop, nextChainedBlock);
-
-            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && disposeMode == false)
-                return await ProcessWhenInIBD(cancellationToken, context);
 
             // Next block does not exist in pending storage, continue onto the download blocks step.
             if (!this.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
                 return StepResult.Next;
+
+            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && disposeMode == false)
+                return await ProcessWhenInIBD(cancellationToken, context);
+
+            if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload && disposeMode)
+                return await ProcessWhenInIBDandDisposing(cancellationToken, context);
 
             // If pending storage has not yet reached the threshold or the node is in IDB, stop the loop and wait for more blocks.
             if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload == true &&
@@ -118,8 +119,58 @@
 
         private async Task<StepResult> ProcessWhenInIBD(CancellationToken cancellationToken, ProcessPendingStorageContext context)
         {
-            if (this.BlockStoreLoop.PendingStorage.Count < 500)
-                return StepResult.Continue;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
+                if (blockIsInPendingStorage == false)
+                {
+                    if (context.PendingBlockPairsToStore.Count == 0)
+                        return StepResult.Next;
+
+                    if (context.PendingBlockPairsToStore.Any())
+                    {
+                        await this.PushBlocksToRepository(context);
+                        this.logger.LogTrace("{0}.{1}:{2} / {3}:{4} [FLUSH_NEXTBLOCK_NOTIN_PENDING]",
+                            nameof(context.BlockStoreLoop.PendingStorage),
+                            nameof(context.BlockStoreLoop.PendingStorage.Count),
+                            context.BlockStoreLoop.PendingStorage.Count,
+                            nameof(context.BlockStoreLoop.StoreTip),
+                            context.BlockStoreLoop.StoreTip.Height
+                            );
+                        break;
+                    }
+                }
+                else
+                {
+                    context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
+                    context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
+                }
+
+                if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
+                {
+                    this.logger.LogTrace("{0}:{1} [FLUSH_BATCHSIZE_REACHED]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                    await this.PushBlocksToRepository(context);
+                    break;
+                }
+
+                context.GetNextBlock();
+
+                var shouldBreak = ShouldBreakExecutionForIBD(context);
+                if (shouldBreak)
+                {
+                    if (context.PendingBlockPairsToStore.Any())
+                        await this.PushBlocksToRepository(context);
+
+                    break;
+                }
+            }
+
+            return StepResult.Continue;
+        }
+
+        private async Task<StepResult> ProcessWhenInIBDandDisposing(CancellationToken cancellationToken, ProcessPendingStorageContext context)
+        {
+            this.logger.LogTrace("Flushing PendingStorage {0}:{1}", nameof(this.BlockStoreLoop.PendingStorage), this.BlockStoreLoop.PendingStorage.Count);
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -131,7 +182,7 @@
 
                     if (context.PendingBlockPairsToStore.Any())
                     {
-                        this.logger.LogTrace("[FLUSH_NEXTBLOCKNOTINPENDING]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
+                        this.logger.LogTrace("{0}:{1} [FLUSH_NEXTBLOCK_NOTIN_PENDING]", nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize);
                         await this.PushBlocksToRepository(context);
                         break;
                     }
@@ -160,6 +211,8 @@
                     break;
                 }
             }
+
+            this.logger.LogTrace("PendingStorage Flushed...");
 
             return StepResult.Continue;
         }

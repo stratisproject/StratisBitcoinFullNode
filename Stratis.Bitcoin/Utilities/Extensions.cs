@@ -9,6 +9,9 @@ namespace Stratis.Bitcoin.Utilities
     public static class TimeSpans
     {
         /// <summary>Time span of 100 milliseconds.</summary>
+        public static TimeSpan Ms5 => TimeSpan.FromMilliseconds(5);
+
+        /// <summary>Time span of 100 milliseconds.</summary>
         public static TimeSpan Ms100 => TimeSpan.FromMilliseconds(100);
 
         /// <summary>Time span of 1 second.</summary>
