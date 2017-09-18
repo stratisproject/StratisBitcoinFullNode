@@ -78,20 +78,6 @@ namespace Stratis.Bitcoin.Base
             get; set;
         }
 
-        /// <summary>
-        /// Represents the last block stored to disk
-        /// </summary>
-        public ChainedBlock HighestPersistedBlock
-        {
-            get; set;
-        }
 
-        /// <summary>
-        /// Represents the last block stored to the index repository
-        /// </summary>
-        public ChainedBlock HighestIndexedBlock
-        {
-            get; set;
-        }
     }
 }
