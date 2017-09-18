@@ -80,11 +80,11 @@ namespace Stratis.Bitcoin.Features.Miner
             var defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-mine=<0 or 1>            Enable POW mining.");
-            builder.AppendLine($"-stake=<0 or 1>           Enable POS.");
-            builder.AppendLine($"-mineaddress=<string>     The address to use for mining (null to select an address from the wallet).");
-            builder.AppendLine($"-walletname=<string>      The wallet name to use when staking.");
-            builder.AppendLine($"-walletpassword=<string>  Password to unlock the wallet.");
+            builder.AppendLine("-mine=<0 or 1>            Enable POW mining.");
+            builder.AppendLine("-stake=<0 or 1>           Enable POS.");
+            builder.AppendLine("-mineaddress=<string>     The address to use for mining (empty string to select an address from the wallet).");
+            builder.AppendLine("-walletname=<string>      The wallet name to use when staking.");
+            builder.AppendLine("-walletpassword=<string>  Password to unlock the wallet.");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
