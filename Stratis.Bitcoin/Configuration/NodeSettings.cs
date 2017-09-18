@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine("#Where the RPC Server binds (default: 127.0.0.1 and ::1)");
                 builder.AppendLine("#rpcbind=127.0.0.1");
                 builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
-                builder.AppendLine("#rpcallowedip=127.0.0.1");
+                builder.AppendLine("#rpcallowip=127.0.0.1");
                 File.WriteAllText(config, builder.ToString());
             }
             return config;
