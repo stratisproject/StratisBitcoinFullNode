@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 else
                 {
-                    this.logger.LogWarning("Staking not started, wallet name or password where not provided.");
+                    this.logger.LogWarning("Staking not started, wallet name or password were not provided.");
                 }
             }
         }
