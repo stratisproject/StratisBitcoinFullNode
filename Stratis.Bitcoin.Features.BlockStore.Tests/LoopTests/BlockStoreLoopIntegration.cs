@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         }
 
         [Fact]
-        public void ProcessPendingStorage_WithPendingBlocks_PushToRepoBeforeDownloadingNewBlocks()
+        public void ProcessPendingStorage_PushToRepo_BeforeDownloadingNewBlocks()
         {
             var blocks = CreateBlocks(15);
 
@@ -110,16 +110,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 fluent.Loop.SetStoreTip(fluent.Loop.Chain.GetBlock(blocks.Take(5).Last().GetHash()));
 
                 // Add chained blocks 5 - 14 to PendingStorage
-                AddBlockToPendingStorage(fluent.Loop, blocks[5]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[6]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[7]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[8]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[9]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[10]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[11]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[12]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[13]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[14]);
+                for (int i = 5; i <= 14; i++)
+                {
+                    AddBlockToPendingStorage(fluent.Loop, blocks[i]);
+                }
 
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
@@ -152,11 +146,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 fluent.Create(chain);
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
-                fluent.Loop.BlockPuller.InjectBlock(blocks[5].GetHash(), new DownloadedBlock() { Length = blocks[5].GetSerializedSize(), Block = blocks[5] }, new CancellationToken());
-                fluent.Loop.BlockPuller.InjectBlock(blocks[6].GetHash(), new DownloadedBlock() { Length = blocks[6].GetSerializedSize(), Block = blocks[6] }, new CancellationToken());
-                fluent.Loop.BlockPuller.InjectBlock(blocks[7].GetHash(), new DownloadedBlock() { Length = blocks[7].GetSerializedSize(), Block = blocks[7] }, new CancellationToken());
-                fluent.Loop.BlockPuller.InjectBlock(blocks[8].GetHash(), new DownloadedBlock() { Length = blocks[8].GetSerializedSize(), Block = blocks[8] }, new CancellationToken());
-                fluent.Loop.BlockPuller.InjectBlock(blocks[9].GetHash(), new DownloadedBlock() { Length = blocks[9].GetSerializedSize(), Block = blocks[9] }, new CancellationToken());
+                for (int i = 5; i <= 9; i++)
+                {
+                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock() { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
+                }
 
                 // Start processing blocks to download from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());

@@ -97,12 +97,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
                 var canProcessNextBlock = context.CanProcessNextBlock();
                 if (canProcessNextBlock == false)
-                    if (!context.PendingBlockPairsToStore.Any())
-                        break;
-
-                if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize || canProcessNextBlock == false)
                 {
-                    await PushBlocksToRepository(context);
+                    if (context.PendingBlockPairsToStore.Any())
+                        await PushBlocksToRepository(context);
+
                     break;
                 }
 
@@ -129,13 +127,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             {
                 PrepareNextBlockFromPendingStorage(context);
 
-                var canProcessNextBlock = context.CanProcessNextBlock();
-                if (canProcessNextBlock == false)
-                    if (!context.PendingBlockPairsToStore.Any())
-                        break;
-
                 await PushBlocksToRepository(context);
 
+                var canProcessNextBlock = context.CanProcessNextBlock();
                 if (canProcessNextBlock == false)
                     break;
 
