@@ -316,6 +316,117 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Directory.Delete(dataDir, true);
         }
 
+        /// <summary>
+        /// Validate P2WPKH transaction in memory pool.
+        /// </summary>
+        [Fact]
+        public async void AcceptToMemoryPool_WithP2WPKHValidTxns_IsSuccessfull()
+        {
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithP2WPKHValidTxns_IsSuccessfull));
+            Directory.CreateDirectory(dataDir);
+
+            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            ITestChainContext context = TestChainFactory.Create(Network.RegTest, miner.PubKey.WitHash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+
+            // Fund Bob
+            // 50 Coins come from first tx on chain - send bob 42 and change back to miner
+            Coin witnessCoin = new Coin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.WitHash.ScriptPubKey);
+            TransactionBuilder txBuilder = new TransactionBuilder();
+            Transaction p2wpkhTx = txBuilder
+                .AddCoins(witnessCoin)
+                .AddKeys(miner)
+                .Send(bob, "42.00")
+                .SendFees("0.001")
+                .SetChange(miner)
+                .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(p2wpkhTx)); //check fully signed
+            MempoolValidationState state = new MempoolValidationState(false);
+            Assert.True(await validator.AcceptToMemoryPool(state, p2wpkhTx), $"Transaction: {nameof(p2wpkhTx)} failed mempool validation.");
+
+            Directory.Delete(dataDir, true);
+        }
+
+        /// <summary>
+        /// Validate P2WSH transaction in memory pool.
+        /// </summary>
+        [Fact]
+        public async void AcceptToMemoryPool_WithP2WSHValidTxns_IsSuccessfull()
+        {
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithP2WSHValidTxns_IsSuccessfull));
+            Directory.CreateDirectory(dataDir);
+
+            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            ITestChainContext context = TestChainFactory.Create(Network.RegTest, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+            
+            // Fund Bob
+            // 50 Coins come from first tx on chain - send bob 42 and change back to miner
+            ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey, miner.PubKey.ScriptPubKey);
+            TransactionBuilder txBuilder = new TransactionBuilder();
+            Transaction p2wshTx = txBuilder
+                .AddCoins(witnessCoin)
+                .AddKeys(miner)
+                .Send(bob, "42.00")
+                .SendFees("0.001")
+                .SetChange(miner)
+                .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(p2wshTx)); //check fully signed
+            MempoolValidationState state = new MempoolValidationState(false);
+            Assert.True(await validator.AcceptToMemoryPool(state, p2wshTx), $"Transaction: {nameof(p2wshTx)} failed mempool validation.");
+
+            Directory.Delete(dataDir, true);
+        }
+
+        /// <summary>
+        /// Validate SegWit transaction in memory pool.
+        /// </summary>
+        [Fact]
+        public async void AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfull()
+        {
+            string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfull));
+            Directory.CreateDirectory(dataDir);
+
+            BitcoinSecret miner = new BitcoinSecret(new Key(), Network.RegTest);
+            ITestChainContext context = TestChainFactory.Create(Network.RegTest, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+
+            // Fund Bob
+            // 50 Coins come from first tx on chain - send bob 42 and change back to miner
+            ScriptCoin witnessCoin = new ScriptCoin(context.SrcTxs[0].GetHash(), 0, context.SrcTxs[0].TotalOut, miner.PubKey.ScriptPubKey.WitHash.ScriptPubKey.Hash.ScriptPubKey, miner.PubKey.ScriptPubKey);
+            TransactionBuilder txBuilder = new TransactionBuilder();
+            Transaction p2wshTx = txBuilder
+                .AddCoins(witnessCoin)
+                .AddKeys(miner)
+                .Send(bob, "42.00")
+                .SendFees("0.001")
+                .SetChange(miner)
+                .BuildTransaction(true);
+            Assert.True(txBuilder.Verify(p2wshTx)); //check fully signed
+
+            // remove witness data from tx
+            Transaction segWitTx = p2wshTx.WithOptions(TransactionOptions.None);
+
+            Assert.Equal(p2wshTx.GetHash(), segWitTx.GetHash());
+            Assert.True(segWitTx.GetSerializedSize() < p2wshTx.GetSerializedSize());
+
+            //TODO: Properly build segWitTx
+            //Assert.True(txBuilder.Verify(segWitTx)); //check fully signed
+            //MempoolValidationState state = new MempoolValidationState(false);
+            //Assert.True(await validator.AcceptToMemoryPool(state, segWitTx), $"Transaction: {nameof(segWitTx)} failed mempool validation.");
+
+            Directory.Delete(dataDir, true);
+        }        
+
         [Fact]
         public void AcceptToMemoryPool_TxIsCoinbase_ReturnsFalse()
         {
