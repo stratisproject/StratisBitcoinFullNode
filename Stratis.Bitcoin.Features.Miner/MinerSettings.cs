@@ -75,6 +75,10 @@ namespace Stratis.Bitcoin.Features.Miner
             this.callback?.Invoke(this);
         }
 
+        /// <summary>
+        /// Displays mining help information on the console.
+        /// </summary>
+        /// <param name="mainNet">Not used.</param>
         public static void PrintHelp(Network mainNet)
         {
             var defaults = NodeSettings.Default();
