@@ -61,6 +61,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             return fullNode.NodeService<BlockStoreManager>();
         }
+
+        public static ChainedBlock HighestPersistedBlock(this FullNode fullNode)
+        {
+            return (fullNode.NodeService<Features.BlockStore.IBlockRepository>() as BlockRepository).HighestPersistedBlock;
+        }
     }
 
     public enum CoreNodeState

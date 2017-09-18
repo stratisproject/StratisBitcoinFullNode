@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -50,7 +51,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="walletManager">Manager providing operations on wallets.</param>
         public MiningFeature(
             Network network, 
-            MinerSettings minerSettings, 
+            MinerSettings minerSettings,
+            NodeSettings nodeSettings,
             ILoggerFactory loggerFactory, 
             PowMining powMining, 
             PosMinting posMinting = null, 
@@ -58,6 +60,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.network = network;
             this.minerSettings = minerSettings;
+            this.minerSettings.Load(nodeSettings);
             this.powMining = powMining;
             this.posMinting = posMinting;
             this.walletManager = walletManager;
@@ -75,6 +78,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 if (!string.IsNullOrEmpty(minto))
                 {
+                    this.logger.LogInformation("Mining enabled.");
+
                     this.powLoop = this.powMining.Mine(BitcoinAddress.Create(minto, this.network).ScriptPubKey);
                 }
             }
@@ -84,6 +89,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (!string.IsNullOrEmpty(this.minerSettings.WalletName)
                     && !string.IsNullOrEmpty(this.minerSettings.WalletPassword))
                 {
+                    this.logger.LogInformation("Staking enabled on wallet {0}.", this.minerSettings.WalletName);
+
                     this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret()
                     {
                         WalletPassword = this.minerSettings.WalletPassword,
