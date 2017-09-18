@@ -106,6 +106,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Create block store loop
                 fluent.Create(chain);
 
+                //Set the store's tip
+                fluent.Loop.SetStoreTip(fluent.Loop.Chain.GetBlock(blocks.Take(5).Last().GetHash()));
+
                 // Add chained blocks 5 - 14 to PendingStorage
                 AddBlockToPendingStorage(fluent.Loop, blocks[5]);
                 AddBlockToPendingStorage(fluent.Loop, blocks[6]);

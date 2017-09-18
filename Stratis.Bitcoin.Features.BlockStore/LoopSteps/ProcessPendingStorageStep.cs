@@ -68,16 +68,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             while (this.BlockStoreLoop.PendingStorage.Count > 0)
             {
-                var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
-                if (blockIsInPendingStorage)
-                {
-                    context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
-                    context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
-                }
+                PrepareNextBlockFromPendingStorage(context);
 
                 var canProcessNextBlock = context.CanProcessNextBlock();
                 if (canProcessNextBlock == false)
-                    if (context.PendingBlockPairsToStore.Any() == false)
+                    if (!context.PendingBlockPairsToStore.Any())
                         break;
             }
 
@@ -98,12 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             do
             {
-                var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
-                if (blockIsInPendingStorage)
-                {
-                    context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
-                    context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
-                }
+                PrepareNextBlockFromPendingStorage(context);
 
                 var canProcessNextBlock = context.CanProcessNextBlock();
                 if (canProcessNextBlock == false)
@@ -137,27 +127,35 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             do
             {
-                var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
-                if (blockIsInPendingStorage)
-                {
-                    context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
-                    context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
-                }
+                PrepareNextBlockFromPendingStorage(context);
 
                 var canProcessNextBlock = context.CanProcessNextBlock();
                 if (canProcessNextBlock == false)
                     if (!context.PendingBlockPairsToStore.Any())
                         break;
 
+                await PushBlocksToRepository(context);
+
                 if (canProcessNextBlock == false)
-                {
-                    await PushBlocksToRepository(context);
                     break;
-                }
 
             } while (context.CancellationToken.IsCancellationRequested == false);
 
             return StepResult.Continue;
+        }
+
+        /// <summary>
+        /// Tries to get and remove the next block from pending storage. If it exists
+        /// then add it to <see cref="ProcessPendingStorageContext.PendingBlockPairsToStore"/>
+        /// </summary>
+        private void PrepareNextBlockFromPendingStorage(ProcessPendingStorageContext context)
+        {
+            var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
+            if (blockIsInPendingStorage)
+            {
+                context.PendingBlockPairsToStore.Push(context.PendingBlockPairToStore);
+                context.PendingStorageBatchSize += context.PendingBlockPairToStore.Block.GetSerializedSize();
+            }
         }
 
         /// <summary>
@@ -178,7 +176,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     }
 
     /// <summary>
-    /// Context class that's used by <see cref="ProcessPendingStorageStep"/> 
+    /// Context class thats used by <see cref="ProcessPendingStorageStep"/> 
     /// </summary>
     internal sealed class ProcessPendingStorageContext
     {
@@ -229,6 +227,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (this.NextChainedBlock.Header.HashPrevBlock != this.InputChainedBlock.HashBlock)
                 return false;
             if (this.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+                return false;
+            if (this.BlockStoreLoop.StoreTip.Height >= this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
                 return false;
 
             return true;

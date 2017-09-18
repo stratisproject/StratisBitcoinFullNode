@@ -215,8 +215,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping, false);
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.Ms5,
-            startAfter: TimeSpans.Second);
+            repeatEvery: TimeSpans.Second,
+            startAfter: TimeSpans.FiveSeconds);
         }
 
         /// <summary>
