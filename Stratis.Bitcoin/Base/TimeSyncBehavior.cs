@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Features.Consensus
+namespace Stratis.Bitcoin.Base
 {
     /// <summary>
     /// Methods related to network peers time synchronization feature.
@@ -171,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public TimeSyncBehaviorState(IDateTimeProvider dateTimeProvider, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, ILoggerFactory loggerFactory)
         {
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
@@ -221,7 +220,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         this.RecalculateTimeOffsetLocked();
 
-                        if (!this.WarningLoopStarted && (Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds))
+                        // If SwitchedOffLimitReached is set, timeOffset is set to zero,
+                        // so we need to check both conditions here.
+                        if (!this.WarningLoopStarted 
+                            && ((Math.Abs(this.timeOffset.TotalSeconds) > TimeOffsetWarningThresholdSeconds) || this.SwitchedOffLimitReached))
                         {
                             startWarningLoopNow = true;
                             this.WarningLoopStarted = true;
@@ -235,7 +237,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             if (startWarningLoopNow)
-                StartWarningLoop();
+                this.StartWarningLoop();
 
             this.logger.LogTrace("(-):{0}", res);
             return res;
@@ -312,25 +314,25 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (timeOffsetWrong)
                     {
-                        this.logger.LogCritical(
-                              "============================== W A R N I N G ! ==============================\n"
+                        this.logger.LogCritical("\n"
+                            + "============================== W A R N I N G ! ==============================\n"
                             + "Your system time is very different than the time of other network nodes.\n"
                             + "To prevent problems, adjust your system time, or check -synctime command line argument.\n"
                             + "Your time difference to the network median time is {0} seconds.\n"
-                            + "=============================================================================",
+                            + "=============================================================================\n",
                               timeOffsetSeconds);
                     }
                 }
                 else
                 {
-                    this.logger.LogCritical(
-                          "============================== W A R N I N G ! ==============================\n"
+                    this.logger.LogCritical("\n"
+                        + "============================== W A R N I N G ! ==============================\n"
                         + "Your system time is VERY different than the time of other network nodes.\n"
-                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds."
+                        + "Your time difference to the network median time is over the allowed maximum of {0} seconds.\n"
                         + "The time syncing feature has been as it is no longer considered safe.\n"
                         + "It is likely that you will now reject new blocks or be unable to mine new block.\n"
-                        + "You need to adjust your system time or check -synctime command line argument."
-                        + "=============================================================================",
+                        + "You need to adjust your system time or check -synctime command line argument.\n"
+                        + "=============================================================================\n",
                           MaxTimeOffsetSeconds);
                 }
 
@@ -382,7 +384,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public TimeSyncBehavior(ITimeSyncBehaviorState state, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
-            this.logger = loggerFactory.CreateLogger(GetType().FullName);
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.state = state;
         }
@@ -444,7 +446,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     VersionPayload version = node.PeerVersion;
                     if (version != null)
                     {
-                        TimeSpan timeOffset = this.dateTimeProvider.GetUtcNow() - version.Timestamp;
+                        TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetUtcNow();
                         if (timeOffset != null) this.state.AddTimeData(address, timeOffset, node.Inbound);
                     }
                     else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);                    

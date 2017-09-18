@@ -1,4 +1,4 @@
-﻿namespace Stratis.Bitcoin.Configuration.Settings
+﻿namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
     /// Configuration of cache limits.
@@ -13,7 +13,7 @@
         /// </summary>
         public CacheSettings()
         {
-            this.MaxItems = Features.Consensus.CoinViews.CachedCoinView.CacheMaxItemsDefault;
+           this.MaxItems = Features.Consensus.CoinViews.CachedCoinView.CacheMaxItemsDefault;
         }
     }
 }
