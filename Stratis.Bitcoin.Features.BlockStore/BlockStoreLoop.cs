@@ -285,7 +285,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block?.HashBlock);
 
-            this.ChainState.HighestPersistedBlock = block;
+            var blockRepository = this.BlockRepository as BlockRepository;
+
+            if (blockRepository != null)
+                blockRepository.HighestPersistedBlock = block;
 
             this.logger.LogTrace("(-)");
         }
