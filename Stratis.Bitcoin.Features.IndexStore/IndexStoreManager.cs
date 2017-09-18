@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 {
     public class IndexStoreManager: BlockStoreManager
     {
-        public IndexStoreManager(ConcurrentChain chain, IConnectionManager connection, IndexRepository indexRepository,
+        public IndexStoreManager(ConcurrentChain chain, IConnectionManager connection, IIndexRepository indexRepository,
             IDateTimeProvider dateTimeProvider, NodeSettings nodeArgs, ChainState chainState, IndexStoreLoop indexStoreLoop):
             base(chain, connection, indexRepository, dateTimeProvider, nodeArgs, chainState, indexStoreLoop)
         {
