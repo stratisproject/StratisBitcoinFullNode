@@ -93,6 +93,12 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public static partial class IFullNodeBuilderExtensions
     {
+        /// <summary>
+        /// Adds a mining feature to the node being initialized.
+        /// </summary>
+        /// <param name="fullNodeBuilder">The object used to build the current node.</param>
+        /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
+        /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder, Action<MinerSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
@@ -114,6 +120,12 @@ namespace Stratis.Bitcoin.Features.Miner
             return fullNodeBuilder;
         }
 
+        /// <summary>
+        /// Adds POW and POS miner components to the node, so that it can stake/mine.
+        /// </summary>
+        /// <param name="fullNodeBuilder">The object used to build the current node.</param>
+        /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
+        /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder, Action<MinerSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
