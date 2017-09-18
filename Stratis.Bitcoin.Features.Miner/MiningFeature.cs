@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 if (!string.IsNullOrEmpty(minto))
                 {
-                    this.logger.LogInformation($"Mining enabled.");
+                    this.logger.LogInformation("Mining enabled.");
 
                     this.powLoop = this.powMining.Mine(BitcoinAddress.Create(minto, this.network).ScriptPubKey);
                 }
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (!string.IsNullOrEmpty(this.minerSettings.WalletName)
                     && !string.IsNullOrEmpty(this.minerSettings.WalletPassword))
                 {
-                    this.logger.LogInformation($"Staking enabled on wallet {this.minerSettings.WalletName}.");
+                    this.logger.LogInformation("Staking enabled on wallet {0}.", this.minerSettings.WalletName);
 
                     this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret()
                     {
