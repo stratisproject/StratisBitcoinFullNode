@@ -10,6 +10,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
@@ -368,12 +369,20 @@ namespace Stratis.Bitcoin.Configuration
         private void SetDefaultDataDir(string appName, Network network)
         {
             string directory = null;
-            var home = Environment.GetEnvironmentVariable("HOME");
-            if (!string.IsNullOrEmpty(home))
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
-                directory = home;
-                directory = Path.Combine(directory, "." + appName.ToLowerInvariant());
+                var home = Environment.GetEnvironmentVariable("HOME");
+                if (!string.IsNullOrEmpty(home))
+                {
+                    this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
+                    directory = home;
+                    directory = Path.Combine(directory, "." + appName.ToLowerInvariant());
+                }
+                else
+                {
+                    throw new DirectoryNotFoundException("Could not find suitable datadir");
+                }
             }
             else
             {
