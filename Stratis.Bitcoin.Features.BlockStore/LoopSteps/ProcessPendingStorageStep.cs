@@ -42,6 +42,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
+            this.logger.LogTrace("{0}:'{1}/{2}',{3}:{4}", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
+
             var context = new ProcessPendingStorageContext(this.BlockStoreLoop, nextChainedBlock, cancellationToken);
 
             // Next block does not exist in pending storage, continue onto the download blocks step.
@@ -66,6 +68,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task<StepResult> ProcessWhenDisposing(ProcessPendingStorageContext context)
         {
+            this.logger.LogDebug("{0}:'{1}/{2}'", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
+
             while (this.BlockStoreLoop.PendingStorage.Count > 0)
             {
                 PrepareNextBlockFromPendingStorage(context);
@@ -88,6 +92,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task<StepResult> ProcessWhenInIBD(ProcessPendingStorageContext context)
         {
+            this.logger.LogDebug("{0}:'{1}/{2}'", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
+
             if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
                 return StepResult.Continue;
 
@@ -123,6 +129,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task<StepResult> ProcessWhenNotInIBD(ProcessPendingStorageContext context)
         {
+            this.logger.LogDebug("{0}:'{1}/{2}'", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
+
             do
             {
                 PrepareNextBlockFromPendingStorage(context);
@@ -142,6 +150,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// Tries to get and remove the next block from pending storage. If it exists
         /// then add it to <see cref="ProcessPendingStorageContext.PendingBlockPairsToStore"/>
         /// </summary>
+        /// <param name="context"><see cref="ProcessPendingStorageContext"/></param>
         private void PrepareNextBlockFromPendingStorage(ProcessPendingStorageContext context)
         {
             var blockIsInPendingStorage = this.BlockStoreLoop.PendingStorage.TryRemove(context.NextChainedBlock.HashBlock, out context.PendingBlockPairToStore);
@@ -155,17 +164,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>
         /// Store missing blocks and remove them from pending blocks and set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedBlock"/>
         /// </summary>
+        /// <param name="context"><see cref="ProcessPendingStorageContext"/></param>
         private async Task PushBlocksToRepository(ProcessPendingStorageContext context)
         {
             await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairsToStore.First().ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
 
             this.BlockStoreLoop.SetStoreTip(context.PendingBlockPairsToStore.First().ChainedBlock);
 
-            this.logger.LogTrace("({0}:{1} / {2}.{3}:{4} / {5}:{6} / {7}:{8})",
-                nameof(context.BlockStoreLoop.ChainState.IsInitialBlockDownload), context.BlockStoreLoop.ChainState.IsInitialBlockDownload,
-                nameof(context.PendingBlockPairsToStore), nameof(context.PendingBlockPairsToStore.Count),
-                context.PendingBlockPairsToStore?.Count, nameof(context.PendingStorageBatchSize), context.PendingStorageBatchSize,
-                nameof(context.BlockStoreLoop.StoreTip), context.BlockStoreLoop.StoreTip);
+            this.logger.LogDebug(context.ToString());
         }
     }
 
@@ -173,7 +179,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// Context class thats used by <see cref="ProcessPendingStorageStep"/> 
     /// </summary>
     internal sealed class ProcessPendingStorageContext
-    {
+    {/// <summary>
+     /// 
+     /// </summary>
+
         internal ProcessPendingStorageContext(BlockStoreLoop blockStoreLoop, ChainedBlock nextChainedBlock, CancellationToken cancellationToken)
         {
             this.BlockStoreLoop = blockStoreLoop;
@@ -207,10 +216,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <summary>
         /// Break execution if:
         /// <list>
-        ///     <item>1: At the tip</item>
-        ///     <item>2: Block is already in store or pending insertion</item>
+        ///     <item>1: Next block is null.</item>
+        ///     <item>2: Next block previous hash does not match previous block.</item>
+        ///     <item>3: Netx block is at tip.</item>
+        ///     <item>4: Store tip is as consensus.</item>
         /// </list>
         /// </summary>
+        /// <returns>Returns <c>true</c> if none of the above condition were met, i.e. the next block can be processed.</returns>
         internal bool CanProcessNextBlock()
         {
             this.InputChainedBlock = this.NextChainedBlock;
@@ -226,6 +238,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return false;
 
             return true;
+        }
+
+        public override string ToString()
+        {
+            return (string.Format("{0}:{1} / {2}.{3}:{4} / {5}:{6} / {7}:{8}",
+                    nameof(this.BlockStoreLoop.ChainState.IsInitialBlockDownload), this.BlockStoreLoop.ChainState.IsInitialBlockDownload,
+                    nameof(this.PendingBlockPairsToStore), nameof(this.PendingBlockPairsToStore.Count),
+                    this.PendingBlockPairsToStore?.Count, nameof(this.PendingStorageBatchSize), this.PendingStorageBatchSize,
+                    nameof(this.BlockStoreLoop.StoreTip), this.BlockStoreLoop.StoreTip));
         }
     }
 }

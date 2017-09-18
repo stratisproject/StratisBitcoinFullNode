@@ -64,9 +64,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         {
             var block = new Block();
 
-            var transactions = bigBlocks ? 1000 : 10;
+            int transactionCount = bigBlocks ? 1000 : 10;
 
-            for (int j = 0; j < transactions; j++)
+            for (int j = 0; j < transactionCount; j++)
             {
                 var trx = new Transaction();
 
