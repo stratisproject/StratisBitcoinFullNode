@@ -11,11 +11,11 @@ namespace Stratis.Bitcoin.Features.IndexStore
     public class IndexStoreLoop : BlockStoreLoop
     {        
         public IndexStoreLoop(ConcurrentChain chain,
-            IndexRepository indexRepository,
+            IIndexRepository indexRepository,
             IndexSettings indexSettings,
             ChainState chainState,
             IndexBlockPuller blockPuller,
-            IndexStoreCache cache,
+            IIndexStoreCache cache,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory, 
