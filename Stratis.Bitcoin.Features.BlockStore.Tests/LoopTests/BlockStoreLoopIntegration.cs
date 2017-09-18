@@ -99,19 +99,24 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
-                // The chain has 10 blocks appended
+                // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(14));
 
                 // Create block store loop
                 fluent.Create(chain);
 
-                // Add chained blocks 5 - 9 to PendingStorage
+                // Add chained blocks 5 - 14 to PendingStorage
                 AddBlockToPendingStorage(fluent.Loop, blocks[5]);
                 AddBlockToPendingStorage(fluent.Loop, blocks[6]);
                 AddBlockToPendingStorage(fluent.Loop, blocks[7]);
                 AddBlockToPendingStorage(fluent.Loop, blocks[8]);
                 AddBlockToPendingStorage(fluent.Loop, blocks[9]);
+                AddBlockToPendingStorage(fluent.Loop, blocks[10]);
+                AddBlockToPendingStorage(fluent.Loop, blocks[11]);
+                AddBlockToPendingStorage(fluent.Loop, blocks[12]);
+                AddBlockToPendingStorage(fluent.Loop, blocks[13]);
+                AddBlockToPendingStorage(fluent.Loop, blocks[14]);
 
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
@@ -119,8 +124,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
                 processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
-                Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
-                Assert.Equal(blocks[9].GetHash(), fluent.Loop.StoreTip.HashBlock);
+                Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
+                Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);
             }
         }
 
