@@ -10,18 +10,44 @@ using System;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
+    /// <summary>
+    /// Provides an ability to mine or stake.
+    /// </summary>
     public class MiningFeature : FullNodeFeature
     {
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
+
+        /// <summary>Settings relevant to mining or staking.</summary>
         private readonly MinerSettings minerSettings;
+
+        /// <summary>POW miner.</summary>
         private readonly PowMining powMining;
+
+        /// <summary>POS staker.</summary>
         private readonly PosMinting posMinting;
+
+        /// <summary>Manager providing operations on wallets.</summary>
         private readonly WalletManager walletManager;
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>POS staking loop.</summary>
         private IAsyncLoop posLoop;
+
+        /// <summary>POW mining loop.</summary>
         private IAsyncLoop powLoop;
 
+        /// <summary>
+        /// Initializes the instance of the object.
+        /// </summary>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="minerSettings">Settings relevant to mining or staking.</param>
+        /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
+        /// <param name="powMining">POW miner.</param>
+        /// <param name="posMinting">POS staker.</param>
+        /// <param name="walletManager">Manager providing operations on wallets.</param>
         public MiningFeature(
             Network network, 
             MinerSettings minerSettings, 
@@ -121,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Adds POW and POS miner components to the node, so that it can stake/mine.
+        /// Adds POW and POS miner components to the node, so that it can mine or stake.
         /// </summary>
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
         /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
