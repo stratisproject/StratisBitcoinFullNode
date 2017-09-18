@@ -48,13 +48,17 @@ namespace Stratis.Bitcoin.Features.Miner
         {
         }
 
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        /// <param name="callback">Callback routine to be called once the miner settings are loaded.</param>
         public MinerSettings(Action<MinerSettings> callback)
         {
             this.callback = callback;
         }
 
         /// <summary>
-        /// Loads the rpc settings from the application configuration.
+        /// Loads the RPC settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
