@@ -12,13 +12,14 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreFeature : FullNodeFeature, IBlockStore
+    public class BlockStoreFeature : FullNodeFeature, IBlockStore, INodeStats
     {
         protected readonly ConcurrentChain chain;
         protected readonly Signals.Signals signals;
@@ -78,6 +79,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
         {
             return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory);
+        }
+
+        public void AddNodeStats(StringBuilder benchLogs)
+        {
+            var highestBlock = (this.blockRepository as BlockRepository)?.HighestPersistedBlock;
+
+            if (highestBlock != null)
+                benchLogs.AppendLine($"{this.name}.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                    highestBlock.Height.ToString().PadRight(8) +
+                    $" {this.name}.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                    highestBlock.HashBlock);
         }
 
         public Task<Transaction> GetTrxAsync(uint256 trxid)
