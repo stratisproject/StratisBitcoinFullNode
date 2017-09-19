@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.Network = network;
             this.ConsensusValidator = consensusValidator;
             this.ChainState = chainState;
+            this.checkpoints = checkpoints;
         }
 
         /// <summary>
