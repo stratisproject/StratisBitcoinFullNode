@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Notifications.Tests
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             chain.Setup(c => c.GetBlock(startBlockId))
                 .Returns((ChainedBlock)null);
 
-            var notification = new BlockNotification(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             notification.Notify();
         }
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             stub.Setup(s => s.NextBlock(lifetime.ApplicationStopping))
                 .Returns((Block)null);
 
-            var notification = new BlockNotification(chain.Object, stub.Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, stub.Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             notification.Notify();
             notification.SyncFrom(startBlockId);
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var signals = new Mock<ISignals>();
 
-            var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             await notification.Notify().RunningTask;
 
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var signals = new Mock<ISignals>();
 
-            var notification = new BlockNotification(chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             notification.SyncFrom(startBlockId);
             await notification.Notify().RunningTask;
