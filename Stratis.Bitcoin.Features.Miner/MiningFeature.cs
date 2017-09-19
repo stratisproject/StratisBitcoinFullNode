@@ -11,18 +11,44 @@ using System;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
+    /// <summary>
+    /// Provides an ability to mine or stake.
+    /// </summary>
     public class MiningFeature : FullNodeFeature
     {
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
+
+        /// <summary>Settings relevant to mining or staking.</summary>
         private readonly MinerSettings minerSettings;
+
+        /// <summary>POW miner.</summary>
         private readonly PowMining powMining;
+
+        /// <summary>POS staker.</summary>
         private readonly PosMinting posMinting;
+
+        /// <summary>Manager providing operations on wallets.</summary>
         private readonly WalletManager walletManager;
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>POS staking loop.</summary>
         private IAsyncLoop posLoop;
+
+        /// <summary>POW mining loop.</summary>
         private IAsyncLoop powLoop;
 
+        /// <summary>
+        /// Initializes the instance of the object.
+        /// </summary>
+        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="minerSettings">Settings relevant to mining or staking.</param>
+        /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
+        /// <param name="powMining">POW miner.</param>
+        /// <param name="posMinting">POS staker.</param>
+        /// <param name="walletManager">Manager providing operations on wallets.</param>
         public MiningFeature(
             Network network, 
             MinerSettings minerSettings,
@@ -46,8 +72,8 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             if (this.minerSettings.Mine)
             {
-                var minto = this.minerSettings.MineAddress;
-                if (string.IsNullOrEmpty(minto)) ;
+                string minto = this.minerSettings.MineAddress;
+                // if (string.IsNullOrEmpty(minto)) ;
                 //	TODO: get an address from the wallet.
 
                 if (!string.IsNullOrEmpty(minto))
@@ -63,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (!string.IsNullOrEmpty(this.minerSettings.WalletName)
                     && !string.IsNullOrEmpty(this.minerSettings.WalletPassword))
                 {
-                    this.logger.LogInformation("Staking enabled on wallet {0}.", this.minerSettings.WalletName);
+                    this.logger.LogInformation("Staking enabled on wallet '{0}'.", this.minerSettings.WalletName);
 
                     this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret()
                     {
@@ -73,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 else
                 {
-                    this.logger.LogWarning("Staking not started, wallet name or password where not provided.");
+                    this.logger.LogWarning("Staking not started, wallet name or password were not provided.");
                 }
             }
         }
@@ -100,6 +126,12 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public static partial class IFullNodeBuilderExtensions
     {
+        /// <summary>
+        /// Adds a mining feature to the node being initialized.
+        /// </summary>
+        /// <param name="fullNodeBuilder">The object used to build the current node.</param>
+        /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
+        /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder, Action<MinerSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
@@ -121,6 +153,12 @@ namespace Stratis.Bitcoin.Features.Miner
             return fullNodeBuilder;
         }
 
+        /// <summary>
+        /// Adds POW and POS miner components to the node, so that it can mine or stake.
+        /// </summary>
+        /// <param name="fullNodeBuilder">The object used to build the current node.</param>
+        /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
+        /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder, Action<MinerSettings> setup = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");

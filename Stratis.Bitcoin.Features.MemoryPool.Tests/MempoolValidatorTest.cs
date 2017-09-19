@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Validate SegWit transaction in memory pool.
         /// </summary>
         [Fact]
-        public async void AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfull()
+        public void AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfull()
         {
             string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfull));
             Directory.CreateDirectory(dataDir);
