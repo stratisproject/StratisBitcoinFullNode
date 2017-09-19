@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
 using Transaction = NBitcoin.Transaction;
+using System.Threading;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 namespace Stratis.Bitcoin.Features.Wallet
@@ -406,7 +407,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
         }
-        
+
+        private static readonly SemaphoreSlim SemaphoreSendTx = new SemaphoreSlim(1, 1);
         /// <inheritdoc />
         public bool SendTransaction(string transactionHex)
         {
@@ -416,27 +418,37 @@ namespace Stratis.Bitcoin.Features.Wallet
             // parse transaction
             Transaction transaction = Transaction.Parse(transactionHex);
 
-            // replace this we a dedicated WalletBroadcast interface
-            // in a fullnode implementation this will validate with the 
-            // mempool and broadcast, in a lightnode this will push to 
-            // the wallet and then broadcast (we might add some basic validation
-            if (this.mempoolValidator == null)
+            SemaphoreSendTx.Wait();
+            try
             {
-                this.ProcessTransaction(transaction);
-            }
-            else
-            {
-                var state = new MempoolValidationState(false);
-                if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
-                    return false;
-                this.ProcessTransaction(transaction);
-            }
+                // replace this we a dedicated WalletBroadcast interface
+                // in a fullnode implementation this will validate with the 
+                // mempool and broadcast, in a lightnode this will push to 
+                // the wallet and then broadcast (we might add some basic validation
+                if (this.mempoolValidator == null)
+                {
+                    this.ProcessTransaction(transaction);
+                }
+                else
+                {
+                    var state = new MempoolValidationState(false);
+                    if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
+                        return false;
+                    this.ProcessTransaction(transaction);
+                }
 
-            // broadcast to peers
-            TxPayload payload = new TxPayload(transaction);
-            foreach (var node in this.connectionManager.ConnectedNodes)
+                // broadcast to peers
+                var invPayload = new InvPayload(transaction);
+                var payload = new TxPayload(transaction);
+                foreach (var node in this.connectionManager.ConnectedNodes)
+                {
+                    node.SendMessage(invPayload);
+                    node.SendMessage(payload);
+                }
+            }
+            finally
             {
-                node.SendMessage(payload);
+                SemaphoreSendTx.SafeRelease();
             }
 
             // we might want to create a behaviour that tracks how many times
