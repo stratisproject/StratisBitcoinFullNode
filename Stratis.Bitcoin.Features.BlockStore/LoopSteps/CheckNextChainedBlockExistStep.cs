@@ -1,9 +1,9 @@
 ﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
-    using System.Threading;
-    using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
     using NBitcoin;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Check if the next chained block already exists in the <see cref="BlockRepository"/>.
@@ -31,7 +31,7 @@
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
+            this.logger.LogTrace("{0}:'{1}/{2}',{3}:{4}", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
 
             if (await this.BlockStoreLoop.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
             {

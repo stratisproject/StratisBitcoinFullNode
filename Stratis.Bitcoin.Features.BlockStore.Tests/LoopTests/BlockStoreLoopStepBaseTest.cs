@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             blockStoreLoop.PendingStorage.TryAdd(block.GetHash(), new BlockPair(block, chainedBlock));
         }
 
-        internal List<Block> CreateBlocks(int amount)
+        internal List<Block> CreateBlocks(int amount, bool bigBlocks = false)
         {
             var blocks = new List<Block>();
             for (int i = 0; i < amount; i++)
@@ -60,11 +60,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             return blocks;
         }
 
-        internal Block CreateBlock(int blockNumber)
+        internal Block CreateBlock(int blockNumber, bool bigBlocks = false)
         {
             var block = new Block();
 
-            for (int j = 0; j < 10; j++)
+            int transactionCount = bigBlocks ? 1000 : 10;
+
+            for (int j = 0; j < transactionCount; j++)
             {
                 var trx = new Transaction();
 

@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public ConcurrentDictionary<uint256, BlockPair> PendingStorage { get; }
 
         /// <summary>The minimum amount of blocks that can be stored in Pending Storage before they get processed.</summary>
-        public const int PendingStorageBatchThreshold = 5;
+        public const int PendingStorageBatchThreshold = 10;
 
         /// <summary>The chain of steps that gets executed to find and download blocks.</summary>
         private BlockStoreStepChain stepChain;
@@ -214,9 +214,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping, false);
             },
-             this.nodeLifetime.ApplicationStopping,
-             repeatEvery: TimeSpans.Second,
-             startAfter: TimeSpans.FiveSeconds);
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.Second,
+            startAfter: TimeSpans.FiveSeconds);
         }
 
         /// <summary>
