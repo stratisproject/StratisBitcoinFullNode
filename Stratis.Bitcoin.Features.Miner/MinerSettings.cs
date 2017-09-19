@@ -48,18 +48,22 @@ namespace Stratis.Bitcoin.Features.Miner
         {
         }
 
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        /// <param name="callback">Callback routine to be called once the miner settings are loaded.</param>
         public MinerSettings(Action<MinerSettings> callback)
         {
             this.callback = callback;
         }
 
         /// <summary>
-        /// Loads the rpc settings from the application configuration.
+        /// Loads the RPC settings from the application configuration.
         /// </summary>
         /// <param name="nodeSettings">Application configuration.</param>
         public void Load(NodeSettings nodeSettings)
         {
-            var config = nodeSettings.ConfigReader;
+            TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.Mine = config.GetOrDefault<bool>("mine", false);
             if (this.Mine)
@@ -75,16 +79,20 @@ namespace Stratis.Bitcoin.Features.Miner
             this.callback?.Invoke(this);
         }
 
+        /// <summary>
+        /// Displays mining help information on the console.
+        /// </summary>
+        /// <param name="mainNet">Not used.</param>
         public static void PrintHelp(Network mainNet)
         {
             var defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-mine=<0 or 1>            Enable POW mining.");
-            builder.AppendLine($"-stake=<0 or 1>           Enable POS.");
-            builder.AppendLine($"-mineaddress=<string>     The address to use for mining (null to select an address from the wallet).");
-            builder.AppendLine($"-walletname=<string>      The wallet name to use when staking.");
-            builder.AppendLine($"-walletpassword=<string>  Password to unlock the wallet.");
+            builder.AppendLine("-mine=<0 or 1>            Enable POW mining.");
+            builder.AppendLine("-stake=<0 or 1>           Enable POS.");
+            builder.AppendLine("-mineaddress=<string>     The address to use for mining (empty string to select an address from the wallet).");
+            builder.AppendLine("-walletname=<string>      The wallet name to use when staking.");
+            builder.AppendLine("-walletpassword=<string>  Password to unlock the wallet.");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
