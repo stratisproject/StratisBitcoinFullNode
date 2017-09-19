@@ -376,8 +376,7 @@ namespace Stratis.Bitcoin.Configuration
                 if (!string.IsNullOrEmpty(home))
                 {
                     this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
-                    directory = home;
-                    directory = Path.Combine(directory, "." + appName.ToLowerInvariant());
+                    directory = Path.Combine(home, "." + appName.ToLowerInvariant());
                 }
                 else
                 {
@@ -390,8 +389,7 @@ namespace Stratis.Bitcoin.Configuration
                 if (!string.IsNullOrEmpty(localAppData))
                 {
                     this.Logger.LogInformation("Using APPDATA environment variable for initializing application data.");
-                    directory = localAppData;
-                    directory = Path.Combine(directory, appName);
+                    directory = Path.Combine(localAppData, appName);
                 }
                 else
                 {
