@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
@@ -26,6 +27,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(puller, nameof(puller));
             Guard.NotNull(signals, nameof(signals));
@@ -51,19 +53,21 @@ namespace Stratis.Bitcoin.Features.Notifications
         {
             this.logger.LogTrace("Received request to sync from hash : {0}.", startHash);
 
+            // No need to resync the first time this method is called.
             if (this.StartHash != null)
             {
                 this.reSync = true;
+
                 ChainedBlock startBlock = this.Chain.GetBlock(startHash);
                 if (startBlock != null)
                 {
                     // Sets the location of the puller to the block preceding the one we want to receive.
-                    this.Puller.SetLocation(startBlock);
-                    this.tip = startBlock;
+                    ChainedBlock previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+                    this.Puller.SetLocation(previousBlock);
+                    this.tip = previousBlock;
 
-                    this.logger.LogTrace("Puller location set to block: {0}.", startBlock);
+                    this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
                 }
-
             }
 
             this.StartHash = startHash;
@@ -82,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                     return Task.CompletedTask;
                 }
 
-                // Not syncing until the chain has been downloaded.
+                // Not syncing until the chain is downloaded at least up to this block.
                 ChainedBlock startBlock = this.Chain.GetBlock(this.StartHash);
                 if (startBlock == null)
                 {
@@ -90,9 +94,11 @@ namespace Stratis.Bitcoin.Features.Notifications
                 }
 
                 // Sets the location of the puller to the block preceding the one we want to receive.
-                this.Puller.SetLocation(startBlock);
-                this.tip = startBlock;
-                this.logger.LogTrace("Puller location set to block: {0}.", startBlock);
+                ChainedBlock previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+                this.Puller.SetLocation(previousBlock);
+                this.tip = previousBlock;
+
+                this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
 
                 // Send notifications for all the following blocks.
                 while (!this.reSync)
