@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Provider of block header hash checkpoints.</summary>
-        private readonly ICheckpoints checkpoints;
+        protected readonly ICheckpoints checkpoints;
 
         private readonly NBitcoin.Consensus consensusParams;
         public NBitcoin.Consensus ConsensusParams { get { return this.consensusParams; } }
