@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // First try finding the previous transaction in database.
             FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
-            if (coins == null || coins.UnspentOutputs.Length != 1)
+            if ((coins == null) || (coins.UnspentOutputs.Length != 1))
                 ConsensusErrors.ReadTxPrevFailed.Throw();
 
             ChainedBlock prevBlock = this.chain.GetBlock(coins.BlockHash);
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, txIn.PrevOut, tx.Time);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         private bool IsConfirmedInNPrevBlocks(UnspentOutputs utxoSet, ChainedBlock pindexFrom, long maxDepth)
