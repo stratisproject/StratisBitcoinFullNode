@@ -2042,11 +2042,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     Assert.Equal(transaction.Outputs[0].Value, changeAddressResult.Amount);
                     Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
 
-                    Assert.Equal(1, payloads.Count);
-                    Assert.Equal(typeof(TxPayload), payloads[0].GetType());
-
-                    var payload = payloads[0] as TxPayload;
-                    var payloadTransaction = payload.Object;
+                    var invPayload = payloads[0] as InvPayload;
+                    Assert.Equal(1, invPayload.Count());
+                    List<InventoryVector> inventory = invPayload.Inventory;
+                    Assert.Equal(1, inventory.Count);
+                    InventoryVector vector = inventory[0];
+                    Assert.Equal(InventoryType.MSG_TX, vector.Type);
+                    Assert.Equal(transaction.GetHash(), vector.Hash);
+                    var txPayload = payloads[1] as TxPayload;
+                    Transaction payloadTransaction = txPayload.Object;
                     Assert.Equal(transaction.ToHex(), payloadTransaction.ToHex());
                 }
             }
@@ -2160,11 +2164,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     Assert.Equal(transaction.Outputs[0].Value, changeAddressResult.Amount);
                     Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
 
-                    Assert.Equal(1, payloads.Count);
-                    Assert.Equal(typeof(TxPayload), payloads[0].GetType());
+                    Assert.Equal(2, payloads.Count);
+                    Assert.Equal(typeof(InvPayload), payloads[0].GetType());
+                    Assert.Equal(typeof(TxPayload), payloads[1].GetType());
 
-                    var payload = payloads[0] as TxPayload;
-                    var payloadTransaction = payload.Object;
+                    var invPayload = payloads[0] as InvPayload;
+                    Assert.Equal(1, invPayload.Count());
+                    List<InventoryVector> inventory = invPayload.Inventory;
+                    Assert.Equal(1, inventory.Count);
+                    InventoryVector vector = inventory[0];
+                    Assert.Equal(InventoryType.MSG_TX, vector.Type);
+                    Assert.Equal(transaction.GetHash(), vector.Hash);
+                    var txPayload = payloads[1] as TxPayload;
+                    Transaction payloadTransaction = txPayload.Object;
                     Assert.Equal(transaction.ToHex(), payloadTransaction.ToHex());
                 }
             }
