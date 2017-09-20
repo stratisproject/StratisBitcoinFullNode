@@ -451,7 +451,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     ConsensusErrors.PrevStakeNull.Throw();
 
                 // Only do proof of stake validation for blocks after last checkpoint.
-                if (lastCheckpointHeight < pindex.Height)
+                if (pindex.Height > lastCheckpointHeight)
                 {
                     this.stakeValidator.CheckProofOfStake(context, pindexPrev, prevBlockStake, block.Transactions[1], pindex.Header.Bits.ToCompact());
                 }
@@ -476,10 +476,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Record proof hash value.
             blockStake.HashProof = context.Stake.HashProofOfStake;
 
-            // Compute stake modifier.
-            if (lastCheckpointHeight < pindex.Height)
+            if (pindex.Height > lastCheckpointHeight)
             {
+                // Compute stake modifier.
                 this.stakeValidator.ComputeStakeModifier(this.chain, pindex, blockStake);
+            }
+            else if (pindex.Height == lastCheckpointHeight)
+            {
+                // Copy checkpointed stake modifier.
+                CheckpointInfo checkpoint = this.checkpoints.GetCheckpoint(lastCheckpointHeight);
+                blockStake.StakeModifier = checkpoint.StakeModifier;
+                blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
+                this.logger.LogTrace("Last checkpoint stake modifiers loaded: 0x{0:x}, '{1}'.", blockStake.StakeModifier, blockStake.StakeModifierV2);
             }
             else this.logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is below last checkpoint block height {1}.", pindex.Height, lastCheckpointHeight);
 
