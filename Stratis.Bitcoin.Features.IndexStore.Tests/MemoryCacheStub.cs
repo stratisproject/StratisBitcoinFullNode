@@ -1,8 +1,7 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
 
 namespace Stratis.Bitcoin.Features.IndexStore.Tests
@@ -43,6 +42,11 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 				return this.key;
 			}
 		}
+
+        public long? Size
+        {
+            get; set;
+        }
 
 		public IList<PostEvictionCallbackRegistration> PostEvictionCallbacks
 		{
