@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionName("createindex")]
         public async Task<bool>CreateIndex(string name, bool multiValue, string builder, string[] dependancies = null)
         {
-            if (dependancies?[0] == null)
+            if (dependancies?.Length == 0)
                 dependancies = null;
 
             return await this.IndexManager.IndexRepository.CreateIndex(name, multiValue, builder, dependancies);

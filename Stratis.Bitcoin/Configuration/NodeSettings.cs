@@ -10,6 +10,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
@@ -43,17 +44,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; private set; }
 
-        /// <summary>Configuration of cache limits.</summary>
-        public CacheSettings Cache { get; set; }
-
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         public ConnectionManagerSettings ConnectionManager { get; set; }
-
-        /// <summary>Configuration of mempool features and limits.</summary>
-        public MempoolSettings Mempool { get; set; }
-
-        /// <summary>Configuration related to storage of transactions.</summary>
-        public StoreSettings Store { get; set; }
 
         /// <summary>Configuration related to logging.</summary>
         public LogSettings Log { get; set; }
@@ -99,10 +91,7 @@ namespace Stratis.Bitcoin.Configuration
         /// </summary>
         public NodeSettings()
         {
-            this.Cache = new CacheSettings();
             this.ConnectionManager = new ConnectionManagerSettings();
-            this.Mempool = new MempoolSettings();
-            this.Store = new StoreSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new LoggerFactory();
         }
@@ -273,9 +262,6 @@ namespace Stratis.Bitcoin.Configuration
                 nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
             }
 
-            nodeSettings.Mempool.Load(config);
-            nodeSettings.Store.Load(config);
-
             return nodeSettings;
         }
 
@@ -340,7 +326,7 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine("#Where the RPC Server binds (default: 127.0.0.1 and ::1)");
                 builder.AppendLine("#rpcbind=127.0.0.1");
                 builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
-                builder.AppendLine("#rpcallowedip=127.0.0.1");
+                builder.AppendLine("#rpcallowip=127.0.0.1");
                 File.WriteAllText(config, builder.ToString());
             }
             return config;
@@ -368,12 +354,19 @@ namespace Stratis.Bitcoin.Configuration
         private void SetDefaultDataDir(string appName, Network network)
         {
             string directory = null;
-            var home = Environment.GetEnvironmentVariable("HOME");
-            if (!string.IsNullOrEmpty(home))
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
-                directory = home;
-                directory = Path.Combine(directory, "." + appName.ToLowerInvariant());
+                var home = Environment.GetEnvironmentVariable("HOME");
+                if (!string.IsNullOrEmpty(home))
+                {
+                    this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
+                    directory = Path.Combine(home, "." + appName.ToLowerInvariant());
+                }
+                else
+                {
+                    throw new DirectoryNotFoundException("Could not find suitable datadir");
+                }
             }
             else
             {
@@ -381,8 +374,7 @@ namespace Stratis.Bitcoin.Configuration
                 if (!string.IsNullOrEmpty(localAppData))
                 {
                     this.Logger.LogInformation("Using APPDATA environment variable for initializing application data.");
-                    directory = localAppData;
-                    directory = Path.Combine(directory, appName);
+                    directory = Path.Combine(localAppData, appName);
                 }
                 else
                 {

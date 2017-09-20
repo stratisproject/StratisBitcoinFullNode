@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Allows running application defined in a loop with specific timing.
     /// </summary>
-    public interface IAsyncLoop
+    public interface IAsyncLoop : IDisposable
     {
         /// <summary>Name of the loop. It is used for logging.</summary>
         string Name { get; }
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Utilities
         /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop. 
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
-        Task Run(TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+        IAsyncLoop Run(TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
         /// Starts an application defined task inside the async loop.
@@ -30,7 +30,12 @@ namespace Stratis.Bitcoin.Utilities
         /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop. 
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
-        Task Run(CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+        IAsyncLoop Run(CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+
+        /// <summary>
+        /// The task representing the loop being executed. 
+        /// </summary>
+        Task RunningTask { get; }
     }
 
     /// <summary>
@@ -55,6 +60,9 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public string Name { get; }
 
+        /// <inheritdoc />
+        public Task RunningTask { get; private set; }
+
         /// <summary>
         /// Initializes a named instance of the object.
         /// </summary>
@@ -72,17 +80,19 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-        public Task Run(TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
+        public IAsyncLoop Run(TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
         {
             return this.Run(CancellationToken.None, repeatEvery, startAfter);
         }
 
         /// <inheritdoc />
-        public Task Run(CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
+        public IAsyncLoop Run(CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
         {
             Guard.NotNull(cancellation, nameof(cancellation));
 
-            return this.StartAsync(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
+            this.RunningTask = this.StartAsync(cancellation, repeatEvery ?? TimeSpan.FromMilliseconds(1000), startAfter);
+
+            return this;
         }
 
         /// <summary>
@@ -97,7 +107,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             return Task.Run(async () =>
             {
-                Exception uncatchException = null;
+                Exception uncaughtException = null;
                 this.logger.LogInformation(this.Name + " starting");
                 try
                 {
@@ -123,22 +133,36 @@ namespace Stratis.Bitcoin.Utilities
                 catch (OperationCanceledException ex)
                 {
                     if (!cancellation.IsCancellationRequested)
-                        uncatchException = ex;
+                        uncaughtException = ex;
                 }
                 catch (Exception ex)
                 {
-                    uncatchException = ex;
+                    uncaughtException = ex;
                 }
                 finally
                 {
                     this.logger.LogInformation(this.Name + " stopping");
                 }
 
-                if (uncatchException != null)
+                if (uncaughtException != null)
                 {
-                    this.logger.LogCritical(new EventId(0), uncatchException, this.Name + " threw an unhandled exception");
+                    // WARNING: Do NOT touch this line unless you want to fix weird AsyncLoop tests.
+                    // The following line has to be called EXACTLY as it is.
+                    this.logger.LogCritical(new EventId(0), uncaughtException, this.Name + " threw an unhandled exception");
+
+                    // You can touch this one.
+                    this.logger.LogDebug("{0} threw an unhandled exception: {1}", this.Name, uncaughtException.ToString());
                 }
             }, cancellation);
+        }
+
+        /// <summary>
+        /// Wait for the loop task to complete.
+        /// </summary>
+        public void Dispose()
+        {
+            this.logger.LogInformation("Waiting for {0} to finish.", this.Name);
+            this.RunningTask.Wait();
         }
     }
 }

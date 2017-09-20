@@ -1,13 +1,11 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Utilities
 {
-    /// <summary>
-    /// Factory for creating and also possibly starting application defined tasks inside async loop.
-    /// </summary>
+    /// <summary>Factory for creating and also possibly starting application defined tasks inside async loop.</summary>
     public interface IAsyncLoopFactory
     {
         /// <summary>
@@ -27,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities
         /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop. 
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
-        Task Run(string name, Func<CancellationToken, Task> loop, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+        IAsyncLoop Run(string name, Func<CancellationToken, Task> loop, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
         /// Starts an application defined task inside a newly created async loop.
@@ -39,7 +37,7 @@ namespace Stratis.Bitcoin.Utilities
         /// If this is <see cref="TimeSpans.RunOnce"/>, the task is only run once and there is no loop. 
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
-        Task Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
+        IAsyncLoop Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null);
 
         /// <summary>
         /// Waits until a condition is met, then executes the action and completes.
@@ -59,11 +57,11 @@ namespace Stratis.Bitcoin.Utilities
         /// If this is null, the task is repeated every 1 second by default.</param>
         /// <param name="startAfter">Delay before the first run of the task, or null if no startup delay is required.</param>
         /// <returns></returns>
-        Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery);
+        IAsyncLoop RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery);
     }
 
     /// <inheritdoc />
-    public class AsyncLoopFactory : IAsyncLoopFactory
+    public sealed class AsyncLoopFactory : IAsyncLoopFactory
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -85,13 +83,13 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-        public Task Run(string name, Func<CancellationToken, Task> loop, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
+        public IAsyncLoop Run(string name, Func<CancellationToken, Task> loop, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
         {
             return new AsyncLoop(name, this.logger, loop).Run(repeatEvery, startAfter);
         }
 
         /// <inheritdoc />
-        public Task Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
+        public IAsyncLoop Run(string name, Func<CancellationToken, Task> loop, CancellationToken cancellation, TimeSpan? repeatEvery = null, TimeSpan? startAfter = null)
         {
             Guard.NotNull(cancellation, nameof(cancellation));
             Guard.NotEmpty(name, nameof(name));
@@ -101,30 +99,30 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-        public Task RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery)
+        public IAsyncLoop RunUntil(string name, CancellationToken nodeCancellationToken, Func<bool> condition, Action action, Action<Exception> onException, TimeSpan repeatEvery)
         {
             CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(nodeCancellationToken);
             return this.Run(name, token =>
+            {
+                try
                 {
-                    try
+                    // loop until the condition is met, then execute the action and finish.
+                    if (condition())
                     {
-                        // loop until the condition is met, then execute the action and finish.
-                        if (condition())
-                        {
-                            action();
+                        action();
 
-                            linkedTokenSource.Cancel();
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        onException(e);
                         linkedTokenSource.Cancel();
                     }
-                    return Task.CompletedTask;
-                },
-                linkedTokenSource.Token,
-                repeatEvery: repeatEvery);
+                }
+                catch (Exception e)
+                {
+                    onException(e);
+                    linkedTokenSource.Cancel();
+                }
+                return Task.CompletedTask;
+            },
+            linkedTokenSource.Token,
+            repeatEvery: repeatEvery);
         }
     }
 }

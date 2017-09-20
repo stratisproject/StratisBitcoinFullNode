@@ -1,13 +1,12 @@
-﻿using Moq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -44,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 chain.Setup(c => c.Tip).Returns(new ChainedBlock(new BlockHeader(), 1));
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain.Object, NodeSettings.Default(),
-                       new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                       new DataFolder(new NodeSettings() { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain.Object, walletManager, new Mock<IWalletFeePolicy>().Object, Network.Main);
 
                 walletManager.Wallets.Add(wallet);
@@ -79,7 +78,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 var address = new HdAddress()
                 {
                     Index = 0,
-                    BlocksScanned = new SortedList<int, int>(),
                     HdPath = $"m/44'/0'/0'/0/0",
                     Address = spendingKeys.Address.ToString(),
                     Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -101,7 +99,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 {
                     new HdAddress() {
                         Index = 0,
-                        BlocksScanned = new SortedList<int, int>(),
                         HdPath = $"m/44'/0'/0'/1/0",
                         Address = changeKeys.Address.ToString(),
                         Pubkey = changeKeys.PubKey.ScriptPubKey,
@@ -113,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 });
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
-                      new DataFolder(new NodeSettings() { DataDir = "/TestData/WalletTransactionHandlerTest/BuildTransactionFeeTooLowThrowsWalletException" }), walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                      new DataFolder(new NodeSettings() { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionFeeTooLowThrowsWalletException" }), walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain, walletManager, walletFeePolicy.Object, Network.Main);
 
                 walletManager.Wallets.Add(wallet);
@@ -141,7 +138,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var address = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
@@ -221,7 +217,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var address = new HdAddress()
             {
                 Index = 0,
-                BlocksScanned = new SortedList<int, int>(),
                 HdPath = $"m/44'/0'/0'/0/0",
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,

@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
                 var output = unspentOutputs.TryGetOutput(vout);
                 this.bestblock = tip.HashBlock;
                 this.coinbase = unspentOutputs.IsCoinbase;
-                this.confirmations = TxMempool.MempoolHeight == unspentOutputs.Height ? 0 : tip.Height - (int)unspentOutputs.Height + 1;
+                this.confirmations = NetworkExtensions.MempoolHeight == unspentOutputs.Height ? 0 : tip.Height - (int)unspentOutputs.Height + 1;
                 if (output != null)
                 {
                     this.value = output.Value;

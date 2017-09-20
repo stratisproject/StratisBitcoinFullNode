@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
     public static class LoggingConfiguration
     {
         /// <summary>Width of a column for pretty console/log outputs.</summary>
-        public const int ColumnLength = 16;
+        public const int ColumnLength = 20;
 
         /// <summary>Currently used node's log settings.</summary>
         private static LogSettings logSettings;
@@ -32,14 +32,11 @@ namespace Stratis.Bitcoin.Configuration.Logging
         {
             //{ "addrman", "" },
             //{ "alert", "" },
-            { "bench", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.{nameof(Stratis.Bitcoin.Features.Consensus.ConsensusStats)}" },
             //{ "cmpctblock", "" }
             //{ "coindb", "" },
-            { "db", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.BlockStore)}.*"}, 
             //{ "http", "" }, 
             //{ "libevent", "" }, 
             //{ "lock", "" }, 
-            { "mempool", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.MemoryPool)}.*" }, 
             //{ "mempoolrej", "" }, 
             { "net", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Connection)}.*" }, 
             //{ "proxy", "" }, 
@@ -52,15 +49,19 @@ namespace Stratis.Bitcoin.Configuration.Logging
             //{ "zmq", "" }, 
             
             // Short Names
-            { "estimatefee", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.MemoryPool)}.{nameof(Stratis.Bitcoin.Features.MemoryPool.Fee)}.*" },
             { "configuration", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Configuration)}.*" },
             { "fullnode", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.FullNode)}" },
-            { "consensus", $"{nameof(Stratis)}.{nameof(Stratis.Bitcoin)}.{nameof(Stratis.Bitcoin.Features)}.{nameof(Stratis.Bitcoin.Features.Consensus)}.*" },
+
         };
 
         public static void RegisterFeatureNamespace<T>(string key)
         {
             keyCategories[key] = typeof(T).Namespace + ".*";
+        }
+
+        public static void RegisterFeatureClass<T>(string key)
+        {
+            keyCategories[key] = typeof(T).Namespace + "." + typeof(T).Name;
         }
 
         /// <summary>Configuration of console logger.</summary>

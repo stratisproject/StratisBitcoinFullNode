@@ -22,8 +22,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="BlockStore\**" />
     <Compile Remove="Stratis.Bitcoin.Tests\**" />
+    <EmbeddedResource Remove="BlockStore\**" />
     <EmbeddedResource Remove="Stratis.Bitcoin.Tests\**" />
+    <None Remove="BlockStore\**" />
     <None Remove="Stratis.Bitcoin.Tests\**" />
   </ItemGroup>
 
@@ -38,6 +41,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.BlockStore\Stratis.Bitcoin.Features.BlockStore.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 

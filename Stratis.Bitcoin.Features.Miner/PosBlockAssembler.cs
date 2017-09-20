@@ -7,56 +7,64 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
-
     public class PosBlockAssembler : PowBlockAssembler
-	{
-		private readonly StakeChain stakeChain;
+    {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
-		public PosBlockAssembler(
-            ConsensusLoop consensusLoop, 
-            Network network, 
+        private readonly StakeChain stakeChain;
+
+        public PosBlockAssembler(
+            ConsensusLoop consensusLoop,
+            Network network,
             ConcurrentChain chain,
-			MempoolAsyncLock mempoolLock, 
+            MempoolAsyncLock mempoolLock,
             TxMempool mempool,
-			IDateTimeProvider dateTimeProvider, 
+            IDateTimeProvider dateTimeProvider,
             StakeChain stakeChain,
-            ILogger logger,
+            ILoggerFactory loggerFactory,
             AssemblerOptions options = null)
-			: base(consensusLoop, network, chain, mempoolLock, mempool, dateTimeProvider, logger, options)
-		{
-			this.stakeChain = stakeChain;
-		}
+            : base(consensusLoop, network, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory, options)
+        {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.stakeChain = stakeChain;
+        }
 
+        public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
+        {
+            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
 
-		public override BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true)
-		{
-			base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
+            base.CreateNewBlock(scriptPubKeyIn, fMineWitnessTx);
 
-			this.coinbase.Outputs[0].ScriptPubKey = new Script();
-			this.coinbase.Outputs[0].Value = Money.Zero;
+            this.coinbase.Outputs[0].ScriptPubKey = new Script();
+            this.coinbase.Outputs[0].Value = Money.Zero;
 
-			var posvalidator = this.consensusLoop.Validator as PosConsensusValidator;
-			Guard.NotNull(posvalidator, "posvalidator");
+            PosConsensusValidator posValidator = this.consensusLoop.Validator as PosConsensusValidator;
+            Guard.NotNull(posValidator, nameof(posValidator));
 
-			// TODO: add this code
-			// Timestamp limit
-			// if (tx.nTime > GetAdjustedTime() || (fProofOfStake && tx.nTime > pblock->vtx[0].nTime))
-				//continue;
+            this.logger.LogTrace("(-)");
+            return this.pblocktemplate;
+        }
 
-			return this.pblocktemplate;
-		}
+        protected override void UpdateHeaders()
+        {
+            this.logger.LogTrace("()");
 
-		protected override void UpdateHeaders()
-		{
-			base.UpdateHeaders();
+            base.UpdateHeaders();
 
-			var stake = new BlockStake(this.pblock);
-			this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(this.stakeChain, this.chain.Tip, this.network.Consensus, this.options.IsProofOfStake);
-		}
+            var stake = new BlockStake(this.pblock);
+            this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(this.stakeChain, this.chain.Tip, this.network.Consensus, this.options.IsProofOfStake);
 
-		protected override void TestBlockValidity()
-		{
-			//base.TestBlockValidity();
-		}
-	}
+            this.logger.LogTrace("(-)");
+        }
+
+        protected override void TestBlockValidity()
+        {
+            this.logger.LogTrace("()");
+
+            //base.TestBlockValidity();
+
+            this.logger.LogTrace("(-)");
+        }
+    }
 }

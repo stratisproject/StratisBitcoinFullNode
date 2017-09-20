@@ -671,12 +671,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public string HdPath { get; set; }
 
         /// <summary>
-        /// A list detailing which blocks have been scanned for this address.
-        /// </summary>
-        [JsonIgnore]
-        public SortedList<int, int> BlocksScanned { get; set; }
-
-        /// <summary>
         /// A list of transactions involving this address.
         /// </summary>
         [JsonProperty(PropertyName = "transactions")]
