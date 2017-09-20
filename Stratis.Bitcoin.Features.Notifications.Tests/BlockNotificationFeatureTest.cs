@@ -24,11 +24,11 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
                 .Returns(NodeSettings.Default());
             connectionManager.Setup(c => c.Parameters)
                 .Returns(new NodeConnectionParameters());
-            
+
             var chain = new Mock<ConcurrentChain>();
             var chainState = new Mock<ChainState>(new Mock<FullNode>().Object);
             var blockPuller = new Mock<LookaheadBlockPuller>(chain.Object, connectionManager.Object, new LoggerFactory());
-            var blockNotification = new Mock<BlockNotification>(chain.Object, blockPuller.Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, blockPuller.Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             var blockNotificationFeature = new BlockNotificationFeature(blockNotification.Object, connectionManager.Object, blockPuller.Object, chainState.Object, chain.Object);
             blockNotificationFeature.Start();
