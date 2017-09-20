@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
@@ -158,7 +159,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         {
             this.logger.LogDebug(context.ToString());
 
-            await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairsToStore.First().ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
+            //Ensure that context.PendingBlockPairToStore matches the last block in context.PendingBlockPairsToStore
+            Guard.Assert(context.PendingBlockPairsToStore.First().ChainedBlock.HashBlock == context.PendingBlockPairToStore.ChainedBlock.HashBlock);
+
+            await this.BlockStoreLoop.BlockRepository.PutAsync(context.PendingBlockPairToStore.ChainedBlock.HashBlock, context.PendingBlockPairsToStore.Select(b => b.Block).ToList());
             this.BlockStoreLoop.SetStoreTip(context.PendingBlockPairsToStore.First().ChainedBlock);
 
             context.PendingBlockPairToStore = null;
