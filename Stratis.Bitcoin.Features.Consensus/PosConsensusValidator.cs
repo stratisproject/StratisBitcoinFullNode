@@ -485,9 +485,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 // Copy checkpointed stake modifier.
                 CheckpointInfo checkpoint = this.checkpoints.GetCheckpoint(lastCheckpointHeight);
-                blockStake.StakeModifier = checkpoint.StakeModifier;
                 blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
-                this.logger.LogTrace("Last checkpoint stake modifiers loaded: 0x{0:x}, '{1}'.", blockStake.StakeModifier, blockStake.StakeModifierV2);
+                this.logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }
             else this.logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is below last checkpoint block height {1}.", pindex.Height, lastCheckpointHeight);
 
