@@ -6,7 +6,6 @@
     <OutputType>Exe</OutputType>
     <PackageId>Stratis.StratisD</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
-    <AssetTargetFallback>$(AssetTargetFallback);dnxcore50</AssetTargetFallback>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>

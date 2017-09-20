@@ -5,7 +5,6 @@
     <AssemblyName>Stratis.Bitcoin.Features.BlockStore.Tests</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.BlockStore.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <AssetTargetFallback>$(AssetTargetFallback);netcore50</AssetTargetFallback>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>

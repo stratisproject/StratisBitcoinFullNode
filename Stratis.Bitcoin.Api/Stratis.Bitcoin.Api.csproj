@@ -7,7 +7,6 @@
     <OutputType>Library</OutputType>
     <PackageId>Stratis.Bitcoin.Api</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
-    <AssetTargetFallback>$(AssetTargetFallback);dotnet5.6;portable-net45+win8</AssetTargetFallback>
     <ApplicationIcon />
     <OutputTypeEx>library</OutputTypeEx>
     <StartupObject />

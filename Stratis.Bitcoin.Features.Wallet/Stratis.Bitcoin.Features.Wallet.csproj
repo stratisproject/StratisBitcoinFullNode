@@ -6,7 +6,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.Features.Wallet</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.Wallet</PackageId>
-    <AssetTargetFallback>$(AssetTargetFallback);netcore50</AssetTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>

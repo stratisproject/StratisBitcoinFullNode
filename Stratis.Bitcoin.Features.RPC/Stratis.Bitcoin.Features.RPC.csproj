@@ -6,7 +6,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.Features.RPC</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.RPC</PackageId>
-    <AssetTargetFallback>$(AssetTargetFallback);netcore50</AssetTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
