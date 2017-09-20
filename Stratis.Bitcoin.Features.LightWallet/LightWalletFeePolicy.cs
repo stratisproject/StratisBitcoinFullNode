@@ -27,9 +27,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         public LightWalletFeePolicy(IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory)
         {
-            this.highTxFeePerKb = null;
-            this.mediumTxFeePerKb = null;
-            this.lowTxFeePerKb = null;
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -37,6 +34,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.initializedOnce = false;
         }
 
+        /// <inheritdoc />
         public Task Initialize()
         {
             return this.asyncLoopFactory.Run(nameof(LightWalletFeePolicy), async token =>
@@ -62,6 +60,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 {
                     response = null;
                 }
+
                 if (response == null || !response.IsSuccessStatusCode)
                 {
                     // If it's already been initialized once just keep using the feerate we already have
@@ -76,6 +75,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         return;
                     }
                 }
+
                 if (token.IsCancellationRequested) return;
 
                 var json = JObject.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
@@ -94,17 +94,20 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 startAfter: TimeSpans.Second);
         }
 
+        /// <inheritdoc />
         public Money GetRequiredFee(int txBytes)
         {
             return Math.Max(this.lowTxFeePerKb.GetFee(txBytes), MempoolValidator.MinRelayTxFee.GetFee(txBytes));
         }
 
+        /// <inheritdoc />
         public Money GetMinimumFee(int txBytes, int confirmTarget)
         {
             // payTxFee is the user-set global for desired feerate
             return this.GetMinimumFee(txBytes, confirmTarget, this.lowTxFeePerKb.GetFee(txBytes));
         }
 
+        /// <inheritdoc />
         public Money GetMinimumFee(int txBytes, int confirmTarget, Money targetFee)
         {
             Money feeNeeded = targetFee;
@@ -121,6 +124,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             return feeNeeded;
         }
 
+        /// <inheritdoc />
         public FeeRate GetFeeRate(int confirmTarget)
         {
             FeeRate feeRate = this.lowTxFeePerKb;
