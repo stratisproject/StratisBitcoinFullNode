@@ -514,7 +514,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Select coins with suitable depth.
             List<StakeTx> setCoins = this.FindCoinsForStaking(stakeTxes, coinstakeTx.Time, balance - this.reserveBalance);
-
             if (!setCoins.Any())
             {
                 this.logger.LogTrace("(-)[NO_SELECTION]:false");
