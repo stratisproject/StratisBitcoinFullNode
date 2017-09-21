@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
@@ -125,6 +126,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
     {
         public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder)
         {
+            bool isStratis = fullNodeBuilder.Network.Name.ToLower().Contains("stratis");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -134,7 +137,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<IWalletSyncManager, LightWalletSyncManager>();
                         services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
                         services.AddSingleton<IWalletManager, WalletManager>();
-                        services.AddSingleton<IWalletFeePolicy, LightWalletFeePolicy>();
+                        if (isStratis)
+                            services.AddSingleton<IWalletFeePolicy, LightWalletFixedFeePolicy>();
+                        else
+                            services.AddSingleton<IWalletFeePolicy, LightWalletFeePolicy>();
                         services.AddSingleton<WalletController>();
 
                     });
