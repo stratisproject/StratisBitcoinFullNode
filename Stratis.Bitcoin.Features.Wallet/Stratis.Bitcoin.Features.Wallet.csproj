@@ -25,6 +25,7 @@
     <None Remove="Stratis.Bitcoin.Features.Wallet\**" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="ConcurrentHashSet" Version="1.0.2" />
     <PackageReference Include="DBreeze" Version="1.85.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.3.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.2" />

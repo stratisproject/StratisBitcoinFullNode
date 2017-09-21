@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -487,7 +488,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns></returns>
         [Route("send-transaction")]
         [HttpPost]
-        public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
+        public async Task<IActionResult> SendTransactionAsync([FromBody] SendTransactionRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -500,7 +501,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                if (this.walletManager.SendTransaction(request.Hex))
+                if (await this.walletManager.SendTransactionAsync(new Transaction(request.Hex), TimeSpan.FromSeconds(21)).ConfigureAwait(false))
                 {
                     return this.Ok();
                 }

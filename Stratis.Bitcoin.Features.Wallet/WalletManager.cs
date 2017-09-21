@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
 using Transaction = NBitcoin.Transaction;
 using System.Threading;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 namespace Stratis.Bitcoin.Features.Wallet
@@ -42,6 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
         private readonly FileStorage<Wallet> fileStorage;
+        private readonly BroadcastState broadcastState;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -65,7 +67,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
-            IMempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+            IMempoolValidator mempoolValidator = null,
+            BroadcastState broadcastState = null) // mempool does not exist in a light wallet
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -89,6 +92,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
+            this.broadcastState = broadcastState ?? new BroadcastState(mempoolValidator, connectionManager);
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
@@ -407,53 +411,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
         }
-
-        private static readonly SemaphoreSlim SemaphoreSendTx = new SemaphoreSlim(1, 1);
+        
         /// <inheritdoc />
-        public bool SendTransaction(string transactionHex)
+        public async Task<bool> SendTransactionAsync(Transaction transaction, TimeSpan waitPropagationTimeout)
         {
-            Guard.NotEmpty(transactionHex, nameof(transactionHex));
-
-            // TODO move this to a behavior to a dedicated interface
-            // parse transaction
-            Transaction transaction = Transaction.Parse(transactionHex);
-
-            SemaphoreSendTx.Wait();
-            try
-            {
-                // replace this we a dedicated WalletBroadcast interface
-                // in a fullnode implementation this will validate with the 
-                // mempool and broadcast, in a lightnode this will push to 
-                // the wallet and then broadcast (we might add some basic validation
-                if (this.mempoolValidator == null)
-                {
-                    this.ProcessTransaction(transaction);
-                }
-                else
-                {
-                    var state = new MempoolValidationState(false);
-                    if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
-                        return false;
-                    this.ProcessTransaction(transaction);
-                }
-
-                // broadcast to peers
-                var invPayload = new InvPayload(transaction);
-                var payload = new TxPayload(transaction);
-                foreach (var node in this.connectionManager.ConnectedNodes)
-                {
-                    node.SendMessage(invPayload);
-                    node.SendMessage(payload);
-                }
-            }
-            finally
-            {
-                SemaphoreSendTx.SafeRelease();
-            }
-
-            // we might want to create a behaviour that tracks how many times
-            // the broadcast trasnactions was sent back to us by other peers
-            return true;
+            return await this.broadcastState.TryBroadcastAsync(transaction, waitPropagationTimeout).ConfigureAwait(false);
         }
 
         /// <inheritdoc />

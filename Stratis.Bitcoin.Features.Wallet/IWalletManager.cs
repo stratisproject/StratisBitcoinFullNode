@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -131,11 +132,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         void RemoveBlocks(ChainedBlock fork);
 
         /// <summary>
-        /// Sends a transaction to the network.
+        /// Broadcasts transaction, returns false if it wasn't propagated within specified timeout
         /// </summary>
-        /// <param name="transactionHex">The hex of the transaction.</param>
-        /// <returns></returns>
-        bool SendTransaction(string transactionHex);
+        Task<bool> SendTransactionAsync(Transaction transaction, TimeSpan waitPropagationTimeout);
 
         /// <summary>
         /// Processes a block received from the network.

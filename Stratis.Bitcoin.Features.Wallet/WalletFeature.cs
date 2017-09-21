@@ -9,6 +9,8 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Interfaces;
 using System;
 using System.Text;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -17,17 +19,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
         private readonly Signals.Signals signals;
+        private readonly IConnectionManager connectionManager;
+        private readonly BroodcasterBehavior broodcasterBehavior;
 
         private IDisposable blockSubscriberdDisposable;
         private IDisposable transactionSubscriberdDisposable;
         private ConcurrentChain chain;
 
-        public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain)
+        public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain, IConnectionManager connectionManager, BroodcasterBehavior broodcasterBehavior)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
             this.signals = signals;
             this.chain = chain;
+            this.connectionManager = connectionManager;
+            this.broodcasterBehavior = broodcasterBehavior;
         }
 
         public void AddNodeStats(StringBuilder benchLogs)
@@ -55,6 +61,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.walletManager.Initialize();
             this.walletSyncManager.Initialize();
+            
+            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broodcasterBehavior);
         }
 
         public override void Stop()
@@ -87,6 +95,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
                         services.AddSingleton<WalletController>();
                         services.AddSingleton<WalletRPCController>();
+                        services.AddSingleton<BroadcastState>();
+                        services.AddSingleton<BroodcasterBehavior>();
                     });
             });
 

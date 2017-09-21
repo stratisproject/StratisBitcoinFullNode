@@ -2053,22 +2053,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                           dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
                     walletManager.Wallets.Add(wallet);
 
-                    var result = walletManager.SendTransaction(transaction.ToHex());
-
-                    Assert.True(result);
-                    var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
+                    walletManager.SendTransactionAsync(transaction, TimeSpan.Zero).Wait();
+                    
                     Assert.Equal(1, spendingAddress.Transactions.Count);
-                    Assert.Equal(transaction.GetHash(), spentAddressResult.Transactions.ElementAt(0).SpendingDetails.TransactionId);
-                    Assert.Equal(0, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.Count);
-
+                    
                     Assert.Equal(0, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.Count);
-
-                    Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Count);
-                    var changeAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.ElementAt(0);
-                    Assert.Equal(transaction.GetHash(), changeAddressResult.Id);
-                    Assert.Equal(transaction.Outputs[0].Value, changeAddressResult.Amount);
-                    Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
-
+                    
                     var invPayload = payloads[0] as InvPayload;
                     Assert.Equal(1, invPayload.Count());
                     List<InventoryVector> inventory = invPayload.Inventory;
@@ -2076,9 +2066,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     InventoryVector vector = inventory[0];
                     Assert.Equal(InventoryType.MSG_TX, vector.Type);
                     Assert.Equal(transaction.GetHash(), vector.Hash);
-                    var txPayload = payloads[1] as TxPayload;
-                    Transaction payloadTransaction = txPayload.Object;
-                    Assert.Equal(transaction.ToHex(), payloadTransaction.ToHex());
                 }
             }
         }
@@ -2175,28 +2162,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                           dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), mempoolValidator.Object);
                     walletManager.Wallets.Add(wallet);
 
-                    var result = walletManager.SendTransaction(transaction.ToHex());
-
-                    Assert.True(result);
+                    walletManager.SendTransactionAsync(transaction, TimeSpan.Zero).Wait();
                     // verify AcceptToMemoryPool has been called.
                     mempoolValidator.Verify();
 
-                    var spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
                     Assert.Equal(1, spendingAddress.Transactions.Count);
-                    Assert.Equal(transaction.GetHash(), spentAddressResult.Transactions.ElementAt(0).SpendingDetails.TransactionId);
-                    Assert.Equal(0, spentAddressResult.Transactions.ElementAt(0).SpendingDetails.Payments.Count);
-
+                    
                     Assert.Equal(0, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.Count);
-
-                    Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.Count);
-                    var changeAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.ElementAt(0);
-                    Assert.Equal(transaction.GetHash(), changeAddressResult.Id);
-                    Assert.Equal(transaction.Outputs[0].Value, changeAddressResult.Amount);
-                    Assert.Equal(transaction.Outputs[0].ScriptPubKey, changeAddressResult.ScriptPubKey);
-
-                    Assert.Equal(2, payloads.Count);
+                                       
+                    Assert.Equal(1, payloads.Count);
                     Assert.Equal(typeof(InvPayload), payloads[0].GetType());
-                    Assert.Equal(typeof(TxPayload), payloads[1].GetType());
 
                     var invPayload = payloads[0] as InvPayload;
                     Assert.Equal(1, invPayload.Count());
@@ -2204,10 +2179,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     Assert.Equal(1, inventory.Count);
                     InventoryVector vector = inventory[0];
                     Assert.Equal(InventoryType.MSG_TX, vector.Type);
-                    Assert.Equal(transaction.GetHash(), vector.Hash);
-                    var txPayload = payloads[1] as TxPayload;
-                    Transaction payloadTransaction = txPayload.Object;
-                    Assert.Equal(transaction.ToHex(), payloadTransaction.ToHex());
+                    Assert.Equal(transaction.GetHash(), vector.Hash);                    
                 }
             }
         }
@@ -2304,7 +2276,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                           dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), mempoolValidator.Object);
                     walletManager.Wallets.Add(wallet);
 
-                    var result = walletManager.SendTransaction(transaction.ToHex());
+                    var result = walletManager.SendTransactionAsync(transaction, TimeSpan.FromSeconds(21)).Result;
 
                     Assert.False(result);
                     // verify AcceptToMemoryPool has been called.
