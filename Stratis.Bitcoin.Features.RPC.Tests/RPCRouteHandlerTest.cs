@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 				.Returns(desciptors);			
 
 			var task = this.handler.RouteAsync(context);
-			task.Wait();
+			task.AwaiterWait();;
 
 			Assert.Equal("GET", callback.RouteData.Values["action"]);
 			Assert.Equal("RPCController", callback.RouteData.Values["controller"]);

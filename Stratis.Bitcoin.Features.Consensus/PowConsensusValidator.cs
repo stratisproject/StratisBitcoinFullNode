@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.CheckBlockReward(context, nFees, index, block);
 
-            bool passed = checkInputs.All(c => c.GetAwaiter().GetResult());
+            bool passed = checkInputs.All(c => c.AwaiterResult());
             if (!passed)
             {
                 this.logger.LogTrace("(-)[BAD_TX_SCRIPT]");

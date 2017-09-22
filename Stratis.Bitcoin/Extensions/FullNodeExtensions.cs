@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin
                 }, waitForStop);
 
                 //await waitForStop.Task;
-                waitForStop.Task.GetAwaiter().GetResult();
+                waitForStop.Task.AwaiterWait();
 
                 node.Stop();
 

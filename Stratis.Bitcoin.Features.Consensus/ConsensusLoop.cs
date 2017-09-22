@@ -58,13 +58,13 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void Initialize()
         {
-            var utxoHash = this.UTXOSet.GetBlockHashAsync().GetAwaiter().GetResult();
-            while(true)
+            var utxoHash = this.UTXOSet.GetBlockHashAsync().AwaiterResult();
+            while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
                 if(this.Tip != null)
                     break;
-                utxoHash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                utxoHash = this.UTXOSet.Rewind().AwaiterResult();
             }
             this.Puller.SetLocation(this.Tip);
         }
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         {
                             while(true)
                             {
-                                var hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                                var hash = this.UTXOSet.Rewind().AwaiterResult();
                                 var rewinded = this.Chain.GetBlock(hash);
                                 if(rewinded == null)
                                     continue;
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             using (this.watch.Start(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
                 var ids = GetIdsToFetch(context.BlockResult.Block, context.Flags.EnforceBIP30);
-                var coins = this.UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
+                var coins = this.UTXOSet.FetchCoinsAsync(ids).AwaiterResult();
                 context.Set.SetCoins(coins.UnspentOutputs);
             }
 

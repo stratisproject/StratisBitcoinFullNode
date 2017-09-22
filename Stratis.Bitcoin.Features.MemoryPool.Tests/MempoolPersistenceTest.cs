@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolManager mempoolManager = CreateTestMempool(settings, out unused);
 
             MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
-            mempoolManager.LoadPool(fileName).GetAwaiter().GetResult();
-            long actualSize = mempoolManager.MempoolSize().GetAwaiter().GetResult();
+            mempoolManager.LoadPool(fileName).AwaiterWait();
+            long actualSize = mempoolManager.MempoolSize().AwaiterResult();
 
             Assert.Equal(0, actualSize);
         }

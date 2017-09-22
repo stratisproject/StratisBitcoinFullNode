@@ -5,6 +5,7 @@
     using Stratis.Bitcoin.Tests;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading.Tasks;
     using Xunit;
 
     public class BlockRepositoryTest : TestBase
@@ -76,9 +77,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxAsync(uint256.Zero);
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.Equal(default(Transaction), task.Result);
+                Assert.Equal(default(Transaction), task.AwaiterResult());
             }
         }
 
@@ -99,9 +100,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxAsync(new uint256(65));
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.Null(task.Result);
+                Assert.Null(task.AwaiterResult());
             }
         }
 
@@ -129,9 +130,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxAsync(trans.GetHash());
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.Equal((uint)125, task.Result.Version);
+                Assert.Equal((uint)125, task.AwaiterResult().Version);
             }
         }
 
@@ -151,9 +152,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.Equal(default(uint256), task.Result);
+                Assert.Equal(default(uint256), task.AwaiterResult());
             }
         }
 
@@ -173,9 +174,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.Null(task.Result);
+                Assert.Null(task.AwaiterResult());
             }
         }
 
@@ -196,9 +197,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.Equal(new uint256(42), task.Result);
+                Assert.Equal(new uint256(42), task.AwaiterResult());
             }
         }
 
@@ -238,7 +239,7 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.PutAsync(nextBlockHash, blocks);
-                task.Wait();
+                task.AwaiterWait();;
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -281,7 +282,7 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.SetTxIndex(false);
-                task.Wait();
+                task.AwaiterWait();;
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -307,7 +308,7 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.SetBlockHash(new uint256(56));
-                task.Wait();
+                task.AwaiterWait();;
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -335,9 +336,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetAsync(block.GetHash());
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.Equal(block.GetHash(), task.Result.GetHash());
+                Assert.Equal(block.GetHash(), task.AwaiterResult().GetHash());
             }
         }
 
@@ -349,9 +350,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.GetAsync(new uint256());
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.Null(task.Result);
+                Assert.Null(task.AwaiterResult());
             }
         }
 
@@ -371,9 +372,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.ExistAsync(block.GetHash());
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.True(task.Result);
+                Assert.True(task.AwaiterResult());
             }
         }
 
@@ -385,9 +386,9 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.ExistAsync(new uint256());
-                task.Wait();
+                task.AwaiterWait();;
 
-                Assert.False(task.Result);
+                Assert.False(task.AwaiterResult());
             }
         }
 
@@ -410,7 +411,7 @@
             using (var repository = SetupRepository(Network.Main, dir))
             {
                 var task = repository.DeleteAsync(new uint256(45), new List<uint256>() { block.GetHash() });
-                task.Wait();
+                task.AwaiterWait();;
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -430,7 +431,7 @@
         private Bitcoin.Features.BlockStore.IBlockRepository SetupRepository(Network main, string dir)
         {
             var repository = new BlockRepository(main, dir, this.loggerFactory);
-            repository.Initialize().GetAwaiter().GetResult();
+            repository.Initialize().AwaiterWait();
 
             return repository;
         }

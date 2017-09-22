@@ -3,6 +3,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -65,7 +66,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // wait for the mempool code to complete
             // until the signaler becomes async 
-            task.GetAwaiter().GetResult();
+            task.AwaiterWait();
         }
 
         /// <summary>

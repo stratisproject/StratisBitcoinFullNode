@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Utilities
             // after dispatching a new Task (thread) to initialize the dbreeze db.
             // Node: The 'DBreezeEngine' instance is not thread safe as there are 
             // static initializers happening internally when creating a new instance.
-            task.GetAwaiter().GetResult();
+            task.AwaiterWait();
         }
 
         /// <summary>

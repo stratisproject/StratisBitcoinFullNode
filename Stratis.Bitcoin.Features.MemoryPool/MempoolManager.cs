@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return Task.Run(() =>
             {
-                return this.InfoAsync(trxid)?.GetAwaiter().GetResult()?.Trx;
+                return this.InfoAsync(trxid)?.AwaiterResult()?.Trx;
             });
         }
 

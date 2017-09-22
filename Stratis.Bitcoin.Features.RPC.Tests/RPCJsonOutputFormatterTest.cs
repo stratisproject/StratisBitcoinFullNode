@@ -104,9 +104,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 				new RPCAuthorization());
 
 			var task = this.formatter.WriteResponseBodyAsync(context, Encoding.UTF8);
-			task.Wait();
+			task.AwaiterWait();
 
-			using (StreamReader reader = new StreamReader(stream))
+            using (StreamReader reader = new StreamReader(stream))
 			{
 				stream.Position = 0;
 				var result = reader.ReadToEnd();

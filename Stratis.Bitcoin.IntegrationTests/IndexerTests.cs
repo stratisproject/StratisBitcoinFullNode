@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.RPC;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -130,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var repository = node.FullNode.NodeService<IIndexRepository>() as IndexRepository;
 
-                repository.PutAsync(block.GetHash(), new List<Block> { block, block2 }).GetAwaiter().GetResult();
+                repository.PutAsync(block.GetHash(), new List<Block> { block, block2 }).AwaiterWait();
 
                 var indexTable = repository.Indexes["Output"].Table;
                 var expectedJSON = repository.Indexes["Output"].ToString();

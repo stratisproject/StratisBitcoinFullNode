@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         {
                             token.ThrowIfCancellationRequested();
 
-                            nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).AwaiterResult();
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block

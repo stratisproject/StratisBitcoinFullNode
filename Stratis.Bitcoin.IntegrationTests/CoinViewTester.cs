@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public CoinViewTester(CoinView coinView)
 		{
 			this.coinView = coinView;
-            this._Hash = coinView.GetBlockHashAsync().Result;
+            this._Hash = coinView.GetBlockHashAsync().AwaiterResult();
 		}
 
 		List<UnspentOutputs> _PendingCoins = new List<UnspentOutputs>();
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 		public bool Exists(Coin c)
 		{
-			var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
+			var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).AwaiterResult();
 			if(result.BlockHash != this._Hash)
 				throw new InvalidOperationException("Unexepected hash");
 			if(result.UnspentOutputs[0] == null)
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 			var coin = this._PendingCoins.FirstOrDefault(u => u.TransactionId == c.Outpoint.Hash);
 			if(coin == null)
 			{
-				var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
+				var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).AwaiterResult();
 				if(result.BlockHash != this._Hash)
 					throw new InvalidOperationException("Unexepected hash");
 				if(result.UnspentOutputs[0] == null)
@@ -69,15 +69,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public uint256 NewBlock()
 		{
 			var newHash = new uint256(RandomUtils.GetBytes(32));
-			this.coinView.SaveChangesAsync(this._PendingCoins, null, this._Hash, newHash).Wait();
-			this._PendingCoins.Clear();
+			this.coinView.SaveChangesAsync(this._PendingCoins, null, this._Hash, newHash).AwaiterWait();
+            this._PendingCoins.Clear();
             this._Hash = newHash;
 			return newHash;
 		}
 
 		public uint256 Rewind()
 		{
-            this._Hash = this.coinView.Rewind().Result;
+            this._Hash = this.coinView.Rewind().AwaiterResult();
 			return this._Hash;
 		}
 	}

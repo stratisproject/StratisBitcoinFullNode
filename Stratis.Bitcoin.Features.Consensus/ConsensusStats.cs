@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using System;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -71,10 +72,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 benchLogs.AppendLine("Downloaded:".PadRight(LoggingConfiguration.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
                 benchLogs.AppendLine("==========================");
             }
-            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().Result).Height);
+            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().AwaiterResult()).Height);
             if (this.cache != null)
             {
-                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().Result).Height);
+                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().AwaiterResult()).Height);
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
             }
 

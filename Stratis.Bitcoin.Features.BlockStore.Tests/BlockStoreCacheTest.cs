@@ -64,7 +64,7 @@
                 .Returns(true);
 
             var task = this.blockStoreCache.GetBlockAsync(blockId);
-            task.Wait();
+            task.AwaiterWait();;
 
             Assert.Equal(1513, ((Block)block).Header.Version);
         }
@@ -82,10 +82,10 @@
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
 
             var result = this.blockStoreCache.GetBlockAsync(blockId);
-            result.Wait();
+            result.AwaiterWait();;
 
             Assert.Equal(blockId, memoryCacheStub.GetLastCreateCalled());
-            Assert.Equal(1451, result.Result.Header.Version);
+            Assert.Equal(1451, result.AwaiterResult().Header.Version);
         }
 
         [Fact]
@@ -103,9 +103,9 @@
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
 
             var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
-            result.Wait();
+            result.AwaiterWait();;
 
-            Assert.Equal(1451, result.Result.Header.Version);
+            Assert.Equal(1451, result.AwaiterResult().Header.Version);
         }
 
         [Fact]
@@ -124,9 +124,9 @@
                 .Returns(Task.FromResult(blockId));
 
             var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
-            result.Wait();
+            result.AwaiterWait();;
 
-            Assert.Equal(1451, result.Result.Header.Version);
+            Assert.Equal(1451, result.AwaiterResult().Header.Version);
             Assert.Equal(txId, memoryCacheStub.GetLastCreateCalled());
         }
 
@@ -140,9 +140,9 @@
                 .Returns(Task.FromResult((uint256)null));
 
             var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
-            result.Wait();
+            result.AwaiterWait();;
 
-            Assert.Null(result.Result);
+            Assert.Null(result.AwaiterResult());
         }
 
         [Fact]
@@ -163,9 +163,9 @@
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
 
             var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
-            result.Wait();
+            result.AwaiterWait();;
 
-            Assert.Equal(trans.GetHash(), result.Result.GetHash());
+            Assert.Equal(trans.GetHash(), result.AwaiterResult().GetHash());
         }
 
         [Fact]
@@ -180,9 +180,9 @@
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
 
             var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
-            result.Wait();
+            result.AwaiterWait();;
 
-            Assert.Null(result.Result);
+            Assert.Null(result.AwaiterResult());
         }
     }
 }
