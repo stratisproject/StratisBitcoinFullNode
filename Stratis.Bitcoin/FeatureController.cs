@@ -3,7 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 
-namespace Stratis.Bitcoin.Features.RPC.Controllers
+namespace Stratis.Bitcoin
 {
     public abstract class FeatureController : Controller
     {
