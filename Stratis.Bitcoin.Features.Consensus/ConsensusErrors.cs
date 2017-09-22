@@ -148,5 +148,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public readonly static ConsensusError BadBlockSignature = new ConsensusError("bad-block-signature", "bad block signature");
         public readonly static ConsensusError BlockTimeBeforeTrx = new ConsensusError("block-time-before-trx", "block timestamp earlier than transaction timestamp");
         public readonly static ConsensusError ProofOfWorkTooHeigh = new ConsensusError("proof-of-work-too-heigh", "proof of work too heigh");
+
+        public readonly static ConsensusError CheckpointViolation = new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
     }
 }
