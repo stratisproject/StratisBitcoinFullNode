@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusController : BaseRPCController
+    public class ConsensusController : FeatureController
     {
         private readonly ILogger logger;
         public ConsensusLoop ConsensusLoop { get; private set; }

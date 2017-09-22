@@ -11,7 +11,7 @@ using System.Net;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
-    public class ConnectionManagerController : BaseRPCController
+    public class ConnectionManagerController : FeatureController
     {
         public ConnectionManagerController(IConnectionManager connectionManager) : base(connectionManager: connectionManager)
         {

@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-    public class MempoolController : BaseRPCController
+    public class MempoolController : FeatureController
     {
         public MempoolManager MempoolManager { get; private set; }
 
