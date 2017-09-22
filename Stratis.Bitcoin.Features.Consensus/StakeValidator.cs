@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -69,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             TxIn txIn = tx.Inputs[0];
 
             // First try finding the previous transaction in database.
-            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
+            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).AwaiterResult();
             if (coins == null || coins.UnspentOutputs.Length != 1)
                 ConsensusErrors.ReadTxPrevFailed.Throw();
 
@@ -572,7 +573,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             foreach (TxIn txin in trx.Inputs)
             {
-                FetchCoinsResponse coins = coinView.FetchCoinsAsync(new[] { txin.PrevOut.Hash }).GetAwaiter().GetResult();
+                FetchCoinsResponse coins = coinView.FetchCoinsAsync(new[] { txin.PrevOut.Hash }).AwaiterResult();
                 if ((coins == null) || (coins.UnspentOutputs.Length != 1))
                     continue;
 
@@ -627,7 +628,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 nameof(nBits), nBits, nameof(nTime), nTime, nameof(prevout), prevout.Hash, prevout.N);
 
             // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/397
-            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).GetAwaiter().GetResult();
+            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).AwaiterResult();
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
             {
                 this.logger.LogTrace("(-)[READ_PREV_TX_FAILED]");

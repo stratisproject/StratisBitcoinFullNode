@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.Wallet
+namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
     /// <summary>
     /// Interface for a manager providing operations on wallets.

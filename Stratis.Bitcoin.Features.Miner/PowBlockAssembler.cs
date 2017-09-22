@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -378,7 +379,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // because some of their txs are already in the block.
             var mapModifiedTx = new Dictionary<uint256, TxMemPoolModifiedEntry>();
 
-            //var mapModifiedTxRes = this.mempoolScheduler.ReadAsync(() => mempool.MapTx.Values).GetAwaiter().GetResult();
+            //var mapModifiedTxRes = this.mempoolScheduler.ReadAsync(() => mempool.MapTx.Values).AwaiterWait();
             // mapModifiedTxRes.Select(s => new TxMemPoolModifiedEntry(s)).OrderBy(o => o, new CompareModifiedEntry());
 
             // Keep track of entries that failed inclusion, to avoid duplicate work.
@@ -388,7 +389,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // and modifying them for their already included ancestors.
             this.UpdatePackagesForAdded(this.inBlock, mapModifiedTx);
 
-            List<TxMempoolEntry> ancestorScoreList = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
+            List<TxMempoolEntry> ancestorScoreList = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.AncestorScore).AwaiterResult().ToList();
 
             TxMempoolEntry iter;
 
@@ -599,7 +600,7 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (TxMempoolEntry setEntry in alreadyAdded)
             {
                 TxMempool.SetEntries setEntries = new TxMempool.SetEntries();
-                this.mempoolLock.ReadAsync(() => this.mempool.CalculateDescendants(setEntry, setEntries)).GetAwaiter().GetResult();
+                this.mempoolLock.ReadAsync(() => this.mempool.CalculateDescendants(setEntry, setEntries)).AwaiterWait();
                 foreach (var desc in setEntries)
                 {
                     if (alreadyAdded.Contains(desc))

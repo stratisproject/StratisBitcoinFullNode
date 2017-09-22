@@ -711,14 +711,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 block = stratisNodeSync.GenerateStratis(1, spends).Single();
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
-                stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
+                stratisNodeSync.FullNode.MempoolManager().Clear().AwaiterWait();
 
                 // Test 3: ... and should be rejected if spend2 is in the memory pool
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
                 block = stratisNodeSync.GenerateStratis(1, spends).Single();
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
-                stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
+                stratisNodeSync.FullNode.MempoolManager().Clear().AwaiterWait();
 
                 // Final sanity test: first spend in mempool, second in block, that's OK:
                 List<Transaction> oneSpend = new List<Transaction>();
@@ -759,7 +759,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     tx.AddInput(new TxIn(new OutPoint(randHash(), 0), new Script(OpcodeType.OP_1)));
                     tx.AddOutput(new TxOut(new Money(1*Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
                     
-                    stratisNode.FullNode.MempoolManager().Orphans.AddOrphanTx(i, tx).Wait();
+                    stratisNode.FullNode.MempoolManager().Orphans.AddOrphanTx(i, tx).AwaiterWait();
                 }
 
                 Assert.Equal(50, stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Count);
@@ -772,7 +772,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     Transaction tx = new Transaction();
                     tx.AddInput(new TxIn(new OutPoint(txPrev.Tx.GetHash(), 0), new Script(OpcodeType.OP_1)));
                     tx.AddOutput(new TxOut(new Money((1 + i + 100) * Money.CENT), stratisNode.MinerSecret.ScriptPubKey));
-                    stratisNode.FullNode.MempoolManager().Orphans.AddOrphanTx(i, tx).Wait();
+                    stratisNode.FullNode.MempoolManager().Orphans.AddOrphanTx(i, tx).AwaiterWait();
                 }
 
                 Assert.Equal(100, stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Count);
@@ -795,16 +795,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                 for (ulong i = 0; i < 3; i++)
                 {
                     var sizeBefore = stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Count;
-                    stratisNode.FullNode.MempoolManager().Orphans.EraseOrphansFor(i).Wait();
+                    stratisNode.FullNode.MempoolManager().Orphans.EraseOrphansFor(i).AwaiterWait();
                     Assert.True(stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Count < sizeBefore);
                 }
 
                 // Test LimitOrphanTxSize() function:
-                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(40).Wait();
+                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(40).AwaiterWait();
                 Assert.True(stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Count <= 40);
-                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(10).Wait();
+                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(10).AwaiterWait();
                 Assert.True(stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Count <= 10);
-                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(0).Wait();
+                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(0).AwaiterWait();
                 Assert.True(!stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Any());
             }
         }

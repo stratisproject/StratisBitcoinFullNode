@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     if (this.chain.Tip != this.consensusLoop.Tip)
                     {
-                        Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                        Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).AwaiterWait();
                         continue;
                     }
 
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     var blockResult = new BlockResult { Block = pblock };
                     this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
                     this.consensusLoop.Puller.SetLocation(newChain);
-                    this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
+                    this.consensusLoop.FlushAsync().AwaiterWait();
 
                     if (blockResult.ChainedBlock == null)
                         break; // Reorg.
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         return blocks;
 
                     // Push the block to disk, so it is available when peers ask for it.
-                    this.blockRepository.PutAsync(blockResult.ChainedBlock.HashBlock, new List<Block> { pblock }).GetAwaiter().GetResult();
+                    this.blockRepository.PutAsync(blockResult.ChainedBlock.HashBlock, new List<Block> { pblock }).AwaiterWait();
 
                     // Similar logic to what's in the full node code.
                     this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;

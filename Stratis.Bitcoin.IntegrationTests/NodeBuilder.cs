@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -290,7 +291,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
                 HttpClient client = new HttpClient();
                 client.Timeout = TimeSpan.FromMinutes(10.0);
-                var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
+                var data = client.GetByteArrayAsync(url).AwaiterResult();
                 File.WriteAllBytes(zip, data);
                 ZipFile.ExtractToDirectory(zip, new FileInfo(zip).Directory.FullName);
                 return bitcoind;
@@ -308,7 +309,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
                 HttpClient client = new HttpClient();
                 client.Timeout = TimeSpan.FromMinutes(10.0);
-                var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
+                var data = client.GetByteArrayAsync(url).AwaiterResult();
                 File.WriteAllBytes(zip, data);
                 Process.Start("tar", "-zxvf " + zip + " -C TestData");
                 return bitcoind;
@@ -512,7 +513,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Start()
         {
-            StartAsync().Wait();
+            StartAsync().AwaiterWait();
         }
 
         readonly NetworkCredential creds;

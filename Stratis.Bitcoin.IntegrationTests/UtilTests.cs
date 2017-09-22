@@ -46,9 +46,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 			});
 
-			task.Wait();
+			task.AwaiterWait();
 
-			Assert.True(IsSequential(collector.ToArray()));
+            Assert.True(IsSequential(collector.ToArray()));
 		}
     }
 }

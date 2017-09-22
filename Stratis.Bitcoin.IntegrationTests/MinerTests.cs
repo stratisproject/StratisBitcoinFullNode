@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -82,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new MempoolValidationContext(tx, new MempoolValidationState(false));
             context.View = new MempoolCoinView(testContext.cachedCoinView, testContext.mempool, testContext.mempoolLock, null);
-            context.View.LoadView(tx).GetAwaiter().GetResult();
+            context.View.LoadView(tx).AwaiterWait();
             return MempoolValidator.CheckSequenceLocks(chainedBlock, context, flags, uselock, false);
         }
 

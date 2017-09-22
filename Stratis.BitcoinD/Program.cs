@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin;
 
 namespace Stratis.BitcoinD
 {

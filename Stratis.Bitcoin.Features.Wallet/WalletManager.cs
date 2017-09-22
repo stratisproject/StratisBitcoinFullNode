@@ -14,6 +14,8 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
 using Transaction = NBitcoin.Transaction;
+using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 namespace Stratis.Bitcoin.Features.Wallet
@@ -440,7 +442,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             else
             {
                 var state = new MempoolValidationState(false);
-                if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
+                if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).AwaiterResult())
                     return false;
                 this.ProcessTransaction(transaction);
             }

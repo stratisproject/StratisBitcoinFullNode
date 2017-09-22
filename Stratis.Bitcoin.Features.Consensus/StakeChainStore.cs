@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return block.BlockStake;
             }
 
-            BlockStake res = this.GetAsync(blockid).GetAwaiter().GetResult();
+            BlockStake res = this.GetAsync(blockid).AwaiterResult();
             if (res != null) this.logger.LogTrace("(-):*.{0}='{1}'", nameof(res.HashProof), res.HashProof);
             else this.logger.LogTrace("(-):null");
             return res;
@@ -163,12 +163,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             // this removed the dependency on chain.
 
             throw new NotImplementedException();
-            //this.SetAsync(blockid, blockStake).GetAwaiter().GetResult();
+            //this.SetAsync(blockid, blockStake).AwaiterWait();
         }
 
         public void Set(ChainedBlock chainedBlock, BlockStake blockStake)
         {
-            this.SetAsync(chainedBlock, blockStake).GetAwaiter().GetResult();
+            this.SetAsync(chainedBlock, blockStake).AwaiterWait();
         }
     }
 }

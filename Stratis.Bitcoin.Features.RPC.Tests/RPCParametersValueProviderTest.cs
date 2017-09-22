@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		public void CreateValueProviderAsyncCreatesValueProviderForContext()
 		{
 			var task = this.provider.CreateValueProviderAsync(this.context);
-			task.Wait();
+			task.AwaiterWait();;
 
 			Assert.Equal(1, this.context.ValueProviders.Count);
 			Assert.True(this.context.ValueProviders[0] is RPCParametersValueProvider);

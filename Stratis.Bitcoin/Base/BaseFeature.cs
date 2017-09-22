@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -160,7 +161,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogInformation("Loading chain");
-            this.chainRepository.Load(this.chain).GetAwaiter().GetResult();
+            this.chainRepository.Load(this.chain).AwaiterWait();
 
             this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
             this.flushChainTask = new PeriodicTask("FlushChain", this.logger, (cancellation) =>

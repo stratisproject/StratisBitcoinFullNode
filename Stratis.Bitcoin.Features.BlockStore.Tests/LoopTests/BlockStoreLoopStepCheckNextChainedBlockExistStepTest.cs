@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).AwaiterWait();
 
                 // The chain has 4 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 var nextChainedBlock = block04;
                 var checkExistsStep = new CheckNextChainedBlockExistStep(fluent.Loop, this.loggerFactory);
-                checkExistsStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                checkExistsStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).AwaiterWait();
 
                 Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block04.Header.GetHash());
                 Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block04.Header.GetHash());
