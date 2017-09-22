@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
