@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace Stratis.Bitcoin.Features.RPC.Controllers
+namespace Stratis.Bitcoin.Connection
 {
     public class ConnectionManagerController : FeatureController
     {
