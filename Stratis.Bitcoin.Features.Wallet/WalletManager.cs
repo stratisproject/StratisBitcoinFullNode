@@ -171,7 +171,17 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // load the file from the local system
             Wallet wallet = this.fileStorage.LoadByFileName($"{name}.{WalletFileExtension}");
-            
+
+            // Check the password
+            try
+            {
+                Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
+            }
+            catch (Exception ex)
+            {
+                throw new SecurityException(ex.Message);
+            }
+
             this.Load(wallet);
             return wallet;
         }
