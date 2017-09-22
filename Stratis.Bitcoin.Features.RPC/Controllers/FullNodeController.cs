@@ -17,7 +17,7 @@ using NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
-    public class FullNodeController : BaseRPCController
+    public class FullNodeController : FeatureController
     {
         private readonly ILogger logger;
 

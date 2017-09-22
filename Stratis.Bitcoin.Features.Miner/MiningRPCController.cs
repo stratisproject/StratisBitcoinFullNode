@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 namespace Stratis.Bitcoin.Features.Miner
 {
     [Controller]
-    public class MiningRPCController : BaseRPCController
+    public class MiningRPCController : FeatureController
     {
         public MiningRPCController(PowMining mining, IFullNode fullNode) : base(fullNode: fullNode)
         {
