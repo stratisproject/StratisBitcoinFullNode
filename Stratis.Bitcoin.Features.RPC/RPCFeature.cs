@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
 using System;
