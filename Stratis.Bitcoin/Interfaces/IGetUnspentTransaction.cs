@@ -1,5 +1,5 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text;

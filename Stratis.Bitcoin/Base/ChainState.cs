@@ -11,24 +11,30 @@ namespace Stratis.Bitcoin.Base
     {
         private readonly FullNode fullNode;
 
+        private long lastUpdate;
+        private bool lastResult;
+
+        internal ReaderWriterLockSlim invalidBlocksLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+        internal HashSet<uint256> invalidBlocks = new HashSet<uint256>();
+
+        /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above HighestValidatedPoW.</summary>
+        public ChainedBlock HighestValidatedPoW { get; set; }
+
         public ChainState(FullNode fullNode)
         {
             this.fullNode = fullNode;
         }
 
-        internal ReaderWriterLockSlim _InvalidBlocksLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
-        internal HashSet<uint256> _InvalidBlocks = new HashSet<uint256>();
-
         public bool IsMarkedInvalid(uint256 hashBlock)
         {
             try
             {
-                this._InvalidBlocksLock.EnterReadLock();
-                return this._InvalidBlocks.Contains(hashBlock);
+                this.invalidBlocksLock.EnterReadLock();
+                return this.invalidBlocks.Contains(hashBlock);
             }
             finally
             {
-                this._InvalidBlocksLock.ExitReadLock();
+                this.invalidBlocksLock.ExitReadLock();
             }
         }
 
@@ -36,48 +42,37 @@ namespace Stratis.Bitcoin.Base
         {
             try
             {
-                this._InvalidBlocksLock.EnterWriteLock();
-                this._InvalidBlocks.Add(blockHash);
+                this.invalidBlocksLock.EnterWriteLock();
+                this.invalidBlocks.Add(blockHash);
             }
             finally
             {
-                this._InvalidBlocksLock.ExitWriteLock();
+                this.invalidBlocksLock.ExitWriteLock();
             }
         }
 
-        private long lastupdate;
-        private bool lastresult;
         public bool IsInitialBlockDownload
         {
             get
             {
-                if (this.lastupdate < this.fullNode.DateTimeProvider.GetUtcNow().Ticks)
+                if (this.lastUpdate < this.fullNode.DateTimeProvider.GetUtcNow().Ticks)
                 {
-                    this.lastupdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks; // sample every minute
+                    // Sample every minute.
+                    this.lastUpdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
 
-                    // if consensus is no present IBD has no meaning. Set to false to match legacy code.                    
+                    // If consensus is not present IBD has no meaning. Set to false to match legacy code.                    
                     var IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
-                    this.lastresult = (IBDStateProvider == null)?false:IBDStateProvider.IsInitialBlockDownload();
+                    this.lastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
                 }
-                return this.lastresult;
+                return this.lastResult;
             }
         }
 
-        // for testing to be able to move the IBD
+        // For testing to be able to move the IBD.
         public void SetIsInitialBlockDownload(bool val, DateTime time)
         {
-            this.lastupdate = time.Ticks;
-            this.lastresult = val;
+            this.lastUpdate = time.Ticks;
+            this.lastResult = val;
         }
-
-        /// <summary>
-        /// ChainBehaviors sharing this state will not broadcast headers which are above HighestValidatedPoW
-        /// </summary>
-        public ChainedBlock HighestValidatedPoW
-        {
-            get; set;
-        }
-
-
     }
 }

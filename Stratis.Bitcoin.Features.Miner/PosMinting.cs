@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Miner
             BlockTemplate pblockTemplate = null;
             bool tryToSync = true;
 
-            while (true)
+            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
                 if (this.chain.Tip != this.consensusLoop.Tip)
                 {
@@ -514,7 +514,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Select coins with suitable depth.
             List<StakeTx> setCoins = this.FindCoinsForStaking(stakeTxes, coinstakeTx.Time, balance - this.reserveBalance);
-
             if (!setCoins.Any())
             {
                 this.logger.LogTrace("(-)[NO_SELECTION]:false");
@@ -565,6 +564,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 for (uint n = 0; (n < searchInterval) && !fKernelFound; n++)
                 {
+                    this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+
                     uint txTime = coinstakeTx.Time - n;
 
                     // Once we reach previous block time + 1, we can't go any lower
@@ -635,6 +636,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("Trying to reduce our staking UTXO set by adding additional inputs to coinstake transaction...");
             foreach (StakeTx stakeTx in setCoins)
             {
+                this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+
                 // Attempt to add more inputs.
                 // Only add coins of the same key/address as kernel.
                 if ((coinstakeTx.Outputs.Count == 2)
