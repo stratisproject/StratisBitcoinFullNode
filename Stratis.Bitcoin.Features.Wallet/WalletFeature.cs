@@ -9,6 +9,10 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Broadcasting;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -22,6 +26,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
         private readonly Signals.Signals signals;
+        private readonly IConnectionManager connectionManager;
+        private readonly BroadcasterBehavior broadcasterBehavior;
 
         private IDisposable blockSubscriberdDisposable;
         private IDisposable transactionSubscriberdDisposable;
@@ -34,12 +40,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
         /// <param name="chain">The chain of blocks.</param>
-        public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain)
+        public WalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, Signals.Signals signals, ConcurrentChain chain, IConnectionManager connectionManager, BroadcasterBehavior broadcasterBehavior)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
             this.signals = signals;
             this.chain = chain;
+            this.connectionManager = connectionManager;
+            this.broadcasterBehavior = broadcasterBehavior;
         }
 
         /// <inheritdoc />
@@ -69,6 +77,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.walletManager.Initialize();
             this.walletSyncManager.Initialize();
+
+            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
         }
 
         /// <inheritdoc />
@@ -102,6 +112,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
                         services.AddSingleton<WalletController>();
                         services.AddSingleton<WalletRPCController>();
+                        services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
+                        services.AddSingleton<BroadcasterBehavior>();
                     });
             });
 

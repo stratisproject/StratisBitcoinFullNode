@@ -10,9 +10,9 @@ namespace Stratis.Bitcoin.Interfaces
 {
     public interface IBroadcasterManager
     {
-        Task<Success> TryBroadcast(Transaction transaction);
-        Success IsPropagated(Transaction transaction);
-        Task<Success> WaitPropagation(Transaction transaction, TimeSpan timeout);
-        event EventHandler<Transaction> OnTransactionPropagation;
+        Task<Success> TryBroadcastAsync(Transaction transaction);
+        event EventHandler<TransactionBroadcastEntry> TransactionStateChanged;
+        TransactionBroadcastEntry GetTransaction(uint256 transactionHash);
+        void AddOrUpdate(Transaction transaction, State state);
     }
 }

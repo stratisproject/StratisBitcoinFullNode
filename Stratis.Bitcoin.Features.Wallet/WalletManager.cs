@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Utilities.FileStorage;
 using Transaction = NBitcoin.Transaction;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Broadcasting;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 namespace Stratis.Bitcoin.Features.Wallet
@@ -43,6 +44,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
         private readonly FileStorage<Wallet> fileStorage;
+        private readonly IBroadcasterManager broadcasterManager;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -56,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Occurs when a transaction is found.
         /// </summary>
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
-
+        
         public WalletManager(
             ILoggerFactory loggerFactory, 
             IConnectionManager connectionManager, 
@@ -66,7 +68,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
-            IMempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+            IMempoolValidator mempoolValidator = null, // mempool does not exist in a light wallet
+            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -90,9 +93,22 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
+            this.broadcasterManager = broadcasterManager;
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
+            if (this.broadcasterManager != null)
+            {
+                this.broadcasterManager.TransactionStateChanged += BroadcasterManager_TransactionStateChanged;
+            }  
+        }
+
+        private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
+        {
+            if(transactionEntry.State == State.Propagated)
+            {
+                this.ProcessTransaction(transactionEntry.Transaction);
+            }
         }
 
         public void Initialize()
@@ -794,6 +810,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void Dispose()
         {
+            if (this.broadcasterManager != null)
+            {
+                this.broadcasterManager.TransactionStateChanged -= BroadcasterManager_TransactionStateChanged;
+            }
             // safely persist the wallets to the file system before disposing
             foreach (var wallet in this.Wallets)
             {
