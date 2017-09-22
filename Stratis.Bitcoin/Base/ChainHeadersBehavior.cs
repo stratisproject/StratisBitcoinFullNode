@@ -225,20 +225,20 @@ namespace Stratis.Bitcoin.Base
 			{
 				try
 				{
-                    this._State._InvalidBlocksLock.EnterReadLock();
-					if (this._State._InvalidBlocks.Count != 0)
+                    this._State.invalidBlocksLock.EnterReadLock();
+					if (this._State.invalidBlocks.Count != 0)
 					{
 						foreach (var header in tip.EnumerateToGenesis())
 						{
 							if (this.invalidHeaderReceived)
 								break;
-                            this.invalidHeaderReceived |= this._State._InvalidBlocks.Contains(header.HashBlock);
+                            this.invalidHeaderReceived |= this._State.invalidBlocks.Contains(header.HashBlock);
 						}
 					}
 				}
 				finally
 				{
-                    this._State._InvalidBlocksLock.ExitReadLock();
+                    this._State.invalidBlocksLock.ExitReadLock();
 				}
 			}
 			return !this.invalidHeaderReceived;

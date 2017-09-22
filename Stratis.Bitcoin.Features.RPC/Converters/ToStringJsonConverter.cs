@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.RPC.Converters
 {
-    class ToStringJsonConverter : JsonConverter
+    public class ToStringJsonConverter : JsonConverter
     {
         public override bool CanConvert(Type objectType)
         {

@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Connection;
 using System;
 using Xunit;
 

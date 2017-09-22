@@ -223,6 +223,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // TODO: this should be set on the network build
                     fullNodeBuilder.Network.Consensus.Options = new PowConsensusOptions();
 
+                    services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, PowConsensusOptions>();
                     services.AddSingleton<PowConsensusValidator>();
                     services.AddSingleton<DBreezeCoinView>();
@@ -255,6 +256,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations = 10;
                         }
 
+                        services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<PowConsensusValidator, PosConsensusValidator>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();

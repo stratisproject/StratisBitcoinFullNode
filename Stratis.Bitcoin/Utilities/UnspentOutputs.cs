@@ -1,9 +1,8 @@
 ﻿using System.Linq;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
-using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus
+namespace Stratis.Bitcoin.Utilities
 {
 	public class UnspentOutputs : IBitcoinSerializable
 	{

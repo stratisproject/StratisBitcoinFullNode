@@ -3,9 +3,9 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 
-namespace Stratis.Bitcoin.Features.RPC.Controllers
+namespace Stratis.Bitcoin
 {
-    public abstract class BaseRPCController : Controller
+    public abstract class FeatureController : Controller
     {
         protected IFullNode FullNode;
         protected NodeSettings Settings;
@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         protected ChainState ChainState;
         protected Connection.IConnectionManager ConnectionManager;
 
-        public BaseRPCController(
+        public FeatureController(
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
