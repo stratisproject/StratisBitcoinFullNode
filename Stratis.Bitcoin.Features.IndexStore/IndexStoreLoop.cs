@@ -11,11 +11,11 @@ namespace Stratis.Bitcoin.Features.IndexStore
     public class IndexStoreLoop : BlockStoreLoop
     {        
         public IndexStoreLoop(ConcurrentChain chain,
-            IndexRepository indexRepository,
+            IIndexRepository indexRepository,
             IndexSettings indexSettings,
             ChainState chainState,
             IndexBlockPuller blockPuller,
-            IndexStoreCache cache,
+            IIndexStoreCache cache,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory, 
@@ -23,12 +23,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             base(asyncLoopFactory, blockPuller, indexRepository, cache, chain, chainState, indexSettings, nodeLifetime, loggerFactory, dateTimeProvider)
         {
         }
-        
-        public override string StoreName => GetType().Name;
 
-        protected override void SetHighestPersistedBlock(ChainedBlock block)
-        {
-            this.ChainState.HighestIndexedBlock = block;
-        }
+        public override string StoreName { get { return "IndexStore"; } }
     }
 }

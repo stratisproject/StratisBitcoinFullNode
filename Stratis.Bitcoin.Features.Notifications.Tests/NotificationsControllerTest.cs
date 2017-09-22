@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -7,7 +8,6 @@ using Stratis.Bitcoin.Features.Notifications.Controllers;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Notifications.Tests
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         public void Given_SyncActionIsCalled_When_QueryParameterIsNullOrEmpty_Then_ReturnBadRequest(string from)
         {
             var chain = new Mock<ConcurrentChain>();
-            var blockNotification = new Mock<BlockNotification>(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
             IActionResult result = notificationController.SyncFrom(from);
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
         }
-        
+
         [Fact]
         public void Given_SyncActionIsCalled_When_ABlockHeightIsSpecified_Then_TheChainIsSyncedFromTheHash()
         {
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             ChainedBlock chainedBlock = new ChainedBlock(new BlockHeader(), hash, null);
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(heightLocation)).Returns(chainedBlock);
-            var blockNotification = new Mock<BlockNotification>(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             ChainedBlock chainedBlock = new ChainedBlock(new BlockHeader(), hash, null);
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(heightLocation)).Returns(chainedBlock);
-            var blockNotification = new Mock<BlockNotification>(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             // Set up
             string hashLocation = "notAValidHash";
             var chain = new Mock<ConcurrentChain>();
-            var blockNotification = new Mock<BlockNotification>(chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
+            var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, new Bitcoin.Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
             var notificationController = new NotificationsController(blockNotification.Object, chain.Object);

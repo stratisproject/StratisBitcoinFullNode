@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         }
 
         [Fact]
-        public void ProcessPendingStorage_WithPendingBlocks_PushToRepoBeforeDownloadingNewBlocks()
+        public void ProcessPendingStorage_PushToRepo_BeforeDownloadingNewBlocks()
         {
             var blocks = CreateBlocks(15);
 
@@ -99,19 +99,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Push 5 blocks to the repository
                 fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
-                // The chain has 10 blocks appended
+                // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
-                AppendBlocksToChain(chain, blocks.Skip(1).Take(9));
+                AppendBlocksToChain(chain, blocks.Skip(1).Take(14));
 
                 // Create block store loop
                 fluent.Create(chain);
 
-                // Add chained blocks 5 - 9 to PendingStorage
-                AddBlockToPendingStorage(fluent.Loop, blocks[5]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[6]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[7]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[8]);
-                AddBlockToPendingStorage(fluent.Loop, blocks[9]);
+                //Set the store's tip
+                fluent.Loop.SetStoreTip(fluent.Loop.Chain.GetBlock(blocks.Take(5).Last().GetHash()));
+
+                // Add chained blocks 5 - 14 to PendingStorage
+                for (int i = 5; i <= 14; i++)
+                {
+                    AddBlockToPendingStorage(fluent.Loop, blocks[i]);
+                }
 
                 //Start processing pending blocks from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
@@ -119,8 +121,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
                 processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
 
-                Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
-                Assert.Equal(blocks[9].GetHash(), fluent.Loop.StoreTip.HashBlock);
+                Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
+                Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);
             }
         }
 
@@ -144,11 +146,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 fluent.Create(chain);
 
                 // Push blocks 5 - 9 to the downloaded blocks collection
-                fluent.Loop.BlockPuller.InjectBlock(blocks[5].GetHash(), new DownloadedBlock() { Length = blocks[5].GetSerializedSize(), Block = blocks[5] }, new CancellationToken());
-                fluent.Loop.BlockPuller.InjectBlock(blocks[6].GetHash(), new DownloadedBlock() { Length = blocks[6].GetSerializedSize(), Block = blocks[6] }, new CancellationToken());
-                fluent.Loop.BlockPuller.InjectBlock(blocks[7].GetHash(), new DownloadedBlock() { Length = blocks[7].GetSerializedSize(), Block = blocks[7] }, new CancellationToken());
-                fluent.Loop.BlockPuller.InjectBlock(blocks[8].GetHash(), new DownloadedBlock() { Length = blocks[8].GetSerializedSize(), Block = blocks[8] }, new CancellationToken());
-                fluent.Loop.BlockPuller.InjectBlock(blocks[9].GetHash(), new DownloadedBlock() { Length = blocks[9].GetSerializedSize(), Block = blocks[9] }, new CancellationToken());
+                for (int i = 5; i <= 9; i++)
+                {
+                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock() { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
+                }
 
                 // Start processing blocks to download from block 5
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());

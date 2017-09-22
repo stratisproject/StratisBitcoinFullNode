@@ -250,31 +250,13 @@ namespace Stratis.Bitcoin
                                      this.Chain.Tip.Height.ToString().PadRight(8) +
                                      " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.Chain.Tip.HashBlock);
 
-                // TODO
+                // TODO: Why are three features all setting the HighestValidatedPoW (Consensus, Mining and Notifications)?
                 if (this?.ChainBehaviorState?.HighestValidatedPoW != null)
                 {
                     benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
                                          this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) +
                                          " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
                                          this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
-                }
-
-                // TODO
-                if (this.ChainBehaviorState.HighestPersistedBlock != null)
-                {
-                    benchLogs.AppendLine("Store.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         this.ChainBehaviorState.HighestPersistedBlock.Height.ToString().PadRight(8) +
-                                         " Store.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         this.ChainBehaviorState.HighestPersistedBlock.HashBlock);
-                }
-
-                // TODO
-                if (this.ChainBehaviorState.HighestIndexedBlock != null)
-                {
-                    benchLogs.AppendLine("Index.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         this.ChainBehaviorState.HighestIndexedBlock.Height.ToString().PadRight(8) +
-                                         " Index.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         this.ChainBehaviorState.HighestIndexedBlock.HashBlock);
                 }
 
                 // Display node stats grouped together

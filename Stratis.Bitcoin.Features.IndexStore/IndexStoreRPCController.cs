@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
-    public class IndexStoreRPCController : BaseRPCController
+    public class IndexStoreRPCController : FeatureController
     {
         private readonly ILogger logger;
         protected IndexStoreManager IndexManager;
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionName("createindex")]
         public async Task<bool>CreateIndex(string name, bool multiValue, string builder, string[] dependancies = null)
         {
-            if (dependancies?[0] == null)
+            if (dependancies?.Length == 0)
                 dependancies = null;
 
             return await this.IndexManager.IndexRepository.CreateIndex(name, multiValue, builder, dependancies);

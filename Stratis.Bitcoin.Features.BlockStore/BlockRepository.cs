@@ -71,6 +71,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Indicates whether or not the repository has had its transactions indexed.</summary>
         public bool TxIndex { get; private set; }
+        
+        /// <summary>Represents the last block stored to disk.</summary>
+        public ChainedBlock HighestPersistedBlock { get; internal set;}
 
         public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
             : this(network, dataFolder.BlockPath, loggerFactory)
