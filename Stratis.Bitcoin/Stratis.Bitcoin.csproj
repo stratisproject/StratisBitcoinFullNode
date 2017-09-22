@@ -45,10 +45,6 @@
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\RPC\Controllers\" />
-  </ItemGroup>
-
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>

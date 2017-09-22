@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
