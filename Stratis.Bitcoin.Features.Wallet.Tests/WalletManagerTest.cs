@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Tests.Utilities;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
