@@ -215,12 +215,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                if (this.stakeChain.Get(chainTip.HashBlock) == null)
-                {
-                    this.logger.LogTrace("(-)[STAKE_CHAIN_SYNC]");
-                    return;
-                }
-
                 while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
                 {
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
@@ -533,7 +527,7 @@ namespace Stratis.Bitcoin.Features.Miner
             long expectedTime = StakeValidator.GetTargetSpacing(chainTip.Height) * networkWeight / ourWeight;
             decimal ourPercent = networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)networkWeight : 0;
             
-            this.logger.LogInformation("Node staking with {0}, which is {1:0.00} % of the network weight {2}, estimated time of finding new block is {3}.", new Money(ourWeight), ourPercent, new Money(networkWeight), TimeSpan.FromSeconds(expectedTime));
+            this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(networkWeight), TimeSpan.FromSeconds(expectedTime));
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeTx.Time);
@@ -920,7 +914,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (block == null)
             {
-                ChainedBlock tip = this.chain.Tip;
+                // Use consensus loop's tip rather than concurrent chain's tip
+                // because consensus loop's tip is guaranteed to have block stake in the database.
+                ChainedBlock tip = this.consensusLoop.Tip;
                 if (tip == null)
                 {
                     this.logger.LogTrace("(-)[DEFAULT]:{0}", res);
@@ -973,19 +969,15 @@ namespace Stratis.Bitcoin.Features.Miner
             int stakesHandled = 0;
             long stakesTime = 0;
 
-            ChainedBlock block = this.chain.Tip;
+            // Use consensus loop's tip rather than concurrent chain's tip
+            // because consensus loop's tip is guaranteed to have block stake in the database.
+            ChainedBlock block = this.consensusLoop.Tip;
             ChainedBlock prevStakeBlock = null;
 
             double res = 0.0;
             while ((block != null) && (stakesHandled < interval))
             {
                 BlockStake blockStake = this.stakeChain.Get(block.HashBlock);
-                if (blockStake == null)
-                {
-                    this.logger.LogTrace("(-)[BLOCK_STAKE_MISSING]:{0}", res);
-                    return res;
-                }
-
                 if (blockStake.IsProofOfStake())
                 {
                     if (prevStakeBlock != null)
