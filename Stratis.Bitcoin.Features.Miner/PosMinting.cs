@@ -183,6 +183,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 catch (Exception e)
                 {
+                    this.logger.LogDebug("Exception occurred in the mining loop: {0}", e.ToString());
                     this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                     throw e;
                 }
@@ -520,7 +521,12 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
-            this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value)));
+            long ourWeight = setCoins.Sum(s => s.TxOut.Value);
+            long networkWeight = (long)this.GetNetworkWeight();
+            long expectedTime = StakeValidator.GetTargetSpacing(chainTip.Height) * networkWeight / ourWeight;
+            decimal ourPercent = networkWeight != 0 ? (decimal)ourWeight / (decimal)networkWeight : 0;
+
+            this.logger.LogInformation("Node staking with {0} STRAT, which is {1:0.00} % of the network weight {2} STRAT, estimated time of finding new block is {3}.", new Money(ourWeight), ourPercent, new Money(networkWeight), TimeSpan.FromSeconds(expectedTime));
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeTx.Time);
@@ -888,6 +894,112 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Check if in memory pool then return 0.
             return this.chain.Tip.Height - chainedBlock.Height + 1;
+        }
+
+        /// <summary>
+        /// Calculates staking difficulty for a specific block.
+        /// </summary>
+        /// <param name="block">Block at which to calculate the difficulty.</param>
+        /// <returns>Staking difficulty.</returns>
+        /// <remarks>
+        /// The actual idea behind the calculation is a mystery. It was simply ported from 
+        /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16 .
+        /// </remarks>
+        public double GetDifficulty(ChainedBlock block)
+        {
+            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(block), block.HashBlock, block.Height);
+
+            double res = 1.0;
+
+            if (block == null)
+            {
+                ChainedBlock tip = this.chain.Tip;
+                if (tip == null)
+                {
+                    this.logger.LogTrace("(-)[DEFAULT]:{0}", res);
+                    return res;
+                }
+
+                block = StakeValidator.GetLastBlockIndex(this.stakeChain, tip, false);
+            }
+
+            uint shift = (block.Header.Bits >> 24) & 0xFF;
+            double diff = (double)0x0000FFFF / (double)(block.Header.Bits & 0x00FFFFFF);
+
+            while (shift < 29)
+            {
+                diff *= 256.0;
+                shift++;
+            }
+
+            while (shift > 29)
+            {
+                diff /= 256.0;
+                shift--;
+            }
+
+            res = diff;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
+        }
+
+        /// <summary>
+        /// Estimates the total staking weight of the network.
+        /// </summary>
+        /// <returns>Estimated number of coins that are used by all stakers on the network.</returns>
+        /// <remarks>
+        /// The idea behind estimating the network staking weight is very similar to estimating 
+        /// the total hash power of PoW network. The difficulty retarget algorithm tries to make 
+        /// sure of certain distribution of the blocks over a period of time. Base on real distribution
+        /// and using the actual difficulty targets, one is able to compute how much stake was 
+        /// presented on the network to generate each block.
+        /// <para>
+        /// The method was ported from 
+        /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L74 .
+        /// </para>
+        /// </remarks>
+        public double GetNetworkWeight()
+        {
+            this.logger.LogTrace("()");
+            int interval = 72;
+            double stakeKernelsAvg = 0.0;
+            int stakesHandled = 0;
+            long stakesTime = 0;
+
+            ChainedBlock block = this.chain.Tip;
+            ChainedBlock prevStakeBlock = null;
+
+            double res = 0.0;
+            while ((block != null) && (stakesHandled < interval))
+            {
+                BlockStake blockStake = this.stakeChain.Get(block.HashBlock);
+                if (blockStake == null)
+                {
+                    this.logger.LogTrace("(-)[BLOCK_STAKE_MISSING]:{0}", res);
+                    return res;
+                }
+
+                if (blockStake.IsProofOfStake())
+                {
+                    if (prevStakeBlock != null)
+                    {
+                        stakeKernelsAvg += this.GetDifficulty(prevStakeBlock) * (double)0x100000000;
+                        stakesTime += (long)prevStakeBlock.Header.Time - (long)block.Header.Time;
+                        stakesHandled++;
+                    }
+
+                    prevStakeBlock = block;
+                }
+
+                block = block.Previous;
+            }
+
+            if (stakesTime != 0) res = stakeKernelsAvg / stakesTime;
+
+            res *= PosConsensusValidator.StakeTimestampMask + 1;
+
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
     }
 }
