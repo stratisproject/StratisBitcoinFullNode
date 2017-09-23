@@ -203,14 +203,21 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            BlockTemplate pblockTemplate = null;
+            BlockTemplate blockTemplate = null;
             bool tryToSync = true;
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                if (this.chain.Tip != this.consensusLoop.Tip)
+                ChainedBlock chainTip = this.chain.Tip;
+                if (chainTip != this.consensusLoop.Tip)
                 {
                     this.logger.LogTrace("(-)[SYNC_OR_REORG]");
+                    return;
+                }
+
+                if (this.stakeChain.Get(chainTip.HashBlock) == null)
+                {
+                    this.logger.LogTrace("(-)[STAKE_CHAIN_SYNC]");
                     return;
                 }
 
@@ -235,24 +242,24 @@ namespace Stratis.Bitcoin.Features.Miner
                     // Yet the 60 secs delay does not prevent us to mine because tryToSync will be false next time we are here
                     // unless we are completely disconnected. So this is weird logic.
                     bool fewPeers = this.connection.ConnectedNodes.Count() < 3;
-                    bool lastBlockTooOld = this.chain.Tip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
+                    bool lastBlockTooOld = chainTip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
                     if ((fewPeers && !this.network.IsTest()) || lastBlockTooOld)
                     {
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
-                        if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", this.chain.Tip.Header.Time);
+                        if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
 
                         Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                         continue;
                     }
                 }
 
-                ChainedBlock pindexPrev = this.consensusLoop.Tip;
+                ChainedBlock prevBlock = this.consensusLoop.Tip;
 
-                if (this.lastCoinStakeSearchPrevBlockHash != pindexPrev.HashBlock)
+                if (this.lastCoinStakeSearchPrevBlockHash != prevBlock.HashBlock)
                 {
-                    this.lastCoinStakeSearchPrevBlockHash = pindexPrev.HashBlock;
-                    this.lastCoinStakeSearchTime = pindexPrev.Header.Time;
-                    this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", pindexPrev.HashBlock, pindexPrev.Height, pindexPrev.Header.Time);
+                    this.lastCoinStakeSearchPrevBlockHash = prevBlock.HashBlock;
+                    this.lastCoinStakeSearchTime = prevBlock.Header.Time;
+                    this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", prevBlock.HashBlock, prevBlock.Height, prevBlock.Header.Time);
                 }
 
                 uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
@@ -263,10 +270,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                if (pblockTemplate == null)
-                    pblockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                if (blockTemplate == null)
+                    blockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
-                Block pblock = pblockTemplate.Block;
+                Block block = blockTemplate.Block;
 
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
@@ -295,13 +302,13 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // Trying to sign a block.
-                if (this.StakeAndSignBlock(stakeTxes, pblock, pindexPrev, pblockTemplate.TotalFee, coinstakeTimestamp))
+                if (this.StakeAndSignBlock(stakeTxes, block, prevBlock, blockTemplate.TotalFee, coinstakeTimestamp))
                 {
                     this.logger.LogTrace("POS block signed successfully.");
-                    var blockResult = new BlockResult { Block = pblock };
-                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), pindexPrev);
+                    var blockResult = new BlockResult { Block = block };
+                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), prevBlock, chainTip);
 
-                    pblockTemplate = null;
+                    blockTemplate = null;
                 }
                 else
                 {
@@ -311,9 +318,9 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        private void CheckStake(ContextInformation context, ChainedBlock pindexPrev)
+        private void CheckStake(ContextInformation context, ChainedBlock prevBlock, ChainedBlock chainTip)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(pindexPrev), pindexPrev?.HashBlock);
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}')", nameof(prevBlock), prevBlock.HashBlock, prevBlock.Height, nameof(chainTip), chainTip.HashBlock, chainTip.Height);
 
             Block block = context.BlockResult.Block;
 
@@ -324,7 +331,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Verify hash target and signature of coinstake tx.
-            BlockStake prevBlockStake = this.stakeChain.Get(pindexPrev.HashBlock);
+            BlockStake prevBlockStake = this.stakeChain.Get(prevBlock.HashBlock);
             if (prevBlockStake == null)
             {
                 this.logger.LogTrace("(-)[NO_PREV_STAKE]");
@@ -332,10 +339,10 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             context.SetStake();
-            this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, pindexPrev, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
+            this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, prevBlock, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
 
             // Found a solution.
-            if (block.Header.HashPrevBlock != this.chain.Tip.HashBlock)
+            if (block.Header.HashPrevBlock != chainTip.HashBlock)
             {
                 this.logger.LogTrace("(-)[SOLUTION_FOUND]");
                 return;
@@ -356,10 +363,10 @@ namespace Stratis.Bitcoin.Features.Miner
                 return;
             }
 
-            if (context.BlockResult.ChainedBlock.ChainWork <= this.chain.Tip.ChainWork)
+            if (context.BlockResult.ChainedBlock.ChainWork <= chainTip.ChainWork)
             {
-                this.logger.LogTrace("Chain tip's work is '{0}', newly minted block's work is only '{1}'.", context.BlockResult.ChainedBlock.ChainWork, this.chain.Tip.ChainWork);
-                this.logger.LogTrace("(-)[CHAIN_WORK]");
+                this.logger.LogTrace("Chain tip's work is '{0}', newly minted block's work is only '{1}'.", context.BlockResult.ChainedBlock.ChainWork, chainTip.ChainWork);
+                this.logger.LogTrace("(-)[LOW_CHAIN_WORK]");
                 return;
             }
 
