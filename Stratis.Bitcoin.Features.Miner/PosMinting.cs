@@ -335,12 +335,15 @@ namespace Stratis.Bitcoin.Features.Miner
             context.SetStake();
             this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, prevBlock, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
 
+            // The following is wrong, this should be REORG not SOLUTION FOUND
+            // but this would just narrow the race condition in case of reorg, not mitigate it.
+            // --------
             // Found a solution.
-            if (block.Header.HashPrevBlock != chainTip.HashBlock)
-            {
-                this.logger.LogTrace("(-)[SOLUTION_FOUND]");
-                return;
-            }
+            // if (block.Header.HashPrevBlock != chainTip.HashBlock)
+            // {
+            //     this.logger.LogTrace("(-)[SOLUTION_FOUND]");
+            //     return;
+            // }
 
             // Validate the block.
             this.consensusLoop.AcceptBlock(context);
