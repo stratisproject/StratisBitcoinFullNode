@@ -131,8 +131,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             base.CheckBlock(context);
 
             Block block = context.BlockResult.Block;
-            ChainedBlock chainedBlock = context.BlockResult.ChainedBlock;
-            int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
 
             // Check timestamp.
             if (block.Header.Time > FutureDriftV2(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
@@ -180,16 +178,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.logger.LogTrace("Block contains transaction with timestamp {0}, which is greater than block's timestamp {1}.", transaction.Time, block.Header.Time);
                     this.logger.LogTrace("(-)[TX_TIME_MISMATCH]");
                     ConsensusErrors.BlockTimeBeforeTrx.Throw();
-                }
-            }
-
-            if (chainedBlock.Height > lastCheckpointHeight)
-            {
-                // Prevent long reorganisations.
-                if (!this.CheckLongReorganization(context.consensusTip, chainedBlock.Height))
-                {
-                    this.logger.LogTrace("(-)[REORG_TOO_LONG]");
-                    ConsensusErrors.ReorgTooLong.Throw();
                 }
             }
 
@@ -322,6 +310,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.logger.LogTrace("(-)[TIME_TOO_EARLY]");
                 ConsensusErrors.BlockTimestampTooEarly.Throw();
+            }
+
+            int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
+            if (chainedBlock.Height > lastCheckpointHeight)
+            {
+                // Prevent long reorganisations.
+                if (!this.CheckLongReorganization(context.consensusTip, chainedBlock.Height))
+                {
+                    this.logger.LogTrace("(-)[REORG_TOO_LONG]");
+                    ConsensusErrors.ReorgTooLong.Throw();
+                }
             }
 
             this.logger.LogTrace("(-)");
