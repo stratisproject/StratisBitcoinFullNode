@@ -30,8 +30,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            // TODO: For now default is hardcoded, should probably be configurable 
-            this.MinTxFee = new FeeRate(10000);// settings.MinTxFee;
+            this.MinTxFee = settings.MinTxFee;
             this.TxFeeRate = this.MinTxFee;
         }
 
