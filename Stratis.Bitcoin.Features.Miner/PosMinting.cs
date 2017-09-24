@@ -58,6 +58,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /** The maximum size for mined blocks */
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
         private readonly Network network;

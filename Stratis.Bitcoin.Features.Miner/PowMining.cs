@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         const int InnerLoopCount = 0x10000;
 
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
         private readonly Network network;
