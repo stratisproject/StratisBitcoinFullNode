@@ -60,7 +60,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly CoinView coinView;
         private readonly PosConsensusOptions consensusOptions;
 
-        public PosConsensusValidator(StakeValidator stakeValidator, ICheckpoints checkpoints, Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
+        private readonly ConsensusLoop consensusLoop;
+
+        public PosConsensusValidator(StakeValidator stakeValidator, ICheckpoints checkpoints, Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ConsensusLoop consensusLoop, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : base(network, checkpoints, loggerFactory)
         {
             Guard.NotNull(network.Consensus.Option<PosConsensusOptions>(), nameof(network.Consensus.Options));
@@ -71,6 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chain = chain;
             this.coinView = coinView;
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
+            this.consensusLoop = consensusLoop;
             this.dateTimeProvider = dateTimeProvider;
         }
 
@@ -131,6 +135,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             base.CheckBlock(context);
 
             Block block = context.BlockResult.Block;
+            ChainedBlock chainedBlock = context.BlockResult.ChainedBlock;
+            int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
 
             // Check timestamp.
             if (block.Header.Time > FutureDriftV2(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
@@ -179,6 +185,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.logger.LogTrace("(-)[TX_TIME_MISMATCH]");
                     ConsensusErrors.BlockTimeBeforeTrx.Throw();
                 }
+            }
+
+            // Prevent long reorganisations.
+            if (!this.CheckLongReorganization(chainedBlock.Height))
+            {
+                this.logger.LogTrace("(-)[REORG_TOO_LONG]");
+                ConsensusErrors.ReorgTooLong.Throw();
             }
 
             this.logger.LogTrace("(-)");
@@ -462,10 +475,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (BlockStake.IsProofOfWork(block))
                 context.Stake.HashProofOfStake = pindex.Header.GetPoWHash();
 
-            // TODO: Is this the same as chain work?
-            // Compute chain trust score.
-            //pindexNew.nChainTrust = (pindexNew->pprev ? pindexNew->pprev->nChainTrust : 0) + pindexNew->GetBlockTrust();
-
             // Compute stake entropy bit for stake modifier.
             if (!blockStake.SetStakeEntropyBit(blockStake.GetStakeEntropyBit()))
             {
@@ -515,6 +524,40 @@ namespace Stratis.Bitcoin.Features.Consensus
             return (this.consensusOptions.PremineHeight > 0) &&
                    (this.consensusOptions.PremineReward > 0) &&
                    (height == this.consensusOptions.PremineHeight);
+        }
+
+        /// <summary>
+        /// Checks whether a reorganization can happen at specific height.
+        /// </summary>
+        /// <param name="height">Height to check.</param>
+        /// <returns><c>true</c> if reorganization at specific height can happen, <c>false</c> otherwise.</returns>
+        private bool CheckLongReorganization(int height)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(height), height);
+
+            ChainedBlock unreorgableBlock = GetUnreorgableBlock();
+            bool res = height > unreorgableBlock.Height;
+
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
+        }
+
+        /// <summary>
+        /// Finds a block in the current consensus chain beyond which no reorganization would be accepted.
+        /// </summary>
+        /// <returns>Last block from the consensus chain that can not be reorganized.</returns>
+        private ChainedBlock GetUnreorgableBlock()
+        {
+            this.logger.LogTrace("()");
+
+            ChainedBlock tip = this.consensusLoop.Tip;
+            ChainedBlock block = tip;
+            ChainedBlock prevBlock = block.Previous;
+            while ((block.Previous != null) && (block.Height + this.consensusOptions.MaxReorgLength > tip.Height))
+                block = block.Previous;
+
+            this.logger.LogTrace("(-):'{0}/{1}'", block.HashBlock, block.Height);
+            return block;
         }
     }
 }
