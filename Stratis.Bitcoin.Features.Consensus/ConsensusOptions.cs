@@ -8,25 +8,34 @@ namespace Stratis.Bitcoin.Features.Consensus
 
     public class PosConsensusOptions : PowConsensusOptions
     {
+        public new Money ProofOfWorkReward { get; set; }
+
+        public Money ProofOfStakeReward { get; set; }
+
+        public Money PremineReward { get; set; }
+
+        public long PremineHeight { get; set; }
+
+        public long StakeMinConfirmations { get; set; }
+
+        public long StakeMinAge { get; set; }
+
+        /// <summary>Time to elapse before new modifier is computed.</summary>
+        public long StakeModifierInterval { get; set; } 
+
         public PosConsensusOptions()
         {
             this.MAX_MONEY = long.MaxValue;
             this.COINBASE_MATURITY = 50;
+
+            this.ProofOfWorkReward = Money.Coins(4);
+            this.ProofOfStakeReward = Money.COIN;
+            this.PremineReward = Money.Coins(98000000);
+            this.PremineHeight = 2;
+            this.StakeMinConfirmations = 50;
+            this.StakeMinAge = 60;
+            this.StakeModifierInterval = 10 * 60;
         }
-        
-        public new Money ProofOfWorkReward { get; set; } = Money.Coins(4);
-
-        public Money ProofOfStakeReward { get; set; } = Money.COIN;
-
-        public Money PremineReward { get; set; } = Money.Coins(98000000);
-
-        public long PremineHeight { get; set; } = 2;
-
-        public long StakeMinConfirmations { get; set; } = 50;
-
-        public long StakeMinAge { get; set; } = 60; // 8 hours
-
-        public long StakeModifierInterval { get; set; } = 10 * 60; // time to elapse before new modifier is computed
     }
 
     /// <summary>
