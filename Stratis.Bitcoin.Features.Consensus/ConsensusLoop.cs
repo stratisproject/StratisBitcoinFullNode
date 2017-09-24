@@ -12,18 +12,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class BlockResult
     {
-        public ChainedBlock ChainedBlock
-        {
-            get; set;
-        }
-        public Block Block
-        {
-            get; set;
-        }
-        public ConsensusError Error
-        {
-            get; set;
-        }
+        public ChainedBlock ChainedBlock { get; set; }
+        public Block Block { get; set; }
+        public ConsensusError Error { get; set; }
     }
     
     public class ConsensusLoop
