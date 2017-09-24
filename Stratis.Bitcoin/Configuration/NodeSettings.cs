@@ -83,6 +83,12 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
 
+        /// <summary>Minimum transaction fee for network.</summary>
+        public FeeRate MinTxFee { get; set; }
+
+        /// <summary>Fall back transaction fee for network.</summary>
+        public FeeRate FallbackTxFee { get; set; }
+
         public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary>
@@ -197,6 +203,15 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
             nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:5000"));
 
+            if (args.Contains("-mintxfee", StringComparer.CurrentCultureIgnoreCase))
+                nodeSettings.MinTxFee = new FeeRate(long.Parse(args.GetValueOf("-mintxfee")));
+            else
+                nodeSettings.MinTxFee = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.DefaultMinTxFee()));
+
+            if (args.Contains("-fallbackfee", StringComparer.CurrentCultureIgnoreCase))
+                nodeSettings.FallbackTxFee = new FeeRate(long.Parse(args.GetValueOf("-fallbackfee")));
+            else
+                nodeSettings.FallbackTxFee = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.DefaultFallbackTxFee()));
 
             try
             {

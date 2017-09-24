@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
-    public class LightWalletFeePolicy : IWalletFeePolicy
+    public class LightWalletBitcoinExternalFeePolicy : IWalletFeePolicy
     {
         private readonly Money maxTxFee;
         private static readonly HttpClient HttpClient = new HttpClient();
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private FeeRate mediumTxFeePerKb;
         private FeeRate lowTxFeePerKb;
 
-        public LightWalletFeePolicy(IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory)
+        public LightWalletBitcoinExternalFeePolicy(IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, ILoggerFactory loggerFactory)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public Task Initialize()
         {
-            IAsyncLoop task = this.asyncLoopFactory.Run(nameof(LightWalletFeePolicy), async token =>
+            IAsyncLoop task = this.asyncLoopFactory.Run(nameof(LightWalletBitcoinExternalFeePolicy), async token =>
             {
                 // This will run evry 3 to 10 minutes randomly
                 // So the API provider is not able to identify our transaction with a timing attack
