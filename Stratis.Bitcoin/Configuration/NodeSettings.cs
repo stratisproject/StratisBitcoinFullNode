@@ -213,6 +213,9 @@ namespace Stratis.Bitcoin.Configuration
             else
                 nodeSettings.FallbackTxFee = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.DefaultFallbackTxFee()));
 
+            nodeSettings.Logger.LogTrace("MinTxFee set to {0}.", nodeSettings.MinTxFee);
+            nodeSettings.Logger.LogTrace("FallbackTxFee set to {0}.", nodeSettings.FallbackTxFee);
+
             try
             {
                 nodeSettings.ConnectionManager.Connect.AddRange(config.GetAll("connect")
