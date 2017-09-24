@@ -203,18 +203,18 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
             nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:5000"));
 
+            nodeSettings.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'", nodeSettings.Network.IsTest(), nodeSettings.Network.IsBitcoin());
             if (args.Contains("-mintxfee", StringComparer.CurrentCultureIgnoreCase))
                 nodeSettings.MinTxFee = new FeeRate(long.Parse(args.GetValueOf("-mintxfee")));
             else
                 nodeSettings.MinTxFee = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.DefaultMinTxFee()));
+            nodeSettings.Logger.LogDebug("MinTxFee set to {0}.", nodeSettings.MinTxFee);
 
             if (args.Contains("-fallbackfee", StringComparer.CurrentCultureIgnoreCase))
                 nodeSettings.FallbackTxFee = new FeeRate(long.Parse(args.GetValueOf("-fallbackfee")));
             else
                 nodeSettings.FallbackTxFee = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.DefaultFallbackTxFee()));
-
-            nodeSettings.Logger.LogTrace("MinTxFee set to {0}.", nodeSettings.MinTxFee);
-            nodeSettings.Logger.LogTrace("FallbackTxFee set to {0}.", nodeSettings.FallbackTxFee);
+            nodeSettings.Logger.LogDebug("FallbackTxFee set to {0}.", nodeSettings.FallbackTxFee);
 
             try
             {
