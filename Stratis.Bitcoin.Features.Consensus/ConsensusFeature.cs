@@ -37,6 +37,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IConnectionManager connectionManager;
         private readonly INodeLifetime nodeLifetime;
         private readonly Signals.Signals signals;
+
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
         private readonly NodeSettings nodeSettings;
         private readonly NodeDeployments nodeDeployments;
