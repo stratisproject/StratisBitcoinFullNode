@@ -183,7 +183,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 catch (Exception e)
                 {
-                    this.logger.LogDebug("Exception occurred in the mining loop: {0}", e.ToString());
                     this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                     throw e;
                 }
