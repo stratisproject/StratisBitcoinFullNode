@@ -5,7 +5,6 @@ namespace Stratis.Bitcoin.Features.Consensus
     // The default setting of values on the consensus options
     // should be removed in to the initialization of each 
     // network this are network specific values
-
     public class PosConsensusOptions : PowConsensusOptions
     {
         public new Money ProofOfWorkReward { get; set; }
@@ -21,8 +20,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         public long StakeMinAge { get; set; }
 
         /// <summary>Time to elapse before new modifier is computed.</summary>
-        public long StakeModifierInterval { get; set; } 
+        public long StakeModifierInterval { get; set; }
 
+        /// <summary>Maximal length of reorganization that the node is willing to accept.</summary>
+        public uint MaxReorgLength { get; set; }
+
+        /// <summary>
+        /// Initializes the default values.
+        /// </summary>
         public PosConsensusOptions()
         {
             this.MAX_MONEY = long.MaxValue;
@@ -35,6 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.StakeMinConfirmations = 50;
             this.StakeMinAge = 60;
             this.StakeModifierInterval = 10 * 60;
+            this.MaxReorgLength = 500;
         }
     }
 
