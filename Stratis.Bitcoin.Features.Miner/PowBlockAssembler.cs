@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            var context = new ContextInformation(new BlockResult { Block = this.pblock }, this.network.Consensus)
+            var context = new ContextInformation(new BlockResult { Block = this.pblock }, this.consensusLoop.Tip, this.network.Consensus)
             {
                 CheckPow = false,
                 CheckMerkleRoot = false,
