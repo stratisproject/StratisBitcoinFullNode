@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.Consensus.CoinViews
+namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Information about a previous state of the coinview that contains all information 

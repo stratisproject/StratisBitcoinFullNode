@@ -4,6 +4,7 @@ using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NLog.Extensions.Logging;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -69,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // First try finding the previous transaction in database.
             FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
-            if (coins == null || coins.UnspentOutputs.Length != 1)
+            if ((coins == null) || (coins.UnspentOutputs.Length != 1))
                 ConsensusErrors.ReadTxPrevFailed.Throw();
 
             ChainedBlock prevBlock = this.chain.GetBlock(coins.BlockHash);
@@ -100,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, txIn.PrevOut, tx.Time);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         private bool IsConfirmedInNPrevBlocks(UnspentOutputs utxoSet, ChainedBlock pindexFrom, long maxDepth)
@@ -325,7 +326,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             blockStake.SetStakeModifier(stakeContext.StakeModifier, stakeContext.GeneratedStakeModifier);
             blockStake.StakeModifierV2 = this.ComputeStakeModifierV2(pindexPrev, blockStakePrev, blockStake.IsProofOfWork() ? pindex.HashBlock : blockStake.PrevoutStake.Hash);
 
-            this.logger.LogTrace("(-):{0}={1},{2}='{3}'", nameof(blockStake.StakeModifier), blockStake.StakeModifier, nameof(blockStake.StakeModifierV2), blockStake.StakeModifierV2);
+            this.logger.LogTrace("(-):{0}=0x{1:x},{2}='{3}'", nameof(blockStake.StakeModifier), blockStake.StakeModifier, nameof(blockStake.StakeModifierV2), blockStake.StakeModifierV2);
         }
 
         // Stake Modifier (hash modifier of proof-of-stake):
@@ -353,11 +354,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // First find current stake modifier and its generation block time
             // if it's not old enough, return the same stake modifier.
-            long nModifierTime = 0;
             if (!this.GetLastStakeModifier(pindexPrev, stakeModifier))
                 ConsensusErrors.ModifierNotFound.Throw();
 
-            if ((nModifierTime / this.consensusOptions.StakeModifierInterval) >= (pindexPrev.Header.Time / this.consensusOptions.StakeModifierInterval))
+            if ((stakeModifier.ModifierTime / this.consensusOptions.StakeModifierInterval) >= (pindexPrev.Header.Time / this.consensusOptions.StakeModifierInterval))
                 return;
 
             // Sort candidate blocks by timestamp.
@@ -694,7 +694,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 blockStake = stakeChain.Get(index.HashBlock);
             }
 
-            clogger.LogTrace("(-):{0}", index);
+            clogger.LogTrace("(-)':{0}'", index);
             return index;
         }
 

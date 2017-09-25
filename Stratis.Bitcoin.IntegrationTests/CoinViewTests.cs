@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Globalization;
 using System.IO;
@@ -336,7 +337,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Flags = consensusFlags,
             };
             Network.Main.Consensus.Options = new PowConsensusOptions();
-            var validator = new PowConsensusValidator(Network.Main, new LoggerFactory());
+            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main), new LoggerFactory());
             //validator.CheckBlockHeader(context);
             validator.ContextualCheckBlock(context);
             validator.CheckBlock(context);

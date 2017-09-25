@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -171,7 +172,17 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // load the file from the local system
             Wallet wallet = this.fileStorage.LoadByFileName($"{name}.{WalletFileExtension}");
-            
+
+            // Check the password
+            try
+            {
+                Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
+            }
+            catch (Exception ex)
+            {
+                throw new SecurityException(ex.Message);
+            }
+
             this.Load(wallet);
             return wallet;
         }

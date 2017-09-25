@@ -239,12 +239,12 @@ namespace Stratis.Bitcoin.Configuration
             var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
             try
             {
-                nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("listen")
+                nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("bind")
                         .Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), false)));
             }
             catch (FormatException)
             {
-                throw new ConfigurationException("Invalid listen parameter");
+                throw new ConfigurationException("Invalid bind parameter");
             }
 
             try

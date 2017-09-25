@@ -514,7 +514,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Select coins with suitable depth.
             List<StakeTx> setCoins = this.FindCoinsForStaking(stakeTxes, coinstakeTx.Time, balance - this.reserveBalance);
-
             if (!setCoins.Any())
             {
                 this.logger.LogTrace("(-)[NO_SELECTION]:false");
@@ -565,7 +564,11 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 for (uint n = 0; (n < searchInterval) && !fKernelFound; n++)
                 {
-                    this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    {
+                        this.logger.LogTrace("(-)[SHUTDOWN]:false");
+                        return false;
+                    }
 
                     uint txTime = coinstakeTx.Time - n;
 
@@ -637,8 +640,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("Trying to reduce our staking UTXO set by adding additional inputs to coinstake transaction...");
             foreach (StakeTx stakeTx in setCoins)
             {
-                this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
-
                 // Attempt to add more inputs.
                 // Only add coins of the same key/address as kernel.
                 if ((coinstakeTx.Outputs.Count == 2)
