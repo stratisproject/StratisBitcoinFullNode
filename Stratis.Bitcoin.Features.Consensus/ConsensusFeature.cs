@@ -41,9 +41,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly NodeSettings nodeSettings;
         private readonly NodeDeployments nodeDeployments;
         private readonly StakeChainStore stakeChain;
+        
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+        
+        /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
+
         private readonly ConsensusManager consensusManager;
         private readonly CacheSettings cacheSettings;
 
@@ -90,6 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusManager = consensusManager;
         }
 
+        /// <inheritdoc />
         public override void Start()
         {
             this.dBreezeCoinView.Initialize().GetAwaiter().GetResult();
@@ -115,6 +123,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpans.RunOnce);
         }
 
+        /// <inheritdoc />
         public override void Stop()
         {
             var cache = this.coinView as CachedCoinView;
@@ -133,11 +142,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             try
             {
                 var stack = new CoinViewStack(this.coinView);
-                var cache = stack.Find<CachedCoinView>();
+                CachedCoinView cache = stack.Find<CachedCoinView>();
                 var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager, this.loggerFactory);
 
                 ChainedBlock lastTip = this.consensusLoop.Tip;
-                foreach (var block in this.consensusLoop.Execute(cancellationToken))
+                foreach (BlockResult block in this.consensusLoop.Execute(cancellationToken))
                 {
                     if (this.consensusLoop.Tip.FindFork(lastTip) != lastTip)
                     {
@@ -150,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (block.Error != null)
                     {
-                        this.logger.LogError("Block rejected: " + block.Error.Message);
+                        this.logger.LogError("Block rejected: {0}", block.Error.Message);
 
                         //Pull again
                         this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
@@ -166,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         //Set the PoW chain back to ConsensusLoop.Tip
                         this.chain.SetTip(this.consensusLoop.Tip);
                         //Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed
-                        this.logger.LogError("Marking block as invalid");
+                        this.logger.LogError("Marking block as invalid.");
                         this.chainState.MarkBlockInvalid(block.Block.GetHash());
                     }
 
