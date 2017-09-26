@@ -313,9 +313,11 @@ namespace Stratis.Bitcoin.Features.Miner
                     }
                 }
 
-                this.rpcGetStakingInfoModel.CurrentBlockSize = pblock.GetSerializedSize();
-                this.rpcGetStakingInfoModel.CurrentBlockTx = pblock.Transactions.Count();
+                this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
+                this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
                 this.rpcGetStakingInfoModel.PooledTx = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).GetAwaiter().GetResult();
+                this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(prevBlock);
+                this.rpcGetStakingInfoModel.NetStakeWeight = (long)this.GetNetworkWeight();
 
                 // Trying to sign a block.
                 if (this.StakeAndSignBlock(stakeTxes, block, prevBlock, blockTemplate.TotalFee, coinstakeTimestamp))
@@ -469,6 +471,8 @@ namespace Stratis.Bitcoin.Features.Miner
             long searchTime = txCoinStake.Time;
 
             long searchInterval = searchTime - this.lastCoinStakeSearchTime;
+            this.rpcGetStakingInfoModel.SearchInterval = (int)searchInterval;
+
             this.lastCoinStakeSearchTime = searchTime;
             this.logger.LogTrace("Search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
 
@@ -558,6 +562,9 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(networkWeight), TimeSpan.FromSeconds(expectedTime));
 
             this.rpcGetStakingInfoModel.Staking = true;
+            this.rpcGetStakingInfoModel.Weight = ourWeight;
+            this.rpcGetStakingInfoModel.NetStakeWeight = networkWeight;
+            this.rpcGetStakingInfoModel.ExpectedTime = expectedTime;
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeTx.Time);
@@ -1031,6 +1038,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.logger.LogTrace("(-):{0}", res);
             return res;
+        }
+
+        /// <summary>
+        /// Constructs model for RPC "getstakinginfo" call.
+        /// </summary>
+        /// <returns>Staking information RPC response.</returns>
+        public RPC.Models.GetStakingInfoModel GetGetStakingInfoModel()
+        {
+            return (RPC.Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
         }
     }
 }
