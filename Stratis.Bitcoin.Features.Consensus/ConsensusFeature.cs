@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         this.logger.LogError("Block rejected: {0}", block.Error.Message);
 
-                        //Pull again
+                        // Pull again.
                         this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
 
                         if (block.Error == ConsensusErrors.BadWitnessNonceSize)
@@ -171,9 +171,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                             continue;
                         }
 
-                        //Set the PoW chain back to ConsensusLoop.Tip
+                        // Set the PoW chain back to ConsensusLoop.Tip.
                         this.chain.SetTip(this.consensusLoop.Tip);
-                        //Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed
+                        
+                        // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
                         this.logger.LogError("Marking block as invalid.");
                         this.chainState.MarkBlockInvalid(block.Block.GetHash());
                     }
@@ -187,7 +188,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.signals.SignalBlock(block.Block);
                     }
 
-                    // TODO: replace this with a signalling object
+                    // TODO: Replace this with a signalling object.
                     if (stats.CanLog)
                         stats.Log();
                 }
