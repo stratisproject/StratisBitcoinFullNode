@@ -126,6 +126,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void Stop()
         {
+            // First, we need to wait for the consensus loop to finish.
+            // Only then we can flush our coinview safely.
+            // Otherwise there is a race condition and a new block 
+            // may come from the consensus at wrong time.
             this.asyncLoop.Dispose();
 
             var cache = this.coinView as CachedCoinView;
