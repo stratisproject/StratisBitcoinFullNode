@@ -20,20 +20,20 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
         {
             if(!SupportType(bindingContext.ModelType))
             {
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
 
             ValueProviderResult val = bindingContext.ValueProvider.GetValue(
                 bindingContext.ModelName);
             if(val == null)
             {
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
 
             string key = val.FirstValue as string;
             if(key == null)
             {
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
 
             var network = (Network)bindingContext.HttpContext.RequestServices.GetService(typeof(Network));
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
                 throw new FormatException("Invalid destination type");
             }
             bindingContext.Result = ModelBindingResult.Success(data);
-            return TaskCache.CompletedTask;
+            return Task.CompletedTask;
         }
 
         private static bool SupportType(Type type)
