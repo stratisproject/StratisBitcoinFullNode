@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Miner
             base.UpdateHeaders();
 
             var stake = new BlockStake(this.pblock);
-            this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(this.stakeChain, this.chain.Tip, this.network.Consensus, this.options.IsProofOfStake);
+            this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(this.stakeChain, this.consensusLoop.Tip, this.network.Consensus, this.options.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
         }
