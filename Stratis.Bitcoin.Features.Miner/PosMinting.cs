@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -83,6 +84,14 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly int minimumInputValue;
         private readonly int minerSleep;
 
+        protected readonly MempoolAsyncLock mempoolLock;
+        protected readonly TxMempool mempool;
+
+        /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
+        /// <remarks>This object does not need a synchronized access because there is no execution logic
+        /// that depends on the reported information.</remarks>
+        private readonly RPC.Models.GetStakingInfoModel rpcGetStakingInfoModel;
+
         /// <summary>
         /// Timestamp of the last attempt to search for POS solution.
         /// <para>
@@ -116,6 +125,8 @@ namespace Stratis.Bitcoin.Features.Miner
             NodeSettings settings,
             CoinView coinView,
             StakeChain stakeChain,
+            MempoolAsyncLock mempoolLock,
+            TxMempool mempool,
             IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
@@ -133,6 +144,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.settings = settings;
             this.coinView = coinView;
             this.stakeChain = stakeChain;
+            this.mempoolLock = mempoolLock;
+            this.mempool = mempool;
             this.asyncLoopFactory = asyncLoopFactory;
             this.walletManager = wallet as WalletManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -144,6 +157,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.minimumInputValue = 0;
 
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
+
+            this.rpcGetStakingInfoModel = new RPC.Models.GetStakingInfoModel();
         }
 
         public IAsyncLoop Mine(WalletSecret walletSecret)
@@ -154,6 +169,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
                 return this.mining;
             }
+
+            this.rpcGetStakingInfoModel.Enabled = true;
 
             this.mining = this.asyncLoopFactory.Run("PosMining.Mine", token =>
             {
@@ -173,6 +190,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     // possibly mined a block that was not accepted by peers or is even invalid,
                     // but it should not halted the mining operation.
                     this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                    this.rpcGetStakingInfoModel.Errors = me.Message;
                 }
                 catch (ConsensusErrorException cee)
                 {
@@ -180,6 +198,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     // run into problems while constructing block or verifying it
                     // but it should not halted the mining operation.
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
+                    this.rpcGetStakingInfoModel.Errors = cee.Message;
                 }
                 catch (Exception e)
                 {
@@ -292,6 +311,10 @@ namespace Stratis.Bitcoin.Features.Miner
                         this.logger.LogTrace("UTXO '{0}/{1}' with value {2} might be available for staking.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, utxo.Value);
                     }
                 }
+
+                this.rpcGetStakingInfoModel.CurrentBlockSize = pblock.GetSerializedSize();
+                this.rpcGetStakingInfoModel.CurrentBlockTx = pblock.Transactions.Count();
+                this.rpcGetStakingInfoModel.PooledTx = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).GetAwaiter().GetResult();
 
                 // Trying to sign a block.
                 if (this.StakeAndSignBlock(stakeTxes, pblock, pindexPrev, pblockTemplate.TotalFee, coinstakeTimestamp))
@@ -507,6 +530,8 @@ namespace Stratis.Bitcoin.Features.Miner
             long balance = this.GetBalance(stakeTxes).Satoshi;
             if (balance <= this.reserveBalance)
             {
+                this.rpcGetStakingInfoModel.Staking = false;
+
                 this.logger.LogTrace("Total balance of available UTXOs is {0}, which is lower than reserve balance {1}.", balance, this.reserveBalance);
                 this.logger.LogTrace("(-)[BELOW_RESERVE]:false");
                 return false;
@@ -516,11 +541,14 @@ namespace Stratis.Bitcoin.Features.Miner
             List<StakeTx> setCoins = this.FindCoinsForStaking(stakeTxes, coinstakeTx.Time, balance - this.reserveBalance);
             if (!setCoins.Any())
             {
+                this.rpcGetStakingInfoModel.Staking = false;
                 this.logger.LogTrace("(-)[NO_SELECTION]:false");
                 return false;
             }
 
             this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value)));
+
+            this.rpcGetStakingInfoModel.Staking = true;
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeTx.Time);
@@ -890,6 +918,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Check if in memory pool then return 0.
             return this.chain.Tip.Height - chainedBlock.Height + 1;
+        }
+
+        /// <summary>
+        /// Constructs model for RPC "getstakinginfo" call.
+        /// </summary>
+        /// <returns>Staking information RPC response.</returns>
+        public RPC.Models.GetStakingInfoModel GetGetStakingInfoModel()
+        {
+            return (RPC.Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
         }
     }
 }
