@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (!isJsonFormat)
             {
-                this.logger.LogError("Binary serialization is not supported for RPC {0}", nameof(GetBlockHeader));
+                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(GetBlockHeader));
                 throw new NotImplementedException();
             }
 
@@ -168,6 +168,32 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 model = new BlockHeaderModel(this.Chain.GetBlock(uint256.Parse(hash))?.Header);
             }
+            return model;
+        }
+
+        /// <summary>
+        /// Implements "getstakinginfo" RPC call.
+        /// </summary>
+        /// <param name="isJsonFormat">Indicates whether to provide data in JSON or binary format.</param>
+        /// <returns>Staking information RPC response.</returns>
+        [ActionName("getstakinginfo")]
+        public GetStakingInfoModel GetStakingInfo(bool isJsonFormat = true)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(isJsonFormat), isJsonFormat);
+
+            if (!isJsonFormat)
+            {
+                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(GetStakingInfo));
+                throw new NotImplementedException();
+            }
+
+            GetStakingInfoModel model = new GetStakingInfoModel();
+            //if (this.Chain != null)
+            //{
+            //    model = new BlockHeaderModel(this.Chain.GetBlock(uint256.Parse(hash))?.Header);
+            //}
+
+            this.logger.LogTrace("(-):{0}", model);
             return model;
         }
 
