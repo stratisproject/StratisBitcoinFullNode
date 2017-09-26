@@ -1,11 +1,12 @@
 ﻿using Newtonsoft.Json;
+using System;
 
 namespace Stratis.Bitcoin.Features.RPC.Models
 {
     /// <summary>
     /// Data structure returned by RPC command "getstakinginfo".
     /// </summary>
-    public class GetStakingInfoModel
+    public class GetStakingInfoModel : ICloneable
     {
         /// <summary><c>true</c> if the staking is enabled.</summary>
         [JsonProperty(PropertyName = "enabled")]
@@ -50,5 +51,26 @@ namespace Stratis.Bitcoin.Features.RPC.Models
         /// <summary>Expected time of the node to find new block in seconds.</summary>
         [JsonProperty(PropertyName = "expectedtime")]
         public long ExpectedTime { get; set; }
+
+        /// <inheritdoc />
+        public object Clone()
+        {
+            GetStakingInfoModel res = new GetStakingInfoModel()
+            {
+                Enabled = this.Enabled,
+                Staking = this.Staking,
+                Errors = this.Errors,
+                CurrentBlockSize = this.CurrentBlockSize,
+                CurrentBlockTx = this.CurrentBlockTx,
+                PooledTx = this.PooledTx,
+                Difficulty = this.Difficulty,
+                SearchInterval = this.SearchInterval,
+                Weight = this.Weight,
+                NetStakeWeight = this.NetStakeWeight,
+                ExpectedTime = this.ExpectedTime
+            };
+
+            return res;
+        }
     }
 }
