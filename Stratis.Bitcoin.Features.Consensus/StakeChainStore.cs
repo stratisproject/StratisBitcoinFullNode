@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             while (next != this.chain.Genesis)
             {
                 load.Add(new StakeItem { BlockId = next.HashBlock, Height = next.Height });
-                if (load.Count >= this.threshold || next.Previous == null)
+                if ((load.Count >= this.threshold) || (next.Previous == null))
                     break;
                 next = next.Previous;
             }
