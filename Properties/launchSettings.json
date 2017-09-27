@@ -1,16 +1,20 @@
 {
   "profiles": {
-    "Breeze.Daemon Main": {
+    "Bitcoin Main": {
       "commandName": "Project",
       "commandLineArgs": "light"
     },
-    "Breeze.Daemon TestNet": {
+    "Bitcoin Test": {
       "commandName": "Project",
       "commandLineArgs": "light -testnet -debug=all -loglevel=debug"
     },
-    "StratisTest": {
+    "Stratis Main": {
       "commandName": "Project",
-      "commandLineArgs": "stratis -testnet"
+      "commandLineArgs": "stratis light"
+    },
+    "Stratis Test": {
+      "commandName": "Project",
+      "commandLineArgs": "stratis light -testnet -debug=all -loglevel=debug"
     }
   }
 }
