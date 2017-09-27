@@ -38,6 +38,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             Assert.Equal(false, info.Staking);
 
             nodeLifetime.StopApplication();
+            nodeLifetime.ApplicationStopped.WaitHandle.WaitOne();
             fullNode.Dispose();
         }
     }
