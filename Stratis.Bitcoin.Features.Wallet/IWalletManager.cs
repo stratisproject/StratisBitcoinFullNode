@@ -88,13 +88,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         /// <returns>An unused account.</returns>
         HdAccount GetUnusedAccount(Wallet wallet, string password);
-        
+
         /// <summary>
         /// Gets an address that contains no transaction.
         /// </summary>
         /// <param name="accountReference">The name of the wallet and account</param>
         /// <returns>An unused address or a newly created address, in Base58 format.</returns>
         HdAddress GetUnusedAddress(WalletAccountReference accountReference);
+
+        IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count);
 
         /// <summary>
         /// Gets a collection of addresses containing transactions for this coin.
@@ -207,5 +209,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <returns>The wallet filenames, along with the folder in which they're contained.</returns>
         (string folderPath, IEnumerable<string>) GetWalletsFiles();
+
+        string GetExtPubKey(WalletAccountReference accountReference);
     }
 }
