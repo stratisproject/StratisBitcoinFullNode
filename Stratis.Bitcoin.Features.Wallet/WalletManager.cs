@@ -288,9 +288,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             // get the account
             HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-            if (account.ExternalAddresses == null)
-                throw new WalletException($"{nameof(account.ExternalAddresses)} is null");
-
             var unusedAddresses = account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
             var diff = unusedAddresses.Count - count;
             if(diff < 0)
