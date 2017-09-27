@@ -5,7 +5,6 @@
     <AssemblyName>Stratis.Bitcoin.Features.LightWallet.Tests</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.LightWallet.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <PackageTargetFallback>$(PackageTargetFallback);netcore50</PackageTargetFallback>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
