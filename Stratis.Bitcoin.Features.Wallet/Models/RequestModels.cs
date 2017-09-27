@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string AccountName { get; set; }
         
         [Required]
-        public int Count { get; set; }
+        public string Count { get; set; }
     }
 
     public class GetExtPubKeyModel : RequestModel

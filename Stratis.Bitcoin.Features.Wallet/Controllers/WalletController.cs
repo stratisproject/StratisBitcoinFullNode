@@ -599,6 +599,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public IActionResult GetUnusedAddresses([FromQuery]GetUnusedAddressesModel request)
         {
             Guard.NotNull(request, nameof(request));
+            var count = int.Parse(request.Count);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -609,7 +610,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                var result = this.walletManager.GetUnusedAddresses(new WalletAccountReference(request.WalletName, request.AccountName), request.Count);
+                var result = this.walletManager.GetUnusedAddresses(new WalletAccountReference(request.WalletName, request.AccountName), count);
                 return this.Json(result.Select(x => x.Address).ToArray());
             }
             catch (Exception e)
