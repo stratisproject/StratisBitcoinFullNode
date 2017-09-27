@@ -1,22 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Api\Stratis.Bitcoin.Api.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.BlockStore\Stratis.Bitcoin.Features.BlockStore.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.IndexStore\Stratis.Bitcoin.Features.IndexStore.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.LightWallet\Stratis.Bitcoin.Features.LightWallet.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.MemoryPool\Stratis.Bitcoin.Features.MemoryPool.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.RPC\Stratis.Bitcoin.Features.RPC.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.Wallet\Stratis.Bitcoin.Features.Wallet.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.WatchOnlyWallet\Stratis.Bitcoin.Features.WatchOnlyWallet.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 

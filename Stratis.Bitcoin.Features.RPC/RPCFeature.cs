@@ -37,7 +37,6 @@ namespace Stratis.Bitcoin.Features.RPC
                 // TODO: The web host wants to create IServiceProvider, so build (but not start) 
                 // earlier, if you want to use dependency injection elsewhere
                 this.fullNode.RPCHost = new WebHostBuilder()
-                .UseLoggerFactory(this.nodeSettings.LoggerFactory)
                 .UseKestrel()
                 .ForFullNode(this.fullNode)
                 .UseUrls(this.rpcSettings.GetUrls())

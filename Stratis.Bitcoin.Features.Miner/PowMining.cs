@@ -112,6 +112,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (nHeight < nHeightEnd)
             {
+                this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+
                 try
                 {
                     if (this.chain.Tip != this.consensusLoop.Tip)
@@ -127,6 +129,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
                     {
+                        this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+
                         ++pblock.Header.Nonce;
                         --maxTries;
                     }

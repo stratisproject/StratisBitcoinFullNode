@@ -11,20 +11,20 @@ namespace Stratis.Bitcoin.Features.RPC.ModelBinders
         {
             if(bindingContext.ModelType != typeof(Money))
             {
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
 
             ValueProviderResult val = bindingContext.ValueProvider.GetValue(
                 bindingContext.ModelName);
             if(val == null)
             {
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
 
             string key = val.FirstValue as string;
             if(key == null)
             {
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
             return Task.FromResult(Money.Parse(key));
         }
