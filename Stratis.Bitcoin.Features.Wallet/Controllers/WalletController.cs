@@ -593,7 +593,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-        
+
+        /// <summary>
+        /// Gets the specified number of unused addresses.
+        /// </summary>
         [Route("addresses")]
         [HttpGet]
         public IActionResult GetUnusedAddresses([FromQuery]GetUnusedAddressesModel request)
@@ -618,7 +621,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-        
+
+        /// <summary>
+        /// Gets the extpubkey of the specified account.
+        /// </summary>
         [Route("extpubkey")]
         [HttpGet]
         public IActionResult GetExtPubKey([FromQuery]GetExtPubKeyModel request)

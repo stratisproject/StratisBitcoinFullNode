@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public HdAddress GetUnusedAddress(WalletAccountReference accountReference)
         {
-            return GetUnusedAddresses(accountReference, 1).First();
+            return GetUnusedAddresses(accountReference, 1).Single();
         }
 
         /// <inheritdoc />
