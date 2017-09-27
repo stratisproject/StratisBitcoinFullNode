@@ -70,7 +70,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Co
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Cli", "Stratis.Bitcoin.Cli\Stratis.Bitcoin.Cli.csproj", "{BCC67768-8333-4723-842D-1A79C084CE3B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Breeze.Daemon", "Stratis.BreezeD\Breeze.Daemon.csproj", "{0A73F282-3138-4BBB-83CB-5EA720C4CCA8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.BreezeD", "Stratis.BreezeD\Stratis.BreezeD.csproj", "{0A73F282-3138-4BBB-83CB-5EA720C4CCA8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

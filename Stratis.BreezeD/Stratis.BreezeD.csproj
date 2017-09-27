@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <AssemblyName>Breeze.Daemon</AssemblyName>
+    <AssemblyName>Stratis.BreezeD</AssemblyName>
     <OutputType>Exe</OutputType>
-    <PackageId>Breeze.Daemon</PackageId>
+    <PackageId>Stratis.BreezeD</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>

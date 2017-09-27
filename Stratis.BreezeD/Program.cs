@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
-namespace Breeze.Daemon
+namespace Stratis.BreezeD
 {
     public class Program
     {
