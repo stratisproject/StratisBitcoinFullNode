@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using NBitcoin;
 
-namespace Stratis.Bitcoin.Utilities
+namespace NBitcoin
 {
     /// <summary>
     /// Extension methods for NBitcoin's Network class.

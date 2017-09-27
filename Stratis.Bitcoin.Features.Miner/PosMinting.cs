@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
@@ -220,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
                     tryToSync = true;
-                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).AwaiterWait();
                 }
 
                 // TODO: What is the purpose of this conditional block?
@@ -241,7 +242,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
                         if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
 
-                        Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                        Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).AwaiterWait();
                         continue;
                     }
                 }
@@ -271,7 +272,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
 
-                FetchCoinsResponse coinset = this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).GetAwaiter().GetResult();
+                FetchCoinsResponse coinset = this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).AwaiterResult();
 
                 foreach (UnspentOutputReference infoTransaction in spendable)
                 {
@@ -306,7 +307,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 else
                 {
                     this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlock), this.minerSleep);
-                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).AwaiterWait();
                 }
             }
         }
@@ -370,7 +371,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.chain.SetTip(context.BlockResult.ChainedBlock);
             this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-            this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
+            this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).AwaiterWait();
             this.signals.SignalBlock(block);
 
             this.logger.LogInformation("==================================================================");

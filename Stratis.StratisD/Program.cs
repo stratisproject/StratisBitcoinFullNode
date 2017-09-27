@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System.Linq;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin;
 
 namespace Stratis.StratisD
 {

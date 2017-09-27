@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 				.Returns(true);
 
 			var task = this.indexStoreCache.GetBlockAsync(blockId);
-			task.Wait();
+			task.AwaiterWait();;
 
 			Assert.Equal(1513, ((Block)block).Header.Version);
 		}
@@ -86,10 +86,10 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			this.indexStoreCache = new IndexStoreCache(this.indexRepository.Object, memoryCacheStub, this.loggerFactory);
 
 			var result = this.indexStoreCache.GetBlockAsync(blockId);
-			result.Wait();
+			result.AwaiterWait();;
 
 			Assert.Equal(blockId, memoryCacheStub.GetLastCreateCalled());
-			Assert.Equal(1451, result.Result.Header.Version);
+			Assert.Equal(1451, result.AwaiterResult().Header.Version);
 		}
 
 		[Fact]
@@ -107,9 +107,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			this.indexStoreCache = new IndexStoreCache(this.indexRepository.Object, memoryCacheStub, this.loggerFactory);
 
 			var result = this.indexStoreCache.GetBlockByTrxAsync(txId);
-			result.Wait();
+			result.AwaiterWait();;
 
-			Assert.Equal(1451, result.Result.Header.Version);
+			Assert.Equal(1451, result.AwaiterResult().Header.Version);
 		}
 
 		[Fact]
@@ -128,9 +128,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 				.Returns(Task.FromResult(blockId));
 
 			var result = this.indexStoreCache.GetBlockByTrxAsync(txId);
-			result.Wait();
+			result.AwaiterWait();;
 
-			Assert.Equal(1451, result.Result.Header.Version);
+			Assert.Equal(1451, result.AwaiterResult().Header.Version);
 			Assert.Equal(txId, memoryCacheStub.GetLastCreateCalled());
 		}
 
@@ -144,9 +144,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 				.Returns(Task.FromResult((uint256)null));
 
 			var result = this.indexStoreCache.GetBlockByTrxAsync(txId);
-			result.Wait();
+			result.AwaiterWait();;
 
-			Assert.Null(result.Result);
+			Assert.Null(result.AwaiterResult());
 		}
 
 		[Fact]
@@ -167,9 +167,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			this.indexStoreCache = new IndexStoreCache(this.indexRepository.Object, memoryCacheStub, this.loggerFactory);
 
 			var result = this.indexStoreCache.GetTrxAsync(trans.GetHash());
-			result.Wait();
+			result.AwaiterWait();;
 
-			Assert.Equal(trans.GetHash(), result.Result.GetHash());
+			Assert.Equal(trans.GetHash(), result.AwaiterResult().GetHash());
 		}
 
 		[Fact]
@@ -184,9 +184,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			this.indexStoreCache = new IndexStoreCache(this.indexRepository.Object, memoryCacheStub, this.loggerFactory);
 
 			var result = this.indexStoreCache.GetTrxAsync(trans.GetHash());
-			result.Wait();
+			result.AwaiterWait();;
 
-			Assert.Null(result.Result);
+			Assert.Null(result.AwaiterResult());
 		}
 	}
 }

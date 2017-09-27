@@ -7,6 +7,7 @@ using NBitcoin;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 var classSource = string.Join(Environment.NewLine, this.Dependencies.Select(dependancy => $"using {dependancy};").ToArray()) + Environment.NewLine +
                     Environment.NewLine + "Expression<Func<Transaction, Block, Network, IEnumerable<object[]>>> builder = " + this.Builder + ";";
                 var options = ScriptOptions.Default.AddReferences(this.Dependencies);
-                ScriptState state = CSharpScript.RunAsync(classSource, options).GetAwaiter().GetResult();
+                ScriptState state = CSharpScript.RunAsync(classSource, options).AwaiterResult();
                 this.expression = state.GetVariable("builder").Value as Expression<Func<Transaction, Block, Network, IEnumerable<object[]>>>;
                 this.compiled = this.expression.Compile();
             }

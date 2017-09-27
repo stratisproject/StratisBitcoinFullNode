@@ -8,6 +8,7 @@ using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {
@@ -146,9 +147,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 {
                     return Thread.CurrentThread.Name;
                 });
-                thread.Wait();
+                thread.AwaiterWait();
 
-                Assert.Equal("TestThread", thread.Result);
+                Assert.Equal("TestThread", thread.AwaiterResult());
             }
         }
 
@@ -197,9 +198,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
                     return "TaskResult";
 
                 });
-                task.Wait();
+                task.AwaiterWait();
 
-                Assert.Equal("TaskResult", task.Result);
+                Assert.Equal("TaskResult", task.AwaiterResult());
             }
         }
 

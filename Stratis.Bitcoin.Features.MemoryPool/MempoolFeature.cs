@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Interfaces;
 using System;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
 
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override void Start()
         {
-            this.mempoolManager.LoadPool().GetAwaiter().GetResult();
+            this.mempoolManager.LoadPool().AwaiterWait();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
             this.signals.SubscribeForBlocks(this.mempoolSignaled);

@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Utilities
         public void Dispose()
         {
             this.logger.LogInformation("Waiting for {0} to finish.", this.Name);
-            this.RunningTask.Wait();
+            this.RunningTask.AwaiterWait();
         }
     }
 }

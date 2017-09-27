@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Stratis.Bitcoin.Utilities
+namespace Microsoft.Extensions.Logging
 {
     /// <summary>
     /// Extension methods for classes and interfaces related to logging.

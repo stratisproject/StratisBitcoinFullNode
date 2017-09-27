@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             this.tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
             this.Indexes = new Dictionary<string, Index>();
             this.requiredIndexes = requiredIndexes;
- 
+
             this.session.Execute(() =>
             {
                 // Discover and add indexes to dictionary and tables to syncronize
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 foreach (string indexTable in (this.session as IndexSession).GetIndexTables())
                     if (!this.session.Transaction.Select<string, string>("Common", indexTable).Exists)
                         (this.session as IndexSession).DeleteTable(indexTable);
-            }).GetAwaiter().GetResult();
+            }).AwaiterWait();
         }
 
         public override BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public override Task Initialize()
         {
-            base.Initialize().GetAwaiter().GetResult();
+            base.Initialize().AwaiterWait();
 
             this.session.Execute(() =>
             {
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
                 // One commit per execute
                 this.session.Transaction.Commit();
-            }).GetAwaiter().GetResult();
+            }).AwaiterWait();
 
  
             return Task.CompletedTask;

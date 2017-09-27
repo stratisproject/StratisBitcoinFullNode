@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void Start()
         {
-            this.dBreezeCoinView.Initialize().GetAwaiter().GetResult();
+            this.dBreezeCoinView.Initialize().AwaiterWait();
             var cache = this.coinView as CachedCoinView;
             if (cache != null)
             {
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
-            this.stakeChain?.Load().GetAwaiter().GetResult();
+            this.stakeChain?.Load().AwaiterWait();
 
             this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async token =>
             {
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (cache != null)
             {
                 this.logger.LogInformation("Flushing Cache CoinView...");
-                cache.FlushAsync().GetAwaiter().GetResult();
+                cache.FlushAsync().AwaiterWait();
             }
 
             this.dBreezeCoinView.Dispose();
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
                         if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
-                            this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
+                            this.consensusLoop.FlushAsync().AwaiterWait();
 
                         this.signals.SignalBlock(block.Block);
                     }

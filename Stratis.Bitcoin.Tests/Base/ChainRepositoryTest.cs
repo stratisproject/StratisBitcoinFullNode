@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests.Base
 {
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var repo = new ChainRepository(dir))
             {
-                repo.Save(chain).Wait();
+                repo.Save(chain).AwaiterWait();
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -59,13 +60,13 @@ namespace Stratis.Bitcoin.Tests.Base
                     }
 
                     session.Transaction.Commit();
-                }).Wait();
+                }).AwaiterWait();
             }
 
             using (var repo = new ChainRepository(dir))
             {
 				var testChain = new ConcurrentChain(Network.RegTest);
-                repo.Load(testChain).GetAwaiter().GetResult();
+                repo.Load(testChain).AwaiterWait();
                 Assert.Equal(tip, testChain.Tip);
             }
         }        
