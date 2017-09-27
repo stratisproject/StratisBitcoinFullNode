@@ -75,6 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             await this.dBreezeCoinView.GetStakeItem(stakeItem);
 
             this.logger.LogTrace("(-)");
+
             return stakeItem.BlockStake;
         }
 

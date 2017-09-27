@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Persists unsaved POS blocks information to the database.
         /// </summary>
-        /// <param name="stakeItems">List of POS block information to be examined and persists if unsaved.</param>
+        /// <param name="stakeItems">List of POS block information to be examined and persisted, if unsaved.</param>
         private void PutStakeInternal(IEnumerable<StakeItem> stakeItems)
         {
             foreach (StakeItem stakeItem in stakeItems)
@@ -317,17 +317,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Retrieves a POS block from the database.
         /// </summary>
-        /// <param name="stakeItem">Partially initialized object that is populated by <see cref="BlockStake"/>.</param>
+        /// <param name="stakeItem">Partially initialized <see cref="StakeItem"/> that is populated by <see cref="BlockStake"/>.</param>
         public Task GetStakeItem(StakeItem stakeItem)
         {
             return this.session.Execute(() =>
             {
+                this.logger.LogTrace("({0}:{1})", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
+
                 var blockStake = this.session.Transaction.Select<byte[], BlockStake>("Stake", stakeItem.BlockHash.ToBytes(false));
-                if (blockStake.Exists == false)
-                    this.logger.LogTrace("{0}:{1}:[NOT IN DATABASE]", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
+                if (!blockStake.Exists)
+                    this.logger.LogTrace("{0}:{1} [NOT IN DATABASE]", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
 
                 if (stakeItem.BlockStake == null)
-                    this.logger.LogTrace("{0}:[NULL]", nameof(stakeItem.BlockStake));
+                    this.logger.LogTrace("{0} [NULL]", nameof(stakeItem.BlockStake));
 
                 stakeItem.Update(blockStake.Value);
 
@@ -338,7 +340,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Retrieves POS blocks from the database.
         /// </summary>
-        /// <param name="stakeItem">Partially initialized objects that is populated by <see cref="BlockStake"/>.</param>
+        /// <param name="stakeItem">Partially initialized <see cref="StakeItem"/>s that is populated by <see cref="BlockStake"/>.</param>
         public Task<IEnumerable<StakeItem>> GetStakeItems(IEnumerable<StakeItem> stakeItems)
         {
             return this.session.Execute(() =>
@@ -347,14 +349,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 foreach (StakeItem stakeItem in stakeItems)
                 {
-                    this.logger.LogTrace("Loading POS block hash '{0}' from the database.", stakeItem);
+                    this.logger.LogTrace("{0}:{1}", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
 
                     var blockStake = this.session.Transaction.Select<byte[], BlockStake>("Stake", stakeItem.BlockHash.ToBytes(false));
                     if (blockStake.Exists == false)
-                        this.logger.LogTrace("{0}:{1}:[NOT IN DATABASE]", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
+                        this.logger.LogTrace("{0}:{1} [NOT IN DATABASE]", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
 
                     if (stakeItem.BlockStake == null)
-                        this.logger.LogTrace("{0}:[NULL]", nameof(stakeItem.BlockStake));
+                        this.logger.LogTrace("{0} [NULL] / {1}:{2}", nameof(stakeItem.BlockStake), nameof(stakeItem.BlockHash), stakeItem.BlockHash);
 
                     stakeItem.Update(blockStake.Value);
                 }
