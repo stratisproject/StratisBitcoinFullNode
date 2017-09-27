@@ -202,12 +202,13 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            BlockTemplate pblockTemplate = null;
+            BlockTemplate blockTemplate = null;
             bool tryToSync = true;
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                if (this.chain.Tip != this.consensusLoop.Tip)
+                ChainedBlock chainTip = this.chain.Tip;
+                if (chainTip != this.consensusLoop.Tip)
                 {
                     this.logger.LogTrace("(-)[SYNC_OR_REORG]");
                     return;
@@ -234,24 +235,24 @@ namespace Stratis.Bitcoin.Features.Miner
                     // Yet the 60 secs delay does not prevent us to mine because tryToSync will be false next time we are here
                     // unless we are completely disconnected. So this is weird logic.
                     bool fewPeers = this.connection.ConnectedNodes.Count() < 3;
-                    bool lastBlockTooOld = this.chain.Tip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
+                    bool lastBlockTooOld = chainTip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
                     if ((fewPeers && !this.network.IsTest()) || lastBlockTooOld)
                     {
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
-                        if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", this.chain.Tip.Header.Time);
+                        if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
 
                         Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                         continue;
                     }
                 }
 
-                ChainedBlock pindexPrev = this.consensusLoop.Tip;
+                ChainedBlock prevBlock = this.consensusLoop.Tip;
 
-                if (this.lastCoinStakeSearchPrevBlockHash != pindexPrev.HashBlock)
+                if (this.lastCoinStakeSearchPrevBlockHash != prevBlock.HashBlock)
                 {
-                    this.lastCoinStakeSearchPrevBlockHash = pindexPrev.HashBlock;
-                    this.lastCoinStakeSearchTime = pindexPrev.Header.Time;
-                    this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", pindexPrev.HashBlock, pindexPrev.Height, pindexPrev.Header.Time);
+                    this.lastCoinStakeSearchPrevBlockHash = prevBlock.HashBlock;
+                    this.lastCoinStakeSearchTime = prevBlock.Header.Time;
+                    this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", prevBlock.HashBlock, prevBlock.Height, prevBlock.Header.Time);
                 }
 
                 uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
@@ -262,10 +263,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                if (pblockTemplate == null)
-                    pblockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                if (blockTemplate == null)
+                    blockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
-                Block pblock = pblockTemplate.Block;
+                Block block = blockTemplate.Block;
 
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
@@ -294,13 +295,13 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // Trying to sign a block.
-                if (this.StakeAndSignBlock(stakeTxes, pblock, pindexPrev, pblockTemplate.TotalFee, coinstakeTimestamp))
+                if (this.StakeAndSignBlock(stakeTxes, block, prevBlock, blockTemplate.TotalFee, coinstakeTimestamp))
                 {
                     this.logger.LogTrace("POS block signed successfully.");
-                    var blockResult = new BlockResult { Block = pblock };
-                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), pindexPrev);
+                    var blockResult = new BlockResult { Block = block };
+                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), prevBlock, chainTip);
 
-                    pblockTemplate = null;
+                    blockTemplate = null;
                 }
                 else
                 {
@@ -310,9 +311,9 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        private void CheckStake(ContextInformation context, ChainedBlock pindexPrev)
+        private void CheckStake(ContextInformation context, ChainedBlock prevBlock, ChainedBlock chainTip)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(pindexPrev), pindexPrev?.HashBlock);
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}')", nameof(prevBlock), prevBlock.HashBlock, prevBlock.Height, nameof(chainTip), chainTip.HashBlock, chainTip.Height);
 
             Block block = context.BlockResult.Block;
 
@@ -323,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Verify hash target and signature of coinstake tx.
-            BlockStake prevBlockStake = this.stakeChain.Get(pindexPrev.HashBlock);
+            BlockStake prevBlockStake = this.stakeChain.Get(prevBlock.HashBlock);
             if (prevBlockStake == null)
             {
                 this.logger.LogTrace("(-)[NO_PREV_STAKE]");
@@ -331,14 +332,17 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             context.SetStake();
-            this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, pindexPrev, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
+            this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, prevBlock, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
 
+            // The following is wrong, this should be REORG not SOLUTION FOUND
+            // but this would just narrow the race condition in case of reorg, not mitigate it.
+            // --------
             // Found a solution.
-            if (block.Header.HashPrevBlock != this.chain.Tip.HashBlock)
-            {
-                this.logger.LogTrace("(-)[SOLUTION_FOUND]");
-                return;
-            }
+            // if (block.Header.HashPrevBlock != chainTip.HashBlock)
+            // {
+            //     this.logger.LogTrace("(-)[SOLUTION_FOUND]");
+            //     return;
+            // }
 
             // Validate the block.
             this.consensusLoop.AcceptBlock(context);
@@ -355,10 +359,10 @@ namespace Stratis.Bitcoin.Features.Miner
                 return;
             }
 
-            if (context.BlockResult.ChainedBlock.ChainWork <= this.chain.Tip.ChainWork)
+            if (context.BlockResult.ChainedBlock.ChainWork <= chainTip.ChainWork)
             {
-                this.logger.LogTrace("Chain tip's work is '{0}', newly minted block's work is only '{1}'.", context.BlockResult.ChainedBlock.ChainWork, this.chain.Tip.ChainWork);
-                this.logger.LogTrace("(-)[CHAIN_WORK]");
+                this.logger.LogTrace("Chain tip's work is '{0}', newly minted block's work is only '{1}'.", context.BlockResult.ChainedBlock.ChainWork, chainTip.ChainWork);
+                this.logger.LogTrace("(-)[LOW_CHAIN_WORK]");
                 return;
             }
 
@@ -520,7 +524,12 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
-            this.logger.LogInformation("Node staking with amount {0}.", new Money(setCoins.Sum(s => s.TxOut.Value)));
+            long ourWeight = setCoins.Sum(s => s.TxOut.Value);
+            long networkWeight = (long)this.GetNetworkWeight();
+            long expectedTime = StakeValidator.GetTargetSpacing(chainTip.Height) * networkWeight / ourWeight;
+            decimal ourPercent = networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)networkWeight : 0;
+            
+            this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(networkWeight), TimeSpan.FromSeconds(expectedTime));
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeTx.Time);
@@ -890,6 +899,110 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // TODO: Check if in memory pool then return 0.
             return this.chain.Tip.Height - chainedBlock.Height + 1;
+        }
+
+        /// <summary>
+        /// Calculates staking difficulty for a specific block.
+        /// </summary>
+        /// <param name="block">Block at which to calculate the difficulty.</param>
+        /// <returns>Staking difficulty.</returns>
+        /// <remarks>
+        /// The actual idea behind the calculation is a mystery. It was simply ported from 
+        /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16 .
+        /// </remarks>
+        public double GetDifficulty(ChainedBlock block)
+        {
+            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(block), block.HashBlock, block.Height);
+
+            double res = 1.0;
+
+            if (block == null)
+            {
+                // Use consensus loop's tip rather than concurrent chain's tip
+                // because consensus loop's tip is guaranteed to have block stake in the database.
+                ChainedBlock tip = this.consensusLoop.Tip;
+                if (tip == null)
+                {
+                    this.logger.LogTrace("(-)[DEFAULT]:{0}", res);
+                    return res;
+                }
+
+                block = StakeValidator.GetLastBlockIndex(this.stakeChain, tip, false);
+            }
+
+            uint shift = (block.Header.Bits >> 24) & 0xFF;
+            double diff = (double)0x0000FFFF / (double)(block.Header.Bits & 0x00FFFFFF);
+
+            while (shift < 29)
+            {
+                diff *= 256.0;
+                shift++;
+            }
+
+            while (shift > 29)
+            {
+                diff /= 256.0;
+                shift--;
+            }
+
+            res = diff;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
+        }
+
+        /// <summary>
+        /// Estimates the total staking weight of the network.
+        /// </summary>
+        /// <returns>Estimated number of coins that are used by all stakers on the network.</returns>
+        /// <remarks>
+        /// The idea behind estimating the network staking weight is very similar to estimating 
+        /// the total hash power of PoW network. The difficulty retarget algorithm tries to make 
+        /// sure of certain distribution of the blocks over a period of time. Base on real distribution
+        /// and using the actual difficulty targets, one is able to compute how much stake was 
+        /// presented on the network to generate each block.
+        /// <para>
+        /// The method was ported from 
+        /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L74 .
+        /// </para>
+        /// </remarks>
+        public double GetNetworkWeight()
+        {
+            this.logger.LogTrace("()");
+            int interval = 72;
+            double stakeKernelsAvg = 0.0;
+            int stakesHandled = 0;
+            long stakesTime = 0;
+
+            // Use consensus loop's tip rather than concurrent chain's tip
+            // because consensus loop's tip is guaranteed to have block stake in the database.
+            ChainedBlock block = this.consensusLoop.Tip;
+            ChainedBlock prevStakeBlock = null;
+
+            double res = 0.0;
+            while ((block != null) && (stakesHandled < interval))
+            {
+                BlockStake blockStake = this.stakeChain.Get(block.HashBlock);
+                if (blockStake.IsProofOfStake())
+                {
+                    if (prevStakeBlock != null)
+                    {
+                        stakeKernelsAvg += this.GetDifficulty(prevStakeBlock) * (double)0x100000000;
+                        stakesTime += (long)prevStakeBlock.Header.Time - (long)block.Header.Time;
+                        stakesHandled++;
+                    }
+
+                    prevStakeBlock = block;
+                }
+
+                block = block.Previous;
+            }
+
+            if (stakesTime != 0) res = stakeKernelsAvg / stakesTime;
+
+            res *= PosConsensusValidator.StakeTimestampMask + 1;
+
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
     }
 }

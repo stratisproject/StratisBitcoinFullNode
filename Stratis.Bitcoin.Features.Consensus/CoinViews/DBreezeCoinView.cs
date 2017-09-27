@@ -245,7 +245,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 this.logger.LogTrace("()");
 
-                // TODO: Why the result of this.GetRewindIndex() is not reused in the else branch - i.e. why do we call SelectBackward again there to get that very same number?
                 if (this.GetRewindIndex() == -1)
                 {
                     this.session.Transaction.RemoveAllKeys("Coins", true);

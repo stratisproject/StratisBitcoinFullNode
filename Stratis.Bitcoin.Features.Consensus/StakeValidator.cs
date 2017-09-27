@@ -700,7 +700,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public static Target GetNextTargetRequired(StakeChain stakeChain, ChainedBlock indexLast, NBitcoin.Consensus consensus, bool proofOfStake)
         {
-            clogger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(indexLast), indexLast.HashBlock, indexLast.Height, nameof(proofOfStake), proofOfStake);
+            clogger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(indexLast), indexLast?.HashBlock, indexLast?.Height, nameof(proofOfStake), proofOfStake);
 
             // Genesis block.
             if (indexLast == null)
