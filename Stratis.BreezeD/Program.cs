@@ -17,8 +17,8 @@ namespace Stratis.BreezeD
 {
     public class Program
     {
-        private const string DefaultBitcoinUri = "http://localhost:5000";
-        private const string DefaultStratisUri = "http://localhost:5105";
+        private const string DefaultBitcoinUri = "http://localhost:37220";
+        private const string DefaultStratisUri = "http://localhost:37221";
 
         public static void Main(string[] args)
         {
