@@ -293,8 +293,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             if(diff < 0)
             {
                 account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
+
                 // persists the address to the wallet file
                 this.SaveToFile(wallet);
+
                 // adds the address to the list of tracked addresses
                 this.LoadKeysLookup();
             }
