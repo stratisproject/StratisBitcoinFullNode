@@ -38,9 +38,11 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         /// </summary>
         /// <param name="dir">Data directory that the node should use.</param>
         /// <returns>Interface to the newly built node.</returns>
+        /// <remarks>Currently the node built here does not actually stake as it has no coins in the wallet,
+        /// but all the features required for it are enabled.</remarks>
         public IFullNode BuildStakingNode(string dir)
         {
-            NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dir}", "-stake=1" });
+            NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dir}", "-stake=1", "-walletname=dummy", "-walletpassword=dummy" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UseStratisConsensus()
