@@ -17,7 +17,7 @@
     },
     "Stratis.Bitcoin.Api": {
       "commandName": "Project",
-      "launchUrl": "http://localhost:5000/api/values",
+      "launchUrl": "http://localhost:37220/api/values",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
