@@ -149,6 +149,27 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string AccountName { get; set; }
     }
 
+    public class GetUnusedAddressesModel : RequestModel
+    {
+        [Required]
+        public string WalletName { get; set; }
+        
+        [Required]
+        public string AccountName { get; set; }
+        
+        [Required]
+        public string Count { get; set; }
+    }
+
+    public class GetExtPubKeyModel : RequestModel
+    {
+        [Required]
+        public string WalletName { get; set; }
+        
+        [Required]
+        public string AccountName { get; set; }
+    }
+
     public class GetUnusedAccountModel : RequestModel
     {
         /// <summary>
