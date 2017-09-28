@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Consensus;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -130,5 +131,55 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        [Fact]
+        public void Given__NodesAreSynced__When__ABigReorgHappens__Then__TheNodesCanRecover()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                var stratisMiner = builder.CreateStratisNode();
+                var stratisSyncer = builder.CreateStratisNode();
+                var stratisReorg = builder.CreateStratisNode();
+
+                builder.StartAll();
+                stratisMiner.NotInIBD();
+                stratisSyncer.NotInIBD();
+                stratisReorg.NotInIBD();
+
+                stratisMiner.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMiner.FullNode.Network));
+                stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
+
+                var maturity = (int)stratisMiner.FullNode.Network.Consensus.Option<PowConsensusOptions>().COINBASE_MATURITY;
+                stratisMiner.GenerateStratisWithMiner(1);
+
+                // wait for block repo for block sync to work
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
+                stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                stratisMiner.CreateRPCClient().AddNode(stratisSyncer.Endpoint, true);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisReorg));
+
+
+                // create a reorg by mining on two different chains
+                // ================================================
+
+                stratisMiner.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+
+                var t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(502));
+                var t2 = Task.Run(() => stratisReorg.GenerateStratisWithMiner(505));
+                Task.WaitAll(t1, t2);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
+
+                // connect the reorg chain
+                stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                stratisSyncer.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+
+                // wait for the chains to catch up
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisReorg));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisSyncer, stratisReorg));
+                Assert.Equal(506, stratisSyncer.FullNode.Chain.Tip.Height);               
+            }
+        }
     }
 }
