@@ -565,6 +565,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.rpcGetStakingInfoModel.Weight = ourWeight;
             this.rpcGetStakingInfoModel.NetStakeWeight = networkWeight;
             this.rpcGetStakingInfoModel.ExpectedTime = expectedTime;
+            this.rpcGetStakingInfoModel.Errors = null;
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeTx.Time);
