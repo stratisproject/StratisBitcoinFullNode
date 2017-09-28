@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Persist the changes to the coinview. This will likely only be stored in memory, 
             // unless the coinview treashold is reached.
-            this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockResult.ChainedBlock.HashBlock);
+            this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult();
 
             // Set the new tip.
             this.Tip = context.BlockResult.ChainedBlock;
