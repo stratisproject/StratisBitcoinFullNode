@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Wait for peers to get the block.
             this.logger.LogTrace("Waiting 1000 ms for newly minted block propagation...");
-            Thread.Sleep(1000);
+            Task.Delay(TimeSpan.FromMilliseconds(1000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
 
             // Ask peers for their headers.
             foreach (Node node in this.connection.ConnectedNodes)
@@ -394,7 +394,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 while ((++retry < 100) && (chainBehaviour.PendingTip != this.chain.Tip))
                 {
                     this.logger.LogTrace("Peer '{0}' still has different tip ('{1}/{2}'), waiting 1000 ms...", node.RemoteSocketEndpoint, chainBehaviour.PendingTip.HashBlock, chainBehaviour.PendingTip.Height);
-                    Thread.Sleep(1000);
+                    Task.Delay(TimeSpan.FromMilliseconds(1000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 }
             }
 
