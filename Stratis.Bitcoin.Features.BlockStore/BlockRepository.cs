@@ -1,15 +1,15 @@
-﻿using DBreeze.Utils;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Stratis.Bitcoin.Features.BlockStore
+﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
+    using DBreeze.Utils;
+    using Microsoft.Extensions.Logging;
+    using NBitcoin;
+    using Stratis.Bitcoin.Configuration;
+    using Stratis.Bitcoin.Utilities;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+
     public interface IBlockRepository : IDisposable
     {
         Task Initialize();
@@ -19,57 +19,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task DeleteAsync(uint256 newlockHash, List<uint256> hashes);
         Task<bool> ExistAsync(uint256 hash);
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
-
-        /// <summary>
-        /// Sets the last block's hash to the repository.
-        /// <para>This value is stored in the "Common" table with <see cref="BlockHashKey"/>.</para>
-        /// </summary>
-        /// <param name="nextBlockHash">The block hash to store.</param>
         Task SetBlockHash(uint256 nextBlockHash);
-
-        /// <summary>
-        /// Sets the <see cref="TxIndex"/> value of the repository.
-        /// </summary>
         Task SetTxIndex(bool txIndex);
-
-        /// <summary>The last stored block in the repository.</summary>
         uint256 BlockHash { get; }
-
         BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
-
-        /// <summary>Indicates whether or not the repository has had its transactions indexed.</summary>
         bool TxIndex { get; }
     }
 
     public class BlockRepository : IBlockRepository
     {
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         protected readonly DBreezeSingleThreadSession session;
         protected readonly Network network;
 
-        /// <summary>The last stored block in the repository.</summary>
-        public uint256 BlockHash { get; private set; }
-
-        /// <summary>The key used to retrieve the <see cref="BlockHash"/> value from the "Common" table.</summary>
         protected static readonly byte[] BlockHashKey = new byte[0];
-
-        public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
-
-        /// <summary>
-        /// The tables that exist in the repository.
-        /// <para>"Block" stores block information.</para>
-        /// <para>"Transaction" contains the list of transactions encapsulated in a block.</para>
-        /// <para>"Common" contains "StoreSetting" values like <see cref="TxIndex"/> as well 
-        /// the last <see cref="BlockHash"/>.
-        /// </para>
-        /// </summary>
         protected HashSet<string> tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
-
-        /// <summary>The key used to retrieve the <see cref="TxIndex"/> value from the "Common" table.</summary>
         protected static readonly byte[] TxIndexKey = new byte[1];
 
-        /// <summary>Indicates whether or not the repository has had its transactions indexed.</summary>
+        public uint256 BlockHash { get; private set; }
+        public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
         public bool TxIndex { get; private set; }
         
         /// <summary>Represents the last block stored to disk.</summary>
@@ -106,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
             var genesis = this.network.GetGenesis();
 
-            var synchronizeTablesTask = this.session.Execute(() =>
+            var sync = this.session.Execute(() =>
             {
                 this.session.Transaction.SynchronizeTables(this.tableNames.ToList());
                 this.session.Transaction.ValuesLazyLoadingIsOn = true;
@@ -126,9 +96,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             });
 
-            Task result = Task.WhenAll(new[] { synchronizeTablesTask, hash });
+            Task res = Task.WhenAll(new[] { sync, hash });
             this.logger.LogTrace("(-)");
-            return result;
+            return res;
         }
 
         public bool LazyLoadingOn
@@ -302,10 +272,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return res;
         }
 
-        /// <summary>
-        /// Loads the <see cref="TxIndex"/> value from the repository.
-        /// </summary>
-        /// <returns>If the <see cref="TxIndex"/> exists return <c>true</c> otherwise <c>null</c></returns>
         private bool? LoadTxIndex()
         {
             this.logger.LogTrace("()");
@@ -329,10 +295,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
-        /// <summary>
-        /// Saves the <see cref="TxIndex"/> value to the repository.
-        /// <para><see cref="TxIndex"/> is stored in the repository's "Common" table</para>
-        /// </summary>
         private void SaveTxIndex(bool txIndex)
         {
             this.logger.LogTrace("({0}:{1})", nameof(txIndex), txIndex);
@@ -344,27 +306,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// See <see cref="SaveTxIndex"/>
-        /// </summary>
         public Task SetTxIndex(bool txIndex)
         {
             this.logger.LogTrace("({0}:{1})", nameof(txIndex), txIndex);
 
-            Task result = this.session.Execute(() =>
+            Task res = this.session.Execute(() =>
             {
                 this.SaveTxIndex(txIndex);
                 this.session.Transaction.Commit();
             });
 
             this.logger.LogTrace("(-)");
-            return result;
+            return res;
         }
 
-        /// <summary>
-        /// Loads the last saved block's hash from the repository.
-        /// <para>This value is retrieved from the "Common" table using <see cref="BlockHashKey"/>.</para>
-        /// </summary>
         private uint256 LoadBlockHash()
         {
             this.logger.LogTrace("()");
@@ -375,11 +330,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return this.BlockHash;
         }
 
-        /// <summary>
-        /// Sets the last block's hash to the repository.
-        /// <para>This value is stored in the "Common" table with <see cref="BlockHashKey"/>.</para>
-        /// </summary>
-        /// <param name="nextBlockHash">The block hash to store.</param>
         public Task SetBlockHash(uint256 nextBlockHash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(nextBlockHash), nextBlockHash);
@@ -395,10 +345,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return res;
         }
 
-        /// <summary>
-        /// See <see cref="SetBlockHash"/>
-        /// </summary>
-        /// <param name="nextBlockHash">The block hash to store.</param>
         private void SaveBlockHash(uint256 nextBlockHash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(nextBlockHash), nextBlockHash);
