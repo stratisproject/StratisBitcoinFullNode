@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Configuration
 
             nodeSettings.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.RegTest || nodeSettings.Testnet));
             nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
-            nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:5000"));
+            nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
 
             nodeSettings.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'", nodeSettings.Network.IsTest(), nodeSettings.Network.IsBitcoin());
             if (args.Contains("-mintxfee", StringComparer.CurrentCultureIgnoreCase))
