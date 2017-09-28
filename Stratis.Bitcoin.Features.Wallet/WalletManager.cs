@@ -257,9 +257,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.SaveToFile(wallet);
             return newAccount;
         }
-        
-        /// <inheritdoc />
-        public HdAddress GetUnusedAddress(WalletAccountReference accountReference)
+
+
+        public string GetExtPubKey(WalletAccountReference accountReference)
         {
             Guard.NotNull(accountReference, nameof(accountReference));
 
@@ -268,26 +268,44 @@ namespace Stratis.Bitcoin.Features.Wallet
             // get the account
             HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-            // validate address creation
-            if (account.ExternalAddresses.Any())
+            return account.ExtendedPubKey;
+        }
+
+        /// <inheritdoc />
+        public HdAddress GetUnusedAddress(WalletAccountReference accountReference)
+        {
+            return GetUnusedAddresses(accountReference, 1).Single();
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count)
+        {
+            Guard.NotNull(accountReference, nameof(accountReference));
+            Guard.Assert(count > 0);
+
+            Wallet wallet = this.GetWalletByName(accountReference.WalletName);
+
+            // get the account
+            HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
+
+            var unusedAddresses = account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
+            var diff = unusedAddresses.Count - count;
+            if(diff < 0)
             {
-                // check last created address contains transactions.
-                var firstUnusedExternalAddress = account.GetFirstUnusedReceivingAddress();
-                if (firstUnusedExternalAddress != null)
-                {
-                    return firstUnusedExternalAddress;
-                }
+                account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
+
+                // persists the address to the wallet file
+                this.SaveToFile(wallet);
+
+                // adds the address to the list of tracked addresses
+                this.LoadKeysLookup();
             }
 
-            // creates an address
-            account.CreateAddresses(this.network, 1);
-
-            // persists the address to the wallet file
-            this.SaveToFile(wallet);
-
-            // adds the address to the list of tracked addresses
-            this.LoadKeysLookup();
-            return account.GetFirstUnusedReceivingAddress();
+            return account
+                .ExternalAddresses
+                .Where(acc => !acc.Transactions.Any())
+                .OrderBy(x=>x.Index)
+                .Take(count);            
         }
 
         /// <inheritdoc />
