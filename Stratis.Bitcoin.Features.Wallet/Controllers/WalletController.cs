@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 WalletHistoryModel model = new WalletHistoryModel();
 
                 // get transactions contained in the wallet
-                var addresses = this.walletManager.GetHistory(request.WalletName);
+                var addresses = this.walletManager.GetHistory(request.WalletName).ToList();
                 foreach (var address in addresses)
                 {
                     foreach (var transaction in address.Transactions.Where(t => !address.IsChangeAddress() || (address.IsChangeAddress() && !t.IsSpendable())))
@@ -303,13 +303,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         // add outgoing fund transaction details
                         if (transaction.SpendingDetails != null)
                         {
-                            TransactionItemModel sentItem = new TransactionItemModel();
-                            sentItem.Type = TransactionItemType.Send;
-                            sentItem.Id = transaction.SpendingDetails.TransactionId;
-                            sentItem.Timestamp = transaction.SpendingDetails.CreationTime;
-                            sentItem.ConfirmedInBlock = transaction.SpendingDetails.BlockHeight;
+                            TransactionItemModel sentItem = new TransactionItemModel
+                            {
+                                Type = TransactionItemType.Send,
+                                Id = transaction.SpendingDetails.TransactionId,
+                                Timestamp = transaction.SpendingDetails.CreationTime,
+                                ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                                Amount = Money.Zero
+                            };
 
-                            sentItem.Amount = Money.Zero;
                             if (transaction.SpendingDetails.Payments != null)
                             {
                                 sentItem.Payments = new List<PaymentDetailModel>();
