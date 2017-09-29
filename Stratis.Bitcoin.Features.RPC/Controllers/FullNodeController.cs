@@ -12,12 +12,12 @@ using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
     public class FullNodeController : FeatureController
     {
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         public FullNodeController(
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (!isJsonFormat)
             {
-                this.logger.LogError("Binary serialization is not supported for RPC {0}", nameof(GetBlockHeader));
+                this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(GetBlockHeader));
                 throw new NotImplementedException();
             }
 

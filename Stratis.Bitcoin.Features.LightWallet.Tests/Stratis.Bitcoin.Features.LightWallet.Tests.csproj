@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <AssemblyName>Stratis.Bitcoin.Features.RPC.Tests</AssemblyName>
-    <PackageId>Stratis.Bitcoin.Features.RPC.Tests</PackageId>
+    <AssemblyName>Stratis.Bitcoin.Features.LightWallet.Tests</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Features.LightWallet.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
@@ -21,9 +21,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Stratis.Bitcoin.Features.RPC.Tests\**" />
-    <EmbeddedResource Remove="Stratis.Bitcoin.Features.RPC.Tests\**" />
-    <None Remove="Stratis.Bitcoin.Features.RPC.Tests\**" />
+    <Compile Remove="Stratis.Bitcoin.Features.LightWallet.Tests\**" />
+    <EmbeddedResource Remove="Stratis.Bitcoin.Features.LightWallet.Tests\**" />
+    <None Remove="Stratis.Bitcoin.Features.LightWallet.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,20 +34,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.RPC\Stratis.Bitcoin.Features.RPC.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Tests\Stratis.Bitcoin.Tests.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.LightWallet\Stratis.Bitcoin.Features.LightWallet.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Tests\Stratis.Bitcoin.Tests.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
 </Project>

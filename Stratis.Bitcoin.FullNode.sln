@@ -72,6 +72,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Cli", "Stra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.BreezeD", "Stratis.BreezeD\Stratis.BreezeD.csproj", "{0A73F282-3138-4BBB-83CB-5EA720C4CCA8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.LightWallet.Tests", "Stratis.Bitcoin.Features.LightWallet.Tests\Stratis.Bitcoin.Features.LightWallet.Tests.csproj", "{D04BAFE7-F475-4709-8560-0570415BAE09}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -194,6 +196,10 @@ Global
 		{0A73F282-3138-4BBB-83CB-5EA720C4CCA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A73F282-3138-4BBB-83CB-5EA720C4CCA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A73F282-3138-4BBB-83CB-5EA720C4CCA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D04BAFE7-F475-4709-8560-0570415BAE09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D04BAFE7-F475-4709-8560-0570415BAE09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D04BAFE7-F475-4709-8560-0570415BAE09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D04BAFE7-F475-4709-8560-0570415BAE09}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
