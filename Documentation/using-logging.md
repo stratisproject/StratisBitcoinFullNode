@@ -159,7 +159,7 @@ Note that in general, having TRACE level logs enabled is not recommended if you 
 #### debug* Targets
 
 We have special handling of logging targets in `NLog.config` file whose names start with `debug` prefix. All such targets have to have `xsi:type` set to either `AsyncWrapper` (see [Async Wrapper](#async-wrapper) section below)
-or to `File` and their `fileName` has to define a relative path to a log file, not absolute! The path is relative to `$DATADIR/Logs` directory. Paths of other targets, without `debug` prefix, 
+or to `File` and their `fileName` has to define a relative path to a log file, it must not be an absolute path! The path is relative to `$DATADIR/Logs` directory. Paths of other targets, without `debug` prefix, 
 are not altered in any way.
 
 
