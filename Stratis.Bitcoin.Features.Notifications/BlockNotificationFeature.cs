@@ -7,6 +7,9 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Notifications.Tests")]
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
@@ -21,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         private readonly ChainState chainState;
         private readonly ConcurrentChain chain;
 
-        public BlockNotificationFeature(BlockNotification blockNotification, IConnectionManager connectionManager, 
+        public BlockNotificationFeature(BlockNotification blockNotification, IConnectionManager connectionManager,
             LookaheadBlockPuller blockPuller, ChainState chainState, ConcurrentChain chain)
         {
             this.blockNotification = blockNotification;
@@ -35,7 +38,8 @@ namespace Stratis.Bitcoin.Features.Notifications
         {
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, new LoggerFactory()));
-            this.blockNotification.Notify();
+
+            this.blockNotification.NotifyLoop();
             this.chainState.HighestValidatedPoW = this.chain.Tip;
         }
     }

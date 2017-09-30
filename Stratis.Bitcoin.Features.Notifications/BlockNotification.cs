@@ -1,10 +1,10 @@
-﻿using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
@@ -13,10 +13,10 @@ namespace Stratis.Bitcoin.Features.Notifications
     /// </summary>
     public class BlockNotification
     {
-        private readonly ISignals signals;
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
+        private readonly ISignals signals;
         private ChainedBlock tip;
 
         public BlockNotification(
@@ -41,13 +41,10 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public ILookaheadBlockPuller Puller { get; }
-
         public ConcurrentChain Chain { get; }
-
-        public uint256 StartHash { get; private set; }
-
+        public ILookaheadBlockPuller Puller { get; }
         private bool reSync;
+        public uint256 StartHash { get; private set; }
 
         public virtual void SyncFrom(uint256 startHash)
         {
@@ -75,58 +72,70 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         /// <summary>
         /// Notifies about blocks, starting from block with hash passed as parameter.
+        /// <para>
+        /// We don't need to wait for this asyncloop to complete as it doesn't rely or depend on
+        /// any other features finishing before shutting down. Stopping the node will stop the async 
+        /// loop task immediately.
+        /// </para>
         /// </summary>
-        public virtual IAsyncLoop Notify()
+        public void NotifyLoop()
         {
-            return this.asyncLoopFactory.Run("block notifier", token =>
+            this.asyncLoopFactory.Run("Notify", async token =>
             {
-                // Not syncing until the StartHash has been set.
-                if (this.StartHash == null)
+                await Notify(this.nodeLifetime.ApplicationStopping);
+            },
+            this.nodeLifetime.ApplicationStopping,
+            TimeSpans.Ms100);
+        }
+
+        internal Task Notify(CancellationToken token)
+        {
+            // Not syncing until the StartHash has been set.
+            if (this.StartHash == null)
+                return Task.CompletedTask;
+
+            // Not syncing until the chain is downloaded at least up to this block.
+            ChainedBlock startBlock = this.Chain.GetBlock(this.StartHash);
+            if (startBlock == null)
+                return Task.CompletedTask;
+
+            // Sets the location of the puller to the block preceding the one we want to receive.
+            ChainedBlock previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
+            this.Puller.SetLocation(previousBlock);
+            this.tip = previousBlock;
+
+            this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
+
+            // Send notifications for all the following blocks.
+            while (!this.reSync)
+            {
+                token.ThrowIfCancellationRequested();
+
+                var block = this.Puller.NextBlock(token);
+                if (block != null)
                 {
-                    return Task.CompletedTask;
+                    // Broadcast the block to the registered observers.
+                    this.signals.SignalBlock(block);
+                    this.tip = this.Chain.GetBlock(block.GetHash());
+
+                    continue;
                 }
 
-                // Not syncing until the chain is downloaded at least up to this block.
-                ChainedBlock startBlock = this.Chain.GetBlock(this.StartHash);
-                if (startBlock == null)
-                {
-                    return Task.CompletedTask;
-                }
+                // In reorg we reset the puller to the fork.
+                // When a reorg happens the puller is pushed back and continues from the current fork.
+                // Find the location of the fork.
+                while (this.Chain.GetBlock(this.tip.HashBlock) == null)
+                    this.tip = this.tip.Previous;
 
-                // Sets the location of the puller to the block preceding the one we want to receive.
-                ChainedBlock previousBlock = this.Chain.GetBlock(startBlock.Height > 0 ? startBlock.Height - 1 : 0);
-                this.Puller.SetLocation(previousBlock);
-                this.tip = previousBlock;
-
-                this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
-
-                // Send notifications for all the following blocks.
-                while (!this.reSync)
-                {
-                    var block = this.Puller.NextBlock(token);
-                    if (block != null)
-                    {
-                        // Broadcast the block to the registered observers.
-                        this.signals.SignalBlock(block);
-                        this.tip = this.Chain.GetBlock(block.GetHash());
-                    }
-                    else
-                    {
-                        // In reorg we reset the puller to the fork.
-                        // When a reorg happens the puller is pushed back and continues from the current fork.
-                        // Find the location of the fork.
-                        while (this.Chain.GetBlock(this.tip.HashBlock) == null)
-                            this.tip = this.tip.Previous;
-
-                        // Set the puller to the fork location.
-                        this.Puller.SetLocation(this.tip);
-                    }
-                }
-
-                this.reSync = false;
+                // Set the puller to the fork location.
+                this.Puller.SetLocation(this.tip);
 
                 return Task.CompletedTask;
-            }, this.nodeLifetime.ApplicationStopping);
+            }
+
+            this.reSync = false;
+
+            return Task.CompletedTask;
         }
     }
 }
