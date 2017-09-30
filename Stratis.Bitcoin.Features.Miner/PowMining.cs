@@ -150,7 +150,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     var blockResult = new BlockResult { Block = pblock };
                     this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
                     this.consensusLoop.Puller.SetLocation(newChain);
-                    this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
 
                     if (blockResult.ChainedBlock == null)
                         break; // Reorg.
