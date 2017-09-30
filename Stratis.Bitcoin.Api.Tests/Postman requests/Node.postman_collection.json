@@ -9,42 +9,42 @@
 	"item": [
 		{
 			"name": "Connect full node",
-			"request": {
-				"url": "http://localhost:5000/api/node/connect",
-				"method": "GET",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWallet\"\n}"
-				},
-				"description": ""
-			},
+      "request": {
+        "url": "http://localhost:37220/api/node/connect",
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "description": ""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWallet\"\n}"
+        },
+        "description": ""
+      },
 			"response": []
 		},
 		{
 			"name": "Start syncing from hash",
-			"request": {
-				"url": "http://localhost:5000/api/node/sync",
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{ \n\t\"hash\": \"00000000770ebe897270ca5f6d539d8afb4ea4f4e757761a34ca82e17207d886\"\n}"
-				},
-				"description": "{ \n\t\"hash\": \"00000000770ebe897270ca5f6d539d8afb4ea4f4e757761a34ca82e17207d886\"\n}"
-			},
+      "request": {
+        "url": "http://localhost:37220/api/node/sync",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "description": ""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \n\t\"hash\": \"00000000770ebe897270ca5f6d539d8afb4ea4f4e757761a34ca82e17207d886\"\n}"
+        },
+        "description": "{ \n\t\"hash\": \"00000000770ebe897270ca5f6d539d8afb4ea4f4e757761a34ca82e17207d886\"\n}"
+      },
 			"response": []
 		}
 	]

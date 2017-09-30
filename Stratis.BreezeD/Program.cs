@@ -1,0 +1,60 @@
+﻿using System;
+using System.Linq;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
+using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Api;
+using Stratis.Bitcoin.Features.LightWallet;
+using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Utilities;
+
+namespace Stratis.BreezeD
+{
+    public class Program
+    {
+        private const string DefaultBitcoinUri = "http://localhost:37220";
+        private const string DefaultStratisUri = "http://localhost:37221";
+
+        public static void Main(string[] args)
+        {
+            IFullNodeBuilder fullNodeBuilder = null;
+
+            // Get the API uri. 
+            var apiUri = args.GetValueOf("apiuri");
+            var isTestNet = args.Contains("-testnet");
+            var isStratis = args.Contains("stratis");
+
+            NodeSettings nodeSettings;
+            if (isStratis)
+            {
+                if (NodeSettings.PrintHelp(args, Network.StratisMain))
+                    return;
+
+                var network = isTestNet ? Network.StratisTest : Network.StratisMain;
+                if (isTestNet)
+                    args = args.Append("-addnode=13.64.76.48").ToArray(); // TODO: fix this temp hack 
+
+                nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
+                nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
+            }
+            else
+            {
+                nodeSettings = NodeSettings.FromArguments(args);
+                nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultBitcoinUri : apiUri);
+            }
+
+            fullNodeBuilder = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseLightWallet()
+                .UseBlockNotification()
+                .UseTransactionNotification()
+                .UseApi();
+
+            var node = fullNodeBuilder.Build();
+
+            // Start Full Node - this will also start the API.
+            node.Run();
+        }
+    }
+}
