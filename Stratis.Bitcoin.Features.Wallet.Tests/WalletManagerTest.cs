@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Assert.Equal(expectedWallet.AccountsRoot.ElementAt(i).LastBlockSyncedHeight, actualWallet.AccountsRoot.ElementAt(i).LastBlockSyncedHeight);
 
                 var accountRoot = actualWallet.AccountsRoot.ElementAt(i);
-                Assert.Equal(2, accountRoot.Accounts.Count);
+                Assert.Equal(1, accountRoot.Accounts.Count);
 
                 for (var j = 0; j < accountRoot.Accounts.Count; j++)
                 {
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Assert.Equal(expectedWallet.AccountsRoot.ElementAt(i).LastBlockSyncedHeight, actualWallet.AccountsRoot.ElementAt(i).LastBlockSyncedHeight);
 
                 var accountRoot = actualWallet.AccountsRoot.ElementAt(i);
-                Assert.Equal(2, accountRoot.Accounts.Count);
+                Assert.Equal(1, accountRoot.Accounts.Count);
 
                 for (var j = 0; j < accountRoot.Accounts.Count; j++)
                 {
@@ -395,9 +395,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 var recoveredAccountRoot = recoveredWallet.AccountsRoot.ElementAt(i);
                 var expectedAccountRoot = expectedWallet.AccountsRoot.ElementAt(i);
-                // for some reason we generate one extra. Why?
-                Assert.Equal(3, recoveredAccountRoot.Accounts.Count);
-                Assert.Equal(2, expectedAccountRoot.Accounts.Count);
+                
+                Assert.Equal(1, recoveredAccountRoot.Accounts.Count);
+                Assert.Equal(1, expectedAccountRoot.Accounts.Count);
 
                 for (var j = 0; j < expectedAccountRoot.Accounts.Count; j++)
                 {
@@ -487,9 +487,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 var recoveredAccountRoot = recoveredWallet.AccountsRoot.ElementAt(i);
                 var expectedAccountRoot = expectedWallet.AccountsRoot.ElementAt(i);
-                // for some reason we generate one extra. Why?
-                Assert.Equal(3, recoveredAccountRoot.Accounts.Count);
-                Assert.Equal(2, expectedAccountRoot.Accounts.Count);
+                
+                Assert.Equal(1, recoveredAccountRoot.Accounts.Count);
+                Assert.Equal(1, expectedAccountRoot.Accounts.Count);
 
                 for (var j = 0; j < expectedAccountRoot.Accounts.Count; j++)
                 {
