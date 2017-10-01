@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 proxy = string.Empty,
                 difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0,
                 testnet = this.Network.IsTest(),
-                relayfee = MempoolValidator.MinRelayTxFee.FeePerK.ToUnit(MoneyUnit.BTC),
+                relayfee = this.Settings.MinRelayTxFee.FeePerK.ToUnit(MoneyUnit.BTC),
                 errors = string.Empty,
 
                 //TODO: Wallet related infos: walletversion, balance, keypoololdest, keypoolsize, unlocked_until, paytxfee

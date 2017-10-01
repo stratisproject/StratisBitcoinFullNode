@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<MempoolAsyncLock>();
                         services.AddSingleton<TxMempool>();
                         services.AddSingleton<BlockPolicyEstimator>();
-                        services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
+//                        services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
                         services.AddSingleton<IMempoolValidator, MempoolValidator>();
                         services.AddSingleton<MempoolOrphans>();
                         services.AddSingleton<MempoolManager>();

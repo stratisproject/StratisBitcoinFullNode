@@ -3,6 +3,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -64,12 +65,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <seealso cref = "MempoolSettings" />
         public const int DefaultMaxMempoolSize = 300;
-
-        /// <summary>
-        /// Default for -minrelaytxfee, minimum relay fee for transactions.
-        /// </summary>
-        /// <seealso cref = "MempoolSettings" />
-        public const int DefaultMinRelayTxFee = 1000; // Default for -minrelaytxfee, minimum relay fee for transactions
 
         /// <summary>
         /// Default limit free relay.
@@ -141,7 +136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ILogger logger;
 
         /// <summary>Minimum fee rate for a relay transaction.</summary>
-        public static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
+        private FeeRate MinRelayTxFee { get; set; }
 
         // TODO: Implement Later with CheckRateLimit() 
         //private readonly FreeLimiterSection freeLimiter;
@@ -163,6 +158,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
+        /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
             TxMempool memPool, 
             MempoolAsyncLock mempoolLock,
@@ -171,7 +167,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolSettings mempoolSettings,
             ConcurrentChain chain, 
             CoinView coinView,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory, 
+            NodeSettings nodeSettings)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
@@ -184,6 +181,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
             this.PerformanceCounter = new MempoolPerformanceCounter();
+            this.MinRelayTxFee = nodeSettings.MinRelayTxFee;
         }
 
         /// <summary>Gets a counter for tracking memory pool performance.</summary>

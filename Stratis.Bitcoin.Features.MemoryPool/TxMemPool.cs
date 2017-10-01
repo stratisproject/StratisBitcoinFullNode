@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
@@ -175,11 +176,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Constructs a new TxMempool object.
         /// </summary>
-        /// <param name="minReasonableRelayFee">The fee rate for a minimum reasonable relay fee.</param>
         /// <param name="dateTimeProvider">The data and time provider for accessing current date and time.</param>
         /// <param name="blockPolicyEstimator">The block policy estimator object.</param>
         /// <param name="loggerFactory">Factory for creating instance logger.</param>
-        public TxMempool(FeeRate minReasonableRelayFee, IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory)
+        /// <param name="nodeSettings">Full node settings.</param>
+        public TxMempool(IDateTimeProvider dateTimeProvider, BlockPolicyEstimator blockPolicyEstimator, ILoggerFactory loggerFactory, NodeSettings nodeSettings)
         {
             this.MapTx = new IndexedTransactionSet();
             this.mapLinks = new TxlinksMap();
@@ -196,7 +197,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.checkFrequency = 0;
 
             this.MinerPolicyEstimator = blockPolicyEstimator;
-            this.minReasonableRelayFee = minReasonableRelayFee;
+            this.minReasonableRelayFee = nodeSettings.MinRelayTxFee;
         }
 
         /// <summary>Gets the miner policy estimator.</summary>
