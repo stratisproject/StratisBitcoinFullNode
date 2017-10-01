@@ -320,15 +320,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string dir = AssureEmptyDir("TestData/WalletManagerTest/LoadWalletWithExistingWalletLoadsWalletOntoManager");
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
-            var wallet = new Bitcoin.Features.Wallet.Wallet()
-            {
-                Network = Network.Main,
-                ChainCode = new byte[0],
-                EncryptedSeed = "",
-                Name = "testWallet",
-                AccountsRoot = new List<AccountRoot>(),
-                BlockLocator = null
-            };
+            var wallet = WalletTestsHelpers.GenerateBlankWallet("testWallet", "password");
 
             Directory.CreateDirectory(dir);
             File.WriteAllText(Path.Combine(dataFolder.WalletPath, "testWallet.wallet.json"), JsonConvert.SerializeObject(wallet, Formatting.Indented, new ByteArrayConverter()));
