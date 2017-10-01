@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        /// <summary></summary>
+        /// <summary>Stopwatch to be used by <see cref="StopwatchDisposable"/> instances.</summary>
         private readonly System.Diagnostics.Stopwatch watch;
 
         /// <summary>Initializes a new instance of the object.</summary>
