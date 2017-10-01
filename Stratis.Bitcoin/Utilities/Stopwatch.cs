@@ -7,8 +7,10 @@ namespace Stratis.Bitcoin.Utilities
     /// to use convenient way of calling the watch with <c>using</c> keyword due to 
     /// the implementation of <see cref="IDisposable"/> interface.
     /// </summary>
-    /// <remarks>Note that we are using <see cref="DateTime.Ticks"/> as a basic unit of measurement,
-    /// not <see cref="System.Diagnostics.Stopwatch.ElapsedTicks"/>.</remarks>
+    /// <remarks>
+    /// Note that we are using <see cref="DateTime.Ticks"/> as a basic unit of measurement,
+    /// not <see cref="System.Diagnostics.Stopwatch.ElapsedTicks"/>.
+    /// </remarks>
     /// <example>
     /// <code>
     /// // Assuming "this.watch" is an instance of "Stopwatch".
