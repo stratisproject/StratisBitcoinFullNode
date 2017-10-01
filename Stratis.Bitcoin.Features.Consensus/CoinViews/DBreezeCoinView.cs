@@ -39,6 +39,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         public BackendPerformanceCounter PerformanceCounter { get { return this.performanceCounter; } }
 
+        /// <summary>Watch for performance counters time measurements.</summary>
+        private readonly Stopwatch watch;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -65,6 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
             this.network = network;
             this.performanceCounter = new BackendPerformanceCounter();
+            this.watch = new Stopwatch();
         }
 
         /// <summary>
@@ -104,7 +108,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds?.Length);
 
                 FetchCoinsResponse res = null;
-                using (StopWatch.Instance.Start(o => this.PerformanceCounter.AddQueryTime(o)))
+                using (this.watch.Start(o => this.PerformanceCounter.AddQueryTime(o)))
                 {
                     uint256 blockHash = this.GetCurrentHash();
                     UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
@@ -158,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 RewindData rewindData = originalOutputs == null ? null : new RewindData(oldBlockHash);
                 int insertedEntities = 0;
-                using (new StopWatch().Start(o => this.PerformanceCounter.AddInsertTime(o)))
+                using (this.watch.Start(o => this.PerformanceCounter.AddInsertTime(o)))
                 {
                     uint256 current = this.GetCurrentHash();
                     if (current != oldBlockHash)
