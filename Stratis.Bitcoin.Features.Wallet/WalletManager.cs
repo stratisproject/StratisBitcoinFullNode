@@ -501,6 +501,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <inheritdoc />
         public int LastBlockHeight()
         {
             if (!this.Wallets.Any())
@@ -1044,6 +1045,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return wallet;
+        }
+
+        /// <inheritdoc />
+        public ICollection<uint256> GetFirstWalletBlockLocator()
+        {
+            return this.Wallets.First().BlockLocator;
         }
     }
 

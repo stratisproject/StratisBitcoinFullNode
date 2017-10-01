@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// The last processed block.
         /// </summary>
-        uint256 WalletTipHash { get; }
+        uint256 WalletTipHash { get; set; }
 
         /// <summary>
         /// Lists all spendable transactions from all accounts in the wallet.
@@ -139,6 +139,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <returns></returns>
         IEnumerable<HdAccount> GetAccounts(string walletName);
 
+        /// <summary>
+        /// Gets the last block height.
+        /// </summary>
+        /// <returns></returns>
+        int LastBlockHeight();
 
         /// <summary>
         /// Remove all the transactions in the wallet that are above this block height
@@ -202,6 +207,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The name of the wallet to get.</param>
         /// <returns>A wallet or null if it doesn't exist</returns>
         Wallet GetWalletByName(string walletName);
+
+
+        /// <summary>
+        /// Gets the block locator of the first loaded wallet.
+        /// </summary>
+        /// <returns></returns>
+        ICollection<uint256> GetFirstWalletBlockLocator();
 
         /// <summary>
         /// Gets a change address or create one if all change addresses are used. 

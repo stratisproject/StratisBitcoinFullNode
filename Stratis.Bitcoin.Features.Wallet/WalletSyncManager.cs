@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletSyncManager : IWalletSyncManager
     {
-        protected readonly WalletManager walletManager;
+        protected readonly IWalletManager walletManager;
         protected readonly ConcurrentChain chain;
         protected readonly CoinType coinType;
         protected readonly ILogger logger;
@@ -26,7 +26,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
-            this.walletManager = walletManager as WalletManager;
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(walletManager, nameof(walletManager));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
+            Guard.NotNull(storeSettings, nameof(storeSettings));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+
+            this.walletManager = walletManager;
             this.chain = chain;
             this.blockStoreCache = blockStoreCache;
             this.coinType = (CoinType)network.Consensus.CoinType;
@@ -58,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // that in the wallet. the block locator will help finding 
                 // a common fork and bringing the wallet back to a good 
                 // state (behind the best chain)
-                var locators = this.walletManager.Wallets.First().BlockLocator;
+                var locators = this.walletManager.GetFirstWalletBlockLocator();
                 BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
                 var fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
