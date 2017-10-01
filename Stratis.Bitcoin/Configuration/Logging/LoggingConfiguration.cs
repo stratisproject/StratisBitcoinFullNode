@@ -101,9 +101,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
             logSettings = settings;
             folder = dataFolder;
 
-            // If we use debugFile target, which is defined in "NLog.config", we make sure it is in the log folder.
-            Target debugTarget = LogManager.Configuration.FindTargetByName("debugFile");
-            if (debugTarget != null)
+            // If we use "debug*" targets, which are defined in "NLog.config", make sure they log into the correct log folder in data directory.
+            List<Target> debugTargets = LogManager.Configuration.AllTargets.Where(t => (t.Name != null) && t.Name.StartsWith("debug")).ToList();
+            foreach (Target debugTarget in debugTargets)
             {
                 FileTarget debugFileTarget = debugTarget is AsyncTargetWrapper ? (FileTarget)((debugTarget as AsyncTargetWrapper).WrappedTarget) : (FileTarget)debugTarget;
                 string currentFile = debugFileTarget.FileName.Render(new LogEventInfo { TimeStamp = DateTime.UtcNow });
