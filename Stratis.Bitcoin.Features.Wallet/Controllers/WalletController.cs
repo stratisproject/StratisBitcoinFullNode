@@ -277,6 +277,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 WalletHistoryModel model = new WalletHistoryModel();
 
+                // in order to calculate the fee properly we need to retrieve all the transactions with spending details.
+                var wallet = this.walletManager.GetWalletByName(request.WalletName);
+                var allTransactionsWithSpendingDetails = wallet.GetAllTransactionsByCoinType(this.coinType).Where(t => t.SpendingDetails != null).ToList();
+
                 // get transactions contained in the wallet
                 var addresses = this.walletManager.GetHistory(request.WalletName).ToList();
                 foreach (var address in addresses)
@@ -303,10 +307,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         // add outgoing fund transaction details
                         if (transaction.SpendingDetails != null)
                         {
+                            var spendingTransactionId = transaction.SpendingDetails.TransactionId;
                             TransactionItemModel sentItem = new TransactionItemModel
                             {
                                 Type = TransactionItemType.Send,
-                                Id = transaction.SpendingDetails.TransactionId,
+                                Id = spendingTransactionId,
                                 Timestamp = transaction.SpendingDetails.CreationTime,
                                 ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
                                 Amount = Money.Zero
@@ -328,10 +333,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                             }
 
                             // get the change address for this spending transaction
-                            var changeAddress = addresses.SingleOrDefault(a => a.IsChangeAddress() && a.Transactions.Any(t => t.Id == transaction.SpendingDetails.TransactionId));
+                            var changeAddress = addresses.SingleOrDefault(a => a.IsChangeAddress() && a.Transactions.Any(t => t.Id == spendingTransactionId));
 
-                            // the fee is calculated as follows: fund in utxo - amount spent - amount sent as change
-                            sentItem.Fee = transaction.Amount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transactions.First(t => t.Id == transaction.SpendingDetails.TransactionId).Amount);
+                            // find all the spending details containing the spending transaction id and aggregate the sums. 
+                            // this is our best shot at finding the total value of inputs for this transaction.
+                            var inputsAmount = new Money(allTransactionsWithSpendingDetails.Where(t => t.SpendingDetails.TransactionId == spendingTransactionId).Sum(t => t.Amount));
+
+                            // the fee is calculated as follows: funds in utxo - amount spent - amount sent as change
+                            sentItem.Fee = inputsAmount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transactions.First(t => t.Id == spendingTransactionId).Amount);
 
                             // mined/staked coins add more coins to the total out 
                             // that makes the fee negative if that's the case ignore the fee
