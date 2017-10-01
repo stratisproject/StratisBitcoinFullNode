@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         lst.Add(block);
                     }
 
-                    Stopwatch stopwatch = new Stopwatch();
+                    System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
                     stopwatch.Start();
                     blockRepo.PutAsync(lst.Last().GetHash(), lst).GetAwaiter().GetResult();
                     var first = stopwatch.ElapsedMilliseconds;
