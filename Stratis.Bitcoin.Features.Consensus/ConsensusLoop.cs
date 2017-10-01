@@ -44,9 +44,12 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
+
+            this.watch = new Stopwatch();
         }
 
-        private StopWatch watch = new StopWatch();
+        /// <summary>Watch for performance counters time measurements.</summary>
+        private readonly Stopwatch watch;
 
         public StakeChain StakeChain { get; }
         public LookaheadBlockPuller Puller { get; }
