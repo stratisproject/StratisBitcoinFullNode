@@ -89,6 +89,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Fall back transaction fee for network.</summary>
         public FeeRate FallbackTxFee { get; set; }
 
+        /// <summary>Minimum relay transcation fee for network.</summary>
+        public FeeRate MinRelayTxFee { get; set; }
+
         public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary>
@@ -207,14 +210,19 @@ namespace Stratis.Bitcoin.Configuration
             if (args.Contains("-mintxfee", StringComparer.CurrentCultureIgnoreCase))
                 nodeSettings.MinTxFee = new FeeRate(long.Parse(args.GetValueOf("-mintxfee")));
             else
-                nodeSettings.MinTxFee = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.DefaultMinTxFee()));
+                nodeSettings.MinTxFee = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.MinTxFee));
             nodeSettings.Logger.LogDebug("MinTxFee set to {0}.", nodeSettings.MinTxFee);
 
             if (args.Contains("-fallbackfee", StringComparer.CurrentCultureIgnoreCase))
                 nodeSettings.FallbackTxFee = new FeeRate(long.Parse(args.GetValueOf("-fallbackfee")));
             else
-                nodeSettings.FallbackTxFee = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.DefaultFallbackTxFee()));
+                nodeSettings.FallbackTxFee = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.FallbackFee));
             nodeSettings.Logger.LogDebug("FallbackTxFee set to {0}.", nodeSettings.FallbackTxFee);
+            if (args.Contains("-minrelaytxfee", StringComparer.CurrentCultureIgnoreCase))
+                nodeSettings.MinRelayTxFee = new FeeRate(long.Parse(args.GetValueOf("-minrelaytxfee")));
+            else
+                nodeSettings.MinRelayTxFee = new FeeRate(config.GetOrDefault("minrelaytxfee", nodeSettings.Network.MinRelayTxFee));
+            nodeSettings.Logger.LogDebug("MinRelayTxFee set to {0}.", nodeSettings.MinRelayTxFee);
 
             try
             {
