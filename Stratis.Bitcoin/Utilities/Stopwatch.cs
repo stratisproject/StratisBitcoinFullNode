@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -39,9 +40,10 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="action">Action to execute when the measurement is done.</param>
         public StopwatchDisposable(Action<long> action)
         {
+            Guard.NotNull(action, nameof(action));
+
             this.action = action;
-            this.watch = new System.Diagnostics.Stopwatch();
-            this.watch.Start();
+            this.watch = Stopwatch.StartNew();
         }
 
         /// <summary>
