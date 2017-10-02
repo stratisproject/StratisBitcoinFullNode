@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -135,7 +134,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<MempoolAsyncLock>();
                         services.AddSingleton<TxMempool>();
                         services.AddSingleton<BlockPolicyEstimator>();
-//                        services.AddSingleton<FeeRate>(MempoolValidator.MinRelayTxFee);
                         services.AddSingleton<IMempoolValidator, MempoolValidator>();
                         services.AddSingleton<MempoolOrphans>();
                         services.AddSingleton<MempoolManager>();
