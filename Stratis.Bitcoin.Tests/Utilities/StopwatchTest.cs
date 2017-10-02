@@ -8,7 +8,7 @@ using Xunit;
 namespace Stratis.Bitcoin.Tests.Utilities
 {
     /// <summary>
-    /// Tests of <see cref="Stopwatch"/> class.
+    /// Tests of <see cref="StopwatchDisposable"/> class.
     /// </summary>
     public class StopwatchTest
     {
@@ -39,7 +39,6 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             DateTime startTime = DateTime.UtcNow;
             System.Diagnostics.Stopwatch diagStopwatch = new System.Diagnostics.Stopwatch();
-            Stopwatch dispStopwatch = new Stopwatch();
 
             int delayTimeMs = 0;
             Random rnd = new Random();
@@ -50,7 +49,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
                 diagStopwatch.Start();
 
-                using (dispStopwatch.Start(o => Interlocked.Add(ref elapsedTicksByDispStopwatch, o)))
+                using (new StopwatchDisposable(o => Interlocked.Add(ref elapsedTicksByDispStopwatch, o)))
                 {
                     // Actual work that we want to measure, which is simulated by sleep.
                     Thread.Sleep(delay);
