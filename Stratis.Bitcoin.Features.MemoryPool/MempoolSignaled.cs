@@ -11,6 +11,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// </summary>
     public class MempoolSignaled : SignalObserver<Block>
     {
+        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
         /// <summary>
         /// Memory pool manager injected dependency.
         /// </summary>
@@ -32,11 +38,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>
-        /// Asynchronous loop factory injected dependency.
-        /// </summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
-        /// <summary>
         /// Constructs an instance of a MempoolSignaled object.
         /// Starts the block notification loop to memory pool behaviors for connected nodes.
         /// </summary>
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="connection">Connection manager injected dependency.</param>
         /// <param name="nodeLifetime">Node lifetime injected dependency.</param>
         /// <param name="asyncLoopFactory">Asynchronous loop factory injected dependency.</param>
-        public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, IConnectionManager connection, 
+        public MempoolSignaled(MempoolManager manager, ConcurrentChain chain, IConnectionManager connection,
             INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
         {
             this.manager = manager;
@@ -53,7 +54,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.connection = connection;
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
-            this.RelayWorker();
         }
 
         /// <inheritdoc />
@@ -71,9 +71,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Announces blocks on all connected nodes memory pool behaviours every ten seconds.
         /// </summary>
-        private void RelayWorker()
+        public void Start()
         {
-            this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
+            this.asyncLoop = this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
             {
                 var nodes = this.connection.ConnectedNodes;
                 if (!nodes.Any())
@@ -87,6 +87,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.TenSeconds,
             startAfter: TimeSpans.TenSeconds);
+        }
+
+        public void Stop()
+        {
+            if (this.asyncLoop != null)
+                this.asyncLoop.Dispose();
         }
     }
 }
