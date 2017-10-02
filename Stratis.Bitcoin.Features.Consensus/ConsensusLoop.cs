@@ -46,8 +46,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.StakeChain = stakeChain;
         }
 
-        private StopWatch watch = new StopWatch();
-
         public StakeChain StakeChain { get; }
         public LookaheadBlockPuller Puller { get; }
         public ConcurrentChain Chain { get; }
@@ -83,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             BlockResult result = new BlockResult();
             try
             {
-                using (this.watch.Start(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
+                using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
                 {
                     while (true)
                     {
@@ -118,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void AcceptBlock(ContextInformation context)
         {
-            using (this.watch.Start(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
+            using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
             {
                 // Check that the current block has not been reorged.
                 // Catching a reorg at this point will not require a rewind.
@@ -154,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
             context.Set = new UnspentOutputSet();
-            using (this.watch.Start(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
+            using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
                 uint256[] ids = GetIdsToFetch(context.BlockResult.Block, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = this.UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
@@ -166,7 +164,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.TryPrefetchAsync(context.Flags);
 
             // Validate the UTXO set is correctly spent.
-            using (this.watch.Start(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
+            using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockProcessingTime(o)))
             {
                 this.Validator.ExecuteBlock(context, null);
             }
