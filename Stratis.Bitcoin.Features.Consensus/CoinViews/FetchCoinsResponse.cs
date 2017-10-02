@@ -16,14 +16,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public UnspentOutputs[] UnspentOutputs { get; set; }
 
         /// <summary>
-        /// Parameterless constructor.
-        /// </summary>
-        /// <remarks>TODO: This does not seem to be used anywhere by anything, can we remove it?</remarks>
-        public FetchCoinsResponse()
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
         /// <param name="unspent">Unspent outputs of the requested transactions.</param>

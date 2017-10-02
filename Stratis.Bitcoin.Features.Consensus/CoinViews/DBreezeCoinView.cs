@@ -19,9 +19,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Database key under which the block hash of the coin view's current tip is stored.</summary>
         private static readonly byte[] blockHashKey = new byte[0];
 
-        /// TODO: Can we removed this? It is not used anywhere.
-        private static readonly UnspentOutputs[] noOutputs = new UnspentOutputs[0];
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
