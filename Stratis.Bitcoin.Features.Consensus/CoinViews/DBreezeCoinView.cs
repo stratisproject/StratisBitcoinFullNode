@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds?.Length);
 
                 FetchCoinsResponse res = null;
-                using (StopWatch.Instance.Start(o => this.PerformanceCounter.AddQueryTime(o)))
+                using (new StopwatchDisposable(o => this.PerformanceCounter.AddQueryTime(o)))
                 {
                     uint256 blockHash = this.GetCurrentHash();
                     UnspentOutputs[] result = new UnspentOutputs[txIds.Length];
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 RewindData rewindData = originalOutputs == null ? null : new RewindData(oldBlockHash);
                 int insertedEntities = 0;
-                using (new StopWatch().Start(o => this.PerformanceCounter.AddInsertTime(o)))
+                using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
                 {
                     uint256 current = this.GetCurrentHash();
                     if (current != oldBlockHash)
