@@ -13,7 +13,12 @@ namespace Stratis.Bitcoin.Features.Notifications
     /// </summary>
     public class BlockNotification
     {
+        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
         private readonly ISignals signals;
@@ -72,20 +77,24 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         /// <summary>
         /// Notifies about blocks, starting from block with hash passed as parameter.
-        /// <para>
-        /// We don't need to wait for this asyncloop to complete as it doesn't rely or depend on
-        /// any other features finishing before shutting down. Stopping the node will stop the async 
-        /// loop task immediately.
-        /// </para>
         /// </summary>
-        public void NotifyLoop()
+        public void Start()
         {
-            this.asyncLoopFactory.Run("Notify", async token =>
-            {
-                await Notify(this.nodeLifetime.ApplicationStopping);
-            },
+            this.asyncLoop = this.asyncLoopFactory.Run("Notify", async token =>
+           {
+               await Notify(this.nodeLifetime.ApplicationStopping);
+           },
             this.nodeLifetime.ApplicationStopping,
             TimeSpans.Ms100);
+        }
+
+        /// <summary>
+        /// Stops block notification by waiting for the async loop to complete.
+        /// </summary>
+        public void Stop()
+        {
+            if (this.asyncLoop != null)
+                this.asyncLoop.Dispose();
         }
 
         internal Task Notify(CancellationToken token)
