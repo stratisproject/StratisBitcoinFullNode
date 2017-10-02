@@ -3,13 +3,17 @@
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Replacement for <see cref="System.Diagnostics.Stopwatch"/> class that allows the caller 
-    /// to use convenient way of calling the watch with <c>using</c> keyword due to 
+    /// Replacement for the <see cref="System.Diagnostics.Stopwatch"/> class that allows the caller 
+    /// to use a convenient way of calling the watch with the <c>using</c> statement due to 
     /// the implementation of <see cref="IDisposable"/> interface.
     /// </summary>
     /// <remarks>
     /// Note that we are using <see cref="DateTime.Ticks"/> as a basic unit of measurement,
     /// not <see cref="System.Diagnostics.Stopwatch.ElapsedTicks"/>.
+    /// <para>
+    /// WARNING: This class is not thread-safe. You need a separate instance for each paralel 
+    /// execution flow.
+    /// </para>
     /// </remarks>
     /// <example>
     /// <code>
