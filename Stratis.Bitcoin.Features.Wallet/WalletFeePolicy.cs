@@ -4,13 +4,13 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
 using System;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
     public interface IWalletFeePolicy
     {
-        Task Initialize();
+        void Start();
+        void Stop();
         Money GetRequiredFee(int txBytes);
         Money GetMinimumFee(int txBytes, int confirmTarget);
         Money GetMinimumFee(int txBytes, int confirmTarget, Money targetFee);
@@ -77,6 +77,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
+        public void Start()
+        {
+            return;
+        }
+
+        /// <inheritdoc />
+        public void Stop()
+        {
+            return;
+        }
+
+        /// <inheritdoc />
         public Money GetRequiredFee(int txBytes)
         {
             return Math.Max(this.minTxFee.GetFee(txBytes), this.minRelayTxFee.GetFee(txBytes));
@@ -117,12 +129,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             //this.blockPolicyEstimator.EstimateSmartFee(confirmTarget, this.mempool, out estimateFoundTarget).GetFee(txBytes);
             return this.fallbackFee;
-        }
-
-        /// <inheritdoc />
-        public Task Initialize()
-        {
-            return Task.CompletedTask;
         }
     }
 }

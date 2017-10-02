@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
@@ -12,6 +11,18 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// <seealso cref="https://github.com/stratisproject/stratisX/blob/master/src/wallet.cpp#L1437">StratisX fee calculation.</seealso>
     public class LightWalletFixedFeePolicy : IWalletFeePolicy
     {
+        /// <inheritdoc />
+        public void Start()
+        {
+            return;
+        }
+
+        /// <inheritdoc />
+        public void Stop()
+        {
+            return;
+        }
+
         /// <summary>Logger instance for this class.</summary>
         private readonly ILogger logger;
 
@@ -56,12 +67,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public Money GetRequiredFee(int txBytes)
         {
             return this.TxFeeRate.GetFee(txBytes);
-        }
-
-        /// <inheritdoc />
-        public Task Initialize()
-        {
-            return Task.CompletedTask;
         }
     }
 }

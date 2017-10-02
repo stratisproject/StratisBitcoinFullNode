@@ -1,18 +1,24 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
     /// Interface for a manager providing operations on wallets.
     /// </summary>
-    public interface IWalletManager : IDisposable
+    public interface IWalletManager
     {
         /// <summary>
-        /// Initializes this wallet manager.
+        /// Starts this wallet manager.
         /// </summary>
-        void Initialize();
+        void Start();
+
+        /// <summary>
+        /// Stops the wallet manager.
+        /// <para>Internally it waits for async loops to complete before saving the wallets to disk.</para>
+        /// </summary>
+        void Stop();
 
         /// <summary>
         /// The last processed block.
@@ -30,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
         List<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0);
-        
+
         /// <summary>
         /// Creates a wallet and persist it as a file on the local system.
         /// </summary>
@@ -176,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <returns>A collection of the wallets' names.</returns>
         string[] GetWalletsNames();
-        
+
         /// <summary>
         /// Updates the wallet with the height of the last block synced.
         /// </summary>
