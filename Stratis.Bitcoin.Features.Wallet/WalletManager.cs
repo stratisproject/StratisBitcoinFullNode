@@ -25,10 +25,19 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public ConcurrentBag<Wallet> Wallets { get; }
 
+        // Size of the buffer of unused addresses maintained in an account. 
         private const int UnusedAddressesBuffer = 20;
-        private const int WalletRecoveryAccountsCount = 3;
-        private const int WalletCreationAccountsCount = 2;
+
+        // Quantity of accounts created in a wallet file when a wallet is restored.
+        private const int WalletRecoveryAccountsCount = 1;
+
+        // Quantity of accounts created in a wallet file when a wallet is created.
+        private const int WalletCreationAccountsCount = 1;
+
+        // File extension for wallet files.
         private const string WalletFileExtension = "wallet.json";
+
+        // Timer for saving wallet files to the file system.
         private const int WalletSavetimeIntervalInMinutes = 5;
 
         private readonly CoinType coinType;

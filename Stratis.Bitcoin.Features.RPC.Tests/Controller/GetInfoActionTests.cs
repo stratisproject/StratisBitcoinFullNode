@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
@@ -22,8 +20,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
             GetInfoModel info = controller.GetInfo();
 
-            uint expectedProtocolVersion = (uint)NodeSettings.Default().ProtocolVersion;
-            var expectedRelayFee = MempoolValidator.MinRelayTxFee.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
+            NodeSettings nodeSettings = NodeSettings.Default();
+            uint expectedProtocolVersion = (uint)nodeSettings.ProtocolVersion;
+            var expectedRelayFee = nodeSettings.MinRelayTxFee.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
             Assert.NotNull(info);
             Assert.Equal(0, info.blocks);
             Assert.NotEqual<uint>(0, info.version);
