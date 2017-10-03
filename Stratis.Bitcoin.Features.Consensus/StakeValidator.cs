@@ -696,7 +696,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             int targetSpacing = GetTargetSpacing(indexLast.Height);
             int actualSpacing = (int)(pindexPrev.Header.Time - pindexPrevPrev.Header.Time);
-            if (IsProtocolV1RetargetingFixed(indexLast.Height) && (actualSpacing < 0))
+            if (actualSpacing < 0)
                 actualSpacing = targetSpacing;
 
             if (IsProtocolV3((int)indexLast.Header.Time) && (actualSpacing > targetSpacing * 10))
@@ -727,11 +727,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         public static int GetTargetSpacing(int height)
         {
             return 64;
-        }
-
-        private static bool IsProtocolV1RetargetingFixed(int height)
-        {
-            return height > 0;
         }
 
         public static uint GetPastTimeLimit(ChainedBlock chainedBlock)
