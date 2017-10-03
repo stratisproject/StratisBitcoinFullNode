@@ -1,29 +1,34 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Api.Models;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Api
 {
     /// <summary>
     /// Provides an Api to the full node
     /// </summary>
-    public class ApiFeature : FullNodeFeature
-    {		
+    public sealed class ApiFeature : FullNodeFeature
+    {
+        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
         private readonly IFullNodeBuilder fullNodeBuilder;
         private readonly FullNode fullNode;
         private readonly ApiFeatureOptions apiFeatureOptions;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly ILogger logger;
 
         public ApiFeature(
-            IFullNodeBuilder fullNodeBuilder, 
-            FullNode fullNode, 
-            ApiFeatureOptions apiFeatureOptions, 
+            IFullNodeBuilder fullNodeBuilder,
+            FullNode fullNode,
+            ApiFeatureOptions apiFeatureOptions,
             IAsyncLoopFactory asyncLoopFactory,
             ILoggerFactory loggerFactory)
         {
@@ -42,6 +47,12 @@ namespace Stratis.Bitcoin.Api
             this.TryStartKeepaliveMonitor();
         }
 
+        public override void Stop()
+        {
+            if (this.asyncLoop != null)
+                this.asyncLoop.Dispose();
+        }
+
         /// <summary>
         /// A KeepaliveMonitor when enabled will shutdown the
         /// node if no one is calling the keepalive endpoint 
@@ -51,31 +62,31 @@ namespace Stratis.Bitcoin.Api
         {
             if (this.apiFeatureOptions.KeepaliveMonitor?.KeepaliveInterval.TotalSeconds > 0)
             {
-                this.asyncLoopFactory.Run("ApiFeature.KeepaliveMonitor", token =>
-                    {
-                        // shortened for redability
-                        var monitor = this.apiFeatureOptions.KeepaliveMonitor;
+                this.asyncLoop = this.asyncLoopFactory.Run("ApiFeature.KeepaliveMonitor", token =>
+                {
+                    // shortened for redability
+                    KeepaliveMonitor monitor = this.apiFeatureOptions.KeepaliveMonitor;
 
-                        // check the trashold to trigger a shutdown
-                        if (monitor.LastBeat.Add(monitor.KeepaliveInterval) < DateTime.UtcNow)
-                            this.fullNode.Stop();
+                    // check the trashold to trigger a shutdown
+                    if (monitor.LastBeat.Add(monitor.KeepaliveInterval) < DateTime.UtcNow)
+                        this.fullNode.Stop();
 
-                        return Task.CompletedTask;
-                    },
-                    this.fullNode.NodeLifetime.ApplicationStopping,
-                    repeatEvery: this.apiFeatureOptions.KeepaliveMonitor?.KeepaliveInterval,
-                    startAfter: TimeSpans.Minute);
+                    return Task.CompletedTask;
+                },
+                this.fullNode.NodeLifetime.ApplicationStopping,
+                repeatEvery: this.apiFeatureOptions.KeepaliveMonitor?.KeepaliveInterval,
+                startAfter: TimeSpans.Minute);
             }
         }
     }
 
-    public class ApiFeatureOptions
+    public sealed class ApiFeatureOptions
     {
-        public KeepaliveMonitor KeepaliveMonitor { get; set; }
+        public KeepaliveMonitor KeepaliveMonitor { get; private set; }
 
         public void Keepalive(TimeSpan timeSpan)
         {
-            this.KeepaliveMonitor = new KeepaliveMonitor {KeepaliveInterval = timeSpan};
+            this.KeepaliveMonitor = new KeepaliveMonitor { KeepaliveInterval = timeSpan };
         }
     }
 
@@ -100,5 +111,5 @@ namespace Stratis.Bitcoin.Api
 
             return fullNodeBuilder;
         }
-    }	
+    }
 }
