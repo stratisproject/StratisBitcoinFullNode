@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockResult.Block;
 
             // Check timestamp.
-            if (block.Header.Time > FutureDriftV2(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
+            if (block.Header.Time > FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
@@ -315,24 +315,15 @@ namespace Stratis.Bitcoin.Features.Consensus
             return (nTimeBlock == nTimeTx) && ((nTimeTx & StakeTimestampMask) == 0);
         }
 
-        private static long FutureDriftV1(long nTime)
-        {
-            return nTime + 10 * 60;
-        }
 
         private static bool IsDriftReduced(long nTime)
         {
             return nTime > 1479513600;
         }
 
-        private static long FutureDriftV2(long nTime)
-        {
-            return IsDriftReduced(nTime) ? nTime + 15 : nTime + 128 * 60 * 60;
-        }
-
         private static long FutureDrift(long nTime)
         {
-            return FutureDriftV2(nTime);
+            return IsDriftReduced(nTime) ? nTime + 15 : nTime + 128 * 60 * 60;
         }
 
         public bool CheckBlockSignature(Block block)
