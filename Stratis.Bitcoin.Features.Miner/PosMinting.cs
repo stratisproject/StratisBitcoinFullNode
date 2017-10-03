@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (this.CreateCoinStake(stakeTxes, block, chainTip, searchInterval, fees, ref txCoinStake, ref key))
             {
-                uint minTimestamp = BlockValidator.GetPastTimeLimit(chainTip) + 1;
+                uint minTimestamp = StakeValidator.GetPastTimeLimit(chainTip) + 1;
                 if (txCoinStake.Time >= minTimestamp)
                 {
                     // Make sure coinstake would meet timestamp protocol
@@ -700,8 +700,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.logger.LogTrace("Found candidate UTXO '{0}/{1}' with {2} coins.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value);
 
-                    long timeWeight = BlockValidator.GetWeight((long)stakeTx.UtxoSet.Time, (long)coinstakeTx.Time);
-
                     // Don't add inputs that would violate the reserve limit.
                     if ((coinstakeInputsValue + stakeTx.TxOut.Value) > (balance - this.reserveBalance))
                     {
@@ -715,11 +713,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         this.logger.LogTrace("UTXO '{0}/{1}' rejected because its value is too big.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
                         continue;
                     }
-
-                    // Do not add input that is still too young.
-                    // V3 case is properly handled by selection function.
-                    if (timeWeight < BlockValidator.StakeMinAge)
-                        continue;
 
                     coinstakeTx.Inputs.Add(new TxIn(new OutPoint(stakeTx.UtxoSet.TransactionId, stakeTx.OutputIndex)));
 
@@ -766,7 +759,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Set output amount.
             if (coinstakeTx.Outputs.Count == 3)
             {
-                coinstakeTx.Outputs[1].Value = (coinstakeInputsValue / 2 / BlockValidator.CENT) * BlockValidator.CENT;
+                coinstakeTx.Outputs[1].Value = (coinstakeInputsValue / 2 / Money.CENT) * Money.CENT;
                 coinstakeTx.Outputs[2].Value = coinstakeInputsValue - coinstakeTx.Outputs[1].Value;
                 this.logger.LogTrace("Coinstake first output value is {0}, second is {2}.", coinstakeTx.Outputs[1].Value, coinstakeTx.Outputs[2].Value);
             }
@@ -831,7 +824,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private static long GetStakeCombineThreshold()
         {
-            return 100 * BlockValidator.COIN;
+            return 100 * Money.COIN;
         }
 
         private static long GetStakeSplitThreshold()
