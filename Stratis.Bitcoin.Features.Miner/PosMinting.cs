@@ -161,6 +161,11 @@ namespace Stratis.Bitcoin.Features.Miner
             this.rpcGetStakingInfoModel = new RPC.Models.GetStakingInfoModel();
         }
 
+        /// <summary>
+        /// Starts the main POS staking loop.
+        /// </summary>
+        /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
+        /// <returns>Interface to started loop, so it can be stopped during shutdown.</returns>
         public IAsyncLoop Mine(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
@@ -217,6 +222,14 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.mining;
         }
 
+        /// <summary>
+        /// Attempts to stake new blocks in a loop.
+        /// <para>
+        /// Staking is attempted only if the node is fully synchronized 
+        /// and connected to the network.
+        /// </para>
+        /// </summary>
+        /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
         public void GenerateBlocks(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
@@ -265,13 +278,11 @@ namespace Stratis.Bitcoin.Features.Miner
                     }
                 }
 
-                ChainedBlock prevBlock = this.consensusLoop.Tip;
-
-                if (this.lastCoinStakeSearchPrevBlockHash != prevBlock.HashBlock)
+                if (this.lastCoinStakeSearchPrevBlockHash != chainTip.HashBlock)
                 {
-                    this.lastCoinStakeSearchPrevBlockHash = prevBlock.HashBlock;
-                    this.lastCoinStakeSearchTime = prevBlock.Header.Time;
-                    this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", prevBlock.HashBlock, prevBlock.Height, prevBlock.Header.Time);
+                    this.lastCoinStakeSearchPrevBlockHash = chainTip.HashBlock;
+                    this.lastCoinStakeSearchTime = chainTip.Header.Time;
+                    this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", chainTip.HashBlock, chainTip.Height, chainTip.Header.Time);
                 }
 
                 uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
@@ -316,15 +327,15 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
                 this.rpcGetStakingInfoModel.PooledTx = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).GetAwaiter().GetResult();
-                this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(prevBlock);
+                this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(chainTip);
                 this.rpcGetStakingInfoModel.NetStakeWeight = (long)this.GetNetworkWeight();
 
                 // Trying to sign a block.
-                if (this.StakeAndSignBlock(stakeTxes, block, prevBlock, blockTemplate.TotalFee, coinstakeTimestamp))
+                if (this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp))
                 {
                     this.logger.LogTrace("POS block signed successfully.");
                     var blockResult = new BlockResult { Block = block };
-                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), prevBlock, chainTip);
+                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip);
 
                     blockTemplate = null;
                 }
@@ -336,9 +347,15 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        private void CheckStake(ContextInformation context, ChainedBlock prevBlock, ChainedBlock chainTip)
+        /// <summary>
+        /// One a new block is staked, this method is used to verify that it 
+        /// is a valid block and if so, it will add it to the chain.
+        /// </summary>
+        /// <param name="context">Information about the new block.</param>
+        /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
+        private void CheckStake(ContextInformation context, ChainedBlock chainTip)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}')", nameof(prevBlock), prevBlock.HashBlock, prevBlock.Height, nameof(chainTip), chainTip.HashBlock, chainTip.Height);
+            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainTip), chainTip.HashBlock, chainTip.Height);
 
             Block block = context.BlockResult.Block;
 
@@ -349,7 +366,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Verify hash target and signature of coinstake tx.
-            BlockStake prevBlockStake = this.stakeChain.Get(prevBlock.HashBlock);
+            BlockStake prevBlockStake = this.stakeChain.Get(chainTip.HashBlock);
             if (prevBlockStake == null)
             {
                 this.logger.LogTrace("(-)[NO_PREV_STAKE]");
@@ -357,17 +374,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             context.SetStake();
-            this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, prevBlock, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
-
-            // The following is wrong, this should be REORG not SOLUTION FOUND
-            // but this would just narrow the race condition in case of reorg, not mitigate it.
-            // --------
-            // Found a solution.
-            // if (block.Header.HashPrevBlock != chainTip.HashBlock)
-            // {
-            //     this.logger.LogTrace("(-)[SOLUTION_FOUND]");
-            //     return;
-            // }
+            this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, chainTip, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
 
             // Validate the block.
             this.consensusLoop.AcceptBlock(context);
@@ -775,7 +782,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Sign.
             foreach (StakeTx walletTx in coinstakeInputs)
             {
-                if (!this.SignSignature(walletTx, coinstakeTx))
+                if (!this.SignTransactionInput(walletTx, coinstakeTx))
                 {
                     this.logger.LogTrace("(-)[SIGN_FAILED]:false");
                     return false;
@@ -796,25 +803,33 @@ namespace Stratis.Bitcoin.Features.Miner
             return true;
         }
 
-        private bool SignSignature(StakeTx from, Transaction txTo, params Script[] knownRedeems)
+        /// <summary>
+        /// Signs input of a transaction.
+        /// </summary>
+        /// <param name="input">Transaction input.</param>
+        /// <param name="transaction">Transaction being built.</param>
+        /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
+        private bool SignTransactionInput(StakeTx input, Transaction transaction)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(from), from.OutPoint.Hash, from.OutPoint.N);
+            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(input), input.OutPoint.Hash, input.OutPoint.N);
+
+            bool res = false;
             try
             {
                 new TransactionBuilder()
-                    .AddKeys(from.Key)
-                    .AddKnownRedeems(knownRedeems)
-                    .AddCoins(new Coin(from.OutPoint, from.TxOut))
-                    .SignTransactionInPlace(txTo);
+                    .AddKeys(input.Key)
+                    .AddCoins(new Coin(input.OutPoint, input.TxOut))
+                    .SignTransactionInPlace(transaction);
+
+                res = true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                this.logger.LogTrace("(-):false");
-                return false;
+                this.logger.LogDebug("Exception occurred: {0}", e.ToString());
             }
 
-            this.logger.LogTrace("(-):true");
-            return true;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
 
         private static long GetStakeCombineThreshold()
