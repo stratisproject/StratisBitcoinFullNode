@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets whether there are any wallet files loaded or not.
         /// </summary>
         /// <returns>Whether any wallet files are loaded.</returns>
-        bool AreWallets { get; }
+        bool ContainsWallets { get; }
 
         string GetExtPubKey(WalletAccountReference accountReference);
     }

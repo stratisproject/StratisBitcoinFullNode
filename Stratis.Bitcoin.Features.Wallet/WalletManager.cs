@@ -403,13 +403,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public bool AreWallets
-        {
-            get
-            {
-                return this.Wallets.Any();
-            }
-        }
+        public bool ContainsWallets { get { return this.Wallets.Any(); } }
 
         /// <summary>
         /// Gets the hash of the oldest block received by the wallets.

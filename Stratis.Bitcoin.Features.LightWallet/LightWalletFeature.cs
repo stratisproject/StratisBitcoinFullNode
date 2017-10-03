@@ -111,8 +111,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                        (manager.AreWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                        (manager.AreWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
+                        (manager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                        (manager.ContainsWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
             }
         }
     }
