@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -8,6 +6,8 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
+using System;
+using System.Text;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -44,18 +44,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            var walletManager = this.walletManager as WalletManager;
+            WalletManager walletManager = this.walletManager as WalletManager;
 
             if (walletManager != null)
             {
-                var height = walletManager.LastBlockHeight();
-                var block = this.chain.GetBlock(height);
-                var hashBlock = block == null ? 0 : block.HashBlock;
+                int height = walletManager.LastBlockHeight();
+                ChainedBlock block = this.chain.GetBlock(height);
+                uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                        height.ToString().PadRight(8) +
-                                        " Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                        hashBlock);
+                                        (walletManager.AreWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                                        (walletManager.AreWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
             }
         }
 
