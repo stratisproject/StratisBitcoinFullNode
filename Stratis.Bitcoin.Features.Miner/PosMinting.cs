@@ -718,11 +718,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     // Do not add input that is still too young.
                     // V3 case is properly handled by selection function.
-                    if (!BlockValidator.IsProtocolV3((int)coinstakeTx.Time))
-                    {
-                        if (timeWeight < BlockValidator.StakeMinAge)
-                            continue;
-                    }
+                    if (timeWeight < BlockValidator.StakeMinAge)
+                        continue;
 
                     coinstakeTx.Inputs.Add(new TxIn(new OutPoint(stakeTx.UtxoSet.TransactionId, stakeTx.OutputIndex)));
 
@@ -888,19 +885,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                if (BlockValidator.IsProtocolV3((int)spendTime))
+                if (depth < requiredDepth)
                 {
-                    if (depth < requiredDepth)
-                    {
-                        this.logger.LogTrace("UTXO '{0}/{1}' depth {2} is lower than required minimum depth {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, depth, requiredDepth);
-                        continue;
-                    }
-                }
-                else
-                {
-                    // Filtering by tx timestamp instead of block timestamp may give false positives but never false negatives.
-                    if (stakeTx.UtxoSet.Time + this.network.Consensus.Option<PosConsensusOptions>().StakeMinAge > spendTime)
-                        continue;
+                    this.logger.LogTrace("UTXO '{0}/{1}' depth {2} is lower than required minimum depth {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, depth, requiredDepth);
+                    continue;
                 }
 
                 if (this.GetBlocksToMaturity(stakeTx) > 0)

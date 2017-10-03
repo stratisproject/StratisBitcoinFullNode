@@ -84,19 +84,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Min age requirement.
-            if (IsProtocolV3((int)tx.Time))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
             {
-                if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
-                {
-                    this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
-                    ConsensusErrors.InvalidStakeDepth.Throw();
-                }
-            }
-            else
-            {
-                uint nTimeBlockFrom = prevBlock.Header.Time;
-                if (nTimeBlockFrom + this.consensusOptions.StakeMinAge > tx.Time)
-                    ConsensusErrors.MinAgeViolation.Throw();
+                this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
+                ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
             this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock.Header.Time, prevBlockStake, prevUtxo, txIn.PrevOut, tx.Time);
@@ -222,16 +213,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             using (var ms = new MemoryStream())
             {
                 var serializer = new BitcoinStream(ms, true);
-                if (IsProtocolV3((int)nTimeTx))
-                {
-                    serializer.ReadWrite(bnStakeModifierV2);
-                }
-                else
-                {
-                    serializer.ReadWrite(nStakeModifier);
-                    serializer.ReadWrite(nTimeBlockFrom);
-                }
-
+                serializer.ReadWrite(bnStakeModifierV2);
                 serializer.ReadWrite(txPrev.Time);
                 serializer.ReadWrite(prevout.Hash);
                 serializer.ReadWrite(prevout.N);
@@ -550,22 +532,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (trx.Time < prevUtxo.Time)
                     return false;  // Transaction timestamp violation.
 
-                if (IsProtocolV3((int)trx.Time))
+                if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
                 {
-                    if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
-                    {
-                        //LogPrint("coinage", "coin age skip nSpendDepth=%d\n", nSpendDepth + 1);
-                        continue; // only count coins meeting min confirmations requirement
-                    }
-                }
-                else
-                {
-                    // Read block header
-                    //var block = blockStore.GetBlock(txPrev.GetHash());
-                    //if (block == null)
-                    //    return false; // unable to read block of previous transaction
-                    if (prevBlock.Header.Time + this.consensusOptions.StakeMinAge > trx.Time)
-                        continue; // only count coins meeting min age requirement
+                    //LogPrint("coinage", "coin age skip nSpendDepth=%d\n", nSpendDepth + 1);
+                    continue; // only count coins meeting min confirmations requirement
                 }
 
                 long nValueIn = prevUtxo._Outputs[txin.PrevOut.N].Value;
@@ -606,19 +576,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
-            if (IsProtocolV3((int)nTime))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
             {
-                if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
-                {
-                    this.logger.LogTrace("(-)[LOW_COIN_AGE]");
-                    ConsensusErrors.InvalidStakeDepth.Throw();
-                }
-            }
-            else
-            {
-                uint nTimeBlockFrom = prevBlock.Header.Time;
-                if (nTimeBlockFrom + this.consensusOptions.StakeMinAge > nTime)
-                    ConsensusErrors.MinAgeViolation.Throw();
+                this.logger.LogTrace("(-)[LOW_COIN_AGE]");
+                ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
             BlockStake prevBlockStake = this.stakeChain.Get(pindexPrev.HashBlock);
@@ -633,11 +594,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock.Header.Time, prevBlockStake, prevUtxo, prevout, (uint)nTime);
 
             this.logger.LogTrace("(-):{0}={1}", nameof(pBlockTime), pBlockTime);
-        }
-
-        public static bool IsProtocolV3(int nTime)
-        {
-            return nTime > 1470467000;
         }
 
         public static ChainedBlock GetLastBlockIndex(StakeChain stakeChain, ChainedBlock index, bool proofOfStake)
@@ -699,7 +655,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (actualSpacing < 0)
                 actualSpacing = targetSpacing;
 
-            if (IsProtocolV3((int)indexLast.Header.Time) && (actualSpacing > targetSpacing * 10))
+            if (actualSpacing > targetSpacing * 10)
                 actualSpacing = targetSpacing * 10;
 
             // Target change every block

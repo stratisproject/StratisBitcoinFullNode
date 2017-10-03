@@ -262,13 +262,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             ChainedBlock chainedBlock = context.BlockResult.ChainedBlock;
             this.logger.LogTrace("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}.", chainedBlock.Height, chainedBlock.Header.Time, chainedBlock.Previous.Header.Time);
 
-            if (!StakeValidator.IsProtocolV3((int)chainedBlock.Header.Time))
+            if (chainedBlock.Header.Version > BlockHeader.CURRENT_VERSION)
             {
-                if (chainedBlock.Header.Version > BlockHeader.CURRENT_VERSION)
-                {
-                    ConsensusErrors.BadVersion.Throw();
-                    this.logger.LogTrace("(-)[BAD_VERSION_NO_V3]");
-                }
+                ConsensusErrors.BadVersion.Throw();
+                this.logger.LogTrace("(-)[BAD_VERSION_NO_V3]");
             }
 
             if (chainedBlock.Header.Version < 7)
@@ -315,7 +312,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             return (nTimeBlock == nTimeTx) && ((nTimeTx & StakeTimestampMask) == 0);
         }
 
-
         private static bool IsDriftReduced(long nTime)
         {
             return nTime > 1479513600;
@@ -353,44 +349,38 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return res;
             }
 
-            if (StakeValidator.IsProtocolV3((int)block.Header.Time))
+            // Block signing key also can be encoded in the nonspendable output.
+            // This allows to not pollute UTXO set with useless outputs e.g. in case of multisig staking.
+
+            List<Op> ops = txout.ScriptPubKey.ToOps().ToList();
+            if (!ops.Any()) // script.GetOp(pc, opcode, vchPushValue))
             {
-                // Block signing key also can be encoded in the nonspendable output.
-                // This allows to not pollute UTXO set with useless outputs e.g. in case of multisig staking.
-
-                List<Op> ops = txout.ScriptPubKey.ToOps().ToList();
-                if (!ops.Any()) // script.GetOp(pc, opcode, vchPushValue))
-                {
-                    this.logger.LogTrace("(-)[NO_OPS]:false");
-                    return false;
-                }
-
-                if (ops.ElementAt(0).Code != OpcodeType.OP_RETURN) // OP_RETURN)
-                {
-                    this.logger.LogTrace("(-)[NO_OP_RETURN]:false");
-                    return false;
-                }
-
-                if (ops.Count < 2) // script.GetOp(pc, opcode, vchPushValue)
-                {
-                    this.logger.LogTrace("(-)[NO_SECOND_OP]:false");
-                    return false;
-                }
-
-                byte[] data = ops.ElementAt(1).PushData;
-                if (!ScriptEvaluationContext.IsCompressedOrUncompressedPubKey(data))
-                {
-                    this.logger.LogTrace("(-)[NO_PUSH_DATA]:false");
-                    return false;
-                }
-
-                bool res = new PubKey(data).Verify(block.GetHash(), new ECDSASignature(block.BlockSignatur.Signature));
-                this.logger.LogTrace("(-):{0}", res);
-                return res;
+                this.logger.LogTrace("(-)[NO_OPS]:false");
+                return false;
             }
 
-            this.logger.LogTrace("(-)[VERSION]:false");
-            return false;
+            if (ops.ElementAt(0).Code != OpcodeType.OP_RETURN) // OP_RETURN)
+            {
+                this.logger.LogTrace("(-)[NO_OP_RETURN]:false");
+                return false;
+            }
+
+            if (ops.Count < 2) // script.GetOp(pc, opcode, vchPushValue)
+            {
+                this.logger.LogTrace("(-)[NO_SECOND_OP]:false");
+                return false;
+            }
+
+            byte[] data = ops.ElementAt(1).PushData;
+            if (!ScriptEvaluationContext.IsCompressedOrUncompressedPubKey(data))
+            {
+                this.logger.LogTrace("(-)[NO_PUSH_DATA]:false");
+                return false;
+            }
+
+            bool verifyRes = new PubKey(data).Verify(block.GetHash(), new ECDSASignature(block.BlockSignatur.Signature));
+            this.logger.LogTrace("(-):{0}", verifyRes);
+            return verifyRes;
         }
 
         public override void CheckBlockHeader(ContextInformation context)
