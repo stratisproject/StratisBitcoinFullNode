@@ -1,6 +1,5 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Consensus;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,15 +7,15 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public class NodeSync
+    public class NodeSyncTests
     {
         [Fact]
         public void NodesCanConnectToEachOthers()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node1 = builder.CreateStratisNode();
-                var node2 = builder.CreateStratisNode();
+                var node1 = builder.CreateStratisPowNode();
+                var node2 = builder.CreateStratisPowNode();
                 builder.StartAll();
                 Assert.Equal(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
                 Assert.Equal(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
@@ -40,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisNode();
+                var stratisNode = builder.CreateStratisPowNode();
                 var coreNode = builder.CreateNode();
                 builder.StartAll();
 
@@ -68,8 +67,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisNode();
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNode = builder.CreateStratisPowNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 var coreCreateNode = builder.CreateNode();
                 builder.StartAll();
 
@@ -102,7 +101,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisNode();
+                var stratisNode = builder.CreateStratisPowNode();
                 var coreNodeSync = builder.CreateNode();
                 var coreCreateNode = builder.CreateNode();
                 builder.StartAll();
@@ -132,53 +131,69 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void Given__NodesAreSynced__When__ABigReorgHappens__Then__TheNodesCanRecover()
+        public void Given__NodesAreSynced__When__ABigReorgHappens__Then__TheReorgIsIgnored()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            // Temporary fix so the Network static initialize will not break.
+            var m = Network.Main;
+            try
             {
-                var stratisMiner = builder.CreateStratisNode();
-                var stratisSyncer = builder.CreateStratisNode();
-                var stratisReorg = builder.CreateStratisNode();
+                using (NodeBuilder builder = NodeBuilder.Create())
+                {
+                    var stratisMiner = builder.CreateStratisPosNode();
+                    var stratisSyncer = builder.CreateStratisPosNode();
+                    var stratisReorg = builder.CreateStratisPosNode();
 
-                builder.StartAll();
-                stratisMiner.NotInIBD();
-                stratisSyncer.NotInIBD();
-                stratisReorg.NotInIBD();
+                    builder.StartAll();
+                    stratisMiner.NotInIBD();
+                    stratisSyncer.NotInIBD();
+                    stratisReorg.NotInIBD();
 
-                stratisMiner.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMiner.FullNode.Network));
-                stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
+                    // TODO: set the max allowed reorg threshold here
+                    // assume a reorg of 10 blocks is not allowed.
 
-                var maturity = (int)stratisMiner.FullNode.Network.Consensus.Option<PowConsensusOptions>().COINBASE_MATURITY;
-                stratisMiner.GenerateStratisWithMiner(1);
+                    stratisMiner.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMiner.FullNode.Network));
+                    stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
 
-                // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
-                stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
-                stratisMiner.CreateRPCClient().AddNode(stratisSyncer.Endpoint, true);
+                    stratisMiner.GenerateStratisWithMiner(1);
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisReorg));
+                    // wait for block repo for block sync to work
+                    TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
+                    stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                    stratisMiner.CreateRPCClient().AddNode(stratisSyncer.Endpoint, true);
+
+                    TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
+                    TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisReorg));
 
 
-                // create a reorg by mining on two different chains
-                // ================================================
+                    // create a reorg by mining on two different chains
+                    // ================================================
 
-                stratisMiner.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                    stratisMiner.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
 
-                var t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(502));
-                var t2 = Task.Run(() => stratisReorg.GenerateStratisWithMiner(505));
-                Task.WaitAll(t1, t2);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
+                    var t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(10));
+                    var t2 = Task.Run(() => stratisReorg.GenerateStratisWithMiner(12));
+                    Task.WaitAll(t1, t2);
+                    TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
+                    TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
 
-                // connect the reorg chain
-                stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
-                stratisSyncer.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                    // The hash before the reorg node is connected.
+                    var hashBeforeReorg = stratisMiner.FullNode.Chain.Tip.HashBlock;
 
-                // wait for the chains to catch up
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisReorg));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisSyncer, stratisReorg));
-                Assert.Equal(506, stratisSyncer.FullNode.Chain.Tip.Height);               
+                    // connect the reorg chain
+                    stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                    stratisSyncer.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+
+                    // wait for the chains to catch up
+                    TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
+
+                    // check that a reorg did not happen.
+                    Assert.Equal(hashBeforeReorg, stratisSyncer.FullNode.Chain.Tip.HashBlock);
+                }
+            }
+            finally
+            {
+                Transaction.TimeStamp = false;
+                Block.BlockSignature = false;
             }
         }
     }

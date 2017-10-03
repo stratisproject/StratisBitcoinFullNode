@@ -733,6 +733,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return res;
             }
 
+            if (consensus.PowNoRetargeting)
+                return pindexPrev.Header.Bits;
+
             int targetSpacing = GetTargetSpacing(indexLast.Height);
             int actualSpacing = (int)(pindexPrev.Header.Time - pindexPrevPrev.Header.Time);
             if (IsProtocolV1RetargetingFixed(indexLast.Height) && (actualSpacing < 0))

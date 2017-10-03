@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Builder
             }
             catch (Exception ex)
             {
-                this.logger.LogError("An error occurred starting the application", ex);
+                this.logger.LogError("An error occurred starting the application: {0}", ex);
                 throw;
             }
         }
