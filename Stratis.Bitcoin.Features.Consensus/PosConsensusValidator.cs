@@ -271,15 +271,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
             }
 
-            if (StakeValidator.IsProtocolV2(chainedBlock.Height) && (chainedBlock.Header.Version < 7))
+            if (chainedBlock.Header.Version < 7)
             {
                 this.logger.LogTrace("(-)[BAD_VERSION_V2_LT_7]");
-                ConsensusErrors.BadVersion.Throw();
-            }
-
-            if (!StakeValidator.IsProtocolV2(chainedBlock.Height) && (chainedBlock.Header.Version > 6))
-            {
-                this.logger.LogTrace("(-)[BAD_VERSION_V1_GT_6]");
                 ConsensusErrors.BadVersion.Throw();
             }
 
@@ -290,7 +284,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check coinbase timestamp.
-            if (chainedBlock.Header.Time > FutureDrift(context.BlockResult.Block.Transactions[0].Time, chainedBlock.Height))
+            if (chainedBlock.Header.Time > FutureDrift(context.BlockResult.Block.Transactions[0].Time))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
@@ -306,7 +300,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Check timestamp against prev.
             if ((chainedBlock.Header.Time <= StakeValidator.GetPastTimeLimit(chainedBlock.Previous))
-                || (FutureDrift(chainedBlock.Header.Time, chainedBlock.Height) < chainedBlock.Previous.Header.Time))
+                || (FutureDrift(chainedBlock.Header.Time) < chainedBlock.Previous.Header.Time))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_EARLY]");
                 ConsensusErrors.BlockTimestampTooEarly.Throw();
@@ -318,10 +312,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         // Check whether the coinstake timestamp meets protocol.
         public static bool CheckCoinStakeTimestamp(int nHeight, long nTimeBlock, long nTimeTx)
         {
-            if (StakeValidator.IsProtocolV2(nHeight))
-                return (nTimeBlock == nTimeTx) && ((nTimeTx & StakeTimestampMask) == 0);
-            else
-                return (nTimeBlock == nTimeTx);
+            return (nTimeBlock == nTimeTx) && ((nTimeTx & StakeTimestampMask) == 0);
         }
 
         private static long FutureDriftV1(long nTime)
@@ -339,9 +330,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             return IsDriftReduced(nTime) ? nTime + 15 : nTime + 128 * 60 * 60;
         }
 
-        private static long FutureDrift(long nTime, int nHeight)
+        private static long FutureDrift(long nTime)
         {
-            return StakeValidator.IsProtocolV2(nHeight) ? FutureDriftV2(nTime) : FutureDriftV1(nTime);
+            return FutureDriftV2(nTime);
         }
 
         public bool CheckBlockSignature(Block block)

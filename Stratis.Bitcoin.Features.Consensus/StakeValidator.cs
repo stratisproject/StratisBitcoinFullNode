@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     ConsensusErrors.MinAgeViolation.Throw();
             }
 
-            this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, txIn.PrevOut, tx.Time);
+            this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock.Header.Time, prevBlockStake, prevUtxo, txIn.PrevOut, tx.Time);
 
             this.logger.LogTrace("(-)[OK]");
         }
@@ -136,41 +136,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             bool res = ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker);
             this.logger.LogTrace("(-):{0}", res);
             return res;
-        }
-
-        private void CheckStakeKernelHash(ContextInformation context, ChainedBlock pindexPrev, uint nBits, ChainedBlock blockFrom,
-            UnspentOutputs txPrev, BlockStake prevBlockStake, OutPoint prevout, uint nTimeTx)
-        {
-            if (IsProtocolV2(pindexPrev.Height + 1)) this.CheckStakeKernelHashV2(context, pindexPrev, nBits, blockFrom.Header.Time, prevBlockStake, txPrev, prevout, nTimeTx);
-            else this.CheckStakeKernelHashV1();
-        }
-
-        // Stratis kernel protocol
-        // coinstake must meet hash target according to the protocol:
-        // kernel (input 0) must meet the formula
-        //     hash(nStakeModifier + txPrev.block.nTime + txPrev.nTime + txPrev.vout.hash + txPrev.vout.n + nTime) < bnTarget * nWeight
-        // this ensures that the chance of getting a coinstake is proportional to the
-        // amount of coins one owns.
-        // The reason this hash is chosen is the following:
-        //   nStakeModifier: scrambles computation to make it very difficult to precompute
-        //                   future proof-of-stake
-        //   txPrev.block.nTime: prevent nodes from guessing a good timestamp to
-        //                       generate transaction for future advantage,
-        //                       obsolete since v3
-        //   txPrev.nTime: slightly scrambles computation
-        //   txPrev.vout.hash: hash of txPrev, to reduce the chance of nodes
-        //                     generating coinstake at the same time
-        //   txPrev.vout.n: output number of txPrev, to reduce the chance of nodes
-        //                  generating coinstake at the same time
-        //   nTime: current timestamp
-        //   block/tx hash should not be used here as they can be generated in vast
-        //   quantities so as to generate blocks faster, degrading the system back into
-        //   a proof-of-work situation.
-        //
-        private void CheckStakeKernelHashV1()
-        {
-            // This is not relevant for the stratis blockchain.
-            throw new NotImplementedException();
         }
 
         private static uint256 ToUInt256(BigInteger input)
@@ -217,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         //   quantities so as to generate blocks faster, degrading the system back into
         //   a proof-of-work situation.
         //
-        private void CheckStakeKernelHashV2(ContextInformation context, ChainedBlock pindexPrev, uint nBits, uint nTimeBlockFrom,
+        private void CheckStakeKernelHash(ContextInformation context, ChainedBlock pindexPrev, uint nBits, uint nTimeBlockFrom,
             BlockStake prevBlockStake, UnspentOutputs txPrev, OutPoint prevout, uint nTimeTx)
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}.{8}:'{9}',{10}:'{11}/{12}',{13}:'{14}/{15}',{16}:{17})",
@@ -665,13 +630,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             pBlockTime = prevBlock.Header.Time;
 
-            this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock, prevUtxo, prevBlockStake, prevout, (uint)nTime);
-            this.logger.LogTrace("(-):{0}={1}", nameof(pBlockTime), pBlockTime);
-        }
+            this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock.Header.Time, prevBlockStake, prevUtxo, prevout, (uint)nTime);
 
-        public static bool IsProtocolV2(int height)
-        {
-            return height > 0;
+            this.logger.LogTrace("(-):{0}={1}", nameof(pBlockTime), pBlockTime);
         }
 
         public static bool IsProtocolV3(int nTime)
@@ -760,12 +721,12 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private static BigInteger GetProofOfStakeLimit(NBitcoin.Consensus consensus, int height)
         {
-            return IsProtocolV2(height) ? consensus.ProofOfStakeLimitV2 : consensus.ProofOfStakeLimit;
+            return consensus.ProofOfStakeLimitV2;
         }
 
         public static int GetTargetSpacing(int height)
         {
-            return IsProtocolV2(height) ? 64 : 60;
+            return 64;
         }
 
         private static bool IsProtocolV1RetargetingFixed(int height)
@@ -775,7 +736,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public static uint GetPastTimeLimit(ChainedBlock chainedBlock)
         {
-            return IsProtocolV2(chainedBlock.Height) ? chainedBlock.Header.Time : GetMedianTimePast(chainedBlock);
+            return chainedBlock.Header.Time;
         }
 
         public static uint GetMedianTimePast(ChainedBlock chainedBlock)
