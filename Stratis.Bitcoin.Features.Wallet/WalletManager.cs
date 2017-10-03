@@ -210,7 +210,21 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // generate the root seed used to generate keys
-            ExtKey extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+            ExtKey extendedKey;
+            try
+            {
+                extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+            }
+            catch (NotSupportedException ex)
+            {
+                if (ex.Message == "Unknown")
+                {
+                    throw new WalletException("Please make sure you enter valid mnemonic words.");
+                }
+
+                throw;
+            }
+
 
             // create a wallet file 
             string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
