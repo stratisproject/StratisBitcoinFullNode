@@ -264,8 +264,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (chainedBlock.Header.Version > BlockHeader.CURRENT_VERSION)
             {
-                ConsensusErrors.BadVersion.Throw();
                 this.logger.LogTrace("(-)[BAD_VERSION_NO_V3]");
+                ConsensusErrors.BadVersion.Throw();
             }
 
             if (chainedBlock.Header.Version < 7)
