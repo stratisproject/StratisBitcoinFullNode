@@ -115,7 +115,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 try
                 {
-                    if (this.chain.Tip != this.consensusLoop.Tip)
+                    var chainTip = this.chain.Tip;
+
+                    if (chainTip != this.consensusLoop.Tip)
                     {
                         Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                         continue;
@@ -123,7 +125,16 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create().CreateNewBlock(reserveScript.reserveSfullNodecript);
 
-                    this.IncrementExtraNonce(pblockTemplate.Block, this.chain.Tip, nExtraNonce);
+                    if (Block.BlockSignature)
+                    {
+                        // POS: make sure the POS consensus rules are valid 
+                        if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
+                        {
+                            continue;
+                        }
+                    }
+
+                    this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
                     Block pblock = pblockTemplate.Block;
 
                     while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
@@ -140,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (pblock.Header.Nonce == InnerLoopCount)
                         continue;
 
-                    var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), this.chain.Tip);
+                    var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
 
                     if (newChain.ChainWork <= this.chain.Tip.ChainWork)
                         continue;
@@ -164,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
                     this.signals.SignalBlock(pblock);
 
-                    this.logger.LogInformation("Mined new {{0}} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock.HashBlock);
+                    this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);
 
                     nHeight++;
                     blocks.Add(pblock.GetHash());
