@@ -440,7 +440,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (chainedBlock.Height > lastCheckpointHeight)
             {
                 // Compute stake modifier.
-                this.stakeValidator.ComputeStakeModifier(this.chain, chainedBlock, blockStake);
+                ChainedBlock prevChainedBlock = chainedBlock.Previous;
+                BlockStake blockStakePrev = prevChainedBlock == null ? null : this.stakeChain.Get(prevChainedBlock.HashBlock);
+                blockStake.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(prevChainedBlock, blockStakePrev, blockStake.IsProofOfWork() ? chainedBlock.HashBlock : blockStake.PrevoutStake.Hash);
             }
             else if (chainedBlock.Height == lastCheckpointHeight)
             {
