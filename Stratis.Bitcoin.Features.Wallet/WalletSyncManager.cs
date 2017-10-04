@@ -69,7 +69,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void Stop()
         {
-            return;
         }
 
         public virtual void ProcessBlock(Block block)

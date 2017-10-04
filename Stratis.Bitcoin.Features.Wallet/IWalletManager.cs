@@ -164,12 +164,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Saves the wallet into the file system.
         /// </summary>
         /// <param name="wallet">The wallet to save.</param>
-        void SaveToFile(Wallet wallet);
+        void SaveWallet(Wallet wallet);
 
         /// <summary>
         /// Saves all the loaded wallets into the file system.
         /// </summary>        
-        void SaveToFile();
+        void SaveWallets();
 
         /// <summary>
         /// Gets the extension of the wallet files.

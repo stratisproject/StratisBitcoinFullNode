@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Stops the walletSyncManager.
         /// <para>
-        /// We need to call <see cref="Stop"/> explicitly to check that the internal async cloop isn't still running
+        /// We need to call <see cref="Stop"/> explicitly to check that the internal async loop isn't still running
         /// and subsequentlly dispose of it properly.
         /// </para>
         /// </summary>

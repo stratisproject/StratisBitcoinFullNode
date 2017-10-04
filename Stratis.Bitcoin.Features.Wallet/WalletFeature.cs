@@ -76,6 +76,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.transactionSubscriberDisposable.Dispose();
 
             this.walletManager.Stop();
+            this.walletSyncManager.Stop();
         }
     }
 

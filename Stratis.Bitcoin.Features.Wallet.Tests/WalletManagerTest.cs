@@ -2617,7 +2617,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
 
-            walletManager.SaveToFile();
+            walletManager.SaveWallets();
 
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
@@ -2653,7 +2653,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
 
-            walletManager.SaveToFile(wallet);
+            walletManager.SaveWallet(wallet);
 
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));

@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // save the wallets file every 5 minutes to help against crashes.
             this.asyncLoop = this.asyncLoopFactory.Run("wallet persist job", token =>
             {
-                this.SaveToFile();
+                this.SaveWallets();
                 this.logger.LogInformation($"Wallets saved to file at {DateTime.Now}.");
                 return Task.CompletedTask;
             },
@@ -142,11 +142,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.asyncLoop != null)
                 this.asyncLoop.Dispose();
 
-            // safely persist the wallets to the file system before disposing
-            foreach (var wallet in this.Wallets)
-            {
-                this.SaveToFile(wallet);
-            }
+            this.SaveWallets();
         }
 
         /// <inheritdoc />
@@ -184,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
 
             // save the changes to the file and add addresses to be tracked
-            this.SaveToFile(wallet);
+            this.SaveWallet(wallet);
             this.Load(wallet);
             this.LoadKeysLookup();
 
@@ -260,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
 
             // save the changes to the file and add addresses to be tracked
-            this.SaveToFile(wallet);
+            this.SaveWallet(wallet);
             this.Load(wallet);
             this.LoadKeysLookup();
 
@@ -295,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             var newAccount = wallet.AddNewAccount(password, this.coinType);
 
             // save the changes to the file
-            this.SaveToFile(wallet);
+            this.SaveWallet(wallet);
             return newAccount;
         }
 
@@ -335,7 +331,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
 
                 // persists the address to the wallet file
-                this.SaveToFile(wallet);
+                this.SaveWallet(wallet);
 
                 // adds the address to the list of tracked addresses
                 this.LoadKeysLookup();
@@ -361,7 +357,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
 
                 // persists the address to the wallet file
-                this.SaveToFile();
+                this.SaveWallets();
 
                 // adds the address to the list of tracked addresses
                 this.LoadKeysLookup();
@@ -793,7 +789,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     account.CreateAddresses(this.network, accountsToAdd, isChange);
 
                     // persists the address to the wallet file
-                    this.SaveToFile(wallet);
+                    this.SaveWallet(wallet);
                 }
             }
 
@@ -807,16 +803,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public void SaveToFile()
+        public void SaveWallets()
         {
             foreach (var wallet in this.Wallets)
             {
-                this.SaveToFile(wallet);
+                this.SaveWallet(wallet);
             }
         }
 
         /// <inheritdoc />
-        public void SaveToFile(Wallet wallet)
+        public void SaveWallet(Wallet wallet)
         {
             Guard.NotNull(wallet, nameof(wallet));
 
