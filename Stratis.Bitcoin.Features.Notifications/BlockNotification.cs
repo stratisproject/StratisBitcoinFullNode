@@ -84,8 +84,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             {
                 await Notify(this.nodeLifetime.ApplicationStopping);
             },
-            this.nodeLifetime.ApplicationStopping,
-            TimeSpans.Ms100);
+            this.nodeLifetime.ApplicationStopping);
         }
 
         /// <summary>
