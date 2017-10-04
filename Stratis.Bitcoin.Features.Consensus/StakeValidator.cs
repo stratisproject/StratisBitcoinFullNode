@@ -204,8 +204,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             context.Stake.TargetProofOfStake = ToUInt256(bnWeightedTarget);
             this.logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", ToUInt256(bnTarget), nValueIn, context.Stake.TargetProofOfStake);
 
-            ulong nStakeModifier = prevBlockStake.StakeModifier; //pindexPrev.Header.BlockStake.StakeModifier;
-            uint256 bnStakeModifierV2 = prevBlockStake.StakeModifierV2; //pindexPrev.Header.BlockStake.StakeModifierV2;
+            ulong nStakeModifier = prevBlockStake.StakeModifier;
+            uint256 bnStakeModifierV2 = prevBlockStake.StakeModifierV2;
             int nStakeModifierHeight = pindexPrev.Height;
             uint nStakeModifierTime = pindexPrev.Header.Time;
 
@@ -224,17 +224,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.logger.LogTrace("Stake modifiers are {0} and '{1}', hash POS is '{2}'.", nStakeModifier, bnStakeModifierV2, context.Stake.HashProofOfStake);
 
-            //LogPrintf("CheckStakeKernelHash() : using modifier 0x%016x at height=%d timestamp=%s for block from timestamp=%s\n",
-            //    nStakeModifier, nStakeModifierHeight,
-            //    DateTimeStrFormat(nStakeModifierTime),
-
-            //    DateTimeStrFormat(nTimeBlockFrom));
-
-            //LogPrintf("CheckStakeKernelHash() : check modifier=0x%016x nTimeBlockFrom=%u nTimeTxPrev=%u nPrevout=%u nTimeTx=%u hashProof=%s\n",
-            //    nStakeModifier,
-            //    nTimeBlockFrom, txPrev.nTime, prevout.n, nTimeTx,
-            //    hashProofOfStake.ToString());
-
             // Now check if proof-of-stake hash meets target protocol.
             BigInteger hashProofOfStakeTarget = new BigInteger(1, context.Stake.HashProofOfStake.ToBytes(false));
             if (hashProofOfStakeTarget.CompareTo(bnWeightedTarget) > 0)
@@ -243,19 +232,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.StakeHashInvalidTarget.Throw();
             }
 
-            //  if (fDebug && !fPrintProofOfStake)
-            //  {
-            //        LogPrintf("CheckStakeKernelHash() : using modifier 0x%016x at height=%d timestamp=%s for block from timestamp=%s\n",
-            //        nStakeModifier, nStakeModifierHeight,
-            //        DateTimeStrFormat(nStakeModifierTime),
-
-            //        DateTimeStrFormat(nTimeBlockFrom));
-
-            //        LogPrintf("CheckStakeKernelHash() : pass modifier=0x%016x nTimeBlockFrom=%u nTimeTxPrev=%u nPrevout=%u nTimeTx=%u hashProof=%s\n",
-            //        nStakeModifier,
-            //        nTimeBlockFrom, txPrev.nTime, prevout.n, nTimeTx,
-            //        hashProofOfStake.ToString());
-            //  }
             this.logger.LogTrace("(-)");
         }
 
