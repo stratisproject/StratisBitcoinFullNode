@@ -88,6 +88,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
             this.signals.SubscribeForBlocks(this.mempoolSignaled);
+            this.mempoolSignaled.Start();
         }
 
         /// <inheritdoc />
@@ -107,6 +108,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.mempoolLogger.LogWarning("...Memory Pool Not Saved!");
                 }
             }
+
+            if (this.mempoolSignaled != null)
+                this.mempoolSignaled.Stop();
         }
     }
 
