@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (this.CreateCoinStake(stakeTxes, block, chainTip, searchInterval, fees, ref txCoinStake, ref key))
             {
-                uint minTimestamp = StakeValidator.GetPastTimeLimit(chainTip) + 1;
+                uint minTimestamp = chainTip.Header.Time + 1;
                 if (txCoinStake.Time >= minTimestamp)
                 {
                     // Make sure coinstake would meet timestamp protocol

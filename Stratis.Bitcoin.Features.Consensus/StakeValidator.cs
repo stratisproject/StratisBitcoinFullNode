@@ -684,20 +684,5 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             return 64;
         }
-
-        public static uint GetPastTimeLimit(ChainedBlock chainedBlock)
-        {
-            return chainedBlock.Header.Time;
-        }
-
-        public static uint GetMedianTimePast(ChainedBlock chainedBlock)
-        {
-            var sortedList = new SortedSet<uint>();
-            ChainedBlock pindex = chainedBlock;
-            for (int i = 0; (i < MedianTimeSpan) && (pindex != null); i++, pindex = pindex.Previous)
-                sortedList.Add(pindex.Header.Time);
-
-            return (sortedList.First() - sortedList.Last()) / 2;
-        }
     }
 }
