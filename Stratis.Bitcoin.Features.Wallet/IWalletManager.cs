@@ -216,6 +216,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>The wallet filenames, along with the folder in which they're contained.</returns>
         (string folderPath, IEnumerable<string>) GetWalletsFiles();
 
+        /// <summary>
+        /// Gets whether there are any wallet files loaded or not.
+        /// </summary>
+        /// <returns>Whether any wallet files are loaded.</returns>
+        bool ContainsWallets { get; }
+
         string GetExtPubKey(WalletAccountReference accountReference);
     }
 }

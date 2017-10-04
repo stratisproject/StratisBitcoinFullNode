@@ -228,7 +228,21 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // generate the root seed used to generate keys
-            ExtKey extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+            ExtKey extendedKey;
+            try
+            {
+                extendedKey = HdOperations.GetHdPrivateKey(mnemonic, passphrase);
+            }
+            catch (NotSupportedException ex)
+            {
+                if (ex.Message == "Unknown")
+                {
+                    throw new WalletException("Please make sure you enter valid mnemonic words.");
+                }
+
+                throw;
+            }
+
 
             // create a wallet file 
             string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
@@ -418,6 +432,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return this.Wallets.Min(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType)?.LastBlockSyncedHeight) ?? 0;
         }
+
+        /// <inheritdoc />
+        public bool ContainsWallets { get { return this.Wallets.Any(); } }
 
         /// <summary>
         /// Gets the hash of the oldest block received by the wallets.
