@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: request.Mnemonic);
 
                 // start syncing the wallet from the creation date
-                this.walletSyncManager.SyncFrom(DateTime.Now);
+                this.walletSyncManager.SyncFromDate(DateTime.Now);
 
                 return this.Json(mnemonic.ToString());
             }
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, null);
 
                 // start syncing the wallet from the creation date
-                this.walletSyncManager.SyncFrom(request.CreationDate);
+                this.walletSyncManager.SyncFromDate(request.CreationDate);
 
                 return this.Ok();
             }
@@ -697,7 +697,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return this.BadRequest();
             }
             var block = this.chain.GetBlock(uint256.Parse(model.Hash));
-            this.walletSyncManager.SyncFrom(block.Height);
+            this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
         }
     }

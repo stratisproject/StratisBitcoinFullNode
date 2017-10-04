@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IWalletManager walletManager;
         private readonly Signals.Signals signals;
 
-        private IDisposable blockSubscriberdDisposable;
-        private IDisposable transactionSubscriberdDisposable;
+        private IDisposable blockSubscriberDisposable;
+        private IDisposable transactionSubscriberDisposable;
         private ConcurrentChain chain;
 
         /// <summary>
@@ -62,20 +62,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         public override void Start()
         {
             // subscribe to receiving blocks and transactions
-            this.blockSubscriberdDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));
-            this.transactionSubscriberdDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
+            this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));
+            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
-            this.walletManager.Initialize();
-            this.walletSyncManager.Initialize();
+            this.walletManager.Start();
+            this.walletSyncManager.Start();
         }
 
         /// <inheritdoc />
         public override void Stop()
         {
-            this.blockSubscriberdDisposable.Dispose();
-            this.transactionSubscriberdDisposable.Dispose();
+            this.blockSubscriberDisposable.Dispose();
+            this.transactionSubscriberDisposable.Dispose();
 
-            this.walletManager.Dispose();
+            this.walletManager.Stop();
+            this.walletSyncManager.Stop();
         }
     }
 

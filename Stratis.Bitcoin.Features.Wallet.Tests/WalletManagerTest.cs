@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -15,13 +10,18 @@ using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Tests.Utilities;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletManagerTest : LogsTestBase, IDisposable
     {
-        
+
         public void Dispose()
         {
             // This is needed here because of the fact that the Stratis network, when initialized, sets the 
@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 var recoveredAccountRoot = recoveredWallet.AccountsRoot.ElementAt(i);
                 var expectedAccountRoot = expectedWallet.AccountsRoot.ElementAt(i);
-                
+
                 Assert.Equal(1, recoveredAccountRoot.Accounts.Count);
                 Assert.Equal(1, expectedAccountRoot.Accounts.Count);
 
@@ -487,7 +487,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 var recoveredAccountRoot = recoveredWallet.AccountsRoot.ElementAt(i);
                 var expectedAccountRoot = expectedWallet.AccountsRoot.ElementAt(i);
-                
+
                 Assert.Equal(1, recoveredAccountRoot.Accounts.Count);
                 Assert.Equal(1, expectedAccountRoot.Accounts.Count);
 
@@ -764,7 +764,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 Index = 0,
                 Name = "myAccount",
-                InternalAddresses= new List<HdAddress>()
+                InternalAddresses = new List<HdAddress>()
                 {
                     new HdAddress() {
                         Index = 0,
@@ -1292,7 +1292,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(wallet3);
 
             var result = walletManager.GetSpendableTransactionsInWallet("myWallet3", confirmations: 1);
-            
+
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("Second expectation", info.Account.Name);
@@ -1329,7 +1329,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(wallet);
 
             var result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1);
-            
+
             Assert.Equal(4, result.Count);
             var info = result[0];
             Assert.Equal("First expectation", info.Account.Name);
@@ -1362,7 +1362,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                         new DataFolder(new NodeSettings() { DataDir = "TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-                walletManager.GetSpendableTransactionsInWallet("myWallet", confirmations: 1);               
+                walletManager.GetSpendableTransactionsInWallet("myWallet", confirmations: 1);
             });
         }
 
@@ -1477,8 +1477,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 data.wallet.GetExtendedPrivateKeyForAddress("password", address);
             });
-        }        
-     
+        }
+
         [Fact]
         public void ProcessTransactionWithValidTransactionLoadsTransactionsIntoWalletIfMatching()
         {
@@ -2617,7 +2617,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
 
-            walletManager.SaveToFile();
+            walletManager.SaveWallets();
 
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
@@ -2653,7 +2653,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
 
-            walletManager.SaveToFile(wallet);
+            walletManager.SaveWallet(wallet);
 
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
@@ -2766,9 +2766,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void DisposeSavesWallets()
+        public void StopSavesWallets()
         {
-            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/DisposeSavesWallets");
+            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletManagerTest/StopSavesWallets");
             Directory.CreateDirectory(dataFolder.WalletPath);
             var wallet = WalletTestsHelpers.GenerateBlankWallet("wallet1", "test");
             var wallet2 = WalletTestsHelpers.GenerateBlankWallet("wallet2", "test");
@@ -2781,19 +2781,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.False(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
 
-            walletManager.Dispose();
+            walletManager.Stop();
 
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
 
-            var resultWallet = JsonConvert.DeserializeObject<Bitcoin.Features.Wallet.Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
+            var resultWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet1.wallet.json")));
             Assert.Equal(wallet.Name, resultWallet.Name);
             Assert.Equal(wallet.EncryptedSeed, resultWallet.EncryptedSeed);
             Assert.Equal(wallet.ChainCode, resultWallet.ChainCode);
             Assert.Equal(wallet.Network, resultWallet.Network);
             Assert.Equal(wallet.AccountsRoot.Count, resultWallet.AccountsRoot.Count);
 
-            var resultWallet2 = JsonConvert.DeserializeObject<Bitcoin.Features.Wallet.Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
+            var resultWallet2 = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(Path.Combine(dataFolder.WalletPath + $"/wallet2.wallet.json")));
             Assert.Equal(wallet2.Name, resultWallet2.Name);
             Assert.Equal(wallet2.EncryptedSeed, resultWallet2.EncryptedSeed);
             Assert.Equal(wallet2.ChainCode, resultWallet2.ChainCode);
@@ -2823,7 +2823,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 Assert.Equal(chainedBlock.GetLocator().Blocks, w.BlockLocator);
                 Assert.Equal(chainedBlock.Height, w.AccountsRoot.ElementAt(0).LastBlockSyncedHeight);
-                Assert.Equal(chainedBlock.HashBlock, w.AccountsRoot.ElementAt(0).LastBlockSyncedHash);                
+                Assert.Equal(chainedBlock.HashBlock, w.AccountsRoot.ElementAt(0).LastBlockSyncedHash);
             }
         }
 
@@ -2858,14 +2858,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void UpdateLastBlockSyncedHeightWithWalletAccountRootOfDifferentCoinTypeDoesNotUpdateLastSyncedInformation()
         {
             var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
-            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;            
+            wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
 
             ConcurrentChain chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
             var chainedBlock = WalletTestsHelpers.AppendBlock(chain.Genesis, chain).ChainedBlock;
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(),
                   new DataFolder(new NodeSettings() { DataDir = "TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
-            walletManager.Wallets.Add(wallet);            
+            walletManager.Wallets.Add(wallet);
             walletManager.WalletTipHash = new uint256(125125125);
 
             walletManager.UpdateLastBlockSyncedHeight(wallet, chainedBlock);

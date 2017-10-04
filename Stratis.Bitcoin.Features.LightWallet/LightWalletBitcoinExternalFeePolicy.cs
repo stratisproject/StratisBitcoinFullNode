@@ -12,9 +12,14 @@ namespace Stratis.Bitcoin.Features.LightWallet
 {
     public class LightWalletBitcoinExternalFeePolicy : IWalletFeePolicy
     {
+        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
         private readonly Money maxTxFee;
         private static readonly HttpClient HttpClient = new HttpClient();
-        private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
         private readonly NodeSettings nodeSettings;
@@ -35,9 +40,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
         }
 
         /// <inheritdoc />
-        public Task Initialize()
+        public void Start()
         {
-            IAsyncLoop task = this.asyncLoopFactory.Run(nameof(LightWalletBitcoinExternalFeePolicy), async token =>
+            this.asyncLoop = this.asyncLoopFactory.Run(nameof(LightWalletBitcoinExternalFeePolicy), async token =>
             {
                 // This will run evry 3 to 10 minutes randomly
                 // So the API provider is not able to identify our transaction with a timing attack
@@ -92,8 +97,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
             startAfter: TimeSpans.Second);
+        }
 
-            return task.RunningTask;
+        public void Stop()
+        {
+            this.asyncLoop.Dispose();
         }
 
         /// <inheritdoc />
