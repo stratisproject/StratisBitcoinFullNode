@@ -29,11 +29,11 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <item>Coinstake transaction's kernel (first) input MUST not be created within last <see cref="PosConsensusOptions.StakeMinConfirmations"/> blocks,
     /// i.e. it MUST have that many confirmation at least.</item>
     /// <item>Coinstake transaction's kernel must meet the staking target using this formula:
-    /// <code>hash(nStakeModifier + txPrev.block.nTime + txPrev.nTime + txPrev.vout.hash + txPrev.vout.n + nTime) < bnTarget * nWeight</code>
+    /// <code>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) < target * weight</code>
     /// <para>
-    /// where 'txPrev' is the coinstake's kernel transaction, 'txPrev.vout' is the kernel's output in that transaction, 
-    /// 'txPrev.vout.hash' is the hash of that transaction; 'nTime' is coinstake's transaction time; 'bnTarget' is the target as 
-    /// in 'nBits' block header; 'nWeight' is the value of the kernel's input. 
+    /// where 'stakingCoins' is the coinstake's kernel UTXO, 'prevout' is the kernel's output in that transaction, 
+    /// 'prevout.Hash' is the hash of that transaction; 'transactionTime' is coinstake's transaction time; 'target' is the target as 
+    /// in 'Bits' block header; 'weight' is the value of the kernel's input. 
     /// </para>
     /// </item>
     /// <item>Block's height MUST NOT be more than 500 blocks back - i.e. reorganizations longer than 500 are not allowed.</item>

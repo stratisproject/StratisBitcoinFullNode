@@ -154,14 +154,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         // Stratis kernel protocol
         // coinstake must meet hash target according to the protocol:
         // kernel (input 0) must meet the formula
-        //     hash(stakeModifierV2 + stakingCoins.Time + txPrev.vout.hash + txPrev.vout.n + transactionTime) < target * weight
+        //     hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) < target * weight
         // this ensures that the chance of getting a coinstake is proportional to the
         // amount of coins one owns.
         // The reason this hash is chosen is the following:
         //   stakeModifierV2: Scrambles computation to make it very difficult to precompute future proof-of-stake.
         //   stakingCoins.Time: Time of the coinstake UTXO. Slightly scrambles computation.
-        //   prevout.hash: Hash of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.
-        //   prevout.n: Output number of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.
+        //   prevout.Hash: Hash of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.
+        //   prevout.N: Output number of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.
         //   transactionTime: Timestamp of the coinstake transaction.
         //   Block or transaction tx hash should not be used here as they can be generated in vast
         //   quantities so as to generate blocks faster, degrading the system back into a proof-of-work situation.
