@@ -247,60 +247,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             return stakeModifier;
         }
 
-        // ppcoin: Total coin age spent in transaction, in the unit of coin-days.
-        // Only those coins meeting minimum age requirement counts. As those
-        // transactions not in main chain are not currently indexed so we
-        // might not find out about their coin age. Older transactions are 
-        // guaranteed to be in main chain by sync-checkpoint. This rule is
-        // introduced to help nodes establish a consistent view of the coin
-        // age (trust score) of competing branches.
-        public bool GetCoinAge(ConcurrentChain chain, CoinView coinView, Transaction trx, ChainedBlock pindexPrev, out ulong nCoinAge)
-        {
-            BigInteger bnCentSecond = BigInteger.Zero;  // coin age in the unit of cent-seconds
-            nCoinAge = 0;
-
-            if (trx.IsCoinBase)
-                return true;
-
-            foreach (TxIn txin in trx.Inputs)
-            {
-                FetchCoinsResponse coins = coinView.FetchCoinsAsync(new[] { txin.PrevOut.Hash }).GetAwaiter().GetResult();
-                if ((coins == null) || (coins.UnspentOutputs.Length != 1))
-                    continue;
-
-                ChainedBlock prevBlock = chain.GetBlock(coins.BlockHash);
-                UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
-
-                // First try finding the previous transaction in database
-                // Transaction txPrev = trasnactionStore.Get(txin.PrevOut.Hash);
-                // if (txPrev == null)
-                //     continue;  // previous transaction not in main chain
-                if (trx.Time < prevUtxo.Time)
-                    return false;  // Transaction timestamp violation.
-
-                if (this.IsConfirmedInNPrevBlocks(prevUtxo, pindexPrev, this.consensusOptions.StakeMinConfirmations - 1))
-                {
-                    //LogPrint("coinage", "coin age skip nSpendDepth=%d\n", nSpendDepth + 1);
-                    continue; // only count coins meeting min confirmations requirement
-                }
-
-                long nValueIn = prevUtxo._Outputs[txin.PrevOut.N].Value;
-                var multiplier = BigInteger.ValueOf((trx.Time - prevUtxo.Time) / Money.CENT);
-                bnCentSecond = bnCentSecond.Add(BigInteger.ValueOf(nValueIn).Multiply(multiplier));
-                //bnCentSecond += new BigInteger(nValueIn) * (trx.Time - txPrev.Time) / CENT;
-
-                //LogPrint("coinage", "coin age nValueIn=%d nTimeDiff=%d bnCentSecond=%s\n", nValueIn, nTime - txPrev.nTime, bnCentSecond.ToString());
-            }
-
-            BigInteger bnCoinDay = bnCentSecond.Multiply(BigInteger.ValueOf(Money.CENT / Money.COIN / (24 * 60 * 60)));
-            //BigInteger bnCoinDay = bnCentSecond * CENT / COIN / (24 * 60 * 60);
-
-            //LogPrint("coinage", "coin age bnCoinDay=%s\n", bnCoinDay.ToString());
-            nCoinAge = new Target(bnCoinDay).ToCompact();
-
-            return true;
-        }
-
         public void CheckKernel(ContextInformation context, ChainedBlock pindexPrev, uint nBits, long nTime, OutPoint prevout, ref long pBlockTime)
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}:'{8}.{9}')", nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height, 

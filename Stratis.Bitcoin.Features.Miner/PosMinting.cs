@@ -730,13 +730,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
             }
 
-            // Calculate coin age reward.
-            if (!this.posConsensusValidator.StakeValidator.GetCoinAge(this.chain, this.coinView, coinstakeTx, chainTip, out ulong coinAge))
-            {
-                this.logger.LogTrace("(-)[AGE_CALCULATION_FAILED]:false");
-                return false;
-            }
-
             long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height);
             if (reward <= 0)
             {
@@ -881,6 +874,12 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (depth < requiredDepth)
                 {
                     this.logger.LogTrace("UTXO '{0}/{1}' depth {2} is lower than required minimum depth {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, depth, requiredDepth);
+                    continue;
+                }
+
+                if (stakeTx.UtxoSet.Time > spendTime)
+                {
+                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its time {2} is greater than coinstake time {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
                     continue;
                 }
 
