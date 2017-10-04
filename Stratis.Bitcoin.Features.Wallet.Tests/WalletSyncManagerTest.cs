@@ -217,6 +217,97 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[3]), ExpectChainedBlock(this.chain.GetBlock(4))), Times.Exactly(2));
         }
 
+        [Fact]
+        public void ProcessTransaction_CallsWalletManager()
+        {
+            var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
+               this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+
+            var transaction = new Transaction()
+            {
+                Version = 15
+            };
+
+            walletSyncManager.ProcessTransaction(transaction);
+
+            this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null));
+        }
+
+        [Fact]
+        public void SyncFromDate_GivenDateMatchingBlocksOnChain_UpdatesWalletTipOnWalletAndWalletSyncManagers_UsingClosestBlock()
+        {
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisMain);
+
+            var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+
+            var block = this.chain.GetBlock(2);
+            walletSyncManager.SyncFromDate(block.Header.BlockTime.DateTime);
+
+            var expectedHash = this.chain.GetBlock(2).HashBlock;
+            Assert.Equal(walletSyncManager.WalletTip.HashBlock, expectedHash);
+            this.walletManager.VerifySet(w => w.WalletTipHash = expectedHash);
+        }
+
+        [Fact]
+        public void SyncFromDate_GivenDateNotMatchingBlocksOnChain_UpdatesWalletTipOnWalletAndWalletSyncManagers_UsingFirstBlock()
+        {
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisMain);
+
+            var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+           
+            walletSyncManager.SyncFromDate(new System.DateTime(1900,1,1)); // date before any block.
+
+            var expectedHash = this.chain.GetBlock(1).HashBlock;
+            Assert.Equal(walletSyncManager.WalletTip.HashBlock, expectedHash);
+            this.walletManager.VerifySet(w => w.WalletTipHash = expectedHash);
+        }
+
+        [Fact]
+        public void SyncFromDate_EmptyChain_UpdatesWalletTipOnWalletAndWalletSyncManagers_UsingGenesisBlock()
+        {
+            this.chain = new ConcurrentChain(Network.StratisMain);
+
+            var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+
+            walletSyncManager.SyncFromDate(new System.DateTime(1900, 1, 1)); // date before any block.
+
+            var expectedHash = this.chain.Genesis.HashBlock;
+            Assert.Equal(walletSyncManager.WalletTip.HashBlock, expectedHash);
+            this.walletManager.VerifySet(w => w.WalletTipHash = expectedHash);
+        }
+
+        [Fact]
+        public void SyncFromHeight_BlockWithHeightOnChain_UpdatesWalletTipOnWalletAndWalletSyncManagers()
+        {
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisMain);
+
+            var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+
+            walletSyncManager.SyncFromHeight(2);
+
+            var expectedHash = this.chain.GetBlock(2).HashBlock;
+            Assert.Equal(walletSyncManager.WalletTip.HashBlock, expectedHash);
+            this.walletManager.VerifySet(w => w.WalletTipHash = expectedHash);
+        }
+
+        [Fact]
+        public void SyncFromHeight_NoBlockWithHeightOnChain_ThrowsWalletException()
+        {
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(1, Network.StratisMain);
+
+            var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+
+            Assert.Throws<WalletException>(() =>
+            {
+                walletSyncManager.SyncFromHeight(2);
+            });
+        }
+
         private static ChainedBlock ExpectChainedBlock(ChainedBlock block)
         {
             return It.Is<ChainedBlock>(c => c.Header.GetHash() == block.Header.GetHash());

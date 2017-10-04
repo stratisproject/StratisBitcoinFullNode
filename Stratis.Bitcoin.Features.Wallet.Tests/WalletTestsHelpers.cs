@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     /// Helper class containing a bunch of methods used for testing the wallet functionality.
     /// </summary>
     public class WalletTestsHelpers
-    {        
+    {
         internal static HdAccount CreateAccount(string name)
         {
             return new HdAccount()
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             }
 
             return new TransactionData()
-            {                
+            {
                 Amount = amount,
                 Id = id,
                 CreationTime = creationTime.Value,
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             }
             return last;
         }
-        
+
         internal static (ChainedBlock ChainedBlock, Block Block) AppendBlock(ChainedBlock previous, ConcurrentChain chain)
         {
             ChainedBlock last = null;
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             return tx;
         }
-        
+
         internal static void AddAddressesToWallet(WalletManager walletManager, int count)
         {
             foreach (var wallet in walletManager.Wallets)
@@ -281,6 +281,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 var block = new Block();
                 block.AddTransaction(new Transaction());
                 block.UpdateMerkleRoot();
+                block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
                 block.Header.Nonce = nonce;
                 chain.SetTip(block.Header);
@@ -289,7 +290,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             return chain;
         }
-        
+
         /// <summary>
         /// Creates a set of chains 'forking' at a specific block height. You can see the left chain as the old one and the right as the new chain.
         /// </summary>
@@ -297,7 +298,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         /// <param name="network">The network to use</param>
         /// <param name="forkBlock">The height at which to put the fork.</param>
         /// <returns></returns>
-        internal static (ConcurrentChain LeftChain, ConcurrentChain RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks) 
+        internal static (ConcurrentChain LeftChain, ConcurrentChain RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks)
             GenerateForkedChainAndBlocksWithHeight(int blockAmount, Network network, int forkBlock)
         {
             var rightchain = new ConcurrentChain(network);
@@ -314,11 +315,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 block.AddTransaction(new Transaction());
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = prevBlockHash;
-                block.Header.Nonce = RandomUtils.GetUInt32();               
+                block.Header.Nonce = RandomUtils.GetUInt32();
                 leftchain.SetTip(block.Header);
 
                 if (leftchain.Height == forkBlock)
-                {                    
+                {
                     forkBlockPrevHash = block.GetHash();
                 }
                 prevBlockHash = block.GetHash();
@@ -338,18 +339,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 block.AddTransaction(new Transaction());
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = forkBlockPrevHash;
-                block.Header.Nonce = RandomUtils.GetUInt32();                
+                block.Header.Nonce = RandomUtils.GetUInt32();
                 rightchain.SetTip(block.Header);
                 forkBlockPrevHash = block.GetHash();
                 rightForkBlocks.Add(block);
             }
-            
+
             // if all blocks are on both sides the fork fails.
-            if (leftForkBlocks.All(l=> rightForkBlocks.Select(r=> r.GetHash()).Contains(l.GetHash())))
+            if (leftForkBlocks.All(l => rightForkBlocks.Select(r => r.GetHash()).Contains(l.GetHash())))
             {
                 throw new InvalidOperationException("No fork created.");
             }
-            
+
             return (leftchain, rightchain, leftForkBlocks, rightForkBlocks);
         }
 
@@ -440,7 +441,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             return addresses;
         }
-        
+
         internal static TransactionData CreateTransactionDataFromFirstBlock((ConcurrentChain chain, uint256 blockHash, Block block) chainInfo)
         {
             var transaction = chainInfo.block.Transactions[0];
