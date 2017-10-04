@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check timestamp against prev.
-            if ((chainedBlock.Header.Time <= StakeValidator.GetPastTimeLimit(chainedBlock.Previous))
+            if ((chainedBlock.Header.Time <= chainedBlock.Previous.Header.Time)
                 || (FutureDrift(chainedBlock.Header.Time) < chainedBlock.Previous.Header.Time))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_EARLY]");
