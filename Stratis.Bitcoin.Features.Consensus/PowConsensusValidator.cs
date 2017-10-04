@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadBlockWeight.Throw();
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         public virtual void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
