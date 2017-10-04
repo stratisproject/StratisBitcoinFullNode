@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Features.Miner.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.Miner

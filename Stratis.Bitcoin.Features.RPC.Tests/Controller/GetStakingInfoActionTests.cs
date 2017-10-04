@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Utilities;
 using System.Threading.Tasks;
 using Xunit;
