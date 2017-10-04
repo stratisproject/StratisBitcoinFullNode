@@ -81,9 +81,9 @@ namespace Stratis.Bitcoin.Features.Notifications
         public void Start()
         {
             this.asyncLoop = this.asyncLoopFactory.Run("Notify", async token =>
-           {
-               await Notify(this.nodeLifetime.ApplicationStopping);
-           },
+            {
+                await Notify(this.nodeLifetime.ApplicationStopping);
+            },
             this.nodeLifetime.ApplicationStopping,
             TimeSpans.Ms100);
         }
@@ -138,8 +138,6 @@ namespace Stratis.Bitcoin.Features.Notifications
 
                 // Set the puller to the fork location.
                 this.Puller.SetLocation(this.tip);
-
-                return Task.CompletedTask;
             }
 
             this.reSync = false;

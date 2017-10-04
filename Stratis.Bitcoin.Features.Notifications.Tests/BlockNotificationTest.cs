@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Notifications.Tests
@@ -91,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// as 2 blocks were made available by the puller to be signaled.
         /// </summary>
         [Fact]
-        public void Notify_WithSync_RunsAndBroadcastsBlocks()
+        public async void Notify_WithSync_RunsAndBroadcastsBlocks()
         {
             var lifetime = new NodeLifetime();
 
@@ -110,9 +111,12 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var notification = new BlockNotification(this.LoggerFactory.Object, chain, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
             notification.SyncFrom(blocks[0].GetHash());
-            notification.Notify(lifetime.ApplicationStopping);
-
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            Task.Run(() => { notification.Notify(lifetime.ApplicationStopping); });
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            await Task.Delay(TimeSpans.Ms100);
             signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(2));
+            notification.Stop();
         }
 
         /// <summary>
