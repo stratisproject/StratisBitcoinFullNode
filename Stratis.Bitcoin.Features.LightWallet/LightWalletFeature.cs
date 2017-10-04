@@ -102,18 +102,17 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLog)
         {
-            var manager = this.walletManager as WalletManager;
+            WalletManager manager = this.walletManager as WalletManager;
 
             if (manager != null)
             {
-                var height = manager.LastBlockHeight();
-                var block = this.chain.GetBlock(height);
-                var hashBlock = block == null ? 0 : block.HashBlock;
+                int height = manager.LastBlockHeight();
+                ChainedBlock block = this.chain.GetBlock(height);
+                uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     height.ToString().PadRight(8) +
-                                     " LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     hashBlock);
+                        (manager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                        (manager.ContainsWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
             }
         }
     }
