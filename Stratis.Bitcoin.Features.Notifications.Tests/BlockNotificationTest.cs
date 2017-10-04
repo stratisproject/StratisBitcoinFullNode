@@ -1,19 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Moq;
-using NBitcoin;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Signals;
-using Stratis.Bitcoin.Tests.Logging;
-using Stratis.Bitcoin.Utilities;
-using System;
-using System.IO;
-using System.Linq;
-using Xunit;
-
-namespace Stratis.Bitcoin.Features.Notifications.Tests
+﻿namespace Stratis.Bitcoin.Features.Notifications.Tests
 {
     public class BlockNotificationTest : LogsTestBase
     {
@@ -109,8 +94,6 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var signals = new Mock<ISignals>();
 
             var notification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
-
-            //var notification = new BlockNotification(this.LoggerFactory.Object, chain, stub.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
             notification.SetupGet(s => s.StartHash).Returns(blocks[0].GetHash());
 
             notification.SetupSequence(s => s.ReSync)
