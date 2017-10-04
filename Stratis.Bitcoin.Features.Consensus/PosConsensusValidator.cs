@@ -427,10 +427,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (BlockStake.IsProofOfWork(block))
                 context.Stake.HashProofOfStake = chainedBlock.Header.GetPoWHash();
 
-            // TODO: Is this the same as chain work?
-            // Compute chain trust score.
-            //pindexNew.nChainTrust = (pindexNew->pprev ? pindexNew->pprev->nChainTrust : 0) + pindexNew->GetBlockTrust();
-
             // Compute stake entropy bit for stake modifier.
             if (!blockStake.SetStakeEntropyBit(blockStake.GetStakeEntropyBit()))
             {
