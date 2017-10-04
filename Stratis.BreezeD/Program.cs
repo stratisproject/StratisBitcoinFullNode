@@ -1,13 +1,14 @@
-﻿using System;
-using System.Linq;
+﻿using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin;
+using Stratis.Bitcoin.Api;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using NBitcoin;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Api;
 using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Linq;
 
 namespace Stratis.BreezeD
 {
@@ -51,7 +52,7 @@ namespace Stratis.BreezeD
                 .UseTransactionNotification()
                 .UseApi();
 
-            var node = fullNodeBuilder.Build();
+            IFullNode node = fullNodeBuilder.Build();
 
             // Start Full Node - this will also start the API.
             node.Run();
