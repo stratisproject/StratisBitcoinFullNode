@@ -15,8 +15,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisNode();
-                var stratisReceiver = builder.CreateStratisNode();
+                var stratisSender = builder.CreateStratisPowNode();
+                var stratisReceiver = builder.CreateStratisPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using(NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 var rpc = stratisNodeSync.CreateRPCClient();
                 rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using(NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 var rpc = stratisNodeSync.CreateRPCClient();
                 rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 101);
@@ -113,9 +113,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisNode();
-                var stratisReceiver = builder.CreateStratisNode();
-                var stratisReorg = builder.CreateStratisNode();
+                var stratisSender = builder.CreateStratisPowNode();
+                var stratisReceiver = builder.CreateStratisPowNode();
+                var stratisReorg = builder.CreateStratisPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -265,9 +265,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisNode();
-                var stratisReceiver = builder.CreateStratisNode();
-                var stratisReorg = builder.CreateStratisNode();
+                var stratisSender = builder.CreateStratisPowNode();
+                var stratisReceiver = builder.CreateStratisPowNode();
+                var stratisReorg = builder.CreateStratisPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
 
                 // rewind the wallet in the stratisReceiver node
-                (stratisReceiver.FullNode.NodeService<IWalletSyncManager>() as WalletSyncManager).SyncFrom(5);
+                (stratisReceiver.FullNode.NodeService<IWalletSyncManager>() as WalletSyncManager).SyncFromHeight(5);
 
                 // connect the reorg chain
                 stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
@@ -324,9 +324,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisSender = builder.CreateStratisNode();
-                var stratisReceiver = builder.CreateStratisNode();
-                var stratisReorg = builder.CreateStratisNode();
+                var stratisSender = builder.CreateStratisPowNode();
+                var stratisReceiver = builder.CreateStratisPowNode();
+                var stratisReorg = builder.CreateStratisPowNode();
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -369,7 +369,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(20, stratisReceiver.FullNode.Chain.Tip.Height);
 
                 // rewind the wallet in the stratisReceiver node
-                (stratisReceiver.FullNode.NodeService<IWalletSyncManager>() as WalletSyncManager).SyncFrom(10);
+                (stratisReceiver.FullNode.NodeService<IWalletSyncManager>() as WalletSyncManager).SyncFromHeight(10);
 
                 stratisSender.GenerateStratisWithMiner(5);
 
@@ -383,7 +383,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisminer = builder.CreateStratisNode();
+                var stratisminer = builder.CreateStratisPowNode();
 
                 builder.StartAll();
                 stratisminer.NotInIBD();
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisminer));
 
                 // push the wallet back
-                stratisminer.FullNode.Services.ServiceProvider.GetService<IWalletSyncManager>().SyncFrom(5);
+                stratisminer.FullNode.Services.ServiceProvider.GetService<IWalletSyncManager>().SyncFromHeight(5);
 
                 stratisminer.GenerateStratis(5);
 
@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 

@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node = builder.CreateStratisNode();
+                var node = builder.CreateStratisPowNode();
                 builder.StartAll();
                 var client = node.CreateRPCClient();
                 var hash = client.GetBestBlockHash();
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                RPCClient rpc = builder.CreateStratisNode().CreateRPCClient();
+                RPCClient rpc = builder.CreateStratisPowNode().CreateRPCClient();
                 builder.StartAll();
                 RPCResponse response = rpc.SendCommand(RPCOperations.getblockhash, 0);
                 string actualGenesis = (string)response.Result;
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode node = builder.CreateStratisNode();
+                CoreNode node = builder.CreateStratisPowNode();
                 RPCClient rpc = node.CreateRPCClient();
                 builder.StartAll();
 
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode nodeA = builder.CreateStratisNode();
+                CoreNode nodeA = builder.CreateStratisPowNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 using (Node nodeB = nodeA.CreateNodeClient())

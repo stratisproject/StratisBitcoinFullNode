@@ -56,6 +56,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(language), language, nameof(wordCount), wordCount);
+
             try
             {
                 Wordlist wordList;
@@ -91,6 +93,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -118,17 +121,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: request.Mnemonic);
 
                 // start syncing the wallet from the creation date
-                this.walletSyncManager.SyncFrom(DateTime.Now);
+                this.walletSyncManager.SyncFromDate(DateTime.Now);
 
                 return this.Json(mnemonic.ToString());
             }
             catch (WalletException e)
             {
                 // indicates that this wallet already exists
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
             }
             catch (NotSupportedException e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem creating a wallet.", e.ToString());
             }
         }
@@ -158,15 +163,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (FileNotFoundException e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "This wallet was not found at the specified location.", e.ToString());
             }
             catch (SecurityException e)
             {
                 // indicates that the password is wrong
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Wrong password, please try again.", e.ToString());
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -194,22 +202,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, null);
 
                 // start syncing the wallet from the creation date
-                this.walletSyncManager.SyncFrom(request.CreationDate);
+                this.walletSyncManager.SyncFromDate(request.CreationDate);
 
                 return this.Ok();
             }
             catch (WalletException e)
             {
                 // indicates that this wallet already exists
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
             }
             catch (FileNotFoundException e)
             {
                 // indicates that this wallet does not exist
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -251,6 +262,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -360,6 +372,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -407,6 +420,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -440,6 +454,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -487,6 +502,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -520,6 +536,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -545,6 +562,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -573,6 +591,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -601,6 +620,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -629,6 +649,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -656,6 +677,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -675,7 +697,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return this.BadRequest();
             }
             var block = this.chain.GetBlock(uint256.Parse(model.Hash));
-            this.walletSyncManager.SyncFrom(block.Height);
+            this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
         }
     }
