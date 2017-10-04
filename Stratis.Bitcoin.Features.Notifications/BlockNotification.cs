@@ -48,8 +48,8 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         public ConcurrentChain Chain { get; }
         public ILookaheadBlockPuller Puller { get; }
-        private bool reSync;
-        public uint256 StartHash { get; private set; }
+        public virtual bool ReSync { get; private set; }
+        public virtual uint256 StartHash { get; private set; }
 
         public virtual void SyncFrom(uint256 startHash)
         {
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             // No need to resync the first time this method is called.
             if (this.StartHash != null)
             {
-                this.reSync = true;
+                this.ReSync = true;
 
                 ChainedBlock startBlock = this.Chain.GetBlock(startHash);
                 if (startBlock != null)
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.logger.LogTrace("Puller location set to block: {0}.", previousBlock);
 
             // Send notifications for all the following blocks.
-            while (!this.reSync)
+            while (!this.ReSync)
             {
                 token.ThrowIfCancellationRequested();
 
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                 this.Puller.SetLocation(this.tip);
             }
 
-            this.reSync = false;
+            this.ReSync = false;
 
             return Task.CompletedTask;
         }
