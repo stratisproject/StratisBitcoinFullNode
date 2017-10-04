@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         protected override void UpdateCoinView(ContextInformation context, Transaction tx)
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             //        return false; // error("ProcessBlock(): EnsureLowS failed");
             //}
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         public override void ContextualCheckBlockHeader(ContextInformation context)
@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BlockTimestampTooEarly.Throw();
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         // Check whether the coinstake timestamp meets protocol.
@@ -396,7 +396,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             context.NextWorkRequired = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockResult.ChainedBlock.Previous, context.Consensus,
                 context.Stake.BlockStake.IsProofOfStake());
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         public void CheckAndComputeStake(ContextInformation context)
@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     this.stakeValidator.CheckProofOfStake(context, prevChainedBlock, prevBlockStake, block.Transactions[1], chainedBlock.Header.Bits.ToCompact());
                 }
-                else this.logger.LogTrace("POS validation skipped for block at height {0} because it is below last checkpoint block height {1}.", chainedBlock.Height, lastCheckpointHeight);
+                else this.logger.LogTrace("POS validation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedBlock.Height, lastCheckpointHeight);
             }
 
             // PoW is checked in CheckBlock().
@@ -454,9 +454,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
                 this.logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }
-            else this.logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is below last checkpoint block height {1}.", chainedBlock.Height, lastCheckpointHeight);
+            else this.logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedBlock.Height, lastCheckpointHeight);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         public override Money GetProofOfWorkReward(int height)

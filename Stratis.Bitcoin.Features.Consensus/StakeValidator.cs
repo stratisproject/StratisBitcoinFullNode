@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.StakeHashInvalidTarget.Throw();
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         // Stake Modifier (hash modifier of proof-of-stake):
