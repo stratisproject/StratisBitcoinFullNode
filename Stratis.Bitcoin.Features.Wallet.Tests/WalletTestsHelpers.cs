@@ -375,7 +375,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return (chain, blocks);
         }
 
-
         internal static ConcurrentChain PrepareChainWithBlock()
         {
             var chain = new ConcurrentChain(Network.StratisMain);

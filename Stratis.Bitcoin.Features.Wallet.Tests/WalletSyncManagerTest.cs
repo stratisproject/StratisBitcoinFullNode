@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Moq;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -240,11 +241,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
              this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+            
+            walletSyncManager.SyncFromDate(this.chain.GetBlock(3).Header.BlockTime.DateTime.AddDays(2));
 
-            var block = this.chain.GetBlock(2);
-            walletSyncManager.SyncFromDate(block.Header.BlockTime.DateTime);
-
-            var expectedHash = this.chain.GetBlock(2).HashBlock;
+            var expectedHash = this.chain.GetBlock(3).HashBlock;
             Assert.Equal(walletSyncManager.WalletTip.HashBlock, expectedHash);
             this.walletManager.VerifySet(w => w.WalletTipHash = expectedHash);
         }
