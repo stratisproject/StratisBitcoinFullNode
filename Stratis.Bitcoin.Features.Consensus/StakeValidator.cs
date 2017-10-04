@@ -14,13 +14,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class StakeValidator
     {
-        public class StakeModifierContext
-        {
-            public ulong StakeModifier { get; set; }
-            public bool GeneratedStakeModifier { get; set; }
-            public long ModifierTime { get; set; }
-        }
-
         // Ratio of group interval length between the last group and the first group.
         private const int ModifierIntervalRatio = 3;
 
