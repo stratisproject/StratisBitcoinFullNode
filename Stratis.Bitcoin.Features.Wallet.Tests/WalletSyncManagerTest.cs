@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void Initialize_HavingPrunedStoreSetting_ThrowsWalletException()
+        public void Start_HavingPrunedStoreSetting_ThrowsWalletException()
         {
             this.storeSettings.Prune = true;
 
@@ -43,12 +43,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Throws<WalletException>(() =>
             {
-                walletSyncManager.Initialize().Wait();
+                walletSyncManager.Start();
             });
         }
 
         [Fact]
-        public void Initialize_BlockOnChain_DoesNotReorgWalletManager()
+        public void Start_BlockOnChain_DoesNotReorgWalletManager()
         {
             this.storeSettings.Prune = false;
             this.chain = WalletTestsHelpers.PrepareChainWithBlock();
@@ -58,16 +58,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
                 this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
 
-            var task = walletSyncManager.Initialize();
-            task.Wait();
+            walletSyncManager.Start();
 
             this.walletManager.Verify(w => w.GetFirstWalletBlockLocator(), Times.Exactly(0));
             this.walletManager.Verify(w => w.RemoveBlocks(It.IsAny<ChainedBlock>()), Times.Exactly(0));
-            Assert.True(task.IsCompleted);
         }
 
         [Fact]
-        public void Initialize_BlockNotChain_ReorgsWalletManagerUsingWallet()
+        public void Start_BlockNotChain_ReorgsWalletManagerUsingWallet()
         {
             this.storeSettings.Prune = false;
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(5, Network.StratisMain);
@@ -82,14 +80,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
                 this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
 
-            var task = walletSyncManager.Initialize();
-            task.Wait();
+            walletSyncManager.Start();
 
             // verify the walletmanager is reorged using the fork block and it's tip is set to it.
             this.walletManager.Verify(w => w.RemoveBlocks(It.Is<ChainedBlock>(c => c.Header.GetHash() == forkBlockHash)));
             this.walletManager.VerifySet(w => w.WalletTipHash = forkBlockHash);
             Assert.Equal(walletSyncManager.WalletTip.HashBlock.ToString(), forkBlock.HashBlock.ToString());
-            Assert.True(task.IsCompleted);
         }
 
         [Fact]
@@ -166,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletSyncManager.SetWalletTip(this.chain.GetBlock(2));
             //process 4th block in the list does not have same prevhash as which is loaded
             var blockToProcess = blocks[3];
-            walletSyncManager.ProcessBlock(blockToProcess); 
+            walletSyncManager.ProcessBlock(blockToProcess);
 
             var expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
             Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
@@ -207,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 });
 
             // set 2nd block as tip
-            walletSyncManager.SetWalletTip(this.chain.GetBlock(2)); 
+            walletSyncManager.SetWalletTip(this.chain.GetBlock(2));
             //process 4th block in the list  does not have same prevhash as which is loaded
             var blockToProcess = blocks[3];
             walletSyncManager.ProcessBlock(blockToProcess);

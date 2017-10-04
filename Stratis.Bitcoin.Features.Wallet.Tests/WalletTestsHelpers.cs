@@ -11,9 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     /// Helper class containing a bunch of methods used for testing the wallet functionality.
     /// </summary>
     public class WalletTestsHelpers
-    {
-        private static ConcurrentChain rightchain;
-
+    {        
         internal static HdAccount CreateAccount(string name)
         {
             return new HdAccount()
