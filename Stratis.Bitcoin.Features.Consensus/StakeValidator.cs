@@ -55,9 +55,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
         }
 
-        public void CheckProofOfStake(ContextInformation context, ChainedBlock pindexPrev, BlockStake prevBlockStake, Transaction tx, uint nBits)
+        public void CheckProofOfStake(ContextInformation context, ChainedBlock pindexPrev, BlockStake prevBlockStake, Transaction tx, uint headerBits)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}:{6:X})", nameof(pindexPrev), pindexPrev.HashBlock, nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(nBits), nBits);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}:0x{6:X})", nameof(pindexPrev), pindexPrev.HashBlock, nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(headerBits), headerBits);
 
             if (!tx.IsCoinStake)
             {
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
-            this.CheckStakeKernelHash(context, pindexPrev, nBits, prevBlock.Header.Time, prevBlockStake, prevUtxo, txIn.PrevOut, tx.Time);
+            this.CheckStakeKernelHash(context, pindexPrev, headerBits, prevBlock.Header.Time, prevBlockStake, prevUtxo, txIn.PrevOut, tx.Time);
 
             this.logger.LogTrace("(-)[OK]");
         }
@@ -154,42 +154,35 @@ namespace Stratis.Bitcoin.Features.Consensus
         // Stratis kernel protocol
         // coinstake must meet hash target according to the protocol:
         // kernel (input 0) must meet the formula
-        //     hash(nStakeModifier + txPrev.block.nTime + txPrev.nTime + txPrev.vout.hash + txPrev.vout.n + nTime) < bnTarget * nWeight
+        //     hash(stakeModifierV2 + stakingCoins.Time + txPrev.vout.hash + txPrev.vout.n + transactionTime) < target * weight
         // this ensures that the chance of getting a coinstake is proportional to the
         // amount of coins one owns.
         // The reason this hash is chosen is the following:
-        //   nStakeModifier: scrambles computation to make it very difficult to precompute
-        //                   future proof-of-stake
-        //   txPrev.block.nTime: prevent nodes from guessing a good timestamp to
-        //                       generate transaction for future advantage,
-        //                       obsolete since v3
-        //   txPrev.nTime: slightly scrambles computation
-        //   txPrev.vout.hash: hash of txPrev, to reduce the chance of nodes
-        //                     generating coinstake at the same time
-        //   txPrev.vout.n: output number of txPrev, to reduce the chance of nodes
-        //                  generating coinstake at the same time
-        //   nTime: current timestamp
-        //   block/tx hash should not be used here as they can be generated in vast
-        //   quantities so as to generate blocks faster, degrading the system back into
-        //   a proof-of-work situation.
+        //   stakeModifierV2: Scrambles computation to make it very difficult to precompute future proof-of-stake.
+        //   stakingCoins.Time: Time of the coinstake UTXO. Slightly scrambles computation.
+        //   prevout.hash: Hash of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.
+        //   prevout.n: Output number of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.
+        //   transactionTime: Timestamp of the coinstake transaction.
+        //   Block or transaction tx hash should not be used here as they can be generated in vast
+        //   quantities so as to generate blocks faster, degrading the system back into a proof-of-work situation.
         //
-        private void CheckStakeKernelHash(ContextInformation context, ChainedBlock pindexPrev, uint nBits, uint nTimeBlockFrom,
-            BlockStake prevBlockStake, UnspentOutputs txPrev, OutPoint prevout, uint nTimeTx)
+        private void CheckStakeKernelHash(ContextInformation context, ChainedBlock prevChainedBlock, uint headerBits, uint prevBlockTime,
+            BlockStake prevBlockStake, UnspentOutputs stakingCoins, OutPoint prevout, uint transactionTime)
         {
             this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}.{8}:'{9}',{10}:'{11}/{12}',{13}:'{14}/{15}',{16}:{17})",
-                nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height, nameof(nBits), nBits, nameof(nTimeBlockFrom), nTimeBlockFrom, 
-                nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(txPrev), txPrev.TransactionId, txPrev.Height,
-                nameof(prevout), prevout.Hash, prevout.N, nameof(nTimeTx), nTimeTx);
+                nameof(prevChainedBlock), prevChainedBlock.HashBlock, prevChainedBlock.Height, nameof(headerBits), headerBits, nameof(prevBlockTime), prevBlockTime, 
+                nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(stakingCoins), stakingCoins.TransactionId, stakingCoins.Height,
+                nameof(prevout), prevout.Hash, prevout.N, nameof(transactionTime), transactionTime);
 
-            if (nTimeTx < txPrev.Time)
+            if (transactionTime < stakingCoins.Time)
             {
-                this.logger.LogTrace("Coinstake transaction timestamp {0} is lower than its own UTXO timestamp {1}.", nTimeTx, txPrev.Time);
+                this.logger.LogTrace("Coinstake transaction timestamp {0} is lower than its own UTXO timestamp {1}.", transactionTime, stakingCoins.Time);
                 this.logger.LogTrace("(-)[BAD_STAKE_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
             }
 
             // Base target.
-            BigInteger bnTarget = new Target(nBits).ToBigInteger();
+            BigInteger target = new Target(headerBits).ToBigInteger();
 
             // TODO: Investigate:
             // The POS protocol should probably put a limit on the max amount that can be staked
@@ -197,36 +190,33 @@ namespace Stratis.Bitcoin.Features.Consensus
             // the max weight should not exceed the max uint256 array size (array size = 32).
 
             // Weighted target.
-            long nValueIn = txPrev._Outputs[prevout.N].Value.Satoshi;
-            BigInteger bnWeight = BigInteger.ValueOf(nValueIn);
-            BigInteger bnWeightedTarget = bnTarget.Multiply(bnWeight);
+            long valueIn = stakingCoins._Outputs[prevout.N].Value.Satoshi;
+            BigInteger weight = BigInteger.ValueOf(valueIn);
+            BigInteger weightedTarget = target.Multiply(weight);
 
-            context.Stake.TargetProofOfStake = ToUInt256(bnWeightedTarget);
-            this.logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", ToUInt256(bnTarget), nValueIn, context.Stake.TargetProofOfStake);
+            context.Stake.TargetProofOfStake = ToUInt256(weightedTarget);
+            this.logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", ToUInt256(target), valueIn, context.Stake.TargetProofOfStake);
 
-            ulong nStakeModifier = prevBlockStake.StakeModifier;
-            uint256 bnStakeModifierV2 = prevBlockStake.StakeModifierV2;
-            int nStakeModifierHeight = pindexPrev.Height;
-            uint nStakeModifierTime = pindexPrev.Header.Time;
+            uint256 stakeModifierV2 = prevBlockStake.StakeModifierV2;
 
             // Calculate hash
             using (var ms = new MemoryStream())
             {
                 var serializer = new BitcoinStream(ms, true);
-                serializer.ReadWrite(bnStakeModifierV2);
-                serializer.ReadWrite(txPrev.Time);
+                serializer.ReadWrite(stakeModifierV2);
+                serializer.ReadWrite(stakingCoins.Time);
                 serializer.ReadWrite(prevout.Hash);
                 serializer.ReadWrite(prevout.N);
-                serializer.ReadWrite(nTimeTx);
+                serializer.ReadWrite(transactionTime);
 
                 context.Stake.HashProofOfStake = Hashes.Hash256(ms.ToArray());
             }
 
-            this.logger.LogTrace("Stake modifiers are {0} and '{1}', hash POS is '{2}'.", nStakeModifier, bnStakeModifierV2, context.Stake.HashProofOfStake);
+            this.logger.LogTrace("Stake modifier V2 is '{0}', hash POS is '{1}'.", stakeModifierV2, context.Stake.HashProofOfStake);
 
             // Now check if proof-of-stake hash meets target protocol.
             BigInteger hashProofOfStakeTarget = new BigInteger(1, context.Stake.HashProofOfStake.ToBytes(false));
-            if (hashProofOfStakeTarget.CompareTo(bnWeightedTarget) > 0)
+            if (hashProofOfStakeTarget.CompareTo(weightedTarget) > 0)
             {
                 this.logger.LogTrace("(-)[TARGET_MISSED]");
                 ConsensusErrors.StakeHashInvalidTarget.Throw();
