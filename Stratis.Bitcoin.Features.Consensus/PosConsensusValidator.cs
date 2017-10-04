@@ -46,6 +46,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         // Supposed to be 2^n-1.
         public const uint StakeTimestampMask = 0x0000000F;
 
+        /// <summary>Drifting Bug Fix, hardfork on Sat, 19 Nov 2016 00:00:00 GMT.</summary>
+        public const long DriftingBugFixTimestamp = 1479513600;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -133,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockResult.Block;
 
             // Check timestamp.
-            if (block.Header.Time > FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
+            if (block.Header.Time > this.FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
@@ -275,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check coinbase timestamp.
-            if (chainedBlock.Header.Time > FutureDrift(context.BlockResult.Block.Transactions[0].Time))
+            if (chainedBlock.Header.Time > this.FutureDrift(context.BlockResult.Block.Transactions[0].Time))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
@@ -283,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Check coinstake timestamp.
             if (context.Stake.BlockStake.IsProofOfStake()
-                && !CheckCoinStakeTimestamp(chainedBlock.Height, chainedBlock.Header.Time, context.BlockResult.Block.Transactions[1].Time))
+                && !this.CheckCoinStakeTimestamp(chainedBlock.Height, chainedBlock.Header.Time, context.BlockResult.Block.Transactions[1].Time))
             {
                 this.logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
@@ -300,17 +303,17 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         // Check whether the coinstake timestamp meets protocol.
-        public static bool CheckCoinStakeTimestamp(int height, long blockTime, long transactionTime)
+        public bool CheckCoinStakeTimestamp(int height, long blockTime, long transactionTime)
         {
             return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
         }
 
-        private static bool IsDriftReduced(long time)
+        private bool IsDriftReduced(long time)
         {
-            return time > 1479513600;
+            return time > DriftingBugFixTimestamp;
         }
 
-        private static long FutureDrift(long time)
+        private long FutureDrift(long time)
         {
             return IsDriftReduced(time) ? time + 15 : time + 128 * 60 * 60;
         }
