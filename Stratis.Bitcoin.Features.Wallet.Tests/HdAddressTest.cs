@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using ConcurrentCollections;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet;
+using System;
+using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -95,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var address = new HdAddress()
             {
-                Transactions = new List<TransactionData>() {
+                Transactions = new ConcurrentHashSet<TransactionData>() {
                     new TransactionData() { Id = new uint256(15)},
                     new TransactionData() { Id = new uint256(16), SpendingDetails = new SpendingDetails() },
                     new TransactionData() { Id = new uint256(17)},
@@ -115,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var address = new HdAddress()
             {
-                Transactions = new List<TransactionData>() {
+                Transactions = new ConcurrentHashSet<TransactionData>() {
                     new TransactionData() { Id = new uint256(16), SpendingDetails = new SpendingDetails() },
                     new TransactionData() { Id = new uint256(18), SpendingDetails = new SpendingDetails() }
                 }
@@ -131,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var address = new HdAddress()
             {
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var result = address.UnspentTransactions();

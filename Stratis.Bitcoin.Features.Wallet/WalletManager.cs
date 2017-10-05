@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ConcurrentCollections;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
@@ -515,7 +516,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 var toRemove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
                 foreach (var transactionData in toRemove)
-                    address.Transactions.Remove(transactionData);
+                    address.Transactions.TryRemove(transactionData);
             }
 
             this.UpdateLastBlockSyncedHeight(fork);
@@ -708,7 +709,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // if the details of this spending transaction are seen for the first time
             if (spentTransaction.SpendingDetails == null)
             {
-                List<PaymentDetails> payments = new List<PaymentDetails>();
+                ConcurrentHashSet<PaymentDetails> payments = new ConcurrentHashSet<PaymentDetails>();
                 foreach (var paidToOutput in paidToOutputs)
                 {
                     payments.Add(new PaymentDetails
@@ -878,7 +879,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 ChainCode = chainCode,
                 CreationTime = creationTime ?? DateTimeOffset.Now,
                 Network = this.network,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
+                AccountsRoot = new ConcurrentHashSet<AccountRoot> { new AccountRoot { Accounts = new ConcurrentHashSet<HdAccount>(), CoinType = this.coinType } },
             };
 
             // create a folder if none exists and persist the file

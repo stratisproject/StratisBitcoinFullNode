@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using ConcurrentCollections;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet;
+using System;
+using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -62,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var account = new HdAccount();
             account.ExternalAddresses.Add(new HdAddress() { Index = 3 });
             account.ExternalAddresses.Add(new HdAddress() { Index = 2 });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
 
             var result = account.GetFirstUnusedReceivingAddress();
 
@@ -73,8 +72,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetFirstUnusedReceivingAddressWithoutExistingUnusedReceivingAddressReturnsNull()
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
 
             var result = account.GetFirstUnusedReceivingAddress();
 
@@ -98,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var account = new HdAccount();
             account.InternalAddresses.Add(new HdAddress() { Index = 3 });
             account.InternalAddresses.Add(new HdAddress() { Index = 2 });
-            account.InternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
 
             var result = account.GetFirstUnusedChangeAddress();
 
@@ -109,8 +108,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetFirstUnusedChangeAddressWithoutExistingUnusedChangeAddressReturnsNull()
         {
             var account = new HdAccount();
-            account.InternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
 
             var result = account.GetFirstUnusedChangeAddress();
 
@@ -132,9 +131,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetLastUsedAddressWithChangeAddressesHavingTransactionsReturnsHighestIndex()
         {
             var account = new HdAccount();
-            account.InternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new List<TransactionData>() { new TransactionData() } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
 
             var result = account.GetLastUsedAddress(isChange: true);
 
@@ -169,9 +168,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetLastUsedAddressWithReceivingAddressesHavingTransactionsReturnsHighestIndex()
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new List<TransactionData>() { new TransactionData() } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() } });
 
             var result = account.GetLastUsedAddress(isChange: false);
 
@@ -206,15 +205,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetTransactionsByIdHavingTransactionsWithIdReturnsTransactions()
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7 } } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 8 } } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 9 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 8 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 9 } } });
             account.ExternalAddresses.Add(new HdAddress() { Index = 6, Transactions = null });
 
-            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10 } } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 5, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 11 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 5, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 11 } } });
             account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = null });
-            account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 12 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 12 } } });
 
             var result = account.GetTransactionsById(new uint256(18));
 
@@ -229,8 +228,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetTransactionsByIdHavingNoMatchingTransactionsReturnsEmptyList()
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7 } } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10 } } });
 
             var result = account.GetTransactionsById(new uint256(20));
 
@@ -241,15 +240,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetSpendableTransactionsWithSpendableTransactionsReturnsSpendableTransactions()
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7, SpendingDetails = new SpendingDetails() } } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 8 } } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 9, SpendingDetails = new SpendingDetails() } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7, SpendingDetails = new SpendingDetails() } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 8 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 9, SpendingDetails = new SpendingDetails() } } });
             account.ExternalAddresses.Add(new HdAddress() { Index = 6, Transactions = null });
 
-            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10, SpendingDetails = new SpendingDetails() } } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 5, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 11 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10, SpendingDetails = new SpendingDetails() } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 5, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 11 } } });
             account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = null });
-            account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 12, SpendingDetails = new SpendingDetails() } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 12, SpendingDetails = new SpendingDetails() } } });
 
             var result = account.GetSpendableTransactions();
 
@@ -264,8 +263,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetSpendableTransactionsWithoutSpendableTransactionsReturnsEmptyList()
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7, SpendingDetails = new SpendingDetails() } } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10, SpendingDetails = new SpendingDetails() } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7, SpendingDetails = new SpendingDetails() } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10, SpendingDetails = new SpendingDetails() } } });
 
             var result = account.GetSpendableTransactions();
 
@@ -276,15 +275,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void FindAddressesForTransactionWithMatchingTransactionsReturnsTransactions()
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7 } } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 8 } } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 9 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 8 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 9 } } });
             account.ExternalAddresses.Add(new HdAddress() { Index = 6, Transactions = null });
 
-            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10 } } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 5, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 11 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 5, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 11 } } });
             account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = null });
-            account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 12 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 12 } } });
 
             var result = account.FindAddressesForTransaction(t => t.Id == 18);
 
@@ -297,15 +296,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void FindAddressesForTransactionWithoutMatchingTransactionsReturnsEmptyList()
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7 } } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 8 } } });
-            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 9 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 2, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 7 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 3, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 8 } } });
+            account.ExternalAddresses.Add(new HdAddress() { Index = 1, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 9 } } });
             account.ExternalAddresses.Add(new HdAddress() { Index = 6, Transactions = null });
 
-            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10 } } });
-            account.InternalAddresses.Add(new HdAddress() { Index = 5, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 11 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 4, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(15), Index = 10 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 5, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(18), Index = 11 } } });
             account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = null });
-            account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = new List<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 12 } } });
+            account.InternalAddresses.Add(new HdAddress() { Index = 6, Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() { Id = new uint256(19), Index = 12 } } });
 
             var result = account.FindAddressesForTransaction(t => t.Id == 25);
 

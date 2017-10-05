@@ -1,8 +1,6 @@
-﻿using NBitcoin;
+﻿using ConcurrentCollections;
+using NBitcoin;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
@@ -12,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             return new AccountRoot()
             {
-                Accounts = new List<HdAccount>(),
+                Accounts = new ConcurrentHashSet<HdAccount>(),
                 CoinType = coinType
             };
         }
@@ -21,14 +19,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             return new AccountRoot()
             {
-                Accounts = new List<HdAccount>() {
+                Accounts = new ConcurrentHashSet<HdAccount>() {
                     new HdAccount() {
                         Name = accountName,
-                        InternalAddresses = new List<HdAddress>()
+                        InternalAddresses = new ConcurrentHashSet<HdAddress>()
                         {
                             CreateAddress(false),
                         },
-                        ExternalAddresses = new List<HdAddress>()
+                        ExternalAddresses = new ConcurrentHashSet<HdAddress>()
                         {
                             CreateAddress(false),
                         }
