@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="request">The name and password of the wallet to stake.</param>
         /// <returns></returns>
         [Route("startstaking")]
-        [HttpGet]
+        [HttpPost]
         public IActionResult StartStaking([FromBody]StartStakingRequest request)
         {
             try
