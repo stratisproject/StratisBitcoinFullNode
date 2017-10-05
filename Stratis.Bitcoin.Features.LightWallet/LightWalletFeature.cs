@@ -70,6 +70,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.walletFeePolicy = walletFeePolicy;
+            this.broadcasterBehavior = broadcasterBehavior;
         }
 
         /// <inheritdoc />

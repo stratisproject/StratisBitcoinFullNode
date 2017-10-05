@@ -501,43 +501,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public bool SendTransaction(string transactionHex)
-        {
-            Guard.NotEmpty(transactionHex, nameof(transactionHex));
-
-            // TODO move this to a behavior to a dedicated interface
-            // parse transaction
-            Transaction transaction = Transaction.Parse(transactionHex);
-
-            // replace this we a dedicated WalletBroadcast interface
-            // in a fullnode implementation this will validate with the 
-            // mempool and broadcast, in a lightnode this will push to 
-            // the wallet and then broadcast (we might add some basic validation
-            if (this.mempoolValidator == null)
-            {
-                this.ProcessTransaction(transaction);
-            }
-            else
-            {
-                var state = new MempoolValidationState(false);
-                if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
-                    return false;
-                this.ProcessTransaction(transaction);
-            }
-
-            // broadcast to peers
-            TxPayload payload = new TxPayload(transaction);
-            foreach (var node in this.connectionManager.ConnectedNodes)
-            {
-                node.SendMessage(payload);
-            }
-
-            // we might want to create a behaviour that tracks how many times
-            // the broadcast trasnactions was sent back to us by other peers
-            return true;
-        }
-
-        /// <inheritdoc />
         public void RemoveBlocks(ChainedBlock fork)
         {
             Guard.NotNull(fork, nameof(fork));
