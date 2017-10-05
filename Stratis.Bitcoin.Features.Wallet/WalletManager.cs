@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletManager : IWalletManager
     {
         /// <summary>A lock object that protects access to the wallet.</summary>
-        private object walletLock;
+        private readonly object walletLock;
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
