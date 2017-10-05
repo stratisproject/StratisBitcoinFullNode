@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Stratis.Bitcoin.Interfaces
+namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
     public interface IWalletFeePolicy
     {
