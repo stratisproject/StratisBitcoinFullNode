@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
 using System;
 
-namespace Stratis.Bitcoin.Features.Wallet
+namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
     public interface IWalletSyncManager
     {
