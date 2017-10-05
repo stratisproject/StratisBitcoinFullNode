@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.checkFrequency = 0;
 
             this.MinerPolicyEstimator = blockPolicyEstimator;
-            this.minReasonableRelayFee = nodeSettings.MinRelayTxFee;
+            this.minReasonableRelayFee = nodeSettings.MinRelayTxFeeRate;
         }
 
         /// <summary>Gets the miner policy estimator.</summary>

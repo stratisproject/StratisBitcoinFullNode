@@ -85,13 +85,13 @@ namespace Stratis.Bitcoin.Configuration
         public Uri ApiUri { get; set; }
 
         /// <summary>Minimum transaction fee for network.</summary>
-        public FeeRate MinTxFee { get; set; }
+        public FeeRate MinTxFeeRate { get; set; }
 
         /// <summary>Fall back transaction fee for network.</summary>
-        public FeeRate FallbackTxFee { get; set; }
+        public FeeRate FallbackTxFeeRate { get; set; }
 
         /// <summary>Minimum relay transcation fee for network.</summary>
-        public FeeRate MinRelayTxFee { get; set; }
+        public FeeRate MinRelayTxFeeRate { get; set; }
 
         public TextFileConfiguration ConfigReader { get; private set; }
 
@@ -209,21 +209,21 @@ namespace Stratis.Bitcoin.Configuration
 
             nodeSettings.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'", nodeSettings.Network.IsTest(), nodeSettings.Network.IsBitcoin());
             if (args.Contains("-mintxfee", StringComparer.CurrentCultureIgnoreCase))
-                nodeSettings.MinTxFee = new FeeRate(long.Parse(args.GetValueOf("-mintxfee")));
+                nodeSettings.MinTxFeeRate = new FeeRate(long.Parse(args.GetValueOf("-mintxfee")));
             else
-                nodeSettings.MinTxFee = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.MinTxFee));
-            nodeSettings.Logger.LogDebug("MinTxFee set to {0}.", nodeSettings.MinTxFee);
+                nodeSettings.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.MinTxFee));
+            nodeSettings.Logger.LogDebug("MinTxFee set to {0}.", nodeSettings.MinTxFeeRate);
 
             if (args.Contains("-fallbackfee", StringComparer.CurrentCultureIgnoreCase))
-                nodeSettings.FallbackTxFee = new FeeRate(long.Parse(args.GetValueOf("-fallbackfee")));
+                nodeSettings.FallbackTxFeeRate = new FeeRate(long.Parse(args.GetValueOf("-fallbackfee")));
             else
-                nodeSettings.FallbackTxFee = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.FallbackFee));
-            nodeSettings.Logger.LogDebug("FallbackTxFee set to {0}.", nodeSettings.FallbackTxFee);
+                nodeSettings.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.FallbackFee));
+            nodeSettings.Logger.LogDebug("FallbackTxFee set to {0}.", nodeSettings.FallbackTxFeeRate);
             if (args.Contains("-minrelaytxfee", StringComparer.CurrentCultureIgnoreCase))
-                nodeSettings.MinRelayTxFee = new FeeRate(long.Parse(args.GetValueOf("-minrelaytxfee")));
+                nodeSettings.MinRelayTxFeeRate = new FeeRate(long.Parse(args.GetValueOf("-minrelaytxfee")));
             else
-                nodeSettings.MinRelayTxFee = new FeeRate(config.GetOrDefault("minrelaytxfee", nodeSettings.Network.MinRelayTxFee));
-            nodeSettings.Logger.LogDebug("MinRelayTxFee set to {0}.", nodeSettings.MinRelayTxFee);
+                nodeSettings.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", nodeSettings.Network.MinRelayTxFee));
+            nodeSettings.Logger.LogDebug("MinRelayTxFee set to {0}.", nodeSettings.MinRelayTxFeeRate);
 
             try
             {

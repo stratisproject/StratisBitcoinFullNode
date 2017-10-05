@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public Money GetRequiredFee(int txBytes)
         {
-            return Math.Max(this.lowTxFeePerKb.GetFee(txBytes), this.nodeSettings.MinRelayTxFee.GetFee(txBytes));
+            return Math.Max(this.lowTxFeePerKb.GetFee(txBytes), this.nodeSettings.MinRelayTxFeeRate.GetFee(txBytes));
         }
 
         /// <inheritdoc />

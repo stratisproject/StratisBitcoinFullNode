@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public FeeRate TxFeeRate { get; set; }
 
         /// <summary>Minimum fee rate to use for this policy.</summary>
-        public FeeRate MinTxFee { get; set; }
+        public FeeRate FallbackTxFeeRate { get; set; }
 
         /// <summary>
         /// Constructor for the light wallet fixed fee policy.
@@ -43,8 +43,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.MinTxFee = settings.MinTxFee;
-            this.TxFeeRate = this.MinTxFee;
+            this.FallbackTxFeeRate = new FeeRate(60000);//settings.FallbackTxFeeRate;
+            this.TxFeeRate = this.FallbackTxFeeRate;
         }
 
         /// <inheritdoc />
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public Money GetMinimumFee(int txBytes, int confirmTarget, Money targetFee)
         {
-            return this.MinTxFee.GetFee(txBytes);
+            return this.FallbackTxFeeRate.GetFee(txBytes);
         }
 
         /// <inheritdoc />
