@@ -60,11 +60,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.mempoolValidator = mempoolValidator;
             this.mempool = mempool;
 
-            this.minTxFee = nodeSettings.MinTxFee;
-            this.fallbackFee = nodeSettings.FallbackTxFee;
+            this.minTxFee = nodeSettings.MinTxFeeRate;
+            this.fallbackFee = nodeSettings.FallbackTxFeeRate;
             this.payTxFee = new FeeRate(0);
             this.maxTxFee = new Money(0.1M, MoneyUnit.BTC);
-            this.minRelayTxFee = nodeSettings.MinRelayTxFee;
+            this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
         }
 
         /// <inheritdoc />
