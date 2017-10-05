@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -67,6 +68,24 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        public void StartStaking(string walletName, string walletPassword)
+        {
+            if (!string.IsNullOrEmpty(walletName) && !string.IsNullOrEmpty(walletPassword))
+            {
+                this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
+
+                this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret()
+                {
+                    WalletPassword = walletPassword,
+                    WalletName = walletName
+                });
+            }
+            else
+            {
+                this.logger.LogWarning("Staking not started, wallet name or password were not provided.");
+            }
+        }
+
         ///<inheritdoc />
         public override void Start()
         {
@@ -86,21 +105,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (this.minerSettings.Stake)
             {
-                if (!string.IsNullOrEmpty(this.minerSettings.WalletName)
-                    && !string.IsNullOrEmpty(this.minerSettings.WalletPassword))
-                {
-                    this.logger.LogInformation("Staking enabled on wallet '{0}'.", this.minerSettings.WalletName);
-
-                    this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret()
-                    {
-                        WalletPassword = this.minerSettings.WalletPassword,
-                        WalletName = this.minerSettings.WalletName
-                    });
-                }
-                else
-                {
-                    this.logger.LogWarning("Staking not started, wallet name or password were not provided.");
-                }
+                StartStaking(this.minerSettings.WalletName, this.minerSettings.WalletPassword);
             }
         }
 
@@ -144,6 +149,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         services.AddSingleton<PowMining>();
                         services.AddSingleton<AssemblerFactory, PowAssemblerFactory>();
+                        services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
 
@@ -172,6 +178,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<PowMining>();
                         services.AddSingleton<PosMinting>();
                         services.AddSingleton<AssemblerFactory, PosAssemblerFactory>();
+                        services.AddSingleton<MinerController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>(new MinerSettings(setup));
                     });
