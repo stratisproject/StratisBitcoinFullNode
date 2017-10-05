@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Stratis.Bitcoin.Utilities;
+using System;
 using System.Reflection;
 #if !NOASSEMBLYCONTEXT
 using System.Runtime.Loader;
@@ -6,7 +7,7 @@ using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Utilities
+namespace Stratis.Bitcoin
 {
     /// <summary>
     /// Extension methods for IFullNode interface.

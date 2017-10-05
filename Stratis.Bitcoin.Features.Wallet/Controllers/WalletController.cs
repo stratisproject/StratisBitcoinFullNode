@@ -13,6 +13,9 @@ using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using System.Threading.Tasks;
+using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -31,9 +34,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         private readonly ConcurrentChain chain;
         private readonly DataFolder dataFolder;
         private readonly ILogger logger;
+        private readonly IBroadcasterManager broadcasterManager;
 
         public WalletController(ILoggerFactory loggerFactory, IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IWalletSyncManager walletSyncManager, IConnectionManager connectionManager, Network network,
-            ConcurrentChain chain, DataFolder dataFolder)
+            ConcurrentChain chain, DataFolder dataFolder, IBroadcasterManager broadcasterManager)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -44,6 +48,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.chain = chain;
             this.dataFolder = dataFolder;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.broadcasterManager = broadcasterManager;
         }
 
         /// <summary>
@@ -514,7 +519,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns></returns>
         [Route("send-transaction")]
         [HttpPost]
-        public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
+        public async Task<IActionResult> SendTransactionAsync([FromBody] SendTransactionRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -527,9 +532,28 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                if (this.walletManager.SendTransaction(request.Hex))
+                var transaction = new Transaction(request.Hex);
+                var result = await this.broadcasterManager.TryBroadcastAsync(transaction).ConfigureAwait(false);
+                if (result == Bitcoin.Broadcasting.Success.Yes)
                 {
                     return this.Ok();
+                }
+                else if(result == Bitcoin.Broadcasting.Success.DontKnow)
+                {
+                    // wait for propagation
+                    var waited = TimeSpan.Zero;
+                    var period = TimeSpan.FromSeconds(1);
+                    while (TimeSpan.FromSeconds(21) > waited)
+                    {
+                        // if broadcasts doesn't contain then success
+                        var transactionEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+                        if (transactionEntry != null && transactionEntry.State == Bitcoin.Broadcasting.State.Propagated)
+                        {
+                            return this.Ok();
+                        }
+                        await Task.Delay(period).ConfigureAwait(false);
+                        waited += period;
+                    }
                 }
 
                 return this.StatusCode((int)HttpStatusCode.BadRequest);

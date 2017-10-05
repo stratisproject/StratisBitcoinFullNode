@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace Stratis.Bitcoin.Utilities
+namespace System.Linq
 {
     /// <summary>
     /// Extension methods for IEnumerable interface.
