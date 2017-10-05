@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Security;
+﻿using ConcurrentCollections;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
@@ -15,6 +10,12 @@ using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -679,7 +680,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "myWallet",
                 Network = WalletHelpers.GetNetwork("mainnet"),
                 CreationTime = new DateTime(2017, 6, 19, 1, 1, 1),
-                AccountsRoot = new List<AccountRoot>() {
+                AccountsRoot = new ConcurrentHashSet<AccountRoot>() {
                     new AccountRoot()
                     {
                         CoinType = (CoinType)Network.Main.Consensus.CoinType,
@@ -805,11 +806,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1);
             address.Transactions.Add(transaction);
 
-            var addresses = new List<HdAddress>() {address};
+            var addresses = new ConcurrentHashSet<HdAddress>() {address};
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot
             {
-                Accounts = new List<HdAccount> { new HdAccount
+                Accounts = new ConcurrentHashSet<HdAccount> { new HdAccount
                 {
                     ExternalAddresses = addresses
                 } }
@@ -858,11 +859,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
             address.Transactions.Add(transaction);
 
-            var addresses = new List<HdAddress>() {address, changeAddress};
+            var addresses = new ConcurrentHashSet<HdAddress>() {address, changeAddress};
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot
             {
-                Accounts = new List<HdAccount> { new HdAccount
+                Accounts = new ConcurrentHashSet<HdAccount> { new HdAccount
                 {
                     ExternalAddresses = addresses
                 } }
@@ -929,12 +930,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData transaction = WalletTestsHelpers.CreateTransaction(new uint256(1), new Money(500000), 1, spendingDetails);
             address.Transactions.Add(transaction);
 
-            var addresses = new List<HdAddress>() {address, changeAddress};
+            var addresses = new ConcurrentHashSet<HdAddress>() {address, changeAddress};
 
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot
             {
-                Accounts = new List<HdAccount> { new HdAccount
+                Accounts = new ConcurrentHashSet<HdAccount> { new HdAccount
                 {
                     ExternalAddresses = addresses
                 } }
@@ -967,12 +968,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetHistoryWithDuplicateSpentTransactionsSelectsDistinctsSpentTransactionsForDuplicates()
         {
             var walletName = "myWallet";
-            var addresses = new List<HdAddress>()
+            var addresses = new ConcurrentHashSet<HdAddress>()
             {
                 new HdAddress()
                 {
                     HdPath = $"m/44'/0'/0'/1/0",
-                    Transactions = new List<TransactionData>()
+                    Transactions = new ConcurrentHashSet<TransactionData>()
                     {
                         new TransactionData()
                         {
@@ -983,7 +984,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                             {
                                 TransactionId = new uint256(15),
                                 BlockHeight = 10,
-                                Payments = new List<PaymentDetails>()
+                                Payments = new ConcurrentHashSet<PaymentDetails>()
                                 {
                                     new PaymentDetails()
                                     {
@@ -998,7 +999,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 new HdAddress()
                 {
                     HdPath = $"m/44'/0'/0'/1/1",
-                    Transactions = new List<TransactionData>()
+                    Transactions = new ConcurrentHashSet<TransactionData>()
                     {
                         new TransactionData()
                         {
@@ -1009,7 +1010,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                             {
                                 TransactionId = new uint256(15),
                                 BlockHeight = 10,
-                                Payments = new List<PaymentDetails>()
+                                Payments = new ConcurrentHashSet<PaymentDetails>()
                                 {
                                     new PaymentDetails()
                                     {
@@ -1026,7 +1027,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot
             {
-                Accounts = new List<HdAccount> { new HdAccount
+                Accounts = new ConcurrentHashSet<HdAccount> { new HdAccount
                 {
                     ExternalAddresses = addresses
                 } }
@@ -1119,11 +1120,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData transaction2 = WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(275000), 2, spendingDetails2);
             changeAddress.Transactions.Add(transaction2);
 
-            var addresses = new List<HdAddress>() {address, changeAddress, changeAddress2};
+            var addresses = new ConcurrentHashSet<HdAddress>() {address, changeAddress, changeAddress2};
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
             wallet.AccountsRoot.Add(new AccountRoot
             {
-                Accounts = new List<HdAccount> { new HdAccount
+                Accounts = new ConcurrentHashSet<HdAccount> { new HdAccount
                 {
                     ExternalAddresses = addresses
                 } }

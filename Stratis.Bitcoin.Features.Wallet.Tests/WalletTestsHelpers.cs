@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Script = NBitcoin.Script;
@@ -129,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return new Bitcoin.Features.Wallet.Wallet()
             {
                 Name = name,
-                AccountsRoot = new List<AccountRoot>(),
+                AccountsRoot = new ConcurrentHashSet<AccountRoot>(),
                 BlockLocator = null
             };
         }
@@ -151,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 ChainCode = extendedKey.ChainCode,
                 CreationTime = DateTimeOffset.Now,
                 Network = Network.Main,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
+                AccountsRoot = new ConcurrentHashSet<AccountRoot> { new AccountRoot { Accounts = new ConcurrentHashSet<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
             };
 
             return (walletFile, extendedKey);
@@ -203,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 wallet.AccountsRoot.Add(new AccountRoot
                 {
                     CoinType = CoinType.Bitcoin,
-                    Accounts = new List<HdAccount>
+                    Accounts = new ConcurrentHashSet<HdAccount>
                     {
                         new HdAccount
                         {
@@ -226,7 +227,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Index = index,
                 Address = addressName,
                 ScriptPubKey = new Script(),
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
         }
 
@@ -237,13 +238,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Index = index,
                 Address = addressName,
                 ScriptPubKey = new Script(),
-                Transactions = new List<TransactionData>() { new TransactionData() }
+                Transactions = new ConcurrentHashSet<TransactionData>() { new TransactionData() }
             };
         }
 
-        internal static List<HdAddress> GenerateAddresses(int count)
+        internal static ConcurrentHashSet<HdAddress> GenerateAddresses(int count)
         {
-            List<HdAddress> addresses = new List<HdAddress>();
+            ConcurrentHashSet<HdAddress> addresses = new ConcurrentHashSet<HdAddress>();
             for (int i = 0; i < count; i++)
             {
 
@@ -303,9 +304,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return chain;
         }
 
-        internal static ICollection<HdAddress> CreateSpentTransactionsOfBlockHeights(Network network, params int[] blockHeights)
+        internal static ConcurrentHashSet<HdAddress> CreateSpentTransactionsOfBlockHeights(Network network, params int[] blockHeights)
         {
-            var addresses = new List<HdAddress>();
+            var addresses = new ConcurrentHashSet<HdAddress>();
 
             foreach (int height in blockHeights)
             {
@@ -314,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 {
                     Address = key.PubKey.GetAddress(network).ToString(),
                     ScriptPubKey = key.ScriptPubKey,
-                    Transactions = new List<TransactionData>() {
+                    Transactions = new ConcurrentHashSet<TransactionData>() {
                         new TransactionData()
                         {
                             BlockHeight = height,
@@ -330,9 +331,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return addresses;
         }
 
-        internal static ICollection<HdAddress> CreateUnspentTransactionsOfBlockHeights(Network network, params int[] blockHeights)
+        internal static ConcurrentHashSet<HdAddress> CreateUnspentTransactionsOfBlockHeights(Network network, params int[] blockHeights)
         {
-            var addresses = new List<HdAddress>();
+            var addresses = new ConcurrentHashSet<HdAddress>();
 
             foreach (int height in blockHeights)
             {
@@ -341,7 +342,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 {
                     Address = key.PubKey.GetAddress(network).ToString(),
                     ScriptPubKey = key.ScriptPubKey,
-                    Transactions = new List<TransactionData>() {
+                    Transactions = new ConcurrentHashSet<TransactionData>() {
                         new TransactionData()
                         {
                             BlockHeight = height,

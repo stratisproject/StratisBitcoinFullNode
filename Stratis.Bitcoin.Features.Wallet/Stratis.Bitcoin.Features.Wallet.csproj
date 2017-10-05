@@ -24,6 +24,7 @@
     <None Remove="Stratis.Bitcoin.Features.Wallet\**" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="ConcurrentHashSet" Version="1.0.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.0" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />

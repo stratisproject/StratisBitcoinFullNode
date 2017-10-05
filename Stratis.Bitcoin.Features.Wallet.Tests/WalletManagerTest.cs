@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ConcurrentCollections;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -728,12 +729,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 Index = 0,
                 Name = "myAccount",
-                ExternalAddresses = new List<HdAddress>()
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>()
                 {
                     new HdAddress() {
                         Index = 0,
                         Address = "myUsedAddress",
-                        Transactions = new List<TransactionData>()
+                        Transactions = new ConcurrentHashSet<TransactionData>()
                         {
                             new TransactionData()
                         }
@@ -741,7 +742,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                      new HdAddress() {
                         Index = 1,
                         Address = "myUnusedAddress",
-                        Transactions = new List<TransactionData>()
+                        Transactions = new ConcurrentHashSet<TransactionData>()
                     }
                 },
                 InternalAddresses = null
@@ -764,12 +765,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 Index = 0,
                 Name = "myAccount",
-                InternalAddresses = new List<HdAddress>()
+                InternalAddresses = new ConcurrentHashSet<HdAddress>()
                 {
                     new HdAddress() {
                         Index = 0,
                         Address = "myUsedAddress",
-                        Transactions = new List<TransactionData>()
+                        Transactions = new ConcurrentHashSet<TransactionData>()
                         {
                             new TransactionData()
                         }
@@ -777,7 +778,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     new HdAddress() {
                         Index = 1,
                         Address = "myUnusedAddress",
-                        Transactions = new List<TransactionData>()
+                        Transactions = new ConcurrentHashSet<TransactionData>()
                     }
                 },
                 ExternalAddresses = null
@@ -807,8 +808,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "myAccount",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountExtendedPubKey,
-                InternalAddresses = new List<HdAddress>(),
-                ExternalAddresses = new List<HdAddress>()
+                InternalAddresses = new ConcurrentHashSet<HdAddress>(),
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>()
             });
             walletManager.Wallets.Add(wallet);
 
@@ -833,19 +834,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Index = 0,
                 Name = "myAccount",
                 HdPath = "m/44'/0'/0'",
-                ExternalAddresses = new List<HdAddress>()
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>()
                 {
                     new HdAddress() {
                         Index = 0,
                         Address = "myUsedAddress",
                         ScriptPubKey = new Script(),
-                        Transactions = new List<TransactionData>()
+                        Transactions = new ConcurrentHashSet<TransactionData>()
                         {
                             new TransactionData()
                         },
                     }
                 },
-                InternalAddresses = new List<HdAddress>(),
+                InternalAddresses = new ConcurrentHashSet<HdAddress>(),
                 ExtendedPubKey = accountExtendedPubKey
             });
             walletManager.Wallets.Add(wallet);
@@ -876,12 +877,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Index = 0,
                 Name = "myAccount",
                 HdPath = "m/44'/0'/0'",
-                ExternalAddresses = new List<HdAddress>()
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>()
                 {
                     WalletTestsHelpers.CreateAddressWithEmptyTransaction(0, "myUsedExternalAddress"),
                     WalletTestsHelpers.CreateAddressWithoutTransaction(1, "myUnusedExternalAddress"),
                 },
-                InternalAddresses = new List<HdAddress>() {
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() {
                     WalletTestsHelpers.CreateAddressWithEmptyTransaction(0, "myUsedInternalAddress"),
                     WalletTestsHelpers.CreateAddressWithoutTransaction(1, "myUnusedInternalAddress"),
                 },
@@ -909,12 +910,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Index = 0,
                 Name = "myAccount",
                 HdPath = "m/44'/0'/0'",
-                ExternalAddresses = new List<HdAddress>()
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>()
                 {
                     WalletTestsHelpers.CreateAddressWithEmptyTransaction(0, "myUsedExternalAddress"),
                     WalletTestsHelpers.CreateAddressWithoutTransaction(1, "myUnusedExternalAddress"),
                 },
-                InternalAddresses = new List<HdAddress>() {
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() {
                     WalletTestsHelpers.CreateAddressWithEmptyTransaction(0, "myUsedInternalAddress"),
                     WalletTestsHelpers.CreateAddressWithoutTransaction(1, "myUnusedInternalAddress"),
                 },
@@ -942,8 +943,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Index = 0,
                 Name = "myAccount",
                 HdPath = "m/44'/0'/0'",
-                ExternalAddresses = new List<HdAddress>(),
-                InternalAddresses = new List<HdAddress>(),
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>(),
+                InternalAddresses = new ConcurrentHashSet<HdAddress>(),
                 ExtendedPubKey = "blabla"
             });
             walletManager.Wallets.Add(wallet);
@@ -999,12 +1000,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.Add(new AccountRoot()
             {
                 CoinType = CoinType.Stratis,
-                Accounts = new List<HdAccount>() { new HdAccount() { Name = "Account 2" } }
+                Accounts = new ConcurrentHashSet<HdAccount>() { new HdAccount() { Name = "Account 2" } }
             });
             wallet.AccountsRoot.Add(new AccountRoot()
             {
                 CoinType = CoinType.Bitcoin,
-                Accounts = new List<HdAccount>() { new HdAccount() { Name = "Account 3" } }
+                Accounts = new ConcurrentHashSet<HdAccount>() { new HdAccount() { Name = "Account 3" } }
             });
             walletManager.Wallets.Add(wallet);
 
@@ -1262,7 +1263,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.Add(new AccountRoot()
             {
                 CoinType = CoinType.Stratis,
-                Accounts = new List<HdAccount>()
+                Accounts = new ConcurrentHashSet<HdAccount>()
                 {
                     new HdAccount() {
                         ExternalAddresses = WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(Network.StratisMain, 8,9,10),
@@ -1322,8 +1323,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
             {
                 Name = "First expectation",
-                ExternalAddresses = WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(Network.Main, 1, 9, 10).Concat(WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 9, 10)).ToList(),
-                InternalAddresses = WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(Network.Main, 2, 9, 10).Concat(WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 2, 9, 10)).ToList()
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>(WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(Network.Main, 1, 9, 10).Concat(WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 9, 10))),
+                InternalAddresses = new ConcurrentHashSet<HdAddress>(WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(Network.Main, 2, 9, 10).Concat(WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 2, 9, 10)))
             });
 
             walletManager.Wallets.Add(wallet);
@@ -1437,10 +1438,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             data.wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
             {
                 Index = 0,
-                ExternalAddresses = new List<HdAddress>() {
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() {
                     address
                 },
-                InternalAddresses = new List<HdAddress>(),
+                InternalAddresses = new ConcurrentHashSet<HdAddress>(),
                 Name = "savings account"
             });
             walletManager.Wallets.Add(data.wallet);
@@ -1469,8 +1470,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 data.wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
                 {
                     Index = 0,
-                    ExternalAddresses = new List<HdAddress>(),
-                    InternalAddresses = new List<HdAddress>(),
+                    ExternalAddresses = new ConcurrentHashSet<HdAddress>(),
+                    InternalAddresses = new ConcurrentHashSet<HdAddress>(),
                     Name = "savings account"
                 });
                 walletManager.Wallets.Add(data.wallet);
@@ -1498,7 +1499,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationAddress = new HdAddress()
@@ -1508,7 +1509,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -1518,7 +1519,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -1532,8 +1533,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress }
             });
 
             // setup a payment to yourself
@@ -1587,7 +1588,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationAddress = new HdAddress()
@@ -1597,7 +1598,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -1607,7 +1608,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -1621,8 +1622,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress }
             });
 
             // setup a payment to yourself
@@ -1673,7 +1674,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -1683,7 +1684,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationChangeAddress = new HdAddress()
@@ -1693,7 +1694,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -1707,8 +1708,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress, destinationChangeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress, destinationChangeAddress }
             });
 
             // setup a payment to yourself
@@ -1764,7 +1765,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationAddress = new HdAddress()
@@ -1774,7 +1775,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -1784,7 +1785,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -1798,8 +1799,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress }
             });
 
             // setup a payment to yourself
@@ -1859,7 +1860,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationAddress = new HdAddress()
@@ -1869,7 +1870,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -1879,7 +1880,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -1893,8 +1894,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress }
             });
 
             // setup a payment to yourself
@@ -1953,7 +1954,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationAddress = new HdAddress()
@@ -1963,7 +1964,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -1973,7 +1974,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -1987,8 +1988,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress }
             });
 
             // setup a payment to yourself
@@ -2063,7 +2064,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationAddress = new HdAddress()
@@ -2073,7 +2074,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -2083,7 +2084,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -2097,8 +2098,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress }
             });
 
             // setup a payment to yourself
@@ -2181,7 +2182,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationAddress = new HdAddress()
@@ -2191,7 +2192,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -2201,7 +2202,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -2215,8 +2216,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress }
             });
 
             // setup a payment to yourself
@@ -2278,8 +2279,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
             {
                 Name = "First account",
-                ExternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3).ToList(),
-                InternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3).ToList()
+                ExternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3),
+                InternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3)
             });
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
@@ -2332,7 +2333,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = spendingKeys.Address.ToString(),
                 Pubkey = spendingKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var destinationAddress = new HdAddress()
@@ -2342,7 +2343,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = destinationKeys.Address.ToString(),
                 Pubkey = destinationKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = destinationKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             var changeAddress = new HdAddress()
@@ -2352,7 +2353,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Address = changeKeys.Address.ToString(),
                 Pubkey = changeKeys.PubKey.ScriptPubKey,
                 ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
+                Transactions = new ConcurrentHashSet<TransactionData>()
             };
 
             //Generate a spendable transaction
@@ -2371,8 +2372,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = "account1",
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress>() { spendingAddress, destinationAddress },
-                InternalAddresses = new List<HdAddress>() { changeAddress }
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>() { spendingAddress, destinationAddress },
+                InternalAddresses = new ConcurrentHashSet<HdAddress>() { changeAddress }
             });
 
             var walletFeePolicy = new Mock<IWalletFeePolicy>();
@@ -2713,8 +2714,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
             {
                 Name = "First account",
-                ExternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3).ToList(),
-                InternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3).ToList()
+                ExternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3),
+                InternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3)
             });
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),

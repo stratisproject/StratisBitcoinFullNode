@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using ConcurrentCollections;
 using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
@@ -16,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public Wallet()
         {
-            this.AccountsRoot = new List<AccountRoot>();
+            this.AccountsRoot = new ConcurrentHashSet<AccountRoot>();
         }
 
         /// <summary>
@@ -62,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The root of the accounts tree.
         /// </summary>
         [JsonProperty(PropertyName = "accountsRoot")]
-        public ICollection<AccountRoot> AccountsRoot { get; set; }
+        public ConcurrentHashSet<AccountRoot> AccountsRoot { get; set; }
 
         /// <summary>
         /// Gets the accounts the wallet has for this type of coin.
@@ -226,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public AccountRoot()
         {
-            this.Accounts = new List<HdAccount>();
+            this.Accounts = new ConcurrentHashSet<HdAccount>();
         }
 
         /// <summary>
@@ -252,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The accounts used in the wallet.
         /// </summary>
         [JsonProperty(PropertyName = "accounts")]
-        public ICollection<HdAccount> Accounts { get; set; }
+        public ConcurrentHashSet<HdAccount> Accounts { get; set; }
 
         /// <summary>
         /// Gets the first account that contains no transaction.
@@ -308,13 +310,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
             Guard.NotNull(chainCode, nameof(chainCode));
 
-            // Get the current collection of accounts.
-            var accounts = this.Accounts.ToList();
-
             int newAccountIndex = 0;
-            if (accounts.Any())
+            if (this.Accounts.Any())
             {
-                newAccountIndex = accounts.Max(a => a.Index) + 1;
+                newAccountIndex = this.Accounts.Max(a => a.Index) + 1;
             }
 
             // Get the extended pub key used to generate addresses for this account.
@@ -326,15 +325,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 Index = newAccountIndex,
                 ExtendedPubKey = accountExtPubKey.ToString(network),
-                ExternalAddresses = new List<HdAddress>(),
-                InternalAddresses = new List<HdAddress>(),
+                ExternalAddresses = new ConcurrentHashSet<HdAddress>(),
+                InternalAddresses = new ConcurrentHashSet<HdAddress>(),
                 Name = $"account {newAccountIndex}",
                 HdPath = accountHdPath,
                 CreationTime = DateTimeOffset.Now
             };
 
-            accounts.Add(newAccount);
-            this.Accounts = accounts;
+            this.Accounts.Add(newAccount);
 
             return newAccount;
         }
@@ -347,8 +345,8 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public HdAccount()
         {
-            this.ExternalAddresses = new List<HdAddress>();
-            this.InternalAddresses = new List<HdAddress>();
+            this.ExternalAddresses = new ConcurrentHashSet<HdAddress>();
+            this.InternalAddresses = new ConcurrentHashSet<HdAddress>();
         }
 
         /// <summary>
@@ -390,13 +388,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The list of external addresses, typically used for receiving money.
         /// </summary>
         [JsonProperty(PropertyName = "externalAddresses")]
-        public ICollection<HdAddress> ExternalAddresses { get; set; }
+        public ConcurrentHashSet<HdAddress> ExternalAddresses { get; set; }
 
         /// <summary>
         /// The list of internal addresses, typically used to receive change.
         /// </summary>
         [JsonProperty(PropertyName = "internalAddresses")]
-        public ICollection<HdAddress> InternalAddresses { get; set; }
+        public ConcurrentHashSet<HdAddress> InternalAddresses { get; set; }
 
         /// <summary>
         /// Gets the type of coin this account is for.
@@ -579,7 +577,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     ScriptPubKey = address.ScriptPubKey,
                     Pubkey = pubkey.ScriptPubKey,
                     Address = address.ToString(),
-                    Transactions = new List<TransactionData>()
+                    Transactions = new ConcurrentHashSet<TransactionData>()
                 });
 
                 addressesCreated.Add(address.ToString());
@@ -635,7 +633,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public HdAddress()
         {
-            this.Transactions = new List<TransactionData>();
+            this.Transactions = new ConcurrentHashSet<TransactionData>();
         }
 
         /// <summary>
@@ -674,7 +672,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// A list of transactions involving this address.
         /// </summary>
         [JsonProperty(PropertyName = "transactions")]
-        public ICollection<TransactionData> Transactions { get; set; }
+        public ConcurrentHashSet<TransactionData> Transactions { get; set; }
 
         /// <summary>
         /// Determines whether this is a change address or a receive address.
@@ -853,7 +851,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public SpendingDetails()
         {
-            this.Payments = new List<PaymentDetails>();
+            this.Payments = new ConcurrentHashSet<PaymentDetails>();
         }
 
         /// <summary>
@@ -867,7 +865,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// A list of payments made out in this transaction.
         /// </summary>
         [JsonProperty(PropertyName = "payments", NullValueHandling = NullValueHandling.Ignore)]
-        public ICollection<PaymentDetails> Payments { get; set; }
+        public ConcurrentHashSet<PaymentDetails> Payments { get; set; }
 
         /// <summary>
         /// The height of the block including this transaction.
