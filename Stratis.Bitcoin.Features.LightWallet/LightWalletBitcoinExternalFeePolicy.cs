@@ -3,6 +3,7 @@ using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Net.Http;
