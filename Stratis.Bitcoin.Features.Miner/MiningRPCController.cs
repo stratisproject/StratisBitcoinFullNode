@@ -66,6 +66,12 @@ namespace Stratis.Bitcoin.Features.Miner
             return res;
         }
 
+        /// <summary>
+        /// Starts staking a wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="walletPassword">The password of the wallet.</param>
+        /// <returns></returns>
         [ActionName("startstaking")]
         public bool StartStaking(string walletName, string walletPassword)
         {

@@ -12,7 +12,7 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 namespace Stratis.Bitcoin.Features.Miner.Controllers
 {
     /// <summary>
-    /// Controller providing operations on a wallet.
+    /// Controller providing operations on mining feature.
     /// </summary>
     [Route("api/[controller]")]
     public class MinerController : Controller
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>
         /// Get staking info from the miner.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>All staking info details as per the GetStakingInfoModel.</returns>
         [Route("getstakinginfo")]
         [HttpGet]
         public IActionResult GetStakingInfo()
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// Start staking.
         /// </summary>
         /// <param name="request">The name and password of the wallet to stake.</param>
-        /// <returns></returns>
+        /// <returns>An OKResult object that produces a status code 200 HTTP response.</returns>
         [Route("startstaking")]
         [HttpPost]
         public IActionResult StartStaking([FromBody]StartStakingRequest request)

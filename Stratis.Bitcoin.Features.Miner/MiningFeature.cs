@@ -68,6 +68,11 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <summary>
+        /// Starts staking a wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="walletPassword">The password of the wallet.</param>
         public void StartStaking(string walletName, string walletPassword)
         {
             if (!string.IsNullOrEmpty(walletName) && !string.IsNullOrEmpty(walletPassword))
