@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 if (blockTemplate == null)
-                    blockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
                 Block block = blockTemplate.Block;
 

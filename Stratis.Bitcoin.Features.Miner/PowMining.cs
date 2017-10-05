@@ -115,15 +115,16 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 try
                 {
-                    if (this.chain.Tip != this.consensusLoop.Tip)
+                    ChainedBlock chainTip = this.consensusLoop.Tip;
+                    if (this.chain.Tip != chainTip)
                     {
                         Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                         continue;
                     }
 
-                    BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create().CreateNewBlock(reserveScript.reserveSfullNodecript);
+                    BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
 
-                    this.IncrementExtraNonce(pblockTemplate.Block, this.chain.Tip, nExtraNonce);
+                    this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
                     Block pblock = pblockTemplate.Block;
 
                     while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
@@ -140,15 +141,15 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (pblock.Header.Nonce == InnerLoopCount)
                         continue;
 
-                    var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), this.chain.Tip);
+                    var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
 
-                    if (newChain.ChainWork <= this.chain.Tip.ChainWork)
+                    if (newChain.ChainWork <= chainTip.ChainWork)
                         continue;
 
                     this.chain.SetTip(newChain);
 
                     var blockResult = new BlockResult { Block = pblock };
-                    this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.consensusLoop.Tip, this.network.Consensus));
+                    this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, chainTip, this.network.Consensus));
                     this.consensusLoop.Puller.SetLocation(newChain);
 
                     if (blockResult.ChainedBlock == null)

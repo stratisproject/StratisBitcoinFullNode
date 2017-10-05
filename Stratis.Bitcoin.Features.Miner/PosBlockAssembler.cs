@@ -17,14 +17,14 @@ namespace Stratis.Bitcoin.Features.Miner
         public PosBlockAssembler(
             ConsensusLoop consensusLoop,
             Network network,
-            ConcurrentChain chain,
             MempoolAsyncLock mempoolLock,
             TxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             StakeChain stakeChain,
+            ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             AssemblerOptions options = null)
-            : base(consensusLoop, network, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory, options)
+            : base(consensusLoop, network, mempoolLock, mempool, dateTimeProvider, chainTip, loggerFactory, options)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Miner
             base.UpdateHeaders();
 
             var stake = new BlockStake(this.pblock);
-            this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(this.stakeChain, this.consensusLoop.Tip, this.network.Consensus, this.options.IsProofOfStake);
+            this.pblock.Header.Bits = StakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.network.Consensus, this.options.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
         }
