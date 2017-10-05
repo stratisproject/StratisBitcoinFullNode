@@ -139,13 +139,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         void RemoveBlocks(ChainedBlock fork);
 
         /// <summary>
-        /// Sends a transaction to the network.
-        /// </summary>
-        /// <param name="transactionHex">The hex of the transaction.</param>
-        /// <returns></returns>
-        bool SendTransaction(string transactionHex);
-
-        /// <summary>
         /// Processes a block received from the network.
         /// </summary>
         /// <param name="block">The block.</param>

@@ -15,6 +15,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Threading.Tasks;
+using Stratis.Bitcoin.Broadcasting;
 using Transaction = NBitcoin.Transaction;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -58,6 +59,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
         private readonly FileStorage<Wallet> fileStorage;
+        private readonly IBroadcasterManager broadcasterManager;
 
         public uint256 WalletTipHash { get; set; }
 
@@ -81,7 +83,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
-            IMempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+            IMempoolValidator mempoolValidator = null, // mempool does not exist in a light wallet
+            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -105,9 +108,22 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
+            this.broadcasterManager = broadcasterManager;
 
             // register events
             this.TransactionFound += this.OnTransactionFound;
+            if (this.broadcasterManager != null)
+            {
+                this.broadcasterManager.TransactionStateChanged += BroadcasterManager_TransactionStateChanged;
+            }
+        }
+
+        private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
+        {
+            if (transactionEntry.State == State.Propagated)
+            {
+                this.ProcessTransaction(transactionEntry.Transaction);
+            }
         }
 
         public void Start()
@@ -141,6 +157,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void Stop()
         {
+            if (this.broadcasterManager != null)
+            {
+                this.broadcasterManager.TransactionStateChanged -= BroadcasterManager_TransactionStateChanged;
+            }
+
             if (this.asyncLoop != null)
                 this.asyncLoop.Dispose();
 
@@ -477,43 +498,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
-        }
-
-        /// <inheritdoc />
-        public bool SendTransaction(string transactionHex)
-        {
-            Guard.NotEmpty(transactionHex, nameof(transactionHex));
-
-            // TODO move this to a behavior to a dedicated interface
-            // parse transaction
-            Transaction transaction = Transaction.Parse(transactionHex);
-
-            // replace this we a dedicated WalletBroadcast interface
-            // in a fullnode implementation this will validate with the 
-            // mempool and broadcast, in a lightnode this will push to 
-            // the wallet and then broadcast (we might add some basic validation
-            if (this.mempoolValidator == null)
-            {
-                this.ProcessTransaction(transaction);
-            }
-            else
-            {
-                var state = new MempoolValidationState(false);
-                if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
-                    return false;
-                this.ProcessTransaction(transaction);
-            }
-
-            // broadcast to peers
-            TxPayload payload = new TxPayload(transaction);
-            foreach (var node in this.connectionManager.ConnectedNodes)
-            {
-                node.SendMessage(payload);
-            }
-
-            // we might want to create a behaviour that tracks how many times
-            // the broadcast trasnactions was sent back to us by other peers
-            return true;
         }
 
         /// <inheritdoc />
