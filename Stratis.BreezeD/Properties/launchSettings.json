@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "Bitcoin Main": {
+      "commandName": "Project",
+      "commandLineArgs": "stratis -testnet"
+    },
+    "Bitcoin Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -debug=all -loglevel=debug"
+    },
+    "Stratis Main": {
+      "commandName": "Project",
+      "commandLineArgs": "stratis "
+    },
+    "Stratis Test": {
+      "commandName": "Project",
+      "commandLineArgs": "stratis -testnet -debug=all -loglevel=debug"
+    }
+  }
+}

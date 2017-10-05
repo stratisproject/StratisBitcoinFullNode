@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
-    public class WalletRPCController : BaseRPCController
+    public class WalletRPCController : FeatureController
     {
         public WalletRPCController(IServiceProvider serviceProvider, IWalletManager walletManager)
         {

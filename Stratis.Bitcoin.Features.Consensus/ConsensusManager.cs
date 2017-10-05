@@ -12,6 +12,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusManager:IBlockDownloadState, INetworkDifficulty, IGetUnspentTransaction
     {
+        /// <summary>Provider of block header hash checkpoints.</summary>
+        private readonly ICheckpoints checkpoints;
+
         public ConsensusLoop ConsensusLoop { get; private set; }
         public IDateTimeProvider DateTimeProvider { get; private set; }
         public NodeSettings NodeSettings { get; private set; }
@@ -19,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public PowConsensusValidator ConsensusValidator { get; private set; }
         public ChainState ChainState { get; private set; }
 
-        public ConsensusManager(ConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
+        public ConsensusManager(ICheckpoints checkpoints, ConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
             PowConsensusValidator consensusValidator = null, ChainState chainState = null)
         {
             this.ConsensusLoop = consensusLoop;
@@ -28,6 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.Network = network;
             this.ConsensusValidator = consensusValidator;
             this.ChainState = chainState;
+            this.checkpoints = checkpoints;
         }
 
         /// <summary>
@@ -40,6 +44,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return false;
 
             if (this.ConsensusLoop.Tip == null)
+                return true;
+
+            if (this.checkpoints.GetLastCheckpointHeight() > this.ConsensusLoop.Tip.Height)
                 return true;
 
             if (this.ConsensusLoop.Tip.ChainWork < (this.Network.Consensus.MinimumChainWork ?? uint256.Zero))

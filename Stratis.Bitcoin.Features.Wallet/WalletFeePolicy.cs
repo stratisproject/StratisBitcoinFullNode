@@ -1,19 +1,34 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using System;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    public interface IWalletFeePolicy
+    {
+        void Start();
+        void Stop();
+        Money GetRequiredFee(int txBytes);
+        Money GetMinimumFee(int txBytes, int confirmTarget);
+        Money GetMinimumFee(int txBytes, int confirmTarget, Money targetFee);
+        FeeRate GetFeeRate(int confirmTarget);
+    }
+
     public class WalletFeePolicy : IWalletFeePolicy
     {
+        /// <summary>Block policy estimator.</summary>
         private readonly BlockPolicyEstimator blockPolicyEstimator;
+
+        /// <summary>Memory pool validator.</summary>
         private readonly IMempoolValidator mempoolValidator;
+
+        /// <summary>Transaction memory pool.</summary>
         private readonly TxMempool mempool;
 
+        /// <summary>Maximum transaction fee.</summary>
         private readonly Money maxTxFee;
 
         /// <summary>
@@ -39,42 +54,53 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         private readonly FeeRate minRelayTxFee;
 
-        public WalletFeePolicy(BlockPolicyEstimator blockPolicyEstimator, IMempoolValidator mempoolValidator, TxMempool mempool, Network network)
+        /// <summary>
+        /// Constructs a wallet fee policy.
+        /// </summary>
+        /// <param name="blockPolicyEstimator">Block policy estimator.</param>
+        /// <param name="mempoolValidator">Memory pool validator.</param>
+        /// <param name="mempool">Memory pool.</param>
+        /// <param name="network">Network node is running on.</param>
+        /// <param name="nodeSettings">Settings for the the node.</param>
+        public WalletFeePolicy(BlockPolicyEstimator blockPolicyEstimator, IMempoolValidator mempoolValidator, TxMempool mempool, Network network, NodeSettings nodeSettings)
         {
             this.blockPolicyEstimator = blockPolicyEstimator;
             this.mempoolValidator = mempoolValidator;
             this.mempool = mempool;
 
-            this.minTxFee = new FeeRate(1000);
-            this.fallbackFee = new FeeRate(20000);
+            this.minTxFee = nodeSettings.MinTxFee;
+            this.fallbackFee = nodeSettings.FallbackTxFee;
             this.payTxFee = new FeeRate(0);
             this.maxTxFee = new Money(0.1M, MoneyUnit.BTC);
-            this.minRelayTxFee = MempoolValidator.MinRelayTxFee;
-
-            // this is a very very ugly hack
-            // the fee constants should be set at the 
-            // network level or the consensus options
-            if (network.Name.ToLower().Contains("stratis"))
-            {
-                this.minTxFee = new FeeRate(10000);
-                this.fallbackFee = new FeeRate(40000);
-                this.payTxFee = new FeeRate(0);
-                this.maxTxFee = new Money(0.1M, MoneyUnit.BTC);
-                this.minRelayTxFee = new FeeRate(10000);
-            }
+            this.minRelayTxFee = nodeSettings.MinRelayTxFee;
         }
 
+        /// <inheritdoc />
+        public void Start()
+        {
+            return;
+        }
+
+        /// <inheritdoc />
+        public void Stop()
+        {
+            return;
+        }
+
+        /// <inheritdoc />
         public Money GetRequiredFee(int txBytes)
         {
             return Math.Max(this.minTxFee.GetFee(txBytes), this.minRelayTxFee.GetFee(txBytes));
         }
 
+        /// <inheritdoc />
         public Money GetMinimumFee(int txBytes, int confirmTarget)
         {
             // payTxFee is the user-set global for desired feerate
             return this.GetMinimumFee(txBytes, confirmTarget, this.payTxFee.GetFee(txBytes));
         }
 
+        /// <inheritdoc />
         public Money GetMinimumFee(int txBytes, int confirmTarget, Money targetFee)
         {
             Money nFeeNeeded = targetFee;
@@ -97,15 +123,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return nFeeNeeded;
         }
 
+        /// <inheritdoc />
         public FeeRate GetFeeRate(int confirmTarget)
         {
             //this.blockPolicyEstimator.EstimateSmartFee(confirmTarget, this.mempool, out estimateFoundTarget).GetFee(txBytes);
             return this.fallbackFee;
-        }
-
-        public Task Initialize()
-        {
-            return Task.CompletedTask;
         }
     }
 }

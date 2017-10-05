@@ -1,7 +1,4 @@
-﻿using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
@@ -25,12 +22,17 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
     public class LightWalletFeature : FullNodeFeature, INodeStats
     {
+        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
         private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
         private readonly NodeDeployments nodeDeployments;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly INodeLifetime nodeLifetime;
         private readonly IWalletFeePolicy walletFeePolicy;
         private readonly BroadcasterBehavior broadcasterBehavior;
@@ -65,20 +67,20 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager));
 
-            this.walletManager.Initialize();
-            this.walletSyncManager.Initialize();
+            this.walletManager.Start();
+            this.walletSyncManager.Start();
 
-            this.StartDeploymentsChecksLoop();
+            this.asyncLoop = this.StartDeploymentsChecksLoop();
 
-            this.walletFeePolicy.Initialize();
+            this.walletFeePolicy.Start();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
         }
 
-        public void StartDeploymentsChecksLoop()
+        public IAsyncLoop StartDeploymentsChecksLoop()
         {
             var loopToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
-            this.asyncLoopFactory.Run("LightWalletFeature.CheckDeployments", token =>
+            return this.asyncLoopFactory.Run("LightWalletFeature.CheckDeployments", token =>
             {
                 if (!this.chain.IsDownloaded())
                     return Task.CompletedTask;
@@ -86,7 +88,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 // check segwit activation on the chain of headers
                 // if segwit is active signal to only connect to 
                 // nodes that also signal they are segwit nodes
-                var flags = this.nodeDeployments.GetFlags(this.walletSyncManager.WalletTip);
+                DeploymentFlags flags = this.nodeDeployments.GetFlags(this.walletSyncManager.WalletTip);
                 if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                     this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
@@ -95,32 +97,34 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
                 return Task.CompletedTask;
             },
-                loopToken.Token,
-                repeatEvery: TimeSpans.TenSeconds,
-                startAfter: TimeSpans.TenSeconds);
+            loopToken.Token,
+            repeatEvery: TimeSpans.TenSeconds,
+            startAfter: TimeSpans.TenSeconds);
         }
 
         /// <inheritdoc />
         public override void Stop()
         {
-            base.Stop();
+            this.walletFeePolicy.Stop();
+            this.asyncLoop.Dispose();
+            this.walletSyncManager.Stop();
+            this.walletManager.Stop();
         }
 
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLog)
         {
-            var manager = this.walletManager as WalletManager;
+            WalletManager manager = this.walletManager as WalletManager;
 
             if (manager != null)
             {
-                var height = manager.LastBlockHeight();
-                var block = this.chain.GetBlock(height);
-                var hashBlock = block == null ? 0 : block.HashBlock;
+                int height = manager.LastBlockHeight();
+                ChainedBlock block = this.chain.GetBlock(height);
+                uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     height.ToString().PadRight(8) +
-                                     " LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     hashBlock);
+                        (manager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                        (manager.ContainsWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
             }
         }
     }
@@ -141,7 +145,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<IWalletSyncManager, LightWalletSyncManager>();
                         services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
                         services.AddSingleton<IWalletManager, WalletManager>();
-                        services.AddSingleton<IWalletFeePolicy, LightWalletFeePolicy>();
+                        if (fullNodeBuilder.Network.IsBitcoin())
+                            services.AddSingleton<IWalletFeePolicy, LightWalletBitcoinExternalFeePolicy>();
+                        else
+                            services.AddSingleton<IWalletFeePolicy, LightWalletFixedFeePolicy>();
                         services.AddSingleton<WalletController>();
                         services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
                         services.AddSingleton<BroadcasterBehavior>();

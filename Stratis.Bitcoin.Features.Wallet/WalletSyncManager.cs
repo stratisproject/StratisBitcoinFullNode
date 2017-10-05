@@ -1,13 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -25,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public ChainedBlock WalletTip => this.walletTip;
 
-        public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain, 
+        public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
             this.walletManager = walletManager as WalletManager;
@@ -38,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public virtual Task Initialize()
+        public void Start()
         {
             // when a node is pruned it imposible to catch up 
             // if the wallet falls behind the block puller.
@@ -67,8 +64,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.walletManager.WalletTipHash = fork.HashBlock;
                 this.walletTip = fork;
             }
+        }
 
-            return Task.CompletedTask;
+        /// <inheritdoc />
+        public void Stop()
+        {
         }
 
         public virtual void ProcessBlock(Block block)
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     // The wallet is falling behind we need to catch up.
                     var next = this.walletTip;
-                    while(next != incomingBlock)
+                    while (next != incomingBlock)
                     {
                         token.ThrowIfCancellationRequested();
 
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         // the block should be put in a queue and pushed to the wallet in an async way
                         // if the wallet is behind it will just read blocks from store (or download in case of a pruned node).
 
-                        next = this.chain.GetBlock(next.Height +1);
+                        next = this.chain.GetBlock(next.Height + 1);
                         Block nextblock = null;
                         var index = 0;
                         while (true)
@@ -144,7 +144,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.walletManager.ProcessBlock(nextblock, next);
                     }
                 }
-                
             }
 
             this.walletTip = this.chain.GetBlock(block.GetHash());
@@ -156,18 +155,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager.ProcessTransaction(transaction);
         }
 
-        public virtual void SyncFrom(DateTime date)
+        public virtual void SyncFromDate(DateTime date)
         {
             int blockSyncStart = this.chain.GetHeightAtTime(date);
-            this.SyncFrom(blockSyncStart);
+            this.SyncFromHeight(blockSyncStart);
         }
 
-        public virtual void SyncFrom(int height)
+        public virtual void SyncFromHeight(int height)
         {
             var chainedBlock = this.chain.GetBlock(height);
-            if(chainedBlock == null)
-                throw  new WalletException("Invalid block height");
-            this.walletTip = chainedBlock;
+            this.walletTip = chainedBlock ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedBlock.HashBlock;
         }
     }

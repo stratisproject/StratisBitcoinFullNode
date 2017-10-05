@@ -1,18 +1,24 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
     /// <summary>
     /// Interface for a manager providing operations on wallets.
     /// </summary>
-    public interface IWalletManager : IDisposable
+    public interface IWalletManager
     {
         /// <summary>
-        /// Initializes this wallet manager.
+        /// Starts this wallet manager.
         /// </summary>
-        void Initialize();
+        void Start();
+
+        /// <summary>
+        /// Stops the wallet manager.
+        /// <para>Internally it waits for async loops to complete before saving the wallets to disk.</para>
+        /// </summary>
+        void Stop();
 
         /// <summary>
         /// The last processed block.
@@ -30,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
         List<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0);
-        
+
         /// <summary>
         /// Creates a wallet and persist it as a file on the local system.
         /// </summary>
@@ -88,13 +94,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </remarks>
         /// <returns>An unused account.</returns>
         HdAccount GetUnusedAccount(Wallet wallet, string password);
-        
+
         /// <summary>
         /// Gets an address that contains no transaction.
         /// </summary>
         /// <param name="accountReference">The name of the wallet and account</param>
         /// <returns>An unused address or a newly created address, in Base58 format.</returns>
         HdAddress GetUnusedAddress(WalletAccountReference accountReference);
+
+        IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count);
 
         /// <summary>
         /// Gets a collection of addresses containing transactions for this coin.
@@ -156,12 +164,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Saves the wallet into the file system.
         /// </summary>
         /// <param name="wallet">The wallet to save.</param>
-        void SaveToFile(Wallet wallet);
+        void SaveWallet(Wallet wallet);
 
         /// <summary>
         /// Saves all the loaded wallets into the file system.
         /// </summary>        
-        void SaveToFile();
+        void SaveWallets();
 
         /// <summary>
         /// Gets the extension of the wallet files.
@@ -174,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns>A collection of the wallets' names.</returns>
         string[] GetWalletsNames();
-        
+
         /// <summary>
         /// Updates the wallet with the height of the last block synced.
         /// </summary>
@@ -207,5 +215,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns>The wallet filenames, along with the folder in which they're contained.</returns>
         (string folderPath, IEnumerable<string>) GetWalletsFiles();
+
+        /// <summary>
+        /// Gets whether there are any wallet files loaded or not.
+        /// </summary>
+        /// <returns>Whether any wallet files are loaded.</returns>
+        bool ContainsWallets { get; }
+
+        string GetExtPubKey(WalletAccountReference accountReference);
     }
 }

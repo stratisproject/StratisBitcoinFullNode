@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -29,8 +27,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IConnectionManager connectionManager;
         private readonly BroadcasterBehavior broadcasterBehavior;
 
-        private IDisposable blockSubscriberdDisposable;
-        private IDisposable transactionSubscriberdDisposable;
+        private IDisposable blockSubscriberDisposable;
+        private IDisposable transactionSubscriberDisposable;
         private ConcurrentChain chain;
 
         /// <summary>
@@ -53,18 +51,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            var walletManager = this.walletManager as WalletManager;
+            WalletManager walletManager = this.walletManager as WalletManager;
 
             if (walletManager != null)
             {
-                var height = walletManager.LastBlockHeight();
-                var block = this.chain.GetBlock(height);
-                var hashBlock = block == null ? 0 : block.HashBlock;
+                int height = walletManager.LastBlockHeight();
+                ChainedBlock block = this.chain.GetBlock(height);
+                uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                        height.ToString().PadRight(8) +
-                                        " Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                        hashBlock);
+                                        (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
             }
         }
 
@@ -72,11 +69,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         public override void Start()
         {
             // subscribe to receiving blocks and transactions
-            this.blockSubscriberdDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));
-            this.transactionSubscriberdDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
+            this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));
+            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
-            this.walletManager.Initialize();
-            this.walletSyncManager.Initialize();
+            this.walletManager.Start();
+            this.walletSyncManager.Start();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
         }
@@ -84,10 +81,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public override void Stop()
         {
-            this.blockSubscriberdDisposable.Dispose();
-            this.transactionSubscriberdDisposable.Dispose();
+            this.blockSubscriberDisposable.Dispose();
+            this.transactionSubscriberDisposable.Dispose();
 
-            this.walletManager.Dispose();
+            this.walletManager.Stop();
+            this.walletSyncManager.Stop();
         }
     }
 

@@ -34,6 +34,11 @@
             }
         }
 
+        public long? Size
+        {
+            get; set;
+        }
+
         public object Key
         {
             get
@@ -93,14 +98,14 @@
             this.lastCreateCalled = null;
             this.internalDict = dict;
         }
-
+        
         public ICacheEntry CreateEntry(object key)
         {
             this.lastCreateCalled = key;
             this.internalDict.Add(key, null);
             return new CacheEntryStub(key, null);
         }
-
+        
         public void Dispose()
         {
         }

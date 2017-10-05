@@ -83,6 +83,15 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
 
+        /// <summary>Minimum transaction fee for network.</summary>
+        public FeeRate MinTxFee { get; set; }
+
+        /// <summary>Fall back transaction fee for network.</summary>
+        public FeeRate FallbackTxFee { get; set; }
+
+        /// <summary>Minimum relay transcation fee for network.</summary>
+        public FeeRate MinRelayTxFee { get; set; }
+
         public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary>
@@ -195,8 +204,25 @@ namespace Stratis.Bitcoin.Configuration
 
             nodeSettings.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.RegTest || nodeSettings.Testnet));
             nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
-            nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:5000"));
+            nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
 
+            nodeSettings.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'", nodeSettings.Network.IsTest(), nodeSettings.Network.IsBitcoin());
+            if (args.Contains("-mintxfee", StringComparer.CurrentCultureIgnoreCase))
+                nodeSettings.MinTxFee = new FeeRate(long.Parse(args.GetValueOf("-mintxfee")));
+            else
+                nodeSettings.MinTxFee = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.MinTxFee));
+            nodeSettings.Logger.LogDebug("MinTxFee set to {0}.", nodeSettings.MinTxFee);
+
+            if (args.Contains("-fallbackfee", StringComparer.CurrentCultureIgnoreCase))
+                nodeSettings.FallbackTxFee = new FeeRate(long.Parse(args.GetValueOf("-fallbackfee")));
+            else
+                nodeSettings.FallbackTxFee = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.FallbackFee));
+            nodeSettings.Logger.LogDebug("FallbackTxFee set to {0}.", nodeSettings.FallbackTxFee);
+            if (args.Contains("-minrelaytxfee", StringComparer.CurrentCultureIgnoreCase))
+                nodeSettings.MinRelayTxFee = new FeeRate(long.Parse(args.GetValueOf("-minrelaytxfee")));
+            else
+                nodeSettings.MinRelayTxFee = new FeeRate(config.GetOrDefault("minrelaytxfee", nodeSettings.Network.MinRelayTxFee));
+            nodeSettings.Logger.LogDebug("MinRelayTxFee set to {0}.", nodeSettings.MinRelayTxFee);
 
             try
             {
@@ -221,12 +247,12 @@ namespace Stratis.Bitcoin.Configuration
             var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
             try
             {
-                nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("listen")
+                nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("bind")
                         .Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), false)));
             }
             catch (FormatException)
             {
-                throw new ConfigurationException("Invalid listen parameter");
+                throw new ConfigurationException("Invalid bind parameter");
             }
 
             try

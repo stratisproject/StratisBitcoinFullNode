@@ -9,81 +9,19 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Utilities;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {
     /// <summary>
     /// Base test class for all the BlockStoreLoop tests.
     /// </summary>
-    public class BlockStoreLoopStepBaseTest
+    public class BlockStoreLoopStepBaseTest : TestBase
     {
-        /// <summary>Factory for creating loggers.</summary>
-        protected readonly ILoggerFactory loggerFactory;
-
-        /// <summary>
-        /// Initializes logger factory for inherited tests.
-        /// </summary>
-        public BlockStoreLoopStepBaseTest()
-        {
-            this.loggerFactory = new LoggerFactory();
-        }
-
-        internal void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)
-        {
-            foreach (var block in blocks)
-            {
-                if (chain.Tip != null)
-                    block.Header.HashPrevBlock = chain.Tip.HashBlock;
-                chain.SetTip(block.Header);
-            }
-        }
-
         internal void AddBlockToPendingStorage(BlockStoreLoop blockStoreLoop, Block block)
         {
             var chainedBlock = blockStoreLoop.Chain.GetBlock(block.GetHash());
             blockStoreLoop.PendingStorage.TryAdd(block.GetHash(), new BlockPair(block, chainedBlock));
-        }
-
-        internal List<Block> CreateBlocks(int amount, bool bigBlocks = false)
-        {
-            var blocks = new List<Block>();
-            for (int i = 0; i < amount; i++)
-            {
-                Block block = this.CreateBlock(i);
-                block.Header.HashPrevBlock = blocks.LastOrDefault()?.GetHash() ?? Network.Main.GenesisHash;
-                blocks.Add(block);
-            }
-
-            return blocks;
-        }
-
-        internal Block CreateBlock(int blockNumber, bool bigBlocks = false)
-        {
-            var block = new Block();
-
-            int transactionCount = bigBlocks ? 1000 : 10;
-
-            for (int j = 0; j < transactionCount; j++)
-            {
-                var trx = new Transaction();
-
-                block.AddTransaction(new Transaction());
-
-                trx.AddInput(new TxIn(Script.Empty));
-                trx.AddOutput(Money.COIN + j + blockNumber, new Script(Enumerable.Range(1, 5).SelectMany(index => Guid.NewGuid().ToByteArray())));
-
-                trx.AddInput(new TxIn(Script.Empty));
-                trx.AddOutput(Money.COIN + j + blockNumber + 1, new Script(Enumerable.Range(1, 5).SelectMany(index => Guid.NewGuid().ToByteArray())));
-
-                block.AddTransaction(trx);
-            }
-
-            block.UpdateMerkleRoot();
-
-            return block;
         }
     }
 

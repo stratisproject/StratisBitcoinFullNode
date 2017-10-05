@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -13,14 +14,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Unspent outputs of the requested transactions.</summary>
         public UnspentOutputs[] UnspentOutputs { get; set; }
-
-        /// <summary>
-        /// Parameterless constructor.
-        /// </summary>
-        /// <remarks>TODO: This does not seem to be used anywhere by anything, can we remove it?</remarks>
-        public FetchCoinsResponse()
-        {
-        }
 
         /// <summary>
         /// Initializes an instance of the object.

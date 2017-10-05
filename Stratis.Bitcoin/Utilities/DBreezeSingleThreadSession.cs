@@ -2,7 +2,6 @@
 using DBreeze.Utils;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using System;
 using System.Linq;
 using System.Threading;

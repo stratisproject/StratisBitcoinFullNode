@@ -145,9 +145,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
-                var stratisNode1 = builder.CreateStratisNode();
-                var stratisNode2 = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
+                var stratisNode1 = builder.CreateStratisPowNode();
+                var stratisNode2 = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNode1.NotInIBD();
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -219,9 +219,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
-                var stratisNode1 = builder.CreateStratisNode();
-                var stratisNode2 = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
+                var stratisNode1 = builder.CreateStratisPowNode();
+                var stratisNode2 = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNode1.NotInIBD();
@@ -270,8 +270,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode1 = builder.CreateStratisNode();
-                var stratisNode2 = builder.CreateStratisNode();
+                var stratisNode1 = builder.CreateStratisPowNode();
+                var stratisNode2 = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNode1.NotInIBD();
                 stratisNode2.NotInIBD();

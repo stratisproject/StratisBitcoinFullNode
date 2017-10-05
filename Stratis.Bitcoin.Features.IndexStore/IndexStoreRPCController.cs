@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {
-    public class IndexStoreRPCController : BaseRPCController
+    public class IndexStoreRPCController : FeatureController
     {
         private readonly ILogger logger;
         protected IndexStoreManager IndexManager;

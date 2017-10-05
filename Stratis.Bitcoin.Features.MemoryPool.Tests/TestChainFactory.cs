@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new PowConsensusOptions();
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, loggerFactory);
+            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network), loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), loggerFactory);
 
@@ -78,8 +78,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network));
             consensus.Initialize();
 
-            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(nodeSettings), loggerFactory);
-            TxMempool mempool = new TxMempool(new FeeRate(1000), dateTimeProvider, blockPolicyEstimator, loggerFactory);
+            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
+            TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
             MempoolAsyncLock mempoolLock = new MempoolAsyncLock();
 
             // Simple block creation, nothing special yet:
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
 
-            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory);
+            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings);
 
             return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
         }

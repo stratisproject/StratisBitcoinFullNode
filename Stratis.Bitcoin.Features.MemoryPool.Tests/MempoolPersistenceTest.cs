@@ -267,14 +267,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             var mempoolSettings = new MempoolSettings(settings);
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
-            txMemPool = new TxMempool(new FeeRate(1000), dateTimeProvider, new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(NodeSettings.Default()), new LoggerFactory()), new LoggerFactory());
+            NodeSettings nodeSettings = NodeSettings.Default();
+            txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings);
             var mempoolLock = new MempoolAsyncLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
             var mempoolPersistence = new MempoolPersistence(settings, new LoggerFactory());
             NBitcoin.Network.Main.Consensus.Options = new PosConsensusOptions();
-            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new LoggerFactory());
-            var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, new LoggerFactory());
+            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new Checkpoints(NBitcoin.Network.Main), new LoggerFactory());
+            var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, new LoggerFactory(), settings);
             var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Bitcoin.Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, new LoggerFactory());
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, new LoggerFactory());
         }

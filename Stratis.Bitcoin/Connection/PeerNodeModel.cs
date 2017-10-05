@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Stratis.Bitcoin.Features.RPC.Models
+namespace Stratis.Bitcoin.Connection
 {
     /// <summary>
     /// Data structure for connected peer node.

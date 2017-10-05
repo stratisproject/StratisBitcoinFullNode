@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
 
             var settings = NodeSettings.Default();
-            TxMempool testPool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(settings), settings.LoggerFactory), settings.LoggerFactory);
+            TxMempool testPool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
 
             // Nothing in pool, remove should do nothing:
             var poolSize = testPool.Size;
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void MempoolIndexingTest()
         {
             var settings = NodeSettings.Default();
-            var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(settings), settings.LoggerFactory), settings.LoggerFactory);
+            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var entry = new TestMemPoolEntryHelper();
 
             /* 3rd highest fee */
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void MempoolAncestorIndexingTest()
         {
             var settings = NodeSettings.Default();
-            var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(settings), settings.LoggerFactory), settings.LoggerFactory);
+            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var entry = new TestMemPoolEntryHelper();
 
             /* 3rd highest fee */
@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var settings = NodeSettings.Default();
             var dateTimeSet = new DateTimeProviderSet();
-            var pool = new TxMempool(new FeeRate(1000), dateTimeSet, new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(settings), settings.LoggerFactory), settings.LoggerFactory);
+            var pool = new TxMempool(dateTimeSet, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var entry = new TestMemPoolEntryHelper();
             entry.Priority(10.0);
 
@@ -531,7 +531,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void MempoolConcurrencyTest()
         {
             var settings = NodeSettings.Default();
-            var pool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(settings), settings.LoggerFactory), settings.LoggerFactory);
+            var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var scheduler = new AsyncLock();
             var rand = new Random();
 
@@ -562,7 +562,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
@@ -591,7 +591,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -634,7 +634,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -672,7 +672,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNodeSync.FullNode.Settings.RequireStandard = true; // make sure to test standard tx
@@ -747,7 +747,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisNode();
+                var stratisNode = builder.CreateStratisPowNode();
                 builder.StartAll();
 
                 stratisNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode.FullNode.Network));
@@ -814,7 +814,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -856,9 +856,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisNode();
-                var stratisNode1 = builder.CreateStratisNode();
-                var stratisNode2 = builder.CreateStratisNode();
+                var stratisNodeSync = builder.CreateStratisPowNode();
+                var stratisNode1 = builder.CreateStratisPowNode();
+                var stratisNode2 = builder.CreateStratisPowNode();
                 builder.StartAll();
 
                 // not in IBD

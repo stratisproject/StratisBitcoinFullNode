@@ -9,128 +9,128 @@
 	"item": [
 		{
 			"name": "Create wallet - success",
-			"request": {
-				"url": "http://localhost:5000/api/wallet/create",
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"testnet\",\n\t\"name\": \"testwallet\"\n}"
-				},
-				"description": ""
-			},
+      "request": {
+        "url": "http://localhost:37220/api/wallet/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "description": ""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"testnet\",\n\t\"name\": \"testwallet\"\n}"
+        },
+        "description": ""
+      },
 			"response": []
 		},
 		{
 			"name": "Create wallet - validation errors",
-			"request": {
-				"url": "http://localhost:5000/api/wallet/create",
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "\n{\n\t\"network\": \"Main\",\n\t\"localFilePath\": \"Wallets/TestWallet2.json\"\n}"
-				},
-				"description": "with errors"
-			},
+      "request": {
+        "url": "http://localhost:37220/api/wallet/create",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "description": ""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "\n{\n\t\"network\": \"Main\",\n\t\"localFilePath\": \"Wallets/TestWallet2.json\"\n}"
+        },
+        "description": "with errors"
+      },
 			"response": []
 		},
 		{
 			"name": "Load wallet",
-			"request": {
-				"url": "http://localhost:5000/api/wallet/load",
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWadllet\"\n}"
-				},
-				"description": ""
-			},
+      "request": {
+        "url": "http://localhost:37220/api/wallet/load",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "description": ""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \n\t\"password\": \"123456\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myFirstWadllet\"\n}"
+        },
+        "description": ""
+      },
 			"response": []
 		},
 		{
 			"name": "Recover wallet",
-			"request": {
-				"url": "http://localhost:5000/api/wallet/recover",
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myRecoveredWallet\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\",\n\t\"creationDate\": \"2016-02-25 16:20:33\"\n}"
-				},
-				"description": ""
-			},
+      "request": {
+        "url": "http://localhost:37220/api/wallet/recover",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "description": ""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \n\t\"password\": \"123456\",\n\t\"network\": \"Main\",\n\t\"folderPath\": \"Wallets\",\n\t\"name\": \"myRecoveredWallet\",\n\t\"mnemonic\": \"elbow scale error joke labor page beyond curve indicate exit brass laundry\",\n\t\"creationDate\": \"2016-02-25 16:20:33\"\n}"
+        },
+        "description": ""
+      },
 			"response": []
 		},
 		{
 			"name": "Get wallet Info",
-			"request": {
-				"url": "http://localhost:5000/api/wallet/general-info?name=mywallet",
-				"method": "GET",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"description": ""
-			},
+      "request": {
+        "url": "http://localhost:37220/api/wallet/general-info?name=mywallet",
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "description": ""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "description": ""
+      },
 			"response": []
 		},
 		{
 			"name": "Get Wallet History",
-			"request": {
-				"url": "http://localhost:5000/api/wallet/history?walletname=wallet1&cointype=0",
-				"method": "GET",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"description": ""
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"description": ""
-			},
+      "request": {
+        "url": "http://localhost:37220/api/wallet/history?walletname=wallet1&cointype=0",
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "description": ""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "description": ""
+      },
 			"response": []
 		},
 		{
 			"name": "Get wallet balance",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/balance?walletname=wallet1&cointype=0",
+				"url": "http://localhost:37220/api/wallet/balance?walletname=wallet1&cointype=0",
 				"method": "GET",
 				"header": [
 					{
@@ -150,7 +150,7 @@
 		{
 			"name": "Build transaction",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/build-transaction",
+				"url": "http://localhost:37220/api/wallet/build-transaction",
 				"method": "POST",
 				"header": [
 					{
@@ -170,7 +170,7 @@
 		{
 			"name": "Send transaction",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/send-transaction",
+				"url": "http://localhost:37220/api/wallet/send-transaction",
 				"method": "POST",
 				"header": [
 					{
@@ -190,7 +190,7 @@
 		{
 			"name": "Get wallets files",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/files",
+				"url": "http://localhost:37220/api/wallet/files",
 				"method": "GET",
 				"header": [
 					{
@@ -210,7 +210,7 @@
 		{
 			"name": "Get unused account in wallet",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/account",
+				"url": "http://localhost:37220/api/wallet/account",
 				"method": "POST",
 				"header": [
 					{
@@ -230,7 +230,7 @@
 		{
 			"name": "Get unused address in wallet",
 			"request": {
-				"url": "http://localhost:5000/api/wallet/address?walletName=wallet1&accountName=account 0&coinType=0",
+				"url": "http://localhost:37220/api/wallet/address?walletName=wallet1&accountName=account 0&coinType=0",
 				"method": "GET",
 				"header": [
 					{
