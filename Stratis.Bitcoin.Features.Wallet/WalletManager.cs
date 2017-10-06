@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             if (this.broadcasterManager != null)
             {
-                this.broadcasterManager.TransactionStateChanged -= BroadcasterManager_TransactionStateChanged;
+                this.broadcasterManager.TransactionStateChanged -= this.BroadcasterManager_TransactionStateChanged;
             }
 
             if (this.asyncLoop != null)
