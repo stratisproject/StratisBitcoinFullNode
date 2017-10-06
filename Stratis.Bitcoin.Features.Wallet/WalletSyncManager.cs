@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletSyncManager : IWalletSyncManager
     {
-        protected readonly WalletManager walletManager;
+        protected readonly IWalletManager walletManager;
         protected readonly ConcurrentChain chain;
         protected readonly CoinType coinType;
         protected readonly ILogger logger;
@@ -26,7 +26,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
-            this.walletManager = walletManager as WalletManager;
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(walletManager, nameof(walletManager));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
+            Guard.NotNull(storeSettings, nameof(storeSettings));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+
+            this.walletManager = walletManager;
             this.chain = chain;
             this.blockStoreCache = blockStoreCache;
             this.coinType = (CoinType)network.Consensus.CoinType;
@@ -58,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // that in the wallet. the block locator will help finding 
                 // a common fork and bringing the wallet back to a good 
                 // state (behind the best chain)
-                var locators = this.walletManager.Wallets.First().BlockLocator;
+                var locators = this.walletManager.GetFirstWalletBlockLocator();
                 BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
                 var fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
@@ -74,10 +82,15 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public virtual void ProcessBlock(Block block)
         {
+            Guard.NotNull(block, nameof(block));
+
             // If the new block previous hash is the same as the 
             // wallet hash then just pass the block to the manager. 
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
+                // set a temporary wallet tip in case we are not on the best chain anymore.
+                var walletTip = this.WalletTip;
+
                 // If previous block does not match there might have 
                 // been a reorg, check if the wallet is still on the main chain.
                 ChainedBlock inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
@@ -86,22 +99,25 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // The current wallet hash was not found on the main chain.
                     // A reorg happenend so bring the wallet back top the last known fork.
 
-                    var fork = this.walletTip;
+                    var fork = walletTip;
 
                     // We walk back the chained block object to find the fork.
                     while (this.chain.GetBlock(fork.HashBlock) == null)
                         fork = fork.Previous;
 
                     this.walletManager.RemoveBlocks(fork);
+
+                    // update temporary wallet tip to be able to catch up again.
+                    walletTip = this.chain.GetBlock(fork.HashBlock);
                 }
 
                 ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
-                if (incomingBlock.Height > this.walletTip.Height)
+                if (incomingBlock.Height > walletTip.Height)
                 {
                     var token = this.nodeLifetime.ApplicationStopping;
 
                     // The wallet is falling behind we need to catch up.
-                    var next = this.walletTip;
+                    var next = walletTip;
                     while (next != incomingBlock)
                     {
                         token.ThrowIfCancellationRequested();
@@ -153,6 +169,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public virtual void ProcessTransaction(Transaction transaction)
         {
+            Guard.NotNull(transaction, nameof(transaction));
+
             this.walletManager.ProcessTransaction(transaction);
         }
 
