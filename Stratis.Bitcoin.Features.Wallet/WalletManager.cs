@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -15,7 +15,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Broadcasting;
 using Transaction = NBitcoin.Transaction;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -119,10 +118,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterManager = broadcasterManager;
 
             // register events
-            this.TransactionFound += this.OnTransactionFound;
             if (this.broadcasterManager != null)
             {
-                this.broadcasterManager.TransactionStateChanged += BroadcasterManager_TransactionStateChanged;
+                this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
             }
         }
 
