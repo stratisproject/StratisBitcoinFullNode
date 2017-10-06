@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Features.Miner.Models;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
@@ -26,6 +27,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>PoS staker.</summary>
         private readonly PosMinting posMinting;
 
+        /// <summary>Full node.</summary>
+        private readonly IFullNode fullNode;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -35,6 +39,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
         public MiningRPCController(PowMining powMining, IFullNode fullNode, ILoggerFactory loggerFactory, PosMinting posMinting = null) : base(fullNode: fullNode)
         {
+            this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.powMining = powMining;
             this.posMinting = posMinting;
@@ -60,6 +65,44 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
             return res;
+        }
+
+        /// <summary>
+        /// Starts staking a wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet.</param>
+        /// <param name="walletPassword">The password of the wallet.</param>
+        /// <returns></returns>
+        [ActionName("startstaking")]
+        public bool StartStaking(string walletName, string walletPassword)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(walletName), walletName);
+
+            WalletManager walletManager = this.fullNode.NodeService<IWalletManager>() as WalletManager;
+
+            Wallet.Wallet wallet = walletManager.Wallets.FirstOrDefault(w => w.Name == walletName);
+
+            if (wallet == null)
+            {
+                this.logger.LogError("Exception occurred: {0}", $"The specified wallet is unknown: '{walletName}'");
+                throw new RPCServerException(NBitcoin.RPC.RPCErrorCode.RPC_INVALID_REQUEST, "Wallet not found");
+            }
+            else
+            {
+                // Check the password
+                try
+                {
+                    Key.Parse(wallet.EncryptedSeed, walletPassword, wallet.Network);
+                }
+                catch (Exception ex)
+                {
+                    throw new SecurityException(ex.Message);
+                }
+            }
+
+            this.fullNode.NodeFeature<MiningFeature>(true).StartStaking(walletName, walletPassword);
+       
+            return true;
         }
 
         /// <summary>

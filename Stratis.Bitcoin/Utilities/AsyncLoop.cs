@@ -127,7 +127,8 @@ namespace Stratis.Bitcoin.Utilities
                     while (!cancellation.IsCancellationRequested)
                     {
                         await this.loopAsync(cancellation).ConfigureAwait(false);
-                        await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
+                        if (!cancellation.IsCancellationRequested)
+                            await Task.Delay(refreshRate, cancellation).ConfigureAwait(false);
                     }
                 }
                 catch (OperationCanceledException ex)
@@ -161,8 +162,11 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         public void Dispose()
         {
-            this.logger.LogInformation("Waiting for {0} to finish.", this.Name);
-            this.RunningTask.Wait();
+            if (!this.RunningTask.IsCanceled)
+            {
+                this.logger.LogInformation("Waiting for {0} to finish.", this.Name);
+                this.RunningTask.Wait();
+            }
         }
     }
 }

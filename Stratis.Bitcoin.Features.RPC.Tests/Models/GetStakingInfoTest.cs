@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Stratis.Bitcoin.Features.RPC.Models;
+using Stratis.Bitcoin.Features.Miner.Models;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Models
