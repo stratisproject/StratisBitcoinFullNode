@@ -557,9 +557,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Parallel.For(0, 5000, new ParallelOptions() { MaxDegreeOfParallelism = 10 }, (int iteration) =>
             {
-                walletManager.LoadKeysLookup();
-                walletManager.LoadKeysLookup();
-                walletManager.LoadKeysLookup();
+                walletManager.LoadKeysLookupLock();
+                walletManager.LoadKeysLookupLock();
+                walletManager.LoadKeysLookupLock();
             });
 
             Assert.Equal(12000, walletManager.keysLookup.Count);
@@ -2732,7 +2732,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 new DataFolder(new NodeSettings() { DataDir = "TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             walletManager.Wallets.Add(wallet);
 
-            walletManager.LoadKeysLookup();
+            walletManager.LoadKeysLookupLock();
 
             Assert.NotNull(walletManager.keysLookup);
             Assert.Equal(6, walletManager.keysLookup.Count);
@@ -2754,7 +2754,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 new DataFolder(new NodeSettings() { DataDir = "TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-            walletManager.LoadKeysLookup();
+            walletManager.LoadKeysLookupLock();
 
             Assert.NotNull(walletManager.keysLookup);
             Assert.Equal(0, walletManager.keysLookup.Count);
