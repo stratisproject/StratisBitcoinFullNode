@@ -132,7 +132,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         public readonly static ConsensusError NonCoinstake = new ConsensusError("non-coinstake", "non-coinstake");
         public readonly static ConsensusError ReadTxPrevFailed = new ConsensusError("read-txPrev-failed", "read txPrev failed");
         public readonly static ConsensusError InvalidStakeDepth = new ConsensusError("invalid-stake-depth", "tried to stake at depth");
-        public readonly static ConsensusError MinAgeViolation = new ConsensusError("min-age-violation", "min age violation");
         public readonly static ConsensusError StakeTimeViolation = new ConsensusError("stake-time-violation", "stake time violation");
         public readonly static ConsensusError BadStakeBlock = new ConsensusError("bad-stake-block", "bad stake block");
         public readonly static ConsensusError PrevStakeNull = new ConsensusError("prev-stake-null", "previous stake is not found");
