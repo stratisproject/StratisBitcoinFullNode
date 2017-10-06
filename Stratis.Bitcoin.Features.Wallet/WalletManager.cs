@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ConcurrentCollections;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
@@ -639,7 +640,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.UpdateLastBlockSyncedHeight(chainedBlock);
             }
         }
-
+        
         /// <inheritdoc />
         public void ProcessTransaction(Transaction transaction, int? blockHeight = null, Block block = null)
         {
@@ -672,13 +673,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
 
-                // check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index            
-                foreach (TxIn input in transaction.Inputs.Where(txIn => this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Any(trackedTx => trackedTx.Id == txIn.PrevOut.Hash && trackedTx.Index == txIn.PrevOut.N)))
+                foreach(var transactionData in this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions))
                 {
-                    TransactionData tTx = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Single(trackedTx => trackedTx.Id == input.PrevOut.Hash && trackedTx.Index == input.PrevOut.N);
-
+                    // check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index       
+                    foreach (var input in transaction.Inputs)
+                    {
+                        if (transactionData.Id == input.PrevOut.Hash && transactionData.Index == input.PrevOut.N)
+                        {
                             // find the script this input references
-                            var keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
+                            var keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(transactionData)).Key;
 
                             // get the details of the outputs paid out. 
                             IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o =>
@@ -698,9 +701,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                                 return !addr.IsChangeAddress();
                             });
 
-                            this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
+                            this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, paidoutto, transactionData.Id, transactionData.Index, blockHeight, block);
                         }
                     }
+                }
+            }
 
             if (foundtrx.Any())
             {
