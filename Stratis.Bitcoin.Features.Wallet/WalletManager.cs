@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletManager : IWalletManager
     {
         /// <summary>A lock object that protects access to the wallet.</summary>
-        private readonly object walletLock;
+        private readonly object lockObject;
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
-            this.walletLock = new object();
+            this.lockObject = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new ConcurrentBag<Wallet>();
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             HdAccount account;
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 account = wallet.GetFirstUnusedAccount(this.coinType);
 
@@ -309,7 +309,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(accountReference.WalletName);
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 // get the account
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
@@ -335,7 +335,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             bool generated = false;
             IEnumerable<HdAddress> addresses;
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 // get the account
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
@@ -373,7 +373,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             HdAddress changeAddress = null;
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 // get address to send the change to
                 changeAddress = account.GetFirstUnusedChangeAddress();
@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public IEnumerable<HdAddress> GetHistory(Wallet wallet)
         {
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 return this.GetHistoryInternal(wallet).ToList();
             }
@@ -437,16 +437,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <inheritdoc />
         public IEnumerable<FlatHistory> GetFlatHistory(string walletName)
         {
             // in order to calculate the fee properly we need to retrieve all the transactions with spending details.
             var wallet = this.GetWalletByName(walletName);
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 // get transactions contained in the wallet
-                var items = this.GetHistoryInternal(wallet)
-                    .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
+                var items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
 
                 return items;
             }
@@ -468,7 +468,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(walletName);
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 return wallet.GetAccountsByCoinType(this.coinType);
             }
@@ -481,7 +481,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return this.chain.Tip.Height;
             }
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 return this.Wallets.Min(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType)?.LastBlockSyncedHeight) ?? 0;
             }
@@ -501,7 +501,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return this.chain.Tip.HashBlock;
             }
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 var lastBlockSyncedHash = this.Wallets
                     .Select(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType))
@@ -521,7 +521,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(walletName);
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 return wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations);
             }
@@ -534,7 +534,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(walletAccountReference.WalletName);
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 HdAccount account = wallet.GetAccountByCoinType(walletAccountReference.AccountName, this.coinType);
 
@@ -595,7 +595,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.LoadKeysLookupLock();
             }
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 var allAddresses = this.keysLookup.Values;
                 foreach (var address in allAddresses)
@@ -638,7 +638,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     throw new WalletException("block too far in the future has arrived to the wallet");
             }
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 foreach (Transaction transaction in block.Transactions)
                 {
@@ -666,7 +666,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             var foundtrx = new List<Tuple<Script, uint256>>();
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 // check the outputs
                 foreach (TxOut utxo in transaction.Outputs)
@@ -904,7 +904,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(wallet, nameof(wallet));
 
-            this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}");
+            lock (this.lockObject)
+            {
+                this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}");
+            }
         }
 
         /// <inheritdoc />
@@ -937,7 +940,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // needs to rewind this will be used to find the fork 
             wallet.BlockLocator = chainedBlock.GetLocator().Blocks;
 
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 // update the wallets with the last processed block height
                 foreach (var accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
@@ -1013,7 +1016,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns></returns>
         public void LoadKeysLookupLock()
         {
-            lock (this.walletLock)
+            lock (this.lockObject)
             {
                 var lookup = new Dictionary<Script, HdAddress>();
                 foreach (var wallet in this.Wallets)
