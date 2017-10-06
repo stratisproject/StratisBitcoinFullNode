@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadBlockWeight.Throw();
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         public virtual void ExecuteBlock(ContextInformation context, TaskScheduler taskScheduler)
@@ -520,7 +520,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadBlockSigOps.Throw();
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         private long GetLegacySigOpCount(Transaction tx)
@@ -616,7 +616,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-)[OK]");
         }
 
         private bool MoneyRange(long nValue)

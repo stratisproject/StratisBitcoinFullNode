@@ -20,6 +20,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         private ConsensusPerformanceSnapshot lastSnapshot;
         private BackendPerformanceSnapshot lastSnapshot2;
         private CachePerformanceSnapshot lastSnapshot3;
+
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
         private readonly ChainState chainState;
         private readonly ConcurrentChain chain;

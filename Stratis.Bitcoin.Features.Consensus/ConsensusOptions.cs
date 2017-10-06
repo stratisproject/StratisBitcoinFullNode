@@ -24,8 +24,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public long StakeMinConfirmations { get; set; } = 50;
 
-        public long StakeMinAge { get; set; } = 60; // 8 hours
-
         public long StakeModifierInterval { get; set; } = 10 * 60; // time to elapse before new modifier is computed
     }
 
