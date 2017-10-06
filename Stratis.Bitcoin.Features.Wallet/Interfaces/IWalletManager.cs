@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Return a flat representation of the wallet history.
         /// </summary>
         /// <param name="walletName">The wallet name.</param>
-        /// <returns>The history in a address to transaction pairs.</returns>
+        /// <returns>Collection of address history and transaction pairs.</returns>
         IEnumerable<FlatHistory> GetFlatHistory(string walletName);
 
         /// <summary>

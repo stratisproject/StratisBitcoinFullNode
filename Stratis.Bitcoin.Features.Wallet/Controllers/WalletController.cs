@@ -4,18 +4,18 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -305,10 +305,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 // get transactions contained in the wallet
                 var items = this.walletManager.GetFlatHistory(request.WalletName).ToList().OrderByDescending(o => o.Transaction.CreationTime).Take(100).ToList();
                 List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
-                List<FlatHistory> filttered = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
+                List<FlatHistory> filtered = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
                 List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
 
-                foreach (var item in filttered)
+                foreach (var item in filtered)
                 {
                     var transaction = item.Transaction;
                     var address = item.Address;
