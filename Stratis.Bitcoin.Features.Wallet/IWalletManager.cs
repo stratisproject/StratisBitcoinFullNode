@@ -112,6 +112,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         IEnumerable<HdAddress> GetHistory(string walletName);
 
         /// <summary>
+        /// Return a flat representation of the wallet history.
+        /// </summary>
+        /// <param name="walletName">The wallet name.</param>
+        /// <returns>The history in a address to transaction pairs.</returns>
+        IEnumerable<FlatHistory> GetFlatHistory(string walletName);
+
+        /// <summary>
         /// Gets a collection of addresses containing transactions for this coin.
         /// </summary>
         /// <param name="wallet">The wallet to get history from.</param>

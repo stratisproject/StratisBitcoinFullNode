@@ -437,6 +437,21 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        public IEnumerable<FlatHistory> GetFlatHistory(string walletName)
+        {
+            // in order to calculate the fee properly we need to retrieve all the transactions with spending details.
+            var wallet = this.GetWalletByName(walletName);
+
+            lock (this.walletLock)
+            {
+                // get transactions contained in the wallet
+                var items = this.GetHistoryInternal(wallet)
+                    .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
+
+                return items;
+            }
+        }
+
         /// <inheritdoc />
         public Wallet GetWallet(string walletName)
         {
@@ -566,7 +581,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // we might want to create a behaviour that tracks how many times
-            // the broadcast trasnactions was sent back to us by other peers
+            // the broadcast transactions was sent back to us by other peers
             return true;
         }
 
@@ -609,22 +624,22 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
             }
 
+            // is this the next block
+            if (chainedBlock.Header.HashPrevBlock != this.WalletTipHash)
+            {
+                // are we still on the main chain
+                var current = this.chain.GetBlock(this.WalletTipHash);
+                if (current == null)
+                    throw new WalletException("Reorg");
+
+                // the block coming in to the wallet should
+                // never be ahead of the wallet, if the block is behind let it pass
+                if (chainedBlock.Height > current.Height)
+                    throw new WalletException("block too far in the future has arrived to the wallet");
+            }
+
             lock (this.walletLock)
             {
-                // is this the next block
-                if (chainedBlock.Header.HashPrevBlock != this.WalletTipHash)
-                {
-                    // are we still on the main chain
-                    var current = this.chain.GetBlock(this.WalletTipHash);
-                    if (current == null)
-                        throw new WalletException("Reorg");
-
-                    // the block coming in to the wallet should
-                    // never be ahead of the wallet, if the block is behind let it pass
-                    if (chainedBlock.Height > current.Height)
-                        throw new WalletException("block too far in the future has arrived to the wallet");
-                }
-
                 foreach (Transaction transaction in block.Transactions)
                 {
                     this.ProcessTransaction(transaction, chainedBlock.Height, block);

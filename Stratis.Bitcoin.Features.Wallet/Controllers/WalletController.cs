@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Security;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -13,6 +7,12 @@ using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -289,85 +289,85 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 WalletHistoryModel model = new WalletHistoryModel();
 
-                // in order to calculate the fee properly we need to retrieve all the transactions with spending details.
-                var wallet = this.walletManager.GetWalletByName(request.WalletName);
-                var allTransactionsWithSpendingDetails = wallet.GetAllTransactionsByCoinType(this.coinType).Where(t => t.SpendingDetails != null).ToList();
-
                 // get transactions contained in the wallet
-                var addresses = this.walletManager.GetHistory(request.WalletName).ToList();
-                foreach (var address in addresses)
-                {
-                    foreach (var transaction in address.Transactions.Where(t => !address.IsChangeAddress() || (address.IsChangeAddress() && !t.IsSpendable())))
-                    {
-                        // Funds received in change addresses are not shown in transaction history.
-                        if (!address.IsChangeAddress())
-                        {
-                            // add incoming fund transaction details
-                            TransactionItemModel receivedItem = new TransactionItemModel
-                            {
-                                Type = TransactionItemType.Received,
-                                ToAddress = address.Address,
-                                Amount = transaction.Amount,
-                                Id = transaction.Id,
-                                Timestamp = transaction.CreationTime,
-                                ConfirmedInBlock = transaction.BlockHeight
-                            };
+                var items = this.walletManager.GetFlatHistory(request.WalletName).ToList().OrderByDescending(o => o.Transaction.CreationTime).Take(100).ToList();
+                List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
+                List<FlatHistory> filttered = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
+                List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
 
-                            model.TransactionsHistory.Add(receivedItem);
+                foreach (var item in filttered)
+                {
+                    var transaction = item.Transaction;
+                    var address = item.Address;
+
+                    if (!address.IsChangeAddress())
+                    {
+                        // add incoming fund transaction details
+                        TransactionItemModel receivedItem = new TransactionItemModel
+                        {
+                            Type = TransactionItemType.Received,
+                            ToAddress = address.Address,
+                            Amount = transaction.Amount,
+                            Id = transaction.Id,
+                            Timestamp = transaction.CreationTime,
+                            ConfirmedInBlock = transaction.BlockHeight
+                        };
+
+                        model.TransactionsHistory.Add(receivedItem);
+                    }
+                  
+                    // add outgoing fund transaction details
+                    if (transaction.SpendingDetails != null)
+                    {
+                        var spendingTransactionId = transaction.SpendingDetails.TransactionId;
+                        TransactionItemModel sentItem = new TransactionItemModel
+                        {
+                            Type = TransactionItemType.Send,
+                            Id = spendingTransactionId,
+                            Timestamp = transaction.SpendingDetails.CreationTime,
+                            ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                            Amount = Money.Zero
+                        };
+
+                        if (transaction.SpendingDetails.Payments != null)
+                        {
+                            sentItem.Payments = new List<PaymentDetailModel>();
+                            foreach (var payment in transaction.SpendingDetails.Payments)
+                            {
+                                sentItem.Payments.Add(new PaymentDetailModel
+                                {
+                                    DestinationAddress = payment.DestinationAddress,
+                                    Amount = payment.Amount
+                                });
+
+                                sentItem.Amount += payment.Amount;
+                            }
                         }
 
-                        // add outgoing fund transaction details
-                        if (transaction.SpendingDetails != null)
+                        // get the change address for this spending transaction
+                        var changeAddress = allchange.FirstOrDefault(a => a.Transaction.Id == spendingTransactionId);
+
+                        // find all the spending details containing the spending transaction id and aggregate the sums. 
+                        // this is our best shot at finding the total value of inputs for this transaction.
+                        var inputsAmount = new Money(spendingDetails.Where(t => t.Transaction.SpendingDetails.TransactionId == spendingTransactionId).Sum(t => t.Transaction.Amount));
+
+                        // the fee is calculated as follows: funds in utxo - amount spent - amount sent as change
+                        sentItem.Fee = inputsAmount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transaction.Amount);
+
+                        // mined/staked coins add more coins to the total out 
+                        // that makes the fee negative if that's the case ignore the fee
+                        if (sentItem.Fee < 0)
+                            sentItem.Fee = 0;
+
+                        if (!model.TransactionsHistory.Contains(sentItem, new SentTransactionItemModelComparer()))
                         {
-                            var spendingTransactionId = transaction.SpendingDetails.TransactionId;
-                            TransactionItemModel sentItem = new TransactionItemModel
-                            {
-                                Type = TransactionItemType.Send,
-                                Id = spendingTransactionId,
-                                Timestamp = transaction.SpendingDetails.CreationTime,
-                                ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
-                                Amount = Money.Zero
-                            };
-
-                            if (transaction.SpendingDetails.Payments != null)
-                            {
-                                sentItem.Payments = new List<PaymentDetailModel>();
-                                foreach (var payment in transaction.SpendingDetails.Payments)
-                                {
-                                    sentItem.Payments.Add(new PaymentDetailModel
-                                    {
-                                        DestinationAddress = payment.DestinationAddress,
-                                        Amount = payment.Amount
-                                    });
-
-                                    sentItem.Amount += payment.Amount;
-                                }
-                            }
-
-                            // get the change address for this spending transaction
-                            var changeAddress = addresses.SingleOrDefault(a => a.IsChangeAddress() && a.Transactions.Any(t => t.Id == spendingTransactionId));
-
-                            // find all the spending details containing the spending transaction id and aggregate the sums. 
-                            // this is our best shot at finding the total value of inputs for this transaction.
-                            var inputsAmount = new Money(allTransactionsWithSpendingDetails.Where(t => t.SpendingDetails.TransactionId == spendingTransactionId).Sum(t => t.Amount));
-
-                            // the fee is calculated as follows: funds in utxo - amount spent - amount sent as change
-                            sentItem.Fee = inputsAmount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transactions.First(t => t.Id == spendingTransactionId).Amount);
-
-                            // mined/staked coins add more coins to the total out 
-                            // that makes the fee negative if that's the case ignore the fee
-                            if (sentItem.Fee < 0)
-                                sentItem.Fee = 0;
-
-                            if (!model.TransactionsHistory.Contains(sentItem, new SentTransactionItemModelComparer()))
-                            {
-                                model.TransactionsHistory.Add(sentItem);
-                            }
+                            model.TransactionsHistory.Add(sentItem);
                         }
                     }
                 }
 
                 model.TransactionsHistory = model.TransactionsHistory.OrderByDescending(t => t.Timestamp).ToList();
+
                 return this.Json(model);
             }
             catch (Exception e)
