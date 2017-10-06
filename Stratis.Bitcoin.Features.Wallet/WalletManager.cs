@@ -23,7 +23,10 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class WalletManager : IWalletManager
     {
-        /// <summary>A lock object that protects access to the wallet.</summary>
+        /// <summary>
+        /// A lock object that protects access to the <see cref="Wallet"/>.
+        /// Any of the collections inside Wallet must be synchronized using this lock.
+        /// </summary>
         private readonly object lockObject;
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
