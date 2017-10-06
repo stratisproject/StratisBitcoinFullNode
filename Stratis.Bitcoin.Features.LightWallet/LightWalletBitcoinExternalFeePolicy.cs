@@ -3,6 +3,8 @@ using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Net.Http;
@@ -107,7 +109,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public Money GetRequiredFee(int txBytes)
         {
-            return Math.Max(this.lowTxFeePerKb.GetFee(txBytes), this.nodeSettings.MinRelayTxFee.GetFee(txBytes));
+            return Math.Max(this.lowTxFeePerKb.GetFee(txBytes), this.nodeSettings.MinRelayTxFeeRate.GetFee(txBytes));
         }
 
         /// <inheritdoc />

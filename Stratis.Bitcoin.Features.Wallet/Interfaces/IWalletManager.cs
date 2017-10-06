@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Stratis.Bitcoin.Features.Wallet
+namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
     /// <summary>
     /// Interface for a manager providing operations on wallets.
@@ -144,13 +144,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Remove all the transactions in the wallet that are above this block height
         /// </summary>
         void RemoveBlocks(ChainedBlock fork);
-
-        /// <summary>
-        /// Sends a transaction to the network.
-        /// </summary>
-        /// <param name="transactionHex">The hex of the transaction.</param>
-        /// <returns></returns>
-        bool SendTransaction(string transactionHex);
 
         /// <summary>
         /// Processes a block received from the network.

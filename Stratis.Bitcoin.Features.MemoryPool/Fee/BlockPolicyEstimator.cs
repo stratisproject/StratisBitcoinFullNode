@@ -136,9 +136,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Fee
             this.untrackedTxs = 0;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.minTrackedFee = nodeSettings.MinRelayTxFee < new FeeRate(new Money(MinFeeRate))
+            this.minTrackedFee = nodeSettings.MinRelayTxFeeRate < new FeeRate(new Money(MinFeeRate))
                 ? new FeeRate(new Money(MinFeeRate))
-                : nodeSettings.MinRelayTxFee;
+                : nodeSettings.MinRelayTxFeeRate;
             var vfeelist = new List<double>();
             for (double bucketBoundary = this.minTrackedFee.FeePerK.Satoshi;
                 bucketBoundary <= MaxFeeRate;

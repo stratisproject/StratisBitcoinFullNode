@@ -14,12 +14,13 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusFeature : FullNodeFeature
+    public class ConsensusFeature : FullNodeFeature, INodeStats
     {
         /// <summary>Factory for creating and also possibly starting application defined tasks inside async loop.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -95,6 +96,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
             this.consensusManager = consensusManager;
+        }
+
+        /// <inheritdoc />
+        public void AddNodeStats(StringBuilder benchLogs)
+        {
+            if (this.chainState?.HighestValidatedPoW != null)
+            {
+                benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     this.chainState.HighestValidatedPoW.Height.ToString().PadRight(8) +
+                                     " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     this.chainState.HighestValidatedPoW.HashBlock);
+            }
         }
 
         /// <inheritdoc />

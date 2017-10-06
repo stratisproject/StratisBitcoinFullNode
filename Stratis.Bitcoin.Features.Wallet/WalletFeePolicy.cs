@@ -2,21 +2,13 @@
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
-    public interface IWalletFeePolicy
-    {
-        void Start();
-        void Stop();
-        Money GetRequiredFee(int txBytes);
-        Money GetMinimumFee(int txBytes, int confirmTarget);
-        Money GetMinimumFee(int txBytes, int confirmTarget, Money targetFee);
-        FeeRate GetFeeRate(int confirmTarget);
-    }
-
     public class WalletFeePolicy : IWalletFeePolicy
     {
         /// <summary>Block policy estimator.</summary>
@@ -68,11 +60,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.mempoolValidator = mempoolValidator;
             this.mempool = mempool;
 
-            this.minTxFee = nodeSettings.MinTxFee;
-            this.fallbackFee = nodeSettings.FallbackTxFee;
+            this.minTxFee = nodeSettings.MinTxFeeRate;
+            this.fallbackFee = nodeSettings.FallbackTxFeeRate;
             this.payTxFee = new FeeRate(0);
             this.maxTxFee = new Money(0.1M, MoneyUnit.BTC);
-            this.minRelayTxFee = nodeSettings.MinRelayTxFee;
+            this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
         }
 
         /// <inheritdoc />
