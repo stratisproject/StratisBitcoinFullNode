@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
 
-        internal Dictionary<Script, HdAddress> keysLookup;
+        internal ConcurrentDictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
         /// Occurs when a transaction is found.
@@ -646,26 +646,29 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(transaction, nameof(transaction));
 
             var hash = transaction.GetHash();
-            this.logger.LogTrace($"transaction received - hash: {hash}, coin: {this.coinType}");
+            this.logger.LogTrace("transaction received - hash: {0}, coin: {1}", hash, this.coinType);
 
             // load the keys for lookup if they are not loaded yet.
             if (this.keysLookup == null)
             {
                 this.LoadKeysLookupLock();
             }
-
-            var foundtrx = new List<Tuple<Script, uint256>>();
+            
+            var foundtrx = new HashSet<(Script Script, uint256 TxHash)>();
 
             lock (this.lockObject)
             {
                 // check the outputs
-                foreach (TxOut utxo in transaction.Outputs)
+                foreach (TxOut txo in transaction.Outputs)
                 {
                     // check if the outputs contain one of our addresses
-                    if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
+                    foreach (var script in this.keysLookup.Keys)
                     {
-                        this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
-                        foundtrx.Add(Tuple.Create(utxo.ScriptPubKey, hash));
+                        if (script == txo.ScriptPubKey)
+                        {
+                            this.AddTransactionToWallet(transaction, transaction.Time, transaction.Outputs.IndexOf(txo), txo.Value, script, blockHeight, block);
+                            foundtrx.Add((script, hash));
+                        }
                     }
                 }
 
@@ -674,30 +677,30 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     TransactionData tTx = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Single(trackedTx => trackedTx.Id == input.PrevOut.Hash && trackedTx.Index == input.PrevOut.N);
 
-                    // find the script this input references
-                    var keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
+                            // find the script this input references
+                            var keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
 
-                    // get the details of the outputs paid out. 
-                    IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o =>
-                    {
-                        // if script is empty ignore it
-                        if (o.IsEmpty)
-                            return false;
+                            // get the details of the outputs paid out. 
+                            IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o =>
+                            {
+                                // if script is empty ignore it
+                                if (o.IsEmpty)
+                                    return false;
 
-                        var found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
+                                var found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
 
-                        // include the keys we don't hold
-                        if (!found)
-                            return true;
+                                // include the keys we don't hold
+                                if (!found)
+                                    return true;
 
-                        // include the keys we do hold but that are for receiving 
-                        // addresses (which would mean the user paid itself).
-                        return !addr.IsChangeAddress();
-                    });
+                                // include the keys we do hold but that are for receiving 
+                                // addresses (which would mean the user paid itself).
+                                return !addr.IsChangeAddress();
+                            });
 
-                    this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
-                }
-            }
+                            this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
+                        }
+                    }
 
             if (foundtrx.Any())
             {
@@ -706,7 +709,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 foreach (var tuple in foundtrx)
                 {
                     // notify a transaction has been found
-                    this.TransactionFound?.Invoke(this, new TransactionFoundEventArgs(tuple.Item1, tuple.Item2));
+                    this.TransactionFound?.Invoke(this, new TransactionFoundEventArgs(tuple.Script, tuple.TxHash));
                 }
             }
         }
@@ -721,8 +724,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="script">The script.</param>
         /// <param name="blockHeight">Height of the block.</param>
         /// <param name="block">The block containing the transaction to add.</param>
-        /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
-        private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, int index, Money amount, Script script,
+        private void AddTransactionToWallet(Transaction transaction, uint time, int index, Money amount, Script script,
             int? blockHeight = null, Block block = null)
         {
             // get the collection of transactions to add to.
@@ -731,7 +733,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // check if a similar UTXO exists or not (same transaction id and same index)
             // new UTXOs are added, existing ones are updated
-            var foundTransaction = addressTransactions.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
+            var foundTransaction = addressTransactions.FirstOrDefault(t => t.Id == transaction.GetHash() && t.Index == index);
             if (foundTransaction == null)
             {
                 var newTransaction = new TransactionData
@@ -739,17 +741,17 @@ namespace Stratis.Bitcoin.Features.Wallet
                     Amount = amount,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
-                    Id = transactionHash,
+                    Id = transaction.GetHash(),
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? time),
                     Index = index,
                     ScriptPubKey = script,
-                    Hex = transactionHex
+                    Hex = transaction.ToHex()
                 };
 
                 // add the Merkle proof to the (non-spending) transaction
                 if (block != null)
                 {
-                    newTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
+                    newTransaction.MerkleProof = new MerkleBlock(block, new[] { transaction.GetHash() }).PartialMerkleTree;
                 }
 
                 addressTransactions.Add(newTransaction);
@@ -772,7 +774,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // add the Merkle proof now that the transaction is confirmed in a block
                 if (block != null && foundTransaction.MerkleProof == null)
                 {
-                    foundTransaction.MerkleProof = new MerkleBlock(block, new[] { transactionHash }).PartialMerkleTree;
+                    foundTransaction.MerkleProof = new MerkleBlock(block, new[] { transaction.GetHash() }).PartialMerkleTree;
                 }
             }
 
@@ -1006,9 +1008,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns></returns>
         public void LoadKeysLookupLock()
         {
+            var kLookup = new ConcurrentDictionary<Script, HdAddress>();
             lock (this.lockObject)
             {
-                var lookup = new Dictionary<Script, HdAddress>();
                 foreach (var wallet in this.Wallets)
                 {
                     var accounts = wallet.GetAccountsByCoinType(this.coinType);
@@ -1017,15 +1019,14 @@ namespace Stratis.Bitcoin.Features.Wallet
                         var addresses = account.ExternalAddresses.Concat(account.InternalAddresses);
                         foreach (var address in addresses)
                         {
-                            lookup.Add(address.ScriptPubKey, address);
+                            kLookup.TryAdd(address.ScriptPubKey, address);
                             if (address.Pubkey != null)
-                                lookup.Add(address.Pubkey, address);
+                                kLookup.TryAdd(address.Pubkey, address);
                         }
                     }
                 }
-
-                this.keysLookup = lookup;
             }
+            this.keysLookup = kLookup;
         }
 
         /// <inheritdoc />
