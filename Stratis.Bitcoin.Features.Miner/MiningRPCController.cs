@@ -83,7 +83,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (wallet == null)
             {
-                wallet = walletManager.LoadWallet(walletPassword, walletName);
+                this.logger.LogError("Exception occurred: {0}", $"The specified wallet is unknown: '{walletName}'");
+                throw new RPCServerException(NBitcoin.RPC.RPCErrorCode.RPC_INVALID_REQUEST, "Wallet not found");
             }
             else
             {

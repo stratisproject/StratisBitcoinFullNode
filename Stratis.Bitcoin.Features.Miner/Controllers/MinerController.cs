@@ -89,7 +89,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
                 if (wallet == null)
                 {
-                    wallet = walletManager.LoadWallet(request.Password, request.Name);
+                    string err = $"The specified wallet is unknown: '{request.Name}'";
+                    this.logger.LogError("Exception occurred: {0}", err);
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found", err);
                 }
                 else
                 {
