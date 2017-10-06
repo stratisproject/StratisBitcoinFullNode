@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
             this.PerformanceCounter = new MempoolPerformanceCounter();
-            this.minRelayTxFee = nodeSettings.MinRelayTxFee;
+            this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
         }
 
         /// <summary>Gets a counter for tracking memory pool performance.</summary>

@@ -2,17 +2,23 @@
 using System;
 using System.Collections.Generic;
 
-namespace Stratis.Bitcoin.Features.Wallet
+namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
     /// <summary>
     /// Interface for a manager providing operations on wallets.
     /// </summary>
-    public interface IWalletManager : IDisposable
+    public interface IWalletManager
     {
         /// <summary>
-        /// Initializes this wallet manager.
+        /// Starts this wallet manager.
         /// </summary>
-        void Initialize();
+        void Start();
+
+        /// <summary>
+        /// Stops the wallet manager.
+        /// <para>Internally it waits for async loops to complete before saving the wallets to disk.</para>
+        /// </summary>
+        void Stop();
 
         /// <summary>
         /// The last processed block.
@@ -30,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
         List<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0);
-        
+
         /// <summary>
         /// Creates a wallet and persist it as a file on the local system.
         /// </summary>
@@ -106,6 +112,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         IEnumerable<HdAddress> GetHistory(string walletName);
 
         /// <summary>
+        /// Return a flat representation of the wallet history.
+        /// </summary>
+        /// <param name="walletName">The wallet name.</param>
+        /// <returns>Collection of address history and transaction pairs.</returns>
+        IEnumerable<FlatHistory> GetFlatHistory(string walletName);
+
+        /// <summary>
         /// Gets a collection of addresses containing transactions for this coin.
         /// </summary>
         /// <param name="wallet">The wallet to get history from.</param>
@@ -133,13 +146,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         void RemoveBlocks(ChainedBlock fork);
 
         /// <summary>
-        /// Sends a transaction to the network.
-        /// </summary>
-        /// <param name="transactionHex">The hex of the transaction.</param>
-        /// <returns></returns>
-        bool SendTransaction(string transactionHex);
-
-        /// <summary>
         /// Processes a block received from the network.
         /// </summary>
         /// <param name="block">The block.</param>
@@ -158,12 +164,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Saves the wallet into the file system.
         /// </summary>
         /// <param name="wallet">The wallet to save.</param>
-        void SaveToFile(Wallet wallet);
+        void SaveWallet(Wallet wallet);
 
         /// <summary>
         /// Saves all the loaded wallets into the file system.
         /// </summary>        
-        void SaveToFile();
+        void SaveWallets();
 
         /// <summary>
         /// Gets the extension of the wallet files.
@@ -176,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <returns>A collection of the wallets' names.</returns>
         string[] GetWalletsNames();
-        
+
         /// <summary>
         /// Updates the wallet with the height of the last block synced.
         /// </summary>

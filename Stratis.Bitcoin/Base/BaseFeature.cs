@@ -7,12 +7,15 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -32,7 +35,7 @@ namespace Stratis.Bitcoin.Base
     /// </list>
     /// </para>
     /// </summary>
-    public class BaseFeature : FullNodeFeature
+    public class BaseFeature : FullNodeFeature, INodeStats
     {
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -129,6 +132,14 @@ namespace Stratis.Bitcoin.Base
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <inheritdoc />
+        public void AddNodeStats(StringBuilder benchLogs)
+        {
+            benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                    this.chain.Tip.Height.ToString().PadRight(8) +
+                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.chain.Tip.HashBlock);
+        }
+        
         /// <inheritdoc />
         public override void Start()
         {

@@ -24,6 +24,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// or null if such a block is not downloaded or does not exist.</returns>
         Block TryGetLookahead(int count);
 
+        /// <summary>Gets the current location of the puller to a specific block header.</summary>
+        ChainedBlock Location { get; }
+
         /// <summary>Sets the current location of the puller to a specific block header.</summary>
         /// <param name="location">Block header to set the location to.</param>
         void SetLocation(ChainedBlock location);
@@ -190,6 +193,12 @@ namespace Stratis.Bitcoin.BlockPulling
             this.MinimumLookahead = 4;
             this.MaximumLookahead = 2000;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <inheritdoc />
+        public ChainedBlock Location
+        {
+            get { return this.location; }
         }
 
         /// <inheritdoc />

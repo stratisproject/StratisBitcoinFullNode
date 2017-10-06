@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -934,5 +934,21 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             return new OutPoint(this.Transaction.Id, (uint)this.Transaction.Index);
         }
+    }
+
+    /// <summary>
+    /// A class that represents a flat view of the wallets history.
+    /// </summary>
+    public class FlatHistory
+    {
+        /// <summary>
+        /// The address associated with this UTXO
+        /// </summary>
+        public HdAddress Address { get; set; }
+
+        /// <summary>
+        /// The transaction representing the UTXO.
+        /// </summary>
+        public TransactionData Transaction { get; set; }
     }
 }

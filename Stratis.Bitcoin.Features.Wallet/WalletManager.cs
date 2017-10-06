@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.FileStorage;
 using System;
@@ -23,6 +25,18 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class WalletManager : IWalletManager
     {
+        /// <summary>
+        /// A lock object that protects access to the <see cref="Wallet"/>.
+        /// Any of the collections inside Wallet must be synchronized using this lock.
+        /// </summary>
+        private readonly object lockObject;
+
+        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
         public ConcurrentBag<Wallet> Wallets { get; }
 
         // Size of the buffer of unused addresses maintained in an account. 
@@ -47,17 +61,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly NodeSettings settings;
         private readonly IWalletFeePolicy walletFeePolicy;
         private readonly IMempoolValidator mempoolValidator;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly INodeLifetime nodeLifetime;
         private readonly ILogger logger;
         private readonly FileStorage<Wallet> fileStorage;
+        private readonly IBroadcasterManager broadcasterManager;
 
         public uint256 WalletTipHash { get; set; }
 
         //TODO: a second lookup dictionary is proposed to lookup for spent outputs
         // every time we find a trx that credits we need to add it to this lookup
         // private Dictionary<OutPoint, TransactionData> outpointLookup;
-        
+
         internal Dictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
@@ -66,15 +80,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         public event EventHandler<TransactionFoundEventArgs> TransactionFound;
 
         public WalletManager(
-            ILoggerFactory loggerFactory, 
-            IConnectionManager connectionManager, 
+            ILoggerFactory loggerFactory,
+            IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder, 
+            NodeSettings settings, DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
-            IMempoolValidator mempoolValidator = null) // mempool does not exist in a light wallet
+            IMempoolValidator mempoolValidator = null, // mempool does not exist in a light wallet
+            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -85,12 +100,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
+            this.lockObject = new object();
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new ConcurrentBag<Wallet>();
 
             this.connectionManager = connectionManager;
             this.network = network;
-            this.coinType = (CoinType) network.Consensus.CoinType;
+            this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.settings = settings;
             this.walletFeePolicy = walletFeePolicy;
@@ -98,12 +115,24 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
+            this.broadcasterManager = broadcasterManager;
 
             // register events
-            this.TransactionFound += this.OnTransactionFound;
+            if (this.broadcasterManager != null)
+            {
+                this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
+            }
         }
 
-        public void Initialize()
+        private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
+        {
+            if (transactionEntry.State == State.Propagated)
+            {
+                this.ProcessTransaction(transactionEntry.Transaction);
+            }
+        }
+
+        public void Start()
         {
             // find wallets and load them in memory
             var wallets = this.fileStorage.LoadByFileExtension(WalletFileExtension);
@@ -112,23 +141,37 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.Wallets.Add(wallet);
             }
-            
+
             // load data in memory for faster lookups
-            this.LoadKeysLookup();
+            this.LoadKeysLookupLock();
 
             // find the last chain block received by the wallet manager.
             this.WalletTipHash = this.LastReceivedBlockHash();
 
             // save the wallets file every 5 minutes to help against crashes.
-            this.asyncLoopFactory.Run("wallet persist job", token =>
-                {
-                    this.SaveToFile();
-                    this.logger.LogInformation($"Wallets saved to file at {DateTime.Now}.");
-                    return Task.CompletedTask;
-                },
-                this.nodeLifetime.ApplicationStopping,
-                repeatEvery: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes),
-                startAfter: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));
+            this.asyncLoop = this.asyncLoopFactory.Run("wallet persist job", token =>
+            {
+                this.SaveWallets();
+                this.logger.LogInformation($"Wallets saved to file at {DateTime.Now}.");
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes),
+            startAfter: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));
+        }
+
+        /// <inheritdoc />
+        public void Stop()
+        {
+            if (this.broadcasterManager != null)
+            {
+                this.broadcasterManager.TransactionStateChanged -= this.BroadcasterManager_TransactionStateChanged;
+            }
+
+            if (this.asyncLoop != null)
+                this.asyncLoop.Dispose();
+
+            this.SaveWallets();
         }
 
         /// <inheritdoc />
@@ -166,9 +209,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
 
             // save the changes to the file and add addresses to be tracked
-            this.SaveToFile(wallet);
+            this.SaveWallet(wallet);
             this.Load(wallet);
-            this.LoadKeysLookup();
+            this.LoadKeysLookupLock();
 
             return mnemonic;
         }
@@ -242,9 +285,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
 
             // save the changes to the file and add addresses to be tracked
-            this.SaveToFile(wallet);
+            this.SaveWallet(wallet);
             this.Load(wallet);
-            this.LoadKeysLookup();
+            this.LoadKeysLookupLock();
 
             return wallet;
         }
@@ -266,21 +309,26 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(wallet, nameof(wallet));
             Guard.NotEmpty(password, nameof(password));
 
-            HdAccount account = wallet.GetFirstUnusedAccount(this.coinType);
+            HdAccount account;
 
-            if (account != null)
+            lock (this.lockObject)
             {
-                return account;
+                account = wallet.GetFirstUnusedAccount(this.coinType);
+
+                if (account != null)
+                {
+                    return account;
+                }
+
+                // No unused account was found, create a new one.
+                account = wallet.AddNewAccount(password, this.coinType);
             }
 
-            // No unused account was found, create a new one.
-            var newAccount = wallet.AddNewAccount(password, this.coinType);
-
             // save the changes to the file
-            this.SaveToFile(wallet);
-            return newAccount;
-        }
+            this.SaveWallet(wallet);
 
+            return account;
+        }
 
         public string GetExtPubKey(WalletAccountReference accountReference)
         {
@@ -288,16 +336,19 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(accountReference.WalletName);
 
-            // get the account
-            HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
+            lock (this.lockObject)
+            {
+                // get the account
+                HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-            return account.ExtendedPubKey;
+                return account.ExtendedPubKey;
+            }
         }
 
         /// <inheritdoc />
         public HdAddress GetUnusedAddress(WalletAccountReference accountReference)
         {
-            return GetUnusedAddresses(accountReference, 1).Single();
+            return this.GetUnusedAddresses(accountReference, 1).Single();
         }
 
         /// <inheritdoc />
@@ -308,46 +359,64 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(accountReference.WalletName);
 
-            // get the account
-            HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
+            bool generated = false;
+            IEnumerable<HdAddress> addresses;
 
-            var unusedAddresses = account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
-            var diff = unusedAddresses.Count - count;
-            if(diff < 0)
+            lock (this.lockObject)
             {
-                account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
+                // get the account
+                HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-                // persists the address to the wallet file
-                this.SaveToFile(wallet);
+                var unusedAddresses = account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
+                var diff = unusedAddresses.Count - count;
+                if (diff < 0)
+                {
+                    account.CreateAddresses(this.network, Math.Abs(diff), isChange: false);
 
-                // adds the address to the list of tracked addresses
-                this.LoadKeysLookup();
+                    generated = true;
+                }
+
+                addresses = account
+                    .ExternalAddresses
+                    .Where(acc => !acc.Transactions.Any())
+                    .OrderBy(x => x.Index)
+                    .Take(count);
             }
 
-            return account
-                .ExternalAddresses
-                .Where(acc => !acc.Transactions.Any())
-                .OrderBy(x=>x.Index)
-                .Take(count);            
+            if (generated)
+            {
+                // adds the address to the list of tracked addresses
+                this.LoadKeysLookupLock();
+
+                // save the changes to the file
+                this.SaveWallet(wallet);
+            }
+
+            return addresses;
         }
 
         /// <inheritdoc />
         public HdAddress GetOrCreateChangeAddress(HdAccount account)
         {
-            // get address to send the change to
-            var changeAddress = account.GetFirstUnusedChangeAddress();
+            HdAddress changeAddress = null;
 
-            // no more change addresses left. create a new one.
+            lock (this.lockObject)
+            {
+                // get address to send the change to
+                changeAddress = account.GetFirstUnusedChangeAddress();
+
+                // no more change addresses left. create a new one.
+                if (changeAddress == null)
+                {
+                    var accountAddress = account.CreateAddresses(this.network, 1, isChange: true).Single();
+                    changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
+                }
+            }
+
             if (changeAddress == null)
             {
-                var accountAddress = account.CreateAddresses(this.network, 1, isChange: true).Single();
-                changeAddress = account.InternalAddresses.First(a => a.Address == accountAddress);
-
-                // persists the address to the wallet file
-                this.SaveToFile();
-
                 // adds the address to the list of tracked addresses
-                this.LoadKeysLookup();
+                this.LoadKeysLookupLock();
             }
 
             return changeAddress;
@@ -372,6 +441,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public IEnumerable<HdAddress> GetHistory(Wallet wallet)
         {
+            lock (this.lockObject)
+            {
+                return this.GetHistoryInternal(wallet).ToList();
+            }
+        }
+
+        private IEnumerable<HdAddress> GetHistoryInternal(Wallet wallet)
+        {
             var accounts = wallet.GetAccountsByCoinType(this.coinType).ToList();
             if (accounts.Count == 0)
             {
@@ -386,7 +463,22 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
         }
-        
+
+        /// <inheritdoc />
+        public IEnumerable<FlatHistory> GetFlatHistory(string walletName)
+        {
+            // in order to calculate the fee properly we need to retrieve all the transactions with spending details.
+            var wallet = this.GetWalletByName(walletName);
+
+            lock (this.lockObject)
+            {
+                // get transactions contained in the wallet
+                var items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
+
+                return items;
+            }
+        }
+
         /// <inheritdoc />
         public Wallet GetWallet(string walletName)
         {
@@ -403,7 +495,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(walletName);
 
-            return wallet.GetAccountsByCoinType(this.coinType);
+            lock (this.lockObject)
+            {
+                return wallet.GetAccountsByCoinType(this.coinType);
+            }
         }
 
         public int LastBlockHeight()
@@ -413,7 +508,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return this.chain.Tip.Height;
             }
 
-            return this.Wallets.Min(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType)?.LastBlockSyncedHeight) ?? 0;
+            lock (this.lockObject)
+            {
+                return this.Wallets.Min(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType)?.LastBlockSyncedHeight) ?? 0;
+            }
         }
 
         /// <inheritdoc />
@@ -430,13 +528,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return this.chain.Tip.HashBlock;
             }
 
-            var lastBlockSyncedHash = this.Wallets
-                .Select(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType))
-                .Where(w => w != null)
-                .OrderBy(o => o.LastBlockSyncedHeight)
-                .FirstOrDefault()?.LastBlockSyncedHash;
-            Guard.Assert(lastBlockSyncedHash != null);
-            return lastBlockSyncedHash;
+            lock (this.lockObject)
+            {
+                var lastBlockSyncedHash = this.Wallets
+                    .Select(w => w.AccountsRoot.SingleOrDefault(a => a.CoinType == this.coinType))
+                    .Where(w => w != null)
+                    .OrderBy(o => o.LastBlockSyncedHeight)
+                    .FirstOrDefault()?.LastBlockSyncedHash;
+                Guard.Assert(lastBlockSyncedHash != null);
+                return lastBlockSyncedHash;
+            }
         }
 
         /// <inheritdoc />
@@ -444,8 +545,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotEmpty(walletName, nameof(walletName));
 
+
             Wallet wallet = this.GetWalletByName(walletName);
-            return wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations);
+
+            lock (this.lockObject)
+            {
+                return wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations);
+            }
         }
 
         /// <inheritdoc />
@@ -454,51 +560,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(walletAccountReference, nameof(walletAccountReference));
 
             Wallet wallet = this.GetWalletByName(walletAccountReference.WalletName);
-            HdAccount account = wallet.GetAccountByCoinType(walletAccountReference.AccountName, this.coinType);
-            
-            if (account == null)
+
+            lock (this.lockObject)
             {
-                throw new WalletException($"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
+                HdAccount account = wallet.GetAccountByCoinType(walletAccountReference.AccountName, this.coinType);
+
+                if (account == null)
+                {
+                    throw new WalletException(
+                        $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
+                }
+
+                return account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
             }
-
-            return account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
-        }
-        
-        /// <inheritdoc />
-        public bool SendTransaction(string transactionHex)
-        {
-            Guard.NotEmpty(transactionHex, nameof(transactionHex));
-
-            // TODO move this to a behavior to a dedicated interface
-            // parse transaction
-            Transaction transaction = Transaction.Parse(transactionHex);
-
-            // replace this we a dedicated WalletBroadcast interface
-            // in a fullnode implementation this will validate with the 
-            // mempool and broadcast, in a lightnode this will push to 
-            // the wallet and then broadcast (we might add some basic validation
-            if (this.mempoolValidator == null)
-            {
-                this.ProcessTransaction(transaction);
-            }
-            else
-            {
-                var state = new MempoolValidationState(false);
-                if (!this.mempoolValidator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult())
-                    return false;
-                this.ProcessTransaction(transaction);
-            }
-
-            // broadcast to peers
-            TxPayload payload = new TxPayload(transaction);
-            foreach (var node in this.connectionManager.ConnectedNodes)
-            {
-                node.SendMessage(payload);
-            }
-
-            // we might want to create a behaviour that tracks how many times
-            // the broadcast trasnactions was sent back to us by other peers
-            return true;
         }
 
         /// <inheritdoc />
@@ -508,18 +582,21 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (this.keysLookup == null)
             {
-                this.LoadKeysLookup();
+                this.LoadKeysLookupLock();
             }
 
-            var allAddresses = this.keysLookup.Values;
-            foreach (var address in allAddresses)
+            lock (this.lockObject)
             {
-                var toRemove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
-                foreach (var transactionData in toRemove)
-                    address.Transactions.Remove(transactionData);
-            }
+                var allAddresses = this.keysLookup.Values;
+                foreach (var address in allAddresses)
+                {
+                    var toRemove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
+                    foreach (var transactionData in toRemove)
+                        address.Transactions.Remove(transactionData);
+                }
 
-            this.UpdateLastBlockSyncedHeight(fork);
+                this.UpdateLastBlockSyncedHeight(fork);
+            }
         }
 
         /// <inheritdoc />
@@ -551,13 +628,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                     throw new WalletException("block too far in the future has arrived to the wallet");
             }
 
-            foreach (Transaction transaction in block.Transactions)
+            lock (this.lockObject)
             {
-                this.ProcessTransaction(transaction, chainedBlock.Height, block);
-            }
+                foreach (Transaction transaction in block.Transactions)
+                {
+                    this.ProcessTransaction(transaction, chainedBlock.Height, block);
+                }
 
-            // update the wallets with the last processed block height
-            this.UpdateLastBlockSyncedHeight(chainedBlock);
+                // update the wallets with the last processed block height
+                this.UpdateLastBlockSyncedHeight(chainedBlock);
+            }
         }
 
         /// <inheritdoc />
@@ -571,46 +651,63 @@ namespace Stratis.Bitcoin.Features.Wallet
             // load the keys for lookup if they are not loaded yet.
             if (this.keysLookup == null)
             {
-                this.LoadKeysLookup();
+                this.LoadKeysLookupLock();
             }
 
-            // check the outputs
-            foreach (TxOut utxo in transaction.Outputs)
+            var foundtrx = new List<Tuple<Script, uint256>>();
+
+            lock (this.lockObject)
             {
-                // check if the outputs contain one of our addresses
-                if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
+                // check the outputs
+                foreach (TxOut utxo in transaction.Outputs)
                 {
-                    this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
+                    // check if the outputs contain one of our addresses
+                    if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress pubKey))
+                    {
+                        this.AddTransactionToWallet(transaction.ToHex(), hash, transaction.Time, transaction.Outputs.IndexOf(utxo), utxo.Value, utxo.ScriptPubKey, blockHeight, block);
+                        foundtrx.Add(Tuple.Create(utxo.ScriptPubKey, hash));
+                    }
+                }
+
+                // check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index            
+                foreach (TxIn input in transaction.Inputs.Where(txIn => this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Any(trackedTx => trackedTx.Id == txIn.PrevOut.Hash && trackedTx.Index == txIn.PrevOut.N)))
+                {
+                    TransactionData tTx = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Single(trackedTx => trackedTx.Id == input.PrevOut.Hash && trackedTx.Index == input.PrevOut.N);
+
+                    // find the script this input references
+                    var keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
+
+                    // get the details of the outputs paid out. 
+                    IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o =>
+                    {
+                        // if script is empty ignore it
+                        if (o.IsEmpty)
+                            return false;
+
+                        var found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
+
+                        // include the keys we don't hold
+                        if (!found)
+                            return true;
+
+                        // include the keys we do hold but that are for receiving 
+                        // addresses (which would mean the user paid itself).
+                        return !addr.IsChangeAddress();
+                    });
+
+                    this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
                 }
             }
 
-            // check the inputs - include those that have a reference to a transaction containing one of our scripts and the same index            
-            foreach (TxIn input in transaction.Inputs.Where(txIn => this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Any(trackedTx => trackedTx.Id == txIn.PrevOut.Hash && trackedTx.Index == txIn.PrevOut.N)))
+            if (foundtrx.Any())
             {
-                TransactionData tTx = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions).Single(trackedTx => trackedTx.Id == input.PrevOut.Hash && trackedTx.Index == input.PrevOut.N);
+                this.LoadKeysLookupLock();
 
-                // find the script this input references
-                var keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
-
-                // get the details of the outputs paid out. 
-                IEnumerable<TxOut> paidoutto = transaction.Outputs.Where(o =>
+                foreach (var tuple in foundtrx)
                 {
-                    // if script is empty ignore it
-                    if (o.IsEmpty)
-                        return false;
-
-                    var found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
-
-                    // include the keys we don't hold
-                    if (!found)
-                        return true;
-
-                    // include the keys we do hold but that are for receiving 
-                    // addresses (which would mean the user paid itself).
-                    return !addr.IsChangeAddress();
-                });
-
-                this.AddSpendingTransactionToWallet(transaction.ToHex(), hash, transaction.Time, paidoutto, tTx.Id, tTx.Index, blockHeight, block);
+                    // notify a transaction has been found
+                    this.TransactionFound?.Invoke(this, new TransactionFoundEventArgs(tuple.Item1, tuple.Item2));
+                }
             }
         }
 
@@ -679,8 +776,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
 
-            // notify a transaction has been found
-            this.TransactionFound?.Invoke(this, new TransactionFoundEventArgs(script, transactionHash));
+            this.TransactionFoundInternal(script);
         }
 
         /// <summary>
@@ -748,18 +844,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        private void OnTransactionFound(object sender, TransactionFoundEventArgs a)
+        private void TransactionFoundInternal(Script script)
         {
             foreach (Wallet wallet in this.Wallets)
             {
                 foreach (var account in wallet.GetAccountsByCoinType(this.coinType))
                 {
                     bool isChange;
-                    if (account.ExternalAddresses.Any(address => address.ScriptPubKey == a.Script))
+                    if (account.ExternalAddresses.Any(address => address.ScriptPubKey == script))
                     {
                         isChange = false;
                     }
-                    else if (account.InternalAddresses.Any(address => address.ScriptPubKey == a.Script))
+                    else if (account.InternalAddresses.Any(address => address.ScriptPubKey == script))
                     {
                         isChange = true;
                     }
@@ -774,13 +870,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
                     int accountsToAdd = UnusedAddressesBuffer - emptyAddressesCount;
                     account.CreateAddresses(this.network, accountsToAdd, isChange);
-
-                    // persists the address to the wallet file
-                    this.SaveToFile(wallet);
                 }
             }
-
-            this.LoadKeysLookup();
         }
 
         /// <inheritdoc />
@@ -788,22 +879,25 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             throw new NotImplementedException();
         }
-        
+
         /// <inheritdoc />
-        public void SaveToFile()
+        public void SaveWallets()
         {
             foreach (var wallet in this.Wallets)
             {
-                this.SaveToFile(wallet);
+                this.SaveWallet(wallet);
             }
         }
 
         /// <inheritdoc />
-        public void SaveToFile(Wallet wallet)
+        public void SaveWallet(Wallet wallet)
         {
             Guard.NotNull(wallet, nameof(wallet));
 
-            this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}");
+            lock (this.lockObject)
+            {
+                this.fileStorage.SaveToFile(wallet, $"{wallet.Name}.{WalletFileExtension}");
+            }
         }
 
         /// <inheritdoc />
@@ -836,21 +930,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             // needs to rewind this will be used to find the fork 
             wallet.BlockLocator = chainedBlock.GetLocator().Blocks;
 
-            // update the wallets with the last processed block height
-            foreach (var accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
+            lock (this.lockObject)
             {
-                accountRoot.LastBlockSyncedHeight = chainedBlock.Height;
-                accountRoot.LastBlockSyncedHash = chainedBlock.HashBlock;
-            }
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            // safely persist the wallets to the file system before disposing
-            foreach (var wallet in this.Wallets)
-            {
-                this.SaveToFile(wallet);
+                // update the wallets with the last processed block height
+                foreach (var accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
+                {
+                    accountRoot.LastBlockSyncedHeight = chainedBlock.Height;
+                    accountRoot.LastBlockSyncedHash = chainedBlock.HashBlock;
+                }
             }
         }
 
@@ -912,29 +999,33 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.Wallets.Add(wallet);
         }
-        
+
         /// <summary>
         /// Loads the keys and transactions we're tracking in memory for faster lookups.
         /// </summary>
         /// <returns></returns>
-        public void LoadKeysLookup()
+        public void LoadKeysLookupLock()
         {
-            var lookup = new Dictionary<Script, HdAddress>();
-            foreach (var wallet in this.Wallets)
+            lock (this.lockObject)
             {
-                var accounts = wallet.GetAccountsByCoinType(this.coinType);
-                foreach (var account in accounts)
+                var lookup = new Dictionary<Script, HdAddress>();
+                foreach (var wallet in this.Wallets)
                 {
-                    var addresses = account.ExternalAddresses.Concat(account.InternalAddresses);
-                    foreach (var address in addresses)
+                    var accounts = wallet.GetAccountsByCoinType(this.coinType);
+                    foreach (var account in accounts)
                     {
-                        lookup.Add(address.ScriptPubKey, address);
-                        if (address.Pubkey != null)
-                            lookup.Add(address.Pubkey, address);
+                        var addresses = account.ExternalAddresses.Concat(account.InternalAddresses);
+                        foreach (var address in addresses)
+                        {
+                            lookup.Add(address.ScriptPubKey, address);
+                            if (address.Pubkey != null)
+                                lookup.Add(address.Pubkey, address);
+                        }
                     }
                 }
+
+                this.keysLookup = lookup;
             }
-            this.keysLookup = lookup;
         }
 
         /// <inheritdoc />
@@ -955,7 +1046,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
     }
-    
+
     public class TransactionFoundEventArgs : EventArgs
     {
         public Script Script { get; set; }

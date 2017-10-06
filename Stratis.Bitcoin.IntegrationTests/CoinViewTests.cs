@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using(NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNode = builder.CreateStratisNode();
+                var stratisNode = builder.CreateStratisPowNode();
                 var coreNode1 = builder.CreateNode();
                 var coreNode2 = builder.CreateNode();
                 builder.StartAll();

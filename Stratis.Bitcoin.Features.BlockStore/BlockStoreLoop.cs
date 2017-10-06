@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public class BlockStoreLoop
     {
+        /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
