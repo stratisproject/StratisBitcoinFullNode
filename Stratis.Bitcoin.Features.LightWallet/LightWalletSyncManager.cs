@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        private readonly WalletManager walletManager;
+        private readonly IWalletManager walletManager;
         private readonly ConcurrentChain chain;
         private readonly BlockNotification blockNotification;
         private readonly CoinType coinType;
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory)
         {
-            this.walletManager = walletManager as WalletManager;
+            this.walletManager = walletManager;
             this.chain = chain;
             this.signals = signals;
             this.blockNotification = blockNotification;
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IDisposable txSub = this.signals.SubscribeForTransactions(new TransactionObserver(this));
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
-            if (!this.walletManager.Wallets.Any())
+            if (!this.walletManager.ContainsWallets)
             {
                 this.walletTip = this.chain.Tip;
             }
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     // that in the wallet. the block locator will help finding 
                     // a common fork and bringing the wallet back to a good 
                     // state (behind the best chain)
-                    ICollection<uint256> locators = this.walletManager.Wallets.First().BlockLocator;
+                    ICollection<uint256> locators = this.walletManager.GetFirstWalletBlockLocator();
                     BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
                     ChainedBlock fork = this.chain.FindFork(blockLocator);
                     this.walletManager.RemoveBlocks(fork);
@@ -87,10 +87,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 // we're looking from where to start syncing the wallets.
                 // we start by looking at the heights of the wallets and we start syncing from the oldest one (the smallest height).
                 // if for some reason we can't find a height, we look at the creation date of the wallets and we start syncing from the earliest date.
-                int? earliestWalletHeight = this.walletManager.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight);
+                int? earliestWalletHeight = this.walletManager.GetEarliestWalletHeight();
                 if (earliestWalletHeight == null)
                 {
-                    DateTimeOffset oldestWalletDate = this.walletManager.Wallets.Min(w => w.CreationTime);
+                    DateTimeOffset oldestWalletDate = this.walletManager.GetOldestWalletCreationTime();
                     this.SyncFromDate(oldestWalletDate.LocalDateTime);
                 }
                 else
