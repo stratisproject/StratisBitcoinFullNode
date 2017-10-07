@@ -14,7 +14,6 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
@@ -409,38 +408,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogInformation("==================================================================");
             this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", context.BlockResult.ChainedBlock.HashBlock, context.BlockResult.ChainedBlock.Height);
             this.logger.LogInformation("==================================================================");
-
-            // Wait for peers to get the block.
-            this.logger.LogTrace("Waiting 1000 ms for newly minted block propagation...");
-            Task.Delay(TimeSpan.FromMilliseconds(1000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
-
-            // Ask peers for their headers.
-            foreach (Node node in this.connection.ConnectedNodes)
-            {
-                this.logger.LogTrace("Updating headers of peer '{0}'.", node.RemoteSocketEndpoint);
-                node.Behavior<ChainHeadersBehavior>().TrySync();
-            }
-
-            // Wait for all peers to accept the block.
-            this.logger.LogTrace("Waiting up to 100 seconds for peers to accept the new block...");
-            int retry = 0;
-            foreach (Node node in this.connection.ConnectedNodes)
-            {
-                this.logger.LogTrace("Waiting for peer '{0}' to accept the new block...", node.RemoteSocketEndpoint);
-                ChainHeadersBehavior chainBehaviour = node.Behavior<ChainHeadersBehavior>();
-                while ((++retry < 100) && (chainBehaviour.PendingTip != this.chain.Tip))
-                {
-                    this.logger.LogTrace("Peer '{0}' still has different tip ('{1}/{2}'), waiting 1000 ms...", node.RemoteSocketEndpoint, chainBehaviour.PendingTip.HashBlock, chainBehaviour.PendingTip.Height);
-                    Task.Delay(TimeSpan.FromMilliseconds(1000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
-                }
-            }
-
-            if (retry == 100)
-            {
-                // Seems the block was not accepted.
-                this.logger.LogTrace("Our newly minted block was rejected by peers.");
-                throw new MinerException("Block rejected by peers");
-            }
         }
 
         /// <summary>
