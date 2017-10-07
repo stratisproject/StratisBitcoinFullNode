@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     public class LightWalletSyncManager : IWalletSyncManager
     {
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
-        private IAsyncLoop asyncLoop;
+        private IAsyncLoop asyncLoop = null;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -24,9 +24,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly IBlockNotification blockNotification;
         private readonly CoinType coinType;
         private readonly ILogger logger;
-        private readonly Signals.Signals signals;
+        private readonly Signals.ISignals signals;
         private ChainedBlock walletTip;
         private readonly INodeLifetime nodeLifetime;
+        private IDisposable sub = null;
+        private IDisposable txSub = null;
 
         public ChainedBlock WalletTip => this.walletTip;
 
@@ -36,10 +38,19 @@ namespace Stratis.Bitcoin.Features.LightWallet
             ConcurrentChain chain,
             Network network,
             IBlockNotification blockNotification,
-            Signals.Signals signals,
+            Signals.ISignals signals,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(walletManager, nameof(walletManager));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(blockNotification, nameof(blockNotification));
+            Guard.NotNull(signals, nameof(signals));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+
             this.walletManager = walletManager;
             this.chain = chain;
             this.signals = signals;
@@ -54,8 +65,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public void Start()
         {
             // subscribe to receiving blocks and transactions
-            IDisposable sub = this.signals.SubscribeForBlocks(new BlockObserver(this));
-            IDisposable txSub = this.signals.SubscribeForTransactions(new TransactionObserver(this));
+            this.sub = this.signals.SubscribeForBlocks(new BlockObserver(this));
+            this.txSub = this.signals.SubscribeForTransactions(new TransactionObserver(this));
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
             if (!this.walletManager.ContainsWallets)
@@ -104,7 +115,22 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public void Stop()
         {
             if (this.asyncLoop != null)
+            {
                 this.asyncLoop.Dispose();
+                this.asyncLoop = null;
+            }
+
+            if (this.sub != null)
+            {
+                this.sub.Dispose();
+                this.sub = null;
+            }
+
+            if (this.txSub != null)
+            {
+                this.txSub.Dispose();
+                this.txSub = null;
+            }
         }
 
         /// <inheritdoc />

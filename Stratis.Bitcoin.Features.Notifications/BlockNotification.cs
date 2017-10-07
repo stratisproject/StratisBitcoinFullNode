@@ -38,6 +38,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             Guard.NotNull(puller, nameof(puller));
             Guard.NotNull(signals, nameof(signals));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
             this.Chain = chain;
             this.Puller = puller;
