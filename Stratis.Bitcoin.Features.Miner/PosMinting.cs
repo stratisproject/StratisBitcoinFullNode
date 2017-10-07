@@ -304,6 +304,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 FetchCoinsResponse coinset = this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).GetAwaiter().GetResult();
 
+                long totalBalance = 0;
                 foreach (UnspentOutputReference infoTransaction in spendable)
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
@@ -321,9 +322,13 @@ namespace Stratis.Bitcoin.Features.Miner
                         stakeTx.UtxoSet = set;
                         stakeTx.Secret = walletSecret; // Temporary.
                         stakeTxes.Add(stakeTx);
+
+                        totalBalance += utxo.Value;
                         this.logger.LogTrace("UTXO '{0}/{1}' with value {2} might be available for staking.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, utxo.Value);
                     }
                 }
+
+                this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
