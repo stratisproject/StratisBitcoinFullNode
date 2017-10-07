@@ -889,9 +889,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                if (this.GetBlocksToMaturity(stakeTx) > 0)
+                int toMaturity = this.GetBlocksToMaturity(stakeTx);
+                if (toMaturity > 0)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because it is not mature.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
+                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because it is not mature, {2} blocks to maturity left.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, toMaturity);
                     continue;
                 }
 
