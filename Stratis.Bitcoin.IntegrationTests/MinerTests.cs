@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.mempoolLock, testContext.mempool, testContext.date, new LoggerFactory(), options);
+            return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), options);
         }
         public class Blockinfo
         {
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.consensus.Tip, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     pblock.Header.Nonce = this.blockinfo[i].nonce;
 
                     this.chain.SetTip(pblock.Header);
-                    this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.consensus.Tip, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                    this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                     blocks.Add(pblock);
                 }
 

@@ -13,6 +13,10 @@ namespace Stratis.Bitcoin.Features.Miner
 {
     public abstract class BlockAssembler
     {
+        /// <summary>Tip of the chain that this instance will work with without touching any shared chain resources.</summary>
+        /// <remarks>Using a fixed value prevents race conditions in the methods of derived classes.</remarks>
+        protected ChainedBlock ChainTip { get; set; }
+
         public abstract BlockTemplate CreateNewBlock(Script scriptPubKeyIn, bool fMineWitnessTx = true);
     }
 
@@ -109,7 +113,6 @@ namespace Stratis.Bitcoin.Features.Miner
         private static long medianTimePast;
 
         protected readonly ConsensusLoop consensusLoop;
-        protected readonly ConcurrentChain chain;
         protected readonly MempoolAsyncLock mempoolLock;
         protected readonly TxMempool mempool;
         protected readonly IDateTimeProvider dateTimeProvider;
@@ -142,16 +145,15 @@ namespace Stratis.Bitcoin.Features.Miner
         protected int height;
         private long lockTimeCutoff;
         protected Network network;
-        protected ChainedBlock pindexPrev;
         protected Script scriptPubKeyIn;
 
         public PowBlockAssembler(
             ConsensusLoop consensusLoop,
             Network network,
-            ConcurrentChain chain,
             MempoolAsyncLock mempoolLock,
             TxMempool mempool,
             IDateTimeProvider dateTimeProvider,
+            ChainedBlock chainTip,
             ILoggerFactory loggerFactory,
             AssemblerOptions options = null)
         {
@@ -170,7 +172,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.needSizeAccounting = (this.blockMaxSize < network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE - 1000);
 
             this.consensusLoop = consensusLoop;
-            this.chain = chain;
             this.mempoolLock = mempoolLock;
             this.mempool = mempool;
             this.dateTimeProvider = dateTimeProvider;
@@ -189,10 +190,11 @@ namespace Stratis.Bitcoin.Features.Miner
             this.blockTx = 0;
             this.fees = 0;
 
+            this.ChainTip = chainTip;
             this.pblocktemplate = new BlockTemplate { Block = new Block(), VTxFees = new List<Money>() };
         }
 
-        private int ComputeBlockVersion(ChainedBlock pindexPrev, NBitcoin.Consensus consensus)
+        private int ComputeBlockVersion(ChainedBlock prevChainedBlock, NBitcoin.Consensus consensus)
         {
             uint nVersion = ThresholdConditionCache.VERSIONBITS_TOP_BITS;
             var thresholdConditionCache = new ThresholdConditionCache(consensus);
@@ -202,7 +204,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             foreach (BIP9Deployments deployment in deploymensts)
             {
-                ThresholdState state = thresholdConditionCache.GetState(pindexPrev, deployment);
+                ThresholdState state = thresholdConditionCache.GetState(prevChainedBlock, deployment);
                 if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
                     nVersion |= thresholdConditionCache.Mask(deployment);
             }
@@ -229,7 +231,7 @@ namespace Stratis.Bitcoin.Features.Miner
             //if (this.network. chainparams.MineBlocksOnDemand())
             //    pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
 
-            medianTimePast = Utils.DateTimeToUnixTime(this.pindexPrev.GetMedianTimePast());
+            medianTimePast = Utils.DateTimeToUnixTime(this.ChainTip.GetMedianTimePast());
             this.lockTimeCutoff = PowConsensusValidator.StandardLocktimeVerifyFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast)
                 ? medianTimePast
                 : this.pblock.Header.Time;
@@ -278,10 +280,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
         protected virtual void ComputeBlockVersion()
         {
-            // compute the block version
-            this.pindexPrev = this.chain.Tip;
-            this.height = this.pindexPrev.Height + 1;
-            this.pblock.Header.Version = this.ComputeBlockVersion(this.pindexPrev, this.network.Consensus);
+            // Compute the block version.
+            this.height = this.ChainTip.Height + 1;
+            this.pblock.Header.Version = this.ComputeBlockVersion(this.ChainTip, this.network.Consensus);
         }
 
         protected virtual void CreateCoinbase()
@@ -290,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Set the coin base with zero money.
             // Once we have the fee we can update the amount.
             this.coinbase = new Transaction();
-            this.coinbase.AddInput(TxIn.CreateCoinbase(this.chain.Height + 1));
+            this.coinbase.AddInput(TxIn.CreateCoinbase(this.ChainTip.Height + 1));
             this.coinbase.AddOutput(new TxOut(Money.Zero, this.scriptPubKeyIn));
             this.pblock.AddTransaction(this.coinbase);
             this.pblocktemplate.VTxFees.Add(-1); // Updated at end.
@@ -302,9 +303,9 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("()");
             
             // Fill in header.
-            this.pblock.Header.HashPrevBlock = this.pindexPrev.HashBlock;
-            this.pblock.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.chain.Tip);
-            this.pblock.Header.Bits = this.pblock.Header.GetWorkRequired(this.network, this.chain.Tip);
+            this.pblock.Header.HashPrevBlock = this.ChainTip.HashBlock;
+            this.pblock.Header.UpdateTime(this.dateTimeProvider.GetTimeOffset(), this.network, this.ChainTip);
+            this.pblock.Header.Bits = this.pblock.Header.GetWorkRequired(this.network, this.ChainTip);
             this.pblock.Header.Nonce = 0;
 
             this.logger.LogTrace("(-)");
@@ -314,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            var context = new ContextInformation(new BlockResult { Block = this.pblock }, this.consensusLoop.Tip, this.network.Consensus)
+            var context = new ContextInformation(new BlockResult { Block = this.pblock }, this.network.Consensus)
             {
                 CheckPow = false,
                 CheckMerkleRoot = false,

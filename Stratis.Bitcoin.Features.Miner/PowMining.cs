@@ -115,15 +115,14 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 try
                 {
-                    var chainTip = this.chain.Tip;
-
-                    if (chainTip != this.consensusLoop.Tip)
+                    ChainedBlock chainTip = this.consensusLoop.Tip;
+                    if (this.chain.Tip != chainTip)
                     {
                         Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                         continue;
                     }
 
-                    BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create().CreateNewBlock(reserveScript.reserveSfullNodecript);
+                    BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
 
                     if (Block.BlockSignature)
                     {
@@ -153,13 +152,13 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
 
-                    if (newChain.ChainWork <= this.chain.Tip.ChainWork)
+                    if (newChain.ChainWork <= chainTip.ChainWork)
                         continue;
 
                     this.chain.SetTip(newChain);
 
                     var blockResult = new BlockResult { Block = pblock };
-                    this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.consensusLoop.Tip, this.network.Consensus));
+                    this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
                     this.consensusLoop.Puller.SetLocation(newChain);
 
                     if (blockResult.ChainedBlock == null)

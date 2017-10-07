@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 if (blockTemplate == null)
-                    blockTemplate = this.blockAssemblerFactory.Create(new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
 
                 Block block = blockTemplate.Block;
 
@@ -303,6 +303,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 FetchCoinsResponse coinset = this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).GetAwaiter().GetResult();
 
+                long totalBalance = 0;
                 foreach (UnspentOutputReference infoTransaction in spendable)
                 {
                     UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
@@ -320,9 +321,13 @@ namespace Stratis.Bitcoin.Features.Miner
                         stakeTx.UtxoSet = set;
                         stakeTx.Secret = walletSecret; // Temporary.
                         stakeTxes.Add(stakeTx);
+
+                        totalBalance += utxo.Value;
                         this.logger.LogTrace("UTXO '{0}/{1}' with value {2} might be available for staking.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, utxo.Value);
                     }
                 }
+
+                this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
@@ -335,7 +340,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.logger.LogTrace("POS block signed successfully.");
                     var blockResult = new BlockResult { Block = block };
-                    this.CheckStake(new ContextInformation(blockResult, chainTip, this.network.Consensus), chainTip);
+                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip);
 
                     blockTemplate = null;
                 }
@@ -612,7 +617,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
                         long nBlockTime = 0;
 
-                        var context = new ContextInformation(new BlockResult { Block = block }, chainTip, this.network.Consensus);
+                        var context = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
                         context.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(context, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 
@@ -851,9 +856,10 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                if (this.GetBlocksToMaturity(stakeTx) > 0)
+                int toMaturity = this.GetBlocksToMaturity(stakeTx);
+                if (toMaturity > 0)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because it is not mature.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
+                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because it is not mature, {2} blocks to maturity left.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, toMaturity);
                     continue;
                 }
 

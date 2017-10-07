@@ -67,21 +67,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             get { return this.Stake != null; }
         }
 
-        /// <summary>Best block in the fully validated chain of blocks.</summary>
-        public ChainedBlock consensusTip { get; set; }
-
         public ContextInformation()
         {
         }
 
-        public ContextInformation(BlockResult blockResult, ChainedBlock consensusTip, NBitcoin.Consensus consensus)
+        public ContextInformation(BlockResult blockResult, NBitcoin.Consensus consensus)
         {
             Guard.NotNull(blockResult, nameof(blockResult));
             Guard.NotNull(consensus, nameof(consensus));
 
             this.BlockResult = blockResult;
             this.Consensus = consensus;
-            this.consensusTip = consensusTip;
 
             // TODO: adding flags to determine the flow of logic is not ideal
             // a refator is in depbate on moving to a consensus rules engine
