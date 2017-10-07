@@ -645,7 +645,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
                         long nBlockTime = 0;
 
-                        var context = new ContextInformation(new BlockResult { Block = block }, chainTip, this.network.Consensus);
+                        var context = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
                         context.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(context, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 
