@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
@@ -90,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
         /// that depends on the reported information.</remarks>
-        private readonly RPC.Models.GetStakingInfoModel rpcGetStakingInfoModel;
+        private readonly Miner.Models.GetStakingInfoModel rpcGetStakingInfoModel;
 
         /// <summary>
         /// Timestamp of the last attempt to search for POS solution.
@@ -158,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
 
-            this.rpcGetStakingInfoModel = new RPC.Models.GetStakingInfoModel();
+            this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
 
         /// <summary>
@@ -644,7 +645,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
                         long nBlockTime = 0;
 
-                        var context = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
+                        var context = new ContextInformation(new BlockResult { Block = block }, chainTip, this.network.Consensus);
                         context.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(context, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 
@@ -1040,9 +1041,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Constructs model for RPC "getstakinginfo" call.
         /// </summary>
         /// <returns>Staking information RPC response.</returns>
-        public RPC.Models.GetStakingInfoModel GetGetStakingInfoModel()
+        public Miner.Models.GetStakingInfoModel GetGetStakingInfoModel()
         {
-            return (RPC.Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
+            return (Miner.Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
         }
     }
 }

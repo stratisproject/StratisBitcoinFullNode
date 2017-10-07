@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     {     
         private CoreNode CreateStratisNode(NodeBuilder builder)
         {
-            return builder.CreateStratisNode(false, fullNodeBuilder =>
+            return builder.CreateStratisPowNode(false, fullNodeBuilder =>
             {
                 fullNodeBuilder
                 .UseConsensus()
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node = builder.CreateStratisNode(false, fullNodeBuilder =>
+                var node = builder.CreateStratisPowNode(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                     .UseConsensus()

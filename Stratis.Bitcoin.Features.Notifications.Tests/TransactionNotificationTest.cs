@@ -5,11 +5,11 @@ using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Notifications.Tests
-{    
+{
     public class TransactionNotificationTest
     {
         [Fact]
-        public void NotifyWithTransactionBroadcastsSuccessfully()
+        public void Notify_WithTransaction_BroadcastsSuccessfully()
         {
             var signals = new Mock<ISignals>();
 
@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         }
 
         [Fact]
-        public void NotifyWithNullTransactionDoesntBroadcast()
+        public void Notify_WithNullTransaction_DoesntBroadcast()
         {
             var signals = new Mock<ISignals>();
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             var exception = Record.Exception(() => new TransactionNotification(null));
             Assert.NotNull(exception);
-            Assert.IsType<ArgumentNullException>(exception);            
+            Assert.IsType<ArgumentNullException>(exception);
         }
     }
 }

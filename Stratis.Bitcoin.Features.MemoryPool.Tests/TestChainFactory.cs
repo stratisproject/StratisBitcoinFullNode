@@ -78,15 +78,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network));
             consensus.Initialize();
 
-            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(nodeSettings), loggerFactory);
-            TxMempool mempool = new TxMempool(new FeeRate(1000), dateTimeProvider, blockPolicyEstimator, loggerFactory);
+            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
+            TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
             MempoolAsyncLock mempoolLock = new MempoolAsyncLock();
 
             // Simple block creation, nothing special yet:
             PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             BlockTemplate newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
-            consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+            consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = newBlock.Block }, consensus.Tip, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = currentBlock }, consensus.Tip, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                 blocks.Add(currentBlock);
             }
 
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
 
-            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory);
+            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings);
 
             return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
         }

@@ -14,12 +14,13 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusFeature : FullNodeFeature
+    public class ConsensusFeature : FullNodeFeature, INodeStats
     {
         /// <summary>Factory for creating and also possibly starting application defined tasks inside async loop.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -97,6 +98,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
             this.consensusManager = consensusManager;
+        }
+
+        /// <inheritdoc />
+        public void AddNodeStats(StringBuilder benchLogs)
+        {
+            if (this.chainState?.HighestValidatedPoW != null)
+            {
+                benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     this.chainState.HighestValidatedPoW.Height.ToString().PadRight(8) +
+                                     " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
+                                     this.chainState.HighestValidatedPoW.HashBlock);
+            }
         }
 
         /// <inheritdoc />
@@ -210,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
                 // thrown so that the node and all the disposables can stop gracefully.
                 this.logger.LogDebug("Exception occurred in consensus loop: {0}", ex.ToString());
-                this.logger.LogCritical(new EventId(0), ex, "Consensus loop unhandled exception (Tip:" + this.consensusLoop.Tip?.Height + ")");
+                this.logger.LogCritical(new EventId(0), ex, "Consensus loop at Tip:{0} unhandled exception {1}", this.consensusLoop.Tip?.Height, ex.ToString());
                 NLog.LogManager.Flush();
                 throw;
             }

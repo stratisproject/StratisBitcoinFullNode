@@ -3,6 +3,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -64,12 +65,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <seealso cref = "MempoolSettings" />
         public const int DefaultMaxMempoolSize = 300;
-
-        /// <summary>
-        /// Default for -minrelaytxfee, minimum relay fee for transactions.
-        /// </summary>
-        /// <seealso cref = "MempoolSettings" />
-        public const int DefaultMinRelayTxFee = 1000; // Default for -minrelaytxfee, minimum relay fee for transactions
 
         /// <summary>
         /// Default limit free relay.
@@ -141,7 +136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ILogger logger;
 
         /// <summary>Minimum fee rate for a relay transaction.</summary>
-        public static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
+        private readonly FeeRate minRelayTxFee;
 
         // TODO: Implement Later with CheckRateLimit() 
         //private readonly FreeLimiterSection freeLimiter;
@@ -163,6 +158,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
+        /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
             TxMempool memPool, 
             MempoolAsyncLock mempoolLock,
@@ -171,7 +167,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolSettings mempoolSettings,
             ConcurrentChain chain, 
             CoinView coinView,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory, 
+            NodeSettings nodeSettings)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
@@ -184,6 +181,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
             this.PerformanceCounter = new MempoolPerformanceCounter();
+            this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
         }
 
         /// <summary>Gets a counter for tracking memory pool performance.</summary>
@@ -631,7 +629,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //{
                 //  context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
                 //}
-                else if (txout.IsDust(MinRelayTxFee))
+                else if (txout.IsDust(minRelayTxFee))
                 {
                     context.State.Fail(MempoolErrors.Dust).Throw();
                 }
@@ -689,7 +687,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 context.State.Fail(MempoolErrors.MinFeeNotMet, $" {context.Fees} < {mempoolRejectFee}").Throw();
             }
-            else if (this.mempoolSettings.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
+            else if (this.mempoolSettings.RelayPriority && context.ModifiedFees < minRelayTxFee.GetFee(context.EntrySize) &&
                      !TxMempool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
             {
                 // Require that free transactions have sufficient priority to be mined in the next block.
@@ -883,10 +881,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // Finally in addition to paying more fees than the conflicts the
                 // new transaction must pay for its own bandwidth.
                 Money nDeltaFees = context.ModifiedFees - context.ConflictingFees;
-                if (nDeltaFees < MinRelayTxFee.GetFee(context.EntrySize))
+                if (nDeltaFees < minRelayTxFee.GetFee(context.EntrySize))
                 {
                     context.State.Fail(MempoolErrors.Insufficientfee,
-                            $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {MinRelayTxFee.GetFee(context.EntrySize)}").Throw();
+                            $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {minRelayTxFee.GetFee(context.EntrySize)}").Throw();
                 }
             }
         }

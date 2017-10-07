@@ -2,6 +2,7 @@
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
@@ -38,9 +39,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 {
                     MempoolExpiry = MempoolExpiry
                 };
+                NodeSettings nodeSettings = NodeSettings.Default();
 
-                BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new FeeRate(1000), settings, loggerFactory);
-                TxMempool mempool = new TxMempool(new FeeRate(1000), dateTime, blockPolicyEstimator, loggerFactory);
+                BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, nodeSettings);
+                TxMempool mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
 
                 Mock<TxMempool> mockTxMempool = new Mock<TxMempool>();
                 Mock<IMempoolValidator> mockValidator = new Mock<IMempoolValidator>();

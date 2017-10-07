@@ -124,6 +124,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
 
+                    if (Block.BlockSignature)
+                    {
+                        // POS: make sure the POS consensus rules are valid 
+                        if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
+                        {
+                            continue;
+                        }
+                    }
+
                     this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
                     Block pblock = pblockTemplate.Block;
 
@@ -149,7 +158,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.chain.SetTip(newChain);
 
                     var blockResult = new BlockResult { Block = pblock };
-                    this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
+                    this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.consensusLoop.Tip, this.network.Consensus));
                     this.consensusLoop.Puller.SetLocation(newChain);
 
                     if (blockResult.ChainedBlock == null)
@@ -165,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
                     this.signals.SignalBlock(pblock);
 
-                    this.logger.LogInformation("Mined new {{0}} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock.HashBlock);
+                    this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);
 
                     nHeight++;
                     blocks.Add(pblock.GetHash());

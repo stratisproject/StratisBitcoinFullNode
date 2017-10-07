@@ -1,13 +1,11 @@
-﻿using System.IO;
-using System.Linq;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Swashbuckle.AspNetCore.Swagger;
+using System.IO;
 
 namespace Stratis.Bitcoin.Api
 {
@@ -51,7 +49,7 @@ namespace Stratis.Bitcoin.Api
                 });
 
             // Add framework services.
-            services.AddMvc(options => options.Filters.Add(typeof(LoggingActionFilter)))
+            services.AddMvc(options => { }) //  options.Filters.Add(typeof(LoggingActionFilter))) 
                 // add serializers for NBitcoin objects
                 .AddJsonOptions(options => NBitcoin.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
                 .AddControllers(services);

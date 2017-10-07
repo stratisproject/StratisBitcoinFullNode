@@ -2,7 +2,8 @@
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
-using System.Threading.Tasks;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
@@ -12,6 +13,18 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// <seealso cref="https://github.com/stratisproject/stratisX/blob/master/src/wallet.cpp#L1437">StratisX fee calculation.</seealso>
     public class LightWalletFixedFeePolicy : IWalletFeePolicy
     {
+        /// <inheritdoc />
+        public void Start()
+        {
+            return;
+        }
+
+        /// <inheritdoc />
+        public void Stop()
+        {
+            return;
+        }
+
         /// <summary>Logger instance for this class.</summary>
         private readonly ILogger logger;
 
@@ -19,7 +32,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public FeeRate TxFeeRate { get; set; }
 
         /// <summary>Minimum fee rate to use for this policy.</summary>
-        public FeeRate MinTxFee { get; set; }
+        public FeeRate FallbackTxFeeRate { get; set; }
 
         /// <summary>
         /// Constructor for the light wallet fixed fee policy.
@@ -30,8 +43,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.MinTxFee = settings.MinTxFee;
-            this.TxFeeRate = this.MinTxFee;
+            this.FallbackTxFeeRate = new FeeRate(60000);//settings.FallbackTxFeeRate;
+            this.TxFeeRate = this.FallbackTxFeeRate;
         }
 
         /// <inheritdoc />
@@ -49,19 +62,13 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public Money GetMinimumFee(int txBytes, int confirmTarget, Money targetFee)
         {
-            return this.MinTxFee.GetFee(txBytes);
+            return this.FallbackTxFeeRate.GetFee(txBytes);
         }
 
         /// <inheritdoc />
         public Money GetRequiredFee(int txBytes)
         {
             return this.TxFeeRate.GetFee(txBytes);
-        }
-
-        /// <inheritdoc />
-        public Task Initialize()
-        {
-            return Task.CompletedTask;
         }
     }
 }

@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     }
                 }
 
-                this.AcceptBlock(new ContextInformation(result, this.Validator.ConsensusParams));
+                this.AcceptBlock(new ContextInformation(result, this.Tip, this.Validator.ConsensusParams));
             }
             catch(ConsensusErrorException ex)
             {

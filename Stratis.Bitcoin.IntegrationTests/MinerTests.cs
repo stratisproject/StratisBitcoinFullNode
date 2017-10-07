@@ -137,13 +137,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 date1.time = DateTimeProvider.Default.GetTime();
                 date1.timeutc = DateTimeProvider.Default.GetUtcNow();
                 this.date = date1;
-                this.mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(NodeSettings.Default()), new LoggerFactory()), new LoggerFactory()); ;
+                var nodeSettings = NodeSettings.Default();
+                this.mempool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings); ;
                 this.mempoolLock = new MempoolAsyncLock();
 
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.consensus.Tip, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -173,7 +174,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     pblock.Header.Nonce = this.blockinfo[i].nonce;
 
                     this.chain.SetTip(pblock.Header);
-                    this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                    this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.consensus.Tip, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                     blocks.Add(pblock);
                 }
 
