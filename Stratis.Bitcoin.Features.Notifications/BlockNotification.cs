@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using System.Threading;
@@ -11,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Notifications
     /// <summary>
     /// Class used to broadcast about new blocks.
     /// </summary>
-    public class BlockNotification
+    public class BlockNotification : IBlockNotification
     {
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -51,6 +52,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         public virtual bool ReSync { get; private set; }
         public virtual uint256 StartHash { get; private set; }
 
+        /// <inheritdoc/>
         public virtual void SyncFrom(uint256 startHash)
         {
             this.logger.LogTrace("Received request to sync from hash : {0}.", startHash);
@@ -75,9 +77,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.StartHash = startHash;
         }
 
-        /// <summary>
-        /// Notifies about blocks, starting from block with hash passed as parameter.
-        /// </summary>
+        /// <inheritdoc/>
         public void Start()
         {
             this.asyncLoop = this.asyncLoopFactory.Run("Notify", async token =>
@@ -86,10 +86,8 @@ namespace Stratis.Bitcoin.Features.Notifications
             },
             this.nodeLifetime.ApplicationStopping);
         }
-
-        /// <summary>
-        /// Stops block notification by waiting for the async loop to complete.
-        /// </summary>
+        
+        /// <inheritdoc/>
         public void Stop()
         {
             if (this.asyncLoop != null)

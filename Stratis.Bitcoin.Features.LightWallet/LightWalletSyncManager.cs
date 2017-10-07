@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly IWalletManager walletManager;
         private readonly ConcurrentChain chain;
-        private readonly BlockNotification blockNotification;
+        private readonly IBlockNotification blockNotification;
         private readonly CoinType coinType;
         private readonly ILogger logger;
         private readonly Signals.Signals signals;
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IWalletManager walletManager,
             ConcurrentChain chain,
             Network network,
-            BlockNotification blockNotification,
+            IBlockNotification blockNotification,
             Signals.Signals signals,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory)
