@@ -31,7 +31,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ChainedBlock Tip { get; private set; }
         public NodeDeployments NodeDeployments { get; private set; }
 
-
         public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, ILoggerFactory loggerFactory, StakeChain stakeChain = null)
         {
             Guard.NotNull(validator, nameof(validator));
