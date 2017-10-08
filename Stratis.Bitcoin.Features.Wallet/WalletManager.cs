@@ -897,7 +897,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If the details of this spending transaction are seen for the first time.
             if (spentTransaction.SpendingDetails == null)
             {
-                this.logger.LogTrace("Spending transaction ID '{0}' is new.", spendingTransactionId);
+                this.logger.LogTrace("Spending UTXO '{0}/{1}' is new.", spendingTransactionId, spendingTransactionIndex);
 
                 List<PaymentDetails> payments = new List<PaymentDetails>();
                 foreach (TxOut paidToOutput in paidToOutputs)
