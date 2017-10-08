@@ -637,7 +637,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         coinstakeInputs.Add(coin);
                         coinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
 
-                        this.logger.LogTrace("Kernel accepted.");
+                        this.logger.LogTrace("Kernel accepted, coinstake input is '{0}/{1}'.", prevoutStake.Hash, prevoutStake.N);
                         fKernelFound = true;
                         break;
                     }
@@ -692,7 +692,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     coinstakeInputsValue += stakeTx.TxOut.Value;
                     coinstakeInputs.Add(stakeTx);
 
-                    this.logger.LogTrace("UTXO '{0}/{1}' joined to coinstake transaction.");
+                    this.logger.LogTrace("UTXO '{0}/{1}' joined to coinstake transaction.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
 
                     // Stop adding more inputs if already too many inputs.
                     if (coinstakeTx.Inputs.Count >= 100)
@@ -727,7 +727,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 coinstakeTx.Outputs[1].Value = (coinstakeInputsValue / 2 / Money.CENT) * Money.CENT;
                 coinstakeTx.Outputs[2].Value = coinstakeInputsValue - coinstakeTx.Outputs[1].Value;
-                this.logger.LogTrace("Coinstake first output value is {0}, second is {2}.", coinstakeTx.Outputs[1].Value, coinstakeTx.Outputs[2].Value);
+                this.logger.LogTrace("Coinstake first output value is {0}, second is {1}.", coinstakeTx.Outputs[1].Value, coinstakeTx.Outputs[2].Value);
             }
             else
             {
