@@ -815,10 +815,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Check if a similar UTXO exists or not (same transaction ID and same index).
             // New UTXOs are added, existing ones are updated.
-            TransactionData foundTransaction = addressTransactions.FirstOrDefault(t => t.Id == transactionHash && t.Index == index);
+            TransactionData foundTransaction = addressTransactions.FirstOrDefault(t => (t.Id == transactionHash) && (t.Index == index));
             if (foundTransaction == null)
             {
-                this.logger.LogTrace("Transaction ID '{0}' not found, creating.", transactionHash);
+                this.logger.LogTrace("UTXO '{0}/{1}' not found, creating.", transactionHash, index);
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
