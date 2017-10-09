@@ -591,15 +591,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var allAddresses = this.keysLookup.Values;
                 foreach (var address in allAddresses)
                 {
-					// remove all the UTXO that have been reorged. 
+                    // remove all the UTXO that have been reorged. 
                     var toRemove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
                     foreach (var transactionData in toRemove)
                         address.Transactions.Remove(transactionData);
 
-					// bring back all the UTXO that are now spendable after the reorg.
-	                var toUndo = address.Transactions.Where(w => w.SpendingDetails.BlockHeight > fork.Height).ToList();
-	                foreach (var transactionData in toUndo)
-		                transactionData.SpendingDetails = null;
+                    // bring back all the UTXO that are now spendable after the reorg.
+                    var toUndo = address.Transactions.Where(w => w.SpendingDetails != null && w.SpendingDetails.BlockHeight > fork.Height);
+                    foreach (var transactionData in toUndo)
+                        transactionData.SpendingDetails = null;
                 }
 
                 this.UpdateLastBlockSyncedHeight(fork);
@@ -718,19 +718,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-		/// <summary>
-		/// Adds a transaction that credits the wallet with new coins.
-		/// This method is can be called many times for the same transaction (idempotent).
-		/// </summary>
-		/// <param name="transactionHash">The transaction hash.</param>
-		/// <param name="time">The time.</param>
-		/// <param name="index">The index.</param>
-		/// <param name="amount">The amount.</param>
-		/// <param name="script">The script.</param>
-		/// <param name="blockHeight">Height of the block.</param>
-		/// <param name="block">The block containing the transaction to add.</param>
-		/// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
-		private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, int index, Money amount, Script script,
+        /// <summary>
+        /// Adds a transaction that credits the wallet with new coins.
+        /// This method is can be called many times for the same transaction (idempotent).
+        /// </summary>
+        /// <param name="transactionHash">The transaction hash.</param>
+        /// <param name="time">The time.</param>
+        /// <param name="index">The index.</param>
+        /// <param name="amount">The amount.</param>
+        /// <param name="script">The script.</param>
+        /// <param name="blockHeight">Height of the block.</param>
+        /// <param name="block">The block containing the transaction to add.</param>
+        /// <param name="transactionHex">The hexadecimal representation of the transaction.</param>
+        private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, int index, Money amount, Script script,
             int? blockHeight = null, Block block = null)
         {
             // get the collection of transactions to add to.
