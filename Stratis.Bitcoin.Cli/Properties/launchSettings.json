@@ -2,7 +2,7 @@
   "profiles": {
     "Stratis.Cli": {
       "commandName": "Project",
-      "commandLineArgs": "stratistest generate"
+      "commandLineArgs": "stratistest getblockhash 0"
     }
   }
 }

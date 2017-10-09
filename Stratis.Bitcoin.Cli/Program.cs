@@ -23,25 +23,40 @@ namespace Stratis.Bitcoin.Cli
             }
 
             // hack until static flags are removed
+            string blockchain = "bitcoin";
             if (args.Any(a => a.Contains("stratis")))
             {
+                blockchain = "stratis";
                 var s = Network.StratisMain;
                 var st = Network.StratisTest;
             }
+
+            // The first argument is the network name
             var network = Network.GetNetwork(args.First());
-            NodeSettings nodeSettings = NodeSettings.FromArguments(args, network.Name);
+            NodeSettings nodeSettings = NodeSettings.FromArguments(args, blockchain, network);
 
             var rpcSettings = new RpcSettings();
             rpcSettings.Load(nodeSettings);
 
-            // TODO: make rpc port injectable to the RPCClient
-            //var rpcPort = rpcSettings.RPCPort > 0 ? rpcSettings.RPCPort : network.RPCPort;
+            // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
+            System.Net.IPEndPoint nodeEndPoint = rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? rpcSettings.Bind[0];
 
-            RPCClient rpc = new RPCClient("user:pass", "http://127.0.0.1", network);
-            
-            var response = rpc.SendCommand(args.ElementAt(1), args.Skip(2));
+            // Initilize the RPC client with the configured or passed userid, password and endpoint
+            RPCClient rpc = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"));
 
-            Console.WriteLine(response.ResultString);
+            try
+            {
+                // Execute the RPC command
+                RPCResponse response = rpc.SendCommand(args.ElementAt(1), args.Skip(2).ToArray());
+
+                // Return the result as a string to the console
+                Console.WriteLine(response.ResultString);
+            }
+            catch (Exception err)
+            {
+                // Report any errors to the console
+                Console.WriteLine(err.ToString());
+            }
         }
     }
 }
