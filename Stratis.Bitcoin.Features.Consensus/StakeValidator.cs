@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class StakeValidator
     {
         /// <summary>Expected (or target) block time in seconds.</summary>
-        private const int TargetSpacingSeconds = 64;
+        public const int TargetSpacingSeconds = 64;
 
         /// <summary>Time interval in minutes that is used in the retarget calculation.</summary>
         private const int RetargetIntervalMinutes = 16;

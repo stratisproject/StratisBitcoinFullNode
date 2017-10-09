@@ -538,7 +538,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             long ourWeight = setCoins.Sum(s => s.TxOut.Value);
             long networkWeight = (long)this.GetNetworkWeight();
-            long expectedTime = StakeValidator.GetTargetSpacing(chainTip.Height) * networkWeight / ourWeight;
+            long expectedTime = StakeValidator.TargetSpacingSeconds * networkWeight / ourWeight;
             decimal ourPercent = networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)networkWeight : 0;
             
             this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(networkWeight), TimeSpan.FromSeconds(expectedTime));
