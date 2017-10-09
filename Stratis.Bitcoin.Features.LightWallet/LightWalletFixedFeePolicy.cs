@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.FallbackTxFeeRate = new FeeRate(60000);//settings.FallbackTxFeeRate;
+            this.FallbackTxFeeRate = settings.FallbackTxFeeRate;
             this.TxFeeRate = this.FallbackTxFeeRate;
         }
 
