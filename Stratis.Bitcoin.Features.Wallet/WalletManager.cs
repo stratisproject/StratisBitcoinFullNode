@@ -592,13 +592,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 foreach (var address in allAddresses)
                 {
                     // remove all the UTXO that have been reorged. 
-                    var toRemove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
-                    foreach (var transactionData in toRemove)
+                    IEnumerable<TransactionData> makeUnspendable = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
+                    foreach (var transactionData in makeUnspendable)
                         address.Transactions.Remove(transactionData);
 
                     // bring back all the UTXO that are now spendable after the reorg.
-                    var toUndo = address.Transactions.Where(w => w.SpendingDetails != null && w.SpendingDetails.BlockHeight > fork.Height);
-                    foreach (var transactionData in toUndo)
+                    IEnumerable<TransactionData> makeSpendable = address.Transactions.Where(w => (w.SpendingDetails != null) && (w.SpendingDetails.BlockHeight > fork.Height));
+                    foreach (var transactionData in makeSpendable)
                         transactionData.SpendingDetails = null;
                 }
 
