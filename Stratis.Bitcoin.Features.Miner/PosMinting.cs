@@ -71,6 +71,8 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly INodeLifetime nodeLifetime;
         private readonly NodeSettings settings;
         private readonly CoinView coinView;
+
+        /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly WalletManager walletManager;
