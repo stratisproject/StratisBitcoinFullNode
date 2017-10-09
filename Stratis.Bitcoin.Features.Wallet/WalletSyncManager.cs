@@ -86,8 +86,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // If the new block previous hash is the same as the 
             // wallet hash then just pass the block to the manager. 
-            var nextTip = this.chain.GetBlock(block.GetHash());
-            if (nextTip == null || block.Header.HashPrevBlock != this.walletTip.HashBlock)
+            var newTip = this.chain.GetBlock(block.GetHash());
+
+            // new block is not in the main chain nothing more to do right now. 
+            if (newTip == null)
+                return; // reorg
+
+            if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
                 // If previous block does not match there might have 
                 // been a reorg, check if the wallet is still on the main chain.
@@ -95,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (inBestChain == null)
                 {
                     // The current wallet hash was not found on the main chain.
-                    // A reorg happenend so bring the wallet back top the last known fork.
+                    // A reorg happened so bring the wallet back top the last known fork.
 
                     var fork = this.walletTip;
 
@@ -109,17 +114,21 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.walletTip = fork;
                 }
 
-                if (nextTip == null)
-                    return; // reorg
-
-                ChainedBlock incomingBlock = nextTip;
-                if (incomingBlock.Height > this.walletTip.Height)
+                // The new tip can be ahead or behind the wallet
+                // If the new tip is ahead we try to bring the wallet up to the new tip.
+                // If the new tip is behind we just check the wallet and the tip ad in the same chain.
+            
+                if (newTip.Height > this.walletTip.Height)
                 {
+                    // check that the new tip is in the chain of the wallet tip
+                    var findTip = newTip.FindAncestorOrSelf(this.walletTip.HashBlock);
+                    Guard.Assert(findTip == this.walletTip); // this should never happen
+
                     var token = this.nodeLifetime.ApplicationStopping;
 
                     // The wallet is falling behind we need to catch up.
                     var next = this.walletTip;
-                    while (next != incomingBlock)
+                    while (next != newTip)
                     {
                         token.ThrowIfCancellationRequested();
 
@@ -131,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         // similar to BlockStore the wallet should be standalone and not depend on consensus
                         // the block should be put in a queue and pushed to the wallet in an async way
                         // if the wallet is behind it will just read blocks from store (or download in case of a pruned node).
-                        next = incomingBlock.GetAncestor(next.Height + 1);
+                        next = newTip.GetAncestor(next.Height + 1);
                         Block nextblock = null;
                         var index = 0;
                         while (true)
@@ -161,9 +170,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.walletManager.ProcessBlock(nextblock, next);
                     }
                 }
+                else
+                {
+                    // check that the new tip is in the chain of the wallet tip
+                    var findTip = this.walletTip.FindAncestorOrSelf(newTip.HashBlock);
+                    Guard.Assert(findTip == newTip); // this should never happen
+                }
             }
 
-            this.walletTip = nextTip;
+            this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, this.walletTip);
         }
 

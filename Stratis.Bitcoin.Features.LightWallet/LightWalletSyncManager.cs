@@ -110,6 +110,16 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
+            Guard.NotNull(block, nameof(block));
+
+            // If the new block previous hash is the same as the 
+            // wallet hash then just pass the block to the manager. 
+            var newTip = this.chain.GetBlock(block.GetHash());
+
+            // new block is not in the main chain nothing more to do right now. 
+            if (newTip == null)
+                return; // reorg
+
             // if the new block previous hash is the same as the 
             // wallet hash then just pass the block to the manager 
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
@@ -130,22 +140,30 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
                     Guard.Assert(fork.HashBlock == block.Header.HashPrevBlock);
                     this.walletManager.RemoveBlocks(fork);
+                    this.walletTip = fork;
                     this.logger.LogWarning($"Reorg detected, wallet tip reverted back to Height = {fork.Height} hash = {fork.HashBlock}.");
+                }
+
+                if (newTip.Height > this.walletTip.Height)
+                {
+                    // check that the new tip is in the chain of the wallet tip
+                    var findTip = newTip.FindAncestorOrSelf(this.walletTip.HashBlock);
+                    Guard.Assert(findTip == this.walletTip); // this should never happen
+
+                    // the wallet is falling behind we need to catch up
+                    this.logger.LogWarning($"block received with height: {newTip.Height} and hash: {block.Header.GetHash()} is too far in advance. put the puller back.");
+                    this.blockNotification.SyncFrom(this.walletTip.HashBlock);
+                    return;
                 }
                 else
                 {
-                    ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
-                    if (incomingBlock.Height > this.walletTip.Height)
-                    {
-                        // the wallet is falling behind we need to catch up
-                        this.logger.LogWarning($"block received with height: {inBestChain.Height} and hash: {block.Header.GetHash()} is too far in advance. put the puller back.");
-                        this.blockNotification.SyncFrom(this.walletTip.HashBlock);
-                        return;
-                    }
+                    // check that the new tip is in the chain of the wallet tip
+                    var findTip = this.walletTip.FindAncestorOrSelf(newTip.HashBlock);
+                    Guard.Assert(findTip == newTip); // this should never happen
                 }
             }
 
-            this.walletTip = this.chain.GetBlock(block.GetHash());
+            this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, this.walletTip);
         }
 
