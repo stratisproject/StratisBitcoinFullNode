@@ -175,9 +175,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode nodeA = builder.CreateStratisPowNode(false, b =>
+                CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
                 {
-                    b
+                    fullNodeBuilder
                     .UseConsensus()
                     .UseIndexStore()
                     .UseMempool()
