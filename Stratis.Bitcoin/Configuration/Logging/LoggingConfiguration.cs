@@ -275,7 +275,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <returns>Console logger settings.</returns>
         public static ConsoleLoggerSettings GetConsoleSettings(this ILoggerFactory loggerFactory)
         {
-            return ((ExtendedLoggerFactory)loggerFactory).ConsoleSettings;
+            ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
+            Guard.NotNull(extendedLoggerFactory, nameof(extendedLoggerFactory));
+            return extendedLoggerFactory.ConsoleSettings;
         }
 
         /// <summary>
@@ -285,7 +287,9 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <returns>Console logger settings.</returns>
         public static ConsoleLoggerProvider GetConsoleLoggerProvider(this ILoggerFactory loggerFactory)
         {
-            return ((ExtendedLoggerFactory)loggerFactory).ConsoleLoggerProvider;
+            ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
+            Guard.NotNull(extendedLoggerFactory, nameof(extendedLoggerFactory));
+            return extendedLoggerFactory.ConsoleLoggerProvider;
         }
     }
 }
