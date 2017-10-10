@@ -401,11 +401,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (generated)
             {
-                // adds the address to the list of tracked addresses
-                this.LoadKeysLookupLock();
-
                 // save the changes to the file
                 this.SaveWallet(wallet);
+
+                // adds the address to the list of tracked addresses
+                this.LoadKeysLookupLock();
             }
 
             return addresses;
@@ -420,6 +420,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 // get address to send the change to
                 changeAddress = account.GetFirstUnusedChangeAddress();
+
+                // persist the address to the wallet files
+                this.SaveWallets();
 
                 // no more change addresses left. create a new one.
                 if (changeAddress == null)
