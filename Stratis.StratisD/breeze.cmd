@@ -1,0 +1,1 @@
+dotnet run -testnet -apiuri=http://localhost:37221

@@ -1,0 +1,1 @@
+dotnet run -testnet -stake=1 -walletname=strattest2 -walletpassword=123456abcABC

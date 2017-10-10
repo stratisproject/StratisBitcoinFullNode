@@ -665,9 +665,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                 IEnumerable<HdAddress> allAddresses = this.keysLookup.Values;
                 foreach (HdAddress address in allAddresses)
                 {
-                    List<TransactionData> toRemove = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
-                    foreach (TransactionData transactionData in toRemove)
+                    // Remove all the UTXO that have been reorged. 
+                    IEnumerable<TransactionData> makeUnspendable = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
+                    foreach (TransactionData transactionData in makeUnspendable)
                         address.Transactions.Remove(transactionData);
+
+                    // Bring back all the UTXO that are now spendable after the reorg.
+                    IEnumerable<TransactionData> makeSpendable = address.Transactions.Where(w => (w.SpendingDetails != null) && (w.SpendingDetails.BlockHeight > fork.Height));
+                    foreach (TransactionData transactionData in makeSpendable)
+                        transactionData.SpendingDetails = null;
                 }
 
                 this.UpdateLastBlockSyncedHeight(fork);
@@ -796,7 +802,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Adds the transaction to the wallet.
+        /// Adds a transaction that credits the wallet with new coins.
+        /// This method is can be called many times for the same transaction (idempotent).
         /// </summary>
         /// <param name="transactionHash">The transaction hash.</param>
         /// <param name="time">The time.</param>
@@ -871,7 +878,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Adds the transaction to the wallet.
+        /// Mark an output as spent, the credit of the output will not be used to calculate the balance.
+        /// The output will remain in the wallet for history (and reorg).
         /// </summary>
         /// <param name="transactionHash">The transaction hash.</param>
         /// <param name="time">The time.</param>
