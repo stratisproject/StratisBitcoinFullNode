@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Configuration
         {
             this.ConnectionManager = new ConnectionManagerSettings();
             this.Log = new LogSettings();
-            this.LoggerFactory = new LoggerFactory();
+            this.LoggerFactory = new ExtendedLoggerFactory();
         }
 
         /// <summary>
