@@ -485,25 +485,28 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<HdAddress> GetHistory(string walletName)
+        public IEnumerable<FlatHistory> GetHistory(string walletName)
         {
-            Guard.NotEmpty(walletName, nameof(walletName));
             this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
 
+            // In order to calculate the fee properly we need to retrieve all the transactions with spending details.
             Wallet wallet = this.GetWalletByName(walletName);
-
-            IEnumerable<HdAddress> res = this.GetHistory(wallet);
+            IEnumerable<FlatHistory> res = this.GetHistory(wallet);
 
             this.logger.LogTrace("(-):*.Count()={0}", res.Count());
             return res;
         }
 
         /// <inheritdoc />
-        public IEnumerable<HdAddress> GetHistory(Wallet wallet)
+        public IEnumerable<FlatHistory> GetHistory(Wallet wallet)
         {
             lock (this.lockObject)
             {
-                return this.GetHistoryInternal(wallet).ToList();
+                // get transactions contained in the wallet
+                List<FlatHistory> items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
+
+                this.logger.LogTrace("(-):*.{0}={1}", nameof(items.Count), items.Count);
+                return items;
             }
         }
 
@@ -521,24 +524,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     yield return address;
                 }
-            }
-        }
-
-        /// <inheritdoc />
-        public IEnumerable<FlatHistory> GetFlatHistory(string walletName)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
-
-            // In order to calculate the fee properly we need to retrieve all the transactions with spending details.
-            Wallet wallet = this.GetWalletByName(walletName);
-
-            lock (this.lockObject)
-            {
-                // get transactions contained in the wallet
-                List<FlatHistory> items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
-
-                this.logger.LogTrace("(-):*.{0}={1}", nameof(items.Count), items.Count);
-                return items;
             }
         }
 

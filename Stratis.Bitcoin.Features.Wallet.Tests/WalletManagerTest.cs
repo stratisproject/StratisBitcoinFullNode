@@ -894,9 +894,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(2, result.Count());
             var address = result.ElementAt(0);
-            Assert.Equal("myUsedExternalAddress", address.Address);
+            Assert.Equal("myUsedExternalAddress", address.Address.Address);
             address = result.ElementAt(1);
-            Assert.Equal("myUsedInternalAddress", address.Address);
+            Assert.Equal("myUsedInternalAddress", address.Address.Address);
         }
 
         [Fact]
@@ -927,9 +927,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(2, result.Count());
             var address = result.ElementAt(0);
-            Assert.Equal("myUsedExternalAddress", address.Address);
+            Assert.Equal("myUsedExternalAddress", address.Address.Address);
             address = result.ElementAt(1);
-            Assert.Equal("myUsedInternalAddress", address.Address);
+            Assert.Equal("myUsedInternalAddress", address.Address.Address);
         }
 
         [Fact]
