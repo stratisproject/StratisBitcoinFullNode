@@ -23,21 +23,23 @@ namespace Stratis.Bitcoin.Features.Notifications
         private readonly LookaheadBlockPuller blockPuller;
         private readonly ChainState chainState;
         private readonly ConcurrentChain chain;
+        private readonly ILoggerFactory loggerFactory;
 
         public BlockNotificationFeature(BlockNotification blockNotification, IConnectionManager connectionManager,
-            LookaheadBlockPuller blockPuller, ChainState chainState, ConcurrentChain chain)
+            LookaheadBlockPuller blockPuller, ChainState chainState, ConcurrentChain chain, ILoggerFactory loggerFactory)
         {
             this.blockNotification = blockNotification;
             this.connectionManager = connectionManager;
             this.blockPuller = blockPuller;
             this.chainState = chainState;
             this.chain = chain;
+            this.loggerFactory = loggerFactory;
         }
 
         public override void Start()
         {
             var connectionParameters = this.connectionManager.Parameters;
-            connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, new LoggerFactory()));
+            connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             this.blockNotification.Start();
             this.chainState.HighestValidatedPoW = this.chain.Tip;

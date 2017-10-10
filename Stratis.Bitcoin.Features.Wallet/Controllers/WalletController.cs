@@ -495,11 +495,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 var context = new TransactionBuildContext(
                     new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] {new Recipient {Amount = request.Amount, ScriptPubKey = destination}}.ToList(),
+                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
                     request.Password)
                 {
                     FeeType = FeeParser.Parse(request.FeeType),
-                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1
+                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                    Shuffle = true
                 };
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
