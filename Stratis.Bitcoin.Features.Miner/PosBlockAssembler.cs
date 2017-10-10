@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
 
         public PosBlockAssembler(

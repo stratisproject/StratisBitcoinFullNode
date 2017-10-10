@@ -58,6 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly StakeValidator stakeValidator;
         public StakeValidator StakeValidator { get { return this.stakeValidator; } }
 
+        /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
         private readonly ConcurrentChain chain;
         private readonly CoinView coinView;
