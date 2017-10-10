@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Tests RPC getpeersinfo
+        /// Tests whether the RPC method "getpeersinfo" can be called and returns a non-empty result.
         /// </summary>
         [Fact]
         public void CanGetPeersInfo()
@@ -125,7 +125,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Can call getpeersinfo by string arguments
+        /// Tests whether the RPC method "getpeersinfo" can be called and returns a string result suitable for console output.
+        /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
         [Fact]
         public void CanGetPeersInfoByStringArgs()
@@ -139,13 +140,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 {
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("getpeerinfo").ResultString;
-                    Assert.True(resp.StartsWith("[\r\n  {\r\n    \"id\": 0,\r\n    \"addr\": \"["));
+                    Assert.True(resp.StartsWith("[" + Environment.NewLine + "  {" + Environment.NewLine + "    \"id\": 0," + Environment.NewLine + "    \"addr\": \"["));
                 }
             }
         }
 
         /// <summary>
-        /// Can GetBlockHash by string arguments
+        /// Tests whether the RPC method "getblockhash" can be called and returns the expected string result suitable for console output.
+        /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
         [Fact]
         public void CanGetBlockHashByStringArgs()
@@ -165,7 +167,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Can CreateIndex by string arguments
+        /// Tests whether the RPC method "createindex" can be called and returns the expected string result suitable for console output.
+        /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
         [Fact]
         public void CanCreateIndexByStringArgs()
@@ -197,7 +200,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Tests RPC generate
+        /// Tests whether the RPC method "generate" can be called and returns a string result suitable for console output.
+        /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
         [Fact]
         public void CanGenerateByStringArgs()
@@ -211,7 +215,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 {
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("generate", "1").ResultString;
-                    Assert.True(resp.StartsWith("[\r\n  \""));
+                    Assert.True(resp.StartsWith("[" + Environment.NewLine + "  \""));
                 }
             }
         }
