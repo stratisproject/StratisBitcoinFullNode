@@ -281,10 +281,10 @@ namespace Stratis.Bitcoin.Configuration.Logging
         }
 
         /// <summary>
-        /// Obtains configuration of the console logger.
+        /// Obtains configuration of the console logger provider.
         /// </summary>
         /// <param name="loggerFactory">Logger factory interface being extended.</param>
-        /// <returns>Console logger settings.</returns>
+        /// <returns>Console logger provider.</returns>
         public static ConsoleLoggerProvider GetConsoleLoggerProvider(this ILoggerFactory loggerFactory)
         {
             ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
