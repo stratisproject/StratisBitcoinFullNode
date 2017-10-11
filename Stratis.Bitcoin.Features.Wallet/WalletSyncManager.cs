@@ -126,13 +126,14 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.logger.LogTrace("Wallet tip set to '{0}/{1}'.", walletTip.HashBlock, walletTip.Height);
                 }
 
+                // use the temporary wallet tip otherwise we can't detect what we needed to catch up.
                 ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
-                if (incomingBlock.Height > this.walletTip.Height)
+                if (incomingBlock.Height > walletTip.Height)
                 {
                     CancellationToken token = this.nodeLifetime.ApplicationStopping;
 
                     // The wallet is falling behind we need to catch up.
-                    ChainedBlock next = this.walletTip;
+                    ChainedBlock next = walletTip;
                     while (next != incomingBlock)
                     {
                         token.ThrowIfCancellationRequested();
