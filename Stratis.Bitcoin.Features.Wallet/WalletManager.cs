@@ -487,6 +487,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public IEnumerable<FlatHistory> GetHistory(string walletName)
         {
+            Guard.NotEmpty(walletName, nameof(walletName));
             this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
 
             // In order to calculate the fee properly we need to retrieve all the transactions with spending details.
@@ -500,9 +501,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public IEnumerable<FlatHistory> GetHistory(Wallet wallet)
         {
+            Guard.NotNull(wallet, nameof(wallet));
             lock (this.lockObject)
             {
-                // get transactions contained in the wallet
+                // Get transactions contained in the wallet.
                 List<FlatHistory> items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
 
                 this.logger.LogTrace("(-):*.{0}={1}", nameof(items.Count), items.Count);
@@ -979,12 +981,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                         continue;
                     }
 
-                    // calculate how many accounts to add to keep a buffer of 20 unused addresses
+                    // Calculate how many accounts to add to keep a buffer of 20 unused addresses.
                     int lastUsedAddressIndex = account.GetLastUsedAddress(isChange).Index;
                     int addressesCount = isChange ? account.InternalAddresses.Count() : account.ExternalAddresses.Count();
                     int emptyAddressesCount = addressesCount - lastUsedAddressIndex - 1;
                     int accountsToAdd = UnusedAddressesBuffer - emptyAddressesCount;
                     account.CreateAddresses(this.network, accountsToAdd, isChange);
+
+                    // Persists the address to the wallet file.
+                    this.SaveWallet(wallet);
                 }
             }
 
