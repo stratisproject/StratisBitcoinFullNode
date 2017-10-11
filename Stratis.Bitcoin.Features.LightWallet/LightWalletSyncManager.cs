@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly IBlockNotification blockNotification;
         private readonly CoinType coinType;
         private readonly ILogger logger;
-        private readonly Signals.ISignals signals;
+        private readonly ISignals signals;
         private ChainedBlock walletTip;
         private readonly INodeLifetime nodeLifetime;
         private IDisposable sub = null;
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             ConcurrentChain chain,
             Network network,
             IBlockNotification blockNotification,
-            Signals.ISignals signals,
+            ISignals signals,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory)
         {
