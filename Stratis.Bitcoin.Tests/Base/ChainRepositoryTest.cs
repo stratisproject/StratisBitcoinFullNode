@@ -5,13 +5,14 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests.Base
 {
     public class ChainRepositoryTest : TestBase
     {
         [Fact]
-        public void SaveWritesChainToDisk()
+        public async Task SaveWritesChainToDiskAsync()
         {
             string dir = AssureEmptyDir("TestData/ChainRepository/SaveWritesChainToDisk");
             var chain = new ConcurrentChain(Network.RegTest);
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var repo = new ChainRepository(dir))
             {
-                repo.Save(chain).Wait();
+                await repo.Save(chain).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         [Fact]
-        public void GetChainReturnsConcurrentChainFromDisk()
+        public async Task GetChainReturnsConcurrentChainFromDiskAsync()
         {
             string dir = AssureEmptyDir("TestData/ChainRepository/GetChainReturnsConcurrentChainFromDisk");
             var chain = new ConcurrentChain(Network.RegTest);
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var session = new DBreezeSingleThreadSession("session", dir))
             {
-                session.Execute(() =>
+                await session.Execute(() =>
                 {
                     var toSave = tip;
                     List<ChainedBlock> blocks = new List<ChainedBlock>();
@@ -59,13 +60,13 @@ namespace Stratis.Bitcoin.Tests.Base
                     }
 
                     session.Transaction.Commit();
-                }).Wait();
+                }).ConfigureAwait(false);
             }
 
             using (var repo = new ChainRepository(dir))
             {
 				var testChain = new ConcurrentChain(Network.RegTest);
-                repo.Load(testChain).GetAwaiter().GetResult();
+                await repo.Load(testChain).ConfigureAwait(false);
                 Assert.Equal(tip, testChain.Tip);
             }
         }        

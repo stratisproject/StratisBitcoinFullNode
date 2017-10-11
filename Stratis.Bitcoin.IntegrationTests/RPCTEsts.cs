@@ -8,17 +8,18 @@ using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class RPCTests
     {
         [Fact]
-        public void CheckRPCFailures()
+        public async Task CheckRPCFailuresAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var node = builder.CreateStratisPowNode();
+                var node = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
                 var hash = client.GetBestBlockHash();
@@ -62,11 +63,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Tests RPC getbestblockhash.
         /// </summary>
         [Fact]
-        public void CanGetGenesisFromRPC()
+        public async Task CanGetGenesisFromRPCAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                RPCClient rpc = builder.CreateStratisPowNode().CreateRPCClient();
+                RPCClient rpc = (await builder.CreateStratisPowNodeAsync().ConfigureAwait(false)).CreateRPCClient();
                 builder.StartAll();
                 RPCResponse response = rpc.SendCommand(RPCOperations.getblockhash, 0);
                 string actualGenesis = (string)response.Result;
@@ -79,11 +80,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Tests RPC getblockheader.
         /// </summary>
         [Fact]
-        public void CanGetBlockHeaderFromRPC()
+        public async Task CanGetBlockHeaderFromRPCAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                CoreNode node = builder.CreateStratisPowNode();
+                CoreNode node = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 RPCClient rpc = node.CreateRPCClient();
                 builder.StartAll();
 
@@ -108,11 +109,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Tests whether the RPC method "getpeersinfo" can be called and returns a non-empty result.
         /// </summary>
         [Fact]
-        public void CanGetPeersInfo()
+        public async Task CanGetPeersInfoAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                CoreNode nodeA = builder.CreateStratisPowNode();
+                CoreNode nodeA = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 using (Node nodeB = nodeA.CreateNodeClient())
@@ -129,11 +130,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
         [Fact]
-        public void CanGetPeersInfoByStringArgs()
+        public async Task CanGetPeersInfoByStringArgsAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                CoreNode nodeA = builder.CreateStratisPowNode();
+                CoreNode nodeA = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 using (Node nodeB = nodeA.CreateNodeClient())
@@ -150,11 +151,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
         [Fact]
-        public void CanGetBlockHashByStringArgs()
+        public async Task CanGetBlockHashByStringArgsAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                CoreNode nodeA = builder.CreateStratisPowNode();
+                CoreNode nodeA = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 using (Node nodeB = nodeA.CreateNodeClient())
@@ -171,18 +172,18 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
         [Fact]
-        public void CanCreateIndexByStringArgs()
+        public async Task CanCreateIndexByStringArgsAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                CoreNode nodeA = await builder.CreateStratisPowNodeAsync(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                     .UseConsensus()
                     .UseIndexStore()
                     .UseMempool()
                     .AddRPC();
-                });
+                }).ConfigureAwait(false);
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 using (Node nodeB = nodeA.CreateNodeClient())
@@ -204,11 +205,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
         [Fact]
-        public void CanGenerateByStringArgs()
+        public async Task CanGenerateByStringArgsAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                CoreNode nodeA = builder.CreateStratisPowNode();
+                CoreNode nodeA = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 using (Node nodeB = nodeA.CreateNodeClient())

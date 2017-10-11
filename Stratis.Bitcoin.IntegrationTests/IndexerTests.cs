@@ -6,28 +6,29 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.RPC;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class IndexStoreTests
     {     
-        private CoreNode CreateStratisNode(NodeBuilder builder)
+        private async Task<CoreNode> CreateStratisNodeAsync(NodeBuilder builder)
         {
-            return builder.CreateStratisPowNode(false, fullNodeBuilder =>
+            return await builder.CreateStratisPowNodeAsync(false, fullNodeBuilder =>
             {
                 fullNodeBuilder
                 .UseConsensus()
                 .UseIndexStore()
                 .AddRPC();
-            });
+            }).ConfigureAwait(false);
         }
 
         [Fact]
-        public void CanCreateIndexFromRPC()
+        public async Task CanCreateIndexFromRPCAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var node = CreateStratisNode(builder);
+                var node = await CreateStratisNodeAsync(builder).ConfigureAwait(false);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
                 var response = bool.Parse((string)client.SendCommand("createindex", "Output", false,
@@ -38,11 +39,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
         
         [Fact]
-        public void CanDropIndexFromRPC()
+        public async Task CanDropIndexFromRPCAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var node = CreateStratisNode(builder);
+                var node = await CreateStratisNodeAsync(builder).ConfigureAwait(false);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
                 bool response1 = bool.Parse((string)client.SendCommand("createindex", "Output", false,
@@ -55,11 +56,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
         
         [Fact]
-        public void CanListIndexesFromRPC()
+        public async Task CanListIndexesFromRPCAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var node = CreateStratisNode(builder);
+                var node = await CreateStratisNodeAsync(builder).ConfigureAwait(false);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
                 bool response1 = bool.Parse((string)client.SendCommand("createindex", "Output", false,
@@ -77,11 +78,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
         
         [Fact]
-        public void CanDescribeIndexFromRPC()
+        public async Task CanDescribeIndexFromRPCAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var node = CreateStratisNode(builder);
+                var node = await CreateStratisNodeAsync(builder).ConfigureAwait(false);
                 builder.StartAll();
                 var client = node.CreateRPCClient();
                 var expr = "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })";
@@ -94,11 +95,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
         
         [Fact]
-        public void CanRegisterSingleValueIndexFromIndexStoreSettings()
+        public async Task CanRegisterSingleValueIndexFromIndexStoreSettingsAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var node = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                var node = await builder.CreateStratisPowNodeAsync(false, fullNodeBuilder =>
                 {
                     fullNodeBuilder
                     .UseConsensus()
@@ -107,7 +108,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         settings.RegisterIndex("Output", "(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })", false);
                     })
                     .AddRPC();
-                 });
+                 }).ConfigureAwait(false);
 
                 builder.StartAll();
                 
@@ -130,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var repository = node.FullNode.NodeService<IIndexRepository>() as IndexRepository;
 
-                repository.PutAsync(block.GetHash(), new List<Block> { block, block2 }).GetAwaiter().GetResult();
+                await repository.PutAsync(block.GetHash(), new List<Block> { block, block2 }).ConfigureAwait(false);
 
                 var indexTable = repository.Indexes["Output"].Table;
                 var expectedJSON = repository.Indexes["Output"].ToString();

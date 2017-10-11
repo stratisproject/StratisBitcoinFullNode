@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
@@ -9,14 +10,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     public sealed class BlockStoreLoopStepReorganiseTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks_InMemory()
+        public async Task ReorganiseBlockRepository_WithBlockRepositoryAndChainOutofSync_ReorganiseBlocks_InMemoryAsync()
         {
             var blocks = CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 15 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).ConfigureAwait(false);
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 //Reorganise (delete) blocks from the block repository that is not found
                 var nextChainedBlock = block10;
                 var reorganiseStep = new ReorganiseBlockRepositoryStep(fluent.Loop, this.loggerFactory);
-                reorganiseStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                await reorganiseStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).ConfigureAwait(false);
 
                 Assert.Equal(fluent.Loop.StoreTip.Header.GetHash(), block10.Previous.Header.GetHash());
                 Assert.Equal(fluent.Loop.BlockRepository.BlockHash, block10.Previous.Header.GetHash());

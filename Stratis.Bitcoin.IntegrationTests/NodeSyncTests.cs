@@ -10,12 +10,12 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class NodeSyncTests
     {
         [Fact]
-        public void NodesCanConnectToEachOthers()
+        public async Task NodesCanConnectToEachOthersAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var node1 = builder.CreateStratisPowNode();
-                var node2 = builder.CreateStratisPowNode();
+                var node1 = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var node2 = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 Assert.Equal(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
                 Assert.Equal(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
@@ -35,41 +35,41 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanStratisSyncFromCore()
+        public async Task CanStratisSyncFromCoreAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var coreNode = builder.CreateNode();
+                var stratisNode = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var coreNode = await builder.CreateNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
 
                 // not in IBD
                 stratisNode.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
-                var tip = coreNode.FindBlock(10).Last();
+                var tip = (await coreNode.FindBlockAsync(10).ConfigureAwait(false)).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
 
                 //Now check if Core connect to stratis
                 stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
-                tip = coreNode.FindBlock(10).Last();
+                tip = (await coreNode.FindBlockAsync(10).ConfigureAwait(false)).Last();
                 coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
             }
         }
 
         [Fact]
-        public void CanStratisSyncFromStratis()
+        public async Task CanStratisSyncFromStratisAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var stratisNodeSync = builder.CreateStratisPowNode();
-                var coreCreateNode = builder.CreateNode();
+                var stratisNode = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var stratisNodeSync = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var coreCreateNode = await builder.CreateNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
 
                 // not in IBD
@@ -78,9 +78,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
-                var tip = coreCreateNode.FindBlock(5).Last();
+                var tip = (await coreCreateNode.FindBlockAsync(5).ConfigureAwait(false)).Last();
                 stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
 
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
 
                 // wait for download and assert
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 bestBlockHash = stratisNodeSync.CreateRPCClient().GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
 
@@ -97,13 +97,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanCoreSyncFromStratis()
+        public async Task CanCoreSyncFromStratisAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var coreNodeSync = builder.CreateNode();
-                var coreCreateNode = builder.CreateNode();
+                var stratisNode = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var coreNodeSync = await builder.CreateNodeAsync().ConfigureAwait(false);
+                var coreCreateNode = await builder.CreateNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
 
                 // not in IBD
@@ -111,10 +111,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
-                var tip = coreCreateNode.FindBlock(5).Last();
+                var tip = (await coreCreateNode.FindBlockAsync(5).ConfigureAwait(false)).Last();
                 stratisNode.CreateRPCClient().AddNode(coreCreateNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash());
-                TestHelper.WaitLoop(() => stratisNode.FullNode.HighestPersistedBlock().HashBlock == stratisNode.FullNode.Chain.Tip.HashBlock);
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreCreateNode.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
+                await TestHelper.WaitLoopAsync(() => stratisNode.FullNode.HighestPersistedBlock().HashBlock == stratisNode.FullNode.Chain.Tip.HashBlock).ConfigureAwait(false);
 
                 var bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
@@ -124,24 +124,24 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreNodeSync.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
 
                 // wait for download and assert
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNodeSync.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNodeSync.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 bestBlockHash = coreNodeSync.CreateRPCClient().GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
             }
         }
 
         [Fact]
-        public void Given__NodesAreSynced__When__ABigReorgHappens__Then__TheReorgIsIgnored()
+        public async Task Given__NodesAreSynced__When__ABigReorgHappens__Then__TheReorgIsIgnoredAsync()
         {
             // Temporary fix so the Network static initialize will not break.
             var m = Network.Main;
             try
             {
-                using (NodeBuilder builder = NodeBuilder.Create())
+                using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
                 {
-                    var stratisMiner = builder.CreateStratisPosNode();
-                    var stratisSyncer = builder.CreateStratisPosNode();
-                    var stratisReorg = builder.CreateStratisPosNode();
+                    var stratisMiner = await builder.CreateStratisPosNodeAsync().ConfigureAwait(false);
+                    var stratisSyncer = await builder.CreateStratisPosNodeAsync().ConfigureAwait(false);
+                    var stratisReorg = await builder.CreateStratisPosNodeAsync().ConfigureAwait(false);
 
                     builder.StartAll();
                     stratisMiner.NotInIBD();
@@ -157,12 +157,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                     stratisMiner.GenerateStratisWithMiner(1);
 
                     // wait for block repo for block sync to work
-                    TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
+                    await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisMiner)).ConfigureAwait(false);
                     stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                     stratisMiner.CreateRPCClient().AddNode(stratisSyncer.Endpoint, true);
 
-                    TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
-                    TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisReorg));
+                    await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer)).ConfigureAwait(false);
+                    await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisMiner, stratisReorg)).ConfigureAwait(false);
 
 
                     // create a reorg by mining on two different chains
@@ -172,9 +172,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     var t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(10));
                     var t2 = Task.Run(() => stratisReorg.GenerateStratisWithMiner(12));
-                    Task.WaitAll(t1, t2);
-                    TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
-                    TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
+                    await Task.WhenAll(t1, t2).ConfigureAwait(false);
+                    await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisMiner)).ConfigureAwait(false);
+                    await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisReorg)).ConfigureAwait(false);
 
                     // The hash before the reorg node is connected.
                     var hashBeforeReorg = stratisMiner.FullNode.Chain.Tip.HashBlock;
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     stratisSyncer.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
 
                     // wait for the chains to catch up
-                    TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
+                    await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer)).ConfigureAwait(false);
 
                     // check that a reorg did not happen.
                     Assert.Equal(hashBeforeReorg, stratisSyncer.FullNode.Chain.Tip.HashBlock);

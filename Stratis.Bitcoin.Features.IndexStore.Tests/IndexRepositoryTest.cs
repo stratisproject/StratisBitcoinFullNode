@@ -18,10 +18,10 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
     public class IndexRepositoryTest : TestBase
     {
         [Fact]
-        public void InitializesGenBlockAndTxIndexOnFirstLoad_IX()
+        public async Task InitializesGenBlockAndTxIndexOnFirstLoad_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/InitializeGenBlockAndTxIndex");
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
             }
 
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
         }
 
         [Fact]
-        public void DoesNotOverwriteExistingBlockAndTxIndexOnFirstLoad_IX()
+        public async Task DoesNotOverwriteExistingBlockAndTxIndexOnFirstLoad_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/NoOverwriteExistingBlockAndTxIndex");
 
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
             }
 
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
         }
 
         [Fact]
-        public void GetTrxAsyncWithoutTransactionIndexReturnsNewTransaction_IX()
+        public async Task GetTrxAsyncWithoutTransactionIndexReturnsNewTransaction_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxAsyncWithoutTxIndex");
 
@@ -81,17 +81,16 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxAsync(uint256.Zero);
-                task.Wait();
+                var result = await repository.GetTrxAsync(uint256.Zero).ConfigureAwait(false);
 
-                Assert.Equal(default(Transaction), task.Result);
+                Assert.Equal(default(Transaction), result);
             }
         }
 
         [Fact]
-        public void GetTrxAsyncWithoutTransactionInIndexReturnsNull_IX()
+        public async Task GetTrxAsyncWithoutTransactionInIndexReturnsNull_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxAsyncWithoutTransactionFound");
 
@@ -104,17 +103,16 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxAsync(new uint256(65));
-                task.Wait();
+                var result = await repository.GetTrxAsync(new uint256(65)).ConfigureAwait(false);
 
-                Assert.Null(task.Result);
+                Assert.Null(result);
             }
         }
 
         [Fact]
-        public void GetTrxAsyncWithTransactionReturnsExistingTransaction_IX()
+        public async Task GetTrxAsyncWithTransactionReturnsExistingTransaction_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxAsyncWithTransaction");
             var trans = new Transaction();
@@ -134,17 +132,16 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxAsync(trans.GetHash());
-                task.Wait();
+                var result = await repository.GetTrxAsync(trans.GetHash()).ConfigureAwait(false);
 
-                Assert.Equal((uint)125, task.Result.Version);
+                Assert.Equal((uint)125, result.Version);
             }
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithoutTxIndexReturnsDefaultId_IX()
+        public async Task GetTrxBlockIdAsyncWithoutTxIndexReturnsDefaultId_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxBlockIdAsyncWithoutTxIndex");
 
@@ -156,17 +153,16 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
+                var result = await repository.GetTrxBlockIdAsync(new uint256(26)).ConfigureAwait(false);
 
-                Assert.Equal(default(uint256), task.Result);
+                Assert.Equal(default(uint256), result);
             }
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithoutExistingTransactionReturnsNull_IX()
+        public async Task GetTrxBlockIdAsyncWithoutExistingTransactionReturnsNull_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxBlockIdAsyncWithoutTransaction");
 
@@ -178,17 +174,16 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
+                var result = await repository.GetTrxBlockIdAsync(new uint256(26)).ConfigureAwait(false);
 
-                Assert.Null(task.Result);
+                Assert.Null(result);
             }
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithTransactionReturnsBlockId_IX()
+        public async Task GetTrxBlockIdAsyncWithTransactionReturnsBlockId_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetTrxBlockIdAsyncWithoutTransaction");
 
@@ -201,17 +196,16 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
+                var result = await repository.GetTrxBlockIdAsync(new uint256(26)).ConfigureAwait(false);
 
-                Assert.Equal(new uint256(42), task.Result);
+                Assert.Equal(new uint256(42), result);
             }
         }
 
         [Fact]
-        public void PutAsyncWritesBlocksAndTransactionsToDbAndSavesNextBlockHash_IX()
+        public async Task PutAsyncWritesBlocksAndTransactionsToDbAndSavesNextBlockHash_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/PutAsyncStoresBlocksAndTxs");
 
@@ -243,10 +237,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.PutAsync(nextBlockHash, blocks);
-                task.Wait();
+                await repository.PutAsync(nextBlockHash, blocks).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -276,7 +269,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
         }
 
         [Fact]
-        public void SetTxIndexUpdatesTxIndex_IX()
+        public async Task SetTxIndexUpdatesTxIndex_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/SetTxIndexUpdatesTxIndex");
             using (var engine = new DBreezeEngine(dir))
@@ -286,10 +279,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.SetTxIndex(false);
-                task.Wait();
+                await repository.SetTxIndex(false).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -302,7 +294,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
         }
 
         [Fact]
-        public void SetBlockHashUpdatesBlockHash_IX()
+        public async Task SetBlockHashUpdatesBlockHash_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/SetBlockHashUpdatesBlockHash");
             using (var engine = new DBreezeEngine(dir))
@@ -312,10 +304,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.SetBlockHash(new uint256(56));
-                task.Wait();
+                await repository.SetBlockHash(new uint256(56)).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -328,7 +319,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
         }
 
         [Fact]
-        public void GetAsyncWithExistingBlockReturnsBlock_IX()
+        public async Task GetAsyncWithExistingBlockReturnsBlock_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetAsyncWithExistingBlock");
             var block = new Block();
@@ -340,31 +331,29 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetAsync(block.GetHash());
-                task.Wait();
+                var result = await repository.GetAsync(block.GetHash()).ConfigureAwait(false);
 
-                Assert.Equal(block.GetHash(), task.Result.GetHash());
+                Assert.Equal(block.GetHash(), result.GetHash());
             }
         }
 
         [Fact]
-        public void GetAsyncWithoutExistingBlockReturnsNull_IX()
+        public async Task GetAsyncWithoutExistingBlockReturnsNull_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/GetAsyncWithoutExistingBlock");
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetAsync(new uint256());
-                task.Wait();
+                var result = await repository.GetAsync(new uint256()).ConfigureAwait(false);
 
-                Assert.Null(task.Result);
+                Assert.Null(result);
             }
         }
 
         [Fact]
-        public void ExistAsyncWithExistingBlockReturnsTrue_IX()
+        public async Task ExistAsyncWithExistingBlockReturnsTrue_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/ExistAsyncWithExistingBlock");
             var block = new Block();
@@ -376,31 +365,29 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.ExistAsync(block.GetHash());
-                task.Wait();
+                var result = await repository.ExistAsync(block.GetHash()).ConfigureAwait(false);
 
-                Assert.True(task.Result);
+                Assert.True(result);
             }
         }
 
         [Fact]
-        public void ExistAsyncWithoutExistingBlockReturnsFalse_IX()
+        public async Task ExistAsyncWithoutExistingBlockReturnsFalse_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/ExistAsyncWithoutExistingBlock");
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.ExistAsync(new uint256());
-                task.Wait();
+                var result = await repository.ExistAsync(new uint256()).ConfigureAwait(false);
 
-                Assert.False(task.Result);
+                Assert.False(result);
             }
         }
 
         [Fact]
-        public void CreateIndexCreatesMultiValueIndex()
+        public async Task CreateIndexCreatesMultiValueIndexAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/CreateIndexCreatesMultiValueIndex");
             var block = new Block();
@@ -424,18 +411,17 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
             string indexTable;
             string expectedJSON;
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                (repository as IndexRepository).SetTxIndex(true).GetAwaiter().GetResult();
+                await (repository as IndexRepository).SetTxIndex(true).ConfigureAwait(false);
 
                 // Insert a block before creating the index
-                (repository as IndexRepository).PutAsync(block.GetHash(), new List<Block> { block }).GetAwaiter().GetResult();
+                await (repository as IndexRepository).PutAsync(block.GetHash(), new List<Block> { block }).ConfigureAwait(false);
 
-                var task = repository.CreateIndex("Script", true, builder);
-                task.Wait();
+                await repository.CreateIndex("Script", true, builder).ConfigureAwait(false);
 
                 // Insert a block after creating the index
-                (repository as IndexRepository).PutAsync(block2.GetHash(), new List<Block> { block2 }).GetAwaiter().GetResult();
+                await (repository as IndexRepository).PutAsync(block2.GetHash(), new List<Block> { block2 }).ConfigureAwait(false);
 
                 var index = new Index(repository as IndexRepository, "Script", true, builder);                
                 indexTable = index.Table;
@@ -473,7 +459,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
         }
 
         [Fact]
-        public void CreateIndexCreatesSingleValueIndex()
+        public async Task CreateIndexCreatesSingleValueIndexAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/CreateIndexCreatesSingleValueIndex");
 
@@ -498,18 +484,17 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
             string indexTable;
             string expectedJSON;
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                (repository as IndexRepository).SetTxIndex(true).GetAwaiter().GetResult();
+                await (repository as IndexRepository).SetTxIndex(true).ConfigureAwait(false);
 
                 // Insert a block before creating the index
-                (repository as IndexRepository).PutAsync(block.GetHash(), new List<Block> { block }).GetAwaiter().GetResult();
+                await (repository as IndexRepository).PutAsync(block.GetHash(), new List<Block> { block }).ConfigureAwait(false);
 
-                var task = repository.CreateIndex("Output", false, builder);
-                task.Wait();
+                await repository.CreateIndex("Output", false, builder).ConfigureAwait(false);
 
                 // Insert a block after creating the index
-                (repository as IndexRepository).PutAsync(block2.GetHash(), new List<Block> { block2 }).GetAwaiter().GetResult();
+                await (repository as IndexRepository).PutAsync(block2.GetHash(), new List<Block> { block2 }).ConfigureAwait(false);
 
                 var index = new Index(repository as IndexRepository, "Output", false, builder);
                 indexTable = index.Table;
@@ -535,7 +520,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
         }
 
         [Fact]
-        public void DeleteAsyncRemovesBlocksAndTransactions_IX()
+        public async Task DeleteAsyncRemovesBlocksAndTransactions_IXAsync()
         {
             var dir = AssureEmptyDir("TestData/IndexRepository/DeleteAsyncRemovesBlocksAndTransactions");
             var block = new Block();
@@ -550,10 +535,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.DeleteAsync(new uint256(45), new List<uint256>() { block.GetHash() });
-                task.Wait();
+                await repository.DeleteAsync(new uint256(45), new List<uint256>() { block.GetHash() }).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -570,10 +554,10 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
             }
         }
 
-        private Features.IndexStore.IIndexRepository SetupRepository(Network main, string dir)
+        private async Task<Features.IndexStore.IIndexRepository> SetupRepositoryAsync(Network main, string dir)
         {
             var repository = new IndexRepository(main, dir, this.loggerFactory);
-            repository.Initialize().GetAwaiter().GetResult();
+            await repository.Initialize().ConfigureAwait(false);
 
             return repository;
         }

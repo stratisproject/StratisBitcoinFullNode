@@ -3,18 +3,28 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class TestHelper
     {
-        public static void WaitLoop(Func<bool> act)
+        public static async Task WaitLoopAsync(Func<bool> act)
         {
             var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
             while(!act())
             {
                 cancel.Token.ThrowIfCancellationRequested();
-                Thread.Sleep(50);
+                await Task.Delay(50).ConfigureAwait(false);
+            }
+        }
+        public static async Task WaitLoopAsync(Func<Task<bool>> act)
+        {
+            var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
+            while (!await act().ConfigureAwait(false))
+            {
+                cancel.Token.ThrowIfCancellationRequested();
+                await Task.Delay(50).ConfigureAwait(false);
             }
         }
 

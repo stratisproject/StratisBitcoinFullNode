@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            new WalletTests().CanSendToAddress();
+            await (new WalletTests()).CanSendToAddressAsync().ConfigureAwait(false);
         }
     }
 }

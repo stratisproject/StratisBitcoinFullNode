@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 		}
 
 		[Fact]
-		public void GetBlockAsyncBlockInCacheReturnsBlock_IX()
+		public async Task GetBlockAsyncBlockInCacheReturnsBlock_IXAsync()
 		{
 			object block = null;			
 			uint256 blockId = new uint256(2389704);
@@ -67,14 +67,13 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 				})
 				.Returns(true);
 
-			var task = this.indexStoreCache.GetBlockAsync(blockId);
-			task.Wait();
+            await this.indexStoreCache.GetBlockAsync(blockId).ConfigureAwait(false);
 
 			Assert.Equal(1513, ((Block)block).Header.Version);
 		}
 
 		[Fact]
-		public void GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock_IX()
+		public async Task GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock_IXAsync()
 		{
 			uint256 blockId = new uint256(2389704);
 			Block repositoryBlock = new Block();
@@ -85,15 +84,14 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			var memoryCacheStub = new MemoryCacheStub();
 			this.indexStoreCache = new IndexStoreCache(this.indexRepository.Object, memoryCacheStub, this.loggerFactory);
 
-			var result = this.indexStoreCache.GetBlockAsync(blockId);
-			result.Wait();
+			var result = await this.indexStoreCache.GetBlockAsync(blockId).ConfigureAwait(false);
 
 			Assert.Equal(blockId, memoryCacheStub.GetLastCreateCalled());
-			Assert.Equal(1451, result.Result.Header.Version);
+			Assert.Equal(1451, result.Header.Version);
 		}
 
 		[Fact]
-		public void GetBlockByTrxAsyncBlockInCacheReturnsBlock_IX()
+		public async Task GetBlockByTrxAsyncBlockInCacheReturnsBlock_IXAsync()
 		{
 			uint256 txId = new uint256(3252);
 			uint256 blockId = new uint256(2389704);
@@ -106,14 +104,13 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			var memoryCacheStub = new MemoryCacheStub(dict);
 			this.indexStoreCache = new IndexStoreCache(this.indexRepository.Object, memoryCacheStub, this.loggerFactory);
 
-			var result = this.indexStoreCache.GetBlockByTrxAsync(txId);
-			result.Wait();
+            var result = await this.indexStoreCache.GetBlockByTrxAsync(txId).ConfigureAwait(false);
 
-			Assert.Equal(1451, result.Result.Header.Version);
+			Assert.Equal(1451, result.Header.Version);
 		}
 
 		[Fact]
-		public void GetBlockByTrxAsyncBlockNotInCacheLookupInRepository_IX()
+		public async Task GetBlockByTrxAsyncBlockNotInCacheLookupInRepository_IXAsync()
 		{
 			uint256 txId = new uint256(3252);
 			uint256 blockId = new uint256(2389704);
@@ -127,15 +124,14 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			this.indexRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
 				.Returns(Task.FromResult(blockId));
 
-			var result = this.indexStoreCache.GetBlockByTrxAsync(txId);
-			result.Wait();
+			var result = await this.indexStoreCache.GetBlockByTrxAsync(txId).ConfigureAwait(false);
 
-			Assert.Equal(1451, result.Result.Header.Version);
+			Assert.Equal(1451, result.Header.Version);
 			Assert.Equal(txId, memoryCacheStub.GetLastCreateCalled());
 		}
 
 		[Fact]
-		public void GetBlockByTrxAsyncBlockNotInCacheLookupNotInRepositoryReturnsNull_IX()
+		public async Task GetBlockByTrxAsyncBlockNotInCacheLookupNotInRepositoryReturnsNull_IXAsync()
 		{
 			uint256 txId = new uint256(3252);			
 			var memoryCacheStub = new MemoryCacheStub();
@@ -143,14 +139,13 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			this.indexRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
 				.Returns(Task.FromResult((uint256)null));
 
-			var result = this.indexStoreCache.GetBlockByTrxAsync(txId);
-			result.Wait();
+            var result = await this.indexStoreCache.GetBlockByTrxAsync(txId).ConfigureAwait(false);
 
-			Assert.Null(result.Result);
+			Assert.Null(result);
 		}
 
 		[Fact]
-		public void GetTrxAsyncReturnsTransactionFromBlockInCache_IX()
+		public async Task GetTrxAsyncReturnsTransactionFromBlockInCache_IXAsync()
 		{
 			var trans = new Transaction();
 			trans.Version = 15121;
@@ -166,14 +161,13 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			var memoryCacheStub = new MemoryCacheStub(dict);
 			this.indexStoreCache = new IndexStoreCache(this.indexRepository.Object, memoryCacheStub, this.loggerFactory);
 
-			var result = this.indexStoreCache.GetTrxAsync(trans.GetHash());
-			result.Wait();
+			var result = await this.indexStoreCache.GetTrxAsync(trans.GetHash()).ConfigureAwait(false);
 
-			Assert.Equal(trans.GetHash(), result.Result.GetHash());
+			Assert.Equal(trans.GetHash(), result.GetHash());
 		}
 
 		[Fact]
-		public void GetTrxAsyncReturnsNullWhenNotInCache_IX()
+		public async Task GetTrxAsyncReturnsNullWhenNotInCache_IXAsync()
 		{
 			var trans = new Transaction();
 			trans.Version = 15121;
@@ -183,10 +177,9 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 			var memoryCacheStub = new MemoryCacheStub();
 			this.indexStoreCache = new IndexStoreCache(this.indexRepository.Object, memoryCacheStub, this.loggerFactory);
 
-			var result = this.indexStoreCache.GetTrxAsync(trans.GetHash());
-			result.Wait();
+			var result = await this.indexStoreCache.GetTrxAsync(trans.GetHash()).ConfigureAwait(false);
 
-			Assert.Null(result.Result);
+			Assert.Null(result);
 		}
 	}
 }

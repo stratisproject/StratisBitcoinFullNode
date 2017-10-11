@@ -52,7 +52,7 @@
         }
 
         [Fact]
-        public void GetBlockAsyncBlockInCacheReturnsBlock()
+        public async Task GetBlockAsyncBlockInCacheReturnsBlockAsync()
         {
             object block = null;
             uint256 blockId = new uint256(2389704);
@@ -63,14 +63,13 @@
                 })
                 .Returns(true);
 
-            var task = this.blockStoreCache.GetBlockAsync(blockId);
-            task.Wait();
+            await this.blockStoreCache.GetBlockAsync(blockId).ConfigureAwait(false);
 
             Assert.Equal(1513, ((Block)block).Header.Version);
         }
 
         [Fact]
-        public void GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock()
+        public async Task GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlockAsync()
         {
             uint256 blockId = new uint256(2389704);
             Block repositoryBlock = new Block();
@@ -81,15 +80,14 @@
             var memoryCacheStub = new MemoryCacheStub();
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
 
-            var result = this.blockStoreCache.GetBlockAsync(blockId);
-            result.Wait();
+            var result = await this.blockStoreCache.GetBlockAsync(blockId).ConfigureAwait(false);
 
             Assert.Equal(blockId, memoryCacheStub.GetLastCreateCalled());
-            Assert.Equal(1451, result.Result.Header.Version);
+            Assert.Equal(1451, result.Header.Version);
         }
 
         [Fact]
-        public void GetBlockByTrxAsyncBlockInCacheReturnsBlock()
+        public async Task GetBlockByTrxAsyncBlockInCacheReturnsBlockAsync()
         {
             uint256 txId = new uint256(3252);
             uint256 blockId = new uint256(2389704);
@@ -102,14 +100,13 @@
             var memoryCacheStub = new MemoryCacheStub(dict);
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
 
-            var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
-            result.Wait();
+            var result = await this.blockStoreCache.GetBlockByTrxAsync(txId).ConfigureAwait(false);
 
-            Assert.Equal(1451, result.Result.Header.Version);
+            Assert.Equal(1451, result.Header.Version);
         }
 
         [Fact]
-        public void GetBlockByTrxAsyncBlockNotInCacheLookupInRepository()
+        public async Task GetBlockByTrxAsyncBlockNotInCacheLookupInRepositoryAsync()
         {
             uint256 txId = new uint256(3252);
             uint256 blockId = new uint256(2389704);
@@ -123,15 +120,14 @@
             this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
                 .Returns(Task.FromResult(blockId));
 
-            var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
-            result.Wait();
+            var result = await this.blockStoreCache.GetBlockByTrxAsync(txId).ConfigureAwait(false);
 
-            Assert.Equal(1451, result.Result.Header.Version);
+            Assert.Equal(1451, result.Header.Version);
             Assert.Equal(txId, memoryCacheStub.GetLastCreateCalled());
         }
 
         [Fact]
-        public void GetBlockByTrxAsyncBlockNotInCacheLookupNotInRepositoryReturnsNull()
+        public async Task GetBlockByTrxAsyncBlockNotInCacheLookupNotInRepositoryReturnsNullAsync()
         {
             uint256 txId = new uint256(3252);
             var memoryCacheStub = new MemoryCacheStub();
@@ -139,14 +135,13 @@
             this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
                 .Returns(Task.FromResult((uint256)null));
 
-            var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
-            result.Wait();
+            var result = await this.blockStoreCache.GetBlockByTrxAsync(txId).ConfigureAwait(false);
 
-            Assert.Null(result.Result);
+            Assert.Null(result);
         }
 
         [Fact]
-        public void GetTrxAsyncReturnsTransactionFromBlockInCache()
+        public async Task GetTrxAsyncReturnsTransactionFromBlockInCacheAsync()
         {
             var trans = new Transaction();
             trans.Version = 15121;
@@ -162,14 +157,13 @@
             var memoryCacheStub = new MemoryCacheStub(dict);
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
 
-            var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
-            result.Wait();
+            var result = await this.blockStoreCache.GetTrxAsync(trans.GetHash()).ConfigureAwait(false);
 
-            Assert.Equal(trans.GetHash(), result.Result.GetHash());
+            Assert.Equal(trans.GetHash(), result.GetHash());
         }
 
         [Fact]
-        public void GetTrxAsyncReturnsNullWhenNotInCache()
+        public async Task GetTrxAsyncReturnsNullWhenNotInCacheAsync()
         {
             var trans = new Transaction();
             trans.Version = 15121;
@@ -179,10 +173,9 @@
             var memoryCacheStub = new MemoryCacheStub();
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
 
-            var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
-            result.Wait();
+            var result = await this.blockStoreCache.GetTrxAsync(trans.GetHash()).ConfigureAwait(false);
 
-            Assert.Null(result.Result);
+            Assert.Null(result);
         }
     }
 }

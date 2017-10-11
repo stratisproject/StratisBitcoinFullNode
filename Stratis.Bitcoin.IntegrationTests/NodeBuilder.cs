@@ -328,12 +328,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
     public class NodeBuilder : IDisposable
     {
-        public static NodeBuilder Create([CallerMemberNameAttribute] string caller = null, string version = "0.13.1")
+        public async static Task<NodeBuilder> CreateAsync([CallerMemberNameAttribute] string caller = null, string version = "0.13.1")
         {
             version = version ?? "0.13.1";
             if (!Directory.Exists("TestData"))
                 Directory.CreateDirectory("TestData");
-            var path = EnsureDownloaded(version);
+            var path = await EnsureDownloadedAsync(version).ConfigureAwait(false);
             caller = Path.Combine("TestData", caller);
             bool retryDelete = true;
             try
@@ -393,7 +393,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        private static string EnsureDownloaded(string version)
+        private async static Task<string> EnsureDownloadedAsync(string version)
         {
             //is a file
             if (version.Length >= 2 && version[1] == ':')
@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
                 HttpClient client = new HttpClient();
                 client.Timeout = TimeSpan.FromMinutes(10.0);
-                var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
+                var data = await client.GetByteArrayAsync(url).ConfigureAwait(false);
                 File.WriteAllBytes(zip, data);
                 ZipFile.ExtractToDirectory(zip, new FileInfo(zip).Directory.FullName);
                 return bitcoind;
@@ -428,7 +428,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 string url = string.Format("https://bitcoin.org/bin/bitcoin-core-{0}/" + Path.GetFileName(zip), version);
                 HttpClient client = new HttpClient();
                 client.Timeout = TimeSpan.FromMinutes(10.0);
-                var data = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
+                var data = await client.GetByteArrayAsync(url).ConfigureAwait(false);
                 File.WriteAllBytes(zip, data);
                 Process.Start("tar", "-zxvf " + zip + " -C TestData");
                 return bitcoind;
@@ -466,33 +466,33 @@ namespace Stratis.Bitcoin.IntegrationTests
             get { return this._ConfigParameters; }
         }
 
-        public CoreNode CreateNode(bool start = false)
+        public async Task<CoreNode> CreateNodeAsync(bool start = false)
         {
             string child = CreateNewEmptyFolder();
             var node = new CoreNode(child, new BitcoinCoreRunner(this._Bitcoind), this);
             this.Nodes.Add(node);
             if (start)
-                node.Start();
+                await node.StartAsync().ConfigureAwait(false);
             return node;
         }
 
-        public CoreNode CreateStratisPowNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public async Task<CoreNode> CreateStratisPowNodeAsync(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
             string child = CreateNewEmptyFolder();
             var node = new CoreNode(child, new StratisBitcoinPowRunner(callback), this);
             this.Nodes.Add(node);
             if (start)
-                node.Start();
+                await node.StartAsync().ConfigureAwait(false);
             return node;
         }
 
-        public CoreNode CreateStratisPosNode(bool start = false, Action<IFullNodeBuilder> callback = null)
+        public async Task<CoreNode> CreateStratisPosNodeAsync(bool start = false, Action<IFullNodeBuilder> callback = null)
         {
             string child = CreateNewEmptyFolder();
             var node = new CoreNode(child, new StratisBitcoinPosRunner(callback), this, configfile: "stratis.conf");
             this.Nodes.Add(node);
             if (start)
-                node.Start();
+                await node.StartAsync().ConfigureAwait(false);
             return node;
         }
 
@@ -646,11 +646,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.FullNode.ChainBehaviorState.SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
-        public void Start()
-        {
-            StartAsync().Wait();
-        }
-
         readonly NetworkCredential creds;
 
         public RPCClient CreateRPCClient()
@@ -792,13 +787,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 #endif
 
-        public void SelectMempoolTransactions()
+        public async Task SelectMempoolTransactionsAsync()
         {
             var rpc = CreateRPCClient();
             var txs = rpc.GetRawMempool();
             var tasks = txs.Select(t => rpc.GetRawTransactionAsync(t)).ToArray();
-            Task.WaitAll(tasks);
-            this.transactions.AddRange(tasks.Select(t => t.Result).ToArray());
+            var transactions = await Task.WhenAll(tasks).ConfigureAwait(false);
+            this.transactions.AddRange(transactions);
         }
 
         public void Split(Money amount, int parts)
@@ -890,12 +885,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 #endif
         }
 
-        public bool AddToStratisMempool(Transaction trx)
+        public async Task<bool> AddToStratisMempoolAsync(Transaction trx)
         {
             var fullNode = (this._Runner as StratisBitcoinPowRunner).FullNode;
             var state = new MempoolValidationState(true);
 
-            return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
+            return await fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).ConfigureAwait(false);
         }
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
@@ -990,9 +985,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             node.PingPong();
         }
 
-        public Block[] FindBlock(int blockCount = 1, bool includeMempool = true)
+        public async Task<Block[]> FindBlockAsync(int blockCount = 1, bool includeMempool = true)
         {
-            SelectMempoolTransactions();
+            await SelectMempoolTransactionsAsync().ConfigureAwait(false);
             return Generate(blockCount, includeMempool);
         }
 

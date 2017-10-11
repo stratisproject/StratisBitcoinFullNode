@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             this._Network = network;
 			this._TestDirectory = TestDirectory.Create(name, clean);
 			this._PersistentCoinView = new DBreezeCoinView(network, this._TestDirectory.FolderName, this.loggerFactory);
-			this._PersistentCoinView.Initialize().GetAwaiter().GetResult();
             this._CleanList.Add(this._PersistentCoinView);
 		}
 
@@ -67,10 +66,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 			}
 		}
 
-		public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
+		public async static Task<NodeContext> CreateAsync([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
 		{
-			return new NodeContext(name, network, clean);
-		}
+			var nodeContext = new NodeContext(name, network, clean);
+            await nodeContext._PersistentCoinView.Initialize().ConfigureAwait(false);
+            return nodeContext;
+        }
 
 		public void Dispose()
 		{
@@ -79,12 +80,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             this._TestDirectory.Dispose(); //Not into cleanlist because it must run last
 		}
 
-		public void ReloadPersistentCoinView()
+		public async Task ReloadPersistentCoinViewAsync()
 		{
 			this._PersistentCoinView.Dispose();
 			this._CleanList.Remove(this._PersistentCoinView);
 			this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName, this.loggerFactory);
-			this._PersistentCoinView.Initialize().GetAwaiter().GetResult();
+			await this._PersistentCoinView.Initialize().ConfigureAwait(false);
             this._CleanList.Add(this._PersistentCoinView);
 		}		
 	}

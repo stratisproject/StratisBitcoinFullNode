@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		}
 
 		[Fact]
-		public void RouteAsyncLoadsRouteContextOntoRouteData()
+		public async Task RouteAsyncLoadsRouteContextOntoRouteDataAsync()
 		{
 			var request = new HttpRequestFeature();
 			SetupRequestBody(request, "{\"method\": \"GET\"}");
@@ -62,10 +62,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 				}
 			}, 1);
             this.actionDescriptor.Setup(a => a.ActionDescriptors)
-				.Returns(desciptors);			
+				.Returns(desciptors);
 
-			var task = this.handler.RouteAsync(context);
-			task.Wait();
+            await this.handler.RouteAsync(context).ConfigureAwait(false);
 
 			Assert.Equal("GET", callback.RouteData.Values["action"]);
 			Assert.Equal("RPCController", callback.RouteData.Values["controller"]);

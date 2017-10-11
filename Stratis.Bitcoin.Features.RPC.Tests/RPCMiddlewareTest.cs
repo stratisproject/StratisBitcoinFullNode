@@ -43,68 +43,68 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		}
 
 		[Fact]
-		public void InvokeValidAuthorizationReturns200()
+		public async Task InvokeValidAuthorizationReturns200Async()
 		{
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			Assert.Equal(StatusCodes.Status200OK, this.httpContext.Response.StatusCode);
 		}
 
 		[Fact]
-		public void InvokeUnauthorizedReturns401()
+		public async Task InvokeUnauthorizedReturns401Async()
 		{
 			this.InitializeFeatureContext();
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(false);
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
 		[Fact]
-		public void InvokeAuthorizedWithoutAuthorizationHeaderReturns401()
+		public async Task InvokeAuthorizedWithoutAuthorizationHeaderReturns401Async()
 		{
 			this.InitializeFeatureContext();
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
 		[Fact]
-		public void InvokeAuthorizedWithBearerAuthorizationHeaderReturns401()
+		public async Task InvokeAuthorizedWithBearerAuthorizationHeaderReturns401Async()
 		{
 			this.request.Headers.Add("Authorization", "Bearer hiuehewuytwe");
 			this.InitializeFeatureContext();
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
 		[Fact]
-		public void InvokeAuthorizedWithEmptyAuthorizationHeaderReturns401()
+		public async Task InvokeAuthorizedWithEmptyAuthorizationHeaderReturns401Async()
 		{
 			this.request.Headers.Add("Authorization", "");
 			this.InitializeFeatureContext();
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
 		[Fact]
-		public void InvokeAuthorizedWithBasicAuthorizationHeaderForUnauthorizedUserReturns401()
+		public async Task InvokeAuthorizedWithBasicAuthorizationHeaderForUnauthorizedUserReturns401Async()
 		{
 			var header = Convert.ToBase64String(Encoding.ASCII.GetBytes("MyUser"));
 			this.request.Headers.Add("Authorization", "Basic " + header);
@@ -114,33 +114,33 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 			this.authorization.Setup(a => a.IsAuthorized("MyUser"))
 				.Returns(false);
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
 		[Fact]
-		public void InvokeAuthorizedWithBasicAuthorizationHeaderWithInvalidEncodingReturns401()
+		public async Task InvokeAuthorizedWithBasicAuthorizationHeaderWithInvalidEncodingReturns401Async()
 		{
 			this.request.Headers.Add("Authorization", "Basic kljseuhtiuorewytiuoer");
 			this.InitializeFeatureContext();
 			this.authorization.Setup(a => a.IsAuthorized(It.IsAny<IPAddress>()))
 				.Returns(true);
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			Assert.Equal(StatusCodes.Status401Unauthorized, this.httpContext.Response.StatusCode);
 		}
 
 		[Fact]
-		public void InvokeThrowsArgumentExceptionWritesArgumentError()
+		public async Task InvokeThrowsArgumentExceptionWritesArgumentErrorAsync()
 		{
 			this.delegateContext.Setup(d => d(It.IsAny<DefaultHttpContext>()))
 				.Throws(new ArgumentException("Name is required."));
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
@@ -152,14 +152,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		}
 
 		[Fact]
-		public void InvokeThrowsFormatExceptionWritesArgumentError()
+		public async Task InvokeThrowsFormatExceptionWritesArgumentErrorAsync()
 		{
 			this.delegateContext.Setup(d => d(It.IsAny<DefaultHttpContext>()))
 				.Throws(new FormatException("Int x is invalid format."));
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
@@ -171,13 +171,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		}
 
 		[Fact]
-		public void Invoke404WritesMethodNotFoundError()
+		public async Task Invoke404WritesMethodNotFoundErrorAsync()
 		{
 			this.response.StatusCode = StatusCodes.Status404NotFound;
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
@@ -189,13 +189,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		}
 
 		[Fact]
-		public void Invoke500WritesInternalErrorAndLogsResult()
+		public async Task Invoke500WritesInternalErrorAndLogsResultAsync()
 		{
 			this.response.StatusCode = StatusCodes.Status500InternalServerError;
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))
@@ -208,14 +208,14 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		}
 
 		[Fact]
-		public void InvokeThrowsUnhandledExceptionWritesInternalErrorAndLogsResult()
+		public async Task InvokeThrowsUnhandledExceptionWritesInternalErrorAndLogsResultAsync()
 		{
 			this.delegateContext.Setup(d => d(It.IsAny<DefaultHttpContext>()))
 				.Throws(new InvalidOperationException("Operation not valid."));
 			this.SetupValidAuthorization();
 			this.InitializeFeatureContext();
 
-			this.middleware.Invoke(this.httpContext).Wait();
+            await this.middleware.Invoke(this.httpContext).ConfigureAwait(false);
 
 			this.httpContext.Response.Body.Position = 0;
 			using (var reader = new StreamReader(this.httpContext.Response.Body))

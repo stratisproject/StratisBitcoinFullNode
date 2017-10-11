@@ -8,6 +8,7 @@ using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {
@@ -138,17 +139,16 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public void DoWithTypeRunsSameThreadAsSessionCreated()
+        public async Task DoWithTypeRunsSameThreadAsSessionCreatedAsync()
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoWithTypeRunsSameThreadAsSessionCreated")))
             {
-                var thread = session.Execute<string>(() =>
+                var name = await session.Execute<string>(() =>
                 {
                     return Thread.CurrentThread.Name;
-                });
-                thread.Wait();
+                }).ConfigureAwait(false);
 
-                Assert.Equal("TestThread", thread.Result);
+                Assert.Equal("TestThread", name);
             }
         }
 
@@ -188,18 +188,17 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public void DoWithTypePerformsTask()
+        public async Task DoWithTypePerformsTaskAsync()
         {
             using (var session = new DBreezeSingleThreadSession("TestThread", AssureEmptyDir("TestData/DBreezeSingleThreadSession/DoWithTypePerformsTask")))
             {
-                var task = session.Execute<string>(() =>
+                var name = await session.Execute<string>(() =>
                 {
                     return "TaskResult";
 
-                });
-                task.Wait();
+                }).ConfigureAwait(false);
 
-                Assert.Equal("TaskResult", task.Result);
+                Assert.Equal("TaskResult", name);
             }
         }
 
