@@ -988,6 +988,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     int accountsToAdd = UnusedAddressesBuffer - emptyAddressesCount;
                     account.CreateAddresses(this.network, accountsToAdd, isChange);
 
+                    this.LoadKeysLookupLock();
+
                     // Persists the address to the wallet file.
                     this.SaveWallet(wallet);
                 }
