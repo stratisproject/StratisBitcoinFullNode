@@ -250,7 +250,8 @@ namespace Stratis.Bitcoin
                 // Now display the other stats
                 foreach (var feature in this.Services.Features.OfType<IFeatureStats>())
                     feature.AddFeatureStats(benchLogs);
-                
+
+                benchLogs.AppendLine();
                 benchLogs.AppendLine("======Connection======");
                 benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
                 this.logger.LogInformation(benchLogs.ToString());
