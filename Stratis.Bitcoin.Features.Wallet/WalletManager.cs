@@ -457,9 +457,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // get address to send the change to
                 changeAddress = account.GetFirstUnusedChangeAddress();
 
-                // persist the address to the wallet files
-                this.SaveWallets();
-
                 // no more change addresses left. create a new one.
                 if (changeAddress == null)
                 {
@@ -468,11 +465,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
 
-            if (changeAddress == null)
-            {
-                // Adds the address to the list of tracked addresses.
-                this.LoadKeysLookupLock();
-            }
+            // Adds the address to the list of tracked addresses.
+            this.LoadKeysLookupLock();
+
+            // Persist the address to the wallet files.
+            this.SaveWallets();
 
             this.logger.LogTrace("(-)");
             return changeAddress;
