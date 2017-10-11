@@ -221,6 +221,7 @@ this.logger.LogTrace("UTXO '{0}/{1}' with value {2} might be available for staki
 
 ## Value Log Format
 
+Examples in this section are mostly for method exit logs, but the formatting of the values inside the log applies to all logs.
 All value types, small integer types, enums, booleans etc. are logged without any apostrophes or quotes. 
 
 ```
