@@ -211,7 +211,11 @@ The format of these logs is
 ```
 
 We do not use '[CONTEXT]' context identifier as the context is given by the sentence itself. We also do not use `nameof()` because we rather describe 
-the event in English. We also don't use `"name:value"` notation or `"name=value"`.
+the event in English. We also don't use `"name:value"` notation or `"name=value"`. Example:
+
+```
+this.logger.LogTrace("UTXO '{0}/{1}' with value {2} might be available for staking.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, utxo.Value);
+```
 
 
 
