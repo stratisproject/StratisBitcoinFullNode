@@ -1,6 +1,7 @@
 # Using Logging
 
-We are using NLog. There are two things that you need to understand - configuration of logging and logging itself. Starting with the latter, that is the simple part.
+We are using NLog. There are two things that you need to understand - configuration of logging and logging itself. Starting with the latter, that is the simple part. However, in this document, 
+we only describe what you need to do to make the logging work. There is a separate document that describes [the style of the logging we use](./logging-style.md).
 
 ## Adding Logging Code
 
