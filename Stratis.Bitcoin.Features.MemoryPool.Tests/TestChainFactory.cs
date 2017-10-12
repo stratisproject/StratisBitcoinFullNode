@@ -210,8 +210,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             AssemblerOptions options = new AssemblerOptions();
 
-            options.BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_WEIGHT;
-            options.BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
+            options.BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight;
+            options.BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize;
 
             FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
