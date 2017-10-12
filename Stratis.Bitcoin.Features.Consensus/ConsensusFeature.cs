@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         if (fullNodeBuilder.NodeSettings.Testnet)
                         {
-                            fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().COINBASE_MATURITY = 10;
+                            fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity = 10;
                             fullNodeBuilder.Network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations = 10;
                         }
 

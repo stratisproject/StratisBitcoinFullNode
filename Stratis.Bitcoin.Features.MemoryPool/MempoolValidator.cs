@@ -379,8 +379,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return tx.GetSerializedSize(
                        (ProtocolVersion)
-                       ((uint)ProtocolVersion.PROTOCOL_VERSION | consensusOptions.SERIALIZE_TRANSACTION_NO_WITNESS),
-                       SerializationType.Network) * (consensusOptions.WITNESS_SCALE_FACTOR - 1) +
+                       ((uint)ProtocolVersion.PROTOCOL_VERSION | consensusOptions.SerializeTransactionNoWitness),
+                       SerializationType.Network) * (consensusOptions.WitnessScaleFactor - 1) +
                    tx.GetSerializedSize(ProtocolVersion.PROTOCOL_VERSION, SerializationType.Network);
         }
 
@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Providing any more cleanup incentive than making additional inputs free would
             // risk encouraging people to create junk outputs to redeem later.
             if (nTxSize == 0)
-                nTxSize = (GetTransactionWeight(trx, consensusOptions) + consensusOptions.WITNESS_SCALE_FACTOR - 1) / consensusOptions.WITNESS_SCALE_FACTOR;
+                nTxSize = (GetTransactionWeight(trx, consensusOptions) + consensusOptions.WitnessScaleFactor - 1) / consensusOptions.WitnessScaleFactor;
 
             foreach (TxIn txInput in trx.Inputs)
             {
@@ -582,7 +582,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement Witness Code
 
             Transaction tx = context.Transaction;
-            if (tx.Version > this.consensusValidator.ConsensusOptions.MAX_STANDARD_VERSION || tx.Version < 1)
+            if (tx.Version > this.consensusValidator.ConsensusOptions.MaxStandardVersion || tx.Version < 1)
                 context.State.Fail(MempoolErrors.Version).Throw();
 
             // Extremely large transactions with lots of inputs can cost the network
@@ -590,7 +590,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // computing signature hashes is O(ninputs*txsize). Limiting transactions
             // to MAX_STANDARD_TX_WEIGHT mitigates CPU exhaustion attacks.
             int sz = GetTransactionWeight(tx, this.consensusValidator.ConsensusOptions);
-            if (sz >= this.consensusValidator.ConsensusOptions.MAX_STANDARD_TX_WEIGHT)
+            if (sz >= this.consensusValidator.ConsensusOptions.MaxStandardTxWeight)
                 context.State.Fail(MempoolErrors.TxSize).Throw();
 
             foreach (TxIn txin in tx.Inputs)
@@ -709,7 +709,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // itself can contain sigops MAX_STANDARD_TX_SIGOPS is less than
             // MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
             // merely non-standard transaction.
-            if (context.SigOpsCost > this.consensusValidator.ConsensusOptions.MAX_BLOCK_SIGOPS_COST)
+            if (context.SigOpsCost > this.consensusValidator.ConsensusOptions.MaxBlockSigopsCost)
                 context.State.Fail(MempoolErrors.TooManySigops).Throw();
         }
 
