@@ -761,6 +761,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password");
+            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+            BitcoinSecret alice = new BitcoinSecret(new Key(), Network.RegTest);
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
             {
                 Index = 0,
@@ -769,7 +771,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 {
                     new HdAddress() {
                         Index = 0,
-                        Address = "myUsedAddress",
+                        Address = bob.GetAddress().ToString(),
+                        ScriptPubKey = bob.ScriptPubKey,
                         Transactions = new List<TransactionData>()
                         {
                             new TransactionData()
@@ -777,17 +780,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     },
                     new HdAddress() {
                         Index = 1,
-                        Address = "myUnusedAddress",
+                        Address = alice.GetAddress().ToString(),
+                        ScriptPubKey = alice.ScriptPubKey,
                         Transactions = new List<TransactionData>()
                     }
                 },
-                ExternalAddresses = null
+                ExternalAddresses = new List<HdAddress>()
             });
             walletManager.Wallets.Add(wallet);
 
             var result = walletManager.GetOrCreateChangeAddress(walletManager.GetAccounts("myWallet").First());
 
-            Assert.Equal("myUnusedAddress", result.Address);
+            Assert.Equal(alice.GetAddress().ToString(), result.Address);
         }
 
         [Fact]
