@@ -105,6 +105,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// that depends on the reported information.</remarks>
         private readonly Miner.Models.GetStakingInfoModel rpcGetStakingInfoModel;
 
+        /// <summary>Estimation of the total staking weight of all nodes on the network.</summary>
+        private long networkWeight;
+
         /// <summary>
         /// Timestamp of the last attempt to search for POS solution.
         /// <para>
@@ -342,11 +345,12 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
+                this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
                 this.rpcGetStakingInfoModel.PooledTx = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).GetAwaiter().GetResult();
                 this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(chainTip);
-                this.rpcGetStakingInfoModel.NetStakeWeight = (long)this.GetNetworkWeight();
+                this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
                 if (this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp))
@@ -549,15 +553,13 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             long ourWeight = setCoins.Sum(s => s.TxOut.Value);
-            long networkWeight = (long)this.GetNetworkWeight();
-            long expectedTime = StakeValidator.TargetSpacingSeconds * networkWeight / ourWeight;
-            decimal ourPercent = networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)networkWeight : 0;
+            long expectedTime = StakeValidator.TargetSpacingSeconds * this.networkWeight / ourWeight;
+            decimal ourPercent = this.networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)this.networkWeight : 0;
             
-            this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(networkWeight), TimeSpan.FromSeconds(expectedTime));
+            this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(this.networkWeight), TimeSpan.FromSeconds(expectedTime));
 
             this.rpcGetStakingInfoModel.Staking = true;
             this.rpcGetStakingInfoModel.Weight = ourWeight;
-            this.rpcGetStakingInfoModel.NetStakeWeight = networkWeight;
             this.rpcGetStakingInfoModel.ExpectedTime = expectedTime;
             this.rpcGetStakingInfoModel.Errors = null;
 
