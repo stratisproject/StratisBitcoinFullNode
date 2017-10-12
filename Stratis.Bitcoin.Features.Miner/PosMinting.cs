@@ -579,7 +579,7 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (StakeTx coin in setCoins)
             {
                 this.logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
-                bool fKernelFound = false;
+                bool kernelFound = false;
 
                 scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
                 if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
@@ -589,7 +589,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                for (uint n = 0; (n < searchInterval) && !fKernelFound; n++)
+                for (uint n = 0; (n < searchInterval) && !kernelFound; n++)
                 {
                     if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                     {
@@ -640,7 +640,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         coinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
 
                         this.logger.LogTrace("Kernel accepted, coinstake input is '{0}/{1}'.", prevoutStake.Hash, prevoutStake.N);
-                        fKernelFound = true;
+                        kernelFound = true;
                         break;
                     }
                     catch (ConsensusErrorException cex)
@@ -654,7 +654,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // If kernel is found stop searching.
-                if (fKernelFound)
+                if (kernelFound)
                     break;
             }
 
