@@ -71,6 +71,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// multiplied by this value. See <see cref="GetSplitStake(int)"/>.</summary>
         public const int CoinstakeSplitLimitMultiplier = 3;
 
+        /// <summary>Number of UTXOs that a single worker's task will process.</summary>
+        /// <remarks>To achieve a good level of parallelism, this should be low enough so that CPU threads are used,
+        /// but high enough to compensate for tasks' overhead.</remarks>
+        private const int CoinsPerCoinstakeWorker = 25;
+
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
         private readonly Network network;
@@ -617,9 +622,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
-            int coinsPerWorker = 20;
             int coinIndex = 0;
-            int workerCount = (setCoins.Count + coinsPerWorker - 1) / coinsPerWorker;
+            int workerCount = (setCoins.Count + CoinsPerCoinstakeWorker - 1) / CoinsPerCoinstakeWorker;
             Task[] workers = new Task[workerCount];
             CoinstakeWorkerContext[] workerContexts = new CoinstakeWorkerContext[workerCount];
 
@@ -635,7 +639,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     Result = workersResult
                 };
 
-                int coinCount = Math.Min(setCoins.Count - coinIndex, coinsPerWorker);
+                int coinCount = Math.Min(setCoins.Count - coinIndex, CoinsPerCoinstakeWorker);
                 cwc.Coins.AddRange(setCoins.GetRange(coinIndex, coinCount));
                 coinIndex += coinCount;
                 workerContexts[workerIndex] = cwc;
