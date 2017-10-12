@@ -210,9 +210,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (coins.IsCoinstake)
             {
-                if ((nSpendHeight - coins.Height) < this.consensusOptions.COINBASE_MATURITY)
+                if ((nSpendHeight - coins.Height) < this.consensusOptions.CoinbaseMaturity)
                 {
-                    this.logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, nSpendHeight, this.consensusOptions.COINBASE_MATURITY);
+                    this.logger.LogTrace("Coinstake transaction height {0} spent at height {1}, but maturity is set to {2}.", coins.Height, nSpendHeight, this.consensusOptions.CoinbaseMaturity);
                     this.logger.LogTrace("(-)[COINSTAKE_PREMATURE_SPENDING]");
                     ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
                 }
