@@ -18,11 +18,11 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         /// Tests that the RPC controller of a staking node correctly replies to "getstakinginfo" command.
         /// </summary>
         [Fact]
-        public async Task GetStakingInfo_StakingEnabledAsync()
+        public void GetStakingInfo_StakingEnabled()
         {
             string dir = AssureEmptyDir("TestData/GetStakingInfoActionTests/GetStakingInfo_StakingEnabled");
             IFullNode fullNode = this.BuildStakingNode(dir);
-            await fullNode.RunAsync();
+            var fullNodeRunTask = fullNode.RunAsync();
 
             INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
@@ -39,19 +39,21 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             nodeLifetime.StopApplication();
             nodeLifetime.ApplicationStopped.WaitHandle.WaitOne();
             fullNode.Dispose();
+            
+            Assert.False(fullNodeRunTask.IsFaulted);
         }
 
         /// <summary>
         /// Tests that the RPC controller of a staking node correctly replies to "startstaking" command.
         /// </summary>
         [Fact]
-        public async Task GetStakingInfo_StartStakingAsync()
+        public void GetStakingInfo_StartStaking()
         {
             string dir = AssureEmptyDir("TestData/GetStakingInfoActionTests/GetStakingInfo_StartStaking");
             IFullNode fullNode = this.BuildStakingNode(dir, false);
             var node = fullNode as FullNode;
 
-            await fullNode.RunAsync();
+            var fullNodeRunTask = fullNode.RunAsync();
 
             INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
@@ -84,6 +86,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             nodeLifetime.StopApplication();
             nodeLifetime.ApplicationStopped.WaitHandle.WaitOne();
             fullNode.Dispose();
+
+            Assert.False(fullNodeRunTask.IsFaulted);
         }
     }
 }
