@@ -14,10 +14,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class StakeValidator
     {
-        // Ratio of group interval length between the last group and the first group.
-        private const int ModifierIntervalRatio = 3;
+        /// <summary>Expected (or target) block time in seconds.</summary>
+        public const int TargetSpacingSeconds = 64;
 
-        private const int MedianTimeSpan = 11;
+        /// <summary>Time interval in minutes that is used in the retarget calculation.</summary>
+        private const int RetargetIntervalMinutes = 16;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -25,8 +26,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Class logger.</summary>
         private static readonly ILogger clogger;
 
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
+        
+        /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
+
         private readonly ConcurrentChain chain;
         private readonly CoinView coinView;
         private readonly PosConsensusOptions consensusOptions;
@@ -192,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             uint256 stakeModifierV2 = prevBlockStake.StakeModifierV2;
 
-            // Calculate hash
+            // Calculate hash.
             using (var ms = new MemoryStream())
             {
                 var serializer = new BitcoinStream(ms, true);
@@ -300,12 +305,37 @@ namespace Stratis.Bitcoin.Features.Consensus
             return index;
         }
 
-        public static Target GetNextTargetRequired(StakeChain stakeChain, ChainedBlock indexLast, NBitcoin.Consensus consensus, bool proofOfStake)
+        /// <summary>
+        /// Calculates the difficulty target for the next block.
+        /// </summary>
+        /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
+        /// <param name="chainedBlock">Block header for which to calculate the target difficulty.</param>
+        /// <param name="consensus">Consensus rules for the current network.</param>
+        /// <param name="proofOfStake"><c>true</c> for calculation of PoS difficulty target, <c>false</c> for calculation of PoW difficulty target.</param>
+        /// <returns>The difficulty target for the next block after <paramref name="chainedBlock"/>.</returns>
+        /// <remarks>
+        /// The calculation of the next target is based on the last target value and the block time (aka spacing) of <paramref name="chainedBlock"/> 
+        /// (i.e. difference in time stamp of this block and its immediate predecessor). The target changes every block and it is adjusted 
+        /// down (i.e. towards harder to reach, or more difficult) if the time to mine last block was lower than the target block time.
+        /// And it is adjusted up if it took longer than the target block time. The adjustments are done in a way the target is moving towards 
+        /// the target spacing exponentially, so even a big change in the mining power on the network will be fixed by retargeting relatively quickly.
+        /// <para>
+        /// Over <see cref="RetargetIntervalMinutes"/> minutes there are certain number (say <c>N</c>) of blocks expected to be mined if the target block time 
+        /// of <see cref="TargetSpacingSeconds"/> was reached every time. Then the next target is calculated as follows:</para>
+        /// <code>
+        /// NewTarget = PrevTarget * ((N - 1) * TargetSpacingSeconds + 2 * LastBlockTime) / ((N + 1) * TargetSpacingSeconds)
+        /// </code>
+        /// <para>
+        /// Which basically says that the block time of the last block is counted twice instead of two optimal block times.
+        /// And the <c>N</c> determines how strongly will the deviation of the last block time affect the difficulty.
+        /// </para>
+        /// </remarks>
+        public static Target GetNextTargetRequired(StakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake)
         {
-            clogger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(indexLast), indexLast?.HashBlock, indexLast?.Height, nameof(proofOfStake), proofOfStake);
+            clogger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(chainedBlock), chainedBlock?.HashBlock, chainedBlock?.Height, nameof(proofOfStake), proofOfStake);
 
             // Genesis block.
-            if (indexLast == null)
+            if (chainedBlock == null)
             {
                 clogger.LogTrace("(-)[GENESIS]:'{0}'", consensus.PowLimit);
                 return consensus.PowLimit;
@@ -314,11 +344,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Find the last two blocks that correspond to the mining algo 
             // (i.e if this is a POS block we need to find the last two POS blocks).
             BigInteger targetLimit = proofOfStake
-                ? GetProofOfStakeLimit(consensus, indexLast.Height)
+                ? consensus.ProofOfStakeLimitV2
                 : consensus.PowLimit.ToBigInteger();
 
             // First block.
-            ChainedBlock pindexPrev = GetLastBlockIndex(stakeChain, indexLast, proofOfStake);
+            ChainedBlock pindexPrev = GetLastBlockIndex(stakeChain, chainedBlock, proofOfStake);
             if (pindexPrev.Previous == null)
             {
                 var res = new Target(targetLimit);
@@ -335,10 +365,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return res;
             }
 
+            // This is used in tests to allow quickly mining blocks.
             if (consensus.PowNoRetargeting)
+            {
+                clogger.LogTrace("(-)[NO_POW_RETARGET]:'{0}'", pindexPrev.Header.Bits);
                 return pindexPrev.Header.Bits;
+            }
 
-            int targetSpacing = GetTargetSpacing(indexLast.Height);
+            int targetSpacing = TargetSpacingSeconds;
             int actualSpacing = (int)(pindexPrev.Header.Time - pindexPrevPrev.Header.Time);
             if (actualSpacing < 0)
                 actualSpacing = targetSpacing;
@@ -346,14 +380,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (actualSpacing > targetSpacing * 10)
                 actualSpacing = targetSpacing * 10;
 
-            // Target change every block
-            // retarget with exponential moving toward target spacing.
-            int targetTimespan = 16 * 60; // 16 mins.
+            int targetTimespan = RetargetIntervalMinutes * 60;
+            int interval = targetTimespan / targetSpacing;
+
             BigInteger target = pindexPrev.Header.Bits.ToBigInteger();
 
-            int interval = targetTimespan / targetSpacing;
-            target = target.Multiply(BigInteger.ValueOf(((interval - 1) * targetSpacing + actualSpacing + actualSpacing)));
-            target = target.Divide(BigInteger.ValueOf(((interval + 1) * targetSpacing)));
+            long multiplyBy = (interval - 1) * targetSpacing + actualSpacing + actualSpacing;
+            target = target.Multiply(BigInteger.ValueOf(multiplyBy));
+
+            long divideBy = (interval + 1) * targetSpacing;
+            target = target.Divide(BigInteger.ValueOf(divideBy));
+
+            clogger.LogTrace("The next target difficulty will be {0} times higher (easier to satisfy) than the previous target.", (double)multiplyBy / (double)divideBy);
 
             if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(targetLimit) >= 1))
                 target = targetLimit;
@@ -361,16 +399,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             var finalTarget = new Target(target);
             clogger.LogTrace("(-):'{0}'", finalTarget);
             return finalTarget;
-        }
-
-        private static BigInteger GetProofOfStakeLimit(NBitcoin.Consensus consensus, int height)
-        {
-            return consensus.ProofOfStakeLimitV2;
-        }
-
-        public static int GetTargetSpacing(int height)
-        {
-            return 64;
         }
     }
 }

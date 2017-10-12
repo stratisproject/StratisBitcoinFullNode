@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 WalletHistoryModel model = new WalletHistoryModel();
 
                 // get transactions contained in the wallet
-                var items = this.walletManager.GetFlatHistory(request.WalletName).ToList().OrderByDescending(o => o.Transaction.CreationTime).Take(100).ToList();
+                var items = this.walletManager.GetHistory(request.WalletName).ToList().OrderByDescending(o => o.Transaction.CreationTime).Take(100).ToList();
                 List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
                 List<FlatHistory> filtered = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
                 List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
@@ -495,11 +495,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 var context = new TransactionBuildContext(
                     new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] {new Recipient {Amount = request.Amount, ScriptPubKey = destination}}.ToList(),
+                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
                     request.Password)
                 {
                     FeeType = FeeParser.Parse(request.FeeType),
-                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1
+                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                    Shuffle = true
                 };
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);

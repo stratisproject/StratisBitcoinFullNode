@@ -58,6 +58,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.FindChangeAddress(context);
             this.AddFee(context);
 
+            if(context.Shuffle)
+            {
+                context.TransactionBuilder.Shuffle();
+            }
+
             // build transaction
             context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
 
@@ -69,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return context.Transaction;
-        }
+        }        
 
         /// <inheritdoc />
         public void FundTransaction(TransactionBuildContext context, Transaction transaction)
@@ -418,6 +423,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
         /// </summary>
         public FeeRate OverrideFeeRate { get; set; }
+
+        /// <summary>
+        /// Shuffles transaction inputs and outputs for increased privacy.
+        /// </summary>
+        public bool Shuffle { get; set; }
     }
 
     /// <summary>

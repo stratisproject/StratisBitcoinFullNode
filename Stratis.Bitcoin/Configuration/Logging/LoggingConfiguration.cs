@@ -5,6 +5,7 @@ using NLog.Config;
 using NLog.Targets;
 using NLog.Targets.Wrappers;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,18 @@ using System.Text;
 
 namespace Stratis.Bitcoin.Configuration.Logging
 {
+    /// <summary>
+    /// An extension of the <see cref="LoggerFactory"/> that allows access to some internal components.
+    /// </summary>
+    public class ExtendedLoggerFactory : LoggerFactory
+    {
+        /// <summary>Configuration of console logger.</summary>
+        public ConsoleLoggerSettings ConsoleSettings { get; set; }
+
+        /// <summary>Provider of console logger.</summary>
+        public ConsoleLoggerProvider ConsoleLoggerProvider { get; set; }
+    }
+
     /// <summary>
     /// Integration of NLog with Microsoft.Extensions.Logging interfaces.
     /// </summary>
@@ -63,9 +76,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
         {
             keyCategories[key] = typeof(T).Namespace + "." + typeof(T).Name;
         }
-
-        /// <summary>Configuration of console logger.</summary>
-        private static ConsoleLoggerSettings consoleSettings;
 
         /// <summary>
         /// Initializes application logging.
@@ -205,8 +215,13 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 }
             };
 
-            loggerFactory.AddConsole(consoleLoggerSettings);
-            consoleSettings = consoleLoggerSettings;
+            ConsoleLoggerProvider consoleLoggerProvider = new ConsoleLoggerProvider(consoleLoggerSettings);
+            loggerFactory.AddProvider(consoleLoggerProvider);
+
+            ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
+            Guard.NotNull(extendedLoggerFactory, nameof(extendedLoggerFactory));
+            extendedLoggerFactory.ConsoleLoggerProvider = consoleLoggerProvider;
+            extendedLoggerFactory.ConsoleSettings = consoleLoggerSettings;
         }
 
         /// <summary>
@@ -260,7 +275,21 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <returns>Console logger settings.</returns>
         public static ConsoleLoggerSettings GetConsoleSettings(this ILoggerFactory loggerFactory)
         {
-            return consoleSettings;
+            ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
+            Guard.NotNull(extendedLoggerFactory, nameof(extendedLoggerFactory));
+            return extendedLoggerFactory.ConsoleSettings;
+        }
+
+        /// <summary>
+        /// Obtains configuration of the console logger provider.
+        /// </summary>
+        /// <param name="loggerFactory">Logger factory interface being extended.</param>
+        /// <returns>Console logger provider.</returns>
+        public static ConsoleLoggerProvider GetConsoleLoggerProvider(this ILoggerFactory loggerFactory)
+        {
+            ExtendedLoggerFactory extendedLoggerFactory = loggerFactory as ExtendedLoggerFactory;
+            Guard.NotNull(extendedLoggerFactory, nameof(extendedLoggerFactory));
+            return extendedLoggerFactory.ConsoleLoggerProvider;
         }
     }
 }

@@ -1,6 +1,7 @@
 # Using Logging
 
-We are using NLog. There are two things that you need to understand - configuration of logging and logging itself. Starting with the latter, that is the simple part.
+We are using NLog. There are two things that you need to understand - configuration of logging and logging itself. Starting with the latter, that is the simple part. However, in this document, 
+we only describe what you need to do to make the logging work. There is a separate document that describes [the style of the logging we use](./logging-style.md).
 
 ## Adding Logging Code
 
@@ -221,6 +222,9 @@ for logs of some components:
     <target name="debugTimeSyncFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
       <target xsi:type="File" fileName="timesync.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
     </target>
+    <target name="debugWalletFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
+      <target xsi:type="File" fileName="wallet.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
+    </target>
     <target xsi:type="null" name="null" formatMessage="false" /> 
   </targets>
 
@@ -234,6 +238,7 @@ for logs of some components:
 
     <logger name="Stratis.Bitcoin.Features.Consensus.CoinViews.*" minlevel="Trace" writeTo="debugCoinViewsFile" />
 
+    <logger name="Stratis.Bitcoin.Features.Consensus.ConsensusLoop" minlevel="Trace" writeTo="debugMiningValidationFile" />
     <logger name="Stratis.Bitcoin.Features.Consensus.StakeValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
     <logger name="Stratis.Bitcoin.Features.Consensus.PosConsensusValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
     <logger name="Stratis.Bitcoin.Features.Consensus.PowConsensusValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
@@ -241,6 +246,8 @@ for logs of some components:
 
     <logger name="Stratis.Bitcoin.Base.TimeSyncBehaviorState" minlevel="Trace" writeTo="debugTimeSyncFile" />
     <logger name="Stratis.Bitcoin.Base.TimeSyncBehavior" minlevel="Trace" writeTo="debugTimeSyncFile" />
+
+    <logger name="Stratis.Bitcoin.Features.Wallet.*" minlevel="Trace" writeTo="debugWalletFile" />
 
     <logger name="*" minlevel="Trace" writeTo="debugAllFile" />
   </rules>
@@ -272,6 +279,9 @@ This first example can be used as a template, from which we can derive the secon
     <target name="debugTimeSyncFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
       <target xsi:type="File" fileName="timesync.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
     </target>
+    <target name="debugWalletFile" xsi:type="AsyncWrapper" queueLimit="10000" overflowAction="Block" batchSize="1000">
+      <target xsi:type="File" fileName="wallet.txt" layout="[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}" encoding="utf-8" /> 
+    </target>
     <target xsi:type="null" name="null" formatMessage="false" /> 
   </targets>
 
@@ -285,6 +295,7 @@ This first example can be used as a template, from which we can derive the secon
 
     <logger name="Stratis.Bitcoin.Features.Consensus.CoinViews.*" minlevel="Debug" writeTo="debugCoinViewsFile" />
 
+    <logger name="Stratis.Bitcoin.Features.Consensus.ConsensusLoop" minlevel="Trace" writeTo="debugMiningValidationFile" />
     <logger name="Stratis.Bitcoin.Features.Consensus.StakeValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
     <logger name="Stratis.Bitcoin.Features.Consensus.PosConsensusValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
     <logger name="Stratis.Bitcoin.Features.Consensus.PowConsensusValidator" minlevel="Trace" writeTo="debugMiningValidationFile" />
@@ -292,6 +303,8 @@ This first example can be used as a template, from which we can derive the secon
 
     <logger name="Stratis.Bitcoin.Base.TimeSyncBehaviorState" minlevel="Debug" writeTo="debugTimeSyncFile" />
     <logger name="Stratis.Bitcoin.Base.TimeSyncBehavior" minlevel="Debug" writeTo="debugTimeSyncFile" />
+
+    <logger name="Stratis.Bitcoin.Features.Wallet.*" minlevel="Debug" writeTo="debugWalletFile" />
 
     <logger name="*" minlevel="Debug" writeTo="debugAllFile" />
   </rules>

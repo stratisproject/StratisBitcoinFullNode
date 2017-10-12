@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Tests.Utilities;
 using Stratis.Bitcoin.Utilities;
@@ -762,6 +761,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password");
+            BitcoinSecret bob = new BitcoinSecret(new Key(), Network.RegTest);
+            BitcoinSecret alice = new BitcoinSecret(new Key(), Network.RegTest);
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
             {
                 Index = 0,
@@ -770,7 +771,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 {
                     new HdAddress() {
                         Index = 0,
-                        Address = "myUsedAddress",
+                        Address = bob.GetAddress().ToString(),
+                        ScriptPubKey = bob.ScriptPubKey,
                         Transactions = new List<TransactionData>()
                         {
                             new TransactionData()
@@ -778,17 +780,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     },
                     new HdAddress() {
                         Index = 1,
-                        Address = "myUnusedAddress",
+                        Address = alice.GetAddress().ToString(),
+                        ScriptPubKey = alice.ScriptPubKey,
                         Transactions = new List<TransactionData>()
                     }
                 },
-                ExternalAddresses = null
+                ExternalAddresses = new List<HdAddress>()
             });
             walletManager.Wallets.Add(wallet);
 
             var result = walletManager.GetOrCreateChangeAddress(walletManager.GetAccounts("myWallet").First());
 
-            Assert.Equal("myUnusedAddress", result.Address);
+            Assert.Equal(alice.GetAddress().ToString(), result.Address);
         }
 
         [Fact]
@@ -895,9 +898,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(2, result.Count());
             var address = result.ElementAt(0);
-            Assert.Equal("myUsedExternalAddress", address.Address);
+            Assert.Equal("myUsedExternalAddress", address.Address.Address);
             address = result.ElementAt(1);
-            Assert.Equal("myUsedInternalAddress", address.Address);
+            Assert.Equal("myUsedInternalAddress", address.Address.Address);
         }
 
         [Fact]
@@ -928,9 +931,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(2, result.Count());
             var address = result.ElementAt(0);
-            Assert.Equal("myUsedExternalAddress", address.Address);
+            Assert.Equal("myUsedExternalAddress", address.Address.Address);
             address = result.ElementAt(1);
-            Assert.Equal("myUsedInternalAddress", address.Address);
+            Assert.Equal("myUsedInternalAddress", address.Address.Address);
         }
 
         [Fact]
@@ -2284,14 +2287,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var concurrentchain = new ConcurrentChain(Network.Main);
             var chainedBlock = WalletTestsHelpers.AppendBlock(null, concurrentchain).ChainedBlock;
+            chainedBlock = WalletTestsHelpers.AppendBlock(chainedBlock, concurrentchain).ChainedBlock;
+            chainedBlock = WalletTestsHelpers.AppendBlock(chainedBlock, concurrentchain).ChainedBlock;
 
             var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount()
             {
                 Name = "First account",
-                ExternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3).ToList(),
-                InternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3).ToList()
+                ExternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3, 4, 5).ToList(),
+                InternalAddresses = WalletTestsHelpers.CreateSpentTransactionsOfBlockHeights(Network.Main, 1, 2, 3, 4, 5).ToList()
             });
+
+            // reorg at block 3
+
+            // Trx at block 0 is not spent
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.First().SpendingDetails = null;
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(0).Transactions.First().SpendingDetails = null;
+
+            // Trx at block 2 is spent in block 3, after reorg it will not be spendable.
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(1).Transactions.First().SpendingDetails.BlockHeight = 3;
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(1).Transactions.First().SpendingDetails.BlockHeight = 3;
+
+            // Trx at block 3 is spent at block 5, after reorg it will be spendable.
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(2).Transactions.First().SpendingDetails.BlockHeight = 5;
+            wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses.ElementAt(2).Transactions.First().SpendingDetails.BlockHeight = 5;
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 new DataFolder(new NodeSettings() { DataDir = "TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
@@ -2306,8 +2325,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var account = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0);
 
-            Assert.Equal(2, account.InternalAddresses.Concat(account.ExternalAddresses).SelectMany(r => r.Transactions).Count());
+            Assert.Equal(6, account.InternalAddresses.Concat(account.ExternalAddresses).SelectMany(r => r.Transactions).Count());
             Assert.True(account.InternalAddresses.Concat(account.ExternalAddresses).SelectMany(r => r.Transactions).All(r => r.BlockHeight <= chainedBlock.Height));
+            Assert.True(account.InternalAddresses.Concat(account.ExternalAddresses).SelectMany(r => r.Transactions).All(r => r.SpendingDetails == null || r.SpendingDetails.BlockHeight <= chainedBlock.Height));
+            Assert.Equal(4, account.InternalAddresses.Concat(account.ExternalAddresses).SelectMany(r => r.Transactions).Count(t => t.SpendingDetails == null));
         }
 
         [Fact]

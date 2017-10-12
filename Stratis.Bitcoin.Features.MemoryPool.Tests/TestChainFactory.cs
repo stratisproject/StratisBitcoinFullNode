@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
 
-            ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network));
+            ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network), loggerFactory);
             consensus.Initialize();
 
             BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);

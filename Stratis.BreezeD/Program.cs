@@ -35,7 +35,7 @@ namespace Stratis.BreezeD
 
                 var network = isTestNet ? Network.StratisTest : Network.StratisMain;
                 if (isTestNet)
-                    args = args.Append("-addnode=13.64.76.48").ToArray(); // TODO: fix this temp hack 
+                    args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack 
 
                 nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
                 nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
