@@ -18,14 +18,11 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         /// Tests that the RPC controller of a staking node correctly replies to "getstakinginfo" command.
         /// </summary>
         [Fact]
-        public void GetStakingInfo_StakingEnabled()
+        public async Task GetStakingInfo_StakingEnabledAsync()
         {
             string dir = AssureEmptyDir("TestData/GetStakingInfoActionTests/GetStakingInfo_StakingEnabled");
             IFullNode fullNode = this.BuildStakingNode(dir);
-            Task.Run(() =>
-            {
-                fullNode.Run();
-            });
+            await fullNode.RunAsync();
 
             INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
@@ -48,16 +45,13 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         /// Tests that the RPC controller of a staking node correctly replies to "startstaking" command.
         /// </summary>
         [Fact]
-        public void GetStakingInfo_StartStaking()
+        public async Task GetStakingInfo_StartStakingAsync()
         {
             string dir = AssureEmptyDir("TestData/GetStakingInfoActionTests/GetStakingInfo_StartStaking");
             IFullNode fullNode = this.BuildStakingNode(dir, false);
             var node = fullNode as FullNode;
 
-            Task.Run(() =>
-            {
-                fullNode.Run();
-            });
+            await fullNode.RunAsync();
 
             INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
