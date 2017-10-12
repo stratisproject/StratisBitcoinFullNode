@@ -728,7 +728,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             context.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4},{5}:{6})", nameof(chainTip), chainTip.HashBlock, chainTip.Height, nameof(minimalAllowedTime), minimalAllowedTime, nameof(searchInterval), searchInterval);
 
-            context.Logger.LogTrace("Going to process {0} UTXOs.", context.Index, context.Coins.Count);
+            context.Logger.LogTrace("Going to process {0} UTXOs.", context.Coins.Count);
 
             // Sort coins by amount, so that highest amounts are tried first
             // because they have greater chance to succeed and thus saving some work.
