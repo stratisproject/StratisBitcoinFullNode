@@ -193,13 +193,13 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.rpcGetStakingInfoModel.Enabled = true;
 
-            this.mining = this.asyncLoopFactory.Run("PosMining.Mine", token =>
+            this.mining = this.asyncLoopFactory.Run("PosMining.Mine", async token =>
             {
                 this.logger.LogTrace("()");
 
                 try
                 {
-                    this.GenerateBlocks(walletSecret);
+                    await this.GenerateBlocks(walletSecret);
                 }
                 catch (OperationCanceledException)
                 {
@@ -228,7 +228,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 this.logger.LogTrace("(-)");
-                return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
@@ -246,7 +245,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </para>
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
-        public void GenerateBlocks(WalletSecret walletSecret)
+        public async Task GenerateBlocks(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
 
@@ -268,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
                     tryToSync = true;
-                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping);
                 }
 
                 // TODO: What is the purpose of this conditional block?
@@ -289,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
                         if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
 
-                        Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                        await Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping);
                         continue;
                     }
                 }
@@ -317,7 +316,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
 
-                FetchCoinsResponse coinset = this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).GetAwaiter().GetResult();
+                FetchCoinsResponse coinset = await this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray());
 
                 long totalBalance = 0;
                 foreach (UnspentOutputReference infoTransaction in spendable)
@@ -348,7 +347,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
-                this.rpcGetStakingInfoModel.PooledTx = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).GetAwaiter().GetResult();
+                this.rpcGetStakingInfoModel.PooledTx = await this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count);
                 this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(chainTip);
                 this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
@@ -357,14 +356,14 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
                     var blockResult = new BlockResult { Block = block };
-                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip);
+                    await this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip);
 
                     blockTemplate = null;
                 }
                 else
                 {
                     this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlock), this.minerSleep);
-                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping);
                 }
             }
         }
@@ -375,7 +374,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="context">Information about the new block.</param>
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
-        private void CheckStake(ContextInformation context, ChainedBlock chainTip)
+        private async Task CheckStake(ContextInformation context, ChainedBlock chainTip)
         {
             this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainTip), chainTip.HashBlock, chainTip.Height);
 
@@ -424,7 +423,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.chain.SetTip(context.BlockResult.ChainedBlock);
             this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-            this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
+            await this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block });
             this.signals.SignalBlock(block);
 
             this.logger.LogInformation("==================================================================");
