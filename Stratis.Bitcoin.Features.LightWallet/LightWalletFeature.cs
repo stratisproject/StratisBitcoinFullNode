@@ -2,20 +2,21 @@
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 
 namespace Stratis.Bitcoin.Features.LightWallet
 {
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// Feature for a full-block SPV wallet.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
-    public class LightWalletFeature : FullNodeFeature, INodeStats
+    public class LightWalletFeature : FullNodeFeature, INodeStats, IFeatureStats
     {
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -136,6 +137,24 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
                         (manager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
                         (manager.ContainsWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
+            }
+        }
+
+        /// <inheritdoc />
+        public void AddFeatureStats(StringBuilder benchLog)
+        {
+            var walletNames = this.walletManager.GetWalletsNames();
+
+            if (walletNames.Any())
+            {
+                benchLog.AppendLine();
+                benchLog.AppendLine("======Wallets======");
+
+                foreach (var walletName in walletNames)
+                {
+                    var items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
+                    benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                }
             }
         }
     }

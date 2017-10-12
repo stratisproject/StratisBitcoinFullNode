@@ -59,6 +59,17 @@ namespace Stratis.Bitcoin.Features.Miner
         /** The maximum size for mined blocks */
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
+        /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO 
+        /// to prevent halting chain; <c>false</c> to disable coinstake splitting.</summary>
+        /// <remarks>TODO: It should be configurable option, not constant. See https://github.com/stratisproject/StratisBitcoinFullNode/issues/550 </remarks>
+        public const bool CoinstakeSplitEnabled = true;
+
+        /// <summary>
+        /// If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if 
+        /// the number of non-empty UTXOs in the wallet is lower than the required coin age for staking plus 1, 
+        /// multiplied by this value. See <see cref="GetSplitStake(int)"/>.</summary>
+        public const int CoinstakeSplitLimitMultiplier = 3;
+
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
         private readonly Network network;
@@ -511,13 +522,14 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}/{5}',{6}:{7},{8}:{9})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip.HashBlock, chainTip.Height, nameof(searchInterval), searchInterval, nameof(fees), fees);
 
+            int nonEmptyUtxos = stakeTxes.Count;
             coinstakeTx.Inputs.Clear();
             coinstakeTx.Outputs.Clear();
 
             // Mark coinstake transaction.
             coinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
-            long balance = this.GetBalance(stakeTxes).Satoshi;
+            long balance = this.GetMatureBalance(stakeTxes).Satoshi;
             if (balance <= this.reserveBalance)
             {
                 this.rpcGetStakingInfoModel.Staking = false;
@@ -579,7 +591,7 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (StakeTx coin in setCoins)
             {
                 this.logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
-                bool fKernelFound = false;
+                bool kernelFound = false;
 
                 scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
                 if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
@@ -589,7 +601,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                for (uint n = 0; (n < searchInterval) && !fKernelFound; n++)
+                for (uint n = 0; (n < searchInterval) && !kernelFound; n++)
                 {
                     if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                     {
@@ -640,7 +652,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         coinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
 
                         this.logger.LogTrace("Kernel accepted, coinstake input is '{0}/{1}'.", prevoutStake.Hash, prevoutStake.N);
-                        fKernelFound = true;
+                        kernelFound = true;
                         break;
                     }
                     catch (ConsensusErrorException cex)
@@ -654,7 +666,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // If kernel is found stop searching.
-                if (fKernelFound)
+                if (kernelFound)
                     break;
             }
 
@@ -662,47 +674,6 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogTrace("(-)[KERNEL_NOT_FOUND]:false");
                 return false;
-            }
-
-            this.logger.LogTrace("Trying to reduce our staking UTXO set by adding additional inputs to coinstake transaction...");
-            foreach (StakeTx stakeTx in setCoins)
-            {
-                // Attempt to add more inputs.
-                // Only add coins of the same key/address as kernel.
-                if ((coinstakeTx.Outputs.Count == 2)
-                    && ((stakeTx.TxOut.ScriptPubKey == scriptPubKeyKernel) || (stakeTx.TxOut.ScriptPubKey == coinstakeTx.Outputs[1].ScriptPubKey))
-                    && (stakeTx.UtxoSet.TransactionId != coinstakeTx.Inputs[0].PrevOut.Hash))
-                {
-                    this.logger.LogTrace("Found candidate UTXO '{0}/{1}' with {2} coins.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value);
-
-                    // Don't add inputs that would violate the reserve limit.
-                    if ((coinstakeInputsValue + stakeTx.TxOut.Value) > (balance - this.reserveBalance))
-                    {
-                        this.logger.LogTrace("UTXO '{0}/{1}' rejected because if it was added, we would not have required reserve anymore. Its value is {2}, we already used {3}, our total balance is {4} and reserve is {5}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, coinstakeInputsValue, balance, this.reserveBalance);
-                        continue;
-                    }
-
-                    // Do not add additional significant input.
-                    if (stakeTx.TxOut.Value >= GetStakeCombineThreshold())
-                    {
-                        this.logger.LogTrace("UTXO '{0}/{1}' rejected because its value is too big.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
-                        continue;
-                    }
-
-                    coinstakeTx.Inputs.Add(new TxIn(new OutPoint(stakeTx.UtxoSet.TransactionId, stakeTx.OutputIndex)));
-
-                    coinstakeInputsValue += stakeTx.TxOut.Value;
-                    coinstakeInputs.Add(stakeTx);
-
-                    this.logger.LogTrace("UTXO '{0}/{1}' joined to coinstake transaction.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
-
-                    // Stop adding more inputs if already too many inputs.
-                    if (coinstakeTx.Inputs.Count >= 100)
-                    {
-                        this.logger.LogTrace("Number of coinstake inputs reached the limit of 100.");
-                        break;
-                    }
-                }
             }
 
             long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height);
@@ -718,7 +689,8 @@ namespace Stratis.Bitcoin.Features.Miner
             coinstakeInputsValue += reward;
 
             // Split stake if above threshold.
-            if (coinstakeInputsValue >= GetStakeSplitThreshold())
+            bool splitStake = GetSplitStake(nonEmptyUtxos);
+            if (splitStake)
             {
                 this.logger.LogTrace("Coinstake UTXO will be split to two.");
                 coinstakeTx.Outputs.Add(new TxOut(0, coinstakeTx.Outputs[1].ScriptPubKey));
@@ -790,17 +762,12 @@ namespace Stratis.Bitcoin.Features.Miner
             return res;
         }
 
-        private static long GetStakeCombineThreshold()
-        {
-            return 100 * Money.COIN;
-        }
-
-        private static long GetStakeSplitThreshold()
-        {
-            return 2 * GetStakeCombineThreshold();
-        }
-
-        public Money GetBalance(List<StakeTx> stakeTxes)
+        /// <summary>
+        /// Calculates the total balance from all UTXOs in the wallet that are mature.
+        /// </summary>
+        /// <param name="stakeTxes">Description of coins in the wallet that will be used for staking.</param>
+        /// <returns>Total balance from all UTXOs in the wallet that are mature.</returns>
+        public Money GetMatureBalance(List<StakeTx> stakeTxes)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count);
 
@@ -890,7 +857,7 @@ namespace Stratis.Bitcoin.Features.Miner
             if (!(stakeTx.UtxoSet.IsCoinbase || stakeTx.UtxoSet.IsCoinstake))
                 return 0;
 
-            return Math.Max(0, (int)this.network.Consensus.Option<PosConsensusOptions>().COINBASE_MATURITY + 1 - this.GetDepthInMainChain(stakeTx));
+            return Math.Max(0, (int)this.network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity + 1 - this.GetDepthInMainChain(stakeTx));
         }
 
         // Return depth of transaction in blockchain:
@@ -1019,6 +986,29 @@ namespace Stratis.Bitcoin.Features.Miner
         public Miner.Models.GetStakingInfoModel GetGetStakingInfoModel()
         {
             return (Miner.Models.GetStakingInfoModel)this.rpcGetStakingInfoModel.Clone();
+        }
+
+        /// <summary>
+        /// Checks whether the coinstake should be split or not.
+        /// </summary>
+        /// <param name="utxoCount">Number of non-empty UTXOs in the wallet.</param>
+        /// <returns><c>true</c> if the coinstake should be split, <c>false</c> otherwise.</returns>
+        /// <remarks>The coinstake is split if the number of non-empty UTXOs we have in the wallet
+        /// is under the given treshold.</remarks>
+        /// <seealso cref="CoinstakeSplitLimitMultiplier"/>
+        private bool GetSplitStake(int utxoCount)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(utxoCount), utxoCount);
+
+            long maturityLimit = this.network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity;
+            long coinAgeLimit = this.network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations;
+            long requiredCoinAgeForStaking = Math.Max(maturityLimit, coinAgeLimit);
+            this.logger.LogTrace("Required coin age for staking is {0}.", requiredCoinAgeForStaking);
+
+            bool res = utxoCount < (requiredCoinAgeForStaking + 1) * CoinstakeSplitLimitMultiplier;
+
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
     }
 }

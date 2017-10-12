@@ -28,8 +28,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             AssemblerOptions options = new AssemblerOptions();
 
-            options.BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_WEIGHT;
-            options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
+            options.BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight;
+            options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize;
             options.BlockMinFeeRate = blockMinFeeRate;
 
             return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), options);
