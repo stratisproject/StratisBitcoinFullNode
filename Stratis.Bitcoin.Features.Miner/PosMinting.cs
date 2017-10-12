@@ -526,6 +526,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public class CoinstakeWorkerResult
         {
+            public const int KernelNotFound = -1;
             private int kernelFoundIndex;
             public int KernelFoundIndex { get { return this.kernelFoundIndex; } }
 
@@ -533,13 +534,13 @@ namespace Stratis.Bitcoin.Features.Miner
 
             public CoinstakeWorkerResult()
             {
-                this.kernelFoundIndex = 1;
+                this.kernelFoundIndex = KernelNotFound;
                 this.KernelCoin = null;
             }
 
             public bool SetKernelFoundIndex(int WorkerIndex)
             {
-                return Interlocked.CompareExchange(ref this.kernelFoundIndex, WorkerIndex, -1) == -1;
+                return Interlocked.CompareExchange(ref this.kernelFoundIndex, WorkerIndex, KernelNotFound) == KernelNotFound;
             }
         }
 
@@ -644,7 +645,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             await Task.WhenAll(workers);
 
-            if (workersResult.KernelFoundIndex == -1)
+            if (workersResult.KernelFoundIndex == CoinstakeWorkerResult.KernelNotFound)
             {
                 this.logger.LogTrace("(-)[KERNEL_NOT_FOUND]:false");
                 return false;
@@ -751,7 +752,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 for (uint n = 0; (n < searchInterval) && !kernelFound; n++)
                 {
-                    if (context.Result.KernelFoundIndex != -1)
+                    if (context.Result.KernelFoundIndex != CoinstakeWorkerResult.KernelNotFound)
                     {
                         context.Logger.LogTrace("Different worker #{0} already found kernel, stopping work.", context.Result.KernelFoundIndex);
                         stopWork = true;
