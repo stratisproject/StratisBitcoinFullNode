@@ -1003,6 +1003,7 @@ namespace Stratis.Bitcoin.Features.Miner
             long maturityLimit = this.network.Consensus.Option<PosConsensusOptions>().CoinbaseMaturity;
             long coinAgeLimit = this.network.Consensus.Option<PosConsensusOptions>().StakeMinConfirmations;
             long requiredCoinAgeForStaking = Math.Max(maturityLimit, coinAgeLimit);
+            this.logger.LogTrace("Required coin age for staking is {0}.)", requiredCoinAgeForStaking);
 
             bool res = utxoCount < (requiredCoinAgeForStaking + 1) * CoinstakeSplitLimitMultiplier;
 
