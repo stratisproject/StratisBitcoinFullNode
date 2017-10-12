@@ -78,6 +78,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
         private readonly IConnectionManager connection;
         private readonly IDateTimeProvider dateTimeProvider;
