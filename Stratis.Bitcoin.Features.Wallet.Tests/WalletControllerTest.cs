@@ -1441,49 +1441,49 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void SendTransactionSuccessfulReturnsOkResponse()
+        public async Task SendTransactionSuccessfulReturnsOkResponseAsync()
         {
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
             mockWalletWrapper.Setup(m => m.TryBroadcastAsync(It.IsAny<Transaction>()))
                 .Returns(Task.FromResult(Success.Yes));
 
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), mockWalletWrapper.Object);
-            IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest()
+            IActionResult result = await controller.SendTransactionAsync(new SendTransactionRequest()
             {
                 Hex = new uint256(15555).ToString()
-            }).GetAwaiter().GetResult();
+            }).ConfigureAwait(false);
 
             Assert.IsType<OkResult>(result);
         }
 
         [Fact]
-        public void SendTransactionFailedReturnsBadRequest()
+        public async Task SendTransactionFailedReturnsBadRequestAsync()
         {
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
             mockWalletWrapper.Setup(m => m.TryBroadcastAsync(It.IsAny<Transaction>()))
                 .Returns(Task.FromResult(Success.No));
 
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), mockWalletWrapper.Object);
-            IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest()
+            IActionResult result = await controller.SendTransactionAsync(new SendTransactionRequest()
             {
                 Hex = new uint256(15555).ToString()
-            }).GetAwaiter().GetResult();
+            }).ConfigureAwait(false);
 
             StatusCodeResult viewResult = Assert.IsType<StatusCodeResult>(result);
             Assert.Equal(400, viewResult.StatusCode);
         }
 
         [Fact]
-        public void SendTransactionWithInvalidModelStateReturnsBadRequest()
+        public async Task SendTransactionWithInvalidModelStateReturnsBadRequestAsync()
         {
             var mockWalletWrapper = new Mock<IWalletManager>();
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object);
             controller.ModelState.AddModelError("Hex", "Hex required.");
-            IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest()
+            IActionResult result = await controller.SendTransactionAsync(new SendTransactionRequest()
             {
                 Hex = ""
-            }).GetAwaiter().GetResult();
+            }).ConfigureAwait(false);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -1496,7 +1496,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void SendTransactionWithExceptionReturnsBadRequest()
+        public async Task SendTransactionWithExceptionReturnsBadRequestAsync()
         {
             var mockWalletWrapper = new Mock<IBroadcasterManager>();
             mockWalletWrapper.Setup(m => m.TryBroadcastAsync(It.IsAny<Transaction>()))
@@ -1504,10 +1504,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), mockWalletWrapper.Object);
 
-            IActionResult result = controller.SendTransactionAsync(new SendTransactionRequest()
+            IActionResult result = await controller.SendTransactionAsync(new SendTransactionRequest()
             {
                 Hex = new uint256(15555).ToString()
-            }).GetAwaiter().GetResult();
+            }).ConfigureAwait(false);
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);

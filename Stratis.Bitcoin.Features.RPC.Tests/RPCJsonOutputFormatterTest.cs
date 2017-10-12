@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		}
 
 		[Fact]
-		public void WriteResponseBodyAsyncWritesContextToResponseBody()
+		public async Task WriteResponseBodyAsyncWritesContextToResponseBodyAsync()
 		{
 			Stream bodyStream = new MemoryStream();
 			DefaultHttpContext defaultContext = SetupDefaultContextWithResponseBodyStream(bodyStream);
@@ -103,8 +103,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 				}, typeof(RPCAuthorization),
 				new RPCAuthorization());
 
-			var task = this.formatter.WriteResponseBodyAsync(context, Encoding.UTF8);
-			task.Wait();
+			await this.formatter.WriteResponseBodyAsync(context, Encoding.UTF8).ConfigureAwait(false);
 
 			using (StreamReader reader = new StreamReader(stream))
 			{

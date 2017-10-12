@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -12,12 +13,12 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class WalletTests
     {
         [Fact]
-        public void WalletCanReceiveAndSendCorrectly()
+        public async Task WalletCanReceiveAndSendCorrectlyAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
+                var stratisSender = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var stratisReceiver = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -37,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSender.GenerateStratis(maturity + 5);
                 // wait for block repo for block sync to work
 
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisSender)).ConfigureAwait(false);
 
                 // the mining should add coins to the wallet
                 var total = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // sync both nodes
                 stratisSender.CreateRPCClient().AddNode(stratisReceiver.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender)).ConfigureAwait(false);
 
                 // send coins to the receiver
                 var sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
@@ -79,11 +80,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanMineBlocks()
+        public async Task CanMineBlocksAsync()
         {
-            using(NodeBuilder builder = NodeBuilder.Create())
+            using(NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
+                var stratisNodeSync = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 var rpc = stratisNodeSync.CreateRPCClient();
                 rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
@@ -92,11 +93,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanSendToAddress()
+        public async Task CanSendToAddressAsync()
         {
-            using(NodeBuilder builder = NodeBuilder.Create())
+            using(NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
+                var stratisNodeSync = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 var rpc = stratisNodeSync.CreateRPCClient();
                 rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 101);
@@ -107,7 +108,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void WalletCanReorg()
+        public async Task WalletCanReorgAsync()
         {
             // this test has 4 parts:
             // send first transaction from one wallet to another and wait for it to be confirmed
@@ -115,11 +116,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             // connected to a longer chain that couse a reorg back so the second trasnaction is undone
             // mine the second transaction back in to the main chain
 
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var stratisReceiver = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var stratisReorg = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -144,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var currentBestHeight = maturity + 15;
 
                 // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisSender)).ConfigureAwait(false);
 
                 // the mining should add coins to the wallet
                 var total = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
@@ -154,8 +155,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisReceiver.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
                 stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender)).ConfigureAwait(false);
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg)).ConfigureAwait(false);
 
                 // Build Transaction 1
                 // ====================
@@ -268,13 +269,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void Given__TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip__When__ANewBlockArrives__Then__WalletCanRecover()
+        public async Task Given__TheNodeHadAReorg_And_WalletTipIsBehindConsensusTip__When__ANewBlockArrives__Then__WalletCanRecoverAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var stratisReceiver = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var stratisReorg = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -287,14 +288,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSender.GenerateStratisWithMiner(10);
 
                 // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisSender)).ConfigureAwait(false);
 
                 //// sync all nodes
                 stratisReceiver.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
                 stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender)).ConfigureAwait(false);
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg)).ConfigureAwait(false);
 
                 // remove the reorg node
                 stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
@@ -305,8 +306,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // advance both chains, one chin is longer
                 stratisSender.GenerateStratisWithMiner(2);
                 stratisReorg.GenerateStratisWithMiner(10);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisSender)).ConfigureAwait(false);
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisReorg)).ConfigureAwait(false);
 
                 // rewind the wallet in the stratisReceiver node
                 (stratisReceiver.FullNode.NodeService<IWalletSyncManager>() as WalletSyncManager).SyncFromHeight(5);
@@ -315,25 +316,25 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 // wait for the chains to catch up
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender)).ConfigureAwait(false);
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg)).ConfigureAwait(false);
                 Assert.Equal(20, stratisReceiver.FullNode.Chain.Tip.Height);
 
                 stratisSender.GenerateStratisWithMiner(5);
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender)).ConfigureAwait(false);
                 Assert.Equal(25, stratisReceiver.FullNode.Chain.Tip.Height);
             }
         }
 
         [Fact]
-        public void Given__TheNodeHadAReorg_And_ConensusTipIsdifferentFromWalletTip__When__ANewBlockArrives__Then__WalletCanRecover()
+        public async Task Given__TheNodeHadAReorg_And_ConensusTipIsdifferentFromWalletTip__When__ANewBlockArrives__Then__WalletCanRecoverAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisSender = builder.CreateStratisPowNode();
-                var stratisReceiver = builder.CreateStratisPowNode();
-                var stratisReorg = builder.CreateStratisPowNode();
+                var stratisSender = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var stratisReceiver = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var stratisReorg = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
 
                 builder.StartAll();
                 stratisSender.NotInIBD();
@@ -346,14 +347,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSender.GenerateStratisWithMiner(10);
 
                 // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisSender)).ConfigureAwait(false);
 
                 //// sync all nodes
                 stratisReceiver.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
                 stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender)).ConfigureAwait(false);
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg)).ConfigureAwait(false);
 
                 // remove the reorg node
                 stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
@@ -364,15 +365,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // advance both chains, one chin is longer
                 stratisSender.GenerateStratisWithMiner(2);
                 stratisReorg.GenerateStratisWithMiner(10);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisSender)).ConfigureAwait(false);
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisReorg)).ConfigureAwait(false);
 
                 // connect the reorg chain
                 stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 // wait for the chains to catch up
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender)).ConfigureAwait(false);
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg)).ConfigureAwait(false);
                 Assert.Equal(20, stratisReceiver.FullNode.Chain.Tip.Height);
 
                 // rewind the wallet in the stratisReceiver node
@@ -380,17 +381,17 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 stratisSender.GenerateStratisWithMiner(5);
 
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+                await TestHelper.WaitLoopAsync(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender)).ConfigureAwait(false);
                 Assert.Equal(25, stratisReceiver.FullNode.Chain.Tip.Height);
             }
         }
 
         [Fact]
-        public void WalletCanCatchupWithBestChain()
+        public async Task WalletCanCatchupWithBestChainAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisminer = builder.CreateStratisPowNode();
+                var stratisminer = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
 
                 builder.StartAll();
                 stratisminer.NotInIBD();
@@ -405,23 +406,23 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisminer.SetDummyMinerSecret(key.GetBitcoinSecret(stratisminer.FullNode.Network));
                 stratisminer.GenerateStratis(10);
                 // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisminer));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisminer)).ConfigureAwait(false);
 
                 // push the wallet back
                 stratisminer.FullNode.Services.ServiceProvider.GetService<IWalletSyncManager>().SyncFromHeight(5);
 
                 stratisminer.GenerateStratis(5);
 
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisminer));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisminer)).ConfigureAwait(false);
             }
         }
 
         [Fact]
-        public void WalletCanRecoverOnStartup()
+        public async Task WalletCanRecoverOnStartupAsync()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
+                var stratisNodeSync = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -434,7 +435,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                
                 stratisNodeSync.SetDummyMinerSecret(key.GetBitcoinSecret(stratisNodeSync.FullNode.Network));
                 stratisNodeSync.GenerateStratis(10);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
+                await TestHelper.WaitLoopAsync(() => TestHelper.IsNodeSynced(stratisNodeSync)).ConfigureAwait(false);
 
                 // set the tip of best chain some blocks in the apst
                 stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
@@ -445,7 +446,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
 
                 // load the node, this should hit the block store recover code
-                newNodeInstance.Start();
+                await newNodeInstance.StartAsync().ConfigureAwait(false);
 
                 // check that store recovered to be the same as the best chain.
                 Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.WalletManager().WalletTipHash);

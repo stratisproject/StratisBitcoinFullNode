@@ -4,6 +4,7 @@ using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -17,8 +18,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 		public CoinViewTester(CoinView coinView)
 		{
 			this.coinView = coinView;
-            this._Hash = coinView.GetBlockHashAsync().Result;
 		}
+
+        public async Task InitializeAsync()
+        {
+            this._Hash = await this.coinView.GetBlockHashAsync().ConfigureAwait(false);
+        }
 
 		List<UnspentOutputs> _PendingCoins = new List<UnspentOutputs>();
 		public Coin[] CreateCoins(int coinCount)
@@ -32,9 +37,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 			return tx.Outputs.AsCoins().ToArray();
 		}
 
-		public bool Exists(Coin c)
+		public async Task<bool> ExistsAsync(Coin c)
 		{
-			var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
+			var result = await this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).ConfigureAwait(false);
 			if(result.BlockHash != this._Hash)
 				throw new InvalidOperationException("Unexepected hash");
 			if(result.UnspentOutputs[0] == null)
@@ -42,12 +47,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 			return result.UnspentOutputs[0].IsAvailable(c.Outpoint.N);
 		}
 
-		public void Spend(Coin c)
+		public async Task SpendAsync(Coin c)
 		{
 			var coin = this._PendingCoins.FirstOrDefault(u => u.TransactionId == c.Outpoint.Hash);
 			if(coin == null)
 			{
-				var result = this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).Result;
+				var result = await this.coinView.FetchCoinsAsync(new[] { c.Outpoint.Hash }).ConfigureAwait(false);
 				if(result.BlockHash != this._Hash)
 					throw new InvalidOperationException("Unexepected hash");
 				if(result.UnspentOutputs[0] == null)
@@ -65,18 +70,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 		}
 
 		uint256 _Hash;
-		public uint256 NewBlock()
+		public async Task<uint256> NewBlockAsync()
 		{
 			var newHash = new uint256(RandomUtils.GetBytes(32));
-			this.coinView.SaveChangesAsync(this._PendingCoins, null, this._Hash, newHash).Wait();
+			await this.coinView.SaveChangesAsync(this._PendingCoins, null, this._Hash, newHash).ConfigureAwait(false);
 			this._PendingCoins.Clear();
             this._Hash = newHash;
 			return newHash;
 		}
 
-		public uint256 Rewind()
+		public async Task<uint256> RewindAsync()
 		{
-            this._Hash = this.coinView.Rewind().Result;
+            this._Hash = await this.coinView.Rewind().ConfigureAwait(false);
 			return this._Hash;
 		}
 	}

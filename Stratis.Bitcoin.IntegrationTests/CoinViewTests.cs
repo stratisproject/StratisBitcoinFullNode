@@ -13,6 +13,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 using static NBitcoin.Transaction;
 
@@ -32,182 +33,183 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void TestDBreezeSerialization()
+        public async Task TestDBreezeSerializationAsync()
         {
-            using(NodeContext ctx = NodeContext.Create())
+            using(NodeContext ctx = await NodeContext.CreateAsync().ConfigureAwait(false))
             {
                 var genesis = ctx.Network.GetGenesis();
                 var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
                 var chained = MakeNext(genesisChainedBlock);
-                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
-                Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+                await ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).ConfigureAwait(false);
+                Assert.NotNull((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).ConfigureAwait(false)).UnspentOutputs[0]);
+                Assert.Null((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).ConfigureAwait(false)).UnspentOutputs[0]);
 
                 var previous = chained;
                 chained = MakeNext(MakeNext(genesisChainedBlock));
                 chained = MakeNext(MakeNext(genesisChainedBlock));
-                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock).Wait();
-                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
-                ctx.ReloadPersistentCoinView();
-                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
-                Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+                await ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock).ConfigureAwait(false);
+                Assert.Equal(chained.HashBlock, await ctx.PersistentCoinView.GetBlockHashAsync().ConfigureAwait(false));
+                await ctx.ReloadPersistentCoinViewAsync().ConfigureAwait(false);
+                Assert.Equal(chained.HashBlock, await ctx.PersistentCoinView.GetBlockHashAsync().ConfigureAwait(false));
+                Assert.NotNull((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).ConfigureAwait(false)).UnspentOutputs[0]);
+                Assert.Null((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).ConfigureAwait(false)).UnspentOutputs[0]);
             }
         }
 
         [Fact]
-        public void TestCacheCoinView()
+        public async Task TestCacheCoinViewAsync()
         {
-            using(NodeContext ctx = NodeContext.Create())
+            using(NodeContext ctx = await NodeContext.CreateAsync().ConfigureAwait(false))
             {
                 var genesis = ctx.Network.GetGenesis();
                 var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
                 var chained = MakeNext(genesisChainedBlock);
-                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, loggerFactory);
+                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, this.loggerFactory);
 
-                cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
-                Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Null(cacheCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
-                Assert.Equal(chained.HashBlock, cacheCoinView.GetBlockHashAsync().Result);
+                await cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).ConfigureAwait(false);
+                Assert.NotNull((await cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).ConfigureAwait(false)).UnspentOutputs[0]);
+                Assert.Null((await cacheCoinView.FetchCoinsAsync(new[] { new uint256() }).ConfigureAwait(false)).UnspentOutputs[0]);
+                Assert.Equal(chained.HashBlock, (await cacheCoinView.GetBlockHashAsync().ConfigureAwait(false)));
 
-                Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Equal(chained.Previous.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().Result);
-                cacheCoinView.FlushAsync().GetAwaiter().GetResult();
-                Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().Result);
-                //Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+                Assert.Null((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).ConfigureAwait(false)).UnspentOutputs[0]);
+                Assert.Equal(chained.Previous.HashBlock, await ctx.PersistentCoinView.GetBlockHashAsync().ConfigureAwait(false));
+                await cacheCoinView.FlushAsync().ConfigureAwait(false);
+                Assert.NotNull((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).ConfigureAwait(false)).UnspentOutputs[0]);
+                Assert.Equal(chained.HashBlock, await ctx.PersistentCoinView.GetBlockHashAsync().ConfigureAwait(false));
+                //Assert.Null((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).ConfigureAwait(false)).UnspentOutputs[0]);
 
 
                 //var previous = chained;
                 //chained = MakeNext(MakeNext(genesisChainedBlock));
                 //chained = MakeNext(MakeNext(genesisChainedBlock));
-                //ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], previous.HashBlock, chained.HashBlock).Wait();
-                //Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
-                //ctx.ReloadPersistentCoinView();
-                //Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetBlockHashAsync().GetAwaiter().GetResult());
-                //Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
-                //Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
+                //await ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], previous.HashBlock, chained.HashBlock).ConfigureAwait(false);
+                //Assert.Equal(chained.HashBlock, await ctx.PersistentCoinView.GetBlockHashAsync().ConfigureAwait(false));
+                //await ctx.ReloadPersistentCoinViewAsync().ConfigureAwait(false)
+                //Assert.Equal(chained.HashBlock, await ctx.PersistentCoinView.GetBlockHashAsync().ConfigureAwait(false));
+                //Assert.NotNull((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).ConfigureAwait(false)).UnspentOutputs[0]);
+                //Assert.Null((await ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).ConfigureAwait(false)).UnspentOutputs[0]);
             }
         }
 
         [Fact]
-        public void CanRewind()
+        public async Task CanRewindAsync()
         {
-            using(NodeContext ctx = NodeContext.Create())
+            using(NodeContext ctx = await NodeContext.CreateAsync().ConfigureAwait(false))
             {
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, this.loggerFactory);
                 var tester = new CoinViewTester(cacheCoinView);
+                await tester.InitializeAsync().ConfigureAwait(false);
 
                 var coins = tester.CreateCoins(5);
                 var coin = tester.CreateCoins(1);
 
                 // 1
-                var h1 = tester.NewBlock();
-                cacheCoinView.FlushAsync().Wait();
-                Assert.True(tester.Exists(coins[2]));
-                Assert.True(tester.Exists(coin[0]));
+                var h1 = await tester.NewBlockAsync().ConfigureAwait(false);
+                await cacheCoinView.FlushAsync().ConfigureAwait(false);
+                Assert.True(await tester.ExistsAsync(coins[2]).ConfigureAwait(false));
+                Assert.True(await tester.ExistsAsync(coin[0]).ConfigureAwait(false));
 
-                tester.Spend(coins[2]);
-                tester.Spend(coin[0]);
+                await tester.SpendAsync(coins[2]).ConfigureAwait(false);
+                await tester.SpendAsync(coin[0]).ConfigureAwait(false);
                 //2
-                tester.NewBlock();
+                await tester.NewBlockAsync().ConfigureAwait(false);
                 //3
-                tester.NewBlock();
+                await tester.NewBlockAsync().ConfigureAwait(false);
                 //4
                 var coin2 = tester.CreateCoins(1);
-                tester.NewBlock();
-                Assert.True(tester.Exists(coins[0]));
-                Assert.True(tester.Exists(coin2[0]));
-                Assert.False(tester.Exists(coins[2]));
-                Assert.False(tester.Exists(coin[0]));
+                await tester.NewBlockAsync().ConfigureAwait(false);
+                Assert.True(await tester.ExistsAsync(coins[0]).ConfigureAwait(false));
+                Assert.True(await tester.ExistsAsync(coin2[0]).ConfigureAwait(false));
+                Assert.False(await tester.ExistsAsync(coins[2]).ConfigureAwait(false));
+                Assert.False(await tester.ExistsAsync(coin[0]).ConfigureAwait(false));
                 //1
-                tester.Rewind();
-                Assert.False(tester.Exists(coin2[0]));
-                Assert.True(tester.Exists(coins[2]));
-                Assert.True(tester.Exists(coin[0]));
+                await tester.RewindAsync().ConfigureAwait(false);
+                Assert.False(await tester.ExistsAsync(coin2[0]).ConfigureAwait(false));
+                Assert.True(await tester.ExistsAsync(coins[2]).ConfigureAwait(false));
+                Assert.True(await tester.ExistsAsync(coin[0]).ConfigureAwait(false));
 
 
-                tester.Spend(coins[2]);
-                tester.Spend(coin[0]);
+                await tester.SpendAsync(coins[2]).ConfigureAwait(false);
+                await tester.SpendAsync(coin[0]).ConfigureAwait(false);
                 //2
-                var h2 = tester.NewBlock();
-                cacheCoinView.FlushAsync().Wait();
-                Assert.False(tester.Exists(coins[2]));
-                Assert.False(tester.Exists(coin[0]));
+                var h2 = await tester.NewBlockAsync().ConfigureAwait(false);
+                await cacheCoinView.FlushAsync().ConfigureAwait(false);
+                Assert.False(await tester.ExistsAsync(coins[2]).ConfigureAwait(false));
+                Assert.False(await tester.ExistsAsync(coin[0]).ConfigureAwait(false));
 
                 //1
-                Assert.True(h1 == tester.Rewind());
-                Assert.True(tester.Exists(coins[2]));
-                Assert.True(tester.Exists(coin[0]));
+                Assert.True(h1 == await tester.RewindAsync().ConfigureAwait(false));
+                Assert.True(await tester.ExistsAsync(coins[2]).ConfigureAwait(false));
+                Assert.True(await tester.ExistsAsync(coin[0]).ConfigureAwait(false));
 
 
                 var coins2 = tester.CreateCoins(7);
-                tester.Spend(coins2[0]);
+                await tester.SpendAsync(coins2[0]).ConfigureAwait(false);
                 coin2 = tester.CreateCoins(1);
-                tester.Spend(coin2[0]);
+                await tester.SpendAsync(coin2[0]).ConfigureAwait(false);
                 //2
-                tester.NewBlock();
-                Assert.True(tester.Exists(coins2[1]));
-                Assert.False(tester.Exists(coins2[0]));
-                cacheCoinView.FlushAsync().Wait();
+                await tester.NewBlockAsync().ConfigureAwait(false);
+                Assert.True(await tester.ExistsAsync(coins2[1]).ConfigureAwait(false));
+                Assert.False(await tester.ExistsAsync(coins2[0]).ConfigureAwait(false));
+                await cacheCoinView.FlushAsync().ConfigureAwait(false);
                 //3
-                tester.NewBlock();
+                await tester.NewBlockAsync().ConfigureAwait(false);
                 //2
-                tester.Rewind();
-                Assert.True(tester.Exists(coins2[1]));
-                Assert.False(tester.Exists(coins2[0]));
-                Assert.False(tester.Exists(coin2[0]));
-                Assert.True(tester.Exists(coins[2]));
-                Assert.True(tester.Exists(coin[0]));
+                await tester.RewindAsync().ConfigureAwait(false);
+                Assert.True(await tester.ExistsAsync(coins2[1]).ConfigureAwait(false));
+                Assert.False(await tester.ExistsAsync(coins2[0]).ConfigureAwait(false));
+                Assert.False(await tester.ExistsAsync(coin2[0]).ConfigureAwait(false));
+                Assert.True(await tester.ExistsAsync(coins[2]).ConfigureAwait(false));
+                Assert.True(await tester.ExistsAsync(coin[0]).ConfigureAwait(false));
 
 
             }
         }
 
         [Fact]
-        public void CanHandleReorgs()
+        public async Task CanHandleReorgsAsync()
         {
-            using(NodeBuilder builder = NodeBuilder.Create())
+            using(NodeBuilder builder = await NodeBuilder.CreateAsync().ConfigureAwait(false))
             {
-                var stratisNode = builder.CreateStratisPowNode();
-                var coreNode1 = builder.CreateNode();
-                var coreNode2 = builder.CreateNode();
+                var stratisNode = await builder.CreateStratisPowNodeAsync().ConfigureAwait(false);
+                var coreNode1 = await builder.CreateNodeAsync().ConfigureAwait(false);
+                var coreNode2 = await builder.CreateNodeAsync().ConfigureAwait(false);
                 builder.StartAll();
 
                 //Core1 discovers 10 blocks, sends to stratis
-                var tip = coreNode1.FindBlock(10).Last();
+                var tip = (await coreNode1.FindBlockAsync(10).ConfigureAwait(false)).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
 
                 //Core2 discovers 20 blocks, sends to stratis
-                tip = coreNode2.FindBlock(20).Last();
+                tip = (await coreNode2.FindBlockAsync(20).ConfigureAwait(false)).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
-                ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
+                await ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().ConfigureAwait(false);
 
                 //Core1 discovers 30 blocks, sends to stratis
-                tip = coreNode1.FindBlock(30).Last();
+                tip = (await coreNode1.FindBlockAsync(30).ConfigureAwait(false)).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
 
                 //Core2 discovers 50 blocks, sends to stratis
-                tip = coreNode2.FindBlock(50).Last();
+                tip = (await coreNode2.FindBlockAsync(50).ConfigureAwait(false)).Last();
                 stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
                 stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
-                ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
+                await ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().ConfigureAwait(false);
 
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
+                await TestHelper.WaitLoopAsync(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash()).ConfigureAwait(false);
             }
         }
 
         [Fact]
-        public void TestDBreezeInsertOrder()
+        public async Task TestDBreezeInsertOrderAsync()
         {
-            using(NodeContext ctx = NodeContext.Create())
+            using(NodeContext ctx = await NodeContext.CreateAsync().ConfigureAwait(false))
             {
                 using(var engine = new DBreeze.DBreezeEngine(ctx.FolderName + "/2"))
                 {
@@ -253,25 +255,25 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanSaveChainIncrementally()
+        public async Task CanSaveChainIncrementallyAsync()
         {
             using(var dir = TestDirectory.Create())
             {
                 using(var repo = new ChainRepository(dir.FolderName))
                 {
                     var chain = new ConcurrentChain(Network.RegTest);
-                    repo.Load(chain).GetAwaiter().GetResult();
+                    await repo.Load(chain).ConfigureAwait(false);
                     Assert.True(chain.Tip == chain.Genesis);
                     chain = new ConcurrentChain(Network.RegTest);
                     var tip = AppendBlock(chain);
-                    repo.Save(chain).GetAwaiter().GetResult();
+                    await repo.Save(chain).ConfigureAwait(false);
                     var newChain = new ConcurrentChain(Network.RegTest);
-                    repo.Load(newChain).GetAwaiter().GetResult();
+                    await repo.Load(newChain).ConfigureAwait(false);
                     Assert.Equal(tip, newChain.Tip);
                     tip = AppendBlock(chain);
-                    repo.Save(chain).GetAwaiter().GetResult();
+                    await repo.Save(chain).ConfigureAwait(false);
                     newChain = new ConcurrentChain(Network.RegTest);
-                    repo.Load(newChain).GetAwaiter().GetResult();
+                    await repo.Load(newChain).ConfigureAwait(false);
                     Assert.Equal(tip, newChain.Tip);
                 }
             }
@@ -300,15 +302,15 @@ namespace Stratis.Bitcoin.IntegrationTests
             return AppendBlock(index, chains);
         }
 
-        private byte[] GetFile(string fileName, string url)
+        private async Task<byte[]> GetFileAsync(string fileName, string url)
         {
             fileName = Path.Combine("TestData", fileName);
             if(File.Exists(fileName))
-                return File.ReadAllBytes(fileName);
+                return await File.ReadAllBytesAsync(fileName).ConfigureAwait(false);
             HttpClient client = new HttpClient();
             client.Timeout = TimeSpan.FromMinutes(10);
-            var data = client.GetByteArrayAsync(url).Result;
-            File.WriteAllBytes(fileName, data);
+            var data = await client.GetByteArrayAsync(url).ConfigureAwait(false);
+            await File.WriteAllBytesAsync(fileName, data).ConfigureAwait(false);
             return data;
         }
 

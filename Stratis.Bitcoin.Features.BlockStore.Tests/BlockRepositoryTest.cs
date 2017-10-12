@@ -5,15 +5,16 @@
     using Stratis.Bitcoin.Tests;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading.Tasks;
     using Xunit;
 
     public class BlockRepositoryTest : TestBase
     {
         [Fact]
-        public void InitializesGenBlockAndTxIndexOnFirstLoad()
+        public async Task InitializesGenBlockAndTxIndexOnFirstLoadAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/InitializeGenBlockAndTxIndex");
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
             }
 
@@ -30,7 +31,7 @@
         }
 
         [Fact]
-        public void DoesNotOverwriteExistingBlockAndTxIndexOnFirstLoad()
+        public async Task DoesNotOverwriteExistingBlockAndTxIndexOnFirstLoadAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/NoOverwriteExistingBlockAndTxIndex");
 
@@ -43,7 +44,7 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
             }
 
@@ -60,7 +61,7 @@
         }
 
         [Fact]
-        public void GetTrxAsyncWithoutTransactionIndexReturnsNewTransaction()
+        public async Task GetTrxAsyncWithoutTransactionIndexReturnsNewTransactionAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithoutTxIndex");
 
@@ -73,17 +74,16 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxAsync(uint256.Zero);
-                task.Wait();
+                var result = await repository.GetTrxAsync(uint256.Zero).ConfigureAwait(false);
 
-                Assert.Equal(default(Transaction), task.Result);
+                Assert.Equal(default(Transaction), result);
             }
         }
 
         [Fact]
-        public void GetTrxAsyncWithoutTransactionInIndexReturnsNull()
+        public async Task GetTrxAsyncWithoutTransactionInIndexReturnsNullAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithoutTransactionFound");
 
@@ -96,17 +96,16 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxAsync(new uint256(65));
-                task.Wait();
+                var result = await repository.GetTrxAsync(new uint256(65)).ConfigureAwait(false);
 
-                Assert.Null(task.Result);
+                Assert.Null(result);
             }
         }
 
         [Fact]
-        public void GetTrxAsyncWithTransactionReturnsExistingTransaction()
+        public async Task GetTrxAsyncWithTransactionReturnsExistingTransactionAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithTransaction");
             var trans = new Transaction();
@@ -126,17 +125,16 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxAsync(trans.GetHash());
-                task.Wait();
+                var result = await repository.GetTrxAsync(trans.GetHash()).ConfigureAwait(false);
 
-                Assert.Equal((uint)125, task.Result.Version);
+                Assert.Equal((uint)125, result.Version);
             }
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithoutTxIndexReturnsDefaultId()
+        public async Task GetTrxBlockIdAsyncWithoutTxIndexReturnsDefaultIdAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTxIndex");
 
@@ -148,17 +146,16 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
+                var result = await repository.GetTrxBlockIdAsync(new uint256(26)).ConfigureAwait(false);
 
-                Assert.Equal(default(uint256), task.Result);
+                Assert.Equal(default(uint256), result);
             }
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithoutExistingTransactionReturnsNull()
+        public async Task GetTrxBlockIdAsyncWithoutExistingTransactionReturnsNullAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTransaction");
 
@@ -170,17 +167,16 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
+                var result = await repository.GetTrxBlockIdAsync(new uint256(26)).ConfigureAwait(false);
 
-                Assert.Null(task.Result);
+                Assert.Null(result);
             }
         }
 
         [Fact]
-        public void GetTrxBlockIdAsyncWithTransactionReturnsBlockId()
+        public async Task GetTrxBlockIdAsyncWithTransactionReturnsBlockIdAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTransaction");
 
@@ -193,17 +189,16 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
-                task.Wait();
-
-                Assert.Equal(new uint256(42), task.Result);
+                var result = await repository.GetTrxBlockIdAsync(new uint256(26)).ConfigureAwait(false);
+                
+                Assert.Equal(new uint256(42), result);
             }
         }
 
         [Fact]
-        public void PutAsyncWritesBlocksAndTransactionsToDbAndSavesNextBlockHash()
+        public async Task PutAsyncWritesBlocksAndTransactionsToDbAndSavesNextBlockHashAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/PutAsyncStoresBlocksAndTxs");
 
@@ -235,10 +230,9 @@
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.PutAsync(nextBlockHash, blocks);
-                task.Wait();
+                await repository.PutAsync(nextBlockHash, blocks).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -268,7 +262,7 @@
         }
 
         [Fact]
-        public void SetTxIndexUpdatesTxIndex()
+        public async Task SetTxIndexUpdatesTxIndexAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/SetTxIndexUpdatesTxIndex");
             using (var engine = new DBreezeEngine(dir))
@@ -278,10 +272,9 @@
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.SetTxIndex(false);
-                task.Wait();
+                await repository.SetTxIndex(false).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -294,7 +287,7 @@
         }
 
         [Fact]
-        public void SetBlockHashUpdatesBlockHash()
+        public async Task SetBlockHashUpdatesBlockHashAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/SetBlockHashUpdatesBlockHash");
             using (var engine = new DBreezeEngine(dir))
@@ -304,10 +297,9 @@
                 trans.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.SetBlockHash(new uint256(56));
-                task.Wait();
+                await repository.SetBlockHash(new uint256(56)).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -320,7 +312,7 @@
         }
 
         [Fact]
-        public void GetAsyncWithExistingBlockReturnsBlock()
+        public async Task GetAsyncWithExistingBlockReturnsBlockAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetAsyncWithExistingBlock");
             var block = new Block();
@@ -332,31 +324,29 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetAsync(block.GetHash());
-                task.Wait();
+                var result = await repository.GetAsync(block.GetHash()).ConfigureAwait(false);
 
-                Assert.Equal(block.GetHash(), task.Result.GetHash());
+                Assert.Equal(block.GetHash(), result.GetHash());
             }
         }
 
         [Fact]
-        public void GetAsyncWithoutExistingBlockReturnsNull()
+        public async Task GetAsyncWithoutExistingBlockReturnsNullAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/GetAsyncWithoutExistingBlock");
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.GetAsync(new uint256());
-                task.Wait();
+                var result = await repository.GetAsync(new uint256()).ConfigureAwait(false);
 
-                Assert.Null(task.Result);
+                Assert.Null(result);
             }
         }
 
         [Fact]
-        public void ExistAsyncWithExistingBlockReturnsTrue()
+        public async Task ExistAsyncWithExistingBlockReturnsTrueAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/ExistAsyncWithExistingBlock");
             var block = new Block();
@@ -368,31 +358,29 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.ExistAsync(block.GetHash());
-                task.Wait();
+                var result = await repository.ExistAsync(block.GetHash()).ConfigureAwait(false);
 
-                Assert.True(task.Result);
+                Assert.True(result);
             }
         }
 
         [Fact]
-        public void ExistAsyncWithoutExistingBlockReturnsFalse()
+        public async Task ExistAsyncWithoutExistingBlockReturnsFalseAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/ExistAsyncWithoutExistingBlock");
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.ExistAsync(new uint256());
-                task.Wait();
-
-                Assert.False(task.Result);
+                var result = await repository.ExistAsync(new uint256()).ConfigureAwait(false);
+                
+                Assert.False(result);
             }
         }
 
         [Fact]
-        public void DeleteAsyncRemovesBlocksAndTransactions()
+        public async Task DeleteAsyncRemovesBlocksAndTransactionsAsync()
         {
             var dir = AssureEmptyDir("TestData/BlockRepository/DeleteAsyncRemovesBlocksAndTransactions");
             var block = new Block();
@@ -407,10 +395,9 @@
                 transaction.Commit();
             }
 
-            using (var repository = SetupRepository(Network.Main, dir))
+            using (var repository = await SetupRepositoryAsync(Network.Main, dir).ConfigureAwait(false))
             {
-                var task = repository.DeleteAsync(new uint256(45), new List<uint256>() { block.GetHash() });
-                task.Wait();
+                await repository.DeleteAsync(new uint256(45), new List<uint256>() { block.GetHash() }).ConfigureAwait(false);
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -427,10 +414,10 @@
             }
         }
 
-        private Bitcoin.Features.BlockStore.IBlockRepository SetupRepository(Network main, string dir)
+        private async Task<BlockStore.IBlockRepository> SetupRepositoryAsync(Network main, string dir)
         {
             var repository = new BlockRepository(main, dir, this.loggerFactory);
-            repository.Initialize().GetAwaiter().GetResult();
+            await repository.Initialize().ConfigureAwait(false);
 
             return repository;
         }

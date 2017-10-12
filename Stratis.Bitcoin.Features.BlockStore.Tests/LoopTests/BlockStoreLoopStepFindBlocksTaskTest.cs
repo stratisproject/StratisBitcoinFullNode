@@ -3,6 +3,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
@@ -11,14 +12,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     public sealed class BlockStoreLoopStepFindBlocksTaskTest : BlockStoreLoopStepBaseTest
     {
         [Fact]
-        public void BlockStoreInnerStepFindBlocks_WithBlocksFound_AddToDownloadStack()
+        public async Task BlockStoreInnerStepFindBlocks_WithBlocksFound_AddToDownloadStackAsync()
         {
             var blocks = CreateBlocks(10);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).ConfigureAwait(false);
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
-                task.ExecuteAsync(context).GetAwaiter().GetResult();
+                await task.ExecuteAsync(context).ConfigureAwait(false);
 
                 // Block[5] through Block[9] should be in the DownloadStack
                 Assert.Equal(5, context.DownloadStack.Count());
@@ -53,14 +54,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         }
 
         [Fact]
-        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_DownloadStackSizeReached()
+        public async Task BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_DownloadStackSizeReachedAsync()
         {
             var blocks = CreateBlocks(55);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 45 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(45).Last().GetHash(), blocks.Take(45).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(45).Last().GetHash(), blocks.Take(45).ToList()).ConfigureAwait(false);
 
                 // The chain has 55 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -76,7 +77,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
-                task.ExecuteAsync(context).GetAwaiter().GetResult();
+                await task.ExecuteAsync(context).ConfigureAwait(false);
 
                 // Block[45] through Block[50] should be in the DownloadStack
                 Assert.Equal(10, context.DownloadStack.Count());
@@ -99,14 +100,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         }
 
         [Fact]
-        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorage()
+        public async Task BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInPendingStorageAsync()
         {
             var blocks = CreateBlocks(3);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 2 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(1).Last().GetHash(), blocks.Take(1).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(1).Last().GetHash(), blocks.Take(1).ToList()).ConfigureAwait(false);
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -125,7 +126,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
-                task.ExecuteAsync(context).GetAwaiter().GetResult();
+                await task.ExecuteAsync(context).ConfigureAwait(false);
 
                 // DownloadStack should only contain Block[1]
                 Assert.Equal(1, context.DownloadStack.Count());
@@ -139,14 +140,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         }
 
         [Fact]
-        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepository()
+        public async Task BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_BlockExistsInRepositoryAsync()
         {
             var blocks = CreateBlocks(3);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 3 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).ConfigureAwait(false);
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -162,7 +163,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
-                task.ExecuteAsync(context).GetAwaiter().GetResult();
+                await task.ExecuteAsync(context).ConfigureAwait(false);
 
                 // DownloadStack should only contain Block[1]
                 Assert.Equal(0, context.DownloadStack.Count());
@@ -176,14 +177,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         }
 
         [Fact]
-        public void BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNull()
+        public async Task BlockStoreInnerStepFindBlocks_CanRemoveTaskFromRoutine_NextChainedBlockIsNullAsync()
         {
             var blocks = CreateBlocks(3);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 2 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(2).Last().GetHash(), blocks.Take(2).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(2).Last().GetHash(), blocks.Take(2).ToList()).ConfigureAwait(false);
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -199,7 +200,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var context = new BlockStoreInnerStepContext(new CancellationToken(), fluent.Loop, nextChainedBlock, this.loggerFactory, DateTimeProvider.Default);
 
                 var task = new BlockStoreInnerStepFindBlocks(this.loggerFactory);
-                task.ExecuteAsync(context).GetAwaiter().GetResult();
+                await task.ExecuteAsync(context).ConfigureAwait(false);
 
                 // DownloadStack should only contain nextChainedBlock
                 Assert.Equal(1, context.DownloadStack.Count());

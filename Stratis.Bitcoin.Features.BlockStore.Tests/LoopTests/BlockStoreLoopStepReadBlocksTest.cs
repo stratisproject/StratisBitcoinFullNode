@@ -3,6 +3,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
@@ -15,14 +16,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// <see cref="BlockStoreInnerStepReadBlocks"/> inner steps via <see cref="DownloadBlockStep"/>
         /// </summary>
         [Fact]
-        public void BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_PushToRepository()
+        public async Task BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_PushToRepositoryAsync()
         {
             var blocks = CreateBlocks(10);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).ConfigureAwait(false);
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -41,7 +42,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var step = new DownloadBlockStep(fluent.Loop, this.loggerFactory, DateTimeProvider.Default);
-                step.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                await step.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).ConfigureAwait(false);
 
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -52,14 +53,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// Test only BlockStoreInnerStepReadBlocks() inner step
         /// </summary>
         [Fact]
-        public void BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_CanBreakExecutionOnStallCountReached()
+        public async Task BlockStoreInnerStepReadBlocks_WithBlocksToAskAndRead_CanBreakExecutionOnStallCountReachedAsync()
         {
             var blocks = CreateBlocks(3);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 3 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks.Take(3).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks.Take(3).ToList()).ConfigureAwait(false);
 
                 // The chain has 3 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -77,21 +78,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 context.StallCount = 10001;
 
                 var task = new BlockStoreInnerStepReadBlocks(this.loggerFactory);
-                var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
+                var result = await task.ExecuteAsync(context).ConfigureAwait(false);
 
                 Assert.Equal(InnerStepResult.Stop, result);
             }
         }
 
         [Fact]
-        public void BlockStoreInnerStepReadBlocks_CanBreakExecution_DownloadStackIsEmpty()
+        public async Task BlockStoreInnerStepReadBlocks_CanBreakExecution_DownloadStackIsEmptyAsync()
         {
             var blocks = CreateBlocks(2);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 2 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).ConfigureAwait(false);
 
                 // The chain has 2 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -108,7 +109,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 context.StallCount = 10001;
 
                 var task = new BlockStoreInnerStepReadBlocks(this.loggerFactory);
-                var result = task.ExecuteAsync(context).GetAwaiter().GetResult();
+                var result = await task.ExecuteAsync(context).ConfigureAwait(false);
                 Assert.Equal(InnerStepResult.Stop, result);
             }
         }

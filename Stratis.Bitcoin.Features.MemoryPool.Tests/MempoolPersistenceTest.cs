@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public void LoadPoolTest_WithBadTransactions()
+        public async Task LoadPoolTest_WithBadTransactionsAsync()
         {
             int numTx = 5;
             string fileName = "mempool.dat";
@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolManager mempoolManager = CreateTestMempool(settings, out unused);
 
             MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
-            mempoolManager.LoadPool(fileName).GetAwaiter().GetResult();
-            long actualSize = mempoolManager.MempoolSize().GetAwaiter().GetResult();
+            await mempoolManager.LoadPool(fileName).ConfigureAwait(false);
+            long actualSize = await mempoolManager.MempoolSize().ConfigureAwait(false);
 
             Assert.Equal(0, actualSize);
         }

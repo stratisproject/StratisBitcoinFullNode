@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
@@ -13,14 +14,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// to the repository.
         /// </summary>
         [Fact]
-        public void ProcessPendingStorage_PushToRepo_NotIBD_InMemory()
+        public async Task ProcessPendingStorage_PushToRepo_NotIBD_InMemoryAsync()
         {
             var blocks = CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).ConfigureAwait(false);
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                await processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).ConfigureAwait(false);
 
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[9].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -58,14 +59,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// </list> 
         /// </summary>
         [Fact]
-        public void ProcessPendingStorage_PushToRepo_IBD_InMemory()
+        public async Task ProcessPendingStorage_PushToRepo_IBD_InMemoryAsync()
         {
             var blocks = CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).ConfigureAwait(false);
 
                 // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -87,7 +88,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                await processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).ConfigureAwait(false);
 
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -103,14 +104,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// </list> 
         /// </summary>
         [Fact]
-        public void ProcessPendingStorage_PushToRepo_IBD_MaxPendingInsertBlockSize_InMemory()
+        public async Task ProcessPendingStorage_PushToRepo_IBD_MaxPendingInsertBlockSize_InMemoryAsync()
         {
             var blocks = CreateBlocks(2500, true);
 
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).ConfigureAwait(false);
 
                 // The chain has 2500 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -132,7 +133,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).GetAwaiter().GetResult();
+                await processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), false).ConfigureAwait(false);
 
                 Assert.Equal(blocks[2499].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[2499].GetHash(), fluent.Loop.StoreTip.HashBlock);
@@ -143,14 +144,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         /// If the store is being disposed, process and push all the blocks in pending storage
         /// </summary>
         [Fact]
-        public void ProcessPendingStorage_PushToRepo_Disposing_InMemory()
+        public async Task ProcessPendingStorage_PushToRepo_Disposing_InMemoryAsync()
         {
             var blocks = CreateBlocks(15);
 
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                await fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).ConfigureAwait(false);
 
                 // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -172,7 +173,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 var nextChainedBlock = fluent.Loop.Chain.GetBlock(blocks[5].GetHash());
 
                 var processPendingStorageStep = new ProcessPendingStorageStep(fluent.Loop, this.loggerFactory);
-                processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), true).GetAwaiter().GetResult();
+                await processPendingStorageStep.ExecuteAsync(nextChainedBlock, new CancellationToken(), true).ConfigureAwait(false);
 
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.BlockRepository.BlockHash);
                 Assert.Equal(blocks[14].GetHash(), fluent.Loop.StoreTip.HashBlock);
