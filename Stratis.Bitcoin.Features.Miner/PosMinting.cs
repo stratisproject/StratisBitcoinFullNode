@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
                 if (this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp))
                 {
-                    this.logger.LogTrace("POS block signed successfully.");
+                    this.logger.LogTrace("New POS block created and signed successfully.");
                     var blockResult = new BlockResult { Block = block };
                     this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip);
 
