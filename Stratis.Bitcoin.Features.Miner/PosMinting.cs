@@ -46,6 +46,76 @@ namespace Stratis.Bitcoin.Features.Miner
             public string WalletName;
         }
 
+        /// <summary>
+        /// Information needed by the coinstake worker for finding the kernel.
+        /// </summary>
+        public class CoinstakeWorkerContext
+        {
+            /// <summary>Worker's ID / index number.</summary>
+            public int Index { get; set; }
+
+            /// <summary>Logger with worker's prefix.</summary>
+            public ILogger Logger { get; set; }
+
+            /// <summary>List of UTXO descriptions that the worker should check.</summary>
+            public List<StakeTx> Coins { get; set; }
+
+            /// <summary>Information related to coinstake transaction.</summary>
+            public CoinstakeContext CoinstakeContext { get; set; }
+
+            /// <summary>Result shared by all workers. A structure that determines the kernel founder and the kernel UTXO that satisfies the target difficulty.</summary>
+            public CoinstakeWorkerResult Result { get; set; }
+        }
+
+        /// <summary>
+        /// Result of a task of coinstake worker that looks for kernel.
+        /// </summary>
+        public class CoinstakeWorkerResult
+        {
+            /// <summary>Invalid worker index as a sign that kernel was not found.</summary>
+            public const int KernelNotFound = -1;
+
+            /// <summary>Index of the worker that found the index, or <see cref="KernelNotFound"/> if no one found the kernel (yet).</summary>
+            private int kernelFoundIndex;
+
+            /// <summary>Index of the worker that found the index, or <see cref="KernelNotFound"/> if no one found the kernel (yet).</summary>
+            public int KernelFoundIndex { get { return this.kernelFoundIndex; } }
+
+            /// <summary>UTXO that satisfied the target difficulty.</summary>
+            public StakeTx KernelCoin { get; set; }
+
+            /// <summary>
+            /// Initializes an instance of the object.
+            /// </summary>
+            public CoinstakeWorkerResult()
+            {
+                this.kernelFoundIndex = KernelNotFound;
+                this.KernelCoin = null;
+            }
+
+            /// <summary>
+            /// Sets the founder of the kernel in thread-safe manner.
+            /// </summary>
+            /// <param name="WorkerIndex">Worker's index to set as the founder of the kernel.</param>
+            /// <returns><c>true</c> if the worker's index was set as the kernel founder, <c>false</c> if another worker index was set earlier.</returns>
+            public bool SetKernelFoundIndex(int WorkerIndex)
+            {
+                return Interlocked.CompareExchange(ref this.kernelFoundIndex, WorkerIndex, KernelNotFound) == KernelNotFound;
+            }
+        }
+
+        /// <summary>
+        /// Information about coinstake transaction and its private key.
+        /// </summary>
+        public class CoinstakeContext
+        {
+            /// <summary>Coinstake transaction being constructed.</summary>
+            public Transaction CoinstakeTx { get; set; }
+
+            /// <summary>If the function succeeds, this is filled with private key for signing the coinstake kernel.</summary>
+            public Key Key { get; set; }
+        }
+
         // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
         public const int DefaultBlockMinTxFee = 1000;
 
@@ -522,46 +592,6 @@ namespace Stratis.Bitcoin.Features.Miner
             return false;
         }
 
-        public class CoinstakeWorkerContext
-        {
-            public int Index { get; set; }
-            public ILogger Logger { get; set; }
-            public List<StakeTx> Coins { get; set; }
-            public CoinstakeContext CoinstakeContext { get; set; }
-            public CoinstakeWorkerResult Result { get; set; }
-        }
-
-        public class CoinstakeWorkerResult
-        {
-            public const int KernelNotFound = -1;
-            private int kernelFoundIndex;
-            public int KernelFoundIndex { get { return this.kernelFoundIndex; } }
-
-            public StakeTx KernelCoin { get; set; }
-
-            public CoinstakeWorkerResult()
-            {
-                this.kernelFoundIndex = KernelNotFound;
-                this.KernelCoin = null;
-            }
-
-            public bool SetKernelFoundIndex(int WorkerIndex)
-            {
-                return Interlocked.CompareExchange(ref this.kernelFoundIndex, WorkerIndex, KernelNotFound) == KernelNotFound;
-            }
-        }
-
-        public class CoinstakeContext
-        {
-            /// <summary>Coinstake transaction being constructed.</summary>
-            public Transaction CoinstakeTx { get; set; }
-            /// <summary>
-            /// If the function succeeds, this is filled with private key for signing the coinstake kernel.
-            /// </summary>
-            public Key Key { get; set; }
-
-        }
-
         /// <summary>
         /// Creates a coinstake transaction with kernel that satisfies POS staking target. 
         /// </summary>
@@ -624,6 +654,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
+            // Create worker tasks that will look for kernel.
+            // Run task in parallel using the default task scheduler.
             int coinIndex = 0;
             int workerCount = (setCoins.Count + CoinsPerCoinstakeWorker - 1) / CoinsPerCoinstakeWorker;
             Task[] workers = new Task[workerCount];
