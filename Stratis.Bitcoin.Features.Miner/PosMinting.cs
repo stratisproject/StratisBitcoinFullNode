@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(chainTip);
                 this.rpcGetStakingInfoModel.NetStakeWeight = (long)this.GetNetworkWeight();
 
-                // Trying to sign a block.
+                // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
                 if (this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp))
                 {
                     this.logger.LogTrace("POS block signed successfully.");
