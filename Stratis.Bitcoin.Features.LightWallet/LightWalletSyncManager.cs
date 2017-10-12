@@ -111,60 +111,78 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public void ProcessBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            // If the new block previous hash is the same as the 
-            // wallet hash then just pass the block to the manager. 
             var newTip = this.chain.GetBlock(block.GetHash());
-
-            // new block is not in the main chain nothing more to do right now. 
             if (newTip == null)
-                return; // reorg
+            {
+                this.logger.LogTrace("(-)[NEW_TIP_REORG]");
+                return;
+            }
 
-            // if the new block previous hash is the same as the 
-            // wallet hash then just pass the block to the manager 
+            // If the new block's previous hash is the same as the 
+            // wallet hash then just pass the block to the manager. 
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
-                // if previous block does not match there might have 
-                // been a reorg, check if the wallet is still on the main chain
+                // If previous block does not match there might have 
+                // been a reorg, check if the wallet is still on the main chain.
                 ChainedBlock inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
                 if (inBestChain == null)
                 {
-                    // the current wallet hash was not found on the main chain
-                    // a reorg happenend so bring the wallet back top the last known fork
+                    // The current wallet hash was not found on the main chain.
+                    // A reorg happened so bring the wallet back top the last known fork.
 
                     ChainedBlock fork = this.walletTip;
 
-                    // we walk back the chained block object to find the fork
+                    // We walk back the chained block object to find the fork.
                     while (this.chain.GetBlock(fork.HashBlock) == null)
                         fork = fork.Previous;
 
-                    Guard.Assert(fork.HashBlock == block.Header.HashPrevBlock);
+                    this.logger.LogInformation("Reorg detected, going back from '{0}/{1}' to '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, fork.HashBlock, fork.Height);
+
                     this.walletManager.RemoveBlocks(fork);
                     this.walletTip = fork;
-                    this.logger.LogWarning($"Reorg detected, wallet tip reverted back to Height = {fork.Height} hash = {fork.HashBlock}.");
+
+                    this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
                 }
+
+                // The new tip can be ahead or behind the wallet
+                // If the new tip is ahead we try to bring the wallet up to the new tip.
+                // If the new tip is behind we just check the wallet and the tip are in the same chain.
 
                 if (newTip.Height > this.walletTip.Height)
                 {
-                    // check that the new tip is in the chain of the wallet tip
-                    var findTip = newTip.FindAncestorOrSelf(this.walletTip.HashBlock);
-                    Guard.Assert(findTip == this.walletTip); // this should never happen
+                    ChainedBlock findTip = newTip.FindAncestorOrSelf(this.walletTip.HashBlock);
+                    if (findTip == null)
+                    {
+                        this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
+                        return;
+                    }
+
+                    this.logger.LogTrace("Wallet tip '{0}/{1}' is behind the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
 
                     // the wallet is falling behind we need to catch up
-                    this.logger.LogWarning($"block received with height: {newTip.Height} and hash: {block.Header.GetHash()} is too far in advance. put the puller back.");
+                    this.logger.LogWarning("New tip '{0}/{1}' is too far in advance, put the puller back.", newTip.HashBlock, newTip.HashBlock);
                     this.blockNotification.SyncFrom(this.walletTip.HashBlock);
                     return;
                 }
                 else
                 {
-                    // check that the new tip is in the chain of the wallet tip
-                    var findTip = this.walletTip.FindAncestorOrSelf(newTip.HashBlock);
-                    Guard.Assert(findTip == newTip); // this should never happen
+                    ChainedBlock findTip = this.walletTip.FindAncestorOrSelf(newTip.HashBlock);
+                    if (findTip == null)
+                    {
+                        this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
+                        return;
+                    }
+                    this.logger.LogTrace("Wallet tip '{0}/{1}' is ahead or equal to the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
                 }
             }
+            else this.logger.LogTrace("New block follows the previously known block '{0}/{1}'.", this.walletTip.HashBlock, this.walletTip.Height);
 
             this.walletTip = newTip;
-            this.walletManager.ProcessBlock(block, this.walletTip);
+            this.walletManager.ProcessBlock(block, newTip);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

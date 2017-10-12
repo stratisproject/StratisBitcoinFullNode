@@ -614,16 +614,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // When calculating the confirmations the tip must be advanced by one.
 
                 var countFrom = currentChainHeight + 1;
-                var unspentTransactions = address.UnspentTransactions()
-                    .Where(a => countFrom - (a.BlockHeight ?? countFrom) >= confirmations).ToList();
+                var unspentTransactions = address.UnspentTransactions().Select(s =>
+                    new {Transaction = s, Confirmations = s.BlockHeight == null ? 0 : countFrom < s.BlockHeight ? 0 : countFrom - s.BlockHeight }).ToList();
 
-                foreach (var transactionData in unspentTransactions)
+                foreach (var transactionData in unspentTransactions.Where(w => w.Confirmations >= confirmations))
                 {
                     unspentOutputs.Add(new UnspentOutputReference
                     {
                         Account = this,
                         Address = address,
-                        Transaction = transactionData
+                        Transaction = transactionData.Transaction
                     });
                 }
             }

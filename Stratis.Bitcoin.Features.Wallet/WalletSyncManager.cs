@@ -90,19 +90,21 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
+            var newTip = this.chain.GetBlock(block.GetHash());
+            if (newTip == null)
+            {
+                this.logger.LogTrace("(-)[NEW_TIP_REORG]");
+                return; 
+            }
+
             // If the new block's previous hash is the same as the 
             // wallet hash then just pass the block to the manager. 
-            var newTip = this.chain.GetBlock(block.GetHash());
-
-            // new block is not in the main chain nothing more to do right now. 
-            if (newTip == null)
-                return; // reorg
-
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
                 // If previous block does not match there might have 
@@ -119,41 +121,43 @@ namespace Stratis.Bitcoin.Features.Wallet
                     while (this.chain.GetBlock(fork.HashBlock) == null)
                         fork = fork.Previous;
 
-                    this.logger.LogTrace("Reorganization detected, going back to '{0}/{1}'.", fork.HashBlock, fork.Height);
+                    this.logger.LogInformation("Reorg detected, going back from '{0}/{1}' to '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, fork.HashBlock, fork.Height);
 
                     this.walletManager.RemoveBlocks(fork);
-
-                    // Update temporary wallet tip to be able to catch up again.
                     this.walletTip = fork;
-                    this.logger.LogTrace("Wallet tip set to '{0}/{1}'.", walletTip.HashBlock, walletTip.Height);
+
+                    this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
                 }
 
                 // The new tip can be ahead or behind the wallet
                 // If the new tip is ahead we try to bring the wallet up to the new tip.
-                // If the new tip is behind we just check the wallet and the tip ad in the same chain.
+                // If the new tip is behind we just check the wallet and the tip are in the same chain.
             
                 if (newTip.Height > this.walletTip.Height)
                 {
-                    // check that the new tip is in the chain of the wallet tip
-                    var findTip = newTip.FindAncestorOrSelf(this.walletTip.HashBlock);
-                    Guard.Assert(findTip == this.walletTip); // this should never happen
+                    ChainedBlock findTip = newTip.FindAncestorOrSelf(this.walletTip.HashBlock);
+                    if (findTip == null)
+                    {
+                        this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
+                        return;
+                    }
 
                     var token = this.nodeLifetime.ApplicationStopping;
+                    this.logger.LogTrace("Wallet tip '{0}/{1}' is behind the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
 
-                    // The wallet is falling behind we need to catch up.
                     ChainedBlock next = this.walletTip;
                     while (next != newTip)
                     {
-                        token.ThrowIfCancellationRequested();
-
-                        // While the wallet is catching up the entire node will wait
-                        // if a wallet recovers to a date in the past. Consensus 
-                        // will stop till the wallet is up to date.
+                        // While the wallet is catching up the entire node will wait.
+                        // If a wallet is recovered to a date in the past. Consensus will stop till the wallet is up to date.
 
                         // TODO: This code should be replaced with a different approach
-                        // similar to BlockStore the wallet should be standalone and not depend on consensus
-                        // the block should be put in a queue and pushed to the wallet in an async way
-                        // if the wallet is behind it will just read blocks from store (or download in case of a pruned node).
+                        // Similar to BlockStore the wallet should be standalone and not depend on consensus.
+                        // The block should be put in a queue and pushed to the wallet in an async way.
+                        // If the wallet is behind it will just read blocks from store (or download in case of a pruned node).
+
+                        token.ThrowIfCancellationRequested();
+
                         next = newTip.GetAncestor(next.Height + 1);
                         Block nextblock = null;
                         int index = 0;
@@ -165,10 +169,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.
-                                // That will make the block available in the next push from conensus.
+                                // That will make the block available in the next push from consensus.
                                 index++;
                                 if (index > 10)
+                                {
+                                    this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
                                     return;
+                                }
 
                                 // Really ugly hack to let store catch up.
                                 // This will block the entire consensus pulling.
@@ -186,20 +193,24 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
                 else
                 {
-                    // check that the new tip is in the chain of the wallet tip
-                    var findTip = this.walletTip.FindAncestorOrSelf(newTip.HashBlock);
-                    Guard.Assert(findTip == newTip); // this should never happen
+                    ChainedBlock findTip = this.walletTip.FindAncestorOrSelf(newTip.HashBlock);
+                    if (findTip == null)
+                    {
+                        this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
+                        return;
+                    }
+                    this.logger.LogTrace("Wallet tip '{0}/{1}' is ahead or equal to the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
                 }
-                else this.logger.LogTrace("New block's height {0} is not above wallet's tip height {1}.", incomingBlock.Height, this.walletTip.Height);
             }
-            else this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip.HashBlock);
+            else this.logger.LogTrace("New block follows the previously known block '{0}/{1}'.", this.walletTip.HashBlock, this.walletTip.Height);
 
             this.walletTip = newTip;
-            this.walletManager.ProcessBlock(block, this.walletTip);
+            this.walletManager.ProcessBlock(block, newTip);
 
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
@@ -211,6 +222,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public virtual void SyncFromDate(DateTime date)
         {
             this.logger.LogTrace("({0}:'{1::yyyy-MM-dd HH:mm:ss}')", nameof(date), date);
@@ -221,6 +233,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
             this.logger.LogTrace("({0}:{1})", nameof(height), height);
