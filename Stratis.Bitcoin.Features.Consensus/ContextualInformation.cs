@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        public ContextInformation(BlockResult blockResult, ChainedBlock consensusTip, NBitcoin.Consensus consensus)
+        public ContextInformation(BlockResult blockResult, NBitcoin.Consensus consensus)
         {
             Guard.NotNull(blockResult, nameof(blockResult));
             Guard.NotNull(consensus, nameof(consensus));

@@ -300,17 +300,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BlockTimestampTooEarly.Throw();
             }
 
-            int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
-            if (chainedBlock.Height > lastCheckpointHeight)
-            {
-                // Prevent long reorganisations.
-                if (!this.CheckLongReorganization(context.consensusTip, chainedBlock.Height))
-                {
-                    this.logger.LogTrace("(-)[REORG_TOO_LONG]");
-                    ConsensusErrors.ReorgTooLong.Throw();
-                }
-            }
-
             this.logger.LogTrace("(-)[OK]");
         }
 
