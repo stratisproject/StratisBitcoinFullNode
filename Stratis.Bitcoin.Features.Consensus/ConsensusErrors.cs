@@ -149,6 +149,5 @@ namespace Stratis.Bitcoin.Features.Consensus
         public readonly static ConsensusError ProofOfWorkTooHeigh = new ConsensusError("proof-of-work-too-heigh", "proof of work too heigh");
 
         public readonly static ConsensusError CheckpointViolation = new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
-        public readonly static ConsensusError ReorgTooLong = new ConsensusError("long-reorg", "reorganization too long");
     }
 }
