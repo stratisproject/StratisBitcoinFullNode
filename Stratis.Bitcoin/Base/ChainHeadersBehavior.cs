@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Base
 			this.RegisterDisposable(this._Refresh);
 			if (this.AttachedNode.State == NodeState.Connected)
 			{
-				var highPoW = this.SharedState.HighestValidatedPoW;
+				var highPoW = this.SharedState.ConsensusTip;
                 this.AttachedNode.MyVersion.StartHeight = highPoW?.Height ?? 0;
 			}
             this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Base
 				this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted)) // if not in IBD whitelisted won't be checked
 			{
 				HeadersPayload headers = new HeadersPayload();
-				var highestPow = this.SharedState.HighestValidatedPoW;
+				var highestPow = this.SharedState.ConsensusTip;
 				highestPow = this.Chain.GetBlock(highestPow.HashBlock);
 				var fork = this.Chain.FindFork(getheaders.BlockLocators);
 
@@ -181,7 +181,22 @@ namespace Stratis.Bitcoin.Base
                     this._PendingTip = tip;
 				}
 
-				if (this._PendingTip.ChainWork > this.Chain.Tip.ChainWork)
+                // Long reorganization protection on POS networks.
+                bool reorgPrevented = false;
+                uint maxReorgLength = this._State.MaxReorgLength;
+                Network network = this.AttachedNode?.Network;
+                ChainedBlock consensusTip = this._State.ConsensusTip;
+                if ((maxReorgLength != 0) && (network != null) && (consensusTip != null))
+                {
+                    ChainedBlock fork = this._PendingTip.FindFork(consensusTip);
+                    if ((fork != null) && (consensusTip.Height - fork.Height > maxReorgLength))
+                    {
+                        this.invalidHeaderReceived = true;
+                        reorgPrevented = true;
+                    }
+                }
+
+                if (!reorgPrevented && (this._PendingTip.ChainWork > this.Chain.Tip.ChainWork))
 				{
                     this.Chain.SetTip(this._PendingTip);
 				}
@@ -290,7 +305,7 @@ namespace Stratis.Bitcoin.Base
 
 		private ChainedBlock GetPendingTipOrChainTip()
 		{
-            this._PendingTip = this._PendingTip ?? this.SharedState.HighestValidatedPoW ?? this.Chain.Tip;
+            this._PendingTip = this._PendingTip ?? this.SharedState.ConsensusTip ?? this.Chain.Tip;
 			return this._PendingTip;
 		}
 
