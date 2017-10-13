@@ -69,15 +69,15 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        public IEnumerable<BlockResult> Execute(CancellationToken cancellationToken)
+        public IEnumerable<Task<BlockResult>> Execute(CancellationToken cancellationToken)
         {
             while (true)
             {
-                yield return this.ExecuteNextBlock(cancellationToken);
+                yield return this.ExecuteNextBlockAsync(cancellationToken);
             }
         }
 
-        public BlockResult ExecuteNextBlock(CancellationToken cancellationToken)
+        public async Task<BlockResult> ExecuteNextBlockAsync(CancellationToken cancellationToken)
         {
             this.logger.LogTrace("()");
 
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
                         while (true)
                         {
-                            uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                            uint256 hash = await this.UTXOSet.Rewind().ConfigureAwait(false);
                             ChainedBlock rewinded = this.Chain.GetBlock(hash);
                             if (rewinded == null)
                             {

@@ -166,8 +166,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager, this.loggerFactory);
 
                 ChainedBlock lastTip = this.consensusLoop.Tip;
-                foreach (BlockResult block in this.consensusLoop.Execute(cancellationToken))
+                foreach (Task<BlockResult> blockTask in this.consensusLoop.Execute(cancellationToken))
                 {
+                    BlockResult block = await blockTask.ConfigureAwait(false);
                     if (this.consensusLoop.Tip.FindFork(lastTip) != lastTip)
                         this.logger.LogInformation("Reorg detected, rewinding from '{0}/{1}' to '{2}/{3}'.", lastTip.HashBlock, lastTip.Height, this.consensusLoop.Tip.HashBlock, this.consensusLoop.Tip.Height);
 
