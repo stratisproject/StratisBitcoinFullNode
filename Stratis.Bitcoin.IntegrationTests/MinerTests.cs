@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -113,6 +114,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             public TestContext()
             {
+                
+            }
+
+            public async Task InitializeAsync()
+            {
                 this.blockinfo = new List<Blockinfo>();
                 var lst = blockinfoarr.Cast<long>().ToList();
                 for (int i = 0; i < lst.Count; i += 2)
@@ -129,7 +135,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.network.Consensus.Options = new PowConsensusOptions();
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), new LoggerFactory());
                 this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network, new Checkpoints(this.network), new LoggerFactory()), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network), new LoggerFactory());
-                this.consensus.Initialize();
+                await this.consensus.InitializeAsync();
 
                 this.entry.Fee(11);
                 this.entry.Height(11);
@@ -188,9 +194,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         // Implemented as an additional function, rather than a separate test case,
         // to allow reusing the blockchain created in CreateNewBlock_validity.
         [Fact]
-        public void MinerTestPackageSelection()
+        public async Task MinerTestPackageSelectionAsync()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
 
             // Test the ancestor feerate transaction selection.
             TestMemPoolEntryHelper entry = new TestMemPoolEntryHelper();
@@ -300,9 +307,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockSigopsLimit1000()
+        public async Task MinerCreateBlockSigopsLimit1000Async()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
 
             // block sigops > limit: 1000 CHECKMULTISIG + 1
             var tx = new Transaction();
@@ -341,9 +349,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockSizeGreaterThenLimit()
+        public async Task MinerCreateBlockSizeGreaterThenLimitAsync()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
@@ -375,9 +384,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockChildWithHigherFeerateThanParent()
+        public async Task MinerCreateBlockChildWithHigherFeerateThanParentAsync()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
@@ -404,9 +414,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockCoinbaseMempoolTemplateCreationFails()
+        public async Task MinerCreateBlockCoinbaseMempoolTemplateCreationFailsAsync()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
@@ -424,9 +435,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockNonFinalTxsInMempool()
+        public async Task MinerCreateBlockNonFinalTxsInMempoolAsync()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
@@ -461,9 +473,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockRelativeTimeLocked()
+        public async Task MinerCreateBlockRelativeTimeLockedAsync()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
@@ -490,9 +503,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockAbsoluteHeightLocked()
+        public async Task MinerCreateBlockAbsoluteHeightLockedAsync()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
@@ -517,6 +531,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.True(locks.Evaluate(context.chain.Tip));
 
             context = new TestContext();
+            await context.InitializeAsync();
 
             // absolute height locked
             tx.Inputs[0].PrevOut.Hash = context.txFirst[2].GetHash();
@@ -533,9 +548,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockAbsoluteTimeLocked()
+        public async Task MinerCreateBlockAbsoluteTimeLockedAsync()
         {
             var context = new TestContext();
+            await context.InitializeAsync();
             var tx = new Transaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());

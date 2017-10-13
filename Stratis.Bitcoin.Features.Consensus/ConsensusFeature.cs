@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 cache.MaxItems = this.cacheSettings.MaxItems;
             }
-            this.consensusLoop.Initialize();
+            this.consensusLoop.InitializeAsync().GetAwaiter().GetResult();
 
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
