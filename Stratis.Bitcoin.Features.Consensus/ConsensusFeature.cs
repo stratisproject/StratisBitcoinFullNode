@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // TODO: Replace this with a signalling object.
                     if (stats.CanLog)
-                        stats.Log();
+                        await stats.LogAsync().ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
