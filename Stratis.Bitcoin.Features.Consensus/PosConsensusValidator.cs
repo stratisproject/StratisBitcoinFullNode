@@ -483,40 +483,5 @@ namespace Stratis.Bitcoin.Features.Consensus
                    (this.consensusOptions.PremineReward > 0) &&
                    (height == this.consensusOptions.PremineHeight);
         }
-
-        /// <summary>
-        /// Checks whether a reorganization can happen at specific height.
-        /// </summary>
-        /// <param name="tip">Tip of the consensus chain.</param>
-        /// <param name="height">Height to check.</param>
-        /// <returns><c>true</c> if reorganization at specific height can happen, <c>false</c> otherwise.</returns>
-        private bool CheckLongReorganization(ChainedBlock tip, int height)
-        {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(tip), tip.HashBlock, tip.Height, nameof(height), height);
-
-            ChainedBlock unreorgableBlock = GetUnreorgableBlock(tip);
-            bool res = height > unreorgableBlock.Height;
-
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
-        }
-
-        /// <summary>
-        /// Finds a block in the current consensus chain beyond which no reorganization would be accepted.
-        /// </summary>
-        /// <param name="tip">Tip of the consensus chain.</param>
-        /// <returns>Last block from the consensus chain that can not be reorganized.</returns>
-        private ChainedBlock GetUnreorgableBlock(ChainedBlock tip)
-        {
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(tip), tip.HashBlock, tip.Height);
-
-            ChainedBlock block = tip;
-            ChainedBlock prevBlock = block.Previous;
-            while ((block.Previous != null) && (block.Height + this.consensusOptions.MaxReorgLength > tip.Height))
-                block = block.Previous;
-
-            this.logger.LogTrace("(-):'{0}/{1}'", block.HashBlock, block.Height);
-            return block;
-        }
     }
 }
