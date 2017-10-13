@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dBreezeCoinView.Dispose();
         }
 
-        private Task RunLoop(CancellationToken cancellationToken)
+        private async Task RunLoop(CancellationToken cancellationToken)
         {
             try
             {
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
                         if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
-                            this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
+                            await this.consensusLoop.FlushAsync().ConfigureAwait(false);
 
                         this.signals.SignalBlock(block.Block);
                     }
