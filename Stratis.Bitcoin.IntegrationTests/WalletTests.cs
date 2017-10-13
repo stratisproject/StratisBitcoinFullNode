@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
-                var maturity = (int)stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().COINBASE_MATURITY;
+                var maturity = (int)stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
                 stratisSender.GenerateStratis(maturity + 5);
                 // wait for block repo for block sync to work
 
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
 
-                var maturity = (int)stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().COINBASE_MATURITY;
+                var maturity = (int)stratisSender.FullNode.Network.Consensus.Option<PowConsensusOptions>().CoinbaseMaturity;
                 stratisSender.GenerateStratisWithMiner(maturity + 15);
 
                 var currentBestHeight = maturity + 15;

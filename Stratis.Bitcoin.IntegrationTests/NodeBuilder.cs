@@ -699,7 +699,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 try
                 {
-                    await CreateRPCClient().GetBlockHashAsync(0).ConfigureAwait(false);
+                    await CreateRPCClient().GetBlockHashAsync(0);
                     this._State = CoreNodeState.Running;
                     break;
                 }
