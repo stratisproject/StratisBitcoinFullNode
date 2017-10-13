@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
@@ -45,6 +46,76 @@ namespace Stratis.Bitcoin.Features.Miner
             public string WalletName;
         }
 
+        /// <summary>
+        /// Information needed by the coinstake worker for finding the kernel.
+        /// </summary>
+        public class CoinstakeWorkerContext
+        {
+            /// <summary>Worker's ID / index number.</summary>
+            public int Index { get; set; }
+
+            /// <summary>Logger with worker's prefix.</summary>
+            public ILogger Logger { get; set; }
+
+            /// <summary>List of UTXO descriptions that the worker should check.</summary>
+            public List<StakeTx> Coins { get; set; }
+
+            /// <summary>Information related to coinstake transaction.</summary>
+            public CoinstakeContext CoinstakeContext { get; set; }
+
+            /// <summary>Result shared by all workers. A structure that determines the kernel founder and the kernel UTXO that satisfies the target difficulty.</summary>
+            public CoinstakeWorkerResult Result { get; set; }
+        }
+
+        /// <summary>
+        /// Result of a task of coinstake worker that looks for kernel.
+        /// </summary>
+        public class CoinstakeWorkerResult
+        {
+            /// <summary>Invalid worker index as a sign that kernel was not found.</summary>
+            public const int KernelNotFound = -1;
+
+            /// <summary>Index of the worker that found the index, or <see cref="KernelNotFound"/> if no one found the kernel (yet).</summary>
+            private int kernelFoundIndex;
+
+            /// <summary>Index of the worker that found the index, or <see cref="KernelNotFound"/> if no one found the kernel (yet).</summary>
+            public int KernelFoundIndex { get { return this.kernelFoundIndex; } }
+
+            /// <summary>UTXO that satisfied the target difficulty.</summary>
+            public StakeTx KernelCoin { get; set; }
+
+            /// <summary>
+            /// Initializes an instance of the object.
+            /// </summary>
+            public CoinstakeWorkerResult()
+            {
+                this.kernelFoundIndex = KernelNotFound;
+                this.KernelCoin = null;
+            }
+
+            /// <summary>
+            /// Sets the founder of the kernel in thread-safe manner.
+            /// </summary>
+            /// <param name="WorkerIndex">Worker's index to set as the founder of the kernel.</param>
+            /// <returns><c>true</c> if the worker's index was set as the kernel founder, <c>false</c> if another worker index was set earlier.</returns>
+            public bool SetKernelFoundIndex(int WorkerIndex)
+            {
+                return Interlocked.CompareExchange(ref this.kernelFoundIndex, WorkerIndex, KernelNotFound) == KernelNotFound;
+            }
+        }
+
+        /// <summary>
+        /// Information about coinstake transaction and its private key.
+        /// </summary>
+        public class CoinstakeContext
+        {
+            /// <summary>Coinstake transaction being constructed.</summary>
+            public Transaction CoinstakeTx { get; set; }
+
+            /// <summary>If the function succeeds, this is filled with private key for signing the coinstake kernel.</summary>
+            public Key Key { get; set; }
+        }
+
         // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
         public const int DefaultBlockMinTxFee = 1000;
 
@@ -70,8 +141,15 @@ namespace Stratis.Bitcoin.Features.Miner
         /// multiplied by this value. See <see cref="GetSplitStake(int)"/>.</summary>
         public const int CoinstakeSplitLimitMultiplier = 3;
 
+        /// <summary>Number of UTXOs that a single worker's task will process.</summary>
+        /// <remarks>To achieve a good level of parallelism, this should be low enough so that CPU threads are used,
+        /// but high enough to compensate for tasks' overhead.</remarks>
+        private const int CoinsPerCoinstakeWorker = 25;
+
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
+
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
         private readonly IConnectionManager connection;
         private readonly IDateTimeProvider dateTimeProvider;
@@ -89,6 +167,9 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly WalletManager walletManager;
         private readonly PosConsensusValidator posConsensusValidator;
 
+        /// <summary>Factory for creating loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -104,6 +185,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <remarks>This object does not need a synchronized access because there is no execution logic
         /// that depends on the reported information.</remarks>
         private readonly Miner.Models.GetStakingInfoModel rpcGetStakingInfoModel;
+
+        /// <summary>Estimation of the total staking weight of all nodes on the network.</summary>
+        private long networkWeight;
 
         /// <summary>
         /// Timestamp of the last attempt to search for POS solution.
@@ -161,6 +245,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.mempool = mempool;
             this.asyncLoopFactory = asyncLoopFactory;
             this.walletManager = wallet as WalletManager;
+            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
@@ -190,13 +275,13 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.rpcGetStakingInfoModel.Enabled = true;
 
-            this.mining = this.asyncLoopFactory.Run("PosMining.Mine", token =>
+            this.mining = this.asyncLoopFactory.Run("PosMining.Mine", async token =>
             {
                 this.logger.LogTrace("()");
 
                 try
                 {
-                    this.GenerateBlocks(walletSecret);
+                    await this.GenerateBlocks(walletSecret).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -225,7 +310,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 this.logger.LogTrace("(-)");
-                return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
@@ -243,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </para>
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
-        public void GenerateBlocks(WalletSecret walletSecret)
+        public async Task GenerateBlocks(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
 
@@ -265,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
                     tryToSync = true;
-                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
 
                 // TODO: What is the purpose of this conditional block?
@@ -286,7 +370,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
                         if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
 
-                        Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                        await Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                         continue;
                     }
                 }
@@ -314,7 +398,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
 
-                FetchCoinsResponse coinset = this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).GetAwaiter().GetResult();
+                FetchCoinsResponse coinset = await this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).ConfigureAwait(false);
 
                 long totalBalance = 0;
                 foreach (UnspentOutputReference infoTransaction in spendable)
@@ -342,25 +426,26 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
+                this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
-                this.rpcGetStakingInfoModel.PooledTx = this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).GetAwaiter().GetResult();
+                this.rpcGetStakingInfoModel.PooledTx = await this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).ConfigureAwait(false);
                 this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(chainTip);
-                this.rpcGetStakingInfoModel.NetStakeWeight = (long)this.GetNetworkWeight();
+                this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
-                // Trying to sign a block.
-                if (this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp))
+                // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
+                if (await this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
-                    this.logger.LogTrace("POS block signed successfully.");
+                    this.logger.LogTrace("New POS block created and signed successfully.");
                     var blockResult = new BlockResult { Block = block };
-                    this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip);
+                    await this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
 
                     blockTemplate = null;
                 }
                 else
                 {
                     this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlock), this.minerSleep);
-                    Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
             }
         }
@@ -371,7 +456,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="context">Information about the new block.</param>
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
-        private void CheckStake(ContextInformation context, ChainedBlock chainTip)
+        private async Task CheckStake(ContextInformation context, ChainedBlock chainTip)
         {
             this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainTip), chainTip.HashBlock, chainTip.Height);
 
@@ -420,7 +505,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.chain.SetTip(context.BlockResult.ChainedBlock);
             this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-            this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
+            await this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).ConfigureAwait(false);
             this.signals.SignalBlock(block);
 
             this.logger.LogInformation("==================================================================");
@@ -438,7 +523,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeTimestamp">Maximal timestamp of the coinstake transaction. The actual timestamp can be lower, but not higher.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        private bool StakeAndSignBlock(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
+        private async Task<bool> StakeAndSignBlock(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}/{5}',{6}:{7},{8}:{9})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip.HashBlock, chainTip.Height, nameof(fees), fees, nameof(coinstakeTimestamp), coinstakeTimestamp);
 
@@ -456,12 +541,12 @@ namespace Stratis.Bitcoin.Features.Miner
                 return true;
             }
 
-            Key key = null;
-            Transaction txCoinStake = new Transaction();
-            txCoinStake.Time = coinstakeTimestamp;
+            CoinstakeContext coinstakeContext = new CoinstakeContext();
+            coinstakeContext.CoinstakeTx = new Transaction();
+            coinstakeContext.CoinstakeTx.Time = coinstakeTimestamp;
 
             // Search to current coinstake time.
-            long searchTime = txCoinStake.Time;
+            long searchTime = coinstakeContext.CoinstakeTx.Time;
 
             long searchInterval = searchTime - this.lastCoinStakeSearchTime;
             this.rpcGetStakingInfoModel.SearchInterval = (int)searchInterval;
@@ -469,14 +554,14 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = searchTime;
             this.logger.LogTrace("Search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
 
-            if (this.CreateCoinStake(stakeTxes, block, chainTip, searchInterval, fees, ref txCoinStake, ref key))
+            if (await this.CreateCoinstake(stakeTxes, block, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
             {
                 uint minTimestamp = chainTip.Header.Time + 1;
-                if (txCoinStake.Time >= minTimestamp)
+                if (coinstakeContext.CoinstakeTx.Time >= minTimestamp)
                 {
                     // Make sure coinstake would meet timestamp protocol
                     // as it would be the same as the block timestamp.
-                    block.Transactions[0].Time = block.Header.Time = txCoinStake.Time;
+                    block.Transactions[0].Time = block.Header.Time = coinstakeContext.CoinstakeTx.Time;
 
                     // We have to make sure that we have no future timestamps in
                     // our transactions set.
@@ -489,17 +574,17 @@ namespace Stratis.Bitcoin.Features.Miner
                         }
                     }
 
-                    block.Transactions.Insert(1, txCoinStake);
+                    block.Transactions.Insert(1, coinstakeContext.CoinstakeTx);
                     block.UpdateMerkleRoot();
 
                     // Append a signature to our block.
-                    ECDSASignature signature = key.Sign(block.GetHash());
+                    ECDSASignature signature = coinstakeContext.Key.Sign(block.GetHash());
 
                     block.BlockSignatur = new BlockSignature { Signature = signature.ToDER() };
                     this.logger.LogTrace("(-):true");
                     return true;
                 }
-                else this.logger.LogTrace("Coinstake transaction created with too early timestamp {0}, minimal timestamp is {1}.", txCoinStake.Time, minTimestamp);
+                else this.logger.LogTrace("Coinstake transaction created with too early timestamp {0}, minimal timestamp is {1}.", coinstakeContext.CoinstakeTx.Time, minTimestamp);
             }
             else this.logger.LogTrace("Unable to create coinstake transaction.");
 
@@ -515,19 +600,18 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="block">Template of the block that we are trying to mine.</param>
         /// <param name="searchInterval">Length of an unexplored block time space in seconds. It only makes sense to look for a solution within this interval.</param>
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
-        /// <param name="coinstakeTx">Coinstake transaction being constructed.</param>
-        /// <param name="key">If the function succeeds, this is filled with private key for signing the coinstake kernel.</param>
+        /// <param name="coinstakeContext">Information about coinstake transaction and its private key that is to be filled when the kernel is found.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        public bool CreateCoinStake(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long searchInterval, long fees, ref Transaction coinstakeTx, ref Key key)
+        public async Task<bool> CreateCoinstake(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}/{5}',{6}:{7},{8}:{9})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip.HashBlock, chainTip.Height, nameof(searchInterval), searchInterval, nameof(fees), fees);
 
             int nonEmptyUtxos = stakeTxes.Count;
-            coinstakeTx.Inputs.Clear();
-            coinstakeTx.Outputs.Clear();
+            coinstakeContext.CoinstakeTx.Inputs.Clear();
+            coinstakeContext.CoinstakeTx.Outputs.Clear();
 
             // Mark coinstake transaction.
-            coinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
+            coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero, new Script()));
 
             long balance = this.GetMatureBalance(stakeTxes).Satoshi;
             if (balance <= this.reserveBalance)
@@ -540,7 +624,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Select coins with suitable depth.
-            List<StakeTx> setCoins = this.FindCoinsForStaking(stakeTxes, coinstakeTx.Time, balance - this.reserveBalance);
+            List<StakeTx> setCoins = this.FindCoinsForStaking(stakeTxes, coinstakeContext.CoinstakeTx.Time, balance - this.reserveBalance);
             if (!setCoins.Any())
             {
                 this.rpcGetStakingInfoModel.Staking = false;
@@ -549,132 +633,63 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             long ourWeight = setCoins.Sum(s => s.TxOut.Value);
-            long networkWeight = (long)this.GetNetworkWeight();
-            long expectedTime = StakeValidator.TargetSpacingSeconds * networkWeight / ourWeight;
-            decimal ourPercent = networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)networkWeight : 0;
+            long expectedTime = StakeValidator.TargetSpacingSeconds * this.networkWeight / ourWeight;
+            decimal ourPercent = this.networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)this.networkWeight : 0;
             
-            this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(networkWeight), TimeSpan.FromSeconds(expectedTime));
+            this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(this.networkWeight), TimeSpan.FromSeconds(expectedTime));
 
             this.rpcGetStakingInfoModel.Staking = true;
             this.rpcGetStakingInfoModel.Weight = ourWeight;
-            this.rpcGetStakingInfoModel.NetStakeWeight = networkWeight;
             this.rpcGetStakingInfoModel.ExpectedTime = expectedTime;
             this.rpcGetStakingInfoModel.Errors = null;
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
-            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeTx.Time);
+            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeContext.CoinstakeTx.Time);
 
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
-            if ((coinstakeTx.Time & ~PosConsensusValidator.StakeTimestampMask) < minimalAllowedTime)
+            if ((coinstakeContext.CoinstakeTx.Time & ~PosConsensusValidator.StakeTimestampMask) < minimalAllowedTime)
             {
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
             }
 
-            // Sort coins by amount, so that highest amounts are tried first
-            // because they have greater chance to succeed and thus saving some work.
-            setCoins = setCoins.OrderByDescending(o => o.TxOut.Value).ToList();
+            // Create worker tasks that will look for kernel.
+            // Run task in parallel using the default task scheduler.
+            int coinIndex = 0;
+            int workerCount = (setCoins.Count + CoinsPerCoinstakeWorker - 1) / CoinsPerCoinstakeWorker;
+            Task[] workers = new Task[workerCount];
+            CoinstakeWorkerContext[] workerContexts = new CoinstakeWorkerContext[workerCount];
 
-            // Inputs to coinstake transaction.
-            // First we are looking for the input that will meet the POS target with its hash.
-            // Once this is done we try to add additional small inputs that we can sign with the same key
-            // in order to reduce the number of UTXOs.
-            List<StakeTx> coinstakeInputs = new List<StakeTx>();
-
-            // Script of the first coinstake input.
-            Script scriptPubKeyKernel = null;
-
-            // Total amount of input values in coinstake transaction.
-            long coinstakeInputsValue = 0;
-
-            foreach (StakeTx coin in setCoins)
+            CoinstakeWorkerResult workersResult = new CoinstakeWorkerResult();
+            for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
             {
-                this.logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
-                bool kernelFound = false;
-
-                scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
-                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
-                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+                CoinstakeWorkerContext cwc = new CoinstakeWorkerContext()
                 {
-                    this.logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
-                    continue;
-                }
+                    Index = workerIndex,
+                    Logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[Worker #{workerIndex}] "),
+                    Coins = new List<StakeTx>(),
+                    CoinstakeContext = coinstakeContext,
+                    Result = workersResult
+                };
 
-                for (uint n = 0; (n < searchInterval) && !kernelFound; n++)
-                {
-                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                    {
-                        this.logger.LogTrace("(-)[SHUTDOWN]:false");
-                        return false;
-                    }
+                int coinCount = Math.Min(setCoins.Count - coinIndex, CoinsPerCoinstakeWorker);
+                cwc.Coins.AddRange(setCoins.GetRange(coinIndex, coinCount));
+                coinIndex += coinCount;
+                workerContexts[workerIndex] = cwc;
 
-                    uint txTime = coinstakeTx.Time - n;
-
-                    // Once we reach previous block time + 1, we can't go any lower
-                    // because it is required that the block time is greater than the previous block time.
-                    if (txTime < minimalAllowedTime)
-                        break;
-
-                    if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
-                        continue;
-
-                    if (chainTip != this.chain.Tip)
-                    {
-                        this.logger.LogTrace("(-)[REORG]:false");
-                        return false;
-                    }
-
-                    this.logger.LogTrace("Trying with transaction time {0}...", txTime);
-                    try
-                    {
-                        var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
-                        long nBlockTime = 0;
-
-                        var context = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
-                        context.SetStake();
-                        this.posConsensusValidator.StakeValidator.CheckKernel(context, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
-
-                        this.logger.LogTrace("Kernel found with solution hash '{0}'.", context.Stake.HashProofOfStake);
-
-                        BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
-                        Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
-                        key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
-
-                        // Create a pubkey script form the current script.
-                        Script scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(key.PubKey); // scriptPubKeyKernel
-
-                        coin.Key = key;
-                        coinstakeTx.Time = txTime;
-                        coinstakeTx.AddInput(new TxIn(prevoutStake));
-                        coinstakeInputsValue = coin.TxOut.Value;
-                        coinstakeInputs.Add(coin);
-                        coinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
-
-                        this.logger.LogTrace("Kernel accepted, coinstake input is '{0}/{1}'.", prevoutStake.Hash, prevoutStake.N);
-                        kernelFound = true;
-                        break;
-                    }
-                    catch (ConsensusErrorException cex)
-                    {
-                        this.logger.LogTrace("Checking kernel failed with exception: {0}.", cex.Message);
-                        if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
-                            continue;
-
-                        throw;
-                    }
-                }
-
-                // If kernel is found stop searching.
-                if (kernelFound)
-                    break;
+                workers[workerIndex] = Task.Run(() => this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval));
             }
 
-            if (coinstakeInputsValue == 0)
+            await Task.WhenAll(workers).ConfigureAwait(false);
+
+            if (workersResult.KernelFoundIndex == CoinstakeWorkerResult.KernelNotFound)
             {
                 this.logger.LogTrace("(-)[KERNEL_NOT_FOUND]:false");
                 return false;
             }
+
+            this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
 
             long reward = fees + this.posConsensusValidator.GetProofOfStakeReward(chainTip.Height);
             if (reward <= 0)
@@ -686,41 +701,42 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
-            coinstakeInputsValue += reward;
-
             // Split stake if above threshold.
-            bool splitStake = GetSplitStake(nonEmptyUtxos);
+            bool splitStake = this.GetSplitStake(nonEmptyUtxos);
             if (splitStake)
             {
                 this.logger.LogTrace("Coinstake UTXO will be split to two.");
-                coinstakeTx.Outputs.Add(new TxOut(0, coinstakeTx.Outputs[1].ScriptPubKey));
+                coinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, coinstakeContext.CoinstakeTx.Outputs[1].ScriptPubKey));
             }
 
+            // Input to coinstake transaction.
+            StakeTx coinstakeInput = workersResult.KernelCoin;
+
+            // Total amount of input values in coinstake transaction.
+            long coinstakeInputValue = coinstakeInput.TxOut.Value + reward;
+
             // Set output amount.
-            if (coinstakeTx.Outputs.Count == 3)
+            if (coinstakeContext.CoinstakeTx.Outputs.Count == 3)
             {
-                coinstakeTx.Outputs[1].Value = (coinstakeInputsValue / 2 / Money.CENT) * Money.CENT;
-                coinstakeTx.Outputs[2].Value = coinstakeInputsValue - coinstakeTx.Outputs[1].Value;
-                this.logger.LogTrace("Coinstake first output value is {0}, second is {1}.", coinstakeTx.Outputs[1].Value, coinstakeTx.Outputs[2].Value);
+                coinstakeContext.CoinstakeTx.Outputs[1].Value = (coinstakeInputValue / 2 / Money.CENT) * Money.CENT;
+                coinstakeContext.CoinstakeTx.Outputs[2].Value = coinstakeInputValue - coinstakeContext.CoinstakeTx.Outputs[1].Value;
+                this.logger.LogTrace("Coinstake first output value is {0}, second is {1}.", coinstakeContext.CoinstakeTx.Outputs[1].Value, coinstakeContext.CoinstakeTx.Outputs[2].Value);
             }
             else
             {
-                coinstakeTx.Outputs[1].Value = coinstakeInputsValue;
-                this.logger.LogTrace("Coinstake output value is {0}.", coinstakeTx.Outputs[1].Value);
+                coinstakeContext.CoinstakeTx.Outputs[1].Value = coinstakeInputValue;
+                this.logger.LogTrace("Coinstake output value is {0}.", coinstakeContext.CoinstakeTx.Outputs[1].Value);
             }
 
             // Sign.
-            foreach (StakeTx walletTx in coinstakeInputs)
+            if (!this.SignTransactionInput(coinstakeInput, coinstakeContext.CoinstakeTx))
             {
-                if (!this.SignTransactionInput(walletTx, coinstakeTx))
-                {
-                    this.logger.LogTrace("(-)[SIGN_FAILED]:false");
-                    return false;
-                }
-            }
+                this.logger.LogTrace("(-)[SIGN_FAILED]:false");
+                return false;
+            } 
 
             // Limit size.
-            int serializedSize = coinstakeTx.GetSerializedSize(ProtocolVersion.ALT_PROTOCOL_VERSION, SerializationType.Network);
+            int serializedSize = coinstakeContext.CoinstakeTx.GetSerializedSize(ProtocolVersion.ALT_PROTOCOL_VERSION, SerializationType.Network);
             if (serializedSize >= (MaxBlockSizeGen / 5))
             {
                 this.logger.LogTrace("Coinstake size {0} bytes exceeded limit {1} bytes.", serializedSize, MaxBlockSizeGen / 5);
@@ -731,6 +747,132 @@ namespace Stratis.Bitcoin.Features.Miner
             // Successfully generated coinstake.
             this.logger.LogTrace("(-):true");
             return true;
+        }
+
+        /// <summary>
+        /// Worker method that tries to find coinstake kernel within a small list of UTXOs.
+        /// <para>
+        /// There are multiple worker tasks created, each checking subset of all available UTXOs.
+        /// This allows the kernel finding task to be processed on multiple processors in parallel.
+        /// </para>
+        /// </summary>
+        /// <param name="context">Context information with worker task description. Results of the worker's attempt are also stored in this context.</param>
+        /// <param name="chainTip">Tip of the best chain. Used only to stop working as soon as the chain advances.</param>
+        /// <param name="block">Template of the block that we are trying to mine.</param>
+        /// <param name="minimalAllowedTime">Minimal valid timestamp for new coinstake transaction.</param>
+        /// <param name="searchInterval">Length of an unexplored block time space in seconds. It only makes sense to look for a solution within this interval.</param>
+        /// <returns></returns>
+        private void CoinstakeWorker(CoinstakeWorkerContext context, ChainedBlock chainTip, Block block, long minimalAllowedTime, long searchInterval)
+        {
+            context.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4},{5}:{6})", nameof(chainTip), chainTip.HashBlock, chainTip.Height, nameof(minimalAllowedTime), minimalAllowedTime, nameof(searchInterval), searchInterval);
+
+            context.Logger.LogTrace("Going to process {0} UTXOs.", context.Coins.Count);
+
+            // Sort coins by amount, so that highest amounts are tried first
+            // because they have greater chance to succeed and thus saving some work.
+            List<StakeTx> orderedCoins = context.Coins.OrderByDescending(o => o.TxOut.Value).ToList();
+
+            bool stopWork = false;
+            foreach (StakeTx coin in orderedCoins)
+            {
+                context.Logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
+
+                bool kernelFound = false;
+
+                // Script of the first coinstake input.
+                Script scriptPubKeyKernel = scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
+                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
+                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+                {
+                    context.Logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
+                    continue;
+                }
+
+                for (uint n = 0; (n < searchInterval) && !kernelFound; n++)
+                {
+                    if (context.Result.KernelFoundIndex != CoinstakeWorkerResult.KernelNotFound)
+                    {
+                        context.Logger.LogTrace("Different worker #{0} already found kernel, stopping work.", context.Result.KernelFoundIndex);
+                        stopWork = true;
+                        break;
+                    }
+
+                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    {
+                        context.Logger.LogTrace("Application shutdown detected, stopping work.");
+                        stopWork = true;
+                        break;
+                    }
+
+                    if (chainTip != this.chain.Tip)
+                    {
+                        context.Logger.LogTrace("Chain advanced, stopping work.");
+                        stopWork = true;
+                        break;
+                    }
+
+                    uint txTime = context.CoinstakeContext.CoinstakeTx.Time - n;
+
+                    // Once we reach previous block time + 1, we can't go any lower
+                    // because it is required that the block time is greater than the previous block time.
+                    if (txTime < minimalAllowedTime)
+                        break;
+
+                    if ((txTime & PosConsensusValidator.StakeTimestampMask) != 0)
+                        continue;
+
+                    context.Logger.LogTrace("Trying with transaction time {0}...", txTime);
+                    try
+                    {
+                        var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
+                        long nBlockTime = 0;
+
+                        var contextInformation = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
+                        contextInformation.SetStake();
+                        this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
+
+                        if (context.Result.SetKernelFoundIndex(context.Index))
+                        {
+                            context.Logger.LogTrace("Kernel found with solution hash '{0}'.", contextInformation.Stake.HashProofOfStake);
+
+                            BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
+                            Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
+                            context.CoinstakeContext.Key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
+
+                            // Create a pubkey script form the current script.
+                            Script scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(context.CoinstakeContext.Key.PubKey); // scriptPubKeyKernel
+
+                            coin.Key = context.CoinstakeContext.Key;
+                            context.CoinstakeContext.CoinstakeTx.Time = txTime;
+                            context.CoinstakeContext.CoinstakeTx.AddInput(new TxIn(prevoutStake));
+                            context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
+
+                            context.Result.KernelCoin = coin;
+
+                            context.Logger.LogTrace("Kernel accepted, coinstake input is '{0}/{1}', stopping work.", prevoutStake.Hash, prevoutStake.N);
+                            kernelFound = true;
+                        }
+                        else context.Logger.LogTrace("Kernel found, but worker #{0} announced its kernel earlier, stopping work.", context.Result.KernelFoundIndex);
+
+                        stopWork = true;
+                    }
+                    catch (ConsensusErrorException cex)
+                    {
+                        context.Logger.LogTrace("Checking kernel failed with exception: {0}.", cex.Message);
+                        if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
+                            continue;
+
+                        stopWork = true;
+                    }
+
+                    if (stopWork) break;
+                }
+
+                // If kernel is found or error occurred, stop searching.
+                if (stopWork) break;
+            }
+
+            context.Logger.LogTrace("(-)");
         }
 
         /// <summary>
