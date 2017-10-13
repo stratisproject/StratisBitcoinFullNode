@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async token =>
             {
-                await this.RunLoop(this.nodeLifetime.ApplicationStopping);
+                await this.RunLoopAsync(this.nodeLifetime.ApplicationStopping);
             }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpans.RunOnce);
         }
 
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dBreezeCoinView.Dispose();
         }
 
-        private async Task RunLoop(CancellationToken cancellationToken)
+        private async Task RunLoopAsync(CancellationToken cancellationToken)
         {
             try
             {
