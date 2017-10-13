@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 try
                 {
-                    await this.GenerateBlocks(walletSecret);
+                    await this.GenerateBlocks(walletSecret).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
                     tryToSync = true;
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping);
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
 
                 // TODO: What is the purpose of this conditional block?
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
                         if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
 
-                        await Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping);
+                        await Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                         continue;
                     }
                 }
@@ -398,7 +398,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
 
-                FetchCoinsResponse coinset = await this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray());
+                FetchCoinsResponse coinset = await this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).ConfigureAwait(false);
 
                 long totalBalance = 0;
                 foreach (UnspentOutputReference infoTransaction in spendable)
@@ -429,23 +429,23 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
-                this.rpcGetStakingInfoModel.PooledTx = await this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count);
+                this.rpcGetStakingInfoModel.PooledTx = await this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).ConfigureAwait(false);
                 this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(chainTip);
                 this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
-                if (await this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp))
+                if (await this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
                     var blockResult = new BlockResult { Block = block };
-                    await this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip);
+                    await this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
 
                     blockTemplate = null;
                 }
                 else
                 {
                     this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlock), this.minerSleep);
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping);
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
             }
         }
@@ -505,7 +505,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.chain.SetTip(context.BlockResult.ChainedBlock);
             this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-            await this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block });
+            await this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).ConfigureAwait(false);
             this.signals.SignalBlock(block);
 
             this.logger.LogInformation("==================================================================");
@@ -554,7 +554,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = searchTime;
             this.logger.LogTrace("Search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
 
-            if (await this.CreateCoinstake(stakeTxes, block, chainTip, searchInterval, fees, coinstakeContext))
+            if (await this.CreateCoinstake(stakeTxes, block, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
             {
                 uint minTimestamp = chainTip.Header.Time + 1;
                 if (coinstakeContext.CoinstakeTx.Time >= minTimestamp)
@@ -681,7 +681,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 workers[workerIndex] = Task.Run(() => this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval));
             }
 
-            await Task.WhenAll(workers);
+            await Task.WhenAll(workers).ConfigureAwait(false);
 
             if (workersResult.KernelFoundIndex == CoinstakeWorkerResult.KernelNotFound)
             {
