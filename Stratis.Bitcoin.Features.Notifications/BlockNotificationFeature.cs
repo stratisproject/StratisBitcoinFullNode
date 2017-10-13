@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             this.blockNotification.Start();
-            this.chainState.HighestValidatedPoW = this.chain.Tip;
+            this.chainState.ConsensusTip = this.chain.Tip;
         }
 
         public override void Stop()

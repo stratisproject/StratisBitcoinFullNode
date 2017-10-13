@@ -70,9 +70,9 @@
                 return true;
             }
 
-            if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+            if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.ConsensusTip?.Height)
             {
-                this.logger.LogTrace("{0} height > {1} height", nameof(context.NextChainedBlock), nameof(context.BlockStoreLoop.ChainState.HighestValidatedPoW));
+                this.logger.LogTrace("{0} height > {1} height", nameof(context.NextChainedBlock), nameof(context.BlockStoreLoop.ChainState.ConsensusTip));
                 return true;
             }
 

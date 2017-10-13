@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.blockRepository.PutAsync(blockResult.ChainedBlock.HashBlock, new List<Block> { pblock }).GetAwaiter().GetResult();
 
                     // Similar logic to what's in the full node code.
-                    this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
+                    this.chainState.ConsensusTip = this.consensusLoop.Tip;
                     this.signals.SignalBlock(pblock);
 
                     this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);

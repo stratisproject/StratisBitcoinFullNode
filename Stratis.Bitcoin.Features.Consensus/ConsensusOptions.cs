@@ -22,9 +22,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Time to elapse before new modifier is computed.</summary>
         public long StakeModifierInterval { get; set; }
 
-        /// <summary>Maximal length of reorganization that the node is willing to accept.</summary>
-        public uint MaxReorgLength { get; set; }
-
         /// <summary>
         /// Initializes the default values.
         /// </summary>
@@ -79,6 +76,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         public long CoinbaseMaturity { get; set; }
         public Money ProofOfWorkReward { get; set; }
 
+        /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
+        public uint MaxReorgLength { get; set; }
+
         /// <summary>
         /// Initializes the default values.
         /// </summary>
@@ -95,6 +95,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.MaxMoney = 21000000 * Money.COIN;
             this.CoinbaseMaturity = 100;
             this.ProofOfWorkReward = Money.Coins(50);
+
+            // No long reorg protection on PoW.
+            this.MaxReorgLength = 0;
         }
     }
 

@@ -98,17 +98,19 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
             this.consensusManager = consensusManager;
+
+            this.chainState.MaxReorgLength = this.network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
         }
 
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            if (this.chainState?.HighestValidatedPoW != null)
+            if (this.chainState?.ConsensusTip != null)
             {
                 benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     this.chainState.HighestValidatedPoW.Height.ToString().PadRight(8) +
+                                     this.chainState.ConsensusTip.Height.ToString().PadRight(8) +
                                      " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     this.chainState.HighestValidatedPoW.HashBlock);
+                                     this.chainState.ConsensusTip.HashBlock);
             }
         }
 
@@ -123,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             this.consensusLoop.Initialize();
 
-            this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
+            this.chainState.ConsensusTip = this.consensusLoop.Tip;
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             var flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
@@ -200,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (block.Error == null)
                     {
-                        this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
+                        this.chainState.ConsensusTip = this.consensusLoop.Tip;
                         if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
                             this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
 

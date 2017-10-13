@@ -60,8 +60,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Target GetNetworkDifficulty()
         {
-            if (this.ConsensusValidator?.ConsensusParams != null && this.ChainState?.HighestValidatedPoW != null)
-                return this.ChainState?.HighestValidatedPoW?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
+            if (this.ConsensusValidator?.ConsensusParams != null && this.ChainState?.ConsensusTip != null)
+                return this.ChainState?.ConsensusTip?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
             else
                 return null;
         }

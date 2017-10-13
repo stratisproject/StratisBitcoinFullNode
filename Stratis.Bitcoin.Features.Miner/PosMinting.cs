@@ -419,7 +419,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Similar logic to what's in the full node code.
             this.chain.SetTip(context.BlockResult.ChainedBlock);
             this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
-            this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
+            this.chainState.ConsensusTip = this.consensusLoop.Tip;
             this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).GetAwaiter().GetResult();
             this.signals.SignalBlock(block);
 

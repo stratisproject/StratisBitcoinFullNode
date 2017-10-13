@@ -235,9 +235,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                 return false;
             }
 
-            if (this.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+            if (this.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.ConsensusTip?.Height)
             {
-                this.logger.LogTrace("[STORE HEIGHT]:{0} > [CONSENSUS HEIGHT]:{1}", nameof(this.NextChainedBlock), nameof(this.BlockStoreLoop.ChainState.HighestValidatedPoW));
+                this.logger.LogTrace("[STORE HEIGHT]:{0} > [CONSENSUS HEIGHT]:{1}", nameof(this.NextChainedBlock), nameof(this.BlockStoreLoop.ChainState.ConsensusTip));
                 return false;
             }
 
