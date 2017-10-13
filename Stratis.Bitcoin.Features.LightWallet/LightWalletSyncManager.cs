@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            var newTip = this.chain.GetBlock(block.GetHash());
+            ChainedBlock newTip = this.chain.GetBlock(block.GetHash());
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
@@ -131,7 +131,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 {
                     // The current wallet hash was not found on the main chain.
                     // A reorg happened so bring the wallet back top the last known fork.
-
                     ChainedBlock fork = this.walletTip;
 
                     // We walk back the chained block object to find the fork.
@@ -143,10 +142,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     this.walletManager.RemoveBlocks(fork);
                     this.walletTip = fork;
 
-                    this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
+                    this.logger.LogTrace("Wallet tip set to '{0}/{1}'.", this.walletTip.HashBlock, this.walletTip.Height);
                 }
 
-                // The new tip can be ahead or behind the wallet
+                // The new tip can be ahead or behind the wallet.
                 // If the new tip is ahead we try to bring the wallet up to the new tip.
                 // If the new tip is behind we just check the wallet and the tip are in the same chain.
 
@@ -161,7 +160,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
                     this.logger.LogTrace("Wallet tip '{0}/{1}' is behind the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
 
-                    // the wallet is falling behind we need to catch up
+                    // The wallet is falling behind we need to catch up.
                     this.logger.LogWarning("New tip '{0}/{1}' is too far in advance, put the puller back.", newTip.HashBlock, newTip.HashBlock);
                     this.blockNotification.SyncFrom(this.walletTip.HashBlock);
                     return;
@@ -174,6 +173,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
                         return;
                     }
+
                     this.logger.LogTrace("Wallet tip '{0}/{1}' is ahead or equal to the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
                 }
             }
