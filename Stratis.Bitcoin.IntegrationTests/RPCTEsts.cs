@@ -1,7 +1,12 @@
-﻿using NBitcoin;
+﻿using System;
+using System.Collections.Generic;
+using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
-using System;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.IndexStore;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -13,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                var node = builder.CreateStratisNode();
+                var node = builder.CreateStratisPowNode();
                 builder.StartAll();
                 var client = node.CreateRPCClient();
                 var hash = client.GetBestBlockHash();
@@ -61,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                RPCClient rpc = builder.CreateStratisNode().CreateRPCClient();
+                RPCClient rpc = builder.CreateStratisPowNode().CreateRPCClient();
                 builder.StartAll();
                 RPCResponse response = rpc.SendCommand(RPCOperations.getblockhash, 0);
                 string actualGenesis = (string)response.Result;
@@ -78,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode node = builder.CreateStratisNode();
+                CoreNode node = builder.CreateStratisPowNode();
                 RPCClient rpc = node.CreateRPCClient();
                 builder.StartAll();
 
@@ -100,14 +105,14 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Tests RPC getpeersinfo
+        /// Tests whether the RPC method "getpeersinfo" can be called and returns a non-empty result.
         /// </summary>
         [Fact]
         public void CanGetPeersInfo()
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode nodeA = builder.CreateStratisNode();
+                CoreNode nodeA = builder.CreateStratisPowNode();
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 using (Node nodeB = nodeA.CreateNodeClient())
@@ -118,5 +123,102 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
             }
         }
+
+        /// <summary>
+        /// Tests whether the RPC method "getpeersinfo" can be called and returns a string result suitable for console output.
+        /// We are also testing whether all arguments can be passed as strings.
+        /// </summary>
+        [Fact]
+        public void CanGetPeersInfoByStringArgs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode nodeA = builder.CreateStratisPowNode();
+                builder.StartAll();
+                RPCClient rpc = nodeA.CreateRPCClient();
+                using (Node nodeB = nodeA.CreateNodeClient())
+                {
+                    nodeB.VersionHandshake();
+                    var resp = rpc.SendCommand("getpeerinfo").ResultString;
+                    Assert.True(resp.StartsWith("[" + Environment.NewLine + "  {" + Environment.NewLine + "    \"id\": 0," + Environment.NewLine + "    \"addr\": \"["));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tests whether the RPC method "getblockhash" can be called and returns the expected string result suitable for console output.
+        /// We are also testing whether all arguments can be passed as strings.
+        /// </summary>
+        [Fact]
+        public void CanGetBlockHashByStringArgs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode nodeA = builder.CreateStratisPowNode();
+                builder.StartAll();
+                RPCClient rpc = nodeA.CreateRPCClient();
+                using (Node nodeB = nodeA.CreateNodeClient())
+                {
+                    nodeB.VersionHandshake();
+                    var resp = rpc.SendCommand("getblockhash", "0").ResultString;
+                    Assert.Equal("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206", resp);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tests whether the RPC method "createindex" can be called and returns the expected string result suitable for console output.
+        /// We are also testing whether all arguments can be passed as strings.
+        /// </summary>
+        [Fact]
+        public void CanCreateIndexByStringArgs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                {
+                    fullNodeBuilder
+                    .UseConsensus()
+                    .UseIndexStore()
+                    .UseMempool()
+                    .AddRPC();
+                });
+                builder.StartAll();
+                RPCClient rpc = nodeA.CreateRPCClient();
+                using (Node nodeB = nodeA.CreateNodeClient())
+                {
+                    nodeB.VersionHandshake();
+                    var args = new List<string>();
+                    args.Add("testindex");
+                    args.Add("false");
+                    args.Add("(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })");
+                    var resp = rpc.SendCommand("createindex", args.ToArray()).ResultString;
+
+                    Assert.Equal("True", resp);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tests whether the RPC method "generate" can be called and returns a string result suitable for console output.
+        /// We are also testing whether all arguments can be passed as strings.
+        /// </summary>
+        [Fact]
+        public void CanGenerateByStringArgs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode nodeA = builder.CreateStratisPowNode();
+                builder.StartAll();
+                RPCClient rpc = nodeA.CreateRPCClient();
+                using (Node nodeB = nodeA.CreateNodeClient())
+                {
+                    nodeB.VersionHandshake();
+                    var resp = rpc.SendCommand("generate", "1").ResultString;
+                    Assert.True(resp.StartsWith("[" + Environment.NewLine + "  \""));
+                }
+            }
+        }
+
     }
 }

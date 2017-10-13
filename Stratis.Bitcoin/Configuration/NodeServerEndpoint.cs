@@ -7,11 +7,11 @@ namespace Stratis.Bitcoin.Configuration
     /// </summary>
     public class NodeServerEndpoint
     {
-        /// <summary>Empty constructor.</summary>
-        /// <remarks>TODO: This does not seem to be used anywhere, can we remove it?</remarks>
-        public NodeServerEndpoint()
-        {
-        }
+        /// <summary>IP address and port number on which the node server listens.</summary>
+        public IPEndPoint Endpoint { get; set; }
+
+        /// <summary>If <c>true</c>, peers that connect to this interface are whitelisted.</summary>
+        public bool Whitelisted { get; set; }
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -22,18 +22,6 @@ namespace Stratis.Bitcoin.Configuration
         {
             this.Endpoint = endpoint;
             this.Whitelisted = whitelisted;
-        }
-
-        /// <summary>IP address and port number on which the node server listens.</summary>
-        public IPEndPoint Endpoint
-        {
-            get; set;
-        }
-
-        /// <summary>If <c>true</c>, peers that connect to this interface are whitelisted.</summary>
-        public bool Whitelisted
-        {
-            get; set;
         }
     }
 }

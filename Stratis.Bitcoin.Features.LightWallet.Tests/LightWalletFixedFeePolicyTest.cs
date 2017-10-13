@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.LightWallet;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -29,21 +28,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ILoggerFactory loggerFactory = new LoggerFactory();
             NodeSettings settings = NodeSettings.Default();
             LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, settings);
-            Assert.Equal(settings.MinTxFee, policy.MinTxFee);
+            Assert.Equal(settings.FallbackTxFeeRate, policy.FallbackTxFeeRate);
         }
 
         [Fact]
         public void TxFeeRate_Result_IsMinTxFee()
         {
             LightWalletFixedFeePolicy policy = this.PolicyForDefaultSettings;
-            Assert.Equal(policy.MinTxFee, policy.TxFeeRate);
+            Assert.Equal(policy.FallbackTxFeeRate, policy.TxFeeRate);
         }
 
         [Fact]
         public void GetFeeRate_Result_IsMinTxFee()
         {
             LightWalletFixedFeePolicy policy = this.PolicyForDefaultSettings;
-            Assert.Equal(policy.MinTxFee, policy.GetFeeRate(6));
+            Assert.Equal(policy.FallbackTxFeeRate, policy.GetFeeRate(6));
         }
 
         [Fact]
@@ -51,8 +50,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             LightWalletFixedFeePolicy policy = this.PolicyForDefaultSettings;
             const int txSizeBytes = 5000;
-            Assert.Equal(policy.MinTxFee.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes,6));
-            Assert.Equal(policy.MinTxFee.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes, 6, new Money(1)));
+            Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes,6));
+            Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetMinimumFee(txSizeBytes, 6, new Money(1)));
         }
 
         [Fact]
@@ -60,7 +59,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             LightWalletFixedFeePolicy policy = this.PolicyForDefaultSettings;
             const int txSizeBytes = 5000;
-            Assert.Equal(policy.MinTxFee.GetFee(txSizeBytes), policy.GetRequiredFee(txSizeBytes));
+            Assert.Equal(policy.FallbackTxFeeRate.GetFee(txSizeBytes), policy.GetRequiredFee(txSizeBytes));
         }
 
         [Fact]
@@ -69,7 +68,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ILoggerFactory loggerFactory = new LoggerFactory();
             NodeSettings settings = NodeSettings.FromArguments(new string[0], innerNetwork: Network.StratisTest);
             LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, settings);
-            Assert.Equal(new FeeRate(Network.StratisTest.DefaultMinTxFee()), policy.MinTxFee);
+            Assert.Equal(new FeeRate(Network.StratisTest.FallbackFee), policy.FallbackTxFeeRate);
         }
 
         [Fact]
@@ -78,7 +77,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ILoggerFactory loggerFactory = new LoggerFactory();
             NodeSettings settings = NodeSettings.FromArguments(new string[0], innerNetwork: Network.TestNet);
             LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, settings);
-            Assert.Equal(new FeeRate(Network.TestNet.DefaultMinTxFee()), policy.MinTxFee);
+            Assert.Equal(new FeeRate(Network.TestNet.FallbackFee), policy.FallbackTxFeeRate);
         }
     }
 }

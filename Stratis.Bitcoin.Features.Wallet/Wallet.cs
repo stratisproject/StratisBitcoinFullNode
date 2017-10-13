@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -610,8 +610,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             List<UnspentOutputReference> unspentOutputs = new List<UnspentOutputReference>();
             foreach (var address in this.GetCombinedAddresses())
             {
+                // A block that is at the tip has 1 confirmation.
+                // When calculating the confirmations the tip must be advanced by one.
+
+                var countFrom = currentChainHeight + 1;
                 var unspentTransactions = address.UnspentTransactions()
-                    .Where(a => currentChainHeight - (a.BlockHeight ?? currentChainHeight) >= confirmations).ToList();
+                    .Where(a => countFrom - (a.BlockHeight ?? countFrom) >= confirmations).ToList();
 
                 foreach (var transactionData in unspentTransactions)
                 {

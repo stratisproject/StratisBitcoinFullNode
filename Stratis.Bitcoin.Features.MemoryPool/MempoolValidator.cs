@@ -3,6 +3,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -64,12 +65,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <seealso cref = "MempoolSettings" />
         public const int DefaultMaxMempoolSize = 300;
-
-        /// <summary>
-        /// Default for -minrelaytxfee, minimum relay fee for transactions.
-        /// </summary>
-        /// <seealso cref = "MempoolSettings" />
-        public const int DefaultMinRelayTxFee = 1000; // Default for -minrelaytxfee, minimum relay fee for transactions
 
         /// <summary>
         /// Default limit free relay.
@@ -141,7 +136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ILogger logger;
 
         /// <summary>Minimum fee rate for a relay transaction.</summary>
-        public static readonly FeeRate MinRelayTxFee = new FeeRate(DefaultMinRelayTxFee);
+        private readonly FeeRate minRelayTxFee;
 
         // TODO: Implement Later with CheckRateLimit() 
         //private readonly FreeLimiterSection freeLimiter;
@@ -163,6 +158,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
+        /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
             TxMempool memPool, 
             MempoolAsyncLock mempoolLock,
@@ -171,7 +167,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolSettings mempoolSettings,
             ConcurrentChain chain, 
             CoinView coinView,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory, 
+            NodeSettings nodeSettings)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
@@ -184,6 +181,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
             this.PerformanceCounter = new MempoolPerformanceCounter();
+            this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
         }
 
         /// <summary>Gets a counter for tracking memory pool performance.</summary>
@@ -381,8 +379,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return tx.GetSerializedSize(
                        (ProtocolVersion)
-                       ((uint)ProtocolVersion.PROTOCOL_VERSION | consensusOptions.SERIALIZE_TRANSACTION_NO_WITNESS),
-                       SerializationType.Network) * (consensusOptions.WITNESS_SCALE_FACTOR - 1) +
+                       ((uint)ProtocolVersion.PROTOCOL_VERSION | consensusOptions.SerializeTransactionNoWitness),
+                       SerializationType.Network) * (consensusOptions.WitnessScaleFactor - 1) +
                    tx.GetSerializedSize(ProtocolVersion.PROTOCOL_VERSION, SerializationType.Network);
         }
 
@@ -402,7 +400,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Providing any more cleanup incentive than making additional inputs free would
             // risk encouraging people to create junk outputs to redeem later.
             if (nTxSize == 0)
-                nTxSize = (GetTransactionWeight(trx, consensusOptions) + consensusOptions.WITNESS_SCALE_FACTOR - 1) / consensusOptions.WITNESS_SCALE_FACTOR;
+                nTxSize = (GetTransactionWeight(trx, consensusOptions) + consensusOptions.WitnessScaleFactor - 1) / consensusOptions.WitnessScaleFactor;
 
             foreach (TxIn txInput in trx.Inputs)
             {
@@ -584,7 +582,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // TODO: Implement Witness Code
 
             Transaction tx = context.Transaction;
-            if (tx.Version > this.consensusValidator.ConsensusOptions.MAX_STANDARD_VERSION || tx.Version < 1)
+            if (tx.Version > this.consensusValidator.ConsensusOptions.MaxStandardVersion || tx.Version < 1)
                 context.State.Fail(MempoolErrors.Version).Throw();
 
             // Extremely large transactions with lots of inputs can cost the network
@@ -592,7 +590,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // computing signature hashes is O(ninputs*txsize). Limiting transactions
             // to MAX_STANDARD_TX_WEIGHT mitigates CPU exhaustion attacks.
             int sz = GetTransactionWeight(tx, this.consensusValidator.ConsensusOptions);
-            if (sz >= this.consensusValidator.ConsensusOptions.MAX_STANDARD_TX_WEIGHT)
+            if (sz >= this.consensusValidator.ConsensusOptions.MaxStandardTxWeight)
                 context.State.Fail(MempoolErrors.TxSize).Throw();
 
             foreach (TxIn txin in tx.Inputs)
@@ -631,7 +629,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //{
                 //  context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
                 //}
-                else if (txout.IsDust(MinRelayTxFee))
+                else if (txout.IsDust(minRelayTxFee))
                 {
                     context.State.Fail(MempoolErrors.Dust).Throw();
                 }
@@ -689,7 +687,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 context.State.Fail(MempoolErrors.MinFeeNotMet, $" {context.Fees} < {mempoolRejectFee}").Throw();
             }
-            else if (this.mempoolSettings.RelayPriority && context.ModifiedFees < MinRelayTxFee.GetFee(context.EntrySize) &&
+            else if (this.mempoolSettings.RelayPriority && context.ModifiedFees < minRelayTxFee.GetFee(context.EntrySize) &&
                      !TxMempool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
             {
                 // Require that free transactions have sufficient priority to be mined in the next block.
@@ -711,7 +709,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // itself can contain sigops MAX_STANDARD_TX_SIGOPS is less than
             // MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
             // merely non-standard transaction.
-            if (context.SigOpsCost > this.consensusValidator.ConsensusOptions.MAX_BLOCK_SIGOPS_COST)
+            if (context.SigOpsCost > this.consensusValidator.ConsensusOptions.MaxBlockSigopsCost)
                 context.State.Fail(MempoolErrors.TooManySigops).Throw();
         }
 
@@ -883,10 +881,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // Finally in addition to paying more fees than the conflicts the
                 // new transaction must pay for its own bandwidth.
                 Money nDeltaFees = context.ModifiedFees - context.ConflictingFees;
-                if (nDeltaFees < MinRelayTxFee.GetFee(context.EntrySize))
+                if (nDeltaFees < minRelayTxFee.GetFee(context.EntrySize))
                 {
                     context.State.Fail(MempoolErrors.Insufficientfee,
-                            $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {MinRelayTxFee.GetFee(context.EntrySize)}").Throw();
+                            $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {minRelayTxFee.GetFee(context.EntrySize)}").Throw();
                 }
             }
         }

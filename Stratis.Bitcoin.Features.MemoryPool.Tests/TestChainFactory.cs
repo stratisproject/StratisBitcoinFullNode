@@ -75,11 +75,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
 
-            ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network));
+            ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network), loggerFactory);
             consensus.Initialize();
 
-            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(nodeSettings), loggerFactory);
-            TxMempool mempool = new TxMempool(new FeeRate(1000), dateTimeProvider, blockPolicyEstimator, loggerFactory);
+            BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
+            TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
             MempoolAsyncLock mempoolLock = new MempoolAsyncLock();
 
             // Simple block creation, nothing special yet:
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
 
-            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory);
+            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings);
 
             return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
         }
@@ -210,13 +210,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             AssemblerOptions options = new AssemblerOptions();
 
-            options.BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_WEIGHT;
-            options.BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
+            options.BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight;
+            options.BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize;
 
             FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(consensus, network, chain, mempoolLock, mempool, date, loggerFactory, options);
+            return new PowBlockAssembler(consensus, network, mempoolLock, mempool, date, chain.Tip, loggerFactory, options);
         }
     }
 }

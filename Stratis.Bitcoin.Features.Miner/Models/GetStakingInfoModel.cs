@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 
-namespace Stratis.Bitcoin.Features.RPC.Models
+namespace Stratis.Bitcoin.Features.Miner.Models
 {
     /// <summary>
     /// Data structure returned by RPC command "getstakinginfo".

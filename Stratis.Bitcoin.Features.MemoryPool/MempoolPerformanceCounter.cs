@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public override string ToString()
         {
             var benchLogs = new StringBuilder();
-            benchLogs.AppendLine(
+            benchLogs.Append(
                 "MempoolSize: " + this.MempoolSize.ToString().PadRight(4) + 
                 " DynamicSize: " + ((this.MempoolDynamicSize / 1000) + " kb").ToString().PadRight(6) +
                 " OrphanSize: " + this.MempoolOrphanSize.ToString().PadRight(4));

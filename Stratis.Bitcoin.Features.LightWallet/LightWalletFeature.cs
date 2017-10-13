@@ -2,14 +2,18 @@
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,16 +24,22 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// Feature for a full-block SPV wallet.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
-    public class LightWalletFeature : FullNodeFeature, INodeStats
+    public class LightWalletFeature : FullNodeFeature, INodeStats, IFeatureStats
     {
+        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary>Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
         private readonly IWalletSyncManager walletSyncManager;
         private readonly IWalletManager walletManager;
         private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
         private readonly NodeDeployments nodeDeployments;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly INodeLifetime nodeLifetime;
         private readonly IWalletFeePolicy walletFeePolicy;
+        private readonly BroadcasterBehavior broadcasterBehavior;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LightWalletFeature"/> class.
@@ -42,8 +52,16 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
         /// <param name="nodeLifetime">The node lifetime.</param>
         /// <param name="walletFeePolicy">The wallet fee policy.</param>
-        public LightWalletFeature(IWalletSyncManager walletSyncManager, IWalletManager walletManager, IConnectionManager connectionManager,
-            ConcurrentChain chain, NodeDeployments nodeDeployments, IAsyncLoopFactory asyncLoopFactory, INodeLifetime nodeLifetime, IWalletFeePolicy walletFeePolicy)
+        public LightWalletFeature(
+            IWalletSyncManager walletSyncManager,
+            IWalletManager walletManager,
+            IConnectionManager connectionManager,
+            ConcurrentChain chain,
+            NodeDeployments nodeDeployments,
+            IAsyncLoopFactory asyncLoopFactory,
+            INodeLifetime nodeLifetime,
+            IWalletFeePolicy walletFeePolicy,
+            BroadcasterBehavior broadcasterBehavior)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -53,6 +71,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.walletFeePolicy = walletFeePolicy;
+            this.broadcasterBehavior = broadcasterBehavior;
         }
 
         /// <inheritdoc />
@@ -60,18 +79,20 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager));
 
-            this.walletManager.Initialize();
-            this.walletSyncManager.Initialize();
+            this.walletManager.Start();
+            this.walletSyncManager.Start();
 
-            this.StartDeploymentsChecksLoop();
+            this.asyncLoop = this.StartDeploymentsChecksLoop();
 
-            this.walletFeePolicy.Initialize();
+            this.walletFeePolicy.Start();
+
+            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
         }
 
-        public void StartDeploymentsChecksLoop()
+        public IAsyncLoop StartDeploymentsChecksLoop()
         {
             var loopToken = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping);
-            this.asyncLoopFactory.Run("LightWalletFeature.CheckDeployments", token =>
+            return this.asyncLoopFactory.Run("LightWalletFeature.CheckDeployments", token =>
             {
                 if (!this.chain.IsDownloaded())
                     return Task.CompletedTask;
@@ -79,7 +100,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 // check segwit activation on the chain of headers
                 // if segwit is active signal to only connect to 
                 // nodes that also signal they are segwit nodes
-                var flags = this.nodeDeployments.GetFlags(this.walletSyncManager.WalletTip);
+                DeploymentFlags flags = this.nodeDeployments.GetFlags(this.walletSyncManager.WalletTip);
                 if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                     this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
@@ -88,32 +109,52 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
                 return Task.CompletedTask;
             },
-                loopToken.Token,
-                repeatEvery: TimeSpans.TenSeconds,
-                startAfter: TimeSpans.TenSeconds);
+            loopToken.Token,
+            repeatEvery: TimeSpans.TenSeconds,
+            startAfter: TimeSpans.TenSeconds);
         }
 
         /// <inheritdoc />
         public override void Stop()
         {
-            base.Stop();
+            this.walletFeePolicy.Stop();
+            this.asyncLoop.Dispose();
+            this.walletSyncManager.Stop();
+            this.walletManager.Stop();
         }
 
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLog)
         {
-            var manager = this.walletManager as WalletManager;
+            WalletManager manager = this.walletManager as WalletManager;
 
             if (manager != null)
             {
-                var height = manager.LastBlockHeight();
-                var block = this.chain.GetBlock(height);
-                var hashBlock = block == null ? 0 : block.HashBlock;
+                int height = manager.LastBlockHeight();
+                ChainedBlock block = this.chain.GetBlock(height);
+                uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
                 benchLog.AppendLine("LightWallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     height.ToString().PadRight(8) +
-                                     " LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     hashBlock);
+                        (manager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                        (manager.ContainsWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + hashBlock) : string.Empty));
+            }
+        }
+
+        /// <inheritdoc />
+        public void AddFeatureStats(StringBuilder benchLog)
+        {
+            var walletNames = this.walletManager.GetWalletsNames();
+
+            if (walletNames.Any())
+            {
+                benchLog.AppendLine();
+                benchLog.AppendLine("======Wallets======");
+
+                foreach (var walletName in walletNames)
+                {
+                    var items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
+                    benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                }
             }
         }
     }
@@ -135,10 +176,12 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
                         services.AddSingleton<IWalletManager, WalletManager>();
                         if (fullNodeBuilder.Network.IsBitcoin())
-                            services.AddSingleton<IWalletFeePolicy, LightWalletBitcoinExternalFeePolicy>();                       
+                            services.AddSingleton<IWalletFeePolicy, LightWalletBitcoinExternalFeePolicy>();
                         else
                             services.AddSingleton<IWalletFeePolicy, LightWalletFixedFeePolicy>();
                         services.AddSingleton<WalletController>();
+                        services.AddSingleton<IBroadcasterManager, LightWalletBroadcasterManager>();
+                        services.AddSingleton<BroadcasterBehavior>();
 
                     });
             });

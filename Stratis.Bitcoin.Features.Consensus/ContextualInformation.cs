@@ -67,9 +67,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             get { return this.Stake != null; }
         }
 
-        /// <summary>Best block in the fully validated chain of blocks.</summary>
-        public ChainedBlock consensusTip { get; set; }
-
         public ContextInformation()
         {
         }
@@ -81,7 +78,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.BlockResult = blockResult;
             this.Consensus = consensus;
-            this.consensusTip = consensusTip;
 
             // TODO: adding flags to determine the flow of logic is not ideal
             // a refator is in depbate on moving to a consensus rules engine

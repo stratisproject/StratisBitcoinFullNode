@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Signals;
 
 namespace Stratis.Bitcoin.Features.Wallet.Notifications

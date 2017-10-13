@@ -28,11 +28,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             AssemblerOptions options = new AssemblerOptions();
 
-            options.BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_WEIGHT;
-            options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MAX_BLOCK_SERIALIZED_SIZE;
+            options.BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight;
+            options.BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize;
             options.BlockMinFeeRate = blockMinFeeRate;
 
-            return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.chain, testContext.mempoolLock, testContext.mempool, testContext.date, new LoggerFactory(), options);
+            return new PowBlockAssembler(testContext.consensus, testContext.network, testContext.mempoolLock, testContext.mempool, testContext.date, testContext.chain.Tip, new LoggerFactory(), options);
         }
         public class Blockinfo
         {
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new PowConsensusOptions();
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), new LoggerFactory());
-                this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network, new Checkpoints(this.network), new LoggerFactory()), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network));
+                this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network, new Checkpoints(this.network), new LoggerFactory()), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network), new LoggerFactory());
                 this.consensus.Initialize();
 
                 this.entry.Fee(11);
@@ -137,7 +137,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 date1.time = DateTimeProvider.Default.GetTime();
                 date1.timeutc = DateTimeProvider.Default.GetUtcNow();
                 this.date = date1;
-                this.mempool = new TxMempool(new FeeRate(1000), DateTimeProvider.Default, new BlockPolicyEstimator(new FeeRate(1000), new MempoolSettings(NodeSettings.Default()), new LoggerFactory()), new LoggerFactory()); ;
+                var nodeSettings = NodeSettings.Default();
+                this.mempool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings); ;
                 this.mempoolLock = new MempoolAsyncLock();
 
                 // Simple block creation, nothing special yet:

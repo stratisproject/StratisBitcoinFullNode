@@ -5,17 +5,16 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace Stratis.Bitcoin
 {
@@ -239,25 +238,10 @@ namespace Stratis.Bitcoin
         {
             this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
             {
-                // TODO: move stats to each of its components
                 StringBuilder benchLogs = new StringBuilder();
 
                 benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
                                      this.ConnectionManager.Parameters.UserAgent);
-
-                // TODO: BaseFeature?
-                benchLogs.AppendLine("Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     this.Chain.Tip.Height.ToString().PadRight(8) +
-                                     " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.Chain.Tip.HashBlock);
-
-                // TODO: Why are three features all setting the HighestValidatedPoW (Consensus, Mining and Notifications)?
-                if (this?.ChainBehaviorState?.HighestValidatedPoW != null)
-                {
-                    benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         this.ChainBehaviorState.HighestValidatedPoW.Height.ToString().PadRight(8) +
-                                         " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                         this.ChainBehaviorState.HighestValidatedPoW.HashBlock);
-                }
 
                 // Display node stats grouped together
                 foreach (var feature in this.Services.Features.OfType<INodeStats>())
@@ -266,7 +250,8 @@ namespace Stratis.Bitcoin
                 // Now display the other stats
                 foreach (var feature in this.Services.Features.OfType<IFeatureStats>())
                     feature.AddFeatureStats(benchLogs);
-                
+
+                benchLogs.AppendLine();
                 benchLogs.AppendLine("======Connection======");
                 benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
                 this.logger.LogInformation(benchLogs.ToString());
