@@ -940,7 +940,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     //try
                     //{
-                        
+
 
                     //	var blockResult = new BlockResult { Block = block };
                     //	fullNode.ConsensusLoop.AcceptBlock(blockResult);
@@ -949,7 +949,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     //	// similar logic to what's in the full node code
                     //	if (blockResult.Error == null)
                     //	{
-                    //		fullNode.ChainBehaviorState.HighestValidatedPoW = fullNode.ConsensusLoop.Tip;
+                    //		fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
                     //		//if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
                     //		//{
                     //		//	var unused = cache.FlushAsync();

@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Base
         internal ReaderWriterLockSlim invalidBlocksLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
         internal HashSet<uint256> invalidBlocks = new HashSet<uint256>();
 
-        /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above HighestValidatedPoW.</summary>
+        /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
         public ChainedBlock ConsensusTip { get; set; }
 
         /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>

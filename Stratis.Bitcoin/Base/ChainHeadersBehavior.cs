@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Base
             // it is sent from the peer on first connect, in response to  Inv(Block) 
             // or in response to HeaderPayload until an empty array is returned
             // this payload notifies peers of our current best validated height 
-            // use the ChainState.HighestValidatedPoW property (not Chain.Tip)
+            // use the ChainState.ConsensusTip property (not Chain.Tip)
             // if the peer is behind/equal to our best height an empty array is sent back
 
             // Ignoring getheaders from peers because node is in initial block download
