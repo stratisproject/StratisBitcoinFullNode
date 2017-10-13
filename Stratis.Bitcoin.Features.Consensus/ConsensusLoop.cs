@@ -51,18 +51,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.StakeChain = stakeChain;
         }
 
-        public void Initialize()
+        public async Task InitializeAsync()
         {
             this.logger.LogTrace("()");
 
-            uint256 utxoHash = this.UTXOSet.GetBlockHashAsync().GetAwaiter().GetResult();
+            uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
                 if (this.Tip != null)
                     break;
 
-                utxoHash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
             }
             this.Puller.SetLocation(this.Tip);
 
