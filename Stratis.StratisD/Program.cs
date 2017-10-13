@@ -10,12 +10,13 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using System.Linq;
 using Stratis.Bitcoin.Features.RPC;
+using System.Threading.Tasks;
 
 namespace Stratis.StratisD
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
             NodeSettings nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
@@ -32,7 +33,7 @@ namespace Stratis.StratisD
                 .AddRPC()
                 .Build();
 
-            node.Run();
+            await node.RunAsync();
         }
     }
 }
