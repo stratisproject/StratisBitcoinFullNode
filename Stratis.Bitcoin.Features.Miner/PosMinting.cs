@@ -777,8 +777,6 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 context.Logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
 
-                bool kernelFound = false;
-
                 // Script of the first coinstake input.
                 Script scriptPubKeyKernel = scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
                 if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
@@ -788,7 +786,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                for (uint n = 0; (n < searchInterval) && !kernelFound; n++)
+                for (uint n = 0; n < searchInterval; n++)
                 {
                     if (context.Result.KernelFoundIndex != CoinstakeWorkerResult.KernelNotFound)
                     {
@@ -850,7 +848,6 @@ namespace Stratis.Bitcoin.Features.Miner
                             context.Result.KernelCoin = coin;
 
                             context.Logger.LogTrace("Kernel accepted, coinstake input is '{0}/{1}', stopping work.", prevoutStake.Hash, prevoutStake.N);
-                            kernelFound = true;
                         }
                         else context.Logger.LogTrace("Kernel found, but worker #{0} announced its kernel earlier, stopping work.", context.Result.KernelFoundIndex);
 
