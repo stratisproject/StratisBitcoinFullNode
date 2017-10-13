@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.consensus.Tip, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     pblock.Header.Nonce = this.blockinfo[i].nonce;
 
                     this.chain.SetTip(pblock.Header);
-                    this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.consensus.Tip, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                    this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                     blocks.Add(pblock);
                 }
 
