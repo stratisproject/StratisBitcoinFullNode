@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (ex is OperationCanceledException)
                 {
                     if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                        return Task.FromException(ex);
+                        throw ex;
                 }
 
                 // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
@@ -227,8 +227,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 NLog.LogManager.Flush();
                 throw;
             }
-
-            return Task.CompletedTask;
         }
     }
 
