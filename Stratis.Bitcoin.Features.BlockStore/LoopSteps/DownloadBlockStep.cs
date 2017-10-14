@@ -42,26 +42,29 @@
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken token, bool disposeMode)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
 
             if (disposeMode)
             {
+                this.logger.LogTrace("(-)[DISPOSE]:{0}", StepResult.Stop);
                 return StepResult.Stop;
             }
 
             var context = new BlockStoreInnerStepContext(token, this.BlockStoreLoop, nextChainedBlock, this.loggerFactory, this.dateTimeProvider);
             while (!token.IsCancellationRequested)
             {
-                foreach (var innerStep in context.InnerSteps.ToList())
+                foreach (BlockStoreInnerStep innerStep in context.InnerSteps.ToList())
                 {
                     InnerStepResult innerStepResult = await innerStep.ExecuteAsync(context);
                     if (innerStepResult == InnerStepResult.Stop)
                     {
+                        this.logger.LogTrace("(-)[INNER]:{0}", StepResult.Next);
                         return StepResult.Next;
                     }
                 }
             }
 
+            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }

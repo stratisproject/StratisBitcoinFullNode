@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>true if the function succeeds, false otherwise.</returns>
         public bool TryGetBlock(ChainedBlock chainedBlock, out DownloadedBlock block)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainedBlock), chainedBlock.HashBlock, chainedBlock.Height);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock);
 
             if (TryRemoveDownloadedBlock(chainedBlock.HashBlock, out block))
             {

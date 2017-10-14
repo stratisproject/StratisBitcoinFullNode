@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public async Task SetAsync(ChainedBlock chainedBlock, BlockStake blockStake)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}.{4}:'{5}')", nameof(chainedBlock), chainedBlock.HashBlock, chainedBlock.Height, nameof(blockStake), nameof(blockStake.HashProof), blockStake.HashProof);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}')", nameof(chainedBlock), chainedBlock, nameof(blockStake), nameof(blockStake.HashProof), blockStake.HashProof);
 
             if (this.items.ContainsKey(chainedBlock.HashBlock))
             {

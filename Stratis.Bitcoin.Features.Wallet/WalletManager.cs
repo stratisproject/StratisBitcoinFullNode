@@ -658,7 +658,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void RemoveBlocks(ChainedBlock fork)
         {
             Guard.NotNull(fork, nameof(fork));
-            this.logger.LogTrace("({0}:'{1}/{2}'", nameof(fork), fork.HashBlock, fork.Height);
+            this.logger.LogTrace("({0}:'{1}'", nameof(fork), fork);
 
             if (this.keysLookup == null)
                 this.LoadKeysLookupLock();
@@ -690,7 +690,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(block, nameof(block));
             Guard.NotNull(chainedBlock, nameof(chainedBlock));
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}/{4}')", nameof(block), block.GetHash(), nameof(chainedBlock), chainedBlock.HashBlock, chainedBlock.Height);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(block), block.GetHash(), nameof(chainedBlock), chainedBlock);
 
             // If there is no wallet yet, update the wallet tip hash and do nothing else.
             if (!this.Wallets.Any())
@@ -831,7 +831,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             TransactionData foundTransaction = addressTransactions.FirstOrDefault(t => (t.Id == transactionHash) && (t.Index == index));
             if (foundTransaction == null)
             {
-                this.logger.LogTrace("UTXO '{0}/{1}' not found, creating.", transactionHash, index);
+                this.logger.LogTrace("UTXO '{0}-{1}' not found, creating.", transactionHash, index);
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
@@ -911,7 +911,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If the details of this spending transaction are seen for the first time.
             if (spentTransaction.SpendingDetails == null)
             {
-                this.logger.LogTrace("Spending UTXO '{0}/{1}' is new.", spendingTransactionId, spendingTransactionIndex);
+                this.logger.LogTrace("Spending UTXO '{0}-{1}' is new.", spendingTransactionId, spendingTransactionIndex);
 
                 List<PaymentDetails> payments = new List<PaymentDetails>();
                 foreach (TxOut paidToOutput in paidToOutputs)
@@ -1034,7 +1034,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void UpdateLastBlockSyncedHeight(ChainedBlock chainedBlock)
         {
             Guard.NotNull(chainedBlock, nameof(chainedBlock));
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainedBlock), chainedBlock.HashBlock, chainedBlock.Height);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedBlock), chainedBlock);
 
             // Update the wallets with the last processed block height.
             foreach (Wallet wallet in this.Wallets)
@@ -1051,7 +1051,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(wallet, nameof(wallet));
             Guard.NotNull(chainedBlock, nameof(chainedBlock));
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}/{4}')", nameof(wallet), wallet.Name, nameof(chainedBlock), chainedBlock.HashBlock, chainedBlock.Height);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(wallet), wallet.Name, nameof(chainedBlock), chainedBlock);
 
             // the block locator will help when the wallet 
             // needs to rewind this will be used to find the fork 

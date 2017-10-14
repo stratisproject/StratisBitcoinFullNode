@@ -379,7 +379,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.lastCoinStakeSearchPrevBlockHash = chainTip.HashBlock;
                     this.lastCoinStakeSearchTime = chainTip.Header.Time;
-                    this.logger.LogTrace("New block '{0}/{1}' detected, setting last search time to its timestamp {2}.", chainTip.HashBlock, chainTip.Height, chainTip.Header.Time);
+                    this.logger.LogTrace("New block '{0}' detected, setting last search time to its timestamp {1}.", chainTip, chainTip.Header.Time);
                 }
 
                 uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
@@ -420,7 +420,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         stakeTxes.Add(stakeTx);
 
                         totalBalance += utxo.Value;
-                        this.logger.LogTrace("UTXO '{0}/{1}' with value {2} might be available for staking.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, utxo.Value);
+                        this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", stakeTx.OutPoint, utxo.Value);
                     }
                 }
 
@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
         private async Task CheckStake(ContextInformation context, ChainedBlock chainTip)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainTip), chainTip.HashBlock, chainTip.Height);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainTip), chainTip);
 
             Block block = context.BlockResult.Block;
 
@@ -525,7 +525,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
         private async Task<bool> StakeAndSignBlock(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}/{5}',{6}:{7},{8}:{9})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip.HashBlock, chainTip.Height, nameof(fees), fees, nameof(coinstakeTimestamp), coinstakeTimestamp);
+            this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip, nameof(fees), fees, nameof(coinstakeTimestamp), coinstakeTimestamp);
 
             // If we are trying to sign something except proof-of-stake block template.
             if (!block.Transactions[0].Outputs[0].IsEmpty)
@@ -604,7 +604,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
         public async Task<bool> CreateCoinstake(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}/{5}',{6}:{7},{8}:{9})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip.HashBlock, chainTip.Height, nameof(searchInterval), searchInterval, nameof(fees), fees);
+            this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip, nameof(searchInterval), searchInterval, nameof(fees), fees);
 
             int nonEmptyUtxos = stakeTxes.Count;
             coinstakeContext.CoinstakeTx.Inputs.Clear();
@@ -764,7 +764,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <returns></returns>
         private void CoinstakeWorker(CoinstakeWorkerContext context, ChainedBlock chainTip, Block block, long minimalAllowedTime, long searchInterval)
         {
-            context.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4},{5}:{6})", nameof(chainTip), chainTip.HashBlock, chainTip.Height, nameof(minimalAllowedTime), minimalAllowedTime, nameof(searchInterval), searchInterval);
+            context.Logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(chainTip), chainTip, nameof(minimalAllowedTime), minimalAllowedTime, nameof(searchInterval), searchInterval);
 
             context.Logger.LogTrace("Going to process {0} UTXOs.", context.Coins.Count);
 
@@ -849,7 +849,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                             context.Result.KernelCoin = coin;
 
-                            context.Logger.LogTrace("Kernel accepted, coinstake input is '{0}/{1}', stopping work.", prevoutStake.Hash, prevoutStake.N);
+                            context.Logger.LogTrace("Kernel accepted, coinstake input is '{0}', stopping work.", prevoutStake);
                             kernelFound = true;
                         }
                         else context.Logger.LogTrace("Kernel found, but worker #{0} announced its kernel earlier, stopping work.", context.Result.KernelFoundIndex);
@@ -883,7 +883,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
         private bool SignTransactionInput(StakeTx input, Transaction transaction)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(input), input.OutPoint.Hash, input.OutPoint.N);
+            this.logger.LogTrace("({0}:'{1}')", nameof(input), input.OutPoint);
 
             bool res = false;
             try
@@ -947,46 +947,46 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (StakeTx stakeTx in stakeTxes)
             {
                 int depth = this.GetDepthInMainChain(stakeTx);
-                this.logger.LogTrace("Checking if UTXO '{0}/{1}' value {2} can be added, its depth is {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, depth);
+                this.logger.LogTrace("Checking if UTXO '{0}' value {1} can be added, its depth is {2}.", stakeTx.OutPoint, stakeTx.TxOut.Value, depth);
 
                 if (depth < 1)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' is new or reorg happened.");
+                    this.logger.LogTrace("UTXO '{0}' is new or reorg happened.", stakeTx.OutPoint);
                     continue;
                 }
 
                 if (depth < requiredDepth)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' depth {2} is lower than required minimum depth {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, depth, requiredDepth);
+                    this.logger.LogTrace("UTXO '{0}' depth {1} is lower than required minimum depth {2}.", stakeTx.OutPoint, depth, requiredDepth);
                     continue;
                 }
 
                 if (stakeTx.UtxoSet.Time > spendTime)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its time {2} is greater than coinstake time {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
+                    this.logger.LogTrace("UTXO '{0}' can't be added because its time {1} is greater than coinstake time {2}.", stakeTx.OutPoint, stakeTx.UtxoSet.Time, spendTime);
                     continue;
                 }
 
                 int toMaturity = this.GetBlocksToMaturity(stakeTx);
                 if (toMaturity > 0)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because it is not mature, {2} blocks to maturity left.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, toMaturity);
+                    this.logger.LogTrace("UTXO '{0}' can't be added because it is not mature, {1} blocks to maturity left.", stakeTx.OutPoint, toMaturity);
                     continue;
                 }
 
                 if (stakeTx.TxOut.Value < this.minimumInputValue)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its value {2} is lower than required minimal value {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, this.minimumInputValue);
+                    this.logger.LogTrace("UTXO '{0}' can't be added because its value {1} is lower than required minimal value {2}.", stakeTx.OutPoint, stakeTx.TxOut.Value, this.minimumInputValue);
                     continue;
                 }
 
                 if (stakeTx.TxOut.Value > maxValue)
                 {
-                    this.logger.LogTrace("UTXO '{0}/{1}' can't be added because its value {2} is greater than required maximal value {3}.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N, stakeTx.TxOut.Value, maxValue);
+                    this.logger.LogTrace("UTXO '{0}' can't be added because its value {1} is greater than required maximal value {2}.", stakeTx.OutPoint, stakeTx.TxOut.Value, maxValue);
                     continue;
                 }
 
-                this.logger.LogTrace("UTXO '{0}/{1}' accepted.", stakeTx.OutPoint.Hash, stakeTx.OutPoint.N);
+                this.logger.LogTrace("UTXO '{0}' accepted.", stakeTx.OutPoint);
                 res.Add(stakeTx);
             }
 
@@ -1028,7 +1028,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </remarks>
         public double GetDifficulty(ChainedBlock block)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}')", nameof(block), block.HashBlock, block.Height);
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block);
 
             double res = 1.0;
 
@@ -1136,7 +1136,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="utxoCount">Number of non-empty UTXOs in the wallet.</param>
         /// <returns><c>true</c> if the coinstake should be split, <c>false</c> otherwise.</returns>
         /// <remarks>The coinstake is split if the number of non-empty UTXOs we have in the wallet
-        /// is under the given treshold.</remarks>
+        /// is under the given threshold.</remarks>
         /// <seealso cref="CoinstakeSplitLimitMultiplier"/>
         private bool GetSplitStake(int utxoCount)
         {

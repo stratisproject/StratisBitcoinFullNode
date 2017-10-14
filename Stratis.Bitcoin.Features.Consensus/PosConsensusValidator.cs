@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public override void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
         {
-            this.logger.LogTrace("({0}:{1},{2}:'{3}/{4}')", nameof(nFees), nFees, nameof(chainedBlock), chainedBlock.HashBlock, chainedBlock.Height);
+            this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(nFees), nFees, nameof(chainedBlock), chainedBlock);
 
             if (BlockStake.IsProofOfStake(block))
             {
