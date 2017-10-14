@@ -116,11 +116,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         public override void Start()
         {
             this.dBreezeCoinView.Initialize().GetAwaiter().GetResult();
-            var cache = this.coinView as CachedCoinView;
-            if (cache != null)
-            {
-                cache.MaxItems = this.cacheSettings.MaxItems;
-            }
             this.consensusLoop.Initialize();
 
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;

@@ -7,10 +7,11 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using System;
 using System.Text;
+using Stratis.Bitcoin.Signals;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusStats
+    public class ConsensusStats : SignalObserver<Block>
     {
         private CachedCoinView cache;
         private DBreezeCoinView dbreeze;
@@ -98,6 +99,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             benchLogs.AppendLine(this.connectionManager.GetStats());
             this.logger.LogInformation(benchLogs.ToString());
+        }
+
+        protected override void OnNextCore(Block value)
+        {
+            throw new NotImplementedException();
         }
     }
 }
