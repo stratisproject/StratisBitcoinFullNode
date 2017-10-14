@@ -364,7 +364,7 @@ namespace Stratis.Bitcoin.Base
                         BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
                     });
                 }
-                else this.logger.LogTrace("No sync. Peer node's state is {0}, {1} sync, {2}invalid header received from this peer.", node.State, this.CanSync ? "CAN" : "CAN'T", this.invalidHeaderReceived ? "" : "NO ");
+                else this.logger.LogTrace("No sync. Peer node's state is {0} (need {1}), {2} sync, {3}invalid header received from this peer.", node.State, NodeState.HandShaked, this.CanSync ? "CAN" : "CAN'T", this.invalidHeaderReceived ? "" : "NO ");
             }
             else this.logger.LogTrace("No node attached.");
 
