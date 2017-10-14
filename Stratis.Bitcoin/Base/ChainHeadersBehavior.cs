@@ -224,6 +224,7 @@ namespace Stratis.Bitcoin.Base
             if ((newHeaders != null) && this.CanSync)
             {
                 ChainedBlock pendingTipBefore = this.GetPendingTipOrChainTip();
+                this.logger.LogTrace("Current peer's '{0}' pending tip is '{1}', received {2} new headers.", this.AttachedNode?.RemoteSocketEndpoint, pendingTipBefore, newHeaders.Headers.Count);
 
                 // TODO: implement MAX_HEADERS_RESULTS in NBitcoin.HeadersPayload
 
@@ -239,12 +240,15 @@ namespace Stratis.Bitcoin.Base
                     validated &= !this.chainState.IsMarkedInvalid(tip.HashBlock);
                     if (!validated)
                     {
+                        this.logger.LogTrace("Validation of new header '{0}' failed.", tip);
                         this.invalidHeaderReceived = true;
                         break;
                     }
 
                     this.pendingTip = tip;
                 }
+
+                this.logger.LogTrace("Current peer's '{0}' pending tip is '{1}'.", this.AttachedNode?.RemoteSocketEndpoint, pendingTipBefore);
 
                 // Long reorganization protection on POS networks.
                 bool reorgPrevented = false;
@@ -254,15 +258,22 @@ namespace Stratis.Bitcoin.Base
                 if ((maxReorgLength != 0) && (network != null) && (consensusTip != null))
                 {
                     ChainedBlock fork = this.pendingTip.FindFork(consensusTip);
-                    if ((fork != null) && (consensusTip.Height - fork.Height > maxReorgLength))
+                    if ((fork != null) && (fork != consensusTip))
                     {
-                        this.invalidHeaderReceived = true;
-                        reorgPrevented = true;
+                        int reorgLength = consensusTip.Height - fork.Height;
+                        if (reorgLength > maxReorgLength)
+                        {
+                            this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}.", reorgLength, maxReorgLength);
+                            this.invalidHeaderReceived = true;
+                            reorgPrevented = true;
+                        }
+                        else this.logger.LogTrace("Reorganization of length {0} prevented accepted.", reorgLength);
                     }
                 }
 
                 if (!reorgPrevented && (this.pendingTip.ChainWork > this.Chain.Tip.ChainWork))
                 {
+                    this.logger.LogTrace("New chain tip '{0}' selected, chain work is '{1}'.", this.pendingTip, this.pendingTip.ChainWork);
                     this.Chain.SetTip(this.pendingTip);
                 }
 
@@ -273,7 +284,7 @@ namespace Stratis.Bitcoin.Base
                     this.pendingTip = chainedPendingTip; 
                 }
 
-                if (newHeaders.Headers.Count != 0 && pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock)
+                if ((newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
                     this.TrySync();
 
                 int newVal = Interlocked.Decrement(ref this.syncingCount);
