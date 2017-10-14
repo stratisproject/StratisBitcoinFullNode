@@ -76,6 +76,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
             }
             else
             {
+                // Needed to sync from the right point if a reorg occurs.
+                ChainedBlock fork = null;
+
                 this.walletTip = this.chain.GetBlock(this.walletManager.WalletTipHash);
                 if (this.walletTip == null && this.chain.Height > 0)
                 {
@@ -89,7 +92,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     // state (behind the best chain)
                     ICollection<uint256> locators = this.walletManager.GetFirstWalletBlockLocator();
                     BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
-                    ChainedBlock fork = this.chain.FindFork(blockLocator);
+                    fork = this.chain.FindFork(blockLocator);
                     this.walletManager.RemoveBlocks(fork);
                     this.walletManager.WalletTipHash = fork.HashBlock;
                     this.walletTip = fork;
@@ -103,12 +106,26 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 if (earliestWalletHeight == null)
                 {
                     DateTimeOffset oldestWalletDate = this.walletManager.GetOldestWalletCreationTime();
+
+                    if (fork != null && oldestWalletDate > fork.Header.BlockTime)
+                    {
+                        oldestWalletDate = fork.Header.BlockTime;
+                    }
+
                     this.SyncFromDate(oldestWalletDate.LocalDateTime);
                 }
                 else
                 {
+                    // if we reorged and the fork point is before the earliest wallet height start to
+                    // sync from the fork point.
+                    if (fork != null && earliestWalletHeight.Value > fork.Height)
+                    {
+                        earliestWalletHeight = fork.Height;
+                    }
+
                     this.SyncFromHeight(earliestWalletHeight.Value);
                 }
+
             }
         }
 
@@ -224,7 +241,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             // before we start syncing we need to make sure that the chain is at a certain level.
             // if the chain is behind the date from which we want to sync, we wait for it to catch up, and then we start syncing.
             // if the chain is already past the date we want to sync from, we don't wait, even though the chain might not be fully downloaded.
-            if (this.chain.Tip.Header.BlockTime.LocalDateTime < date)
+            if (this.chain.Tip != null && this.chain.Tip.Header.BlockTime.LocalDateTime < date)
             {
                 this.asyncLoop = this.asyncLoopFactory.RunUntil("WalletFeature.DownloadChain", this.nodeLifetime.ApplicationStopping,
                     () => this.chain.Tip.Header.BlockTime.LocalDateTime >= date,
@@ -250,7 +267,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             // before we start syncing we need to make sure that the chain is at a certain level.
             // if the chain is behind the height from which we want to sync, we wait for it to catch up, and then we start syncing.
             // if the chain is already past the height we want to sync from, we don't wait, even though the chain might  not be fully downloaded.
-            if (this.chain.Tip.Height < height)
+            if (this.chain.Tip != null && this.chain.Tip.Height < height)
             {
                 this.asyncLoop = this.asyncLoopFactory.RunUntil("WalletFeature.DownloadChain", this.nodeLifetime.ApplicationStopping,
                     () => this.chain.Tip.Height >= height,
