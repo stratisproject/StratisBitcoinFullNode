@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Base
 
         private void Intercept(IncomingMessage message, Action act)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(message), message.Message.Command, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
 
             var inv = message.Message.Payload as InvPayload;
             if (inv != null)
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Base
             if ((newHeaders != null) && this.CanSync)
             {
                 ChainedBlock pendingTipBefore = this.GetPendingTipOrChainTip();
-                this.logger.LogTrace("Current peer's '{0}' pending tip is '{1}', received {2} new headers.", this.AttachedNode?.RemoteSocketEndpoint, pendingTipBefore, newHeaders.Headers.Count);
+                this.logger.LogTrace("Pending tip is '{0}', received {1} new headers.", pendingTipBefore, newHeaders.Headers.Count);
 
                 // TODO: implement MAX_HEADERS_RESULTS in NBitcoin.HeadersPayload
 
@@ -248,7 +248,8 @@ namespace Stratis.Bitcoin.Base
                     this.pendingTip = tip;
                 }
 
-                this.logger.LogTrace("Current peer's '{0}' pending tip is '{1}'.", this.AttachedNode?.RemoteSocketEndpoint, pendingTipBefore);
+                if (pendingTipBefore != this.pendingTip)
+                  this.logger.LogTrace("Pending tip changed to '{0}'.", pendingTipBefore);
 
                 // Long reorganization protection on POS networks.
                 bool reorgPrevented = false;
@@ -353,7 +354,7 @@ namespace Stratis.Bitcoin.Base
 
         private void AttachedNode_StateChanged(Node node, NodeState oldState)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
 
             this.TrySync();
 
