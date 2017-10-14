@@ -116,25 +116,44 @@ namespace Stratis.Bitcoin.Base
 
         protected override void AttachCore()
         {
+            this.logger.LogTrace("()");
+
             this.refreshTimer = new Timer(o =>
             {
+                this.logger.LogTrace("()");
+
                 if (this.AutoSync)
                     this.TrySync();
+
+                this.logger.LogTrace("(-)");
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
 
             this.RegisterDisposable(this.refreshTimer);
             if (this.AttachedNode.State == NodeState.Connected)
             {
-                var highPoW = this.chainState.ConsensusTip;
+                ChainedBlock highPoW = this.chainState.ConsensusTip;
                 this.AttachedNode.MyVersion.StartHeight = highPoW?.Height ?? 0;
             }
 
             this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
             this.RegisterDisposable(this.AttachedNode.Filters.Add(this.Intercept));
+
+            this.logger.LogTrace("(-)");
         }
 
-        void Intercept(IncomingMessage message, Action act)
+        protected override void DetachCore()
         {
+            this.logger.LogTrace("()");
+
+            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        private void Intercept(IncomingMessage message, Action act)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(message), message.Message.Command);
+
             var inv = message.Message.Payload as InvPayload;
             if (inv != null)
             {
@@ -257,15 +276,21 @@ namespace Stratis.Bitcoin.Base
                 if (newHeaders.Headers.Count != 0 && pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock)
                     this.TrySync();
 
-                Interlocked.Decrement(ref this.syncingCount);
+                int newVal = Interlocked.Decrement(ref this.syncingCount);
+                this.logger.LogTrace("Syncing count decremented to {0}.", newVal);
             }
 
             act();
+
+            this.logger.LogTrace("(-)");
         }
 
         public void SetPendingTip(ChainedBlock newTip)
         {
-            if (newTip.ChainWork > this.PendingTip.ChainWork)
+            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
+
+            uint256 pendingTipChainWork = this.PendingTip.ChainWork;
+            if (newTip.ChainWork > pendingTipChainWork)
             {
                 ChainedBlock chainedPendingTip = this.Chain.GetBlock(newTip.HashBlock);
                 if (chainedPendingTip != null)
@@ -274,16 +299,20 @@ namespace Stratis.Bitcoin.Base
                     this.pendingTip = chainedPendingTip;
                 }
             }
+            else this.logger.LogTrace("New pending tip not set because its chain work '{0}' is lower than current's pending tip's chain work '{1}'.", newTip.ChainWork, pendingTipChainWork);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
         /// Check if any past blocks announced by this peer is in the invalid blocks list, and set InvalidHeaderReceived flag accordingly.
         /// </summary>
-        /// <returns>True if no invalid block is received</returns>
+        /// <returns><c>true</c> if no invalid block has been received.</returns>
         public bool CheckAnnouncedBlocks()
         {
-            ChainedBlock tip = this.pendingTip;
+            this.logger.LogTrace("()");
 
+            ChainedBlock tip = this.pendingTip;
             if ((tip != null) && !this.invalidHeaderReceived)
             {
                 try
@@ -306,12 +335,18 @@ namespace Stratis.Bitcoin.Base
                 }
             }
 
-            return !this.invalidHeaderReceived;
+            bool res = !this.invalidHeaderReceived;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
 
-        void AttachedNode_StateChanged(Node node, NodeState oldState)
+        private void AttachedNode_StateChanged(Node node, NodeState oldState)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState);
+
             this.TrySync();
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -319,29 +354,32 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         public void TrySync()
         {
+            this.logger.LogTrace("()");
+
             Node node = this.AttachedNode;
             if (node != null)
             {
                 if ((node.State == NodeState.HandShaked) && this.CanSync && !this.invalidHeaderReceived)
                 {
-                    Interlocked.Increment(ref this.syncingCount);
+                    int newVal = Interlocked.Increment(ref this.syncingCount);
+                    this.logger.LogTrace("Syncing count incremented to {0}.", newVal);
+
                     node.SendMessageAsync(new GetHeadersPayload()
                     {
                         BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
                     });
                 }
+                else this.logger.LogTrace("No sync. Peer node's state is {0}, {1} sync, {2}invalid header received from this peer.", node.State, this.CanSync ? "CAN" : "CAN'T", this.invalidHeaderReceived ? "" : "NO ");
             }
+            else this.logger.LogTrace("No node attached.");
+
+            this.logger.LogTrace("(-)");
         }
 
         private ChainedBlock GetPendingTipOrChainTip()
         {
             this.pendingTip = this.pendingTip ?? this.chainState.ConsensusTip ?? this.Chain.Tip;
             return this.pendingTip;
-        }
-
-        protected override void DetachCore()
-        {
-            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
         }
 
         #region ICloneable Members
