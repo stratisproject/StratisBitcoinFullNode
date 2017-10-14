@@ -83,17 +83,6 @@ namespace Stratis.Bitcoin.Base
             }
         }
 
-        private int syncingCount;
-
-        /// <summary>Using for test, this might not be reliable.</summary>
-        internal bool Syncing
-        {
-            get
-            {
-                return this.syncingCount != 0;
-            }
-        }
-
         /// <summary>
         /// Initializes an instanse of the object.
         /// </summary>
@@ -287,9 +276,6 @@ namespace Stratis.Bitcoin.Base
 
                 if ((newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
                     this.TrySync();
-
-                int newVal = Interlocked.Decrement(ref this.syncingCount);
-                this.logger.LogTrace("Syncing count decremented to {0}.", newVal);
             }
 
             act();
@@ -373,9 +359,6 @@ namespace Stratis.Bitcoin.Base
             {
                 if ((node.State == NodeState.HandShaked) && this.CanSync && !this.invalidHeaderReceived)
                 {
-                    int newVal = Interlocked.Increment(ref this.syncingCount);
-                    this.logger.LogTrace("Syncing count incremented to {0}.", newVal);
-
                     node.SendMessageAsync(new GetHeadersPayload()
                     {
                         BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
