@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 if (pendingTipBefore != this.pendingTip)
-                  this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
+                    this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
                 // Long reorganization protection on POS networks.
                 bool reorgPrevented = false;
@@ -253,11 +253,11 @@ namespace Stratis.Bitcoin.Base
                         int reorgLength = consensusTip.Height - fork.Height;
                         if (reorgLength > maxReorgLength)
                         {
-                            this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}.", reorgLength, maxReorgLength);
+                            this.logger.LogTrace("Reorganization of length {0} prevented, maximal reorganization length is {1}, consensus tip is '{2}'.", reorgLength, maxReorgLength, consensusTip);
                             this.invalidHeaderReceived = true;
                             reorgPrevented = true;
                         }
-                        else this.logger.LogTrace("Reorganization of length {0} prevented accepted.", reorgLength);
+                        else this.logger.LogTrace("Reorganization of length {0} accepted, consensus tip is '{1}'.", reorgLength, consensusTip);
                     }
                 }
 
