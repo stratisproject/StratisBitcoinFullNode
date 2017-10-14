@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 if (pendingTipBefore != this.pendingTip)
-                  this.logger.LogTrace("Pending tip changed to '{0}'.", pendingTipBefore);
+                  this.logger.LogTrace("Pending tip changed to '{0}'.", this.pendingTip);
 
                 // Long reorganization protection on POS networks.
                 bool reorgPrevented = false;
