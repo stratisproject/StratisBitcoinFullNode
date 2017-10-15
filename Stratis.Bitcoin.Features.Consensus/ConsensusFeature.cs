@@ -22,12 +22,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusFeature : FullNodeFeature, INodeStats
     {
-        /// <summary>Factory for creating and also possibly starting application defined tasks inside async loop.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
-        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
-        private IAsyncLoop asyncLoop;
-
         private readonly DBreezeCoinView dBreezeCoinView;
         private readonly Network network;
         private readonly ConcurrentChain chain;
@@ -80,7 +74,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConsensusStats consensusStats,
             StakeChainStore stakeChain = null)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
             this.dBreezeCoinView = dBreezeCoinView;
             this.consensusValidator = consensusValidator;
             this.chain = chain;
@@ -118,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public override void Start()
         {
             this.dBreezeCoinView.Initialize().GetAwaiter().GetResult();
-            this.consensusLoop.Initialize();
+            this.consensusLoop.Start();
 
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
@@ -128,11 +121,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
             this.stakeChain?.Load().GetAwaiter().GetResult();
-
-            this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async token =>
-            {
-                await this.RunLoop(this.nodeLifetime.ApplicationStopping);
-            }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpans.RunOnce);
 
             this.signals.SubscribeForBlocks(this.consensusStats);
         }
@@ -144,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Only then we can flush our coinview safely.
             // Otherwise there is a race condition and a new block 
             // may come from the consensus at wrong time.
-            this.asyncLoop.Dispose();
+            this.consensusLoop.Stop();
 
             var cache = this.coinView as CachedCoinView;
             if (cache != null)
@@ -154,72 +142,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.dBreezeCoinView.Dispose();
-        }
-
-        private Task RunLoop(CancellationToken cancellationToken)
-        {
-            try
-            {
-                ChainedBlock lastTip = this.consensusLoop.Tip;
-                foreach (BlockResult block in this.consensusLoop.Execute(cancellationToken))
-                {
-                    if (this.consensusLoop.Tip.FindFork(lastTip) != lastTip)
-                        this.logger.LogInformation("Reorg detected, rewinding from '{0}/{1}' to '{2}/{3}'.", lastTip.HashBlock, lastTip.Height, this.consensusLoop.Tip.HashBlock, this.consensusLoop.Tip.Height);
-
-                    lastTip = this.consensusLoop.Tip;
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (block.Error != null)
-                    {
-                        this.logger.LogError("Block rejected: {0}", block.Error.Message);
-
-                        // Pull again.
-                        this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
-
-                        if (block.Error == ConsensusErrors.BadWitnessNonceSize)
-                        {
-                            this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
-                            this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-                            this.consensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
-                            continue;
-                        }
-
-                        // Set the PoW chain back to ConsensusLoop.Tip.
-                        this.chain.SetTip(this.consensusLoop.Tip);
-                        
-                        // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                        this.logger.LogError("Marking block as invalid.");
-                        this.chainState.MarkBlockInvalid(block.Block.GetHash());
-                    }
-
-                    if (block.Error == null)
-                    {
-                        this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-                        if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
-                            this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
-
-                        this.signals.SignalBlock(block.Block);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                if (ex is OperationCanceledException)
-                {
-                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                        return Task.FromException(ex);
-                }
-
-                // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
-                // thrown so that the node and all the disposables can stop gracefully.
-                this.logger.LogDebug("Exception occurred in consensus loop: {0}", ex.ToString());
-                this.logger.LogCritical(new EventId(0), ex, "Consensus loop at Tip:{0} unhandled exception {1}", this.consensusLoop.Tip?.Height, ex.ToString());
-                NLog.LogManager.Flush();
-                throw;
-            }
-
-            return Task.CompletedTask;
         }
     }
 
@@ -261,6 +183,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public static IFullNodeBuilder UseStratisConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features

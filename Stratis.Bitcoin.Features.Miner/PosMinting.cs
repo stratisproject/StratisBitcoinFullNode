@@ -437,7 +437,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (await this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
-                    var blockResult = new BlockResult { Block = block };
+                    var blockResult = new BlockItem { Block = block };
                     await this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
 
                     blockTemplate = null;
@@ -460,7 +460,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainTip), chainTip.HashBlock, chainTip.Height);
 
-            Block block = context.BlockResult.Block;
+            Block block = context.BlockItem.Block;
 
             if (!BlockStake.IsProofOfStake(block))
             {
@@ -480,36 +480,36 @@ namespace Stratis.Bitcoin.Features.Miner
             this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, chainTip, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
 
             // Validate the block.
-            this.consensusLoop.AcceptBlock(context);
+            this.consensusLoop.ValidateBlock(context);
 
-            if (context.BlockResult.ChainedBlock == null)
+            if (context.BlockItem.ChainedBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return;
             }
 
-            if (context.BlockResult.Error != null)
+            if (context.BlockItem.Error != null)
             {
                 this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
                 return;
             }
 
-            if (context.BlockResult.ChainedBlock.ChainWork <= chainTip.ChainWork)
+            if (context.BlockItem.ChainedBlock.ChainWork <= chainTip.ChainWork)
             {
-                this.logger.LogTrace("Chain tip's work is '{0}', newly minted block's work is only '{1}'.", context.BlockResult.ChainedBlock.ChainWork, chainTip.ChainWork);
+                this.logger.LogTrace("Chain tip's work is '{0}', newly minted block's work is only '{1}'.", context.BlockItem.ChainedBlock.ChainWork, chainTip.ChainWork);
                 this.logger.LogTrace("(-)[LOW_CHAIN_WORK]");
                 return;
             }
 
             // Similar logic to what's in the full node code.
-            this.chain.SetTip(context.BlockResult.ChainedBlock);
+            this.chain.SetTip(context.BlockItem.ChainedBlock);
             this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-            await this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).ConfigureAwait(false);
+            await this.blockRepository.PutAsync(context.BlockItem.ChainedBlock.HashBlock, new List<Block> { block }).ConfigureAwait(false);
             this.signals.SignalBlock(block);
 
             this.logger.LogInformation("==================================================================");
-            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", context.BlockResult.ChainedBlock.HashBlock, context.BlockResult.ChainedBlock.Height);
+            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", context.BlockItem.ChainedBlock.HashBlock, context.BlockItem.ChainedBlock.Height);
             this.logger.LogInformation("==================================================================");
         }
 
@@ -827,7 +827,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
                         long nBlockTime = 0;
 
-                        var contextInformation = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
+                        var contextInformation = new ContextInformation(new BlockItem { Block = block }, this.network.Consensus);
                         contextInformation.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 

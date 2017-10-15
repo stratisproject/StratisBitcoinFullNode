@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -8,10 +9,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class BlockResult
+    public class BlockItem
     {
         public ChainedBlock ChainedBlock { get; set; }
         public Block Block { get; set; }
@@ -23,25 +27,74 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Information holding POS data chained.</summary>
         public StakeChain StakeChain { get; }
+        
+        /// <summary>A puller that can pull blocks from peers on demand.</summary>
         public LookaheadBlockPuller Puller { get; }
+
+        /// <summary>A chain of headers all the way to gensis.</summary>
         public ConcurrentChain Chain { get; }
+
+        /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
         public CoinView UTXOSet { get; }
+
+        /// <summary>The validation logic for the consensus rules.</summary>
         public PowConsensusValidator Validator { get; }
+
+        /// <summary>The current tip of the cahin that has been validated.</summary>
         public ChainedBlock Tip { get; private set; }
+
+        /// <summary>Contain information about deployment and activation of features in the chain.</summary>
         public NodeDeployments NodeDeployments { get; private set; }
 
-        public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, ILoggerFactory loggerFactory, StakeChain stakeChain = null)
+        /// <summary>Factory for creating and also possibly starting application defined tasks inside async loop.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary>Contain information about the life time of the node, its used on startup and shuitdown.</summary>
+        private readonly INodeLifetime nodeLifetime;
+
+        private readonly ChainState chainState;
+        private readonly IConnectionManager connectionManager;
+        private readonly Signals.Signals signals;
+
+        public ConsensusLoop(
+            IAsyncLoopFactory asyncLoopFactory,
+            PowConsensusValidator validator,
+            INodeLifetime nodeLifetime,
+            ConcurrentChain chain, 
+            CoinView utxoSet, 
+            LookaheadBlockPuller puller, 
+            NodeDeployments nodeDeployments, 
+            ILoggerFactory loggerFactory,
+            ChainState chainState,
+            IConnectionManager connectionManager,
+            Signals.Signals signals,
+
+            StakeChain stakeChain = null)
         {
+            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(validator, nameof(validator));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(utxoSet, nameof(utxoSet));
             Guard.NotNull(puller, nameof(puller));
             Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
+            Guard.NotNull(connectionManager, nameof(connectionManager));
+            Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(signals, nameof(signals));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
+            this.asyncLoopFactory = asyncLoopFactory;
             this.Validator = validator;
+            this.nodeLifetime = nodeLifetime;
+            this.chainState = chainState;
+            this.connectionManager = connectionManager;
+            this.signals = signals;
             this.Chain = chain;
             this.UTXOSet = utxoSet;
             this.Puller = puller;
@@ -51,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.StakeChain = stakeChain;
         }
 
-        public void Initialize()
+        public void Start()
         {
             this.logger.LogTrace("()");
 
@@ -62,70 +115,138 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (this.Tip != null)
                     break;
 
+                // TODO: this rewind code may never happen. 
+                // The node will complete loading before connecting to peers so the  
+                // chain will never know if a reorg happened.
                 utxoHash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
             }
             this.Puller.SetLocation(this.Tip);
 
+            this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async token =>
+            {
+                await this.PullerLoop(this.nodeLifetime.ApplicationStopping);
+            }, 
+            this.nodeLifetime.ApplicationStopping, 
+            repeatEvery: TimeSpans.RunOnce);
+
             this.logger.LogTrace("(-)");
         }
 
-        public IEnumerable<BlockResult> Execute(CancellationToken cancellationToken)
+        public void Stop()
         {
-            while (true)
-            {
-                yield return this.ExecuteNextBlock(cancellationToken);
-            }
+            this.asyncLoop?.Dispose();
         }
 
-        public BlockResult ExecuteNextBlock(CancellationToken cancellationToken)
+        private Task PullerLoop(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    BlockItem item = new BlockItem();
+
+                    using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
+                    {
+                        item.Block = this.Puller.NextBlock(cancellationToken);
+                    }
+
+                    this.logger.LogTrace("Block received from puller.");
+                    this.AcceptBlock(item);
+
+                }
+                catch (Exception ex)
+                {
+                    if (ex is OperationCanceledException)
+                    {
+                        if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                            return Task.FromException(ex);
+                    }
+
+                    // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
+                    // thrown so that the node and all the disposables can stop gracefully.
+                    this.logger.LogCritical(new EventId(0), ex, "Consensus loop at Tip:{0} unhandled exception {1}", this.Tip?.Height, ex.ToString());
+                    NLog.LogManager.Flush();
+                    throw;
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public void AcceptBlock(BlockItem item)
         {
             this.logger.LogTrace("()");
 
-            BlockResult result = new BlockResult();
+            if (item.Block == null)
+            {
+                this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
+                ChainedBlock lastTip = this.Tip;
+
+                var token = this.nodeLifetime.ApplicationStopping;
+
+                while (true)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                    ChainedBlock rewinded = this.Chain.GetBlock(hash);
+                    if (rewinded == null)
+                    {
+                        this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.", hash);
+                        continue;
+                    }
+
+                    this.Tip = rewinded;
+                    this.Puller.SetLocation(rewinded);
+                    this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
+                    return;
+                }
+            }
+
             try
             {
-                using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
-                {
-                    while (true)
-                    {
-                        result.Block = this.Puller.NextBlock(cancellationToken);
-                        if (result.Block != null)
-                        {
-                            this.logger.LogTrace("Block received from puller.");
-                            break;
-                        }
-
-                        this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
-                        while (true)
-                        {
-                            uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
-                            ChainedBlock rewinded = this.Chain.GetBlock(hash);
-                            if (rewinded == null)
-                            {
-                                this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.", hash);
-                                continue;
-                            }
-
-                            this.logger.LogTrace("Rewound to '{0}'.", hash);
-                            this.Tip = rewinded;
-                            this.Puller.SetLocation(rewinded);
-                            break;
-                        }
-                    }
-                }
-
-                this.AcceptBlock(new ContextInformation(result, this.Validator.ConsensusParams));
+                this.ValidateBlock(new ContextInformation(item, this.Validator.ConsensusParams));
             }
             catch (ConsensusErrorException ex)
             {
-                result.Error = ex.ConsensusError;
+                item.Error = ex.ConsensusError;
             }
 
-            this.logger.LogTrace("(-):*.{0}='{1}/{2}',*.{3}='{4}'", nameof(result.ChainedBlock), result.ChainedBlock?.HashBlock, result.ChainedBlock?.Height, nameof(result.Error), result.Error?.Message);
-            return result;
+            if (item.Error != null)
+            {
+                this.logger.LogError("Block rejected: {0}", item.Error.Message);
+
+                // Pull again.
+                this.Puller.SetLocation(this.Tip);
+
+                if (item.Error == ConsensusErrors.BadWitnessNonceSize)
+                {
+                    this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
+                    this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+                    this.Puller.RequestOptions(TransactionOptions.Witness);
+                    return;
+                }
+
+                // Set the chain back to ConsensusLoop.Tip.
+                this.Chain.SetTip(this.Tip);
+
+                // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
+                this.logger.LogError("Marking block as invalid.");
+                this.chainState.MarkBlockInvalid(item.Block?.GetHash());
+            }
+            else
+            {
+                this.chainState.HighestValidatedPoW = this.Tip;
+                if (this.Chain.Tip.HashBlock == item.ChainedBlock?.HashBlock)
+                    this.FlushAsync().GetAwaiter().GetResult();
+
+                this.signals.SignalBlock(item.Block);
+            }
+
+            this.logger.LogTrace("(-):*.{0}='{1}/{2}',*.{3}='{4}'", nameof(item.ChainedBlock), item.ChainedBlock?.HashBlock, item.ChainedBlock?.Height, nameof(item.Error), item.Error?.Message);
         }
 
-        public void AcceptBlock(ContextInformation context)
+        public void ValidateBlock(ContextInformation context)
         {
             this.logger.LogTrace("()");
 
@@ -133,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 // Check that the current block has not been reorged.
                 // Catching a reorg at this point will not require a rewind.
-                if (context.BlockResult.Block.Header.HashPrevBlock != this.Tip.HashBlock)
+                if (context.BlockItem.Block.Header.HashPrevBlock != this.Tip.HashBlock)
                 {
                     this.logger.LogTrace("Reorganization detected.");
                     ConsensusErrors.InvalidPrevTip.Throw(); // reorg
@@ -144,10 +265,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Build the next block in the chain of headers. The chain header is most likely already created by 
                 // one of the peers so after we create a new chained block (mainly for validation) 
                 // we ask the chain headers for its version (also to prevent memory leaks). 
-                context.BlockResult.ChainedBlock = new ChainedBlock(context.BlockResult.Block.Header, context.BlockResult.Block.Header.GetHash(), this.Tip);
+                context.BlockItem.ChainedBlock = new ChainedBlock(context.BlockItem.Block.Header, context.BlockItem.Block.Header.GetHash(), this.Tip);
                 
                 // Liberate from memory the block created above if possible.
-                context.BlockResult.ChainedBlock = this.Chain.GetBlock(context.BlockResult.ChainedBlock.HashBlock) ?? context.BlockResult.ChainedBlock;
+                context.BlockItem.ChainedBlock = this.Chain.GetBlock(context.BlockItem.ChainedBlock.HashBlock) ?? context.BlockItem.ChainedBlock;
                 context.SetBestBlock();
 
                 // == validation flow ==
@@ -157,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.Validator.ContextualCheckBlockHeader(context);
 
                 // Calculate the consensus flags and check they are valid.
-                context.Flags = this.NodeDeployments.GetFlags(context.BlockResult.ChainedBlock);
+                context.Flags = this.NodeDeployments.GetFlags(context.BlockItem.ChainedBlock);
                 this.Validator.ContextualCheckBlock(context);
 
                 // check the block itself
@@ -176,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             context.Set = new UnspentOutputSet();
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = GetIdsToFetch(context.BlockResult.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = GetIdsToFetch(context.BlockItem.Block, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = this.UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
                 context.Set.SetCoins(coins.UnspentOutputs);
             }
@@ -195,10 +316,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Persist the changes to the coinview. This will likely only be stored in memory, 
             // unless the coinview treashold is reached.
             this.logger.LogTrace("Saving coinview changes.");
-            this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockResult.ChainedBlock.HashBlock).GetAwaiter().GetResult();
+            this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockItem.ChainedBlock.HashBlock).GetAwaiter().GetResult();
 
             // Set the new tip.
-            this.Tip = context.BlockResult.ChainedBlock;
+            this.Tip = context.BlockItem.ChainedBlock;
             this.logger.LogTrace("(-)[OK]");
         }
 

@@ -157,8 +157,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     this.chain.SetTip(newChain);
 
-                    var blockResult = new BlockResult { Block = pblock };
-                    this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
+                    var blockResult = new BlockItem { Block = pblock };
+                    this.consensusLoop.ValidateBlock(new ContextInformation(blockResult, this.network.Consensus));
                     this.consensusLoop.Puller.SetLocation(newChain);
 
                     if (blockResult.ChainedBlock == null)
