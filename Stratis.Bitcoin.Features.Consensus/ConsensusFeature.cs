@@ -55,7 +55,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IDateTimeProvider dateTimeProvider;
 
         private readonly ConsensusManager consensusManager;
-        private readonly CacheSettings cacheSettings;
+        
+        /// <summary>Consensus statistics logger.</summary>
+        private readonly ConsensusStats consensusStats;
 
         public ConsensusFeature(
             IAsyncLoopFactory asyncLoopFactory,
@@ -75,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider,
             ConsensusManager consensusManager,
-            CacheSettings cacheSettings,
+            ConsensusStats consensusStats,
             StakeChainStore stakeChain = null)
         {
             this.asyncLoopFactory = asyncLoopFactory;
@@ -92,12 +94,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusLoop = consensusLoop;
             this.nodeSettings = nodeSettings;
             this.nodeDeployments = nodeDeployments;
-            this.cacheSettings = cacheSettings;
             this.stakeChain = stakeChain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
             this.consensusManager = consensusManager;
+            this.consensusStats = consensusStats;
         }
 
         /// <inheritdoc />
@@ -131,6 +133,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 await this.RunLoop(this.nodeLifetime.ApplicationStopping);
             }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpans.RunOnce);
+
+            this.signals.SubscribeForBlocks(this.consensusStats);
         }
 
         /// <inheritdoc />
@@ -156,10 +160,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             try
             {
-                var stack = new CoinViewStack(this.coinView);
-                CachedCoinView cache = stack.Find<CachedCoinView>();
-                var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager, this.loggerFactory);
-
                 ChainedBlock lastTip = this.consensusLoop.Tip;
                 foreach (BlockResult block in this.consensusLoop.Execute(cancellationToken))
                 {
@@ -201,10 +201,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         this.signals.SignalBlock(block.Block);
                     }
-
-                    // TODO: Replace this with a signalling object.
-                    if (stats.CanLog)
-                        stats.Log();
                 }
             }
             catch (Exception ex)
@@ -256,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
                     services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                     services.AddSingleton<ConsensusController>();
-                    services.AddSingleton<CacheSettings>(new CacheSettings());
+                    services.AddSingleton<ConsensusStats>();
                 });
             });
 
@@ -289,7 +285,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<StakeValidator>();
                         services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<CacheSettings>(new CacheSettings());
+                        services.AddSingleton<ConsensusStats>();
                     });
             });
 
