@@ -264,6 +264,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void SyncFromHeight(int height)
         {
+            if (height < 0)
+            {
+                throw new WalletException("Invalid block height");
+            }
+
             // before we start syncing we need to make sure that the chain is at a certain level.
             // if the chain is behind the height from which we want to sync, we wait for it to catch up, and then we start syncing.
             // if the chain is already past the height we want to sync from, we don't wait, even though the chain might  not be fully downloaded.

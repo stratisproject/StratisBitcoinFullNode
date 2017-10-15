@@ -330,6 +330,146 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         }
 
         [Fact]
+        public void SyncFromHeight_TipLessChain_ThrowsWalletException()
+        {
+            Assert.Throws<WalletException>(() =>
+            {
+                this.chain = new ConcurrentChain();
+                var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                    this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+                lightWalletSyncManager.SyncFromHeight(3);
+            });
+        }
+
+        [Fact]
+        public void SyncFromHeight_EmptyChain_StartsAsyncLoopToCatchup()
+        {
+            this.chain = new ConcurrentChain(this.network);
+            var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            lightWalletSyncManager.SyncFromHeight(3);
+
+            this.asyncLoopFactory.Verify(
+                a => a.RunUntil(
+                    "WalletFeature.DownloadChain",
+                    It.IsAny<CancellationToken>(),
+                    It.IsAny<Func<bool>>(),
+                    It.IsAny<Action>(),
+                    It.IsAny<Action<Exception>>(),
+                    TimeSpans.FiveSeconds));
+            this.nodeLifetime.VerifyGet(n => n.ApplicationStopping);
+        }
+
+        [Fact]
+        public void SyncFromHeight_NegativeHeight_ThrowsWalletException()
+        {
+            Assert.Throws<WalletException>(() =>
+            {
+                this.chain = new ConcurrentChain(this.network);
+                var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                    this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+                lightWalletSyncManager.SyncFromHeight(-1);
+            });
+        }
+
+        [Fact]
+        public void SyncFromHeight_ChainTipAfterGivenHeight_StartsSyncFromGivenHeight()
+        {
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(2, this.network);
+            var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            lightWalletSyncManager.SyncFromHeight(1);
+
+            var expectedBlockHash = this.chain.GetBlock(1).HashBlock;
+            this.blockNotification.Verify(b => b.SyncFrom(expectedBlockHash));
+            Assert.Equal(lightWalletSyncManager.WalletTip.HashBlock, expectedBlockHash);
+            this.walletManager.VerifySet(b => b.WalletTipHash = expectedBlockHash);
+        }
+
+        [Fact]
+        public void SyncFromHeight_ChainTipBeforeGivenHeight_StartsAsyncLoopToCatchupChain()
+        {
+            var asyncLoop = new Mock<IAsyncLoop>();
+
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(2, this.network);
+            var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            lightWalletSyncManager.SyncFromHeight(3);
+
+            this.asyncLoopFactory.Verify(
+                a => a.RunUntil(
+                    "WalletFeature.DownloadChain",
+                    It.IsAny<CancellationToken>(),
+                    It.IsAny<Func<bool>>(),
+                    It.IsAny<Action>(),
+                    It.IsAny<Action<Exception>>(),
+                    TimeSpans.FiveSeconds));
+            this.nodeLifetime.VerifyGet(n => n.ApplicationStopping);
+        }
+
+        [Fact]
+        public void SyncFromDate_EmptyChain_StartsAsyncLoopToCatchup()
+        {
+            this.chain = new ConcurrentChain(this.network);
+            var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            lightWalletSyncManager.SyncFromDate(new DateTime(2017, 1, 1));
+
+            this.asyncLoopFactory.Verify(
+                           a => a.RunUntil(
+                               "WalletFeature.DownloadChain",
+                               It.IsAny<CancellationToken>(),
+                               It.IsAny<Func<bool>>(),
+                               It.IsAny<Action>(),
+                               It.IsAny<Action<Exception>>(),
+                               TimeSpans.FiveSeconds));
+            this.nodeLifetime.VerifyGet(n => n.ApplicationStopping);
+        }
+
+        [Fact]
+        public void SyncFromDate_ChainTipAfterGivenDate_StartsSyncFromHeightAtTime()
+        {
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
+            var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            lightWalletSyncManager.SyncFromDate(this.chain.GetBlock(1).Header.BlockTime.DateTime);
+
+            var expectedBlockHash = this.chain.GetBlock(1).HashBlock;
+            this.blockNotification.Verify(b => b.SyncFrom(expectedBlockHash));
+            Assert.Equal(lightWalletSyncManager.WalletTip.HashBlock, expectedBlockHash);
+            this.walletManager.VerifySet(b => b.WalletTipHash = expectedBlockHash);
+        }
+
+        [Fact]
+        public void SyncFromDate_ChainTipBeforeGivenDate_StartsAsyncLoopToCatchupChain()
+        {
+            var asyncLoop = new Mock<IAsyncLoop>();
+
+            this.chain = WalletTestsHelpers.GenerateChainWithHeight(2, this.network);
+            var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            lightWalletSyncManager.SyncFromDate(this.chain.Tip.Header.BlockTime.DateTime.AddDays(15));
+
+            this.asyncLoopFactory.Verify(
+                a => a.RunUntil(
+                    "WalletFeature.DownloadChain",
+                    It.IsAny<CancellationToken>(),
+                    It.IsAny<Func<bool>>(),
+                    It.IsAny<Action>(),
+                    It.IsAny<Action<Exception>>(),
+                    TimeSpans.FiveSeconds));
+            this.nodeLifetime.VerifyGet(n => n.ApplicationStopping);
+        }
+
+        [Fact]
         public void ProcessTransaction_CallsWalletManager()
         {
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
