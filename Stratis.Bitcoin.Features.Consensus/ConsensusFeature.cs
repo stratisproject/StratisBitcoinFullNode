@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dBreezeCoinView.Dispose();
         }
 
-        private Task RunLoop(CancellationToken cancellationToken)
+        private async Task RunLoop(CancellationToken cancellationToken)
         {
             try
             {
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
                         if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
-                            this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
+                            await this.consensusLoop.FlushAsync().ConfigureAwait(false);
 
                         this.signals.SignalBlock(block.Block);
                     }
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (ex is OperationCanceledException)
                 {
                     if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                        return Task.FromException(ex);
+                        throw ex;
                 }
 
                 // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
@@ -227,8 +227,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 NLog.LogManager.Flush();
                 throw;
             }
-
-            return Task.CompletedTask;
         }
     }
 
