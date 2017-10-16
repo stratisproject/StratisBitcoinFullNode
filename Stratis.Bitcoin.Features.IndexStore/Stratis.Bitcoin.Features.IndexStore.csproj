@@ -18,7 +18,7 @@
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DBreeze" Version="1.85.0" />
+    <PackageReference Include="DBreeze" Version="1.89.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.3.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />

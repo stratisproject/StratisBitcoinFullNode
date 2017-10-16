@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = account.GetTransactionsById(new uint256(20));
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -269,7 +269,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = account.GetSpendableTransactions();
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -309,7 +309,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = account.FindAddressesForTransaction(t => t.Id == 25);
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
     }
 }

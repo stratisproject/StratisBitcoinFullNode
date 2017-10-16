@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletCreate.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(409, error.Status);
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletCreate.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -420,7 +420,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -455,7 +455,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(409, error.Status);
@@ -488,7 +488,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(404, error.Status);
@@ -521,7 +521,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -578,7 +578,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -608,7 +608,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(404, error.Status);
@@ -638,7 +638,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(403, error.Status);
@@ -668,7 +668,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -746,7 +746,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -772,7 +772,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             mockWalletWrapper.VerifyAll();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -798,7 +798,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(model);
 
-            Assert.Equal(0, model.TransactionsHistory.Count);
+            Assert.Empty(model.TransactionsHistory);
         }
 
         [Fact]
@@ -836,7 +836,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(model);
 
-            Assert.Equal(1, model.TransactionsHistory.Count);
+            Assert.Single(model.TransactionsHistory);
             TransactionItemModel resultingTransactionModel = model.TransactionsHistory[0];
 
             Assert.Equal(TransactionItemType.Received, resultingTransactionModel.Type);
@@ -1060,7 +1060,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(model);
 
-            Assert.Equal(1, model.TransactionsHistory.Count);
+            Assert.Single(model.TransactionsHistory);
 
             TransactionItemModel resultingTransactionModel = model.TransactionsHistory[0];
             
@@ -1091,7 +1091,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1278,7 +1278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var model = viewResult.Value as WalletBalanceModel;
 
             Assert.NotNull(model);
-            Assert.Equal(0, model.AccountsBalances.Count);
+            Assert.Empty(model.AccountsBalances);
         }
 
         [Fact]
@@ -1295,7 +1295,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1318,7 +1318,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1400,7 +1400,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1432,7 +1432,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1487,7 +1487,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1511,7 +1511,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1565,7 +1565,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.NotNull(model);
             Assert.Equal(dataFolder.WalletPath, model.WalletsPath);
-            Assert.Equal(0, model.WalletsFiles.Count());
+            Assert.Empty(model.WalletsFiles);
         }
 
         [Fact]
@@ -1583,7 +1583,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1624,7 +1624,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1648,7 +1648,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1691,7 +1691,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1715,7 +1715,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
@@ -1738,7 +1738,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.NotNull(errorResult.StatusCode);
@@ -1788,7 +1788,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
         }

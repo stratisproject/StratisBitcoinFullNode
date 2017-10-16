@@ -422,8 +422,8 @@
                 var transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
                 Assert.Equal(new uint256(45), blockHashKeyRow.Value);
-                Assert.Equal(0, blockDict.Count);
-                Assert.Equal(0, transDict.Count);
+                Assert.Empty(blockDict);
+                Assert.Empty(transDict);
             }
         }
 

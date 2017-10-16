@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 {
                     case "A":
                         // Peer A should not get any work.
-                        Assert.Equal(0, assignedBlockHeights.Count);
+                        Assert.Empty(assignedBlockHeights);
                         break;
 
                     case "B":
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
                     // Peers with shorter chain should not get any work
                     // other peers should not get any work exceeding their knowledge.
-                    if (peer.ChainHeight <= ourBlockCount) Assert.Equal(0, assignedBlockHeights.Count);
+                    if (peer.ChainHeight <= ourBlockCount) Assert.Empty(assignedBlockHeights);
                     else if (assignedBlockHeights.Count > 0) Assert.True(assignedBlockHeights.Max() <= peer.ChainHeight);
                 }
 
