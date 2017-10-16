@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using DBreeze.DataTypes;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
-using DBreeze.DataTypes;
-using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -280,14 +280,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Persists unsaved POS blocks information to the database.
         /// </summary>
-        /// <param name="stakeEntries">List of POS block information to be examined and persists if unsaved.</param>
-        public Task PutStake(IEnumerable<StakeItem> stakeEntries)
+        /// <param name="stakeItems">List of POS block information to be examined and persists if unsaved.</param>
+        public Task PutStake(IEnumerable<StakeItem> stakeItems)
         {
             return this.session.Execute(() =>
             {
-                this.logger.LogTrace("({0}.Count():{1})", nameof(stakeEntries), stakeEntries.Count());
+                this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
 
-                this.PutStakeInternal(stakeEntries);
+                this.PutStakeInternal(stakeItems);
+
                 this.session.Transaction.Commit();
 
                 this.logger.LogTrace("(-)");
@@ -297,38 +298,69 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Persists unsaved POS blocks information to the database.
         /// </summary>
-        /// <param name="stakeEntries">List of POS block information to be examined and persists if unsaved.</param>
-        private void PutStakeInternal(IEnumerable<StakeItem> stakeEntries)
+        /// <param name="stakeItems">List of POS block information to be examined and persisted, if unsaved.</param>
+        private void PutStakeInternal(IEnumerable<StakeItem> stakeItems)
         {
-            foreach (StakeItem stakeEntry in stakeEntries)
+            foreach (StakeItem stakeItem in stakeItems)
             {
-                if (!stakeEntry.InStore)
+                if (!stakeItem.ExistsInStore)
                 {
-                    this.session.Transaction.Insert<byte[], BlockStake>("Stake", stakeEntry.BlockId.ToBytes(false), stakeEntry.BlockStake);
-                    stakeEntry.InStore = true;
+                    this.session.Transaction.Insert<byte[], BlockStake>("Stake", stakeItem.BlockHash.ToBytes(false), stakeItem.BlockStake);
+                    stakeItem.InStore();
                 }
             }
         }
 
         /// <summary>
-        /// Retrieves POS blocks information from the database.
+        /// Retrieves a POS block from the database.
         /// </summary>
-        /// <param name="blocklist">List of partially initialized POS block information that is to be fully initialized with the values from the database.</param>
-        public Task GetStake(IEnumerable<StakeItem> blocklist)
+        /// <param name="stakeItem">Partially initialized <see cref="StakeItem"/> that is populated by <see cref="BlockStake"/>.</param>
+        public Task GetStakeItem(StakeItem stakeItem)
         {
             return this.session.Execute(() =>
             {
-                this.logger.LogTrace("({0}.Count():{1})", nameof(blocklist), blocklist.Count());
+                this.logger.LogTrace("({0}:{1})", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
 
-                foreach (StakeItem blockStake in blocklist)
+                var blockStake = this.session.Transaction.Select<byte[], BlockStake>("Stake", stakeItem.BlockHash.ToBytes(false));
+                if (!blockStake.Exists)
+                    this.logger.LogTrace("{0}:{1} [NOT IN DATABASE]", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
+
+                if (stakeItem.BlockStake == null)
+                    this.logger.LogTrace("{0} [NULL]", nameof(stakeItem.BlockStake));
+
+                stakeItem.Update(blockStake.Value);
+
+                this.logger.LogTrace("(-)");
+            });
+        }
+
+        /// <summary>
+        /// Retrieves POS blocks from the database.
+        /// </summary>
+        /// <param name="stakeItem">Partially initialized <see cref="StakeItem"/>s that is populated by <see cref="BlockStake"/>.</param>
+        public Task<IEnumerable<StakeItem>> GetStakeItems(IEnumerable<StakeItem> stakeItems)
+        {
+            return this.session.Execute(() =>
+            {
+                this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
+
+                foreach (StakeItem stakeItem in stakeItems)
                 {
-                    this.logger.LogTrace("Loading POS block hash '{0}' from the database.", blockStake.BlockId);
-                    Row<byte[], BlockStake> stake = this.session.Transaction.Select<byte[], BlockStake>("Stake", blockStake.BlockId.ToBytes(false));
-                    blockStake.BlockStake = stake.Value;
-                    blockStake.InStore = true;
+                    this.logger.LogTrace("{0}:{1}", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
+
+                    var blockStake = this.session.Transaction.Select<byte[], BlockStake>("Stake", stakeItem.BlockHash.ToBytes(false));
+                    if (blockStake.Exists == false)
+                        this.logger.LogTrace("{0}:{1} [NOT IN DATABASE]", nameof(stakeItem.BlockHash), stakeItem.BlockHash);
+
+                    if (stakeItem.BlockStake == null)
+                        this.logger.LogTrace("{0} [NULL] / {1}:{2}", nameof(stakeItem.BlockStake), nameof(stakeItem.BlockHash), stakeItem.BlockHash);
+
+                    stakeItem.Update(blockStake.Value);
                 }
 
                 this.logger.LogTrace("(-)");
+
+                return stakeItems;
             });
         }
 
