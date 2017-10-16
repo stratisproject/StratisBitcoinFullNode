@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -144,7 +145,7 @@ namespace Stratis.Bitcoin.Base
         public override void Start()
         {
             this.StartAddressManager();
-            this.StartChain();
+            this.StartChainAsync().GetAwaiter().GetResult();
 
             NodeConnectionParameters connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
@@ -162,7 +163,7 @@ namespace Stratis.Bitcoin.Base
         /// Initializes node's chain repository.
         /// Creates periodic task to persist changes to the database.
         /// </summary>
-        private void StartChain()
+        private async Task StartChainAsync()
         {
             if (!Directory.Exists(this.dataFolder.ChainPath))
             {
@@ -171,7 +172,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogInformation("Loading chain");
-            this.chainRepository.Load(this.chain).GetAwaiter().GetResult();
+            await this.chainRepository.Load(this.chain).ConfigureAwait(false);
 
             this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
             this.flushChainTask = new PeriodicTask("FlushChain", this.logger, (cancellation) =>

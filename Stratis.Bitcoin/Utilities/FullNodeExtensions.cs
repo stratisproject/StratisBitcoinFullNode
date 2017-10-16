@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Utilities
         /// Installs handlers for graceful shutdown in the console, starts a full node and waits until it terminates. 
         /// </summary>
         /// <param name="node">Full node to run.</param>
-        public static void Run(this IFullNode node)
+        public static async Task RunAsync(this IFullNode node)
         {
             var done = new ManualResetEventSlim(false);
             using (CancellationTokenSource cts = new CancellationTokenSource())
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Utilities
                     eventArgs.Cancel = true;
                 };
 
-                node.Run(cts.Token, "Application started. Press Ctrl+C to shut down.", "Application stopped.");
+                await node.RunAsync(cts.Token, "Application started. Press Ctrl+C to shut down.", "Application stopped.").ConfigureAwait(false);
                 done.Set();
             }
         }
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="cancellationToken">Cancellation token that triggers when the node should be shut down.</param>
         /// <param name="shutdownMessage">Message to display on the console to instruct the user on how to invoke the shutdown.</param>
         /// <param name="shutdownCompleteMessage">Message to display on the console when the shutdown is complete.</param>
-        public static void Run(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
+        public static async Task RunAsync(this IFullNode node, CancellationToken cancellationToken, string shutdownMessage, string shutdownCompleteMessage)
         {
             using (node)
             {
@@ -87,9 +87,8 @@ namespace Stratis.Bitcoin.Utilities
                     var tcs = (TaskCompletionSource<object>)obj;
                     tcs.TrySetResult(null);
                 }, waitForStop);
-
-                //await waitForStop.Task;
-                waitForStop.Task.GetAwaiter().GetResult();
+                
+                await waitForStop.Task.ConfigureAwait(false);
 
                 node.Stop();
 
