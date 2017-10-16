@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             registration.FeatureServices(d => { d.AddSingleton<FeatureCollection>(); });
 
             Assert.Equal(typeof(FeatureRegistrationFullNodeFeature), registration.FeatureType);
-            Assert.Equal(1, registration.ConfigureServicesDelegates.Count);
+            Assert.Single(registration.ConfigureServicesDelegates);
             registration.ConfigureServicesDelegates[0].Invoke(collection);
             var descriptors = collection as IList<ServiceDescriptor>;
             Assert.Equal(1, descriptors.Count);

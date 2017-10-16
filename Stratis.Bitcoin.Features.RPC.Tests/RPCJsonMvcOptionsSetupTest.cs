@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             RPCJsonMvcOptionsSetup.ConfigureMvc(options, settings, null, charpool, null);
 
-            Assert.Equal(1, options.OutputFormatters.Count);
+            Assert.Single(options.OutputFormatters);
             Assert.Equal(typeof(RPCJsonOutputFormatter), options.OutputFormatters[0].GetType());
         }
     }

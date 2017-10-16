@@ -334,7 +334,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal("testWallet", result.Name);
             Assert.Equal(Network.Main, result.Network);
 
-            Assert.Equal(1, walletManager.Wallets.Count);
+            Assert.Single(walletManager.Wallets);
             Assert.Equal("testWallet", walletManager.Wallets.ElementAt(0).Name);
             Assert.Equal(Network.Main, walletManager.Wallets.ElementAt(0).Network);
         }
@@ -955,7 +955,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = walletManager.GetHistory(wallet);
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -1032,7 +1032,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = walletManager.GetAccounts("myWallet");
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -1244,7 +1244,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = walletManager.GetSpendableTransactionsInWallet("myWallet", confirmations: 1);
 
-            Assert.Equal(0, result.Count);
+            Assert.Empty(result);
         }
 
         /// <summary>
@@ -1389,7 +1389,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = walletManager.GetSpendableTransactionsInWallet("myWallet2", confirmations: 1);
 
-            Assert.Equal(0, result.Count);
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -1410,7 +1410,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1);
 
-            Assert.Equal(0, result.Count);
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -2735,7 +2735,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = walletManager.GetWalletsNames().OrderBy(w => w).ToArray();
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -2778,7 +2778,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.LoadKeysLookupLock();
 
             Assert.NotNull(walletManager.keysLookup);
-            Assert.Equal(0, walletManager.keysLookup.Count);
+            Assert.Empty(walletManager.keysLookup);
         }
 
         [Fact]
