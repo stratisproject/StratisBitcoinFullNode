@@ -137,12 +137,12 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     while (this.chain.GetBlock(fork.HashBlock) == null)
                         fork = fork.Previous;
 
-                    this.logger.LogInformation("Reorg detected, going back from '{0}/{1}' to '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, fork.HashBlock, fork.Height);
+                    this.logger.LogInformation("Reorg detected, going back from '{0}' to '{1}'.", this.walletTip, fork);
 
                     this.walletManager.RemoveBlocks(fork);
                     this.walletTip = fork;
 
-                    this.logger.LogTrace("Wallet tip set to '{0}/{1}'.", this.walletTip.HashBlock, this.walletTip.Height);
+                    this.logger.LogTrace("Wallet tip set to '{0}'.", this.walletTip);
                 }
 
                 // The new tip can be ahead or behind the wallet.
@@ -158,10 +158,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}/{1}' is behind the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
+                    this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     // The wallet is falling behind we need to catch up.
-                    this.logger.LogWarning("New tip '{0}/{1}' is too far in advance, put the puller back.", newTip.HashBlock, newTip.HashBlock);
+                    this.logger.LogWarning("New tip '{0}' is too far in advance, put the puller back.", newTip);
                     this.blockNotification.SyncFrom(this.walletTip.HashBlock);
                     return;
                 }
@@ -174,10 +174,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         return;
                     }
 
-                    this.logger.LogTrace("Wallet tip '{0}/{1}' is ahead or equal to the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
+                    this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip.HashBlock);
                 }
             }
-            else this.logger.LogTrace("New block follows the previously known block '{0}/{1}'.", this.walletTip.HashBlock, this.walletTip.Height);
+            else this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);

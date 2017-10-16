@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 foreach (BlockResult block in this.consensusLoop.Execute(cancellationToken))
                 {
                     if (this.consensusLoop.Tip.FindFork(lastTip) != lastTip)
-                        this.logger.LogInformation("Reorg detected, rewinding from '{0}/{1}' to '{2}/{3}'.", lastTip.HashBlock, lastTip.Height, this.consensusLoop.Tip.HashBlock, this.consensusLoop.Tip.Height);
+                        this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip.HashBlock, this.consensusLoop.Tip);
 
                     lastTip = this.consensusLoop.Tip;
 
