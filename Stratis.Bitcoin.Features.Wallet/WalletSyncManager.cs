@@ -90,63 +90,74 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
+            ChainedBlock newTip = this.chain.GetBlock(block.GetHash());
+            if (newTip == null)
+            {
+                this.logger.LogTrace("(-)[NEW_TIP_REORG]");
+                return; 
+            }
+
             // If the new block's previous hash is the same as the 
             // wallet hash then just pass the block to the manager. 
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
-                this.logger.LogTrace("New block's prev block '{0}' does not match wallet's tip block hash '{1}'.", block.Header.HashPrevBlock, this.walletTip.HashBlock);
-
-                // Set a temporary wallet tip in case we are not on the best chain anymore.
-                ChainedBlock walletTip = this.WalletTip;
-
                 // If previous block does not match there might have 
                 // been a reorg, check if the wallet is still on the main chain.
                 ChainedBlock inBestChain = this.chain.GetBlock(this.walletTip.HashBlock);
                 if (inBestChain == null)
                 {
                     // The current wallet hash was not found on the main chain.
-                    // A reorg happenend so bring the wallet back top the last known fork.
-                    ChainedBlock fork = walletTip;
+                    // A reorg happened so bring the wallet back top the last known fork.
+                    ChainedBlock fork = this.walletTip;
 
                     // We walk back the chained block object to find the fork.
                     while (this.chain.GetBlock(fork.HashBlock) == null)
                         fork = fork.Previous;
 
-                    this.logger.LogTrace("Reorganization detected, going back to '{0}/{1}'.", fork.HashBlock, fork.Height);
+                    this.logger.LogInformation("Reorg detected, going back from '{0}/{1}' to '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, fork.HashBlock, fork.Height);
 
                     this.walletManager.RemoveBlocks(fork);
+                    this.walletTip = fork;
 
-                    // Update temporary wallet tip to be able to catch up again.
-                    walletTip = this.chain.GetBlock(fork.HashBlock);
-                    this.logger.LogTrace("Wallet tip set to '{0}/{1}'.", walletTip.HashBlock, walletTip.Height);
+                    this.logger.LogTrace("Wallet tip set to '{0}/{1}'.", this.walletTip.HashBlock, this.walletTip.Height);
                 }
 
-                ChainedBlock incomingBlock = this.chain.GetBlock(block.GetHash());
-                if (incomingBlock.Height > this.walletTip.Height)
+                // The new tip can be ahead or behind the wallet.
+                // If the new tip is ahead we try to bring the wallet up to the new tip.
+                // If the new tip is behind we just check the wallet and the tip are in the same chain.
+
+                if (newTip.Height > this.walletTip.Height)
                 {
-                    CancellationToken token = this.nodeLifetime.ApplicationStopping;
-
-                    // The wallet is falling behind we need to catch up.
-                    ChainedBlock next = this.walletTip;
-                    while (next != incomingBlock)
+                    ChainedBlock findTip = newTip.FindAncestorOrSelf(this.walletTip.HashBlock);
+                    if (findTip == null)
                     {
-                        token.ThrowIfCancellationRequested();
+                        this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
+                        return;
+                    }
 
-                        // While the wallet is catching up the entire node will wait
-                        // if a wallet recovers to a date in the past. Consensus 
-                        // will stop till the wallet is up to date.
+                    var token = this.nodeLifetime.ApplicationStopping;
+                    this.logger.LogTrace("Wallet tip '{0}/{1}' is behind the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
+
+                    ChainedBlock next = this.walletTip;
+                    while (next != newTip)
+                    {
+                        // While the wallet is catching up the entire node will wait.
+                        // If a wallet is recovered to a date in the past. Consensus will stop till the wallet is up to date.
 
                         // TODO: This code should be replaced with a different approach
-                        // similar to BlockStore. The wallet should be standalone and not depend on consensus.
+                        // Similar to BlockStore the wallet should be standalone and not depend on consensus.
                         // The block should be put in a queue and pushed to the wallet in an async way.
                         // If the wallet is behind it will just read blocks from store (or download in case of a pruned node).
 
-                        next = this.chain.GetBlock(next.Height + 1);
+                        token.ThrowIfCancellationRequested();
+
+                        next = newTip.GetAncestor(next.Height + 1);
                         Block nextblock = null;
                         int index = 0;
                         while (true)
@@ -157,10 +168,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.
-                                // That will make the block available in the next push from conensus.
+                                // That will make the block available in the next push from consensus.
                                 index++;
                                 if (index > 10)
+                                {
+                                    this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
                                     return;
+                                }
 
                                 // Really ugly hack to let store catch up.
                                 // This will block the entire consensus pulling.
@@ -176,16 +190,27 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.walletManager.ProcessBlock(nextblock, next);
                     }
                 }
-                else this.logger.LogTrace("New block's height {0} is not above wallet's tip height {1}.", incomingBlock.Height, this.walletTip.Height);
-            }
-            else this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip.HashBlock);
+                else
+                {
+                    ChainedBlock findTip = this.walletTip.FindAncestorOrSelf(newTip.HashBlock);
+                    if (findTip == null)
+                    {
+                        this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
+                        return;
+                    }
 
-            this.walletTip = this.chain.GetBlock(block.GetHash());
-            this.walletManager.ProcessBlock(block, this.walletTip);
+                    this.logger.LogTrace("Wallet tip '{0}/{1}' is ahead or equal to the new tip '{2}/{3}'.", this.walletTip.HashBlock, this.walletTip.Height, newTip.HashBlock, newTip.HashBlock);
+                }
+            }
+            else this.logger.LogTrace("New block follows the previously known block '{0}/{1}'.", this.walletTip.HashBlock, this.walletTip.Height);
+
+            this.walletTip = newTip;
+            this.walletManager.ProcessBlock(block, newTip);
 
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
@@ -197,6 +222,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public virtual void SyncFromDate(DateTime date)
         {
             this.logger.LogTrace("({0}:'{1::yyyy-MM-dd HH:mm:ss}')", nameof(date), date);
@@ -207,6 +233,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
             this.logger.LogTrace("({0}:{1})", nameof(height), height);

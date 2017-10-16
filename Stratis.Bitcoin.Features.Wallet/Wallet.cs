@@ -206,9 +206,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A collection of spendable outputs.</returns>
         public List<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0)
         {
-            var accounts = this.GetAccountsByCoinType(coinType);
+            IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType);
 
-            var walletAccounts = new List<UnspentOutputReference>();
+            List<UnspentOutputReference> walletAccounts = new List<UnspentOutputReference>();
             foreach (var account in accounts)
             {
                 walletAccounts.AddRange(account.GetSpendableTransactions(currentChainHeight, confirmations));
@@ -613,18 +613,22 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // A block that is at the tip has 1 confirmation.
                 // When calculating the confirmations the tip must be advanced by one.
 
-                var countFrom = currentChainHeight + 1;
-                var unspentTransactions = address.UnspentTransactions()
-                    .Where(a => countFrom - (a.BlockHeight ?? countFrom) >= confirmations).ToList();
-
-                foreach (var transactionData in unspentTransactions)
+                int countFrom = currentChainHeight + 1;
+                foreach (TransactionData transactionData in address.UnspentTransactions())
                 {
-                    unspentOutputs.Add(new UnspentOutputReference
+                    int? confirmationCount = 0;
+                    if (transactionData.BlockHeight != null)
+                        confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
+
+                    if (confirmationCount >= confirmations)
                     {
-                        Account = this,
-                        Address = address,
-                        Transaction = transactionData
-                    });
+                        unspentOutputs.Add(new UnspentOutputReference
+                        {
+                            Account = this,
+                            Address = address,
+                            Transaction = transactionData
+                        });
+                    }
                 }
             }
 
