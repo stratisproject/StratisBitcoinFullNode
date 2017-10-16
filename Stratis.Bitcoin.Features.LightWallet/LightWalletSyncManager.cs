@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         private readonly CoinType coinType;
         private readonly ILogger logger;
         private readonly ISignals signals;
-        private ChainedBlock walletTip;
+        protected ChainedBlock walletTip;
         private readonly INodeLifetime nodeLifetime;
         private IDisposable sub = null;
         private IDisposable txSub = null;

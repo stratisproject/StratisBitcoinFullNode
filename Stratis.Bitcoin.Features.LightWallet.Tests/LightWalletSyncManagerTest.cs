@@ -1,5 +1,6 @@
 ﻿using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Tests;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using Xunit;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.LightWallet.Tests
 {
@@ -483,6 +485,173 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             lightWalletSyncManager.ProcessTransaction(transaction);
 
             this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null));
+        }
+
+        /// <summary>
+        /// When processing a new <see cref="Block"/> that has a previous hash that is the same as the <see cref="LightWalletSyncManager.WalletTip"/> pass it directly to the <see cref="WalletManager"/> 
+        /// and set it as the new WalletTip.
+        /// </summary>
+        [Fact]
+        public void ProcessBlock_NewBlock_PreviousHashSameAsWalletTip_PassesBlockToManagerWithoutReorg()
+        {
+            var result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Network.StratisMain);
+            this.chain = result.Chain;
+            var blocks = result.Blocks;
+            var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+            lightWalletSyncManager.SetWalletTip(this.chain.GetBlock(3));
+
+            var blockToProcess = blocks[3];
+            lightWalletSyncManager.ProcessBlock(blockToProcess); //4th block in the list has same prevhash as which is loaded
+
+            var expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
+            Assert.Equal(expectedBlockHash, lightWalletSyncManager.WalletTip.Header.GetHash());
+            this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedBlock>(c => c.Header.GetHash() == expectedBlockHash)));
+        }
+
+        /// <summary>
+        /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="LightWalletSyncManager.WalletTip"/> and is on the best chain
+        /// see which blocks are missing notify the <see cref="BlockNotification"/> to sync from the wallet tip to catchup the <see cref="WalletManager"/>.
+        /// Do not process the block or set it as a wallet tip.
+        /// </summary>
+        [Fact]
+        public void ProcessBlock_NewBlock_BlockOnBestChain_WalletTipBeforeNewTip_StartsSyncFromWalletTipWithoutProcessingBlock()
+        {
+            var result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Network.StratisMain);
+            this.chain = result.Chain;
+            var blocks = result.Blocks;
+            var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+              this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            // set 2nd block as tip
+            lightWalletSyncManager.SetWalletTip(this.chain.GetBlock(2));
+            //process 4th block in the list does not have same prevhash as which is loaded
+            var blockToProcess = blocks[3];
+            lightWalletSyncManager.ProcessBlock(blockToProcess);
+
+            this.blockNotification.Verify(b => b.SyncFrom(this.chain.GetBlock(2).HashBlock));
+
+            var expectedBlockHash = this.chain.GetBlock(2).Header.GetHash();
+            Assert.Equal(expectedBlockHash, lightWalletSyncManager.WalletTip.Header.GetHash());
+            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedBlock>()), Times.Exactly(0));
+        }
+
+        /// <summary>
+        /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="LightWalletSyncManager.WalletTip"/> 
+        /// and is on the best chain see if the wallettip is after the newtip.
+        /// If this is the case use the old <see cref="LightWalletSyncManager.WalletTip"/> and  process the block using the <see cref="WalletManager"/>.
+        /// </summary>
+        [Fact]
+        public void ProcessBlock_NewBlock_BlockOnBestChain_WalletTipAfterNewTip_StartsSyncFromNewTip()
+        {
+            var result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Network.StratisMain);
+            this.chain = result.Chain;
+            var blocks = result.Blocks;
+            var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+              this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            // set 2nd block as tip
+            lightWalletSyncManager.SetWalletTip(this.chain.GetBlock(4));
+            //process 4th block in the list does not have same prevhash as which is loaded
+            var blockToProcess = blocks[3];
+            lightWalletSyncManager.ProcessBlock(blockToProcess);
+
+            var expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
+            Assert.Equal(expectedBlockHash, lightWalletSyncManager.WalletTip.Header.GetHash());
+            this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[3]), ExpectChainedBlock(this.chain.GetBlock(4))));
+        }
+
+        
+        /// <summary>
+        /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="LightWalletSyncManager.WalletTip"/> and is not on the best chain
+        /// look for the point at which the chain forked and remove blocks after that fork point from the <see cref="WalletManager"/>.
+        /// After removing those blocks set the fork block as the <see cref="LightWalletSyncManager.WalletTip"/> and notify the <see cref="blockNotification"/> to start syncing from the fork.
+        /// Do not process the block.
+        /// </summary>
+        [Fact]
+        public void ProcessBlock_BlockNotOnBestChain_ReorgWalletTipBeforeNewTip_StartsSyncFromForkPointWithoutProcessingBlock()
+        {           
+            var result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, Network.StratisMain, 2);
+            // left side chain containing the 'old' fork.
+            var leftChain = result.LeftChain;
+            // right side chain containing the 'new' fork. Work on this.
+            this.chain = result.RightChain;
+            var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            // set 4th block of the old chain as tip. 2 ahead of the fork thus not being on the right chain.
+            lightWalletSyncManager.SetWalletTip(leftChain.GetBlock(result.LeftForkBlocks[3].Header.GetHash()));
+            //process 5th block from the right side of the fork in the list does not have same prevhash as which is loaded.
+            var blockToProcess = result.RightForkBlocks[4];
+            lightWalletSyncManager.ProcessBlock(blockToProcess);
+
+            // walletmanager removes all blocks up to the fork.
+            this.walletManager.Verify(w => w.RemoveBlocks(ExpectChainedBlock(this.chain.GetBlock(2))));
+
+            //expect the wallet tip to be set to the fork and the sync to be started from that block.
+            Assert.Equal(this.chain.GetBlock(2).HashBlock, lightWalletSyncManager.WalletTip.HashBlock);
+            this.blockNotification.Verify(w => w.SyncFrom(this.chain.GetBlock(2).HashBlock));
+            // expect no blocks to be processed.
+            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedBlock>()), Times.Exactly(0));
+        }
+
+
+        /// <summary>
+        /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="LightWalletSyncManager.WalletTip"/> and is not on the best chain
+        /// look for the point at which the chain forked and remove blocks after that fork point from the <see cref="WalletManager"/>.
+        /// After removing those blocks set the fork block as the <see cref="LightWalletSyncManager.WalletTip"/> 
+        /// Process the block if the new tip is before the <see cref="LightWalletSyncManager.WalletTip"/>.
+        /// </summary>
+        [Fact]
+        public void ProcessBlock_BlockNotOnBestChain_ReorgWalletTipAfterNewTip_StartProcessingFromFork()
+        {
+            var result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, Network.StratisMain, 2);
+            // left side chain containing the 'old' fork.
+            var leftChain = result.LeftChain;
+            // right side chain containing the 'new' fork. Work on this.
+            this.chain = result.RightChain;
+
+            var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
+               this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+
+            // set 4th block of the old chain as tip. 2 ahead of the fork thus not being on the right chain.
+            lightWalletSyncManager.SetWalletTip(leftChain.GetBlock(result.LeftForkBlocks[3].Header.GetHash()));
+            //process 2nd block from the right side of the fork in the list does not have same prevhash as which is loaded.
+            var blockToProcess = result.RightForkBlocks[1];
+            lightWalletSyncManager.ProcessBlock(blockToProcess);
+
+            // walletmanager removes all blocks up to the fork.
+            this.walletManager.Verify(w => w.RemoveBlocks(ExpectChainedBlock(this.chain.GetBlock(2))));
+
+            //expect the wallet tip to be set to the fork and do not start the sync to be started from that block.
+            Assert.Equal(this.chain.GetBlock(2).HashBlock, lightWalletSyncManager.WalletTip.HashBlock);
+            this.blockNotification.Verify(w => w.SyncFrom(It.IsAny<uint256>()), Times.Exactly(0));
+            // expect the block to be processed.
+            this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[1]), ExpectChainedBlock(this.chain.GetBlock(2))));
+        }
+
+        private static ChainedBlock ExpectChainedBlock(ChainedBlock block)
+        {
+            return It.Is<ChainedBlock>(c => c.Header.GetHash() == block.Header.GetHash());
+        }
+
+        private static Block ExpectBlock(Block block)
+        {
+            return It.Is<Block>(b => b.GetHash() == block.GetHash());
+        }
+
+        private class LightWalletSyncManagerOverride : LightWalletSyncManager
+        {
+            public LightWalletSyncManagerOverride(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
+                Network network, IBlockNotification blockNotification, ISignals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+                : base(loggerFactory, walletManager, chain, network, blockNotification, signals, nodeLifetime, asyncLoopFactory)
+            {
+            }
+
+            public void SetWalletTip(ChainedBlock tip)
+            {
+                base.walletTip = tip;
+            }
         }
     }
 }
