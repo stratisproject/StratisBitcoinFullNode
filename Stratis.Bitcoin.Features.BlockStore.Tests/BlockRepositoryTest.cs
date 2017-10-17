@@ -422,12 +422,12 @@
                 var transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
                 Assert.Equal(new uint256(45), blockHashKeyRow.Value);
-                Assert.Equal(0, blockDict.Count);
-                Assert.Equal(0, transDict.Count);
+                Assert.Empty(blockDict);
+                Assert.Empty(transDict);
             }
         }
 
-        private Bitcoin.Features.BlockStore.IBlockRepository SetupRepository(Network main, string dir)
+        private BlockStore.IBlockRepository SetupRepository(Network main, string dir)
         {
             var repository = new BlockRepository(main, dir, this.loggerFactory);
             repository.Initialize().GetAwaiter().GetResult();

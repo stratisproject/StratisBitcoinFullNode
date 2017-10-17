@@ -37,10 +37,10 @@ namespace Stratis.Bitcoin.Tests.Builder
 		{
 			this.fullNodeBuilder = new FullNodeBuilder(this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
-			Assert.Equal(0, this.featureCollection.FeatureRegistrations.Count);
-			Assert.Equal(0, this.featureCollectionDelegates.Count);
-			Assert.Equal(0, this.serviceProviderDelegates.Count);
-			Assert.Equal(0, this.serviceCollectionDelegates.Count);
+			Assert.Empty(this.featureCollection.FeatureRegistrations);
+			Assert.Empty(this.featureCollectionDelegates);
+			Assert.Empty(this.serviceProviderDelegates);
+			Assert.Empty(this.serviceCollectionDelegates);
 			Assert.Null(this.fullNodeBuilder.Network);
 			Assert.Null(this.fullNodeBuilder.NodeSettings);
 		}
@@ -52,10 +52,10 @@ namespace Stratis.Bitcoin.Tests.Builder
 
 			this.fullNodeBuilder = new FullNodeBuilder(settings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 			
-			Assert.Equal(0, this.featureCollection.FeatureRegistrations.Count);
-			Assert.Equal(1, this.featureCollectionDelegates.Count);
-			Assert.Equal(0, this.serviceProviderDelegates.Count);
-			Assert.Equal(1, this.serviceCollectionDelegates.Count);
+			Assert.Empty(this.featureCollection.FeatureRegistrations);
+			Assert.Single(this.featureCollectionDelegates);
+			Assert.Empty(this.serviceProviderDelegates);
+			Assert.Single(this.serviceCollectionDelegates);
 			Assert.Equal(Network.Main, this.fullNodeBuilder.Network);
 			Assert.Equal(settings, this.fullNodeBuilder.NodeSettings);
 		}
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Tests.Builder
 
 			var result = this.fullNodeBuilder.ConfigureServices(action);
 
-			Assert.Equal(1, this.serviceCollectionDelegates.Count);
+			Assert.Single(this.serviceCollectionDelegates);
 			Assert.Equal(action, this.serviceCollectionDelegates[0]);
 			Assert.Equal(this.fullNodeBuilder, result);
 		}
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Tests.Builder
 
 			var result = this.fullNodeBuilder.ConfigureFeature(action);
 
-			Assert.Equal(1, this.featureCollectionDelegates.Count);
+			Assert.Single(this.featureCollectionDelegates);
 			Assert.Equal(action, this.featureCollectionDelegates[0]);
 			Assert.Equal(this.fullNodeBuilder, result);
 		}
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Tests.Builder
 
 			var result = this.fullNodeBuilder.ConfigureServiceProvider(action);
 
-			Assert.Equal(1, this.serviceProviderDelegates.Count);
+			Assert.Single(this.serviceProviderDelegates);
 			Assert.Equal(action, this.serviceProviderDelegates[0]);
 			Assert.Equal(this.fullNodeBuilder, result);
 		}

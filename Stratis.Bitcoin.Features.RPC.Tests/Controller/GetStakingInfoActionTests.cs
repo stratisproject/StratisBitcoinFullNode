@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetStakingInfoModel info = controller.GetStakingInfo();
 
             Assert.NotNull(info);
-            Assert.Equal(true, info.Enabled);
-            Assert.Equal(false, info.Staking);
+            Assert.True(info.Enabled);
+            Assert.False(info.Staking);
 
             nodeLifetime.StopApplication();
             nodeLifetime.ApplicationStopped.WaitHandle.WaitOne();
@@ -76,16 +76,16 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             GetStakingInfoModel info = controller.GetStakingInfo();
 
             Assert.NotNull(info);
-            Assert.Equal(false, info.Enabled);
-            Assert.Equal(false, info.Staking);
+            Assert.False(info.Enabled);
+            Assert.False(info.Staking);
 
             controller.StartStaking("test", "test");
 
             info = controller.GetStakingInfo();
 
             Assert.NotNull(info);
-            Assert.Equal(true, info.Enabled);
-            Assert.Equal(false, info.Staking);
+            Assert.True(info.Enabled);
+            Assert.False(info.Staking);
 
             nodeLifetime.StopApplication();
             nodeLifetime.ApplicationStopped.WaitHandle.WaitOne();

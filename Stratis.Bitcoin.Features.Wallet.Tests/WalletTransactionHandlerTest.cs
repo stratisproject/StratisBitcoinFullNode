@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var result = new Transaction(transactionResult.ToHex());
             var expectedChangeAddressKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
 
-            Assert.Equal(1, result.Inputs.Count);
+            Assert.Single(result.Inputs);
             Assert.Equal(addressTransaction.Id, result.Inputs[0].PrevOut.Hash);
 
             Assert.Equal(2, result.Outputs.Count);
@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // remove 2 inputs they will be added back by fund transaction
             fundTransaction.Inputs.RemoveAt(2);
             fundTransaction.Inputs.RemoveAt(1);
-            Assert.Equal(1, fundTransaction.Inputs.Count); // 3 inputs
+            Assert.Single(fundTransaction.Inputs); // 3 inputs
 
             var fundTransactionClone = fundTransaction.Clone();
             var fundContext = new TransactionBuildContext(walletReference, new List<Recipient>(), "password")
@@ -293,15 +293,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletTransactionHandler.FundTransaction(fundContext, fundTransaction);
 
             foreach (var input in fundTransactionClone.Inputs) // all original inputs are still in the trx
-                Assert.True(fundTransaction.Inputs.Any(a => a.PrevOut == input.PrevOut));
+                Assert.Contains(fundTransaction.Inputs, a => a.PrevOut == input.PrevOut);
 
             Assert.Equal(3, fundTransaction.Inputs.Count); // we expect 3 inputs 
             Assert.Equal(4, fundTransaction.Outputs.Count); // we expect 4 outputs 
             Assert.Equal(new Money(150, MoneyUnit.BTC) - fundContext.TransactionFee, fundTransaction.TotalOut);
 
-            Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys1.PubKey.ScriptPubKey));
-            Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys2.PubKey.ScriptPubKey));
-            Assert.True(fundTransaction.Outputs.Any(a => a.ScriptPubKey == destinationKeys3.PubKey.ScriptPubKey));
+            Assert.Contains(fundTransaction.Outputs, a => a.ScriptPubKey == destinationKeys1.PubKey.ScriptPubKey);
+            Assert.Contains(fundTransaction.Outputs, a => a.ScriptPubKey == destinationKeys2.PubKey.ScriptPubKey);
+            Assert.Contains(fundTransaction.Outputs, a => a.ScriptPubKey == destinationKeys3.PubKey.ScriptPubKey);
         }
 
         [Fact]

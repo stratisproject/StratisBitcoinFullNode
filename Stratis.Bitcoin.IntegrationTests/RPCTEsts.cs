@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 {
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("getpeerinfo").ResultString;
-                    Assert.True(resp.StartsWith("[" + Environment.NewLine + "  {" + Environment.NewLine + "    \"id\": 0," + Environment.NewLine + "    \"addr\": \"["));
+                    Assert.StartsWith("[" + Environment.NewLine + "  {" + Environment.NewLine + "    \"id\": 0," + Environment.NewLine + "    \"addr\": \"[", resp);
                 }
             }
         }
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 {
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("generate", "1").ResultString;
-                    Assert.True(resp.StartsWith("[" + Environment.NewLine + "  \""));
+                    Assert.StartsWith("[" + Environment.NewLine + "  \"", resp);
                 }
             }
         }

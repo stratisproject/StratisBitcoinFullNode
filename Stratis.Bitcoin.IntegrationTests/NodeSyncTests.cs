@@ -17,13 +17,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var node1 = builder.CreateStratisPowNode();
                 var node2 = builder.CreateStratisPowNode();
                 builder.StartAll();
-                Assert.Equal(0, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
-                Assert.Equal(0, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
+                Assert.Empty(node1.FullNode.ConnectionManager.ConnectedNodes);
+                Assert.Empty(node2.FullNode.ConnectionManager.ConnectedNodes);
                 var rpc1 = node1.CreateRPCClient();
                 var rpc2 = node2.CreateRPCClient();
                 rpc1.AddNode(node2.Endpoint, true);
-                Assert.Equal(1, node1.FullNode.ConnectionManager.ConnectedNodes.Count());
-                Assert.Equal(1, node2.FullNode.ConnectionManager.ConnectedNodes.Count());
+                Assert.Single(node1.FullNode.ConnectionManager.ConnectedNodes);
+                Assert.Single(node2.FullNode.ConnectionManager.ConnectedNodes);
 
                 var behavior = node1.FullNode.ConnectionManager.ConnectedNodes.First().Behaviors.Find<ConnectionManagerBehavior>();
                 Assert.False(behavior.Inbound);

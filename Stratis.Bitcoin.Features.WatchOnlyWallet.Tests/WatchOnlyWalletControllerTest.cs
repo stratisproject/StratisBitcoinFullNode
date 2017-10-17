@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             IActionResult result = controller.Watch(address);
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);            
         }
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             IActionResult result = controller.Watch(address);
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.Conflict, errorResult.StatusCode.Value);
         }
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             IActionResult result = controller.GetWatchOnlyWallet();
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
         }

@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = address.UnspentTransactions();
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = address.UnspentTransactions();
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
     }
 }
