@@ -104,9 +104,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         Address = changeKeys.Address.ToString(),
                         Pubkey = changeKeys.PubKey.ScriptPubKey,
                         ScriptPubKey = changeKeys.Address.ScriptPubKey,
-                        Transactions = new List<TransactionData>() {
-                        }
-                    }
+                        Transactions = new List<TransactionData>()                    }
                 }
                 });
 
@@ -157,11 +155,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
                 ExternalAddresses = new List<HdAddress>() { address },
-                InternalAddresses = new List<HdAddress>()
-                {
-                    // no change addresses at the moment!
-                }
-            });
+                InternalAddresses = new List<HdAddress>()            });
 
             var walletFeePolicy = new Mock<IWalletFeePolicy>();
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
@@ -236,11 +230,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 HdPath = "m/44'/0'/0'",
                 ExtendedPubKey = accountKeys.ExtPubKey,
                 ExternalAddresses = new List<HdAddress>() { address },
-                InternalAddresses = new List<HdAddress>()
-                {
-                    // no change addresses at the moment!
-                }
-            });
+                InternalAddresses = new List<HdAddress>()            });
 
             var walletFeePolicy = new Mock<IWalletFeePolicy>();
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));

@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var transaction = new TransactionData()
             {
-                SpendingDetails = new SpendingDetails() { },
+                SpendingDetails = new SpendingDetails(),
                 Amount = new Money(15),
                 BlockHeight = 15
             };
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var transaction = new TransactionData()
             {
-                SpendingDetails = new SpendingDetails() { },
+                SpendingDetails = new SpendingDetails(),
                 Amount = new Money(15),
                 BlockHeight = 15
             };
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var transaction = new TransactionData()
             {
-                SpendingDetails = new SpendingDetails() { },
+                SpendingDetails = new SpendingDetails(),
                 Amount = new Money(15),
             };
 
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var transaction = new TransactionData()
             {
-                SpendingDetails = new SpendingDetails() { },
+                SpendingDetails = new SpendingDetails(),
                 Amount = new Money(15),
             };
 
