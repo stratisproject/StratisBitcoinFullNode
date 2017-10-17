@@ -5,12 +5,12 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Api;
 using Xunit;
 
@@ -107,6 +107,45 @@ namespace Stratis.Bitcoin.IntegrationTests
                     Assert.NotNull(info);
                     Assert.True(info.Enabled);
                     Assert.False(info.Staking);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tests whether the Wallet API method "callbyname" can be called and returns a non-empty JSON formatted result.
+        /// </summary>
+        [Fact]
+        public void CanCallRPCMethodViaRPCsCallByNameAPI()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create())
+            {
+                CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                {
+                    fullNodeBuilder
+                   .UseConsensus()
+                   .UseBlockStore()
+                   .UseMempool()
+                   .AddMining()
+                   .UseWallet()
+                   .UseApi()
+                   .AddRPC();
+                });
+
+                builder.StartAll();
+
+                var fullNode = nodeA.FullNode;
+                var ApiURI = fullNode.Settings.ApiUri;
+
+                using (Node nodeB = nodeA.CreateNodeClient())
+                {
+                    nodeB.VersionHandshake();
+
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                    var response = client.GetStringAsync(ApiURI + "api/rpc/callbyname?methodName=getblockhash&height=0").GetAwaiter().GetResult();
+
+                    Assert.Equal("\"0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206\"", response);
                 }
             }
         }
