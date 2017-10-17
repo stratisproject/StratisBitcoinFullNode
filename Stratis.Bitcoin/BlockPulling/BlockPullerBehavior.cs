@@ -38,12 +38,12 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly ILogger logger;
 
         /// <summary>
-        /// Token that allows cancellation of async tasks. 
+        /// Token that allows cancellation of async tasks.
         /// It is used during component shutdown.
         /// </summary>
         private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
         /// <summary>
-        /// Token that allows cancellation of async tasks. 
+        /// Token that allows cancellation of async tasks.
         /// It is used during component shutdown.
         /// </summary>
         public CancellationTokenSource CancellationTokenSource => this.cancellationToken;
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 // There are two pullers for each peer connection and each is having its own puller behavior.
                 // Both these behaviors get notification from the node when it receives a message,
                 // even if the origin of the message was from the other puller behavior.
-                // Therefore we first make a quick check whether this puller behavior was the one 
+                // Therefore we first make a quick check whether this puller behavior was the one
                 // who should deal with this block.
                 uint256 blockHash = block.Object.Header.GetHash();
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// If there are any more blocks the node wants to download, this method assigns and starts 
+        /// If there are any more blocks the node wants to download, this method assigns and starts
         /// a new download task for a specific peer node that this behavior represents.
         /// </summary>
         internal void AssignPendingVector()

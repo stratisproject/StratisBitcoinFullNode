@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(blocks, nameof(blocks));
 
             // dbreeze is faster if sort ascending by key in memory before insert
-            // however we need to find how byte arrays are sorted in dbreeze this link can help 
+            // however we need to find how byte arrays are sorted in dbreeze this link can help
             // https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
 
             Task res = this.session.Execute(() =>

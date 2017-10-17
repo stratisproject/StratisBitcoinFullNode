@@ -60,7 +60,7 @@
             this.Store = new List<BlockPair>();
         }
 
-        /// <summary>The number of blocks pushed to repository. This gets reset when the next 
+        /// <summary>The number of blocks pushed to repository. This gets reset when the next
         /// set of blocks are asked from the puller</summary>
         public int BlocksPushedCount { get; set; }
 

@@ -16,8 +16,8 @@ namespace Stratis.Bitcoin.Cli
         {
             if (NodeSettings.PrintHelp(args, Network.Main))
             {
-                // TODO: add more outputs 
-                // Proposal: use reflection to find all settings classes and print out help. 
+                // TODO: add more outputs
+                // Proposal: use reflection to find all settings classes and print out help.
                 RpcSettings.PrintHelp(Network.Main);
                 return;
             }

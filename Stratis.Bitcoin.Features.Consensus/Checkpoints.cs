@@ -57,13 +57,13 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <summary>
-    /// Checkpoints is a mechanism on how to avoid validation of historic blocks for which there 
+    /// Checkpoints is a mechanism on how to avoid validation of historic blocks for which there
     /// already is a consensus on the network. This allows speeding up IBD, especially on POS networks.
     /// </summary>
     /// <remarks>
     /// From https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L66 :
     /// What makes a good checkpoint block? It is surrounded by blocks with reasonable timestamps
-    //  (no blocks before with a timestamp after, none after with timestamp before). It also contains 
+    //  (no blocks before with a timestamp after, none after with timestamp before). It also contains
     //  no strange transactions.
     /// </remarks>
     public class Checkpoints : ICheckpoints

@@ -20,14 +20,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private const int TimeEpsilonMs = 50;
 
         /// <summary>
-        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/> 
+        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
         /// properly calculates adjusted time offset using small sample set.
         /// </summary>
         [Fact]
         public void AddTimeData_WithSmallSampleSet_CalculatedCorrectly()
         {
             // Samples to be inserted to the state.
-            // Columns meanings: isInbound, isUsed, expectedTimeOffsetLessThanMs, timeOffsetSample, peerAddress 
+            // Columns meanings: isInbound, isUsed, expectedTimeOffsetLessThanMs, timeOffsetSample, peerAddress
             var samples = new List<object[]>
             {
                 // First group of samples does not affect adjusted time, so difference should be ~0 ms.
@@ -75,29 +75,29 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         }
 
         /// <summary>
-        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/> 
+        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
         /// turns on the user warnings and then switches off the time sync feature on defined threshold levels.
         /// </summary>
         [Fact]
         public void AddTimeData_WithSmallSampleSet_TurnsWarningOnAndSwitchesSyncOff()
         {
             // Samples to be inserted to the state.
-            // Columns meanings: isInbound, isUsed, isWarningOn, isSyncOff, timeOffsetSample, peerAddress 
+            // Columns meanings: isInbound, isUsed, isWarningOn, isSyncOff, timeOffsetSample, peerAddress
             var samples = new List<object[]>
             {
                 // First group of samples does not affect adjusted time, so difference should be ~0 ms.
                 new object[] { false, true,  false, false, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 1),      IPAddress.Parse("1.2.3.41"), },
                 new object[] { false, true,  false, false, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 2),      IPAddress.Parse("1.2.3.42"), },
                 new object[] { false, true,  false, false, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 3),      IPAddress.Parse("1.2.3.43"), },
-                                                                                                                                                                       
-                // The next sample turns on the warning.                                                                                                               
+
+                // The next sample turns on the warning.
                 new object[] { false, true,  true,  false, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 4),      IPAddress.Parse("1.2.3.44"), },
-                                                                                                                                                                       
-                // It can't be turned off.                                                                                                                             
+
+                // It can't be turned off.
                 new object[] { false, true,  true,  false, TimeSpan.FromSeconds(3),                                                                IPAddress.Parse("1.2.3.45"), },
                 new object[] { false, true,  true,  false, TimeSpan.FromSeconds(4),                                                                IPAddress.Parse("1.2.3.46"), },
-                                                                                                                                                                        
-                // Add more samples.                                                                                                                                    
+
+                // Add more samples.
                 new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 10),                 IPAddress.Parse("1.2.3.47"), },
                 new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 11),                 IPAddress.Parse("1.2.3.48"), },
                 new object[] { false, true,  true,  false, TimeSpan.FromSeconds(-TimeSyncBehaviorState.MaxTimeOffsetSeconds - 12),                 IPAddress.Parse("1.2.3.49"), },
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         }
 
         /// <summary>
-        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/> 
+        /// Checks that <see cref="TimeSyncBehaviorState.AddTimeData(IPAddress, TimeSpan, bool)"/>
         /// forgets old samples if it has reached predefined limits.
         /// </summary>
         [Fact]

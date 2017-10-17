@@ -24,7 +24,7 @@ using Stratis.Bitcoin.Broadcasting;
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
     public class WalletControllerTest : LogsTestBase
-    {        
+    {
         [Fact]
         public void GenerateMnemonicWithoutParametersCreatesMnemonicWithDefaults()
         {
@@ -923,7 +923,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void GetHistoryWithValidModelWithFeeBelowZeroSetsFeeToZero()
         {
             var walletName = "myWallet";
-            
+
             HdAddress changeAddress = WalletTestsHelpers.CreateAddress(changeAddress: true);
             HdAddress address = WalletTestsHelpers.CreateAddress();
             HdAddress destinationAddress = WalletTestsHelpers.CreateAddress();
@@ -1053,7 +1053,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 WalletName = walletName
             });
-            
+
 
             JsonResult viewResult = Assert.IsType<JsonResult>(result);
             var model = viewResult.Value as WalletHistoryModel;
@@ -1063,7 +1063,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Single(model.TransactionsHistory);
 
             TransactionItemModel resultingTransactionModel = model.TransactionsHistory[0];
-            
+
             Assert.Equal(TransactionItemType.Send, resultingTransactionModel.Type);
             Assert.Equal(new uint256(15), resultingTransactionModel.Id);
             Assert.Equal(10, resultingTransactionModel.ConfirmedInBlock);
@@ -1125,7 +1125,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             TransactionData changeTransaction2 = WalletTestsHelpers.CreateTransaction(new uint256(4), new Money(200000), 2);
             changeAddress2.Transactions.Add(changeTransaction2);
 
-            // create transaction with spending details on change address 
+            // create transaction with spending details on change address
             PaymentDetails paymentDetails2 = WalletTestsHelpers.CreatePaymentDetails(new Money(50000), destinationAddress2);
             SpendingDetails spendingDetails2 = WalletTestsHelpers.CreateSpendingDetails(changeTransaction2, paymentDetails2);
             TransactionData transaction2 = WalletTestsHelpers.CreateTransaction(new uint256(3), new Money(275000), 2, spendingDetails2);
@@ -1186,7 +1186,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(paymentDetails.Amount, resultingPayment.Amount);
 
             resultingTransactionModel = model.TransactionsHistory[2];
-            
+
             Assert.Equal(TransactionItemType.Send, resultingTransactionModel.Type);
             Assert.Null(resultingTransactionModel.ToAddress);
             Assert.Equal(spendingDetails2.TransactionId, resultingTransactionModel.Id);
@@ -1576,9 +1576,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(m => m.GetWalletsFiles())
                 .Throws(new Exception("something happened."));
-            
+
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, dataFolder, new Mock<IBroadcasterManager>().Object);
-            
+
             IActionResult result = controller.ListWalletsFiles();
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);

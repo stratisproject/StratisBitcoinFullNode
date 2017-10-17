@@ -116,13 +116,13 @@ namespace Stratis.Bitcoin.Features.Miner
             public Key Key { get; set; }
         }
 
-        // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
+        // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code
         public const int DefaultBlockMinTxFee = 1000;
 
-        // Default for -blockmaxsize, which controls the maximum size of block the mining code will create 
+        // Default for -blockmaxsize, which controls the maximum size of block the mining code will create
         public const int DefaultBlockMaxSize = 750000;
 
-        // Default for -blockmaxweight, which controls the range of block weights the mining code will create 
+        // Default for -blockmaxweight, which controls the range of block weights the mining code will create
         public const int DefaultBlockMaxWeight = 3000000;
 
         /** The maximum allowed size for a serialized block, in bytes (network rule) */
@@ -130,14 +130,14 @@ namespace Stratis.Bitcoin.Features.Miner
         /** The maximum size for mined blocks */
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
-        /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO 
+        /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO
         /// to prevent halting chain; <c>false</c> to disable coinstake splitting.</summary>
         /// <remarks>TODO: It should be configurable option, not constant. See https://github.com/stratisproject/StratisBitcoinFullNode/issues/550 </remarks>
         public const bool CoinstakeSplitEnabled = true;
 
         /// <summary>
-        /// If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if 
-        /// the number of non-empty UTXOs in the wallet is lower than the required coin age for staking plus 1, 
+        /// If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if
+        /// the number of non-empty UTXOs in the wallet is lower than the required coin age for staking plus 1,
         /// multiplied by this value. See <see cref="GetSplitStake(int)"/>.</summary>
         public const int CoinstakeSplitLimitMultiplier = 3;
 
@@ -193,14 +193,14 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Timestamp of the last attempt to search for POS solution.
         /// <para>
         /// It is used to prevent searching for solutions that were already proved wrong in the past.
-        /// If there is no new block since last time we searched for the solution, it does not make 
+        /// If there is no new block since last time we searched for the solution, it does not make
         /// sense to try timestamps earlier than this value.
         /// </para>
         /// </summary>
         private long lastCoinStakeSearchTime;
 
         /// <summary>
-        /// Hash of the block headers of the block that was at the tip of the chain during our last 
+        /// Hash of the block headers of the block that was at the tip of the chain during our last
         /// search for POS solution.
         /// <para>
         /// It is used to prevent searching for solutions that were already proved wrong in the past.
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.minerSleep = 500; // GetArg("-minersleep", 500);
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
-            this.reserveBalance = 0; // TOOD:settings.ReserveBalance 
+            this.reserveBalance = 0; // TOOD:settings.ReserveBalance
             this.minimumInputValue = 0;
 
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 catch (MinerException me)
                 {
-                    // Miner rexceptions should be ignored. It means that the miner 
+                    // Miner rexceptions should be ignored. It means that the miner
                     // possibly mined a block that was not accepted by peers or is even invalid,
                     // but it should not halted the mining operation.
                     this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 catch (ConsensusErrorException cee)
                 {
-                    // All consensus exceptions should be ignored. It means that the miner 
+                    // All consensus exceptions should be ignored. It means that the miner
                     // run into problems while constructing block or verifying it
                     // but it should not halted the mining operation.
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Attempts to stake new blocks in a loop.
         /// <para>
-        /// Staking is attempted only if the node is fully synchronized 
+        /// Staking is attempted only if the node is fully synchronized
         /// and connected to the network.
         /// </para>
         /// </summary>
@@ -353,7 +353,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 // TODO: What is the purpose of this conditional block?
-                // It seems that if it ends with continue, the next round of the loop will just 
+                // It seems that if it ends with continue, the next round of the loop will just
                 // not execute the above while loop and it won't even enter this block again,
                 // so it seems like no operation.
                 // In StratisX there is the wait uncommented. Then it makes sense. Why we have it commented?
@@ -451,7 +451,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// One a new block is staked, this method is used to verify that it 
+        /// One a new block is staked, this method is used to verify that it
         /// is a valid block and if so, it will add it to the chain.
         /// </summary>
         /// <param name="context">Information about the new block.</param>
@@ -593,7 +593,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Creates a coinstake transaction with kernel that satisfies POS staking target. 
+        /// Creates a coinstake transaction with kernel that satisfies POS staking target.
         /// </summary>
         /// <param name="stakeTxes">List of coins that are available in the wallet for staking.</param>
         /// <param name="chainTip">Tip of the best chain.</param>
@@ -635,7 +635,7 @@ namespace Stratis.Bitcoin.Features.Miner
             long ourWeight = setCoins.Sum(s => s.TxOut.Value);
             long expectedTime = StakeValidator.TargetSpacingSeconds * this.networkWeight / ourWeight;
             decimal ourPercent = this.networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)this.networkWeight : 0;
-            
+
             this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(this.networkWeight), TimeSpan.FromSeconds(expectedTime));
 
             this.rpcGetStakingInfoModel.Staking = true;
@@ -733,7 +733,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogTrace("(-)[SIGN_FAILED]:false");
                 return false;
-            } 
+            }
 
             // Limit size.
             int serializedSize = coinstakeContext.CoinstakeTx.GetSerializedSize(ProtocolVersion.ALT_PROTOCOL_VERSION, SerializationType.Network);
@@ -928,7 +928,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Selects coins that are suitable for staking. 
+        /// Selects coins that are suitable for staking.
         /// <para>
         /// Such a coin has to be confirmed with enough confirmations - i.e. has suitable depth,
         /// and it also has to be mature and meet requirement for minimal value.
@@ -1023,7 +1023,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="block">Block at which to calculate the difficulty.</param>
         /// <returns>Staking difficulty.</returns>
         /// <remarks>
-        /// The actual idea behind the calculation is a mystery. It was simply ported from 
+        /// The actual idea behind the calculation is a mystery. It was simply ported from
         /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16 .
         /// </remarks>
         public double GetDifficulty(ChainedBlock block)
@@ -1071,13 +1071,13 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <returns>Estimated number of coins that are used by all stakers on the network.</returns>
         /// <remarks>
-        /// The idea behind estimating the network staking weight is very similar to estimating 
-        /// the total hash power of PoW network. The difficulty retarget algorithm tries to make 
+        /// The idea behind estimating the network staking weight is very similar to estimating
+        /// the total hash power of PoW network. The difficulty retarget algorithm tries to make
         /// sure of certain distribution of the blocks over a period of time. Base on real distribution
-        /// and using the actual difficulty targets, one is able to compute how much stake was 
+        /// and using the actual difficulty targets, one is able to compute how much stake was
         /// presented on the network to generate each block.
         /// <para>
-        /// The method was ported from 
+        /// The method was ported from
         /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L74 .
         /// </para>
         /// </remarks>

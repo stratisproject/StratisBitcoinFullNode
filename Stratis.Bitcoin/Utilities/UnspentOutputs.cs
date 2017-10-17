@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Utilities
 			if(outputIndex >= this._Outputs.Length)
 				return null;
 			return this._Outputs[outputIndex];
-		}		
+		}
 
 		public bool Spend(uint outputIndex)
 		{

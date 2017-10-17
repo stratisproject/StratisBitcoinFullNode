@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     public sealed class BlockStoreLoopStepDownloadBlocksTest : BlockStoreLoopStepBaseTest
     {
         /// <summary>
-        /// This test executes DownloadBlockStep the <see cref="BlockStoreInnerStepFindBlocks"/> and 
+        /// This test executes DownloadBlockStep the <see cref="BlockStoreInnerStepFindBlocks"/> and
         /// <see cref="BlockStoreInnerStepReadBlocks"/> inner steps via <see cref="DownloadBlockStep"/>
         /// </summary>
         [Fact]

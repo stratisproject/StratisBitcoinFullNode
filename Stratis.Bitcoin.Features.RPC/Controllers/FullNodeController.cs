@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
-            
+
             if(unspentOutputs == null)
             {
                 return null;

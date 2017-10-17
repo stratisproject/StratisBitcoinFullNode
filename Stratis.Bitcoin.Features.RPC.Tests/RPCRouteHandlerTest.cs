@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 				}
 			}, 1);
             this.actionDescriptor.Setup(a => a.ActionDescriptors)
-				.Returns(desciptors);			
+				.Returns(desciptors);
 
 			var task = this.handler.RouteAsync(context);
 			task.Wait();

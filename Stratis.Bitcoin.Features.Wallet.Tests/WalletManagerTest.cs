@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public void Dispose()
         {
-            // This is needed here because of the fact that the Stratis network, when initialized, sets the 
+            // This is needed here because of the fact that the Stratis network, when initialized, sets the
             // Transaction.TimeStamp value to 'true' (look in Network.InitStratisTest() and Network.InitStratisMain()) in order
             // for proof-of-stake to work.
             // Now, there are a few tests where we're trying to parse Bitcoin transaction, but since the TimeStamp is set the true,

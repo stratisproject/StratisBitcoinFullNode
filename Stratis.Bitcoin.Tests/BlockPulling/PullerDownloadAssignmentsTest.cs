@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
     public class PullerDownloadAssignmentsTest
     {
         /// <summary>
-        /// Previous implementation of block puller's strategy could lead to a situation in which the node's 
+        /// Previous implementation of block puller's strategy could lead to a situation in which the node's
         /// peers were asked for blocks then did not have. This is undesirable.
         /// <para>
         /// We simulate the following scenario in this test:
@@ -27,8 +27,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         /// </para>
         /// <para>
         /// We call AskBlocks on the block puller with requests to download blocks 6 to 40
-        /// and we check that the node A is not assigned any work and that the node B is not 
-        /// assigned any work for blocks 21 to 40, and C is not assigned any work for blocks 
+        /// and we check that the node A is not assigned any work and that the node B is not
+        /// assigned any work for blocks 21 to 40, and C is not assigned any work for blocks
         /// 31 to 40.
         /// </para>
         /// </summary>
@@ -178,11 +178,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         }
 
         /// <summary>
-        /// Assignment of tasks to nodes should prevent the very next blocks that the consumer will need 
+        /// Assignment of tasks to nodes should prevent the very next blocks that the consumer will need
         /// in the nearest future to be assigned to nodes that are considered of poor quality.
         /// This test checks that this protection works as intended.
         /// <para>
-        /// We will request assignment of blocks A to B, and check that the lower half of these requests 
+        /// We will request assignment of blocks A to B, and check that the lower half of these requests
         /// (i.e. blocks from A to median(A..B) are not assigned to nodes having quality score worse than median.
         /// </para>
         /// </summary>

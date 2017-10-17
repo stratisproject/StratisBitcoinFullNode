@@ -110,17 +110,17 @@ namespace Stratis.Bitcoin.Base
 			}
 
 			// == GetHeadersPayload ==
-			// represents our height from the peer's point of view 
-			// it is sent from the peer on first connect, in response to  Inv(Block) 
+			// represents our height from the peer's point of view
+			// it is sent from the peer on first connect, in response to  Inv(Block)
 			// or in response to HeaderPayload until an empty array is returned
-			// this payload notifies peers of our current best validated height 
+			// this payload notifies peers of our current best validated height
 			// use the ChainState.HighestValidatedPoW property (not Chain.Tip)
 			// if the peer is behind/equal to our best height an empty array is sent back
 
 			// Ignoring getheaders from peers because node is in initial block download
 			var getheaders = message.Message.Payload as GetHeadersPayload;
 			if (getheaders != null && this.CanRespondToGetHeaders &&
-				(!this.SharedState.IsInitialBlockDownload || 
+				(!this.SharedState.IsInitialBlockDownload ||
 				this.AttachedNode.Behavior<ConnectionManagerBehavior>().Whitelisted)) // if not in IBD whitelisted won't be checked
 			{
 				HeadersPayload headers = new HeadersPayload();
@@ -151,11 +151,11 @@ namespace Stratis.Bitcoin.Base
 
 			// == HeadersPayload ==
 			// represents the peers height from our point view
-			// this updates the pending tip parameter which is the 
+			// this updates the pending tip parameter which is the
 			// peers current best validated height
-			// if the peer's height is higher Chain.Tip is updated to have 
+			// if the peer's height is higher Chain.Tip is updated to have
 			// the most PoW header
-			// is sent in response to GetHeadersPayload or is solicited by the 
+			// is sent in response to GetHeadersPayload or is solicited by the
 			// peer when a new block is validated (and not in IBD)
 
 			var newheaders = message.Message.Payload as HeadersPayload;

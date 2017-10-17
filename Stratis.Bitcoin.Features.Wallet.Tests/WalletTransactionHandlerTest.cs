@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain.Object, walletManager, new Mock<IWalletFeePolicy>().Object, Network.Main);
 
                 walletManager.Wallets.Add(wallet);
-                
+
 
                 var walletReference = new WalletAccountReference
                 {
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
                 .Returns(new FeeRate(20000));
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(), dataFolder, 
+            var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(), dataFolder,
                 walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain, walletManager, walletFeePolicy.Object, Network.Main);
 
@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // create a trx with 3 outputs 50 + 50 + 49 = 149 BTC
             var context = new TransactionBuildContext(walletReference,
-                new[] 
+                new[]
                 {
                     new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys1.PubKey.ScriptPubKey },
                     new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys2.PubKey.ScriptPubKey },
@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 MinConfirmations = 0,
                 FeeType = FeeType.Low
             };
-            
+
             var fundTransaction = walletTransactionHandler.BuildTransaction(context);
             Assert.Equal(3, fundTransaction.Inputs.Count); // 3 inputs
             Assert.Equal(4, fundTransaction.Outputs.Count); // 3 outputs with change
@@ -285,8 +285,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             foreach (var input in fundTransactionClone.Inputs) // all original inputs are still in the trx
                 Assert.Contains(fundTransaction.Inputs, a => a.PrevOut == input.PrevOut);
 
-            Assert.Equal(3, fundTransaction.Inputs.Count); // we expect 3 inputs 
-            Assert.Equal(4, fundTransaction.Outputs.Count); // we expect 4 outputs 
+            Assert.Equal(3, fundTransaction.Inputs.Count); // we expect 3 inputs
+            Assert.Equal(4, fundTransaction.Outputs.Count); // we expect 4 outputs
             Assert.Equal(new Money(150, MoneyUnit.BTC) - fundContext.TransactionFee, fundTransaction.TotalOut);
 
             Assert.Contains(fundTransaction.Outputs, a => a.ScriptPubKey == destinationKeys1.PubKey.ScriptPubKey);
@@ -309,9 +309,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.Add(new AccountRoot
             {
                 Accounts = new List<HdAccount> { WalletTestsHelpers.CreateAccount("account 1") }
-            });            
+            });
             walletManager.Wallets.Add(wallet);
-            
+
             Exception ex = Assert.Throws<WalletException>(() => walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference("wallet1", "noaccount"), FeeType.Low, true));
             Assert.NotNull(ex);
             Assert.NotNull(ex.Message);
@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 Accounts = new List<HdAccount> { account }
             });
-            
+
             walletManager.Wallets.Add(wallet);
 
             (Money max, Money fee) result = walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference("wallet1", "account 1"), FeeType.Low, true);
@@ -459,7 +459,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(Money.Zero, result.max);
             Assert.Equal(Money.Zero, result.fee);
         }
-        
+
         public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {

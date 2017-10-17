@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Connection
 
     public class ConnectionManager : IConnectionManager
     {
-		// The maximum number of entries in an 'inv' protocol message 
+		// The maximum number of entries in an 'inv' protocol message
 		public const int MAX_INV_SZ = 50000;
 
 		private readonly NodesCollection connectedNodes = new NodesCollection();
