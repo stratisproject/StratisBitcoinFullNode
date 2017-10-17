@@ -502,17 +502,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 // Get transactions contained in the wallet.
-                List<FlatHistory> items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
+                IEnumerable<FlatHistory> items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t }));
 
-                this.logger.LogTrace("(-):*.{0}={1}", nameof(items.Count), items.Count);
+                this.logger.LogTrace("(-):*.Count={1}", items.Count());
                 return items;
             }
         }
 
         private IEnumerable<HdAddress> GetHistoryInternal(Wallet wallet)
         {
-            List<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType).ToList();
-            if (accounts.Count == 0)
+            IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
+            if (accounts.Count() == 0)
             {
                 yield break;
             }
@@ -612,30 +612,30 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public List<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(confirmations), confirmations);
 
             Wallet wallet = this.GetWalletByName(walletName);
-            List<UnspentOutputReference> res;
+            IEnumerable<UnspentOutputReference> res;
             lock (this.lockObject)
             {
                 res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations);
             }
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
+            this.logger.LogTrace("(-):*.Count()={1}", res.Count());
             return res;
         }
 
         /// <inheritdoc />
-        public List<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0)
         {
             Guard.NotNull(walletAccountReference, nameof(walletAccountReference));
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletAccountReference), walletAccountReference, nameof(confirmations), confirmations);
 
             Wallet wallet = this.GetWalletByName(walletAccountReference.WalletName);
-            List<UnspentOutputReference> res;
+            IEnumerable<UnspentOutputReference> res;
             lock (this.lockObject)
             {
                 HdAccount account = wallet.GetAccountByCoinType(walletAccountReference.AccountName, this.coinType);
@@ -650,7 +650,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 res = account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
             }
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
+            this.logger.LogTrace("(-):*.Count={1}", res.Count());
             return res;
         }
 

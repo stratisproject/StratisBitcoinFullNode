@@ -1296,9 +1296,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Wallets.Add(wallet2);
             walletManager.Wallets.Add(wallet3);
 
-            var result = walletManager.GetSpendableTransactionsInWallet("myWallet3", confirmations: 1);
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet3", confirmations: 1).ToArray();
 
-            Assert.Equal(4, result.Count);
+            Assert.Equal(4, result.Count());
             var info = result[0];
             Assert.Equal("Second expectation", info.Account.Name);
             Assert.Equal(wallet3.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Address, info.Address.Address);
@@ -1333,9 +1333,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             walletManager.Wallets.Add(wallet);
 
-            var result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1);
+            var result = walletManager.GetSpendableTransactionsInWallet("myWallet1", confirmations: 1).ToArray();
 
-            Assert.Equal(4, result.Count);
+            Assert.Equal(4, result.Count());
             var info = result[0];
             Assert.Equal("First expectation", info.Account.Name);
             Assert.Equal(wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Address, info.Address.Address);
