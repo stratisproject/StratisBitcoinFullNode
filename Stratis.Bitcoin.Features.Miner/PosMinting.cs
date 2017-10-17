@@ -306,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 catch (Exception e)
                 {
                     this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                    throw e;
+                    throw;
                 }
 
                 this.logger.LogTrace("(-)");
