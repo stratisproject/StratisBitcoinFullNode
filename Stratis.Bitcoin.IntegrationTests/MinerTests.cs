@@ -128,23 +128,31 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new PowConsensusOptions();
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), new LoggerFactory());
-                this.consensus = new ConsensusLoop(new PowConsensusValidator(this.network, new Checkpoints(this.network), new LoggerFactory()), this.chain, this.cachedCoinView, new LookaheadBlockPuller(this.chain, new ConnectionManager(this.network, new NodeConnectionParameters(), new NodeSettings(), new LoggerFactory(), new NodeLifetime()), new LoggerFactory()), new NodeDeployments(this.network), new LoggerFactory());
-                this.consensus.Initialize();
+
+                LoggerFactory loggerFactory = new LoggerFactory();
+                IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network), loggerFactory);
+                var nodeSettings = NodeSettings.Default();
+
+                ConnectionManager connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
+                LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
+
+                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network), loggerFactory, new ChainState(new FullNode()), connectionManager, new Signals.Signals());
+                this.consensus.Start();
 
                 this.entry.Fee(11);
                 this.entry.Height(11);
                 var date1 = new MemoryPoolTests.DateTimeProviderSet();
-                date1.time = DateTimeProvider.Default.GetTime();
-                date1.timeutc = DateTimeProvider.Default.GetUtcNow();
+                date1.time = dateTimeProvider.GetTime();
+                date1.timeutc = dateTimeProvider.GetUtcNow();
                 this.date = date1;
-                var nodeSettings = NodeSettings.Default();
-                this.mempool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings); ;
+                this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings); ;
                 this.mempoolLock = new MempoolAsyncLock();
 
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                this.consensus.ValidateBlock(new ContextInformation(new BlockItem { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -174,7 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     pblock.Header.Nonce = this.blockinfo[i].nonce;
 
                     this.chain.SetTip(pblock.Header);
-                    this.consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                    this.consensus.ValidateBlock(new ContextInformation(new BlockItem { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                     blocks.Add(pblock);
                 }
 

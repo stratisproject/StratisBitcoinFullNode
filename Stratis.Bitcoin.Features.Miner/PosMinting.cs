@@ -438,7 +438,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
                     var blockResult = new BlockItem { Block = block };
-                    await this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
+                    await this.CheckStake(block, chainTip).ConfigureAwait(false);
 
                     blockTemplate = null;
                 }
@@ -454,13 +454,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// One a new block is staked, this method is used to verify that it 
         /// is a valid block and if so, it will add it to the chain.
         /// </summary>
-        /// <param name="context">Information about the new block.</param>
+        /// <param name="block">The new block.</param>
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
-        private async Task CheckStake(ContextInformation context, ChainedBlock chainTip)
+        private async Task CheckStake(Block block, ChainedBlock chainTip)
         {
             this.logger.LogTrace("({0}:'{1}/{2}')", nameof(chainTip), chainTip.HashBlock, chainTip.Height);
-
-            Block block = context.BlockItem.Block;
 
             if (!BlockStake.IsProofOfStake(block))
             {
@@ -476,40 +474,26 @@ namespace Stratis.Bitcoin.Features.Miner
                 ConsensusErrors.PrevStakeNull.Throw();
             }
 
-            context.SetStake();
-            this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, chainTip, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
-
             // Validate the block.
-            this.consensusLoop.ValidateBlock(context);
+            BlockItem blockItem = new BlockItem { Block = block };
+            this.consensusLoop.AcceptBlock(blockItem);
 
-            if (context.BlockItem.ChainedBlock == null)
+            if (blockItem.ChainedBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return;
             }
 
-            if (context.BlockItem.Error != null)
+            if (blockItem.Error != null)
             {
                 this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
                 return;
             }
 
-            if (context.BlockItem.ChainedBlock.ChainWork <= chainTip.ChainWork)
-            {
-                this.logger.LogTrace("Chain tip's work is '{0}', newly minted block's work is only '{1}'.", context.BlockItem.ChainedBlock.ChainWork, chainTip.ChainWork);
-                this.logger.LogTrace("(-)[LOW_CHAIN_WORK]");
-                return;
-            }
-
-            // Similar logic to what's in the full node code.
-            this.chain.SetTip(context.BlockItem.ChainedBlock);
-            this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
-            this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-            await this.blockRepository.PutAsync(context.BlockItem.ChainedBlock.HashBlock, new List<Block> { block }).ConfigureAwait(false);
-            this.signals.SignalBlock(block);
+            await this.blockRepository.PutAsync(blockItem.ChainedBlock.HashBlock, new List<Block> { block }).ConfigureAwait(false);
 
             this.logger.LogInformation("==================================================================");
-            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", context.BlockItem.ChainedBlock.HashBlock, context.BlockItem.ChainedBlock.Height);
+            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockItem.ChainedBlock.HashBlock, blockItem.ChainedBlock.Height);
             this.logger.LogInformation("==================================================================");
         }
 

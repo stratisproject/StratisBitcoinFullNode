@@ -1,17 +1,17 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -137,6 +137,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.asyncLoop?.Dispose();
         }
 
+        /// <summary>
+        /// A puller method that will continuously loop and ask for the next block  in the chain from peers.
+        /// The block will then be passed to the consensus validation. 
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token that will stop the loop.</param>
+        /// <returns>The task the loop will be running under.</returns>
         private Task PullerLoop(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -173,6 +179,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// A method that will accept a new block to the node.
+        /// The block will be validated and the <see cref="CoinView"/> db will be updated.
+        /// If its a new block that extends the chain then the <see cref="ConcurrentChain.Tip"/> will be set.
+        /// </summary>
+        /// <param name="item">The block to validate</param>
         public void AcceptBlock(BlockItem item)
         {
             this.logger.LogTrace("()");
@@ -226,9 +238,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.Puller.RequestOptions(TransactionOptions.Witness);
                     return;
                 }
-
+                
                 // Set the chain back to ConsensusLoop.Tip.
                 this.Chain.SetTip(this.Tip);
+                this.logger.LogTrace("Chain reverted back to block '{0}' ", this.Tip);
 
                 // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
                 this.logger.LogError("Marking block as invalid.");
@@ -236,9 +249,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             else
             {
+                this.logger.LogTrace("Block accepted '{0}' ", this.Tip);
+
                 this.chainState.HighestValidatedPoW = this.Tip;
                 if (this.Chain.Tip.HashBlock == item.ChainedBlock?.HashBlock)
                     this.FlushAsync().GetAwaiter().GetResult();
+
+                if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
+                {
+                    // This is a newly mined block.
+                    this.Puller.SetLocation(this.Tip);
+                    this.Chain.SetTip(this.Tip);
+
+                    this.logger.LogTrace("Block extends consensus tip to ");
+                }
 
                 this.signals.SignalBlock(item.Block);
             }
@@ -246,6 +270,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-):*.{0}='{1}/{2}',*.{3}='{4}'", nameof(item.ChainedBlock), item.ChainedBlock?.HashBlock, item.ChainedBlock?.Height, nameof(item.Error), item.Error?.Message);
         }
 
+        /// <summary>
+        /// Validate a block using the consensus rules.
+        /// </summary>
+        /// <param name="context">A context that contains all information required to validate the block.</param>
         public void ValidateBlock(ContextInformation context)
         {
             this.logger.LogTrace("()");

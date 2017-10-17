@@ -155,24 +155,27 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (newChain.ChainWork <= chainTip.ChainWork)
                         continue;
 
-                    this.chain.SetTip(newChain);
-
                     var blockResult = new BlockItem { Block = pblock };
-                    this.consensusLoop.ValidateBlock(new ContextInformation(blockResult, this.network.Consensus));
-                    this.consensusLoop.Puller.SetLocation(newChain);
+
+                    this.consensusLoop.AcceptBlock(blockResult);
 
                     if (blockResult.ChainedBlock == null)
-                        break; // Reorg.
+                    {
+                        this.logger.LogTrace("(-)[REORG-2]");
+                        return blocks;
+                    }
 
                     if (blockResult.Error != null)
+                    {
+                        if (blockResult.Error == ConsensusErrors.InvalidPrevTip)
+                            continue;
+
+                        this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
                         return blocks;
+                    }
 
                     // Push the block to disk, so it is available when peers ask for it.
                     this.blockRepository.PutAsync(blockResult.ChainedBlock.HashBlock, new List<Block> { pblock }).GetAwaiter().GetResult();
-
-                    // Similar logic to what's in the full node code.
-                    this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-                    this.signals.SignalBlock(pblock);
 
                     this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);
 

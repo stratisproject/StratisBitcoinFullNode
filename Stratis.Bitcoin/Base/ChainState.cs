@@ -1,15 +1,14 @@
 using NBitcoin;
+using Stratis.Bitcoin.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
-using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Base
 {
     public class ChainState
     {
-        private readonly FullNode fullNode;
+        private readonly IFullNode fullNode;
 
         private long lastUpdate;
         private bool lastResult;
@@ -20,7 +19,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above HighestValidatedPoW.</summary>
         public ChainedBlock HighestValidatedPoW { get; set; }
 
-        public ChainState(FullNode fullNode)
+        public ChainState(IFullNode fullNode)
         {
             this.fullNode = fullNode;
         }
@@ -55,10 +54,11 @@ namespace Stratis.Bitcoin.Base
         {
             get
             {
-                if (this.lastUpdate < this.fullNode.DateTimeProvider.GetUtcNow().Ticks)
+                IDateTimeProvider dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true);
+                if (this.lastUpdate < dateTimeProvider?.GetUtcNow().Ticks)
                 {
                     // Sample every minute.
-                    this.lastUpdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
+                    this.lastUpdate = dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
 
                     // If consensus is not present IBD has no meaning. Set to false to match legacy code.                    
                     var IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
