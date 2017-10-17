@@ -366,11 +366,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                if (blockTemplate == null)
-                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
-
-                Block block = blockTemplate.Block;
-
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
 
@@ -401,6 +396,11 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
+
+                if (blockTemplate == null)
+                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+
+                Block block = blockTemplate.Block;
 
                 this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
