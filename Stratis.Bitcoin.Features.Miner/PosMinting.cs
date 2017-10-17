@@ -356,6 +356,9 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.lastCoinStakeSearchPrevBlockHash = chainTip.HashBlock;
                     this.lastCoinStakeSearchTime = chainTip.Header.Time;
                     this.logger.LogTrace("New block '{0}' detected, setting last search time to its timestamp {1}.", chainTip, chainTip.Header.Time);
+
+                    // Reset the template as the chain advanced.
+                    blockTemplate = null;
                 }
 
                 uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
