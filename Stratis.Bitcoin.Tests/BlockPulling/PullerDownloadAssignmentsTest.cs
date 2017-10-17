@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 }
 
                 // Check that all tasks that could be assigned were assigned.
-                int taskShouldAssign = requiredBlockHeights.Where(r => r <= maxPeerChainLength).Count();
+                int taskShouldAssign = requiredBlockHeights.Count(r => r <= maxPeerChainLength);
                 Assert.Equal(taskShouldAssign, tasksAssigned);
             }
         }

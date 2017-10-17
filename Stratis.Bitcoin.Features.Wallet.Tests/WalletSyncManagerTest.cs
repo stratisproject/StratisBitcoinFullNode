@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
                 {
-                    return result.LeftForkBlocks.Union(result.RightForkBlocks).Where(b => b.GetHash() == hashblock).Single();
+                    return result.LeftForkBlocks.Union(result.RightForkBlocks).Single(b => b.GetHash() == hashblock);
                 });
 
             // set 4th block of the old chain as tip. 2 ahead of the fork thus not being on the right chain.
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
                 {
-                    return blocks.Where(b => b.GetHash() == hashblock).Single();
+                    return blocks.Single(b => b.GetHash() == hashblock);
                 });
 
             // set 2nd block as tip
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     }
                     else
                     {
-                        return blocks.Where(b => b.GetHash() == hashblock).Single();
+                        return blocks.Single(b => b.GetHash() == hashblock);
                     }
                 });
 
