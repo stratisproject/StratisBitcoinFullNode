@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Act
             string[] result = textFileConfiguration.GetAll("test");
             // Assert
-            Assert.Equal(0, result.Length);
+            Assert.Empty(result);
         }
 
         /// <summary>

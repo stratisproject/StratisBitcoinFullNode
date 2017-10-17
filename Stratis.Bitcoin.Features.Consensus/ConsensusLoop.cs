@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 result.Error = ex.ConsensusError;
             }
 
-            this.logger.LogTrace("(-):*.{0}='{1}/{2}',*.{3}='{4}'", nameof(result.ChainedBlock), result.ChainedBlock?.HashBlock, result.ChainedBlock?.Height, nameof(result.Error), result.Error?.Message);
+            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(result.ChainedBlock), result.ChainedBlock, nameof(result.Error), result.Error?.Message);
             return result;
         }
 

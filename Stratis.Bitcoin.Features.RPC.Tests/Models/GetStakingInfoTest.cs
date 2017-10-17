@@ -72,8 +72,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
             GetStakingInfoModel model = Newtonsoft.Json.JsonConvert.DeserializeObject<GetStakingInfoModel>(json);
 
             Assert.Equal(expectedSortedPropertyNames, actualSortedPropertyNames);
-            Assert.Equal(true, model.Enabled);
-            Assert.Equal(true, model.Staking);
+            Assert.True(model.Enabled);
+            Assert.True(model.Staking);
             Assert.Equal("Block rejected by peers", model.Errors);
             Assert.Equal(151, model.CurrentBlockSize);
             Assert.Equal(1, model.CurrentBlockTx);

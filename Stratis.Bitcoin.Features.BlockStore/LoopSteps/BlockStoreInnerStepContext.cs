@@ -96,10 +96,12 @@
         /// <summary> Sets the next chained block to process.</summary>
         internal void GetNextBlock()
         {
+            this.logger.LogTrace("()");
+
             this.InputChainedBlock = this.NextChainedBlock;
             this.NextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(this.InputChainedBlock.Height + 1);
 
-            this.logger.LogTrace("{0}='{1}/{2}'", nameof(this.NextChainedBlock), this.NextChainedBlock?.HashBlock, this.NextChainedBlock?.Height);
+            this.logger.LogTrace("(-):{0}='{1}'", nameof(this.NextChainedBlock), this.NextChainedBlock);
         }
 
         /// <summary> Removes BlockStoreInnerStepFindBlocks from the routine.</summary>

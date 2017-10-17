@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void StartFeaturesThrowExceptionsCollectedInAggregateException()
         {
-            Assert.Throws(typeof(AggregateException), () =>
+            Assert.Throws<AggregateException>(() =>
             {
                 this.feature.Setup(f => f.Start())
                     .Throws(new ArgumentNullException());
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void StopFeaturesThrowExceptionsCollectedInAggregateException()
         {
-            Assert.Throws(typeof(AggregateException), () =>
+            Assert.Throws<AggregateException>(() =>
             {
                 this.feature.Setup(f => f.Stop())
                     .Throws(new ArgumentNullException());

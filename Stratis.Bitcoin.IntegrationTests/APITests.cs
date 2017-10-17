@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     var response = client.GetStringAsync(ApiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
 
-                    Assert.True(response.StartsWith("{\"walletFilePath\":null,\"network\":\"RegTest\",\"creationTime\":\""));
+                    Assert.StartsWith("{\"walletFilePath\":null,\"network\":\"RegTest\",\"creationTime\":\"", response);
                 }
             }
         }
@@ -108,8 +108,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                         GetStakingInfoModel info = controller.GetStakingInfo();
 
                         Assert.NotNull(info);
-                        Assert.Equal(true, info.Enabled);
-                        Assert.Equal(false, info.Staking);
+                        Assert.True(info.Enabled);
+                        Assert.False(info.Staking);
                     }
                 }
             }

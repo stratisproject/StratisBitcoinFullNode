@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Equal(NodeSettings.Default().DataDir, this.fullNodeBuilder.NodeSettings.DataDir);
             Assert.NotNull(this.fullNodeBuilder.Network);
             Assert.Equal(NodeSettings.Default().GetNetwork(),this.fullNodeBuilder.Network);
-            Assert.Equal(1, this.serviceCollectionDelegates.Count);
+            Assert.Single(this.serviceCollectionDelegates);
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Equal(nodeSettings.DataDir, this.fullNodeBuilder.NodeSettings.DataDir);
             Assert.NotNull(this.fullNodeBuilder.Network);
             Assert.Equal(Network.Main, this.fullNodeBuilder.Network);
-            Assert.Equal(1, this.serviceCollectionDelegates.Count);
+            Assert.Single(this.serviceCollectionDelegates);
         }
 
         [Fact]
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Equal(nodeSettings.DataDir, this.fullNodeBuilder.NodeSettings.DataDir);
             Assert.NotNull(this.fullNodeBuilder.Network);
             Assert.Equal(Network.TestNet, this.fullNodeBuilder.Network);
-            Assert.Equal(1, this.serviceCollectionDelegates.Count);
+            Assert.Single(this.serviceCollectionDelegates);
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Equal(nodeSettings.DataDir, this.fullNodeBuilder.NodeSettings.DataDir);
             Assert.NotNull(this.fullNodeBuilder.Network);
             Assert.Equal(Network.RegTest, this.fullNodeBuilder.Network);
-            Assert.Equal(1, this.serviceCollectionDelegates.Count);
+            Assert.Single(this.serviceCollectionDelegates);
         }
     }
 }
