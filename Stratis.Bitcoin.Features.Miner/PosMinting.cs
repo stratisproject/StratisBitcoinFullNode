@@ -332,7 +332,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("()");
 
             BlockTemplate blockTemplate = null;
-            bool tryToSync = true;
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
@@ -348,31 +347,8 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
-                    tryToSync = true;
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-                }
-
-                // TODO: What is the purpose of this conditional block?
-                // It seems that if it ends with continue, the next round of the loop will just 
-                // not execute the above while loop and it won't even enter this block again,
-                // so it seems like no operation.
-                // In StratisX there is the wait uncommented. Then it makes sense. Why we have it commented?
-                if (tryToSync)
-                {
-                    tryToSync = false;
-                    // TODO: This condition to have at least 3 peers is disqualifying us on testnet quite often.
-                    // Yet the 60 secs delay does not prevent us to mine because tryToSync will be false next time we are here
-                    // unless we are completely disconnected. So this is weird logic.
-                    bool fewPeers = this.connection.ConnectedNodes.Count() < 3;
-                    bool lastBlockTooOld = chainTip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
-                    if ((fewPeers && !this.network.IsTest()) || lastBlockTooOld)
-                    {
-                        if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
-                        if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
-
-                        await Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-                        continue;
-                    }
+                    continue;
                 }
 
                 if (this.lastCoinStakeSearchPrevBlockHash != chainTip.HashBlock)
