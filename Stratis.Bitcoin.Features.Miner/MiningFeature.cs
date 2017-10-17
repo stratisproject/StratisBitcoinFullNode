@@ -51,12 +51,12 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="posMinting">POS staker.</param>
         /// <param name="walletManager">Manager providing operations on wallets.</param>
         public MiningFeature(
-            Network network, 
+            Network network,
             MinerSettings minerSettings,
             NodeSettings nodeSettings,
-            ILoggerFactory loggerFactory, 
-            PowMining powMining, 
-            PosMinting posMinting = null, 
+            ILoggerFactory loggerFactory,
+            PowMining powMining,
+            PosMinting posMinting = null,
             WalletManager walletManager = null)
         {
             this.network = network;
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
 
-                this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret()
+                this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret
                 {
                     WalletPassword = walletPassword,
                     WalletName = walletName
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         ///<inheritdoc />
         public override void ValidateDependencies(IFullNodeServiceProvider services)
-        {            
+        {
             if (services.ServiceProvider.GetService<PosMinting>() != null)
             {
                 services.Features.EnsureFeature<WalletFeature>();
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     });
             });
-            
+
             return fullNodeBuilder;
         }
 

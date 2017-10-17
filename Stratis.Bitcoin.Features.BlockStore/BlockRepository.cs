@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly Network network;
 
         protected static readonly byte[] BlockHashKey = new byte[0];
-        protected HashSet<string> tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
+        protected HashSet<string> tableNames = new HashSet<string> { "Block", "Transaction", "Common" };
         protected static readonly byte[] TxIndexKey = new byte[1];
 
         public uint256 BlockHash { get; private set; }
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(blocks, nameof(blocks));
 
             // dbreeze is faster if sort ascending by key in memory before insert
-            // however we need to find how byte arrays are sorted in dbreeze this link can help 
+            // however we need to find how byte arrays are sorted in dbreeze this link can help
             // https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
 
             Task res = this.session.Execute(() =>

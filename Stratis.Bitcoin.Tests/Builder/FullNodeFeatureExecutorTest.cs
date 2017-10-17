@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         /// This is used in the missing dependency test.
         /// </summary>
         private FullNodeFeatureExecutor MissingFeatureExecutor
-        { 
+        {
             get
             {
                 Mock<IFullNodeFeature> feature = new Mock<IFullNodeFeature>();
@@ -30,17 +30,17 @@ namespace Stratis.Bitcoin.Tests.Builder
 
                 var fullNodeServiceProvider = new Mock<IFullNodeServiceProvider>();
                 fullNodeServiceProvider.Setup(f => f.Features)
-                    .Returns(new List<IFullNodeFeature>() { feature.Object });
+                    .Returns(new List<IFullNodeFeature> { feature.Object });
                 var fullNode = new Mock<IFullNode>();
                 fullNode.Setup(f => f.Services)
-                    .Returns(fullNodeServiceProvider.Object);             
+                    .Returns(fullNodeServiceProvider.Object);
 
                 return new FullNodeFeatureExecutor(fullNode.Object, new LoggerFactory());
             }
         }
 
         public FullNodeFeatureExecutorTest()
-        {			
+        {
             this.feature = new Mock<IFullNodeFeature>();
             this.feature2 = new Mock<IFullNodeFeature>();
 
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 .Returns(this.fullNodeServiceProvider.Object);
 
             this.fullNodeServiceProvider.Setup(f => f.Features)
-                .Returns(new List<IFullNodeFeature>() { this.feature.Object, this.feature2.Object });
+                .Returns(new List<IFullNodeFeature> { this.feature.Object, this.feature2.Object });
 
             this.executor = new FullNodeFeatureExecutor(this.fullNode.Object, new LoggerFactory());
         }

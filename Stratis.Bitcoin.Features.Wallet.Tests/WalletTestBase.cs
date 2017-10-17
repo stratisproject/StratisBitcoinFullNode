@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     {
         public static AccountRoot CreateAccountRoot(CoinType coinType)
         {
-            return new AccountRoot()
+            return new AccountRoot
             {
                 Accounts = new List<HdAccount>(),
                 CoinType = coinType
@@ -19,16 +19,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public static AccountRoot CreateAccountRootWithHdAccountHavingAddresses(string accountName, CoinType coinType)
         {
-            return new AccountRoot()
+            return new AccountRoot
             {
-                Accounts = new List<HdAccount>() {
-                    new HdAccount() {
+                Accounts = new List<HdAccount> {
+                    new HdAccount {
                         Name = accountName,
-                        InternalAddresses = new List<HdAddress>()
+                        InternalAddresses = new List<HdAddress>
                         {
                             CreateAddress(false),
                         },
-                        ExternalAddresses = new List<HdAddress>()
+                        ExternalAddresses = new List<HdAddress>
                         {
                             CreateAddress(false),
                         }
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public static HdAccount CreateAccount(string name)
         {
-            return new HdAccount()
+            return new HdAccount
             {
                 Name = name,
                 HdPath = "1/2/3/4/5",
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 creationTime = new DateTimeOffset(new DateTime(2017, 6, 23, 1, 2, 3));
             }
 
-            return new TransactionData()
+            return new TransactionData
             {
                 Amount = amount,
                 Id = id,
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 hdPath = "1/2/3/4/1";
             }
             var key = new Key();
-            var address = new HdAddress()
+            var address = new HdAddress
             {
                 Address = key.PubKey.GetAddress(Network.Main).ToString(),
                 HdPath = hdPath,

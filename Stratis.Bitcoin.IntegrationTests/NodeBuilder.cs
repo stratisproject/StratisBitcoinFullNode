@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         public FullNode FullNode;
-        
+
         private static Network InitStratisRegTest()
         {
             // TODO: move this to Networks
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             pchMessageStart[1] = 0xf2;
             pchMessageStart[2] = 0xc0;
             pchMessageStart[3] = 0xef;
-            var magic = BitConverter.ToUInt32(pchMessageStart, 0); //0x5223570; 
+            var magic = BitConverter.ToUInt32(pchMessageStart, 0); //0x5223570;
 
             var genesis = Network.StratisMain.GetGenesis().Clone();
             genesis.Header.Time = 1494909211;
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         public void Start(string dataDir)
-        {			
+        {
 
             var args = NodeSettings.FromArguments( new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
 
@@ -596,7 +596,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 if(this._Runner is StratisBitcoinPosRunner)
                    return ((StratisBitcoinPosRunner)this._Runner).FullNode;
-               
+
                 return ((StratisBitcoinPowRunner) this._Runner).FullNode;
             }
         }
@@ -936,11 +936,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                     uint256 blockHash = block.GetHash();
                     var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
                     var oldTip = fullNode.Chain.SetTip(newChain);
-                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock() { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
 
                     //try
                     //{
-                        
+
 
                     //	var blockResult = new BlockResult { Block = block };
                     //	fullNode.ConsensusLoop.AcceptBlock(blockResult);

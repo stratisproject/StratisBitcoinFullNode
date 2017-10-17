@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Loads the storage related settings from the application configuration.
         /// </summary>
-        /// <param name="config">Application configuration.</param>
+        /// <param name="nodeSettings">Application configuration.</param>
         public virtual void Load(NodeSettings nodeSettings)
         {
             var config = nodeSettings.ConfigReader;
