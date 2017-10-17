@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 try
                 {
-                    await this.GenerateBlocks(walletSecret).ConfigureAwait(false);
+                    await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </para>
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
-        public async Task GenerateBlocks(WalletSecret walletSecret)
+        public async Task GenerateBlocksAsync(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
 
@@ -434,17 +434,17 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
-                if (await this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
+                if (await this.StakeAndSignBlockAsync(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
                     var blockResult = new BlockResult { Block = block };
-                    await this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
+                    await this.CheckStakeAsync(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
 
                     blockTemplate = null;
                 }
                 else
                 {
-                    this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlock), this.minerSleep);
+                    this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlockAsync), this.minerSleep);
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
             }
@@ -456,7 +456,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="context">Information about the new block.</param>
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
-        private async Task CheckStake(ContextInformation context, ChainedBlock chainTip)
+        private async Task CheckStakeAsync(ContextInformation context, ChainedBlock chainTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainTip), chainTip);
 
@@ -523,7 +523,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeTimestamp">Maximal timestamp of the coinstake transaction. The actual timestamp can be lower, but not higher.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        private async Task<bool> StakeAndSignBlock(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
+        private async Task<bool> StakeAndSignBlockAsync(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip, nameof(fees), fees, nameof(coinstakeTimestamp), coinstakeTimestamp);
 
@@ -554,7 +554,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = searchTime;
             this.logger.LogTrace("Search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
 
-            if (await this.CreateCoinstake(stakeTxes, block, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
+            if (await this.CreateCoinstakeAsync(stakeTxes, block, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
             {
                 uint minTimestamp = chainTip.Header.Time + 1;
                 if (coinstakeContext.CoinstakeTx.Time >= minTimestamp)
@@ -602,7 +602,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeContext">Information about coinstake transaction and its private key that is to be filled when the kernel is found.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        public async Task<bool> CreateCoinstake(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
+        public async Task<bool> CreateCoinstakeAsync(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip, nameof(searchInterval), searchInterval, nameof(fees), fees);
 
