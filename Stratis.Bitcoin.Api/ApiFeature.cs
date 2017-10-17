@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Api.Models;
 using Stratis.Bitcoin.Builder;
@@ -20,10 +21,14 @@ namespace Stratis.Bitcoin.Api
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        /// <summary>How long we are willing to wait for the API to stop.</summary>
+        private const int APIStopTimeoutSeconds = 10;
+
         private readonly IFullNodeBuilder fullNodeBuilder;
         private readonly FullNode fullNode;
         private readonly ApiFeatureOptions apiFeatureOptions;
         private readonly ILogger logger;
+        private IWebHost webHost = null;
 
         public ApiFeature(
             IFullNodeBuilder fullNodeBuilder,
@@ -41,8 +46,8 @@ namespace Stratis.Bitcoin.Api
 
         public override void Start()
         {
-            this.logger.LogInformation($"Api starting on url {this.fullNode.Settings.ApiUri}");
-            Program.Initialize(this.fullNodeBuilder.Services, this.fullNode);
+            this.logger.LogInformation("API starting on URL '{0}'.", this.fullNode.Settings.ApiUri);
+            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode);
 
             this.TryStartKeepaliveMonitor();
         }
@@ -51,6 +56,14 @@ namespace Stratis.Bitcoin.Api
         {
             if (this.asyncLoop != null)
                 this.asyncLoop.Dispose();
+
+            // Make sure we are releasing the listening ip address / port.
+            if (this.webHost != null)
+            {
+                this.logger.LogInformation("API stopping on URL '{0}'.", this.fullNode.Settings.ApiUri);
+                this.webHost.StopAsync(TimeSpan.FromSeconds(APIStopTimeoutSeconds)).Wait();
+                this.webHost = null;
+            }        
         }
 
         /// <summary>
