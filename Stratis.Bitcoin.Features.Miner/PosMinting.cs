@@ -335,20 +335,19 @@ namespace Stratis.Bitcoin.Features.Miner
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                ChainedBlock chainTip = this.chain.Tip;
-                if (chainTip != this.consensusLoop.Tip)
-                {
-                    this.logger.LogTrace("(-)[SYNC_OR_REORG]");
-                    return;
-                }
-
                 while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
                 {
                     if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
                     else this.logger.LogTrace("Waiting for IBD to complete...");
 
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-                    continue;
+                }
+
+                ChainedBlock chainTip = this.chain.Tip;
+                if (chainTip != this.consensusLoop.Tip)
+                {
+                    this.logger.LogTrace("(-)[SYNC_OR_REORG]");
+                    return;
                 }
 
                 if (this.lastCoinStakeSearchPrevBlockHash != chainTip.HashBlock)
