@@ -54,12 +54,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
         private IAsyncLoop asyncLoop;
 
-        /// <summary>Contain information about the life time of the node, its used on startup and shuitdown.</summary>
+        /// <summary>Contain information about the life time of the node, its used on startup and shutdown.</summary>
         private readonly INodeLifetime nodeLifetime;
 
+        /// <summary>Holds state related to the block chain.</summary>
         private readonly ChainState chainState;
+
+        /// <summary>Connection manager of all the currently connected peers.</summary>
         private readonly IConnectionManager connectionManager;
+
+        /// <summary>A signaler that used to signal messages between features.</summary>
         private readonly Signals.Signals signals;
+
+        /// <summary>A lock object that synchronizes access to the consensus rules.</summary>
+        private readonly object consensusLock;
 
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
@@ -86,6 +94,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(signals, nameof(signals));
+
+            this.consensusLock = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -189,82 +199,88 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            if (item.Block == null)
+            lock (this.consensusLock)
             {
-                this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
-                ChainedBlock lastTip = this.Tip;
-
-                var token = this.nodeLifetime.ApplicationStopping;
-
-                while (true)
+                if (item.Block == null)
                 {
-                    token.ThrowIfCancellationRequested();
+                    this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
+                    ChainedBlock lastTip = this.Tip;
 
-                    uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
-                    ChainedBlock rewinded = this.Chain.GetBlock(hash);
-                    if (rewinded == null)
+                    var token = this.nodeLifetime.ApplicationStopping;
+
+                    while (true)
                     {
-                        this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.", hash);
-                        continue;
+                        token.ThrowIfCancellationRequested();
+
+                        uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                        ChainedBlock rewinded = this.Chain.GetBlock(hash);
+                        if (rewinded == null)
+                        {
+                            this.logger.LogTrace(
+                                "Rewound to '{0}', which is still not a part of the current best chain, rewinding further.",
+                                hash);
+                            continue;
+                        }
+
+                        this.Tip = rewinded;
+                        this.Puller.SetLocation(rewinded);
+                        this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
+                        return;
+                    }
+                }
+
+                try
+                {
+                    this.ValidateBlock(new ContextInformation(item, this.Validator.ConsensusParams));
+                }
+                catch (ConsensusErrorException ex)
+                {
+                    item.Error = ex.ConsensusError;
+                }
+
+                if (item.Error != null)
+                {
+                    this.logger.LogError("Block rejected: {0}", item.Error.Message);
+
+                    // Pull again.
+                    this.Puller.SetLocation(this.Tip);
+
+                    if (item.Error == ConsensusErrors.BadWitnessNonceSize)
+                    {
+                        this.logger.LogInformation(
+                            "You probably need witness information, activating witness requirement for peers.");
+                        this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
+                        this.Puller.RequestOptions(TransactionOptions.Witness);
+                        return;
                     }
 
-                    this.Tip = rewinded;
-                    this.Puller.SetLocation(rewinded);
-                    this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
-                    return;
-                }
-            }
-
-            try
-            {
-                this.ValidateBlock(new ContextInformation(item, this.Validator.ConsensusParams));
-            }
-            catch (ConsensusErrorException ex)
-            {
-                item.Error = ex.ConsensusError;
-            }
-
-            if (item.Error != null)
-            {
-                this.logger.LogError("Block rejected: {0}", item.Error.Message);
-
-                // Pull again.
-                this.Puller.SetLocation(this.Tip);
-
-                if (item.Error == ConsensusErrors.BadWitnessNonceSize)
-                {
-                    this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
-                    this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-                    this.Puller.RequestOptions(TransactionOptions.Witness);
-                    return;
-                }
-                
-                // Set the chain back to ConsensusLoop.Tip.
-                this.Chain.SetTip(this.Tip);
-                this.logger.LogTrace("Chain reverted back to block '{0}' ", this.Tip);
-
-                // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                this.logger.LogError("Marking block as invalid.");
-                this.chainState.MarkBlockInvalid(item.Block?.GetHash());
-            }
-            else
-            {
-                this.logger.LogTrace("Block accepted '{0}' ", this.Tip);
-
-                this.chainState.HighestValidatedPoW = this.Tip;
-                if (this.Chain.Tip.HashBlock == item.ChainedBlock?.HashBlock)
-                    this.FlushAsync().GetAwaiter().GetResult();
-
-                if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
-                {
-                    // This is a newly mined block.
-                    this.Puller.SetLocation(this.Tip);
+                    // Set the chain back to ConsensusLoop.Tip.
                     this.Chain.SetTip(this.Tip);
+                    this.logger.LogTrace("Chain reverted back to block '{0}' ", this.Tip);
 
-                    this.logger.LogTrace("Block extends consensus tip to ");
+                    // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
+                    this.logger.LogError("Marking block as invalid.");
+                    this.chainState.MarkBlockInvalid(item.Block?.GetHash());
                 }
+                else
+                {
+                    this.logger.LogTrace("Block accepted '{0}' ", this.Tip);
 
-                this.signals.SignalBlock(item.Block);
+                    this.chainState.HighestValidatedPoW = this.Tip;
+                    if (this.Chain.Tip.HashBlock == item.ChainedBlock?.HashBlock)
+                        this.FlushAsync().GetAwaiter().GetResult();
+
+                    if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
+                    {
+                        // This is a newly mined block.
+                        this.Puller.SetLocation(this.Tip);
+                        this.Chain.SetTip(this.Tip);
+
+                        this.logger.LogTrace("Block extends consensus tip to ");
+                    }
+
+                    this.signals.SignalBlock(item.Block);
+                }
             }
 
             this.logger.LogTrace("(-):*.{0}='{1}/{2}',*.{3}='{4}'", nameof(item.ChainedBlock), item.ChainedBlock?.HashBlock, item.ChainedBlock?.Height, nameof(item.Error), item.Error?.Message);
