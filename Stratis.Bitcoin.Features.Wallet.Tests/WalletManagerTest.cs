@@ -2733,7 +2733,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 new DataFolder(new NodeSettings() { DataDir = "TestData/WalletManagerTest" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
 
-            var result = walletManager.GetWalletsNames().OrderBy(w => w).ToArray();
+            var result = walletManager.GetWalletsNames().OrderBy(w => w);
 
             Assert.Empty(result);
         }

@@ -512,10 +512,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         private IEnumerable<HdAddress> GetHistoryInternal(Wallet wallet)
         {
             IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
-            if (accounts.Count() == 0)
-            {
-                yield break;
-            }
 
             foreach (HdAddress address in accounts.SelectMany(a => a.ExternalAddresses).Concat(accounts.SelectMany(a => a.InternalAddresses)))
             {
@@ -1165,9 +1161,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public string[] GetWalletsNames()
+        public IEnumerable<string> GetWalletsNames()
         {
-            return this.Wallets.Select(w => w.Name).ToArray();
+            return this.Wallets.Select(w => w.Name);
         }
 
         /// <inheritdoc />
