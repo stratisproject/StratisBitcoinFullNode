@@ -46,30 +46,30 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             requiredBlockHeights = requiredBlockHeights.OrderBy(a => rnd.Next()).ToList();
 
             // Initialize node's peers.
-            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>()
+            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>
             {
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "A",
                     QualityScore = 100,
                     ChainHeight = 4,
                     TasksAssignedCount = 0
                 },
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "B",
                     QualityScore = 100,
                     ChainHeight = 20,
                     TasksAssignedCount = 0
                 },
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "C",
                     QualityScore = 50,
                     ChainHeight = 30,
                     TasksAssignedCount = 0
                 },
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "D",
                     QualityScore = 150,
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
                 List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>();
                 for (int peerIndex = 0; peerIndex < availablePeerCount; peerIndex++)
                 {
-                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation()
+                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation
                     {
                         ChainHeight = rnd.Next(bestChainBlockCount) + 1,
                         PeerId = peerIndex,
@@ -203,37 +203,37 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
             // Initialize node's peers. We have 5 peers with median quality 100.
             // Thus peers A and E should not receive any work from the lower half of the requests.
-            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>()
+            List<PullerDownloadAssignments.PeerInformation> availablePeersInformation = new List<PullerDownloadAssignments.PeerInformation>
             {
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "A",
                     QualityScore = 20,
                     ChainHeight = bestBlockCount,
                     TasksAssignedCount = rnd.Next(1000)
                 },
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "B",
                     QualityScore = 100,
                     ChainHeight = bestBlockCount,
                     TasksAssignedCount = rnd.Next(1000)
                 },
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "C",
                     QualityScore = 150,
                     ChainHeight = bestBlockCount,
                     TasksAssignedCount = rnd.Next(1000)
                 },
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "D",
                     QualityScore = 120,
                     ChainHeight = bestBlockCount,
                     TasksAssignedCount = rnd.Next(1000)
                 },
-                new PullerDownloadAssignments.PeerInformation()
+                new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = "E",
                     QualityScore = 90,
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             List<double> qualities = new List<double>();
             for (int i = 0; i < peerCount; i++)
             {
-                var peerInfo = new PullerDownloadAssignments.PeerInformation()
+                var peerInfo = new PullerDownloadAssignments.PeerInformation
                 {
                     PeerId = i.ToString(),
                     QualityScore = rnd.NextDouble() * (QualityScore.MaxScore - QualityScore.MinScore) + QualityScore.MinScore,

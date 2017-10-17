@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Connection
 
 		private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters, NodeServices requiredServices)
 		{
-			return new NodesGroup(this.Network, cloneParameters, new NodeRequirement()
+			return new NodesGroup(this.Network, cloneParameters, new NodeRequirement
 			{
 				MinVersion = this.NodeSettings.ProtocolVersion,
 				RequiredServices = requiredServices,

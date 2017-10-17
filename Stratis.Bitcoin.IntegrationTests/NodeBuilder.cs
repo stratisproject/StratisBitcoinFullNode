@@ -936,7 +936,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     uint256 blockHash = block.GetHash();
                     var newChain = new ChainedBlock(block.Header, blockHash, fullNode.Chain.Tip);
                     var oldTip = fullNode.Chain.SetTip(newChain);
-                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock() { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
 
                     //try
                     //{

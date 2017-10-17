@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void SetStake()
         {
-            this.Stake = new ContextStakeInformation()
+            this.Stake = new ContextStakeInformation
             {
                 BlockStake = new BlockStake(this.BlockResult.Block)
             };

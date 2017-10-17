@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
         public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory, Dictionary<string, IndexExpression> requiredIndexes = null):
             base(network, new IndexSession("DBreeze IndexRepository", folder), loggerFactory)
         {
-            this.tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
+            this.tableNames = new HashSet<string> { "Block", "Transaction", "Common" };
             this.Indexes = new Dictionary<string, Index>();
             this.requiredIndexes = requiredIndexes;
  

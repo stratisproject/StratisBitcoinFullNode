@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     foreach (Transaction tx in block.Object.Transactions)
                         tx.CacheHashes();
 
-                    DownloadedBlock downloadedBlock = new DownloadedBlock()
+                    DownloadedBlock downloadedBlock = new DownloadedBlock
                     {
                         Block = block.Object,
                         Length = (int)message.Length,

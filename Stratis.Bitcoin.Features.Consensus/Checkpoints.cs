@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class Checkpoints : ICheckpoints
     {
         /// <summary>List of selected checkpoints for STRAT mainnet.</summary>
-        private static Dictionary<int, CheckpointInfo> stratisMainnetCheckpoints = new Dictionary<int, CheckpointInfo>()
+        private static Dictionary<int, CheckpointInfo> stratisMainnetCheckpoints = new Dictionary<int, CheckpointInfo>
         {
             { 0, new CheckpointInfo(new uint256("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
             { 2, new CheckpointInfo(new uint256("0xbca5936f638181e74a5f1e9999c95b0ce77da48c2688399e72bcc53a00c61eff"), new uint256("0x7d61c139a471821caa6b7635a4636e90afcfe5e195040aecbc1ad7d24924db1e")) }, // Premine
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         };
 
         /// <summary>List of selected checkpoints for STRAT testnet.</summary>
-        private static Dictionary<int, CheckpointInfo> stratisTestnetCheckpoints = new Dictionary<int, CheckpointInfo>()
+        private static Dictionary<int, CheckpointInfo> stratisTestnetCheckpoints = new Dictionary<int, CheckpointInfo>
         {
             { 0, new CheckpointInfo(new uint256("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
             { 2, new CheckpointInfo(new uint256("0x56959b1c8498631fb0ca5fe7bd83319dccdc6ac003dccb3171f39f553ecfa2f2"), new uint256("0x13f4c27ca813aefe2d9018077f8efeb3766796b9144fcc4cd51803bf4376ab02")) },
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>List of selected checkpoints for Bitcoin mainnet.</summary>
         /// <remarks>Partially obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L146 .</remarks>
-        private static Dictionary<int, CheckpointInfo> bitcoinMainnetCheckpoints = new Dictionary<int, CheckpointInfo>()
+        private static Dictionary<int, CheckpointInfo> bitcoinMainnetCheckpoints = new Dictionary<int, CheckpointInfo>
         {
             { 11111, new CheckpointInfo(new uint256("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")) },
             { 33333, new CheckpointInfo(new uint256("0x000000002dd5588a74784eaa7ab0507a18ad16a236e7b1ce69f00d7ddfb5d0a6")) },
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>List of selected checkpoints for Bitcoin testnet.</summary>
         /// <remarks>Obtained from https://github.com/bitcoin/bitcoin/blob/b1973d6181eacfaaf45effb67e0c449ea3a436b8/src/chainparams.cpp#L246 .</remarks>
-        private static Dictionary<int, CheckpointInfo> bitcoinTestnetCheckpoints = new Dictionary<int, CheckpointInfo>()
+        private static Dictionary<int, CheckpointInfo> bitcoinTestnetCheckpoints = new Dictionary<int, CheckpointInfo>
         {
             { 546, new CheckpointInfo(new uint256("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")) },
         };

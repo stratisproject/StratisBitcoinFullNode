@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
 
-                this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret()
+                this.posLoop = this.posMinting.Mine(new PosMinting.WalletSecret
                 {
                     WalletPassword = walletPassword,
                     WalletName = walletName

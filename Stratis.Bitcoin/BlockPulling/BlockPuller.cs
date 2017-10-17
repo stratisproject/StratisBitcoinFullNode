@@ -338,7 +338,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 int? peerHeight = behavior.ChainHeadersBehavior?.PendingTip?.Height;
                 if (peerHeight >= minHeight)
                 {
-                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation()
+                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation
                     {
                         QualityScore = behavior.QualityScore,
                         PeerId = behavior,

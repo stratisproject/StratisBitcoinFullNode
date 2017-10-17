@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly Network network;
 
         protected static readonly byte[] BlockHashKey = new byte[0];
-        protected HashSet<string> tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
+        protected HashSet<string> tableNames = new HashSet<string> { "Block", "Transaction", "Common" };
         protected static readonly byte[] TxIndexKey = new byte[1];
 
         public uint256 BlockHash { get; private set; }

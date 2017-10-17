@@ -552,7 +552,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.DeleteAsync(new uint256(45), new List<uint256>() { block.GetHash() });
+                var task = repository.DeleteAsync(new uint256(45), new List<uint256> { block.GetHash() });
                 task.Wait();
             }
 

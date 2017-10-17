@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsConfirmedWithTransactionHavingBlockHeightReturnsTrue()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 BlockHeight = 15
             };
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsConfirmedWithTransactionHavingNoBlockHeightReturnsFalse()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 BlockHeight = null
             };
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsSpendableWithTransactionHavingSpendingDetailsReturnsFalse()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = new SpendingDetails()
             };
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsSpendableWithTransactionHavingNoSpendingDetailsReturnsTrue()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = null
             };
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountNotConfirmedOnlyGivenNoSpendingDetailsReturnsTransactionAmount()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = null,
                 Amount = new Money(15)
@@ -70,9 +70,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountNotConfirmedOnlyGivenBeingConfirmedAndSpentConfirmedReturnsZero()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
-                SpendingDetails = new SpendingDetails() { BlockHeight = 16 },
+                SpendingDetails = new SpendingDetails { BlockHeight = 16 },
                 Amount = new Money(15),
                 BlockHeight = 15
             };
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountNotConfirmedOnlyGivenBeingConfirmedAndSpentUnconfirmedReturnsZero()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = new SpendingDetails(),
                 Amount = new Money(15),
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountConfirmedOnlyGivenBeingConfirmedAndSpentUnconfirmedReturnsZero()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = new SpendingDetails(),
                 Amount = new Money(15),
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountNotConfirmedOnlyGivenBeingUnConfirmedAndSpentUnconfirmedReturnsZero()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = new SpendingDetails(),
                 Amount = new Money(15),
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountConfirmedOnlyGivenNoSpendingDetailsReturnsZero()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = null
             };
@@ -142,9 +142,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountConfirmedOnlyGivenBeingConfirmedAndSpentConfirmedReturnsZero()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
-                SpendingDetails = new SpendingDetails() { BlockHeight = 16 },
+                SpendingDetails = new SpendingDetails { BlockHeight = 16 },
                 Amount = new Money(15),
                 BlockHeight = 15
             };
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountConfirmedOnlyGivenBeingUnConfirmedAndSpentUnconfirmedReturnsZero()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = new SpendingDetails(),
                 Amount = new Money(15),
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void SpendableAmountConfirmedOnlyGivenSpendableAndConfirmedReturnsAmount()
         {
-            var transaction = new TransactionData()
+            var transaction = new TransactionData
             {
                 SpendingDetails = null,
                 Amount = new Money(15),

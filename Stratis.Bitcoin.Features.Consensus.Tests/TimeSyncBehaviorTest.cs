@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             // Samples to be inserted to the state.
             // Columns meanings: isInbound, isUsed, expectedTimeOffsetLessThanMs, timeOffsetSample, peerAddress 
-            var samples = new List<object[]>()
+            var samples = new List<object[]>
             {
                 // First group of samples does not affect adjusted time, so difference should be ~0 ms.
                 new object[] { false, true,     0, TimeSpan.FromSeconds(3.56),      IPAddress.Parse("1.2.3.4"),                                 },
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             // Samples to be inserted to the state.
             // Columns meanings: isInbound, isUsed, isWarningOn, isSyncOff, timeOffsetSample, peerAddress 
-            var samples = new List<object[]>()
+            var samples = new List<object[]>
             {
                 // First group of samples does not affect adjusted time, so difference should be ~0 ms.
                 new object[] { false, true,  false, false, TimeSpan.FromSeconds(TimeSyncBehaviorState.TimeOffsetWarningThresholdSeconds + 1),      IPAddress.Parse("1.2.3.41"), },

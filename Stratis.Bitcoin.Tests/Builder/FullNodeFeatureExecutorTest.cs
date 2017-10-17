@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Tests.Builder
 
                 var fullNodeServiceProvider = new Mock<IFullNodeServiceProvider>();
                 fullNodeServiceProvider.Setup(f => f.Features)
-                    .Returns(new List<IFullNodeFeature>() { feature.Object });
+                    .Returns(new List<IFullNodeFeature> { feature.Object });
                 var fullNode = new Mock<IFullNode>();
                 fullNode.Setup(f => f.Services)
                     .Returns(fullNodeServiceProvider.Object);             
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 .Returns(this.fullNodeServiceProvider.Object);
 
             this.fullNodeServiceProvider.Setup(f => f.Features)
-                .Returns(new List<IFullNodeFeature>() { this.feature.Object, this.feature2.Object });
+                .Returns(new List<IFullNodeFeature> { this.feature.Object, this.feature2.Object });
 
             this.executor = new FullNodeFeatureExecutor(this.fullNode.Object, new LoggerFactory());
         }

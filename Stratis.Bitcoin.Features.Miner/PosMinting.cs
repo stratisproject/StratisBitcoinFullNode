@@ -391,7 +391,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 if (blockTemplate == null)
-                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions { IsProofOfStake = true }).CreateNewBlock(new Script());
 
                 Block block = blockTemplate.Block;
 
@@ -664,7 +664,7 @@ namespace Stratis.Bitcoin.Features.Miner
             CoinstakeWorkerResult workersResult = new CoinstakeWorkerResult();
             for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
             {
-                CoinstakeWorkerContext cwc = new CoinstakeWorkerContext()
+                CoinstakeWorkerContext cwc = new CoinstakeWorkerContext
                 {
                     Index = workerIndex,
                     Logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[Worker #{workerIndex}] "),

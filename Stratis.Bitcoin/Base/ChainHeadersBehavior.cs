@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Base
 				if (node.State == NodeState.HandShaked && this.CanSync && !this.invalidHeaderReceived)
 				{
 					Interlocked.Increment(ref this._SynchingCount);
-					node.SendMessageAsync(new GetHeadersPayload()
+					node.SendMessageAsync(new GetHeadersPayload
 					{
 						BlockLocators = this.GetPendingTipOrChainTip().GetLocator()
 					});
