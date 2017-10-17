@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Api
         {
         }
 
-        public static void Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode)
+        public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode)
         {
             var host = new WebHostBuilder()
                 .UseKestrel()
@@ -45,6 +45,8 @@ namespace Stratis.Bitcoin.Api
                 .Build();
 
             host.Start();
+
+            return host;
         }
     }
 }
