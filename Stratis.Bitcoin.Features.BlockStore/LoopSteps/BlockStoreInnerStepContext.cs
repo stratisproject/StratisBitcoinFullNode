@@ -52,7 +52,7 @@
             this.CancellationToken = cancellationToken;
             this.DateTimeProvider = dateTimeProvider;
             this.DownloadStack = new Queue<ChainedBlock>();
-            this.InnerSteps = new List<BlockStoreInnerStep>() { new BlockStoreInnerStepFindBlocks(this.loggerFactory), new BlockStoreInnerStepReadBlocks(this.loggerFactory) };
+            this.InnerSteps = new List<BlockStoreInnerStep> { new BlockStoreInnerStepFindBlocks(this.loggerFactory), new BlockStoreInnerStepReadBlocks(this.loggerFactory) };
             this.InsertBlockSize = 0;
             this.LastDownloadStackFlushTime = this.DateTimeProvider.GetUtcNow();
             this.NextChainedBlock = nextChainedBlock;
@@ -60,7 +60,7 @@
             this.Store = new List<BlockPair>();
         }
 
-        /// <summary>The number of blocks pushed to repository. This gets reset when the next 
+        /// <summary>The number of blocks pushed to repository. This gets reset when the next
         /// set of blocks are asked from the puller</summary>
         public int BlocksPushedCount { get; set; }
 

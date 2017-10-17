@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     {
         internal static HdAccount CreateAccount(string name)
         {
-            return new HdAccount()
+            return new HdAccount
             {
                 Name = name,
                 HdPath = "1/2/3/4/5",
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         internal static SpendingDetails CreateSpendingDetails(TransactionData changeTransaction, PaymentDetails paymentDetails)
         {
-            var spendingDetails = new SpendingDetails()
+            var spendingDetails = new SpendingDetails
             {
                 TransactionId = changeTransaction.Id,
                 CreationTime = new DateTimeOffset(new DateTime(2017, 6, 23, 1, 2, 3)),
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         internal static PaymentDetails CreatePaymentDetails(Money amount, HdAddress destinationAddress)
         {
-            return new PaymentDetails()
+            return new PaymentDetails
             {
                 Amount = amount,
                 DestinationAddress = destinationAddress.Address,
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 creationTime = new DateTimeOffset(new DateTime(2017, 6, 23, 1, 2, 3));
             }
 
-            return new TransactionData()
+            return new TransactionData
             {
                 Amount = amount,
                 Id = id,
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 hdPath = "1/2/3/4/1";
             }
             var key = new Key();
-            var address = new HdAddress()
+            var address = new HdAddress
             {
                 Address = key.PubKey.GetAddress(Network.Main).ToString(),
                 HdPath = hdPath,
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         internal static Bitcoin.Features.Wallet.Wallet CreateWallet(string name)
         {
-            return new Bitcoin.Features.Wallet.Wallet()
+            return new Bitcoin.Features.Wallet.Wallet
             {
                 Name = name,
                 AccountsRoot = new List<AccountRoot>(),
@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         internal static HdAddress CreateAddressWithoutTransaction(int index, string addressName)
         {
-            return new HdAddress()
+            return new HdAddress
             {
                 Index = index,
                 Address = addressName,
@@ -232,12 +232,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         internal static HdAddress CreateAddressWithEmptyTransaction(int index, string addressName)
         {
-            return new HdAddress()
+            return new HdAddress
             {
                 Index = index,
                 Address = addressName,
                 ScriptPubKey = new Script(),
-                Transactions = new List<TransactionData>() { new TransactionData() }
+                Transactions = new List<TransactionData> { new TransactionData() }
             };
         }
 
@@ -395,12 +395,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             foreach (int height in blockHeights)
             {
                 var key = new Key();
-                var address = new HdAddress()
+                var address = new HdAddress
                 {
                     Address = key.PubKey.GetAddress(network).ToString(),
                     ScriptPubKey = key.ScriptPubKey,
-                    Transactions = new List<TransactionData>() {
-                        new TransactionData()
+                    Transactions = new List<TransactionData> {
+                        new TransactionData
                         {
                             BlockHeight = height,
                             Amount = new Money(new Random().Next(500000, 1000000)),
@@ -422,12 +422,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             foreach (int height in blockHeights)
             {
                 var key = new Key();
-                var address = new HdAddress()
+                var address = new HdAddress
                 {
                     Address = key.PubKey.GetAddress(network).ToString(),
                     ScriptPubKey = key.ScriptPubKey,
-                    Transactions = new List<TransactionData>() {
-                        new TransactionData()
+                    Transactions = new List<TransactionData> {
+                        new TransactionData
                         {
                             BlockHeight = height,
                             Amount = new Money(new Random().Next(500000, 1000000))
@@ -445,7 +445,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var transaction = chainInfo.block.Transactions[0];
 
-            var addressTransaction = new TransactionData()
+            var addressTransaction = new TransactionData
             {
                 Amount = transaction.TotalOut,
                 BlockHash = chainInfo.blockHash,
@@ -505,7 +505,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
                 chain.SetTip(block.Header);
 
-                var addressTransaction = new TransactionData()
+                var addressTransaction = new TransactionData
                 {
                     Amount = coinbase.TotalOut,
                     BlockHash = block.GetHash(),

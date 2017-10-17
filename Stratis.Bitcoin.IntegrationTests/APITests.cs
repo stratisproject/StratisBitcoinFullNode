@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         WalletManager walletManager = fullNode.NodeService<IWalletManager>() as WalletManager;
 
                         // create the wallet
-                        var model = new StartStakingRequest() { Name = "apitest", Password = "123456" };
+                        var model = new StartStakingRequest { Name = "apitest", Password = "123456" };
                         var mnemonic = walletManager.CreateWallet(model.Password, model.Name);
 
                         var content = new StringContent(model.ToString(), Encoding.UTF8, "application/json");

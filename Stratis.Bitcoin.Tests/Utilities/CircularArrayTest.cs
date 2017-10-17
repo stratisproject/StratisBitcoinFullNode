@@ -114,13 +114,13 @@ namespace Stratis.Bitcoin.Tests.Utilities
             CircularArray<IPHostEntry> carray = new CircularArray<IPHostEntry>(5);
 
             IPHostEntry oldItem;
-            bool replaced = carray.Add(new IPHostEntry() { HostName = "a" }, out oldItem);
+            bool replaced = carray.Add(new IPHostEntry { HostName = "a" }, out oldItem);
             Assert.False(replaced);
 
-            replaced = carray.Add(new IPHostEntry() { HostName = "b" }, out oldItem);
+            replaced = carray.Add(new IPHostEntry { HostName = "b" }, out oldItem);
             Assert.False(replaced);
 
-            replaced = carray.Add(new IPHostEntry() { HostName = "c" }, out oldItem);
+            replaced = carray.Add(new IPHostEntry { HostName = "c" }, out oldItem);
             Assert.False(replaced);
 
             string nameSum = "";
@@ -129,16 +129,16 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Assert.Equal("abc", nameSum);
 
-            replaced = carray.Add(new IPHostEntry() { HostName = "d" }, out oldItem);
+            replaced = carray.Add(new IPHostEntry { HostName = "d" }, out oldItem);
             Assert.False(replaced);
 
-            replaced = carray.Add(new IPHostEntry() { HostName = "e" }, out oldItem);
+            replaced = carray.Add(new IPHostEntry { HostName = "e" }, out oldItem);
             Assert.False(replaced);
 
-            replaced = carray.Add(new IPHostEntry() { HostName = "f" }, out oldItem);
+            replaced = carray.Add(new IPHostEntry { HostName = "f" }, out oldItem);
             Assert.True(replaced);
 
-            replaced = carray.Add(new IPHostEntry() { HostName = "g" }, out oldItem);
+            replaced = carray.Add(new IPHostEntry { HostName = "g" }, out oldItem);
             Assert.True(replaced);
 
             nameSum = "";
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Assert.Equal("cdefg", nameSum);
 
-            replaced = carray.Add(new IPHostEntry() { HostName = "g" }, out oldItem);
+            replaced = carray.Add(new IPHostEntry { HostName = "g" }, out oldItem);
             Assert.True(replaced);
             Assert.Equal("c", oldItem.HostName);
         }

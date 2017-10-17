@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsSpentConfirmedHavingBlockHeightReturnsTrue()
         {
-            var spendingDetails = new SpendingDetails()
+            var spendingDetails = new SpendingDetails
             {
                 BlockHeight = 15
             };
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsConfirmedHavingNoBlockHeightReturnsFalse()
         {
-            var spendingDetails = new SpendingDetails()
+            var spendingDetails = new SpendingDetails
             {
                 BlockHeight = null
             };
