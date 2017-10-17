@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Api
 
         public override void Start()
         {
-            this.logger.LogInformation($"API starting on url {this.fullNode.Settings.ApiUri}.");
+            this.logger.LogInformation("API starting on URL '{0}'.", this.fullNode.Settings.ApiUri);
             this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode);
 
             this.TryStartKeepaliveMonitor();
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Api
             // Make sure we are releasing the listening ip address / port.
             if (this.webHost != null)
             {
-                this.logger.LogInformation($"API stopping on url {this.fullNode.Settings.ApiUri}.");
+                this.logger.LogInformation("API stopping on URL '{0}'.", this.fullNode.Settings.ApiUri);
                 this.webHost.StopAsync(TimeSpan.FromSeconds(APIStopTimeoutSeconds)).Wait();
                 this.webHost = null;
             }        
