@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsChangeAddressWithValidHdPathForChangeAddressReturnsTrue()
         {
-            var address = new HdAddress()
+            var address = new HdAddress
             {
                 HdPath = "0/1/2/3/1"
             };
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsChangeAddressWithValidHdPathForNonChangeAddressReturnsFalse()
         {
-            var address = new HdAddress()
+            var address = new HdAddress
             {
                 HdPath = "0/1/2/3/0"
             };
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void IsChangeAddressWithTextInHdPathReturnsFalse()
         {
-            var address = new HdAddress()
+            var address = new HdAddress
             {
                 HdPath = "0/1/2/3/A"
             };
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             Assert.Throws<FormatException>(() =>
             {
-                var address = new HdAddress()
+                var address = new HdAddress
                 {
                     HdPath = "0/1/2"
                 };
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             Assert.Throws<ArgumentException> (() =>
             {
-                var address = new HdAddress()
+                var address = new HdAddress
                 {
                     HdPath = string.Empty
                 };
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             Assert.Throws<ArgumentNullException>(() =>
             {
-                var address = new HdAddress()
+                var address = new HdAddress
                 {
                     HdPath = null
                 };
@@ -93,13 +93,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void UnspentTransactionsWithAddressHavingUnspentTransactionsReturnsUnspentTransactions()
         {
-            var address = new HdAddress()
+            var address = new HdAddress
             {
-                Transactions = new List<TransactionData>() {
-                    new TransactionData() { Id = new uint256(15)},
-                    new TransactionData() { Id = new uint256(16), SpendingDetails = new SpendingDetails() },
-                    new TransactionData() { Id = new uint256(17)},
-                    new TransactionData() { Id = new uint256(18), SpendingDetails = new SpendingDetails() }
+                Transactions = new List<TransactionData> {
+                    new TransactionData { Id = new uint256(15)},
+                    new TransactionData { Id = new uint256(16), SpendingDetails = new SpendingDetails() },
+                    new TransactionData { Id = new uint256(17)},
+                    new TransactionData { Id = new uint256(18), SpendingDetails = new SpendingDetails() }
                 }
             };
 
@@ -113,11 +113,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void UnspentTransactionsWithAddressNotHavingUnspentTransactionsReturnsEmptyList()
         {
-            var address = new HdAddress()
+            var address = new HdAddress
             {
-                Transactions = new List<TransactionData>() {
-                    new TransactionData() { Id = new uint256(16), SpendingDetails = new SpendingDetails() },
-                    new TransactionData() { Id = new uint256(18), SpendingDetails = new SpendingDetails() }
+                Transactions = new List<TransactionData> {
+                    new TransactionData { Id = new uint256(16), SpendingDetails = new SpendingDetails() },
+                    new TransactionData { Id = new uint256(18), SpendingDetails = new SpendingDetails() }
                 }
             };
 
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void UnspentTransactionsWithAddressWithoutTransactionsReturnsEmptyList()
         {
-            var address = new HdAddress()
+            var address = new HdAddress
             {
                 Transactions = new List<TransactionData>()
             };

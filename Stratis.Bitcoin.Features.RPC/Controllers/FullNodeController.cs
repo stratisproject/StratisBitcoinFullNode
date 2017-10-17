@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
-            
+
             if(unspentOutputs == null)
             {
                 return null;
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionName("getinfo")]
         public GetInfoModel GetInfo()
         {
-            var model = new GetInfoModel()
+            var model = new GetInfoModel
             {
                 version = this.FullNode?.Version.ToUint() ?? 0,
                 protocolversion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),

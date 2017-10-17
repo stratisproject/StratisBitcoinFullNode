@@ -215,8 +215,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (passphrase == null)
                 passphrase = password;
 
-            // Generate the root seed used to generate keys from a mnemonic picked at random 
-            // and a passphrase optionally provided by the user.          
+            // Generate the root seed used to generate keys from a mnemonic picked at random
+            // and a passphrase optionally provided by the user.
             Mnemonic mnemonic = string.IsNullOrEmpty(mnemonicList)
                 ? new Mnemonic(Wordlist.English, WordCount.Twelve)
                 : new Mnemonic(mnemonicList);
@@ -542,7 +542,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(walletName);
 
-            IEnumerable<HdAccount> res = null; 
+            IEnumerable<HdAccount> res = null;
             lock (this.lockObject)
             {
                 res = wallet.GetAccountsByCoinType(this.coinType);
@@ -664,7 +664,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 IEnumerable<HdAddress> allAddresses = this.keysLookup.Values;
                 foreach (HdAddress address in allAddresses)
                 {
-                    // Remove all the UTXO that have been reorged. 
+                    // Remove all the UTXO that have been reorged.
                     IEnumerable<TransactionData> makeUnspendable = address.Transactions.Where(w => w.BlockHeight > fork.Height).ToList();
                     foreach (TransactionData transactionData in makeUnspendable)
                         address.Transactions.Remove(transactionData);
@@ -764,7 +764,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // Find the script this input references.
                     Script keyToSpend = this.keysLookup.First(v => v.Value.Transactions.Contains(tTx)).Key;
 
-                    // Get the details of the outputs paid out. 
+                    // Get the details of the outputs paid out.
                     IEnumerable<TxOut> paidOutTo = transaction.Outputs.Where(o =>
                     {
                         // If script is empty ignore it.
@@ -777,7 +777,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (!found)
                             return true;
 
-                        // Include the keys we do hold but that are for receiving 
+                        // Include the keys we do hold but that are for receiving
                         // addresses (which would mean the user paid itself).
                         return !addr.IsChangeAddress();
                     });
@@ -815,9 +815,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         private void AddTransactionToWallet(string transactionHex, uint256 transactionHash, uint time, int index, Money amount, Script script,
             int? blockHeight = null, Block block = null)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:{7},{8}:{9},{10}:{11})", nameof(transactionHex), transactionHex, 
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:{7},{8}:{9},{10}:{11})", nameof(transactionHex), transactionHex,
                 nameof(transactionHash), transactionHash, nameof(time), time, nameof(index), index, nameof(amount), amount, nameof(blockHeight), blockHeight);
-            
+
             // Get the collection of transactions to add to.
             this.keysLookup.TryGetValue(script, out HdAddress address);
             ICollection<TransactionData> addressTransactions = address.Transactions;
@@ -1049,8 +1049,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(chainedBlock, nameof(chainedBlock));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(wallet), wallet.Name, nameof(chainedBlock), chainedBlock);
 
-            // the block locator will help when the wallet 
-            // needs to rewind this will be used to find the fork 
+            // the block locator will help when the wallet
+            // needs to rewind this will be used to find the fork
             wallet.BlockLocator = chainedBlock.GetLocator().Blocks;
 
             lock (this.lockObject)

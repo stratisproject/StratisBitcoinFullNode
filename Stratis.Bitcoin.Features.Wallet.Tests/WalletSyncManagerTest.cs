@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public WalletSyncManagerTest()
         {
-            this.storeSettings = new StoreSettings()
+            this.storeSettings = new StoreSettings
             {
                 Prune = false
             };
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         /// <summary>
-        /// When processing a new <see cref="Block"/> that has a previous hash that is the same as the <see cref="WalletSyncManager.WalletTip"/> pass it directly to the <see cref="WalletManager"/> 
+        /// When processing a new <see cref="Block"/> that has a previous hash that is the same as the <see cref="WalletSyncManager.WalletTip"/> pass it directly to the <see cref="WalletManager"/>
         /// and set it as the new WalletTip.
         /// </summary>
         [Fact]
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
                 {
-                    return result.LeftForkBlocks.Union(result.RightForkBlocks).Where(b => b.GetHash() == hashblock).Single();
+                    return result.LeftForkBlocks.Union(result.RightForkBlocks).Single(b => b.GetHash() == hashblock);
                 });
 
             // set 4th block of the old chain as tip. 2 ahead of the fork thus not being on the right chain.
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
                 {
-                    return blocks.Where(b => b.GetHash() == hashblock).Single();
+                    return blocks.Single(b => b.GetHash() == hashblock);
                 });
 
             // set 2nd block as tip
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     }
                     else
                     {
-                        return blocks.Where(b => b.GetHash() == hashblock).Single();
+                        return blocks.Single(b => b.GetHash() == hashblock);
                     }
                 });
 
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
 
-            var transaction = new Transaction()
+            var transaction = new Transaction
             {
                 Version = 15
             };
