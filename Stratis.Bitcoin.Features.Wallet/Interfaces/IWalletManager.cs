@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Gets all the wallets' names.
         /// </summary>
         /// <returns>A collection of the wallets' names.</returns>
-        string[] GetWalletsNames();
+        IEnumerable<string> GetWalletsNames();
 
         /// <summary>
         /// Updates the wallet with the height of the last block synced.
