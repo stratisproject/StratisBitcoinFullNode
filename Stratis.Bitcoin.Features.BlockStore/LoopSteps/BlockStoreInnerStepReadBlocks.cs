@@ -5,6 +5,8 @@
     using Microsoft.Extensions.Logging;
     using NBitcoin;
     using static Stratis.Bitcoin.BlockPulling.BlockPuller;
+    using System;
+    using System.Collections.Generic;
 
     /// <summary>
     /// Reads blocks from the <see cref="BlockPuller"/> in a loop and removes block 
@@ -37,7 +39,7 @@
         {
             if (!context.DownloadStack.Any())
             {
-                this.logger.LogTrace("(-):{0} empty.", nameof(context.DownloadStack));
+                this.logger.LogTrace("(-)[EMPTY_STACK1]:{0}", InnerStepResult.Stop);
                 return InnerStepResult.Stop;
             }
 
@@ -48,7 +50,7 @@
 
                 if (context.BlockStoreLoop.BlockPuller.TryGetBlock(nextBlock, out downloadedBlock))
                 {
-                    this.logger.LogTrace("Puller provided block '{0}/{1}', length {2}.", nextBlock.HashBlock, nextBlock.Height, downloadedBlock.Length);
+                    this.logger.LogTrace("Puller provided block '{0}', length {1}.", nextBlock, downloadedBlock.Length);
 
                     ChainedBlock lastBlockToPush = this.AddDownloadedBlockToStore(context, downloadedBlock);
 
@@ -58,7 +60,7 @@
 
                         if (!context.DownloadStack.Any())
                         {
-                            this.logger.LogTrace("(-):{0} empty.", nameof(context.DownloadStack));
+                            this.logger.LogTrace("(-)[EMPTY_STACK2]:{0}", InnerStepResult.Stop);
                             return InnerStepResult.Stop;
                         }
                     }
@@ -70,11 +72,12 @@
                         // Increase limit by 10 % to allow adjustments for low speed connections.
                         // Eventually, the limit be high enough to allow normal operation.
                         context.StallCountThreshold += context.StallCountThreshold / 10;
-                        this.logger.LogTrace("(-):{0},{1}={2}", InnerStepResult.Stop, nameof(context.StallCountThreshold), context.StallCountThreshold);
+                        this.logger.LogTrace("Stall count threshold increased to {0}.", context.StallCountThreshold);
+                        this.logger.LogTrace("(-)[STALLING]:{0}", InnerStepResult.Stop);
                         return InnerStepResult.Stop;
                     }
 
-                    this.logger.LogTrace("Block '{0}/{1}' not available, stall count is {2}, waiting {3} ms...", nextBlock.HashBlock, nextBlock.Height, context.StallCount, BlockStoreInnerStepContext.StallDelayMs);
+                    this.logger.LogTrace("Block '{0}' not available, stall count is {1}, waiting {2} ms...", nextBlock, context.StallCount, BlockStoreInnerStepContext.StallDelayMs);
                     await Task.Delay(BlockStoreInnerStepContext.StallDelayMs, context.CancellationToken);
 
                     context.StallCount++;
@@ -90,13 +93,15 @@
         /// <summary> Adds the downloaded block to the store and resets the stall count.</summary>
         private ChainedBlock AddDownloadedBlockToStore(BlockStoreInnerStepContext context, DownloadedBlock downloadedBlock)
         {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(downloadedBlock), nameof(downloadedBlock.Length), downloadedBlock.Length);
+
             ChainedBlock chainedBlockToStore = context.DownloadStack.Dequeue();
             context.Store.Add(new BlockPair(downloadedBlock.Block, chainedBlockToStore));
 
             context.InsertBlockSize += downloadedBlock.Length;
             context.StallCount = 0;
 
-            this.logger.LogTrace("{0}='{1}/{2}' added to the store.", nameof(chainedBlockToStore), chainedBlockToStore.HashBlock, chainedBlockToStore.Height, context.BlocksPushedCount);
+            this.logger.LogTrace("(-):'{0}'", chainedBlockToStore);
             return chainedBlockToStore;
         }
 
@@ -104,17 +109,21 @@
         /// to push (persist) the downloaded blocks to the repository.</summary>
         private bool ShouldBlocksBePushedToRepository(BlockStoreInnerStepContext context)
         {
-            var now = context.DateTimeProvider.GetUtcNow();
+            this.logger.LogTrace("()");
+
+            DateTime now = context.DateTimeProvider.GetUtcNow();
             uint lastFlushDiff = (uint)(now - context.LastDownloadStackFlushTime).TotalMilliseconds;
 
-            this.logger.LogTrace("Insert block size is {0} bytes, download stack contains {1} more blocks to download, last flush time was {2} ms ago.", context.InsertBlockSize, context.DownloadStack.Count, lastFlushDiff);
+            bool pushBufferSizeReached = context.InsertBlockSize > BlockStoreLoop.MaxInsertBlockSize;
+            bool downloadStackEmpty = !context.DownloadStack.Any();
+            bool pushTimeReached = lastFlushDiff > BlockStoreInnerStepContext.MaxDownloadStackFlushTimeMs;
 
-            var pushBufferSizeReached = context.InsertBlockSize > BlockStoreLoop.MaxInsertBlockSize;
-            var downloadStackEmpty = !context.DownloadStack.Any();
-            var pushTimeReached = lastFlushDiff > BlockStoreInnerStepContext.MaxDownloadStackFlushTimeMs;
+            this.logger.LogTrace("Insert block size is {0} bytes{1}, download stack contains {2} blocks, last flush time was {3} ms ago{4}.", 
+                context.InsertBlockSize, pushBufferSizeReached ? " (threshold reached)" : "", context.DownloadStack.Count, lastFlushDiff, pushTimeReached ? " (threshold reached)" : "");
 
-            this.logger.LogTrace("{0}={1} / {2}={3} / {4}={5}", nameof(pushBufferSizeReached), pushBufferSizeReached, nameof(downloadStackEmpty), downloadStackEmpty, nameof(pushTimeReached), pushTimeReached);
-            return pushBufferSizeReached || downloadStackEmpty || pushTimeReached;
+            bool res = pushBufferSizeReached || downloadStackEmpty || pushTimeReached;
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
 
         /// <summary>
@@ -123,16 +132,20 @@
         /// <param name="lastDownloadedBlock">Last block in the list to store, also used to set the store tip.</param>
         private async Task PushBlocksToRepository(BlockStoreInnerStepContext context, ChainedBlock lastDownloadedBlock)
         {
-            var blocksToStore = context.Store.Select(bp => bp.Block).ToList();
+            this.logger.LogTrace("()");
+
+            List<Block> blocksToStore = context.Store.Select(bp => bp.Block).ToList();
             await context.BlockStoreLoop.BlockRepository.PutAsync(lastDownloadedBlock.HashBlock, blocksToStore);
             context.BlocksPushedCount += blocksToStore.Count;
-            this.logger.LogTrace("{0} blocks pushed to the repository. {1}={2}", blocksToStore.Count, nameof(context.BlocksPushedCount), context.BlocksPushedCount);
+            this.logger.LogTrace("{0} blocks pushed to the repository, {1} blocks pushed in total.", blocksToStore.Count, context.BlocksPushedCount);
 
             context.BlockStoreLoop.SetStoreTip(lastDownloadedBlock);
             context.InsertBlockSize = 0;
             context.LastDownloadStackFlushTime = context.DateTimeProvider.GetUtcNow();
 
             context.Store.Clear();
+
+            this.logger.LogTrace("(-)");
         }
     }
 }

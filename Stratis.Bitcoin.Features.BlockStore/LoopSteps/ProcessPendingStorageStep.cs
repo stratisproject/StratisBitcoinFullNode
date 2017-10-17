@@ -42,21 +42,34 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
-            this.logger.LogTrace("{0}:'{1}/{2}',{3}:{4}", nameof(nextChainedBlock), nextChainedBlock?.HashBlock, nextChainedBlock?.Height, nameof(disposeMode), disposeMode);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
 
             var context = new ProcessPendingStorageContext(this.logger, this.BlockStoreLoop, nextChainedBlock, cancellationToken);
 
             // Next block does not exist in pending storage, continue onto the download blocks step.
             if (!this.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
+            {
+                this.logger.LogTrace("(-)[NOT_FOUND]:{0}", StepResult.Next);
                 return StepResult.Next;
+            }
 
             if (disposeMode)
-                return await this.ProcessWhenDisposing(context);
+            {
+                StepResult lres = await this.ProcessWhenDisposing(context);
+                this.logger.LogTrace("(-)[DISPOSE]:{0}", lres);
+                return lres;
+            }
 
             if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload)
-                return await this.ProcessWhenInIBD(context);
+            {
+                StepResult lres = await this.ProcessWhenInIBD(context);
+                this.logger.LogTrace("(-)[IBD]:{0}", lres);
+                return lres;
+            }
 
-            return await this.ProcessWhenNotInIBD(context);
+            StepResult res = await this.ProcessWhenNotInIBD(context);
+            this.logger.LogTrace("(-):{0}", res);
+            return res;
         }
 
         /// <summary>
@@ -65,11 +78,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task<StepResult> ProcessWhenDisposing(ProcessPendingStorageContext context)
         {
-            this.logger.LogTrace("{0}:'{1}/{2}'", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
+            this.logger.LogTrace("({0}:'{1}')", nameof(context.NextChainedBlock), context.NextChainedBlock);
 
             while (this.BlockStoreLoop.PendingStorage.Count > 0)
             {
-                var result = this.PrepareNextBlockFromPendingStorage(context);
+                StepResult result = this.PrepareNextBlockFromPendingStorage(context);
                 if (result == StepResult.Stop)
                     break;
             }
@@ -77,6 +90,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (context.PendingBlockPairsToStore.Any())
                 await this.PushBlocksToRepository(context);
 
+            this.logger.LogTrace("(-):{0}", StepResult.Stop);
             return StepResult.Stop;
         }
 
@@ -86,14 +100,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task<StepResult> ProcessWhenInIBD(ProcessPendingStorageContext context)
         {
-            this.logger.LogTrace("{0}:'{1}/{2}' {3}.{4}:{5}", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height, nameof(this.BlockStoreLoop.PendingStorage), nameof(this.BlockStoreLoop.PendingStorage.Count), this.BlockStoreLoop.PendingStorage.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(context.NextChainedBlock), context.NextChainedBlock, nameof(this.BlockStoreLoop.PendingStorage), nameof(this.BlockStoreLoop.PendingStorage.Count), this.BlockStoreLoop.PendingStorage.Count);
 
             if (this.BlockStoreLoop.PendingStorage.Count < BlockStoreLoop.PendingStorageBatchThreshold)
                 return StepResult.Continue;
 
             while (context.CancellationToken.IsCancellationRequested == false)
             {
-                var result = this.PrepareNextBlockFromPendingStorage(context);
+                StepResult result = this.PrepareNextBlockFromPendingStorage(context);
                 if (result == StepResult.Stop)
                     break;
 
@@ -104,6 +118,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (context.PendingBlockPairsToStore.Any())
                 await this.PushBlocksToRepository(context);
 
+            this.logger.LogTrace("(-):{0}", StepResult.Continue);
             return StepResult.Continue;
         }
 
@@ -113,11 +128,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// </summary>
         private async Task<StepResult> ProcessWhenNotInIBD(ProcessPendingStorageContext context)
         {
-            this.logger.LogTrace("{0}:'{1}/{2}'", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
+            this.logger.LogTrace("({0}:'{1}')", nameof(context.NextChainedBlock), context.NextChainedBlock);
 
             while (context.CancellationToken.IsCancellationRequested == false)
             {
-                var result = this.PrepareNextBlockFromPendingStorage(context);
+                StepResult result = this.PrepareNextBlockFromPendingStorage(context);
                 if (result == StepResult.Stop)
                     break;
             }
@@ -125,6 +140,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             if (context.PendingBlockPairsToStore.Any())
                 await this.PushBlocksToRepository(context);
 
+            this.logger.LogTrace("(-):{0}", StepResult.Continue);
             return StepResult.Continue;
         }
 
@@ -220,27 +236,30 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// <returns>Returns <c>true</c> if none of the above condition were met, i.e. the next block can be processed.</returns>
         internal bool CanProcessNextBlock()
         {
+            this.logger.LogTrace("()");
+
             this.PreviousChainedBlock = this.NextChainedBlock;
             this.NextChainedBlock = this.BlockStoreLoop.Chain.GetBlock(this.NextChainedBlock.Height + 1);
 
             if (this.NextChainedBlock == null)
             {
-                this.logger.LogTrace("{0} [NULL]", nameof(this.NextChainedBlock));
+                this.logger.LogTrace("(-)[NO_NEXT]:false");
                 return false;
             }
 
             if (this.NextChainedBlock.Header.HashPrevBlock != this.PreviousChainedBlock.HashBlock)
             {
-                this.logger.LogTrace("[REORG] - [BLOCK]:{0} [WITH PREV]:{1} [NOT SIMILAR TO PREV]:{2}", nameof(this.NextChainedBlock), nameof(this.NextChainedBlock.Previous), nameof(this.PreviousChainedBlock));
+                this.logger.LogTrace("(-)[REORG]:false");
                 return false;
             }
 
             if (this.NextChainedBlock.Height > this.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
             {
-                this.logger.LogTrace("[STORE HEIGHT]:{0} > [CONSENSUS HEIGHT]:{1}", nameof(this.NextChainedBlock), nameof(this.BlockStoreLoop.ChainState.HighestValidatedPoW));
+                this.logger.LogTrace("(-)[NEXT_GT_CONSENSUS_TIP]:false");
                 return false;
             }
 
+            this.logger.LogTrace("(-):true");
             return true;
         }
 

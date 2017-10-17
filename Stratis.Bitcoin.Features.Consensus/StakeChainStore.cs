@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 next = next.Previous;
             }
 
-            await this.dBreezeCoinView.GetStake(load);
+            await this.dBreezeCoinView.GetStakeAsync(load);
 
             // All block stake items should be in store.
             if (load.Any(l => l.BlockStake == null))
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("({0}:'{1}')", nameof(blockid), blockid);
 
             var stakeItem = new StakeItem { BlockId = blockid };
-            await this.dBreezeCoinView.GetStake(new[] { stakeItem }).ConfigureAwait(false);
+            await this.dBreezeCoinView.GetStakeAsync(new[] { stakeItem }).ConfigureAwait(false);
 
             if (stakeItem.BlockStake != null) this.logger.LogTrace("(-):*.{0}='{1}'", nameof(stakeItem.BlockStake.HashProof), stakeItem.BlockStake.HashProof);
             else this.logger.LogTrace("(-):null");
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public async Task SetAsync(ChainedBlock chainedBlock, BlockStake blockStake)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}.{4}:'{5}')", nameof(chainedBlock), chainedBlock.HashBlock, chainedBlock.Height, nameof(blockStake), nameof(blockStake.HashProof), blockStake.HashProof);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}')", nameof(chainedBlock), chainedBlock, nameof(blockStake), nameof(blockStake.HashProof), blockStake.HashProof);
 
             if (this.items.ContainsKey(chainedBlock.HashBlock))
             {
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 // Push to store all items that are not already persisted.
                 ICollection<StakeItem> entries = this.items.Values;
-                await this.dBreezeCoinView.PutStake(entries.Where(w => !w.InStore));
+                await this.dBreezeCoinView.PutStakeAsync(entries.Where(w => !w.InStore));
 
                 if (disposeMode)
                     return;

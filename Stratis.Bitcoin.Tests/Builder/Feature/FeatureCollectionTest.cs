@@ -14,14 +14,14 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 
             collection.AddFeature<FeatureCollectionFullNodeFeature>();
 
-            Assert.Equal(1, collection.FeatureRegistrations.Count);
+            Assert.Single(collection.FeatureRegistrations);
             Assert.Equal(typeof(FeatureCollectionFullNodeFeature), collection.FeatureRegistrations[0].FeatureType);
         }
 
         [Fact]
         public void AddFeatureAlreadyInCollectionThrowsException()
         {
-            Assert.Throws(typeof(ArgumentException), () =>
+            Assert.Throws<ArgumentException>(() =>
             {
                 var collection = new FeatureCollection();
 

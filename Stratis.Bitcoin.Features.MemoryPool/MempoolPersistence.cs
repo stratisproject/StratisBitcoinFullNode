@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Persistence entry.</returns>
         public static MempoolPersistenceEntry FromTxMempoolEntry(TxMempoolEntry tx)
         {
-            return new MempoolPersistenceEntry()
+            return new MempoolPersistenceEntry
             {
                 Tx = tx.Transaction,
                 Time = tx.Time,

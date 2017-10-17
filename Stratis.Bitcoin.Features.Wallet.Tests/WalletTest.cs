@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = wallet.GetAccountsByCoinType(CoinType.Stratis);
 
-            Assert.Equal(0, result.Count());
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
 
-            Assert.Equal(0, result.Count);
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = wallet.GetAllTransactionsByCoinType(CoinType.Stratis).ToList();
 
-            Assert.Equal(0, result.Count);
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 
-            Assert.Equal(0, result.Count);            
+            Assert.Empty(result);            
         }
 
         [Fact]
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var result = wallet.GetAllPubKeysByCoinType(CoinType.Stratis).ToList();
 
-            Assert.Equal(0, result.Count);
+            Assert.Empty(result);
         }
     }
 }

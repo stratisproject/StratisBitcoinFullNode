@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
             ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Equal(1, errorResponse.Errors.Count);
+            Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);

@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var blockInfoList = new List<BlockInfo>();
             List<long> lst = blockinfoarr.Cast<long>().ToList();
             for (int i = 0; i < lst.Count; i += 2)
-                blockInfoList.Add(new BlockInfo() { extraNonce = (int)lst[i], nonce = (uint)lst[i + 1] });
+                blockInfoList.Add(new BlockInfo { extraNonce = (int)lst[i], nonce = (uint)lst[i + 1] });
             return blockInfoList;
         }
 

@@ -58,36 +58,41 @@
 
         private async Task<bool> ShouldStopFindingBlocks(BlockStoreInnerStepContext context)
         {
+            this.logger.LogTrace("()");
+
             if (context.NextChainedBlock == null)
             {
-                this.logger.LogTrace("{0} is null", nameof(context.NextChainedBlock));
+                this.logger.LogTrace("(-)[NULL_NEXT]:true");
                 return true;
             }
 
-            if (context.InputChainedBlock != null && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock))
+            if ((context.InputChainedBlock != null) && (context.NextChainedBlock.Header.HashPrevBlock != context.InputChainedBlock.HashBlock))
             {
-                this.logger.LogTrace("{0} != {1}", nameof(context.NextChainedBlock.Header.HashPrevBlock), nameof(context.InputChainedBlock.HashBlock));
+                this.logger.LogTrace("(-)[NEXT_NEQ_INPUT]:true");
                 return true;
             }
 
             if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
             {
-                this.logger.LogTrace("{0} height > {1} height", nameof(context.NextChainedBlock), nameof(context.BlockStoreLoop.ChainState.HighestValidatedPoW));
+                this.logger.LogTrace("(-)[NEXT_HEIGHT_GT_CONSENSUS_TIP]:true");
                 return true;
             }
 
             if (context.BlockStoreLoop.PendingStorage.ContainsKey(context.NextChainedBlock.HashBlock))
             {
-                this.logger.LogTrace("{0}='{1}/{2}' exists in pending storage.", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
+                this.logger.LogTrace("Chained block '{0}' already exists in the pending storage.", context.NextChainedBlock);
+                this.logger.LogTrace("(-)[NEXT_ALREADY_EXISTS_PENDING_STORE]:true");
                 return true;
             }
 
             if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
             {
-                this.logger.LogTrace("{0}='{1}/{2}' exists in the repository.", nameof(context.NextChainedBlock), context.NextChainedBlock.HashBlock, context.NextChainedBlock.Height);
+                this.logger.LogTrace("Chained block '{0}' already exists in the repository.", context.NextChainedBlock);
+                this.logger.LogTrace("(-)[NEXT_ALREADY_EXISTS_REPOSITORY]:true");
                 return true;
             }
 
+            this.logger.LogTrace("(-):false");
             return false;
         }
     }

@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.RPC.Models
 
         public ScriptPubKey(NBitcoin.Script script, Network network) : base(script)
         {
-            var destinations = new List<TxDestination>() { script.GetDestination() };
+            var destinations = new List<TxDestination> { script.GetDestination() };
             this.type = this.GetScriptType(script.FindTemplate());
             if (destinations[0] == null)
             {
