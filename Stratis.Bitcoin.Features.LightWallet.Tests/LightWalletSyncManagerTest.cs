@@ -329,20 +329,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             asyncLoop.Verify(b => b.Dispose());
             blockSub.Verify(b => b.Dispose());
             transSub.Verify(b => b.Dispose());
-        }
-
-        [Fact]
-        public void SyncFromHeight_TipLessChain_ThrowsWalletException()
-        {
-            Assert.Throws<WalletException>(() =>
-            {
-                this.chain = new ConcurrentChain();
-                var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                    this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
-
-                lightWalletSyncManager.SyncFromHeight(3);
-            });
-        }
+        }       
 
         [Fact]
         public void SyncFromHeight_EmptyChain_StartsAsyncLoopToCatchup()
