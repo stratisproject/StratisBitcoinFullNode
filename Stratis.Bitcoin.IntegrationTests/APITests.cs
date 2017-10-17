@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -65,49 +66,58 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanStartStakingViaAPI()
         {
-            using (NodeBuilder builder = NodeBuilder.Create())
+            try
             {
-                CoreNode nodeA = builder.CreateStratisPosNode(false, fullNodeBuilder =>
+                using (NodeBuilder builder = NodeBuilder.Create())
                 {
-                    fullNodeBuilder
-                   .UseStratisConsensus()
-                   .UseBlockStore()
-                   .UseMempool()
-                   .UseWallet()
-                   .AddPowPosMining()
-                   .UseApi()
-                   .AddRPC();
-                });
+                    CoreNode nodeA = builder.CreateStratisPosNode(false, fullNodeBuilder =>
+                    {
+                        fullNodeBuilder
+                       .UseStratisConsensus()
+                       .UseBlockStore()
+                       .UseMempool()
+                       .UseWallet()
+                       .AddPowPosMining()
+                       .UseApi()
+                       .AddRPC();
+                    });
 
-                builder.StartAll();
+                    builder.StartAll();
 
-                var fullNode = nodeA.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                    var fullNode = nodeA.FullNode;
+                    var ApiURI = fullNode.Settings.ApiUri;
 
-                Assert.NotNull(fullNode.NodeService<PosMinting>(true));
+                    Assert.NotNull(fullNode.NodeService<PosMinting>(true));
 
-                using (Node nodeB = nodeA.CreateNodeClient())
-                {
-                    WalletManager walletManager = fullNode.NodeService<IWalletManager>() as WalletManager;
+                    using (Node nodeB = nodeA.CreateNodeClient())
+                    {
+                        WalletManager walletManager = fullNode.NodeService<IWalletManager>() as WalletManager;
 
-                    // create the wallet
-                    var model = new StartStakingRequest() { Name = "apitest", Password = "123456" };
-                    var mnemonic = walletManager.CreateWallet(model.Password, model.Name);
+                        // create the wallet
+                        var model = new StartStakingRequest() { Name = "apitest", Password = "123456" };
+                        var mnemonic = walletManager.CreateWallet(model.Password, model.Name);
 
-                    var content = new StringContent(model.ToString(), Encoding.UTF8, "application/json");
-                    var response = client.PostAsync(ApiURI + "api/miner/startstaking", content).GetAwaiter().GetResult();
-                    Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+                        var content = new StringContent(model.ToString(), Encoding.UTF8, "application/json");
+                        var response = client.PostAsync(ApiURI + "api/miner/startstaking", content).GetAwaiter().GetResult();
+                        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
 
-                    var responseText = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    Assert.Equal("", responseText);
+                        var responseText = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        Assert.Equal("", responseText);
 
-                    MiningRPCController controller = fullNode.NodeService<MiningRPCController>();
-                    GetStakingInfoModel info = controller.GetStakingInfo();
+                        MiningRPCController controller = fullNode.NodeService<MiningRPCController>();
+                        GetStakingInfoModel info = controller.GetStakingInfo();
 
-                    Assert.NotNull(info);
-                    Assert.True(info.Enabled);
-                    Assert.False(info.Staking);
+                        Assert.NotNull(info);
+                        Assert.True(info.Enabled);
+                        Assert.False(info.Staking);
+                    }
                 }
+            }
+            finally
+            {
+                // Revert global side-effects of StratisBitcoinPosRunner.InitStratisRegTest()
+                Block.BlockSignature = false;
+                Transaction.TimeStamp = false;
             }
         }
     }

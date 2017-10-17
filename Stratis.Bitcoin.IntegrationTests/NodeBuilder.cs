@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
                 {
-                    if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.Tests"))
+                    if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
                     {
                         bitcoind.Kill();
                     }
