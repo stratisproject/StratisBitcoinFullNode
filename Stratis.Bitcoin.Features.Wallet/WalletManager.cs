@@ -1078,7 +1078,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="chainCode">The chain code.</param>
         /// <param name="creationTime">The time this wallet was created.</param>
         /// <returns>The wallet object that was saved into the file system.</returns>
-        /// <exception cref="System.NotSupportedException"></exception>
+        /// <exception cref="WalletException">Thrown if wallet cannot be created.</exception>
         private Wallet GenerateWalletFile(string name, string encryptedSeed, byte[] chainCode, DateTimeOffset? creationTime = null)
         {
             Guard.NotEmpty(name, nameof(name));
@@ -1086,7 +1086,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(chainCode, nameof(chainCode));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
 
-            if (this.fileStorage.Exists($"{name}.{WalletFileExtension}"))
+            // Check if wallet file already exists or a wallet with same name, different case exists.
+            if (this.fileStorage.Exists($"{name}.{WalletFileExtension}") || this.Wallets.Any(w => string.Compare(w.Name, name, true) == 0))
             {
                 this.logger.LogTrace("(-)[WALLET_ALREADY_EXISTS]");
                 throw new WalletException($"Wallet with name '{name}' already exists.");
