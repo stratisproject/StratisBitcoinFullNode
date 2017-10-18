@@ -201,8 +201,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                     if (block.Error == null)
                     {
                         this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-                        if (this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock)
-                            this.consensusLoop.FlushAsync().GetAwaiter().GetResult();
+
+                        // We really want to flush if we are at the top of the chain.
+                        // Otherwise, we just allow the flush to happen if it is needed.
+                        bool mustFlush = this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock;
+                        this.consensusLoop.FlushAsync(mustFlush).GetAwaiter().GetResult();
 
                         this.signals.SignalBlock(block.Block);
                     }
