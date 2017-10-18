@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -23,14 +24,21 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>Full Node.</summary>
         private readonly IFullNode fullNode;
 
-        /// <summary>
+        /// <summary>Full Node.</summary>
+        private readonly RpcSettings rpcSettings;
+
+        /// <summary>MethodInfo cache.</summary>
+        private readonly Dictionary<string, MethodInfo> methodInfoCache;
+
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
-        public RPCController(IFullNode fullNode, ILoggerFactory loggerFactory)
+        public RPCController(IFullNode fullNode, ILoggerFactory loggerFactory, RpcSettings rpcSettings)
         {
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.rpcSettings = rpcSettings;
+            this.methodInfoCache = new Dictionary<string, MethodInfo>();
         }
 
         /// <summary>
@@ -40,18 +48,22 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <returns>The 'MethodInfo' associated with the RPC method or null if the method is not found.</returns>
         private MethodInfo GetRPCMethod(string name)
         {
+            if (this.methodInfoCache.TryGetValue(name, out MethodInfo methodInfo))
+                return methodInfo;
+
             foreach (Assembly asm in this.fullNode.Services.Features.OfType<FullNodeFeature>().Select(x => x.GetType().GetTypeInfo().Assembly).Distinct())
             {
-                MethodInfo methodInfo = asm.GetTypes()
+                methodInfo = asm.GetTypes()
                     .Where(type => typeof(Controller).IsAssignableFrom(type))
                     .SelectMany(type => type.GetMethods())
                     .Where(method => method.IsPublic && !method.IsDefined(typeof(NonActionAttribute)) && method.GetCustomAttribute<ActionNameAttribute>()?.Name == name).FirstOrDefault();
 
                 if (methodInfo != null)
-                    return methodInfo;
+                    break;
             }
 
-            return null;
+            this.methodInfoCache[name] = methodInfo;
+            return methodInfo;
         }
 
         /// <summary>
@@ -73,12 +85,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 if (controller == null)
                     throw new Exception($"RPC method '{ methodName }' controller instance '{ methodInfo.DeclaringType }' not found.");
 
-                RpcSettings rpcSettings = this.fullNode.NodeService<RpcSettings>();
-
                 // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
-                System.Net.IPEndPoint nodeEndPoint = rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? rpcSettings.Bind[0];
+                System.Net.IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
 
-                var rpcClient = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
+                var rpcClient = new RPCClient($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
 
                 ParameterInfo[] paramInfo = methodInfo.GetParameters();
                 string[] param = new string[paramInfo.Length];
