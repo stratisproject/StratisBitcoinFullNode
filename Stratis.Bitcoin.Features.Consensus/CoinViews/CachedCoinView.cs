@@ -227,14 +227,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 this.logger.LogTrace("Cache is full now with {0} entries, evicting ...", cacheEntryCount);
                 this.Evict();
-
-                cacheEntryCount = this.CacheEntryCount;
-                if (cacheEntryCount > this.MaxItems)
-                {
-                    this.logger.LogTrace("Cache is still full with {0} entries, flusing and evicting ...", cacheEntryCount);
-                    await this.FlushAsync().ConfigureAwait(false);
-                    this.Evict();
-                }
             }
 
             this.logger.LogTrace("(-):*.{0}='{1}',*.{2}.{3}={4}", nameof(result.BlockHash), result.BlockHash, nameof(result.UnspentOutputs), nameof(result.UnspentOutputs.Length), result.UnspentOutputs.Length);
