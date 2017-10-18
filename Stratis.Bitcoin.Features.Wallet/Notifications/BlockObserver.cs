@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet.Notifications
 {
@@ -13,6 +14,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Notifications
 
         public BlockObserver(IWalletSyncManager walletSyncManager)
         {
+            Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
+
             this.walletSyncManager = walletSyncManager;
         }
 

@@ -6,7 +6,7 @@
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
-    public class BlockRepositoryInMemory : Bitcoin.Features.BlockStore.IBlockRepository
+    public class BlockRepositoryInMemory : BlockStore.IBlockRepository
     {
         private ConcurrentDictionary<uint256, Block> store;
         public uint256 BlockHash { get; private set; }

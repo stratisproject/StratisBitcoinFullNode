@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             notification.Notify(lifetime.ApplicationStopping);
 
-            Assert.Equal(lookAheadBlockPuller.Location.Height, 0);
+            Assert.Equal(0, lookAheadBlockPuller.Location.Height);
             Assert.Equal(lookAheadBlockPuller.Location.Header.GetHash(), blocks[0].Header.GetHash());
         }
 

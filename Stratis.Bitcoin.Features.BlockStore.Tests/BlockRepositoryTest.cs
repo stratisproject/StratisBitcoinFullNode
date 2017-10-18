@@ -255,13 +255,13 @@
 
                 foreach (var item in blockDict)
                 {
-                    var bl = blocks.Where(b => b.GetHash() == new uint256(item.Key)).Single();
+                    var bl = blocks.Single(b => b.GetHash() == new uint256(item.Key));
                     Assert.Equal(bl.Header.GetHash(), new Block(item.Value).Header.GetHash());
                 }
 
                 foreach (var item in transDict)
                 {
-                    var bl = blocks.Where(b => b.Transactions.Any(t => t.GetHash() == new uint256(item.Key))).Single();
+                    var bl = blocks.Single(b => b.Transactions.Any(t => t.GetHash() == new uint256(item.Key)));
                     Assert.Equal(bl.GetHash(), new uint256(item.Value));
                 }
             }
@@ -409,7 +409,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.DeleteAsync(new uint256(45), new List<uint256>() { block.GetHash() });
+                var task = repository.DeleteAsync(new uint256(45), new List<uint256> { block.GetHash() });
                 task.Wait();
             }
 
@@ -422,12 +422,12 @@
                 var transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
                 Assert.Equal(new uint256(45), blockHashKeyRow.Value);
-                Assert.Equal(0, blockDict.Count);
-                Assert.Equal(0, transDict.Count);
+                Assert.Empty(blockDict);
+                Assert.Empty(transDict);
             }
         }
 
-        private Bitcoin.Features.BlockStore.IBlockRepository SetupRepository(Network main, string dir)
+        private BlockStore.IBlockRepository SetupRepository(Network main, string dir)
         {
             var repository = new BlockRepository(main, dir, this.loggerFactory);
             repository.Initialize().GetAwaiter().GetResult();

@@ -97,8 +97,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             // Assert
             Assert.Equal(2, filesPaths.Count());
-            Assert.True(filesPaths.Contains(Path.Combine(dir, "savedTestObject1.json")));
-            Assert.True(filesPaths.Contains(Path.Combine(dir, "savedTestObject2.json")));
+            Assert.Contains(Path.Combine(dir, "savedTestObject1.json"), filesPaths);
+            Assert.Contains(Path.Combine(dir, "savedTestObject2.json"), filesPaths);
         }
 
         [Fact]
@@ -116,9 +116,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var filesPaths = fileStorage.GetFilesPaths("txt");
 
             // Assert
-            Assert.Equal(0, filesPaths.Count());
-            Assert.False(filesPaths.Contains(Path.Combine(dir, "savedTestObject1.json")));
-            Assert.False(filesPaths.Contains(Path.Combine(dir, "savedTestObject2.json")));
+            Assert.Empty(filesPaths);
+            Assert.DoesNotContain(Path.Combine(dir, "savedTestObject1.json"), filesPaths);
+            Assert.DoesNotContain(Path.Combine(dir, "savedTestObject2.json"), filesPaths);
         }
         
         [Fact]
@@ -136,9 +136,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
             var filesPaths = fileStorage.GetFilesNames("txt");
 
             // Assert
-            Assert.Equal(0, filesPaths.Count());
-            Assert.False(filesPaths.Contains("savedTestObject1.json"));
-            Assert.False(filesPaths.Contains("savedTestObject2.json"));
+            Assert.Empty(filesPaths);
+            Assert.DoesNotContain("savedTestObject1.json", filesPaths);
+            Assert.DoesNotContain("savedTestObject2.json", filesPaths);
         }
         
         [Fact]
@@ -157,8 +157,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             // Assert
             Assert.Equal(2, filesPaths.Count());
-            Assert.True(filesPaths.Contains("savedTestObject1.json"));
-            Assert.True(filesPaths.Contains("savedTestObject2.json"));
+            Assert.Contains("savedTestObject1.json", filesPaths);
+            Assert.Contains("savedTestObject2.json", filesPaths);
         }
 
 
@@ -206,8 +206,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             // Assert
             Assert.Equal(2, loadedObjects.Count());
-            Assert.True(loadedObjects.Any(o => o.Property1 == testObject1.Property1 && o.Property2 == testObject1.Property2));
-            Assert.True(loadedObjects.Any(o => o.Property1 == testObject2.Property1 && o.Property2 == testObject2.Property2));
+            Assert.Contains(loadedObjects, o => o.Property1 == testObject1.Property1 && o.Property2 == testObject1.Property2);
+            Assert.Contains(loadedObjects, o => o.Property1 == testObject2.Property1 && o.Property2 == testObject2.Property2);
         }
         
         [Fact]

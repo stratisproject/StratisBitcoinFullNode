@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Models
         public void GetInfoSerializeFullTest()
         {
             var expectedOrderedPropertyNames = AllPropertyNames;
-            var info = new GetInfoModel()
+            var info = new GetInfoModel
             {
                 connections = 0,
                 walletversion = default(uint),

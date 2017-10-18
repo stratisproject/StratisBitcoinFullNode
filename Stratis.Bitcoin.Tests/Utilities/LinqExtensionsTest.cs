@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void EmptySetTest()
         {
-            List<long> list = new List<long> { };
+            List<long> list = new List<long>();
 
             var median = list.Median();
 

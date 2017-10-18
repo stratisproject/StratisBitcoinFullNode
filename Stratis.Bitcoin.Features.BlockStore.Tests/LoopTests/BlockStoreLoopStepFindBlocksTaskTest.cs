@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Push blocks[5] - [9] to the downloaded blocks collection
                 for (int i = 5; i <= 9; i++)
                 {
-                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock() { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
+                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
                 }
 
                 // Start finding blocks from block[5]
@@ -44,11 +44,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // Block[5] through Block[9] should be in the DownloadStack
                 Assert.Equal(5, context.DownloadStack.Count());
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[5].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[6].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[7].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[8].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[9].GetHash()));
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[5].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[6].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[7].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[8].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[9].GetHash());
             }
         }
 
@@ -80,20 +80,20 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 
                 // Block[45] through Block[50] should be in the DownloadStack
                 Assert.Equal(10, context.DownloadStack.Count());
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[45].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[46].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[47].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[48].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[49].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[50].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[51].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[52].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[53].GetHash()));
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == blocks[54].GetHash()));
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[45].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[46].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[47].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[48].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[49].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[50].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[51].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[52].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[53].GetHash());
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == blocks[54].GetHash());
 
                 // The FindBlocks() task should be removed from the routine
                 // as the batch download size is reached
-                Assert.Equal(1, context.InnerSteps.Count());
+                Assert.Single(context.InnerSteps);
                 Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
@@ -128,12 +128,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain Block[1]
-                Assert.Equal(1, context.DownloadStack.Count());
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == nextChainedBlock.HashBlock));
+                Assert.Single(context.DownloadStack);
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == nextChainedBlock.HashBlock);
 
                 // The FindBlocks() task should be removed from the routine
                 // as the next chained block exists in PendingStorage
-                Assert.Equal(1, context.InnerSteps.Count());
+                Assert.Single(context.InnerSteps);
                 Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
@@ -165,12 +165,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain Block[1]
-                Assert.Equal(0, context.DownloadStack.Count());
+                Assert.Empty(context.DownloadStack);
 
                 // The FindBlocks() task should be removed from the routine
                 // as the next chained block exist in the BlockRepository
                 // causing a stop condition
-                Assert.Equal(1, context.InnerSteps.Count());
+                Assert.Single(context.InnerSteps);
                 Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
@@ -202,12 +202,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 task.ExecuteAsync(context).GetAwaiter().GetResult();
 
                 // DownloadStack should only contain nextChainedBlock
-                Assert.Equal(1, context.DownloadStack.Count());
-                Assert.True(context.DownloadStack.Any(cb => cb.HashBlock == nextChainedBlock.HashBlock));
+                Assert.Single(context.DownloadStack);
+                Assert.Contains(context.DownloadStack, cb => cb.HashBlock == nextChainedBlock.HashBlock);
 
                 // The FindBlocks() task should be removed from the routine
                 // as the next chained block is null
-                Assert.Equal(1, context.InnerSteps.Count());
+                Assert.Single(context.InnerSteps);
                 Assert.False(context.InnerSteps.OfType<BlockStoreInnerStepFindBlocks>().Any());
             }
         }
