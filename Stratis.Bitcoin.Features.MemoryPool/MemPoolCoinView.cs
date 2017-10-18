@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly TxMempool memPool;
 
         /// <summary>A lock for protecting access to <see cref="memPool"/>.</summary>
-        private readonly AsyncLock mempoolLock;
+        private readonly SchedulerLock mempoolLock;
 
         /// <summary>Memory pool validator for validating transactions.</summary>
         private readonly IMempoolValidator mempoolValidator;
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="mempoolValidator">Memory pool validator for validating transactions.</param>
-        public MempoolCoinView(CoinView inner, TxMempool memPool, AsyncLock mempoolLock, IMempoolValidator mempoolValidator)
+        public MempoolCoinView(CoinView inner, TxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
         {
             this.Inner = inner;
             this.memPool = memPool;

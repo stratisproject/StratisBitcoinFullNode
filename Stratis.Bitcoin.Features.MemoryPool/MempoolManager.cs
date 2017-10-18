@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// A lock for managing asynchronous access to memory pool.
     /// </summary>
-    public class MempoolAsyncLock : AsyncLock
+    public class MempoolAsyncLock : SchedulerLock
     { }
 
     /// <summary>
