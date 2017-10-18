@@ -85,7 +85,10 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 for (int i = 0; i < paramInfo.Length; i++)
                 {
                     var pInfo = paramInfo[i];
-                    param[i] = this.Request.Query[pInfo.Name.ToLower()];
+                    if (this.Request.Query.TryGetValue(pInfo.Name.ToLower(), out Microsoft.Extensions.Primitives.StringValues values))
+                        param[i] = values[0];
+                    else
+                        param[i] = pInfo.DefaultValue?.ToString();
                 }
 
                 RPCResponse response = rpcClient.SendCommand(methodName, param);
