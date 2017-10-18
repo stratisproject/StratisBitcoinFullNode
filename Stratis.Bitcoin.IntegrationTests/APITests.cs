@@ -1,12 +1,11 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -17,9 +16,28 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    public class APITests
+    public class APITests:IDisposable
     {
-        static HttpClient client = new HttpClient();
+        static HttpClient client = null;
+
+        public void Dispose()
+        {
+            // This is needed here because of the fact that the Stratis network, when initialized, sets the 
+            // Transaction.TimeStamp value to 'true' (look in Network.InitStratisTest() and Network.InitStratisMain()) in order
+            // for proof-of-stake to work.
+            // Now, there are a few tests where we're trying to parse Bitcoin transaction, but since the TimeStamp is set the true,
+            // the execution path is different and the bitcoin transaction tests are failing.
+            // Here we're resetting the TimeStamp after every test so it doesn't cause any trouble.
+
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+
+            if (client != null)
+            {
+                client.Dispose();
+                client = null;
+            }
+        }
 
         /// <summary>
         /// Tests whether the Wallet API method "general-info" can be called and returns a non-empty JSON-formatted string result.
@@ -29,33 +47,38 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create())
             {
-                CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                try
                 {
-                    fullNodeBuilder
-                   .UseConsensus()
-                   .UseBlockStore()
-                   .UseMempool()
-                   .AddMining()
-                   .UseWallet()
-                   .UseApi()
-                   .AddRPC();
-                });
+                    CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                    {
+                        fullNodeBuilder
+                       .UseConsensus()
+                       .UseBlockStore()
+                       .UseMempool()
+                       .AddMining()
+                       .UseWallet()
+                       .UseApi()
+                       .AddRPC();
+                    });
 
-                builder.StartAll();
+                    builder.StartAll();
 
-                var fullNode = nodeA.FullNode;
-                var ApiURI = fullNode.Settings.ApiUri;
+                    var fullNode = nodeA.FullNode;
+                    var ApiURI = fullNode.Settings.ApiUri;
 
-                using (Node nodeB = nodeA.CreateNodeClient())
+                    using (client = new HttpClient())
+                    {
+                        client.DefaultRequestHeaders.Accept.Clear();
+                        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                        var response = client.GetStringAsync(ApiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
+
+                        Assert.True(response.StartsWith("{\"walletFilePath\":null,\"network\":\"RegTest\",\"creationTime\":\""));
+                    }
+                }
+                finally
                 {
-                    nodeB.VersionHandshake();
-
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                    var response = client.GetStringAsync(ApiURI + "api/wallet/general-info?name=test").GetAwaiter().GetResult();
-
-                    Assert.StartsWith("{\"walletFilePath\":null,\"network\":\"RegTest\",\"creationTime\":\"", response);
+                    this.Dispose();
                 }
             }
         }
@@ -73,13 +96,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                     CoreNode nodeA = builder.CreateStratisPosNode(false, fullNodeBuilder =>
                     {
                         fullNodeBuilder
-                       .UseStratisConsensus()
-                       .UseBlockStore()
-                       .UseMempool()
-                       .UseWallet()
-                       .AddPowPosMining()
-                       .UseApi()
-                       .AddRPC();
+                        .UseStratisConsensus()
+                        .UseBlockStore()
+                        .UseMempool()
+                        .UseWallet()
+                        .AddPowPosMining()
+                        .UseApi()
+                        .AddRPC();
                     });
 
                     builder.StartAll();
@@ -89,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     Assert.NotNull(fullNode.NodeService<PosMinting>(true));
 
-                    using (Node nodeB = nodeA.CreateNodeClient())
+                    using (client = new HttpClient())
                     {
                         WalletManager walletManager = fullNode.NodeService<IWalletManager>() as WalletManager;
 
@@ -115,9 +138,51 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
             finally
             {
-                // Revert global side-effects of StratisBitcoinPosRunner.InitStratisRegTest()
-                Block.BlockSignature = false;
-                Transaction.TimeStamp = false;
+                this.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Tests whether the RPC API method "callbyname" can be called and returns a non-empty JSON formatted result.
+        /// </summary>
+        [Fact]
+        public void CanCallRPCMethodViaRPCsCallByNameAPI()
+        {
+            try
+            {
+                using (NodeBuilder builder = NodeBuilder.Create())
+                {
+                    CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                    {
+                        fullNodeBuilder
+                       .UseConsensus()
+                       .UseBlockStore()
+                       .UseMempool()
+                       .AddMining()
+                       .UseWallet()
+                       .UseApi()
+                       .AddRPC();
+                    });
+
+                    builder.StartAll();
+
+                    var fullNode = nodeA.FullNode;
+                    var ApiURI = fullNode.Settings.ApiUri;
+
+                    using (client = new HttpClient())
+                    {
+                        client.DefaultRequestHeaders.Accept.Clear();
+                        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                        var response = client.GetStringAsync(ApiURI + "api/rpc/callbyname?methodName=getblockhash&height=0").GetAwaiter().GetResult();
+
+                        Assert.Equal("\"0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206\"", response);
+                    }
+                }
+            }
+            finally
+            {
+                this.Dispose();
             }
         }
     }
