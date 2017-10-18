@@ -1087,7 +1087,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
 
             // Check if any wallet file already exists, with case insensitive comparison.
-            if (this.Wallets.Any(w => string.Compare(w.Name, name, true) == 0))
+            if (this.Wallets.Any(w => string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase)))
             {
                 this.logger.LogTrace("(-)[WALLET_ALREADY_EXISTS]");
                 throw new WalletException($"Wallet with name '{name}' already exists.");
