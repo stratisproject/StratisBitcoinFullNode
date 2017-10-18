@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		[Fact]
 		public void SchedulerPairSessionTest()
 		{
-			var session = new AsyncLock();
+			var session = new SchedulerLock();
 			var collector = new List<int>();
 
 			var task = Task.Run(async () =>
