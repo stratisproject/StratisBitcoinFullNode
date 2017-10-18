@@ -241,12 +241,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// WARNING: This method can only be run from <see cref="ConsensusLoop.Execute(System.Threading.CancellationToken)"/> thread context
         /// or when consensus loop is stopped. Otherwise, there is a risk of race condition when the consensus loop accepts new block.
         /// </remarks>
-        public async Task FlushAsync(bool force)
+        public async Task FlushAsync(bool force = true)
         {
             this.logger.LogTrace("({0}:{1})", nameof(force), force);
 
             DateTime now = this.dateTimeProvider.GetUtcNow();
-            if (!force && (now - this.lastCacheFlushTime).TotalSeconds < CacheFlushTimeIntervalSeconds)
+            if (!force && ((now - this.lastCacheFlushTime).TotalSeconds < CacheFlushTimeIntervalSeconds))
             {
                 this.logger.LogTrace("(-)[NOT_NOW]");
                 return;
