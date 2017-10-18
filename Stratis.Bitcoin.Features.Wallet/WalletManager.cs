@@ -1191,6 +1191,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             return this.Wallets.First().BlockLocator;
         }
+
+        /// <inheritdoc />
+        public int? GetEarliestWalletHeight()
+        {
+            return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight);
+        }
+
+        /// <inheritdoc />
+        public DateTimeOffset GetOldestWalletCreationTime()
+        {
+            return this.Wallets.Min(w => w.CreationTime);
+        }
     }
 
     public class TransactionFoundEventArgs : EventArgs
