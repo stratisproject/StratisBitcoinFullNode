@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -57,6 +58,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Default maximum number of transactions in the cache.</summary>
         public const int CacheMaxItemsDefault = 100000;
 
+        /// <summary>Length of the coinview cache flushing interval in seconds.</summary>
+        /// <seealso cref="lastCacheFlushTime"/>
+        public const int CacheFlushTimeIntervalSeconds = 3 * 60;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -98,14 +103,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Task that handles rewinding of the the underlaying coinview. Used for synchronization.</summary>
         private Task rewindingTask = Task.CompletedTask;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Time of the last cache flush.</summary>
+        private DateTime lastCacheFlushTime;
+
         /// <summary>
         /// Initializes instance of the object based on DBreeze based coinview.
         /// </summary>
         /// <param name="inner">Underlaying coinview with database storage.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
-        public CachedCoinView(DBreezeCoinView inner, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null) :
-            this(loggerFactory, stakeChainStore)
+        public CachedCoinView(DBreezeCoinView inner, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null) :
+            this(dateTimeProvider, loggerFactory, stakeChainStore)
         {
             Guard.NotNull(inner, nameof(inner));
             this.inner = inner;
@@ -115,14 +127,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Initializes instance of the object based on memory based coinview.
         /// </summary>
         /// <param name="inner">Underlaying coinview with memory based storage.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
         /// <remarks>
         /// This is used for testing the coinview.
         /// It allows a coin view that only has in-memory entries.
         /// </remarks>
-        public CachedCoinView(InMemoryCoinView inner, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null) :
-            this(loggerFactory, stakeChainStore)
+        public CachedCoinView(InMemoryCoinView inner, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null) :
+            this(dateTimeProvider, loggerFactory, stakeChainStore)
         {
             Guard.NotNull(inner, nameof(inner));
             this.inner = inner;
@@ -131,16 +144,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Initializes instance of the object based.
         /// </summary>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
-        private CachedCoinView(ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null)
+        private CachedCoinView(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, StakeChainStore stakeChainStore = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.dateTimeProvider = dateTimeProvider;
             this.stakeChainStore = stakeChainStore;
             this.MaxItems = CacheMaxItemsDefault;
             this.lockobj = new ReaderWriterLock();
             this.unspents = new Dictionary<uint256, CacheItem>();
             this.PerformanceCounter = new CachePerformanceCounter();
+            this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
         }
 
         /// <inheritdoc />
@@ -228,9 +244,23 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Finds all changed records in the cache and persists them to the underlaying coinview.
         /// </summary>
-        public async Task FlushAsync()
+        /// <param name="force"><c>true</c> to enforce flush, <c>false</c> to flush only if <see cref="lastCacheFlushTime"/> is older than <see cref="CacheFlushTimeIntervalSeconds"/>.</param>
+        /// <remarks>
+        /// WARNING: This method can only be run from <see cref="ConsensusLoop.Execute(System.Threading.CancellationToken)"/> thread context
+        /// or when consensus loop is stopped. Otherwise, there is a risk of race condition when the consensus loop accepts new block.
+        /// </remarks>
+        public async Task FlushAsync(bool force)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(force), force);
+
+            DateTime now = this.dateTimeProvider.GetUtcNow();
+            if (!force && (now - this.lastCacheFlushTime).TotalSeconds < CacheFlushTimeIntervalSeconds)
+            {
+                this.logger.LogTrace("(-)[NOT_NOW]");
+                return;
+            }
+
+            this.lastCacheFlushTime = now;
 
             // Before flushing the coinview persist the stake store
             // the stake store depends on the last block hash
