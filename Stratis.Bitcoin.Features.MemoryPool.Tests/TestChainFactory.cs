@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             network.Consensus.Options = new PowConsensusOptions();
             PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network), loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
-            CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), loggerFactory);
+            CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
 
             ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
