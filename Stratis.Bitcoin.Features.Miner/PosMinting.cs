@@ -437,8 +437,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (await this.StakeAndSignBlockAsync(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
-                    var blockResult = new BlockItem { Block = block };
-                    await this.CheckStake(block, chainTip).ConfigureAwait(false);
+                    await this.CheckStakeAsync(block, chainTip).ConfigureAwait(false);
 
                     blockTemplate = null;
                 }

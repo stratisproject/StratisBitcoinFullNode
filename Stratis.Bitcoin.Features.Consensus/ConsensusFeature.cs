@@ -13,10 +13,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -110,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void Start()
         {
-            this.dBreezeCoinView.Initialize().GetAwaiter().GetResult();
+            this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
             this.consensusLoop.Start();
 
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
