@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
                     // thrown so that the node and all the disposables can stop gracefully.
-                    this.logger.LogCritical(new EventId(0), ex, "Consensus loop at Tip:{0} unhandled exception {1}", this.Tip?.Height, ex.ToString());
+                    this.logger.LogCritical(new EventId(0), ex, "Consensus loop at Tip:{0} unhandled exception {1}", this.Tip, ex.ToString());
                     NLog.LogManager.Flush();
                     throw;
                 }
@@ -283,12 +283,16 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
             }
 
-            this.logger.LogTrace("(-):*.{0}='{1}/{2}',*.{3}='{4}'", nameof(item.ChainedBlock), item.ChainedBlock?.HashBlock, item.ChainedBlock?.Height, nameof(item.Error), item.Error?.Message);
+            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(item.ChainedBlock), item.ChainedBlock, nameof(item.Error), item.Error?.Message);
         }
 
         /// <summary>
         /// Validate a block using the consensus rules.
         /// </summary>
+        /// <remarks>
+        /// WARNING: This method can only be called from <see cref="ConsensusLoop.AcceptBlock"/>, 
+        /// it the requirement is to validate a block without affecting the consensus db then <see cref="ContextInformation.OnlyCheck"/> must be set to true.
+        /// </remarks>
         /// <param name="context">A context that contains all information required to validate the block.</param>
         public void ValidateBlock(ContextInformation context)
         {
