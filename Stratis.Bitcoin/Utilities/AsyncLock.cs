@@ -21,9 +21,9 @@ namespace Stratis.Bitcoin.Utilities
             this.releaser = Task.FromResult((IDisposable)new Releaser(this));
         }
 
-        public Task<IDisposable> LockAsync()
+        public Task<IDisposable> LockAsync(CancellationToken cancel = default(CancellationToken))
         {
-            var wait = this.semaphore.WaitAsync();
+            var wait = this.semaphore.WaitAsync(cancel);
 
             if(wait.IsCompleted)
             {
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 return wait.ContinueWith((_, state) =>
                     (IDisposable)state,
-                    this.releaser.Result, CancellationToken.None,
+                    this.releaser.Result, cancel,
                     TaskContinuationOptions.ExecuteSynchronously,
                     TaskScheduler.Default);
             }
