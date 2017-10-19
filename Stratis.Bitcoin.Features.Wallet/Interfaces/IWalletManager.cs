@@ -228,5 +228,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         bool ContainsWallets { get; }
 
         string GetExtPubKey(WalletAccountReference accountReference);
+
+        /// <summary>
+        /// Gets the lowest LastBlockSyncedHeight of all loaded wallet accountroots.
+        /// </summary>
+        /// <returns>The lowest LastBlockSyncedHeight or null if there are no account roots yet.</returns>
+        int? GetEarliestWalletHeight();
+
+        /// <summary>
+        /// Gets the oldest wallet creation time.
+        /// </summary>
+        /// <returns></returns>
+        DateTimeOffset GetOldestWalletCreationTime();
     }
 }

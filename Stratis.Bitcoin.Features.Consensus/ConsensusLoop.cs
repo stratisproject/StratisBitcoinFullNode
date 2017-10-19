@@ -371,14 +371,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)[OK]");
         }
 
-        public Task FlushAsync()
+        /// <summary>
+        /// Flushes changes in the cached coinview to the disk.
+        /// </summary>
+        /// <param name="force"><c>true</c> to enforce flush, <c>false</c> to flush only if the cached coinview itself wants to be flushed.</param>
+        public async Task FlushAsync(bool force)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(force), force);
 
-            Task res = (this.UTXOSet as CachedCoinView)?.FlushAsync();
+            await (this.UTXOSet as CachedCoinView)?.FlushAsync(force);
 
             this.logger.LogTrace("(-)");
-            return res;
         }
 
         private Task TryPrefetchAsync(DeploymentFlags flags)
