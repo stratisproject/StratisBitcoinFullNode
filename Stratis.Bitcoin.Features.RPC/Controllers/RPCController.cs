@@ -64,6 +64,20 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
+        /// Processes a RPCRequest. 
+        /// </summary>
+        /// <param name="request">The request to process.</param>
+        /// <returns></returns>
+        private RPCResponse SendRPCRequest(RPCRequest request)
+        {
+            // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
+            System.Net.IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
+            var rpcClient = new RPCClient($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
+
+            return rpcClient.SendCommand(request);
+        }
+
+        /// <summary>
         /// Call an RPC method by name.
         /// </summary>
         /// <returns>A JSON result that varies depending on the RPC method.</returns>
@@ -79,22 +93,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
                 // Prepare the named parameters that were passed via the query string in the order that they are expected by SendCommand.
                 var paramInfo = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
-                string[] param = new string[paramInfo.Count];
+                object[] param = new object[paramInfo.Count];
                 for (int i = 0; i <  paramInfo.Count; i++)
-                {
+                {                    
                     var pInfo = paramInfo[i];
-                    if (this.Request.Query.TryGetValue(pInfo.Name.ToLower(), out Microsoft.Extensions.Primitives.StringValues values))
-                        param[i] = values[0];
-                    else
-                        param[i] = pInfo.ParameterInfo.DefaultValue?.ToString();
+                    var stringValues = this.Request.Query.FirstOrDefault(p => p.Key.ToLower() == pInfo.Name.ToLower());
+                    param[i] = (stringValues.Key == null)?pInfo.ParameterInfo.HasDefaultValue?pInfo.ParameterInfo.DefaultValue.ToString():null:stringValues.Value[0];
                 }
 
-                // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
-                System.Net.IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
-                var rpcClient = new RPCClient($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
-                
-                // Act as RPC proxy.
-                RPCResponse response = rpcClient.SendCommand(methodName, param);
+                // Build RPC request object.
+                RPCResponse response = this.SendRPCRequest(new RPCRequest(methodName, param));
 
                 // Throw error if any.
                 if (response?.Error?.Message != null)
