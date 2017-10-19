@@ -204,8 +204,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         // We really want to flush if we are at the top of the chain.
                         // Otherwise, we just allow the flush to happen if it is needed.
-                        bool mustFlush = this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock;
-                        this.consensusLoop.FlushAsync(mustFlush).GetAwaiter().GetResult();
+                        bool forceFlush = this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock;
+                        this.consensusLoop.FlushAsync(forceFlush).GetAwaiter().GetResult();
 
                         this.signals.SignalBlock(block.Block);
                     }
