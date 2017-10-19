@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Utilities
 {
-    // https://www.hanselman.com/blog/ComparingTwoTechniquesInNETAsynchronousCoordinationPrimitives.aspx
+    /// <summary>
+    /// Usage: using(await myAsyncLock.LockAsync())
+    /// Implementation: https://www.hanselman.com/blog/ComparingTwoTechniquesInNETAsynchronousCoordinationPrimitives.aspx
+    /// </summary>
     public sealed class AsyncLock
     {
         private readonly SemaphoreSlim semaphore;
