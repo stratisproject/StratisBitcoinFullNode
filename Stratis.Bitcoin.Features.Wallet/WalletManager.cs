@@ -502,7 +502,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 // Get transactions contained in the wallet.
-                IEnumerable<FlatHistory> items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t }));
+                IEnumerable<FlatHistory> items = this.GetHistoryInternal(wallet).SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
 
                 this.logger.LogTrace("(-):*.Count={1}", items.Count());
                 return items;
@@ -617,11 +617,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             IEnumerable<UnspentOutputReference> res;
             lock (this.lockObject)
             {
-                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations);
-            }
+                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations).ToArray();
 
-            this.logger.LogTrace("(-):*.Count()={1}", res.Count());
-            return res;
+                this.logger.LogTrace("(-):*.Count()={1}", res.Count());
+                return res;
+            }
         }
 
         /// <inheritdoc />
@@ -643,11 +643,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                         $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
                 }
 
-                res = account.GetSpendableTransactions(this.chain.Tip.Height, confirmations);
-            }
+                res = account.GetSpendableTransactions(this.chain.Tip.Height, confirmations).ToArray();
 
-            this.logger.LogTrace("(-):*.Count={1}", res.Count());
-            return res;
+                this.logger.LogTrace("(-):*.Count={1}", res.Count());
+                return res;
+            }
         }
 
         /// <inheritdoc />
