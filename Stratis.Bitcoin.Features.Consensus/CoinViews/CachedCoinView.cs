@@ -252,8 +252,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 return;
             }
 
-            this.lastCacheFlushTime = now;
-
             // Before flushing the coinview persist the stake store
             // the stake store depends on the last block hash
             // to be stored after the stake store is persisted.
@@ -294,6 +292,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             // Can't await inside a lock.
             await this.flushingTask.ConfigureAwait(false);
+
+            this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
+
             this.logger.LogTrace("(-)");
         }
 
