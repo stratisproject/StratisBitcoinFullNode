@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Utilities
     /// <summary>
     /// An async reader writer lock for concurrent and exclusive work.
     /// </summary>
-    public interface ISchedulerLock
+    public interface IMempoolSchedulerLock
     {
         /// <summary>
         /// Queues concurrent work to the concurrent scheduler.
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Utilities
     /// schedule the synchronous parts.
     /// </para>
     /// </remarks>
-    public class SchedulerLock : ISchedulerLock
+    public class MempoolSchedulerLock : IMempoolSchedulerLock
     {
         /// <inheritdoc />
         private CancellationTokenSource cancellation;
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="cancellation">Cancellation source to allow cancel the tasks run by the schedulers.</param>
         /// <param name="maxItemsPerTask">Number of exclusive tasks to process before checking concurrent tasks.</param>
-        public SchedulerLock(CancellationTokenSource cancellation = null, int maxItemsPerTask = 5)
+        public MempoolSchedulerLock(CancellationTokenSource cancellation = null, int maxItemsPerTask = 5)
         {
             this.cancellation = cancellation ?? new CancellationTokenSource();
             int defaultMaxConcurrencyLevel = Environment.ProcessorCount; 
@@ -108,21 +108,21 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-        /// <remarks>See warning in <see cref="SchedulerLock"/> remarks section.</remarks>
+        /// <remarks>See warning in <see cref="MempoolSchedulerLock"/> remarks section.</remarks>
         public Task<T> ReadAsync<T>(Func<T> func)
         {
             return this.concurrentFactory.StartNew(func, this.cancellation.Token);
         }
 
         /// <inheritdoc />
-        /// <remarks>See warning in <see cref="SchedulerLock"/> remarks section.</remarks>
+        /// <remarks>See warning in <see cref="MempoolSchedulerLock"/> remarks section.</remarks>
         public Task WriteAsync(Action func)
         {
             return this.exclusiveFactory.StartNew(func, this.cancellation.Token);
         }
 
         /// <inheritdoc />
-        /// <remarks>See warning in <see cref="SchedulerLock"/> remarks section.</remarks>
+        /// <remarks>See warning in <see cref="MempoolSchedulerLock"/> remarks section.</remarks>
         public Task<T> WriteAsync<T>(Func<T> func)
         {
             return this.exclusiveFactory.StartNew(func, this.cancellation.Token);
