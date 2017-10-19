@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private const int MaxFeeEstimationTipAge = 3 * 60 * 60;
 
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
-        private readonly MempoolAsyncLock mempoolLock;
+        private readonly MempoolSchedulerLock mempoolLock;
 
         /// <summary>Date and time information provider.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
             TxMempool memPool, 
-            MempoolAsyncLock mempoolLock,
+            MempoolSchedulerLock mempoolLock,
             PowConsensusValidator consensusValidator, 
             IDateTimeProvider dateTimeProvider, 
             MempoolSettings mempoolSettings,

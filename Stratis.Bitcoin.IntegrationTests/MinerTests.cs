@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public ConsensusLoop consensus;
             public DateTimeProvider date;
             public TxMempool mempool;
-            public MempoolAsyncLock mempoolLock;
+            public MempoolSchedulerLock mempoolLock;
             public List<Transaction> txFirst;
             public Money BLOCKSUBSIDY = 50 * Money.COIN;
             public Money LOWFEE = Money.CENT;
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.date = date1;
                 var nodeSettings = NodeSettings.Default();
                 this.mempool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings); ;
-                this.mempoolLock = new MempoolAsyncLock();
+                this.mempoolLock = new MempoolSchedulerLock();
 
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);

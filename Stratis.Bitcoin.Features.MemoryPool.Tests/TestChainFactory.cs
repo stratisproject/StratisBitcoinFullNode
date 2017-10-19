@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
             TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
-            MempoolAsyncLock mempoolLock = new MempoolAsyncLock();
+            MempoolSchedulerLock mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:
             PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <param name="mempool">Memory pool for transactions.</param>
         /// <param name="date">Date and time provider.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockAssembler CreatePowBlockAssembler(Network network, ConsensusLoop consensus, ConcurrentChain chain, MempoolAsyncLock mempoolLock, TxMempool mempool, IDateTimeProvider date, LoggerFactory loggerFactory)
+        private static PowBlockAssembler CreatePowBlockAssembler(Network network, ConsensusLoop consensus, ConcurrentChain chain, MempoolSchedulerLock mempoolLock, TxMempool mempool, IDateTimeProvider date, LoggerFactory loggerFactory)
         {
             AssemblerOptions options = new AssemblerOptions();
 

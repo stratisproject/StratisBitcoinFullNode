@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private static long medianTimePast;
 
         protected readonly ConsensusLoop consensusLoop;
-        protected readonly MempoolAsyncLock mempoolLock;
+        protected readonly MempoolSchedulerLock mempoolLock;
         protected readonly TxMempool mempool;
         protected readonly IDateTimeProvider dateTimeProvider;
 
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public PowBlockAssembler(
             ConsensusLoop consensusLoop,
             Network network,
-            MempoolAsyncLock mempoolLock,
+            MempoolSchedulerLock mempoolLock,
             TxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
