@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void Start()
         {
-            this.dBreezeCoinView.Initialize().GetAwaiter().GetResult();
+            this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
             var cache = this.coinView as CachedCoinView;
             if (cache != null)
             {

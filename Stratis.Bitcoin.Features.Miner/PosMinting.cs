@@ -116,13 +116,13 @@ namespace Stratis.Bitcoin.Features.Miner
             public Key Key { get; set; }
         }
 
-        // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code 
+        // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code
         public const int DefaultBlockMinTxFee = 1000;
 
-        // Default for -blockmaxsize, which controls the maximum size of block the mining code will create 
+        // Default for -blockmaxsize, which controls the maximum size of block the mining code will create
         public const int DefaultBlockMaxSize = 750000;
 
-        // Default for -blockmaxweight, which controls the range of block weights the mining code will create 
+        // Default for -blockmaxweight, which controls the range of block weights the mining code will create
         public const int DefaultBlockMaxWeight = 3000000;
 
         /** The maximum allowed size for a serialized block, in bytes (network rule) */
@@ -130,14 +130,14 @@ namespace Stratis.Bitcoin.Features.Miner
         /** The maximum size for mined blocks */
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
-        /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO 
+        /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO
         /// to prevent halting chain; <c>false</c> to disable coinstake splitting.</summary>
         /// <remarks>TODO: It should be configurable option, not constant. See https://github.com/stratisproject/StratisBitcoinFullNode/issues/550 </remarks>
         public const bool CoinstakeSplitEnabled = true;
 
         /// <summary>
-        /// If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if 
-        /// the number of non-empty UTXOs in the wallet is lower than the required coin age for staking plus 1, 
+        /// If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if
+        /// the number of non-empty UTXOs in the wallet is lower than the required coin age for staking plus 1,
         /// multiplied by this value. See <see cref="GetSplitStake(int)"/>.</summary>
         public const int CoinstakeSplitLimitMultiplier = 3;
 
@@ -193,14 +193,14 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Timestamp of the last attempt to search for POS solution.
         /// <para>
         /// It is used to prevent searching for solutions that were already proved wrong in the past.
-        /// If there is no new block since last time we searched for the solution, it does not make 
+        /// If there is no new block since last time we searched for the solution, it does not make
         /// sense to try timestamps earlier than this value.
         /// </para>
         /// </summary>
         private long lastCoinStakeSearchTime;
 
         /// <summary>
-        /// Hash of the block headers of the block that was at the tip of the chain during our last 
+        /// Hash of the block headers of the block that was at the tip of the chain during our last
         /// search for POS solution.
         /// <para>
         /// It is used to prevent searching for solutions that were already proved wrong in the past.
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.minerSleep = 500; // GetArg("-minersleep", 500);
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
-            this.reserveBalance = 0; // TOOD:settings.ReserveBalance 
+            this.reserveBalance = 0; // TOOD:settings.ReserveBalance
             this.minimumInputValue = 0;
 
             this.posConsensusValidator = consensusLoop.Validator as PosConsensusValidator;
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 try
                 {
-                    await this.GenerateBlocks(walletSecret).ConfigureAwait(false);
+                    await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 catch (MinerException me)
                 {
-                    // Miner rexceptions should be ignored. It means that the miner 
+                    // Miner rexceptions should be ignored. It means that the miner
                     // possibly mined a block that was not accepted by peers or is even invalid,
                     // but it should not halted the mining operation.
                     this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 catch (ConsensusErrorException cee)
                 {
-                    // All consensus exceptions should be ignored. It means that the miner 
+                    // All consensus exceptions should be ignored. It means that the miner
                     // run into problems while constructing block or verifying it
                     // but it should not halted the mining operation.
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
@@ -306,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 catch (Exception e)
                 {
                     this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                    throw e;
+                    throw;
                 }
 
                 this.logger.LogTrace("(-)");
@@ -322,20 +322,27 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Attempts to stake new blocks in a loop.
         /// <para>
-        /// Staking is attempted only if the node is fully synchronized 
+        /// Staking is attempted only if the node is fully synchronized
         /// and connected to the network.
         /// </para>
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
-        public async Task GenerateBlocks(WalletSecret walletSecret)
+        public async Task GenerateBlocksAsync(WalletSecret walletSecret)
         {
             this.logger.LogTrace("()");
 
             BlockTemplate blockTemplate = null;
-            bool tryToSync = true;
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
+                while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
+                {
+                    if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
+                    else this.logger.LogTrace("Waiting for IBD to complete...");
+
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                }
+
                 ChainedBlock chainTip = this.chain.Tip;
                 if (chainTip != this.consensusLoop.Tip)
                 {
@@ -343,43 +350,14 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
-                {
-                    if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
-                    else this.logger.LogTrace("Waiting for IBD to complete...");
-
-                    tryToSync = true;
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-                }
-
-                // TODO: What is the purpose of this conditional block?
-                // It seems that if it ends with continue, the next round of the loop will just 
-                // not execute the above while loop and it won't even enter this block again,
-                // so it seems like no operation.
-                // In StratisX there is the wait uncommented. Then it makes sense. Why we have it commented?
-                if (tryToSync)
-                {
-                    tryToSync = false;
-                    // TODO: This condition to have at least 3 peers is disqualifying us on testnet quite often.
-                    // Yet the 60 secs delay does not prevent us to mine because tryToSync will be false next time we are here
-                    // unless we are completely disconnected. So this is weird logic.
-                    bool fewPeers = this.connection.ConnectedNodes.Count() < 3;
-                    bool lastBlockTooOld = chainTip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
-                    if ((fewPeers && !this.network.IsTest()) || lastBlockTooOld)
-                    {
-                        if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
-                        if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
-
-                        await Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-                        continue;
-                    }
-                }
-
                 if (this.lastCoinStakeSearchPrevBlockHash != chainTip.HashBlock)
                 {
                     this.lastCoinStakeSearchPrevBlockHash = chainTip.HashBlock;
                     this.lastCoinStakeSearchTime = chainTip.Header.Time;
                     this.logger.LogTrace("New block '{0}' detected, setting last search time to its timestamp {1}.", chainTip, chainTip.Header.Time);
+
+                    // Reset the template as the chain advanced.
+                    blockTemplate = null;
                 }
 
                 uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
@@ -389,11 +367,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.logger.LogTrace("(-)[NOTHING_TO_DO]");
                     return;
                 }
-
-                if (blockTemplate == null)
-                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
-
-                Block block = blockTemplate.Block;
 
                 var stakeTxes = new List<StakeTx>();
                 List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
@@ -426,6 +399,11 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
 
+                if (blockTemplate == null)
+                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+
+                Block block = blockTemplate.Block;
+
                 this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
@@ -434,29 +412,29 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
-                if (await this.StakeAndSignBlock(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
+                if (await this.StakeAndSignBlockAsync(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
                     var blockResult = new BlockResult { Block = block };
-                    await this.CheckStake(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
+                    await this.CheckStakeAsync(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
 
                     blockTemplate = null;
                 }
                 else
                 {
-                    this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlock), this.minerSleep);
+                    this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlockAsync), this.minerSleep);
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                 }
             }
         }
 
         /// <summary>
-        /// One a new block is staked, this method is used to verify that it 
+        /// One a new block is staked, this method is used to verify that it
         /// is a valid block and if so, it will add it to the chain.
         /// </summary>
         /// <param name="context">Information about the new block.</param>
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
-        private async Task CheckStake(ContextInformation context, ChainedBlock chainTip)
+        private async Task CheckStakeAsync(ContextInformation context, ChainedBlock chainTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainTip), chainTip);
 
@@ -523,7 +501,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeTimestamp">Maximal timestamp of the coinstake transaction. The actual timestamp can be lower, but not higher.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        private async Task<bool> StakeAndSignBlock(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
+        private async Task<bool> StakeAndSignBlockAsync(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long fees, uint coinstakeTimestamp)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip, nameof(fees), fees, nameof(coinstakeTimestamp), coinstakeTimestamp);
 
@@ -554,7 +532,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = searchTime;
             this.logger.LogTrace("Search interval set to {0}, last coinstake search timestamp set to {1}.", searchInterval, this.lastCoinStakeSearchTime);
 
-            if (await this.CreateCoinstake(stakeTxes, block, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
+            if (await this.CreateCoinstakeAsync(stakeTxes, block, chainTip, searchInterval, fees, coinstakeContext).ConfigureAwait(false))
             {
                 uint minTimestamp = chainTip.Header.Time + 1;
                 if (coinstakeContext.CoinstakeTx.Time >= minTimestamp)
@@ -593,7 +571,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Creates a coinstake transaction with kernel that satisfies POS staking target. 
+        /// Creates a coinstake transaction with kernel that satisfies POS staking target.
         /// </summary>
         /// <param name="stakeTxes">List of coins that are available in the wallet for staking.</param>
         /// <param name="chainTip">Tip of the best chain.</param>
@@ -602,7 +580,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeContext">Information about coinstake transaction and its private key that is to be filled when the kernel is found.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        public async Task<bool> CreateCoinstake(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
+        public async Task<bool> CreateCoinstakeAsync(List<StakeTx> stakeTxes, Block block, ChainedBlock chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:'{4}',{5}:{6},{7}:{8})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(chainTip), chainTip, nameof(searchInterval), searchInterval, nameof(fees), fees);
 
@@ -635,7 +613,7 @@ namespace Stratis.Bitcoin.Features.Miner
             long ourWeight = setCoins.Sum(s => s.TxOut.Value);
             long expectedTime = StakeValidator.TargetSpacingSeconds * this.networkWeight / ourWeight;
             decimal ourPercent = this.networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)this.networkWeight : 0;
-            
+
             this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(this.networkWeight), TimeSpan.FromSeconds(expectedTime));
 
             this.rpcGetStakingInfoModel.Staking = true;
@@ -664,7 +642,7 @@ namespace Stratis.Bitcoin.Features.Miner
             CoinstakeWorkerResult workersResult = new CoinstakeWorkerResult();
             for (int workerIndex = 0; workerIndex < workerCount; workerIndex++)
             {
-                CoinstakeWorkerContext cwc = new CoinstakeWorkerContext()
+                CoinstakeWorkerContext cwc = new CoinstakeWorkerContext
                 {
                     Index = workerIndex,
                     Logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[Worker #{workerIndex}] "),
@@ -733,7 +711,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogTrace("(-)[SIGN_FAILED]:false");
                 return false;
-            } 
+            }
 
             // Limit size.
             int serializedSize = coinstakeContext.CoinstakeTx.GetSerializedSize(ProtocolVersion.ALT_PROTOCOL_VERSION, SerializationType.Network);
@@ -928,7 +906,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Selects coins that are suitable for staking. 
+        /// Selects coins that are suitable for staking.
         /// <para>
         /// Such a coin has to be confirmed with enough confirmations - i.e. has suitable depth,
         /// and it also has to be mature and meet requirement for minimal value.
@@ -1023,7 +1001,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="block">Block at which to calculate the difficulty.</param>
         /// <returns>Staking difficulty.</returns>
         /// <remarks>
-        /// The actual idea behind the calculation is a mystery. It was simply ported from 
+        /// The actual idea behind the calculation is a mystery. It was simply ported from
         /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16 .
         /// </remarks>
         public double GetDifficulty(ChainedBlock block)
@@ -1071,13 +1049,13 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <returns>Estimated number of coins that are used by all stakers on the network.</returns>
         /// <remarks>
-        /// The idea behind estimating the network staking weight is very similar to estimating 
-        /// the total hash power of PoW network. The difficulty retarget algorithm tries to make 
+        /// The idea behind estimating the network staking weight is very similar to estimating
+        /// the total hash power of PoW network. The difficulty retarget algorithm tries to make
         /// sure of certain distribution of the blocks over a period of time. Base on real distribution
-        /// and using the actual difficulty targets, one is able to compute how much stake was 
+        /// and using the actual difficulty targets, one is able to compute how much stake was
         /// presented on the network to generate each block.
         /// <para>
-        /// The method was ported from 
+        /// The method was ported from
         /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L74 .
         /// </para>
         /// </remarks>

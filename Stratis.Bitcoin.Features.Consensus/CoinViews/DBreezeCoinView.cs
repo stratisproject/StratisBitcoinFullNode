@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Initializes the database tables used by the coinview.
         /// </summary>
-        public Task Initialize()
+        public Task InitializeAsync()
         {
             this.logger.LogTrace("()");
 
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Persists unsaved POS blocks information to the database.
         /// </summary>
         /// <param name="stakeEntries">List of POS block information to be examined and persists if unsaved.</param>
-        public Task PutStake(IEnumerable<StakeItem> stakeEntries)
+        public Task PutStakeAsync(IEnumerable<StakeItem> stakeEntries)
         {
             return this.session.Execute(() =>
             {
@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Retrieves POS blocks information from the database.
         /// </summary>
         /// <param name="blocklist">List of partially initialized POS block information that is to be fully initialized with the values from the database.</param>
-        public Task GetStake(IEnumerable<StakeItem> blocklist)
+        public Task GetStakeAsync(IEnumerable<StakeItem> blocklist)
         {
             return this.session.Execute(() =>
             {
@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// TODO: Do we need this method? 
-        public Task DeleteStake(uint256 blockid, BlockStake blockStake)
+        public Task DeleteStakeAsync(uint256 blockid, BlockStake blockStake)
         {
             // TODO: Implement delete stake on rewind.
             throw new NotImplementedException();
