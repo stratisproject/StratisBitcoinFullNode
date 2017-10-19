@@ -728,8 +728,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns>A result containing the errors.</returns>
         private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
         {
-            var errors = modelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-            return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+            List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
+            return ErrorHelpers.BuildErrorResponse(
+                HttpStatusCode.BadRequest, 
+                string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)), 
+                string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
         }
     }
 }
