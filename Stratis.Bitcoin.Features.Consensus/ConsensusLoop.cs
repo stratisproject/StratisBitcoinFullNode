@@ -316,10 +316,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
                     {
                         // This is a newly mined block.
-                        this.Puller.SetLocation(this.Tip);
                         this.Chain.SetTip(this.Tip);
+                        this.Puller.SetLocation(this.Tip);
 
-                        this.logger.LogTrace("Block extends consensus tip to '{0}'", this.Tip);
+                        this.logger.LogDebug("Block extends consensus tip to '{0}'", this.Tip);
                     }
 
                     this.signals.SignalBlock(item.Block);

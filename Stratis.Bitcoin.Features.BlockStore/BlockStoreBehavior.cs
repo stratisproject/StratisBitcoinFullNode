@@ -1,10 +1,5 @@
 ﻿namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-
     using Microsoft.Extensions.Logging;
     using NBitcoin;
     using NBitcoin.Protocol;
@@ -12,6 +7,10 @@
     using Stratis.Bitcoin.Base;
     using Stratis.Bitcoin.Connection;
     using Stratis.Bitcoin.Utilities;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
 
     public interface IBlockStoreBehavior : INodeBehavior
     {
@@ -308,7 +307,7 @@
                         if (chainBehavior.PendingTip.GetAncestor(chainedBlock.Height) == null)
                         {
                             inventoryBlockToSend.Add(hashToAnnounce);
-                            this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", node.RemoteSocketEndpoint, hashToAnnounce);
+                            this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", hashToAnnounce, node.RemoteSocketEndpoint);
                         }
                     }
                 }
