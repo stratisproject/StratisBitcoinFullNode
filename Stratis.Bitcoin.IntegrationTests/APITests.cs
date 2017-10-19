@@ -185,5 +185,49 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.Dispose();
             }
         }
+
+        /// <summary>
+        /// Tests whether the RPC API method "listmethods" can be called and returns a JSON formatted list of strings.
+        /// </summary>
+        [Fact]
+        public void CanListRPCMethodsViaRPCsListMethodsAPI()
+        {
+            try
+            {
+                using (NodeBuilder builder = NodeBuilder.Create())
+                {
+                    CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
+                    {
+                        fullNodeBuilder
+                       .UseConsensus()
+                       .UseBlockStore()
+                       .UseMempool()
+                       .AddMining()
+                       .UseWallet()
+                       .UseApi()
+                       .AddRPC();
+                    });
+
+                    builder.StartAll();
+
+                    var fullNode = nodeA.FullNode;
+                    var ApiURI = fullNode.Settings.ApiUri;
+
+                    using (client = new HttpClient())
+                    {
+                        client.DefaultRequestHeaders.Accept.Clear();
+                        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                        var response = client.GetStringAsync(ApiURI + "api/rpc/listmethods").GetAwaiter().GetResult();
+
+                        Assert.StartsWith("[\"", response);
+                    }
+                }
+            }
+            finally
+            {
+                this.Dispose();
+            }
+        }
     }
 }

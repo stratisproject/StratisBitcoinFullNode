@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using NBitcoin.RPC;
@@ -24,46 +26,41 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>Full Node.</summary>
         private readonly IFullNode fullNode;
 
-        /// <summary>Full Node.</summary>
+        /// <summary>RPC Settings.</summary>
         private readonly RpcSettings rpcSettings;
 
-        /// <summary>MethodInfo cache.</summary>
-        private readonly Dictionary<string, MethodInfo> methodInfoCache;
+        /// <summary>ControllerActionDescriptor dictionary.</summary>
+        private Dictionary<string, ControllerActionDescriptor> ActionDescriptors {get; set;}
 
+        /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
+        /// <param name="fullNode">The full node.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
+        /// <param name="rpcSettings">The RPC Settings of the full node.</param>
         public RPCController(IFullNode fullNode, ILoggerFactory loggerFactory, RpcSettings rpcSettings)
         {
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.rpcSettings = rpcSettings;
-            this.methodInfoCache = new Dictionary<string, MethodInfo>();
         }
 
         /// <summary>
-        /// Finds an RPC method by name by looking in all features assemblies of the full node.
+        /// Returns the collection of available action descriptors.
         /// </summary>
-        /// <param name="name">The name of the RPC method to find.</param>
-        /// <returns>The 'MethodInfo' associated with the RPC method or null if the method is not found.</returns>
-        private MethodInfo GetRPCMethod(string name)
+        private Dictionary<string, ControllerActionDescriptor> GetActionDescriptors()
         {
-            if (this.methodInfoCache.TryGetValue(name, out MethodInfo methodInfo))
-                return methodInfo;
-
-            foreach (Assembly asm in this.fullNode.Services.Features.OfType<FullNodeFeature>().Select(x => x.GetType().GetTypeInfo().Assembly).Distinct())
+            if (this.ActionDescriptors == null)
             {
-                methodInfo = asm.GetTypes()
-                    .Where(type => typeof(Controller).IsAssignableFrom(type))
-                    .SelectMany(type => type.GetMethods())
-                    .Where(method => method.IsPublic && !method.IsDefined(typeof(NonActionAttribute)) && method.GetCustomAttribute<ActionNameAttribute>()?.Name == name).FirstOrDefault();
-
-                if (methodInfo != null)
-                    break;
+                this.ActionDescriptors = new Dictionary<string, ControllerActionDescriptor>();
+                var actionDescriptorProvider = (this.fullNode as FullNode)?.RPCHost.Services.GetService(typeof(IActionDescriptorCollectionProvider)) as IActionDescriptorCollectionProvider;
+                // This approach is similar to the one used by RPCRouteHandler so should only give us the descriptors 
+                // that RPC would normally act on subject to the method name matching the "ActionName".
+                foreach (var actionDescriptor in actionDescriptorProvider?.ActionDescriptors.Items.OfType<ControllerActionDescriptor>())
+                    this.ActionDescriptors[actionDescriptor.ActionName] = actionDescriptor;
             }
 
-            this.methodInfoCache[name] = methodInfo;
-            return methodInfo;
+            return this.ActionDescriptors;
         }
 
         /// <summary>
@@ -76,36 +73,34 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                MethodInfo methodInfo = GetRPCMethod(methodName);
-
-                if (methodInfo == null)
+                ControllerActionDescriptor actionDescriptor = null;
+                if (!this.GetActionDescriptors()?.TryGetValue(methodName, out actionDescriptor) ?? false)
                     throw new Exception($"RPC method '{ methodName }' not found.");
 
-                var controller = this.fullNode.Services.ServiceProvider.GetService(methodInfo.DeclaringType);
-                if (controller == null)
-                    throw new Exception($"RPC method '{ methodName }' controller instance '{ methodInfo.DeclaringType }' not found.");
-
-                // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
-                System.Net.IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
-
-                var rpcClient = new RPCClient($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
-
-                ParameterInfo[] paramInfo = methodInfo.GetParameters();
-                string[] param = new string[paramInfo.Length];
-                for (int i = 0; i < paramInfo.Length; i++)
+                // Prepare the named parameters that were passed via the query string in the order that they are expected by SendCommand.
+                var paramInfo = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
+                string[] param = new string[paramInfo.Count];
+                for (int i = 0; i <  paramInfo.Count; i++)
                 {
                     var pInfo = paramInfo[i];
                     if (this.Request.Query.TryGetValue(pInfo.Name.ToLower(), out Microsoft.Extensions.Primitives.StringValues values))
                         param[i] = values[0];
                     else
-                        param[i] = pInfo.DefaultValue?.ToString();
+                        param[i] = pInfo.ParameterInfo.DefaultValue?.ToString();
                 }
 
+                // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
+                System.Net.IPEndPoint nodeEndPoint = this.rpcSettings.Bind.Where(b => b.Address.ToString() == "127.0.0.1").FirstOrDefault() ?? this.rpcSettings.Bind[0];
+                var rpcClient = new RPCClient($"{this.rpcSettings.RpcUser}:{this.rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"), this.fullNode.Network);
+                
+                // Act as RPC proxy.
                 RPCResponse response = rpcClient.SendCommand(methodName, param);
 
+                // Throw error if any.
                 if (response?.Error?.Message != null)
                     throw new Exception(response.Error.Message);
 
+                // Return a Json result from the API call.
                 return this.Json(response?.Result);
             }
             catch (Exception e)
@@ -114,5 +109,34 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-    }
+
+        /// <summary>
+        /// Lists the available RPC methods.
+        /// </summary>
+        /// <returns>A JSON result that lists the RPC methods.</returns>
+        [Route("listmethods")]
+        public IActionResult ListMethods()
+        {
+            try
+            {
+                var listMethods = new List<string>();
+                foreach (var descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
+                {
+                    var parameters = new List<string>();
+                    foreach (var param in descriptor.Parameters.OfType<ControllerParameterDescriptor>())
+                        if (!param.ParameterInfo.IsRetval)
+                            parameters.Add(param.ParameterInfo.ToString());
+
+                    listMethods.Add($"{descriptor.ActionName}({string.Join(", ", parameters.ToArray())})");
+                }
+
+                return this.Json(listMethods);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+     }
 }
