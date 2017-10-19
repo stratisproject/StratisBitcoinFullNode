@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Utilities
 
         public Task<IDisposable> LockAsync(CancellationToken cancel = default(CancellationToken))
         {
-            var wait = this.semaphore.WaitAsync(cancel);
+            Task wait = this.semaphore.WaitAsync(cancel);
 
             if(wait.IsCompleted)
             {
