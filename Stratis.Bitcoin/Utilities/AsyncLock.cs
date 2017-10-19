@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             Task wait = this.semaphore.WaitAsync(cancel);
 
-            if(wait.IsCompleted)
+            if (wait.IsCompleted)
             {
                 return this.releaser;
             }
