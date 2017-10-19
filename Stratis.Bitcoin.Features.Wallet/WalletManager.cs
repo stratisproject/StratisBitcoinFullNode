@@ -611,10 +611,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(confirmations), confirmations);
 
             Wallet wallet = this.GetWalletByName(walletName);
-            IEnumerable<UnspentOutputReference> res;
             lock (this.lockObject)
             {
-                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations).ToArray();
+                UnspentOutputReference[] res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations).ToArray();
 
                 this.logger.LogTrace("(-):*.Count={0}", res.Count());
                 return res;
