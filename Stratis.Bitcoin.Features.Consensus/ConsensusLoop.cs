@@ -15,13 +15,34 @@ using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
+    /// <summary>
+    /// A block object that is passed around when downloading a block from peers and has information about the validation state of the block.
+    /// </summary>
     public class BlockItem
     {
+        /// <summary>
+        /// The chain of headers associated with the current block.
+        /// </summary>
         public ChainedBlock ChainedBlock { get; set; }
+
+        /// <summary>
+        /// The block downloaded from peers.
+        /// </summary>
         public Block Block { get; set; }
+
+        /// <summary>
+        /// If the block validation failed this will be set with the reason of failure.
+        /// </summary>
         public ConsensusError Error { get; set; }
     }
     
+    /// <summary>
+    /// A class that is responsible for downloading blocks from peers using the <see cref="ILookaheadBlockPuller"/> 
+    /// and validating this blocks using either the <see cref="PowConsensusValidator"/> for POF networks or <see cref="PosConsensusValidator"/> for POS networks. 
+    /// </summary>
+    /// <remarks>
+    /// An internal loop will manage such background operations.
+    /// </remarks>
     public class ConsensusLoop
     {
         /// <summary>Instance logger.</summary>
@@ -33,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A puller that can pull blocks from peers on demand.</summary>
         public LookaheadBlockPuller Puller { get; }
 
-        /// <summary>A chain of headers all the way to gensis.</summary>
+        /// <summary>A chain of headers all the way to genesis.</summary>
         public ConcurrentChain Chain { get; }
 
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
@@ -66,9 +87,24 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A signaler that used to signal messages between features.</summary>
         private readonly Signals.Signals signals;
 
-        /// <summary>A lock object that synchronizes access to the consensus rules.</summary>
+        /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlock"/> method.</summary>
         private readonly object consensusLock;
 
+        /// <summary>
+        /// Initialize a new instance of <see cref="ConsensusLoop"/>.
+        /// </summary>
+        /// <param name="asyncLoopFactory">The async loop we need to wait upon before we can shut down this feature.</param>
+        /// <param name="validator">The validation logic for the consensus rules.</param>
+        /// <param name="nodeLifetime">Contain information about the life time of the node, its used on startup and shutdown.</param>
+        /// <param name="chain">A chain of headers all the way to genesis.</param>
+        /// <param name="utxoSet">The consensus db, containing all unspent UTXO in the chain.</param>
+        /// <param name="puller">A puller that can pull blocks from peers on demand.</param>
+        /// <param name="nodeDeployments">Contain information about deployment and activation of features in the chain.</param>
+        /// <param name="loggerFactory">A factory to provide logger instances.</param>
+        /// <param name="chainState">Holds state related to the block chain.</param>
+        /// <param name="connectionManager">Connection manager of all the currently connected peers.</param>
+        /// <param name="signals">A signaler that used to signal messages between features.</param>
+        /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
             PowConsensusValidator validator,
@@ -114,6 +150,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.StakeChain = stakeChain;
         }
 
+        /// <summary>
+        /// Initialize components in <see cref="ConsensusLoop"/>.
+        /// </summary>
         public void Start()
         {
             this.logger.LogTrace("()");
@@ -142,6 +181,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Dispose components in <see cref="ConsensusLoop"/>.
+        /// </summary>
         public void Stop()
         {
             this.asyncLoop?.Dispose();
@@ -216,8 +258,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         ChainedBlock rewinded = this.Chain.GetBlock(hash);
                         if (rewinded == null)
                         {
-                            this.logger.LogTrace(
-                                "Rewound to '{0}', which is still not a part of the current best chain, rewinding further.",
+                            this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.",
                                 hash);
                             continue;
                         }
@@ -247,8 +288,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (item.Error == ConsensusErrors.BadWitnessNonceSize)
                     {
-                        this.logger.LogInformation(
-                            "You probably need witness information, activating witness requirement for peers.");
+                        this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
                         this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
                         this.Puller.RequestOptions(TransactionOptions.Witness);
                         return;
@@ -267,8 +307,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.logger.LogTrace("Block accepted '{0}' ", this.Tip);
 
                     this.chainState.HighestValidatedPoW = this.Tip;
-                    if (this.Chain.Tip.HashBlock == item.ChainedBlock?.HashBlock)
-                        this.FlushAsync().GetAwaiter().GetResult();
+
+                    // We really want to flush if we are at the top of the chain.
+                    // Otherwise, we just allow the flush to happen if it is needed.
+                    bool forceFlush = this.Chain.Tip.HashBlock == item.ChainedBlock?.HashBlock;
+                    this.FlushAsync(forceFlush).GetAwaiter().GetResult();
 
                     if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
                     {
@@ -276,7 +319,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.Puller.SetLocation(this.Tip);
                         this.Chain.SetTip(this.Tip);
 
-                        this.logger.LogTrace("Block extends consensus tip to ");
+                        this.logger.LogTrace("Block extends consensus tip to '{0}'", this.Tip);
                     }
 
                     this.signals.SignalBlock(item.Block);
@@ -384,6 +427,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// This method try to load from cash the items of the next block, in a background task. 
+        /// </summary>
+        /// <param name="flags">A flag to provide information about activated features.</param>
+        /// <returns>The process task.</returns>
         private Task TryPrefetchAsync(DeploymentFlags flags)
         {
             this.logger.LogTrace("({0}:{1})", nameof(flags), flags);
@@ -401,6 +449,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             return prefetching;
         }
 
+        /// <summary>
+        /// Get transaction identifiers to try to pref-etch them from cache.
+        /// </summary>
+        /// <param name="block">The block containing transactions to fetch.</param>
+        /// <param name="enforceBIP30">The BIP30 flag.</param>
+        /// <returns>List of transaction ids.</returns>
         public uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(block), block.GetHash(), nameof(enforceBIP30), enforceBIP30);

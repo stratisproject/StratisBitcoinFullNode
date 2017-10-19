@@ -127,10 +127,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new PowConsensusOptions();
-                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), new LoggerFactory());
+                IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+
+                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
 
                 LoggerFactory loggerFactory = new LoggerFactory();
-                IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
                 PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network), loggerFactory);
                 var nodeSettings = NodeSettings.Default();
 

@@ -467,8 +467,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 return;
             }
 
-            await this.blockRepository.PutAsync(blockItem.ChainedBlock.HashBlock, new List<Block> { block }).ConfigureAwait(false);
-
             this.logger.LogInformation("==================================================================");
             this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockItem.ChainedBlock.HashBlock, blockItem.ChainedBlock.Height);
             this.logger.LogInformation("==================================================================");

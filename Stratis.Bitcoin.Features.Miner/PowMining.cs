@@ -174,9 +174,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         return blocks;
                     }
 
-                    // Push the block to disk, so it is available when peers ask for it.
-                    this.blockRepository.PutAsync(blockResult.ChainedBlock.HashBlock, new List<Block> { pblock }).GetAwaiter().GetResult();
-
                     this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);
 
                     nHeight++;

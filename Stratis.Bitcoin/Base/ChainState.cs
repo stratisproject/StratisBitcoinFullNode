@@ -10,11 +10,11 @@ namespace Stratis.Bitcoin.Base
         /// <summary>The fullnode interface.</summary>
         private readonly IFullNode fullNode;
 
-        /// <summary>The last time the <see cref="ibdlastResult"/> was updated.</summary>
-        private long ibdlastUpdate;
+        /// <summary>The last time the <see cref="ibdLastResult"/> was updated.</summary>
+        private long ibdLastUpdate;
         
         /// <summary>A cached result of the IBD method.</summary>
-        private bool ibdlastResult;
+        private bool ibdLastResult;
 
         /// <summary>A collection of blocks that have been found to be invalid.</summary>
         internal ConcurrentDictionary<uint256, uint256> InvalidBlocks;
@@ -58,24 +58,24 @@ namespace Stratis.Bitcoin.Base
         {
             get
             {
-                if (this.ibdlastUpdate < this.dateTimeProvider?.GetUtcNow().Ticks)
+                if (this.ibdLastUpdate < this.dateTimeProvider?.GetUtcNow().Ticks)
                 {
                     // Sample every minute.
-                    this.ibdlastUpdate = this.dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
+                    this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
 
                     // If consensus is not present IBD has no meaning. Set to false to match legacy code.                    
                     var IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
-                    this.ibdlastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
+                    this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
                 }
-                return this.ibdlastResult;
+                return this.ibdLastResult;
             }
         }
 
         // For testing to be able to move the IBD.
         public void SetIsInitialBlockDownload(bool val, DateTime time)
         {
-            this.ibdlastUpdate = time.Ticks;
-            this.ibdlastResult = val;
+            this.ibdLastUpdate = time.Ticks;
+            this.ibdLastResult = val;
         }
     }
 }
