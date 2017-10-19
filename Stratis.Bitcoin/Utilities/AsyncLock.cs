@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
-    /// Usage: using(await myAsyncLock.LockAsync())
     /// Implementation: https://www.hanselman.com/blog/ComparingTwoTechniquesInNETAsynchronousCoordinationPrimitives.aspx
     /// </summary>
     public sealed class AsyncLock
@@ -21,6 +20,9 @@ namespace Stratis.Bitcoin.Utilities
             this.releaser = Task.FromResult((IDisposable)new Releaser(this));
         }
 
+        /// <summary>
+        /// Usage: using(await myAsyncLock.LockAsync())
+        /// </summary>
         public Task<IDisposable> LockAsync(CancellationToken cancel = default(CancellationToken))
         {
             Task wait = this.semaphore.WaitAsync(cancel);
