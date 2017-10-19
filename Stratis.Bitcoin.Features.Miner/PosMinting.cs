@@ -332,10 +332,17 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("()");
 
             BlockTemplate blockTemplate = null;
-            bool tryToSync = true;
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
+                while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
+                {
+                    if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
+                    else this.logger.LogTrace("Waiting for IBD to complete...");
+
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                }
+
                 ChainedBlock chainTip = this.chain.Tip;
                 if (chainTip != this.consensusLoop.Tip)
                 {
@@ -343,43 +350,14 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                while (!this.connection.ConnectedNodes.Any() || this.chainState.IsInitialBlockDownload)
-                {
-                    if (!this.connection.ConnectedNodes.Any()) this.logger.LogTrace("Waiting to be connected with at least one network peer...");
-                    else this.logger.LogTrace("Waiting for IBD to complete...");
-
-                    tryToSync = true;
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-                }
-
-                // TODO: What is the purpose of this conditional block?
-                // It seems that if it ends with continue, the next round of the loop will just
-                // not execute the above while loop and it won't even enter this block again,
-                // so it seems like no operation.
-                // In StratisX there is the wait uncommented. Then it makes sense. Why we have it commented?
-                if (tryToSync)
-                {
-                    tryToSync = false;
-                    // TODO: This condition to have at least 3 peers is disqualifying us on testnet quite often.
-                    // Yet the 60 secs delay does not prevent us to mine because tryToSync will be false next time we are here
-                    // unless we are completely disconnected. So this is weird logic.
-                    bool fewPeers = this.connection.ConnectedNodes.Count() < 3;
-                    bool lastBlockTooOld = chainTip.Header.Time < (this.dateTimeProvider.GetTime() - 10 * 60);
-                    if ((fewPeers && !this.network.IsTest()) || lastBlockTooOld)
-                    {
-                        if (fewPeers) this.logger.LogTrace("Node is connected to few peers.");
-                        if (lastBlockTooOld) this.logger.LogTrace("Last block is too old, timestamp {0}.", chainTip.Header.Time);
-
-                        await Task.Delay(TimeSpan.FromMilliseconds(60000), this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-                        continue;
-                    }
-                }
-
                 if (this.lastCoinStakeSearchPrevBlockHash != chainTip.HashBlock)
                 {
                     this.lastCoinStakeSearchPrevBlockHash = chainTip.HashBlock;
                     this.lastCoinStakeSearchTime = chainTip.Header.Time;
                     this.logger.LogTrace("New block '{0}' detected, setting last search time to its timestamp {1}.", chainTip, chainTip.Header.Time);
+
+                    // Reset the template as the chain advanced.
+                    blockTemplate = null;
                 }
 
                 uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusValidator.StakeTimestampMask;
@@ -389,11 +367,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.logger.LogTrace("(-)[NOTHING_TO_DO]");
                     return;
                 }
-
-                if (blockTemplate == null)
-                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions { IsProofOfStake = true }).CreateNewBlock(new Script());
-
-                Block block = blockTemplate.Block;
 
                 var stakeTxes = new List<StakeTx>();
                 IEnumerable<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
@@ -425,6 +398,11 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
+
+                if (blockTemplate == null)
+                    blockTemplate = this.blockAssemblerFactory.Create(chainTip, new AssemblerOptions() { IsProofOfStake = true }).CreateNewBlock(new Script());
+
+                Block block = blockTemplate.Block;
 
                 this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();

@@ -1074,7 +1074,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="chainCode">The chain code.</param>
         /// <param name="creationTime">The time this wallet was created.</param>
         /// <returns>The wallet object that was saved into the file system.</returns>
-        /// <exception cref="System.NotSupportedException"></exception>
+        /// <exception cref="WalletException">Thrown if wallet cannot be created.</exception>
         private Wallet GenerateWalletFile(string name, string encryptedSeed, byte[] chainCode, DateTimeOffset? creationTime = null)
         {
             Guard.NotEmpty(name, nameof(name));
@@ -1082,7 +1082,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(chainCode, nameof(chainCode));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
 
-            if (this.fileStorage.Exists($"{name}.{WalletFileExtension}"))
+            // Check if any wallet file already exists, with case insensitive comparison.
+            if (this.Wallets.Any(w => string.Equals(w.Name, name, StringComparison.OrdinalIgnoreCase)))
             {
                 this.logger.LogTrace("(-)[WALLET_ALREADY_EXISTS]");
                 throw new WalletException($"Wallet with name '{name}' already exists.");
@@ -1186,6 +1187,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         public ICollection<uint256> GetFirstWalletBlockLocator()
         {
             return this.Wallets.First().BlockLocator;
+        }
+
+        /// <inheritdoc />
+        public int? GetEarliestWalletHeight()
+        {
+            return this.Wallets.Min(w => w.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight);
+        }
+
+        /// <inheritdoc />
+        public DateTimeOffset GetOldestWalletCreationTime()
+        {
+            return this.Wallets.Min(w => w.CreationTime);
         }
     }
 
