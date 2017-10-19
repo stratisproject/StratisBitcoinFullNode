@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Miner
     {
         protected readonly ConsensusLoop consensusLoop;
         protected readonly Network network;
-        protected readonly MempoolAsyncLock mempoolLock;
+        protected readonly MempoolSchedulerLock mempoolLock;
         protected readonly TxMempool mempool;
         protected readonly IDateTimeProvider dateTimeProvider;
         protected readonly StakeChain stakeChain;
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public PowAssemblerFactory(
             ConsensusLoop consensusLoop,
             Network network,
-            MempoolAsyncLock mempoolLock,
+            MempoolSchedulerLock mempoolLock,
             TxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Miner
     {
         protected readonly ConsensusLoop consensusLoop;
         protected readonly Network network;
-        protected readonly MempoolAsyncLock mempoolScheduler;
+        protected readonly MempoolSchedulerLock mempoolScheduler;
         protected readonly TxMempool mempool;
         protected readonly IDateTimeProvider dateTimeProvider;
         protected readonly StakeChain stakeChain;
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public PosAssemblerFactory(
             ConsensusLoop consensusLoop,
             Network network,
-            MempoolAsyncLock mempoolScheduler,
+            MempoolSchedulerLock mempoolScheduler,
             TxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,

@@ -532,7 +532,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var settings = NodeSettings.Default();
             var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
-            var scheduler = new AsyncLock();
+            var scheduler = new SchedulerLock();
             var rand = new Random();
 
             var value = 10000;

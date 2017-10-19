@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// A lock for managing asynchronous access to memory pool.
     /// </summary>
-    public class MempoolAsyncLock : AsyncLock
+    public class MempoolSchedulerLock : SchedulerLock
     { }
 
     /// <summary>
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolManager(
-            MempoolAsyncLock mempoolLock, 
+            MempoolSchedulerLock mempoolLock, 
             TxMempool memPool,
             IMempoolValidator validator, 
             MempoolOrphans orphans, 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>Lock for memory pool access.</summary>
-        public MempoolAsyncLock MempoolLock { get; }
+        public MempoolSchedulerLock MempoolLock { get; }
 
         /// <summary>Memory pool validator for validating transactions.</summary>
         public IMempoolValidator Validator { get; } // public for testing

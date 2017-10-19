@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
         /// <param name="loggerFactory">Factory for creating instance logger for this object.</param>
         public MempoolOrphans(
-            MempoolAsyncLock mempoolLock, 
+            MempoolSchedulerLock mempoolLock, 
             TxMempool memPool, 
             ConcurrentChain chain, 
             Signals.Signals signals, 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
-        public MempoolAsyncLock MempoolLock { get; }
+        public MempoolSchedulerLock MempoolLock { get; }
 
         /// <summary>Memory pool validator for validating transactions.</summary>
         public IMempoolValidator Validator { get; } // public for testing
