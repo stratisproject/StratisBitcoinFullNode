@@ -34,7 +34,7 @@ So you have 4 options:
 1. To run a <b>Stratis</b> node on <b>MainNet</b>, do
 ```
 cd Stratis.StratisD
-dotnet build
+dotnet restore
 dotnet run
 ```  
 
