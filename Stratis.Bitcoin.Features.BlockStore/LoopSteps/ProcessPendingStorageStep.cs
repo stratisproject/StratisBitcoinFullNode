@@ -55,19 +55,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 
             if (disposeMode)
             {
-                StepResult lres = await this.ProcessWhenDisposing(context);
+                StepResult lres = await this.ProcessWhenDisposingAsync(context);
                 this.logger.LogTrace("(-)[DISPOSE]:{0}", lres);
                 return lres;
             }
 
             if (this.BlockStoreLoop.ChainState.IsInitialBlockDownload)
             {
-                StepResult lres = await this.ProcessWhenInIBD(context);
+                StepResult lres = await this.ProcessWhenInIBDAsync(context);
                 this.logger.LogTrace("(-)[IBD]:{0}", lres);
                 return lres;
             }
 
-            StepResult res = await this.ProcessWhenNotInIBD(context);
+            StepResult res = await this.ProcessWhenNotInIBDAsync(context);
             this.logger.LogTrace("(-):{0}", res);
             return res;
         }
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// When the node disposes, process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until 
         /// its empty
         /// </summary>
-        private async Task<StepResult> ProcessWhenDisposing(ProcessPendingStorageContext context)
+        private async Task<StepResult> ProcessWhenDisposingAsync(ProcessPendingStorageContext context)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(context.NextChainedBlock), context.NextChainedBlock);
 
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             }
 
             if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepository(context);
+                await this.PushBlocksToRepositoryAsync(context);
 
             this.logger.LogTrace("(-):{0}", StepResult.Stop);
             return StepResult.Stop;
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// When the node is in IBD wait for <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/> to be true then continuously process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until 
         /// a stop condition is found, the blocks will be pushed to the repository in batches of size <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/>.
         /// </summary>
-        private async Task<StepResult> ProcessWhenInIBD(ProcessPendingStorageContext context)
+        private async Task<StepResult> ProcessWhenInIBDAsync(ProcessPendingStorageContext context)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(context.NextChainedBlock), context.NextChainedBlock, nameof(this.BlockStoreLoop.PendingStorage), nameof(this.BlockStoreLoop.PendingStorage.Count), this.BlockStoreLoop.PendingStorage.Count);
 
@@ -112,11 +112,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
                     break;
 
                 if (context.PendingStorageBatchSize > BlockStoreLoop.MaxPendingInsertBlockSize)
-                    await this.PushBlocksToRepository(context);
+                    await this.PushBlocksToRepositoryAsync(context);
             }
 
             if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepository(context);
+                await this.PushBlocksToRepositoryAsync(context);
 
             this.logger.LogTrace("(-):{0}", StepResult.Continue);
             return StepResult.Continue;
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// When the node is NOT in IBD, process and push the blocks in <see cref="BlockStoreLoop.PendingStorage"/> immediately 
         /// to the block repository without checking batch size.
         /// </summary>
-        private async Task<StepResult> ProcessWhenNotInIBD(ProcessPendingStorageContext context)
+        private async Task<StepResult> ProcessWhenNotInIBDAsync(ProcessPendingStorageContext context)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(context.NextChainedBlock), context.NextChainedBlock);
 
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
             }
 
             if (context.PendingBlockPairsToStore.Any())
-                await this.PushBlocksToRepository(context);
+                await this.PushBlocksToRepositoryAsync(context);
 
             this.logger.LogTrace("(-):{0}", StepResult.Continue);
             return StepResult.Continue;
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// Store missing blocks and remove them from pending blocks and set the Store's tip to <see cref="ProcessPendingStorageContext.NextChainedBlock"/>
         /// </summary>
         /// <param name="context"><see cref="ProcessPendingStorageContext"/></param>
-        private async Task PushBlocksToRepository(ProcessPendingStorageContext context)
+        private async Task PushBlocksToRepositoryAsync(ProcessPendingStorageContext context)
         {
             this.logger.LogDebug(context.ToString());
 

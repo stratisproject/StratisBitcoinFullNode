@@ -32,20 +32,20 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         protected override void AttachCore()
         {
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
         }
 
         protected override void DetachCore()
         {
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
         }
 
-        private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
         {
             try
             {
                 //Guard.Assert(node == this.AttachedNode); // just in case
-                await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)
             {
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
         }
 
-        private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        private Task ProcessMessageAsync(Node node, IncomingMessage message)
         {
             // check the type of message received.
             // we're only interested in Inventory and Transaction messages.

@@ -60,7 +60,7 @@
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
-            Guard.NotNull(blockStoreCache, nameof(logger));
+            Guard.NotNull(blockStoreCache, nameof(this.logger));
 
             this.chain = chain;
             this.blockRepository = blockRepository;
@@ -93,7 +93,9 @@
             this.logger.LogTrace("(-)");
         }
 
+#pragma warning disable IDE1006 // Naming Styles
         private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+#pragma warning restore IDE1006 // Naming Styles
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
@@ -183,7 +185,7 @@
             this.logger.LogTrace("(-)");
         }
 
-        private async Task SendAsBlockInventory(Node node, IEnumerable<uint256> blocks)
+        private async Task SendAsBlockInventoryAsync(Node node, IEnumerable<uint256> blocks)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(node), node?.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
 
@@ -316,7 +318,7 @@
 
             if (inventoryBlockToSend.Any())
             {
-                Task res = this.SendAsBlockInventory(node, inventoryBlockToSend);
+                Task res = this.SendAsBlockInventoryAsync(node, inventoryBlockToSend);
                 this.logger.LogTrace("(-)[SEND_INVENTORY]");
                 return res;
             }

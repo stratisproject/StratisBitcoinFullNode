@@ -53,7 +53,9 @@ namespace Stratis.Bitcoin.Broadcasting
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
+ #pragma warning disable IDE1006 // Naming Styles
         protected async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+#pragma warning restore IDE1006 // Naming Styles
         {
             try
             {

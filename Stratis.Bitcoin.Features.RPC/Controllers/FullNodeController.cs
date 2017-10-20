@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         [ActionName("getrawtransaction")]
-        public async Task<TransactionModel> GetRawTransaction(string txid, int verbose = 0)
+        public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0)
         {
             uint256 trxid;
             if (!uint256.TryParse(txid, out trxid))
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (verbose != 0)
             {
-                ChainedBlock block = await this.GetTransactionBlock(trxid);
+                ChainedBlock block = await this.GetTransactionBlockAsync(trxid);
                 return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.HighestValidatedPoW);
             }
             else
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="includeMemPool">Whether to include the mempool</param>
         /// <returns>The GetTxOut rpc format</returns>
         [ActionName("gettxout")]
-        public async Task<GetTxOutModel> GetTxOut(string txid, uint vout, bool includeMemPool = true)
+        public async Task<GetTxOutModel> GetTxOutAsync(string txid, uint vout, bool includeMemPool = true)
         {
             uint256 trxid;
             if (!uint256.TryParse(txid, out trxid))
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return model;
         }
 
-        private async Task<ChainedBlock> GetTransactionBlock(uint256 trxid)
+        private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedBlock block = null;
             uint256 blockid = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxBlockIdAsync(trxid);

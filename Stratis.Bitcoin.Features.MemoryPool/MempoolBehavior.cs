@@ -180,7 +180,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
+#pragma warning disable IDE1006 // Naming Styles
         private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+#pragma warning restore IDE1006 // Naming Styles
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
             // TODO: Add exception handling
@@ -233,7 +235,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (mempoolPayload != null)
             {
                 this.logger.LogTrace("(-)[MEMPOOL_PAYLOAD]");
-                return this.SendMempoolPayload(node, mempoolPayload);
+                return this.SendMempoolPayloadAsync(node, mempoolPayload);
             }
 
             GetDataPayload getDataPayload = message.Message.Payload as GetDataPayload;
@@ -260,7 +262,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node Sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private async Task SendMempoolPayload(Node node, MempoolPayload message)
+        private async Task SendMempoolPayloadAsync(Node node, MempoolPayload message)
         {
             Guard.Assert(node == this.AttachedNode); // just in case
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Command);
@@ -307,7 +309,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             });
 
             this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node?.RemoteSocketEndpoint);
-            await this.SendAsTxInventory(node, sends.Select(s => s.Trx.GetHash()));
+            await this.SendAsTxInventoryAsync(node, sends.Select(s => s.Trx.GetHash()));
             this.LastMempoolReq = this.manager.DateTimeProvider.GetTime();
 
             this.logger.LogTrace("(-)");
@@ -352,7 +354,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (blocksOnly)
                     this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, node.RemoteSocketEndpoint);
 
-                if (await this.orphans.AlreadyHave(inv.Hash))
+                if (await this.orphans.AlreadyHaveAsync(inv.Hash))
                 {
                     this.logger.LogDebug("Transaction ID '{0}' already in orphans, skipped.", inv.Hash);
                     continue;
@@ -422,7 +424,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             await this.manager.MempoolLock.WriteAsync(() => this.filterInventoryKnown.TryAdd(trxHash, trxHash));
 
             MempoolValidationState state = new MempoolValidationState(true);
-            if (!await this.orphans.AlreadyHave(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
+            if (!await this.orphans.AlreadyHaveAsync(trxHash) && await this.validator.AcceptToMemoryPool(state, trx))
             {
                 await this.validator.SanityCheck();
                 await this.RelayTransaction(trxHash).ConfigureAwait(false);
@@ -434,11 +436,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 this.logger.LogInformation("Transaction ID '{0}' accepted to memory pool from peer '{1}' (poolsz {2} txn, {3} kb).", trxHash, node.RemoteSocketEndpoint, mmsize, memdyn/1000);
 
-                await this.orphans.ProcessesOrphans(this, trx);
+                await this.orphans.ProcessesOrphansAsync(this, trx);
             }
             else if (state.MissingInputs)
             {
-                await this.orphans.ProcessesOrphansMissingInputs(node, trx);
+                await this.orphans.ProcessesOrphansMissingInputsAsync(node, trx);
             }
             else
             {
@@ -462,7 +464,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node to receive message.</param>
         /// <param name="trxList">List of transactions.</param>
-        private async Task SendAsTxInventory(Node node, IEnumerable<uint256> trxList)
+        private async Task SendAsTxInventoryAsync(Node node, IEnumerable<uint256> trxList)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(trxList), "trxList.Count", trxList?.Count());
             Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(InventoryType.MSG_TX, s)));
@@ -512,7 +514,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Sends transaction inventory to attached node.
         /// This is executed on a 10 second loop when MempoolSignaled is constructed.
         /// </summary>
-        public async Task SendTrickle()
+        public async Task SendTrickleAsync()
         {
             this.logger.LogTrace("()");
             if (!this.CanSend)
@@ -560,7 +562,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (sends.Any())
             {
                 this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", this.AttachedNode.RemoteSocketEndpoint);
-                await this.SendAsTxInventory(this.AttachedNode, sends);
+                await this.SendAsTxInventoryAsync(this.AttachedNode, sends);
             }
 
             this.logger.LogTrace("(-)");

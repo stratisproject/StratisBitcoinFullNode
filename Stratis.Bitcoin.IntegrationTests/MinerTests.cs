@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new MempoolValidationContext(tx, new MempoolValidationState(false));
             context.View = new MempoolCoinView(testContext.cachedCoinView, testContext.mempool, testContext.mempoolLock, null);
-            context.View.LoadView(tx).GetAwaiter().GetResult();
+            context.View.LoadViewAsync(tx).GetAwaiter().GetResult();
             return MempoolValidator.CheckSequenceLocks(chainedBlock, context, flags, uselock, false);
         }
 

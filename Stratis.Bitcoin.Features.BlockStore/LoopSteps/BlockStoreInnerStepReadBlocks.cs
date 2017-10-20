@@ -56,7 +56,7 @@
 
                     if (this.ShouldBlocksBePushedToRepository(context))
                     {
-                        await this.PushBlocksToRepository(context, lastBlockToPush);
+                        await this.PushBlocksToRepositoryAsync(context, lastBlockToPush);
 
                         if (!context.DownloadStack.Any())
                         {
@@ -130,7 +130,7 @@
         /// Push (persist) the downloaded blocks to the block repository
         /// </summary>
         /// <param name="lastDownloadedBlock">Last block in the list to store, also used to set the store tip.</param>
-        private async Task PushBlocksToRepository(BlockStoreInnerStepContext context, ChainedBlock lastDownloadedBlock)
+        private async Task PushBlocksToRepositoryAsync(BlockStoreInnerStepContext context, ChainedBlock lastDownloadedBlock)
         {
             this.logger.LogTrace("()");
 

@@ -128,13 +128,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Loads the memory pool asynchronously from a file.
         /// </summary>
         /// <param name="fileName">Filename to load from.</param>
-        internal async Task LoadPool(string fileName = null)
+        internal async Task LoadPoolAsync(string fileName = null)
         {
             if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
             {
                 this.mempoolLogger.LogInformation("Loading Memory Pool...");
                 IEnumerable<MempoolPersistenceEntry> entries = this.mempoolPersistence.Load(fileName);
-                await this.AddMempoolEntriesToMempool(entries);
+                await this.AddMempoolEntriesToMempoolAsync(entries);
             }
             else
             {
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return null;
             }
             var memPoolCoinView = new MempoolCoinView(this.coinView, this.memPool, this.MempoolLock, this.Validator);
-            await memPoolCoinView.LoadView(txInfo.Trx);
+            await memPoolCoinView.LoadViewAsync(txInfo.Trx);
             return memPoolCoinView.GetCoins(trxid);
         }
 
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Add persisted mempool entries to the memory pool.
         /// </summary>
         /// <param name="entries">Entries read from mempool cache.</param>
-        internal async Task AddMempoolEntriesToMempool(IEnumerable<MempoolPersistenceEntry> entries)
+        internal async Task AddMempoolEntriesToMempoolAsync(IEnumerable<MempoolPersistenceEntry> entries)
         {
             int i = 0;
             if (entries != null)

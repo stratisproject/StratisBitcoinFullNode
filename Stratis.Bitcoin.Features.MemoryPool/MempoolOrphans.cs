@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="trxid">transaction id to search for.</param>
         /// <returns>Whether the transaction id is present.</returns>
-        public async Task<bool> AlreadyHave(uint256 trxid)
+        public async Task<bool> AlreadyHaveAsync(uint256 trxid)
         {
             if (this.chain.Tip.HashBlock != this.hashRecentRejectsChainTip)
             {
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="behavior">Memory pool behavior that received new transaction.</param>
         /// <param name="tx">The new transaction received.</param>
-        public async Task ProcessesOrphans(MempoolBehavior behavior, Transaction tx)
+        public async Task ProcessesOrphansAsync(MempoolBehavior behavior, Transaction tx)
         {
             Queue<OutPoint> vWorkQueue = new Queue<OutPoint>();
             List<uint256> vEraseQueue = new List<uint256>();
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="from">Source node for transaction.</param>
         /// <param name="tx">Transaction to add.</param>
         /// <returns>Whether the transaction was added to orphans.</returns>
-        public async Task<bool> ProcessesOrphansMissingInputs(Node from, Transaction tx)
+        public async Task<bool> ProcessesOrphansMissingInputsAsync(Node from, Transaction tx)
         {
             // It may be the case that the orphans parents have all been rejected
             var rejectedParents = await this.MempoolLock.ReadAsync(() =>
@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             int nMaxOrphanTx = this.mempoolSettings.MaxOrphanTx;
-            int nEvicted = await this.LimitOrphanTxSize(nMaxOrphanTx);
+            int nEvicted = await this.LimitOrphanTxSizeAsync(nMaxOrphanTx);
             if (nEvicted > 0)
                 this.mempoolLogger.LogInformation($"mapOrphan overflow, removed {nEvicted} tx");
 
@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="maxOrphanTx">Size to limit the orphan transactions to.</param>
         /// <returns>The number of transactions evicted.</returns>
-        public async Task<int> LimitOrphanTxSize(int maxOrphanTx)
+        public async Task<int> LimitOrphanTxSizeAsync(int maxOrphanTx)
         {
             int nEvicted = 0;
             var nNow = this.dateTimeProvider.GetTime();

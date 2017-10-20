@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 		}
 
 		[Fact]
-		public async Task RouteAsyncLoadsRouteContextWithoutControllerDescriptorOntoRouteData()
+		public async Task RouteAsyncLoadsRouteContextWithoutControllerDescriptorOntoRouteDataAsync()
 		{
 			var request = new HttpRequestFeature();
 			SetupRequestBody(request, "{\"method\": \"GET\"}");
