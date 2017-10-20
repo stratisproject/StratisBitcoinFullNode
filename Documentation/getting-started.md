@@ -23,8 +23,7 @@ To install and run the node, you need
 ```
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
 cd StratisBitcoinFullNode
-git checkout master
-git submodule updated --init --recursive
+git submodule update --init --recursive
 ```
 
 ### Build and run the code
@@ -34,7 +33,6 @@ So you have 4 options:
 1. To run a <b>Stratis</b> node on <b>MainNet</b>, do
 ```
 cd Stratis.StratisD
-dotnet restore
 dotnet run
 ```  
 
