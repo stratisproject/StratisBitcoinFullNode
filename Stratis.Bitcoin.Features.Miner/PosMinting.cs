@@ -415,7 +415,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (await this.StakeAndSignBlockAsync(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
-                    await this.CheckStakeAsync(block, chainTip).ConfigureAwait(false);
+                    this.CheckStakeAsync(block, chainTip);
 
                     blockTemplate = null;
                 }
@@ -433,7 +433,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="block">The new block.</param>
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
-        private async Task CheckStakeAsync(Block block, ChainedBlock chainTip)
+        private void CheckStakeAsync(Block block, ChainedBlock chainTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainTip), chainTip);
 

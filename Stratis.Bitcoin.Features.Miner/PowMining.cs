@@ -113,81 +113,71 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
 
-                try
+                ChainedBlock chainTip = this.consensusLoop.Tip;
+                if (this.chain.Tip != chainTip)
                 {
-                    ChainedBlock chainTip = this.consensusLoop.Tip;
-                    if (this.chain.Tip != chainTip)
-                    {
-                        Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
-                        continue;
-                    }
-
-                    BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
-
-                    if (Block.BlockSignature)
-                    {
-                        // POS: make sure the POS consensus rules are valid 
-                        if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
-                        {
-                            continue;
-                        }
-                    }
-
-                    this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
-                    Block pblock = pblockTemplate.Block;
-
-                    while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
-                    {
-                        this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
-
-                        ++pblock.Header.Nonce;
-                        --maxTries;
-                    }
-
-                    if (maxTries == 0)
-                        break;
-
-                    if (pblock.Header.Nonce == InnerLoopCount)
-                        continue;
-
-                    var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
-
-                    if (newChain.ChainWork <= chainTip.ChainWork)
-                        continue;
-
-                    var blockResult = new BlockItem { Block = pblock };
-
-                    this.consensusLoop.AcceptBlock(blockResult);
-
-                    if (blockResult.ChainedBlock == null)
-                    {
-                        this.logger.LogTrace("(-)[REORG-2]");
-                        return blocks;
-                    }
-
-                    if (blockResult.Error != null)
-                    {
-                        if (blockResult.Error == ConsensusErrors.InvalidPrevTip)
-                            continue;
-
-                        this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
-                        return blocks;
-                    }
-
-                    this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);
-
-                    nHeight++;
-                    blocks.Add(pblock.GetHash());
-
-                    pblockTemplate = null;
+                    Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    continue;
                 }
-                catch (ConsensusErrorException cer)
+
+                BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
+
+                if (Block.BlockSignature)
                 {
-                    if (cer.ConsensusError == ConsensusErrors.InvalidPrevTip)
+                    // POS: make sure the POS consensus rules are valid 
+                    if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
+                    {
+                        continue;
+                    }
+                }
+
+                this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
+                Block pblock = pblockTemplate.Block;
+
+                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
+                {
+                    this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+
+                    ++pblock.Header.Nonce;
+                    --maxTries;
+                }
+
+                if (maxTries == 0)
+                    break;
+
+                if (pblock.Header.Nonce == InnerLoopCount)
+                    continue;
+
+                var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
+
+                if (newChain.ChainWork <= chainTip.ChainWork)
+                    continue;
+
+                var blockResult = new BlockItem { Block = pblock };
+
+                this.consensusLoop.AcceptBlock(blockResult);
+
+                if (blockResult.ChainedBlock == null)
+                {
+                    this.logger.LogTrace("(-)[REORG-2]");
+                    return blocks;
+                }
+
+                if (blockResult.Error != null)
+                {
+                    if (blockResult.Error == ConsensusErrors.InvalidPrevTip)
                         continue;
 
-                    throw;
+                    this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
+                    return blocks;
                 }
+
+                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);
+
+                nHeight++;
+                blocks.Add(pblock.GetHash());
+
+                pblockTemplate = null;
             }
 
             return blocks;

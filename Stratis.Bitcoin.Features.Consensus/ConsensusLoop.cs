@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A signaler that used to signal messages between features.</summary>
         private readonly Signals.Signals signals;
 
-        /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlock"/> method.</summary>
+        /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlock"/> and the reorg part of <see cref="ConsensusLoop.PullerLoop"/> methods.</summary>
         private readonly object consensusLock;
 
         /// <summary>
@@ -171,9 +171,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             this.Puller.SetLocation(this.Tip);
 
-            this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async token =>
+            this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", token =>
             {
-                await this.PullerLoop(this.nodeLifetime.ApplicationStopping);
+                this.PullerLoop(this.nodeLifetime.ApplicationStopping);
+
+                return Task.CompletedTask;
             }, 
             this.nodeLifetime.ApplicationStopping, 
             repeatEvery: TimeSpans.RunOnce);
@@ -193,9 +195,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// A puller method that will continuously loop and ask for the next block  in the chain from peers.
         /// The block will then be passed to the consensus validation. 
         /// </summary>
+        /// <remarks>
+        /// If the <see cref="Block"/> returned from the puller is null that means the puller is signalling a reorg was detected.
+        /// In this case a rewind of the <see cref="CoinView"/> db will be triggered to roll back consensus until a block is found that is in the best chain.
+        /// </remarks>
         /// <param name="cancellationToken">A cancellation token that will stop the loop.</param>
-        /// <returns>The task the loop will be running under.</returns>
-        private Task PullerLoop(CancellationToken cancellationToken)
+        private void PullerLoop(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -205,19 +210,49 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
                     {
+                        // This method will block until the next block is downloaded.
                         item.Block = this.Puller.NextBlock(cancellationToken);
+
+                        if (item.Block == null)
+                        {
+                            lock (this.consensusLock)
+                            {
+                                this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
+                                ChainedBlock lastTip = this.Tip;
+
+                                CancellationToken token = this.nodeLifetime.ApplicationStopping;
+
+                                ChainedBlock rewinded = null;
+                                while (rewinded == null)
+                                {
+                                    token.ThrowIfCancellationRequested();
+
+                                    uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                                    rewinded = this.Chain.GetBlock(hash);
+                                    if (rewinded == null)
+                                    {
+                                        this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.", hash);
+                                    }
+                                }
+
+                                this.Tip = rewinded;
+                                this.Puller.SetLocation(rewinded);
+                                this.chainState.HighestValidatedPoW = this.Tip;
+                                this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
+                                break;
+                            }
+                        }
                     }
 
                     this.logger.LogTrace("Block received from puller.");
                     this.AcceptBlock(item);
-
                 }
                 catch (Exception ex)
                 {
                     if (ex is OperationCanceledException)
                     {
                         if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                            return Task.FromException(ex);
+                            return;
                     }
 
                     // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
@@ -227,49 +262,20 @@ namespace Stratis.Bitcoin.Features.Consensus
                     throw;
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>
         /// A method that will accept a new block to the node.
         /// The block will be validated and the <see cref="CoinView"/> db will be updated.
-        /// If its a new block that extends the chain then the <see cref="ConcurrentChain.Tip"/> will be set.
+        /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
         /// </summary>
-        /// <param name="item">The block to validate</param>
+        /// <param name="item">The block to validate.</param>
         public void AcceptBlock(BlockItem item)
         {
             this.logger.LogTrace("()");
 
             lock (this.consensusLock)
             {
-                if (item.Block == null)
-                {
-                    this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
-                    ChainedBlock lastTip = this.Tip;
-
-                    var token = this.nodeLifetime.ApplicationStopping;
-
-                    while (true)
-                    {
-                        token.ThrowIfCancellationRequested();
-
-                        uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
-                        ChainedBlock rewinded = this.Chain.GetBlock(hash);
-                        if (rewinded == null)
-                        {
-                            this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.",
-                                hash);
-                            continue;
-                        }
-
-                        this.Tip = rewinded;
-                        this.Puller.SetLocation(rewinded);
-                        this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
-                        return;
-                    }
-                }
-
                 try
                 {
                     this.ValidateBlock(new ContextInformation(item, this.Validator.ConsensusParams));
@@ -300,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
                     this.logger.LogError("Marking block as invalid.");
-                    this.chainState.MarkBlockInvalid(item.Block?.GetHash());
+                    this.chainState.MarkBlockInvalid(item.Block.GetHash());
                 }
                 else
                 {
@@ -335,6 +341,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <remarks>
         /// WARNING: This method can only be called from <see cref="ConsensusLoop.AcceptBlock"/>, 
         /// it the requirement is to validate a block without affecting the consensus db then <see cref="ContextInformation.OnlyCheck"/> must be set to true.
+        /// </remarks>
+        /// <remarks>
+        /// TODO: This method can be broken in two parts (and remove the WARNING) where one part will only validate (anything before the context.OnlyCheck flag) and second part will also effect state (update the CoinView DB).
         /// </remarks>
         /// <param name="context">A context that contains all information required to validate the block.</param>
         public void ValidateBlock(ContextInformation context)
@@ -428,9 +437,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// This method try to load from cash the items of the next block, in a background task. 
+        /// This method try to load from cashe the UTXO of the next block in a background task. 
         /// </summary>
-        /// <param name="flags">A flag to provide information about activated features.</param>
+        /// <param name="flags">Information about activated features.</param>
         /// <returns>The process task.</returns>
         private Task TryPrefetchAsync(DeploymentFlags flags)
         {
@@ -450,10 +459,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Get transaction identifiers to try to pref-etch them from cache.
+        /// Get transaction identifiers to try to pre-fetch them from cache.
         /// </summary>
         /// <param name="block">The block containing transactions to fetch.</param>
-        /// <param name="enforceBIP30">The BIP30 flag.</param>
+        /// <param name="enforceBIP30"><c>true</c> to enforce BIP30.</param>
         /// <returns>List of transaction ids.</returns>
         public uint256[] GetIdsToFetch(Block block, bool enforceBIP30)
         {
