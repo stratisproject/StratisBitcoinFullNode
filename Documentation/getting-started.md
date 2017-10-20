@@ -57,8 +57,8 @@ dotnet run -testnet
 ```  
 
 ### Script
-We have a little nifty script that can execute all the previous commands for you, including starting the node.  
-You just need to edit the file and specify whether you want to run a Stratis or Bitcoin node, on MainNet or Testnet.  
+We have a nifty little script that can execute all the previous commands for you, including starting the node.  
+You just need to edit the file and specify whether you want to run a Stratis or a Bitcoin node, on MainNet or Testnet.  
 It's located [here](https://gist.github.com/bokobza/e68832f5d7d4102bcb33fcde8d9a72fb#file-build-and-run-a-stratis-node-ps1).
 
 
