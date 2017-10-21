@@ -21,13 +21,13 @@
         public DateTime Start { get; private set; }
 
         /// <summary>Provider of date time functionality.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
+        protected readonly IDateTimeProvider dateTimeProvider;
 
         public BlockStoreCachePerformanceCounter(IDateTimeProvider dateTimeProvider, string name = "BlockStore")
         {
             this.Name = name;
             this.dateTimeProvider = dateTimeProvider;
-            this.Start = DateTime.UtcNow;
+            this.Start = this.dateTimeProvider.GetUtcNow();
         }
 
         public TimeSpan Elapsed

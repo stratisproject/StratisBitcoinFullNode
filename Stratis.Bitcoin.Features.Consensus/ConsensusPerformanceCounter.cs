@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -189,9 +190,17 @@ namespace Stratis.Bitcoin.Features.Consensus
 	}
 	public class ConsensusPerformanceCounter
 	{
-		public ConsensusPerformanceCounter()
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>
+        /// Initializes an instance of the object.
+        /// </summary>
+        /// <param name="dateTimeProvider">Provider of date time functionality.</param>
+        public ConsensusPerformanceCounter(IDateTimeProvider dateTimeProvider)
 		{
-            this._Start = DateTime.UtcNow;
+            this.dateTimeProvider = dateTimeProvider;
+            this._Start = this.dateTimeProvider.GetUtcNow();
 		}
 
 		long _ProcessedTransactions;
@@ -279,8 +288,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 			var snap = new ConsensusPerformanceSnapshot(this.ProcessedInputs, this.ProcessedTransactions, this.ProcessedBlocks, this._BlockFetchingTime, this._BlockProcessingTime, this._UTXOFetchingTime)
 			{
 				Start = this.Start,
-				Taken = DateTime.UtcNow
-			};
+				Taken = this.dateTimeProvider.GetUtcNow()
+            };
 			return snap;
 		}
 
@@ -296,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 		{
 			get
 			{
-				return DateTime.UtcNow - this.Start;
+				return this.dateTimeProvider.GetUtcNow() - this.Start;
 			}
 		}
 
