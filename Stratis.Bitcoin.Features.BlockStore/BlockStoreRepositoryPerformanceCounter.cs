@@ -88,9 +88,6 @@
 
         public BlockStoreRepositoryPerformanceSnapshot Snapshot()
         {
-#if !(PORTABLE || NETCORE)
-            Thread.MemoryBarrier();
-#endif
             var snap = new BlockStoreRepositoryPerformanceSnapshot(this.RepositoryHitCount, this.RepositoryMissCount, this.RepositoryDeleteCount, this.RepositoryInsertCount, this.Name)
             {
                 Start = this.Start,
