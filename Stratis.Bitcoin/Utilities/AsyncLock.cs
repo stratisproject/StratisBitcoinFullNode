@@ -28,17 +28,10 @@ namespace Stratis.Bitcoin.Utilities
             Task wait = this.semaphore.WaitAsync(cancel);
 
             if (wait.IsCompleted)
-            {
                 return this.releaser;
-            }
-            else
-            {
-                return wait.ContinueWith((_, state) =>
-                    (IDisposable)state,
-                    this.releaser.Result, cancel,
-                    TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.Default);
-            }
+
+            return wait.ContinueWith((_, state) => (IDisposable)state, this.releaser.Result, 
+                cancel, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
 
         private sealed class Releaser : IDisposable
