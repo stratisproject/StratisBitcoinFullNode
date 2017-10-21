@@ -30,7 +30,7 @@
         {
             get
             {
-                return DateTime.UtcNow - this.Start;
+                return this.dateTimeProvider.GetUtcNow() - this.Start;
             }
         }
 
