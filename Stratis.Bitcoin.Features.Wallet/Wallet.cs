@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -10,7 +11,7 @@ using System.Linq;
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
-    /// A wallet
+    /// A wallet.
     /// </summary>
     public class Wallet
     {
@@ -224,8 +225,16 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class AccountRoot
     {
-        public AccountRoot()
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>
+        /// Initializes a new instance of the wallet.
+        /// </summary>
+        /// <param name="dateTimeProvider">Provider of date time functionality.</param>
+        public AccountRoot(IDateTimeProvider dateTimeProvider)
         {
+            this.dateTimeProvider = dateTimeProvider;
             this.Accounts = new List<HdAccount>();
         }
 
@@ -330,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 InternalAddresses = new List<HdAddress>(),
                 Name = $"account {newAccountIndex}",
                 HdPath = accountHdPath,
-                CreationTime = DateTimeOffset.Now
+                CreationTime = this.dateTimeProvider.GetTimeOffset()
             };
 
             accounts.Add(newAccount);

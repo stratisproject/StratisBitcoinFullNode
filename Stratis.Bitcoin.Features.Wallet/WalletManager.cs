@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
@@ -88,6 +89,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly FileStorage<Wallet> fileStorage;
         private readonly IBroadcasterManager broadcasterManager;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         public uint256 WalletTipHash { get; set; }
 
         // TODO: a second lookup dictionary is proposed to lookup for spent outputs
@@ -110,6 +114,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
+            IDateTimeProvider dateTimeProvider,
             IMempoolValidator mempoolValidator = null, // mempool does not exist in a light wallet
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
         {
@@ -138,6 +143,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
+            this.dateTimeProvider = dateTimeProvider;
 
             // register events
             if (this.broadcasterManager != null)
@@ -176,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.logger.LogTrace("()");
 
                 this.SaveWallets();
-                this.logger.LogInformation("Wallets saved to file at {0}.", DateTime.Now);
+                this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
 
                 this.logger.LogTrace("(-)");
                 return Task.CompletedTask;
@@ -1107,9 +1113,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Name = name,
                 EncryptedSeed = encryptedSeed,
                 ChainCode = chainCode,
-                CreationTime = creationTime ?? DateTimeOffset.Now,
+                CreationTime = creationTime ?? this.dateTimeProvider.GetTimeOffset(),
                 Network = this.network,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
+                AccountsRoot = new List<AccountRoot> { new AccountRoot(this.dateTimeProvider) { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
             };
 
             // create a folder if none exists and persist the file
