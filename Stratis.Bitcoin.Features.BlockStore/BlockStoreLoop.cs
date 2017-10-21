@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.dateTimeProvider = dateTimeProvider;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.logger);
+            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.dateTimeProvider, this.logger);
         }
 
         /// <summary>
