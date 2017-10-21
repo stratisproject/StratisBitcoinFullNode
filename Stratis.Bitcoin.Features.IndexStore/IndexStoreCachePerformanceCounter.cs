@@ -17,9 +17,6 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public override BlockStoreCachePerformanceSnapshot Snapshot()
         {
-#if !(PORTABLE || NETCORE)
-			Thread.MemoryBarrier();
-#endif
             var snap = new IndexStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount)
             {
                 Start = this.Start,
