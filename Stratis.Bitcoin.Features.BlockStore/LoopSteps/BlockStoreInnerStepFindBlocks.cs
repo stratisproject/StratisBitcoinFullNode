@@ -13,7 +13,7 @@
     /// <see cref="BlockStoreInnerStepContext.DownloadStackThreshold"/> blocks.
     /// </para>
     /// <para>
-    /// If a stop condition is found <see cref="ShouldStopFindingBlocks"/> and
+    /// If a stop condition is found <see cref="ShouldStopFindingBlocksAsync"/> and
     /// there are still blocks to download, stop finding new blocks and only execute
     /// the read blocks inner step <see cref="BlockStoreInnerStepReadBlocks"/>.
     /// </para> 
@@ -36,7 +36,7 @@
 
             while (batchList.Count < batchSize)
             {
-                if (await ShouldStopFindingBlocks(context))
+                if (await ShouldStopFindingBlocksAsync(context))
                 {
                     context.StopFindingBlocks();
                     break;
@@ -56,7 +56,7 @@
             return InnerStepResult.Next;
         }
 
-        private async Task<bool> ShouldStopFindingBlocks(BlockStoreInnerStepContext context)
+        private async Task<bool> ShouldStopFindingBlocksAsync(BlockStoreInnerStepContext context)
         {
             this.logger.LogTrace("()");
 

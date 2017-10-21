@@ -11,7 +11,7 @@
     /// <summary>
     /// The chain of block store loop steps that is executed when the
     /// BlockStoreLoop's DownloadAndStoreBlocks is called.
-    /// <seealso cref="BlockStoreLoop.DownloadAndStoreBlocks"/>
+    /// <seealso cref="BlockStoreLoop.DownloadAndStoreBlocksAsync"/>
     /// </summary>
     internal sealed class BlockStoreStepChain
     {
@@ -38,7 +38,7 @@
         /// <param name="disposeMode">This is <c>true</c> if <see cref="BlockStoreLoop.Flush"/> was called.</param>
         /// <param name="cancellationToken">Cancellation token to check.</param>
         /// <returns>BlockStoreLoopStepResult</returns>
-        internal async Task<StepResult> Execute(ChainedBlock nextChainedBlock, bool disposeMode, CancellationToken cancellationToken)
+        internal async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, bool disposeMode, CancellationToken cancellationToken)
         {
             foreach (var step in this.steps)
             {

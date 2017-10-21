@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // announce the blocks on each nodes behaviour
                 var behaviours = nodes.Select(s => s.Behavior<MempoolBehavior>());
                 foreach (var behaviour in behaviours)
-                    await behaviour.SendTrickle().ConfigureAwait(false);
+                    await behaviour.SendTrickleAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.TenSeconds,

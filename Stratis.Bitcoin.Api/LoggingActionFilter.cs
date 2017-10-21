@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Api
 {
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Api
             
             // get the body
             var body = string.Empty;
-            var arguments = context.ActionArguments;
+            IDictionary<string, object> arguments = context.ActionArguments;
             if (request.ContentLength != null && arguments != null && arguments.Any())
             {
                body = string.Join(Environment.NewLine, arguments.Values);

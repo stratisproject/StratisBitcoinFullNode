@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Load the coin view for a memory pool transaction.
         /// </summary>
         /// <param name="trx">Memory pool transaction.</param>
-        public async Task LoadView(Transaction trx)
+        public async Task LoadViewAsync(Transaction trx)
         {
             // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();

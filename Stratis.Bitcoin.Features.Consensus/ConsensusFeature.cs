@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
 
-            this.stakeChain?.Load().GetAwaiter().GetResult();
+            this.stakeChain?.LoadAsync().GetAwaiter().GetResult();
 
             this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async token =>
             {
