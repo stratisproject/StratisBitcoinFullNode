@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     /// <example>
     /// <code>
-    /// private asyncLock = new AsyncLock();
+    /// private AsyncLock asyncLock = new AsyncLock();
     /// ...
     /// using (await asyncLock.LockAsync(cancellationToken))
     /// {
