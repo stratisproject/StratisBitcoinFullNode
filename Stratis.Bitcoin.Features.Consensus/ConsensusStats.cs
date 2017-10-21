@@ -26,7 +26,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ChainState chainState;
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connectionManager;
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
 
         public ConsensusStats(
             CoinViewStack stack, 
@@ -35,6 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ChainState chainState, 
             ConcurrentChain chain, 
             IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory)
         {
             stack = new CoinViewStack(coinView);
@@ -51,6 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainState = chainState;
             this.chain = chain;
             this.connectionManager = connectionManager;
+            this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -58,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             get
             {
-                return this.chainState.IsInitialBlockDownload && (DateTimeOffset.UtcNow - this.lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
+                return this.chainState.IsInitialBlockDownload && (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
             }
         }
 
