@@ -88,10 +88,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.OnlyCheck = false;
         }
 
-        public void SetBestBlock()
+        public void SetBestBlock(DateTime now)
         {
             this.BestBlock = new ContextBlockInformation(this.BlockResult.ChainedBlock.Previous, this.Consensus);
-            this.Time = DateTimeOffset.UtcNow;
+            this.Time = now;
         }
 
         public void SetStake()
