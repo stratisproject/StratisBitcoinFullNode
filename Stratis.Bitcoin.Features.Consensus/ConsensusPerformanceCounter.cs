@@ -276,9 +276,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
 		public ConsensusPerformanceSnapshot Snapshot()
 		{
-#if !(PORTABLE || NETCORE)
-			Thread.MemoryBarrier();
-#endif
 			var snap = new ConsensusPerformanceSnapshot(this.ProcessedInputs, this.ProcessedTransactions, this.ProcessedBlocks, this._BlockFetchingTime, this._BlockProcessingTime, this._UTXOFetchingTime)
 			{
 				Start = this.Start,
