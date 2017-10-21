@@ -551,6 +551,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(MempoolErrors.Coinbase).Throw();
 
             // TODO: Implement Witness Code
+            // Bitcoin Ref: https://github.com/bitcoin/bitcoin/blob/ea729d55b4dbd17a53ced474a8457d4759cfb5a5/src/validation.cpp#L463-L467
             //// Reject transactions with witness before segregated witness activates (override with -prematurewitness)
             bool witnessEnabled = false;//IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus());
             //if (!GetBoolArg("-prematurewitness",false) && tx.HasWitness() && !witnessEnabled) {
@@ -574,6 +575,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Validate the transaction is a standard transaction.
         /// Checks the version number, transaction size, input signature size,
         /// output script template, single output, & dust outputs.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp##L82-L144"/>
         /// </summary>
         /// <param name="context">Current validation context.</param>
         /// <param name="witnessEnabled">Whether witness is enabled.</param>
@@ -617,7 +619,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxOut txout in tx.Outputs)
             {
                 ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
-                if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))
+                if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     context.State.Fail(MempoolErrors.Scriptpubkey).Throw();
                 }
