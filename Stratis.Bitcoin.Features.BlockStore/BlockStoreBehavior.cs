@@ -60,7 +60,7 @@
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
-            Guard.NotNull(blockStoreCache, nameof(this.logger));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
             this.chain = chain;
             this.blockRepository = blockRepository;
