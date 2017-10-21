@@ -1153,7 +1153,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private bool IsWitnessStandard(Transaction tx, MempoolCoinView mapInputs)
         {
             if (tx.IsCoinBase)
-                return true; // Coinbases are skipped
+                return true; // Coinbases are skipped.
 
             foreach (TxIn input in tx.Inputs)
             {
@@ -1164,7 +1164,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 TxOut prev = mapInputs.GetOutputFor(input);
 
-                // get the scriptPubKey corresponding to this input:
+                // Get the scriptPubKey corresponding to this input.
                 Script prevScript = prev.ScriptPubKey;
                 if (prevScript.IsPayToScriptHash)
                 {
@@ -1178,33 +1178,52 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     prevScript = sigParams.RedeemScript;
                 }
 
-                // Non-witness program must not be associated with any witness
+                // Non-witness program must not be associated with any witness.
                 if (!prevScript.IsWitness)
                     return false;
 
-                // todo: validate the witness program - stack script size, max stack items, stack item size
-                // Bitcoin logic from here https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L225-L243
-                //int witnessversion = 0;
-                //std::vector < unsigned char> witnessprogram;
+                // Check P2WSH standard limits.
+                WitProgramParameters wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(prevScript);
+                if (wit == null)
+                    return false;
 
-                //// Non-witness program must not be associated with any witness
-                //if (!prevScript.IsWitnessProgram(witnessversion, witnessprogram))
-                //    return false;
+                // Version 0 segregated witness program validation.
+                if (wit.Version == 0 && wit.Program.Length == 32)
+                {
+                    const int MaxStandardP2wshScriptSize = 3600;
+                    const int MaxStandardP2wshStackItems = 100;
+                    const int MaxStandardP2wshStackItemSize = 80;
 
-                //// Check P2WSH standard limits
-                //if (witnessversion == 0 && witnessprogram.size() == 32)
-                //{
-                //    if (tx.vin[i].scriptWitness.stack.back().size() > MAX_STANDARD_P2WSH_SCRIPT_SIZE)
-                //        return false;
-                //    size_t sizeWitnessStack = tx.vin[i].scriptWitness.stack.size() - 1;
-                //    if (sizeWitnessStack > MAX_STANDARD_P2WSH_STACK_ITEMS)
-                //        return false;
-                //    for (unsigned int j = 0; j < sizeWitnessStack; j++)
-                //    {
-                //        if (tx.vin[i].scriptWitness.stack[j].size() > MAX_STANDARD_P2WSH_STACK_ITEM_SIZE)
-                //            return false;
-                //    }
-                //}
+                    WitScript witness = input.WitScript;
+
+                    // Get P2WSH script from top of stack.
+                    Script scriptPubKey = Script.FromBytesUnsafe(witness.GetUnsafePush(witness.PushCount - 1));
+
+                    // Stack items are remainder of stack.
+                    int sizeWitnessStack = witness.PushCount - 1;
+
+                    // Get the witness stack items.
+                    List<byte[]> stack = new List<byte[]>();
+                    for (int i = 0; i < sizeWitnessStack; i++)
+                    {
+                        stack.Add(witness.GetUnsafePush(i));
+                    }
+
+                    // Validate P2WSH script isn't larger than max length.
+                    if (scriptPubKey.ToBytes(true).Length > MaxStandardP2wshScriptSize)
+                        return false;
+
+                    // Validate number items in witness stack isn't larger than max.
+                    if (sizeWitnessStack > MaxStandardP2wshStackItems)
+                        return false;
+
+                    // Validate size of each of the witness stack items.
+                    for (int j = 0; j < sizeWitnessStack; j++)
+                    {
+                        if (stack[j].Length > MaxStandardP2wshStackItemSize)
+                            return false;
+                    }
+                }
             }
 
             return true;
