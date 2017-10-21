@@ -446,7 +446,7 @@ namespace Stratis.Bitcoin.Base
                     VersionPayload version = node.PeerVersion;
                     if (version != null)
                     {
-                        TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetUtcNow();
+                        TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
                         if (timeOffset != null) this.state.AddTimeData(address, timeOffset, node.Inbound);
                     }
                     else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);                    
