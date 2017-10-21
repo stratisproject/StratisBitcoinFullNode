@@ -92,9 +92,6 @@
 
         public virtual BlockStoreCachePerformanceSnapshot Snapshot()
         {
-#if !(PORTABLE || NETCORE)
-            Thread.MemoryBarrier();
-#endif
             var snap = new BlockStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount, this.Name)
             {
                 Start = this.Start,
