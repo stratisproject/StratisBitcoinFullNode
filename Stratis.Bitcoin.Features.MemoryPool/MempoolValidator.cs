@@ -734,10 +734,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (this.mempoolSettings.NodeSettings.RequireStandard && !this.AreInputsStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardInputs).Throw();
 
-            // TODO: Implement Witness Code
-            //// Check for non-standard witness in P2WSH
-            //if (tx.HasWitness && requireStandard && !IsWitnessStandard(Trx, context.View))
-            //  state.Invalid(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "bad-witness-nonstandard")).Throw();
+            // Check for non-standard witness in P2WSH
+            if (context.Transaction.HasWitness && this.mempoolSettings.NodeSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
+                context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
 
             context.SigOpsCost = this.consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
                 new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
@@ -1144,14 +1143,76 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>
         /// Whether transaction is witness standard.
-        /// Not implemented.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L196"/>
         /// </summary>
         /// <param name="tx">Transaction to verify.</param>
         /// <param name="mapInputs">Map of previous transactions that have outputs we're spending.</param>
         /// <returns>Whether transaction is witness standard.</returns>
         private bool IsWitnessStandard(Transaction tx, MempoolCoinView mapInputs)
         {
-            // TODO: Implement Witness Code
+            if (tx.IsCoinBase)
+                return true; // Coinbases are skipped
+
+            foreach (TxIn input in tx.Inputs)
+            {
+                // We don't care if witness for this input is empty, since it must not be bloated.
+                // If the script is invalid without witness, it would be caught sooner or later during validation.
+                if (!input.ScriptSig.IsWitness)
+                    continue;
+
+                TxOut prev = mapInputs.GetOutputFor(input);
+
+                // get the scriptPubKey corresponding to this input:
+                Script prevScript = prev.ScriptPubKey;
+                if (prevScript.IsPayToScriptHash)
+                {
+                    // If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
+                    // into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
+                    // If the check fails at this stage, we know that this txid must be a bad one.
+                    ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
+                    if (template == null)
+                        return false;
+
+                    //todo: extract redeem script, validate and set to prevScript
+
+                    //std::vector < std::vector < unsigned char> > stack;
+                    //// If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
+                    //// into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
+                    //// If the check fails at this stage, we know that this txid must be a bad one.
+                    //if (!EvalScript(stack, tx.vin[i].scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker(), SIGVERSION_BASE))
+                    //    return false;
+                    //if (stack.empty())
+                    //    return false;
+                    //prevScript = CScript(stack.back().begin(), stack.back().end());
+                }
+
+                // Non-witness program must not be associated with any witness
+                if (!prevScript.IsWitness)
+                    return false;
+
+                //int witnessversion = 0;
+                //std::vector < unsigned char> witnessprogram;
+
+                //// Non-witness program must not be associated with any witness
+                //if (!prevScript.IsWitnessProgram(witnessversion, witnessprogram))
+                //    return false;
+
+                //// Check P2WSH standard limits
+                //if (witnessversion == 0 && witnessprogram.size() == 32)
+                //{
+                //    if (tx.vin[i].scriptWitness.stack.back().size() > MAX_STANDARD_P2WSH_SCRIPT_SIZE)
+                //        return false;
+                //    size_t sizeWitnessStack = tx.vin[i].scriptWitness.stack.size() - 1;
+                //    if (sizeWitnessStack > MAX_STANDARD_P2WSH_STACK_ITEMS)
+                //        return false;
+                //    for (unsigned int j = 0; j < sizeWitnessStack; j++)
+                //    {
+                //        if (tx.vin[i].scriptWitness.stack[j].size() > MAX_STANDARD_P2WSH_STACK_ITEM_SIZE)
+                //            return false;
+                //    }
+                //}
+            }
+
             return true;
         }
     }
