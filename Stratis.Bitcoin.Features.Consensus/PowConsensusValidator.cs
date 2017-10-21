@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public bool UseConsensusLib { get; set; }
 
         /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
+        protected readonly IDateTimeProvider dateTimeProvider;
 
         public PowConsensusValidator(Network network, ICheckpoints checkpoints, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
