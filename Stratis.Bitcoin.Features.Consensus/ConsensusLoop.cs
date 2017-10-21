@@ -239,7 +239,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                                 this.Puller.SetLocation(rewinded);
                                 this.chainState.HighestValidatedPoW = this.Tip;
                                 this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
-                                break;
+
+                                continue;
                             }
                         }
                     }
@@ -303,6 +304,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // Set the chain back to ConsensusLoop.Tip.
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}' ", this.Tip);
+
+                    // Check if the error is a consensus failure.
+                    if (item.Error == ConsensusErrors.InvalidPrevTip)
+                    {
+                        this.logger.LogTrace("Block failure is not consensus critical.");
+                        return;
+                    }
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
                     this.logger.LogError("Marking block as invalid.");
