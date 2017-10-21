@@ -1157,7 +1157,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 // We don't care if witness for this input is empty, since it must not be bloated.
                 // If the script is invalid without witness, it would be caught sooner or later during validation.
-                if (!input.ScriptSig.IsWitness)
+                if (input.WitScript == null)
                     continue;
 
                 TxOut prev = mapInputs.GetOutputFor(input);
@@ -1169,8 +1169,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     // If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
                     // into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
                     // If the check fails at this stage, we know that this txid must be a bad one.
-                    ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
-                    if (template == null)
+                    ScriptTemplate p2shTemplate = StandardScripts.GetTemplateFromScriptPubKey(prevScript);
+                    if (p2shTemplate == null)
                         return false;
 
                     //todo: extract redeem script, validate and set to prevScript
@@ -1189,6 +1189,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // Non-witness program must not be associated with any witness
                 if (!prevScript.IsWitness)
                     return false;
+
+                // Check P2WSH standard limits
+                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(prevScript);
+                if (template == null)
+                    return false;
+
+                // todo: validate the p2sh script - stack script size, max stack items, stack item size
+
 
                 //int witnessversion = 0;
                 //std::vector < unsigned char> witnessprogram;
