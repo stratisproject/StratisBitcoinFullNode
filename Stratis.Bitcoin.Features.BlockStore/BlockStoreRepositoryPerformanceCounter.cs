@@ -5,6 +5,7 @@
     using System.Threading;
 
     using Stratis.Bitcoin.Configuration.Logging;
+    using Stratis.Bitcoin.Base;
 
     public class BlockStoreRepositoryPerformanceCounter
     {
@@ -15,10 +16,14 @@
         public string Name { get; private set; }
         public DateTime Start {get; private set; }
 
-        public BlockStoreRepositoryPerformanceCounter(string name = "BlockStore")
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockStoreRepositoryPerformanceCounter(IDateTimeProvider dateTimeProvider, string name = "BlockStore")
         {
             this.Name = name;
-            this.Start = DateTime.UtcNow;
+            this.dateTimeProvider = dateTimeProvider;
+            this.Start = this.dateTimeProvider.GetUtcNow();
         }
 
         public TimeSpan Elapsed
@@ -89,7 +94,7 @@
             var snap = new BlockStoreRepositoryPerformanceSnapshot(this.RepositoryHitCount, this.RepositoryMissCount, this.RepositoryDeleteCount, this.RepositoryInsertCount, this.Name)
             {
                 Start = this.Start,
-                Taken = DateTime.UtcNow
+                Taken = this.dateTimeProvider.GetUtcNow()
             };
             return snap;
         }
