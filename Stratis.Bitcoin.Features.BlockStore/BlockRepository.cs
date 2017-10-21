@@ -1,6 +1,7 @@
 ﻿using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -45,17 +46,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Represents the last block stored to disk.</summary>
         public ChainedBlock HighestPersistedBlock { get; internal set; }
 
-        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.BlockPath, loggerFactory)
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
-            : this(network, (new DBreezeSingleThreadSession($"DBreeze BlockRepository", folder)), loggerFactory)
+        public BlockRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(network, (new DBreezeSingleThreadSession($"DBreeze BlockRepository", folder)), dateTimeProvider, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, DBreezeSingleThreadSession session, ILoggerFactory loggerFactory)
+        public BlockRepository(Network network, DBreezeSingleThreadSession session, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(session, nameof(session));
@@ -63,12 +67,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.session = session;
             this.network = network;
+            this.dateTimeProvider = dateTimeProvider;
+
             this.PerformanceCounter = PerformanceCounterFactory();
         }
 
         public virtual BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
         {
-            return new BlockStoreRepositoryPerformanceCounter();
+            return new BlockStoreRepositoryPerformanceCounter(this.dateTimeProvider);
         }
 
         public virtual Task Initialize()
