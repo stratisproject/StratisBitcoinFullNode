@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -31,7 +32,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ChainedBlock Tip { get; private set; }
         public NodeDeployments NodeDeployments { get; private set; }
 
-        public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, ILoggerFactory loggerFactory, StakeChain stakeChain = null)
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public ConsensusLoop(PowConsensusValidator validator, ConcurrentChain chain, CoinView utxoSet, LookaheadBlockPuller puller, NodeDeployments nodeDeployments, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, StakeChain stakeChain = null)
         {
             Guard.NotNull(validator, nameof(validator));
             Guard.NotNull(chain, nameof(chain));
@@ -46,6 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.UTXOSet = utxoSet;
             this.Puller = puller;
             this.NodeDeployments = nodeDeployments;
+            this.dateTimeProvider = dateTimeProvider;
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
@@ -148,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 
                 // Liberate from memory the block created above if possible.
                 context.BlockResult.ChainedBlock = this.Chain.GetBlock(context.BlockResult.ChainedBlock.HashBlock) ?? context.BlockResult.ChainedBlock;
-                context.SetBestBlock();
+                context.SetBestBlock(this.dateTimeProvider.GetTimeOffset());
 
                 // == validation flow ==
                 
