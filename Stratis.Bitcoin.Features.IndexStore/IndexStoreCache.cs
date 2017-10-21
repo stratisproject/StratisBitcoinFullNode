@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Stratis.Bitcoin.Features.BlockStore;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -11,18 +12,19 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
     public class IndexStoreCache : BlockStoreCache, IIndexStoreCache
     {
-        public IndexStoreCache(IIndexRepository indexRepository, ILoggerFactory loggerFactory) : this(indexRepository, new MemoryCache(new MemoryCacheOptions()), loggerFactory)
+        public IndexStoreCache(IIndexRepository indexRepository, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory) : 
+            this(indexRepository, new MemoryCache(new MemoryCacheOptions()), dateTimeProvider, loggerFactory)
         {
         }
 
-        public IndexStoreCache(IIndexRepository indexRepository, IMemoryCache memoryCache, ILoggerFactory loggerFactory)
-            :base(indexRepository, memoryCache, loggerFactory)
+        public IndexStoreCache(IIndexRepository indexRepository, IMemoryCache memoryCache, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory) :
+            base(indexRepository, memoryCache, dateTimeProvider, loggerFactory)
         {
         }
 
         public override BlockStoreCachePerformanceCounter BlockStoreCachePerformanceCounterFactory()
         {
-            return new IndexStoreCachePerformanceCounter();
+            return new IndexStoreCachePerformanceCounter(this.dateTimeProvider);
         }
     }
 }

@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public ChainedBlock HighestPersistedBlock { get; internal set; }
 
         /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
+        protected readonly IDateTimeProvider dateTimeProvider;
 
         public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)

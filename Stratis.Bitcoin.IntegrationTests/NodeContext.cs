@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.loggerFactory = new LoggerFactory();
             this._Network = network;
 			this._TestDirectory = TestDirectory.Create(name, clean);
-			this._PersistentCoinView = new DBreezeCoinView(network, this._TestDirectory.FolderName, this.loggerFactory);
+			this._PersistentCoinView = new DBreezeCoinView(network, this._TestDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
 			this._PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
             this._CleanList.Add(this._PersistentCoinView);
 		}
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 		{
 			this._PersistentCoinView.Dispose();
 			this._CleanList.Remove(this._PersistentCoinView);
-			this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName, this.loggerFactory);
+			this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
 			this._PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
             this._CleanList.Add(this._PersistentCoinView);
 		}		

@@ -32,7 +32,7 @@
         private readonly ILogger logger;
 
         /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
+        protected readonly IDateTimeProvider dateTimeProvider;
 
         public BlockStoreCache(IBlockRepository blockRepository, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(blockRepository, new MemoryCache(new MemoryCacheOptions()), dateTimeProvider, loggerFactory)

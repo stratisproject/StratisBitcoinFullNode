@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
         internal FluentBlockStoreLoop WithConcreteRepository(string dataFolder)
         {
             this.dataFolder = TestBase.AssureEmptyDirAsDataFolder(dataFolder);
-            this.BlockRepository = new BlockRepository(Network.Main, this.dataFolder, this.loggerFactory.Object);
+            this.BlockRepository = new BlockRepository(Network.Main, this.dataFolder, DateTimeProvider.Default, this.loggerFactory.Object);
             return this;
         }
 
