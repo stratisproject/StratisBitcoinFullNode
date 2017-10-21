@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -180,9 +180,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
-#pragma warning disable IDE1006 // Naming Styles
-        private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
-#pragma warning restore IDE1006 // Naming Styles
+        private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
             // TODO: Add exception handling
@@ -192,7 +190,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             try
             {
-                await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)
             {
@@ -220,7 +218,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="message">Incoming message.</param>
-        private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        private Task ProcessMessageAsync(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 

@@ -79,7 +79,7 @@
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -88,20 +88,18 @@
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
-
-#pragma warning disable IDE1006 // Naming Styles
-        private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
-#pragma warning restore IDE1006 // Naming Styles
+        
+        private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
             try
             {
-                await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)
             {
@@ -123,7 +121,7 @@
             this.logger.LogTrace("(-)");
         }
 
-        private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        private Task ProcessMessageAsync(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 

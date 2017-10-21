@@ -53,13 +53,11 @@ namespace Stratis.Bitcoin.Broadcasting
         /// <remarks>
         /// TODO: Fix the exception handling of the async event.
         /// </remarks>
- #pragma warning disable IDE1006 // Naming Styles
-        protected async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
-#pragma warning restore IDE1006 // Naming Styles
+        protected async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
         {
             try
             {
-                await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)
             {
@@ -85,7 +83,7 @@ namespace Stratis.Bitcoin.Broadcasting
         /// </summary>
         /// <param name="node">Node sending the message.</param>
         /// <param name="message">Incoming message.</param>
-        protected Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        protected Task ProcessMessageAsync(Node node, IncomingMessage message)
         {
             if (message.Message.Payload is GetDataPayload getDataPayload)
             {
@@ -137,13 +135,13 @@ namespace Stratis.Bitcoin.Broadcasting
         /// <inheritdoc />
         protected override void AttachCore()
         {
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
         }
 
         /// <inheritdoc />
         protected override void DetachCore()
         {
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
         }
     }
 }
