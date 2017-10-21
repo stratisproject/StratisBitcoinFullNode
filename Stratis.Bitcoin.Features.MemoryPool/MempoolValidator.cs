@@ -1169,35 +1169,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     // If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
                     // into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
                     // If the check fails at this stage, we know that this txid must be a bad one.
-                    ScriptTemplate p2shTemplate = StandardScripts.GetTemplateFromScriptPubKey(prevScript);
-                    if (p2shTemplate == null)
+                    PayToScriptHashSigParameters sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig);
+                    if (sigParams == null || sigParams.RedeemScript == null)
                         return false;
 
-                    //todo: extract redeem script, validate and set to prevScript
-
-                    //std::vector < std::vector < unsigned char> > stack;
-                    //// If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
-                    //// into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
-                    //// If the check fails at this stage, we know that this txid must be a bad one.
-                    //if (!EvalScript(stack, tx.vin[i].scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker(), SIGVERSION_BASE))
-                    //    return false;
-                    //if (stack.empty())
-                    //    return false;
-                    //prevScript = CScript(stack.back().begin(), stack.back().end());
+                    prevScript = sigParams.RedeemScript;
                 }
 
                 // Non-witness program must not be associated with any witness
                 if (!prevScript.IsWitness)
                     return false;
 
-                // Check P2WSH standard limits
-                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(prevScript);
-                if (template == null)
-                    return false;
-
-                // todo: validate the p2sh script - stack script size, max stack items, stack item size
-
-
+                // todo: validate the witness program - stack script size, max stack items, stack item size
+                // Bitcoin logic from here https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L225-L243
                 //int witnessversion = 0;
                 //std::vector < unsigned char> witnessprogram;
 
