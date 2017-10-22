@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // Set the chain back to ConsensusLoop.Tip.
                     this.Chain.SetTip(this.Tip);
-                    this.logger.LogTrace("Chain reverted back to block '{0}' ", this.Tip);
+                    this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
                     // Check if the error is a consensus failure.
                     if (item.Error == ConsensusErrors.InvalidPrevTip)
