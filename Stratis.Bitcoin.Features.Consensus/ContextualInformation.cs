@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Target NextWorkRequired { get; set; }
 
-        public BlockItem BlockItem { get; set; }
+        public BlockValidationContext BlockValidationContext { get; set; }
 
         public DeploymentFlags Flags { get; set; }
 
@@ -71,12 +71,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        public ContextInformation(BlockItem blockItem, NBitcoin.Consensus consensus)
+        public ContextInformation(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus)
         {
-            Guard.NotNull(blockItem, nameof(blockItem));
+            Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
             Guard.NotNull(consensus, nameof(consensus));
 
-            this.BlockItem = blockItem;
+            this.BlockValidationContext = blockValidationContext;
             this.Consensus = consensus;
 
             // TODO: adding flags to determine the flow of logic is not ideal
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void SetBestBlock()
         {
-            this.BestBlock = new ContextBlockInformation(this.BlockItem.ChainedBlock.Previous, this.Consensus);
+            this.BestBlock = new ContextBlockInformation(this.BlockValidationContext.ChainedBlock.Previous, this.Consensus);
             this.Time = DateTimeOffset.UtcNow;
         }
 
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.Stake = new ContextStakeInformation
             {
-                BlockStake = new BlockStake(this.BlockItem.Block)
+                BlockStake = new BlockStake(this.BlockValidationContext.Block)
             };
         }
     }

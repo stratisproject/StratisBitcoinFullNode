@@ -452,23 +452,23 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Validate the block.
-            BlockItem blockItem = new BlockItem { Block = block };
-            this.consensusLoop.AcceptBlock(blockItem);
+            BlockValidationContext blockValidationContext = new BlockValidationContext { Block = block };
+            this.consensusLoop.AcceptBlock(blockValidationContext);
 
-            if (blockItem.ChainedBlock == null)
+            if (blockValidationContext.ChainedBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return;
             }
 
-            if (blockItem.Error != null)
+            if (blockValidationContext.Error != null)
             {
                 this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
                 return;
             }
 
             this.logger.LogInformation("==================================================================");
-            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockItem.ChainedBlock.HashBlock, blockItem.ChainedBlock.Height);
+            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockValidationContext.ChainedBlock.HashBlock, blockValidationContext.ChainedBlock.Height);
             this.logger.LogInformation("==================================================================");
         }
 
@@ -786,7 +786,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
                         long nBlockTime = 0;
 
-                        var contextInformation = new ContextInformation(new BlockItem { Block = block }, this.network.Consensus);
+                        var contextInformation = new ContextInformation(new BlockValidationContext { Block = block }, this.network.Consensus);
                         contextInformation.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 

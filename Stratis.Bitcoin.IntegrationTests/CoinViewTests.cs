@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 },
                 NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
-                BlockItem = new BlockItem { Block = block },
+                BlockValidationContext = new BlockValidationContext { Block = block },
                 Flags = consensusFlags,
             };
             Network.Main.Consensus.Options = new PowConsensusOptions();

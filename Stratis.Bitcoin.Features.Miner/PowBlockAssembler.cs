@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            var context = new ContextInformation(new BlockItem { Block = this.pblock }, this.network.Consensus)
+            var context = new ContextInformation(new BlockValidationContext { Block = this.pblock }, this.network.Consensus)
             {
                 CheckPow = false,
                 CheckMerkleRoot = false,

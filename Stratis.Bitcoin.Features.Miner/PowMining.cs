@@ -153,26 +153,26 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (newChain.ChainWork <= chainTip.ChainWork)
                     continue;
 
-                var blockResult = new BlockItem { Block = pblock };
+                var blockValidationContext = new BlockValidationContext { Block = pblock };
 
-                this.consensusLoop.AcceptBlock(blockResult);
+                this.consensusLoop.AcceptBlock(blockValidationContext);
 
-                if (blockResult.ChainedBlock == null)
+                if (blockValidationContext.ChainedBlock == null)
                 {
                     this.logger.LogTrace("(-)[REORG-2]");
                     return blocks;
                 }
 
-                if (blockResult.Error != null)
+                if (blockValidationContext.Error != null)
                 {
-                    if (blockResult.Error == ConsensusErrors.InvalidPrevTip)
+                    if (blockValidationContext.Error == ConsensusErrors.InvalidPrevTip)
                         continue;
 
                     this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
                     return blocks;
                 }
 
-                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);
+                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedBlock);
 
                 nHeight++;
                 blocks.Add(pblock.GetHash());

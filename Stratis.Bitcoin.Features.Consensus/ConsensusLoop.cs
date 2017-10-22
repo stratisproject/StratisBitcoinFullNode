@@ -16,23 +16,18 @@ using System.Threading.Tasks;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>
-    /// A block object that is passed around when downloading a block from peers and has information about the validation state of the block.
+    /// Information about a block that is required for its validation. 
+    /// It is used when a new block is downloaded or mined.
     /// </summary>
-    public class BlockItem
+    public class BlockValidationContext
     {
-        /// <summary>
-        /// The chain of headers associated with the current block.
-        /// </summary>
+        /// <summary>The chain of headers associated with the block.</summary>
         public ChainedBlock ChainedBlock { get; set; }
 
-        /// <summary>
-        /// The block downloaded from peers.
-        /// </summary>
+        /// <summary>Downloaded or mined block to be validated.</summary>
         public Block Block { get; set; }
 
-        /// <summary>
-        /// If the block validation failed this will be set with the reason of failure.
-        /// </summary>
+        /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
         public ConsensusError Error { get; set; }
     }
     
@@ -206,14 +201,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 try
                 {
-                    BlockItem item = new BlockItem();
+                    BlockValidationContext blockValidationContext = new BlockValidationContext();
 
                     using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
                     {
                         // This method will block until the next block is downloaded.
-                        item.Block = this.Puller.NextBlock(cancellationToken);
+                        blockValidationContext.Block = this.Puller.NextBlock(cancellationToken);
 
-                        if (item.Block == null)
+                        if (blockValidationContext.Block == null)
                         {
                             lock (this.consensusLock)
                             {
@@ -246,7 +241,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     }
 
                     this.logger.LogTrace("Block received from puller.");
-                    this.AcceptBlock(item);
+                    this.AcceptBlock(blockValidationContext);
                 }
                 catch (Exception ex)
                 {
@@ -270,8 +265,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// The block will be validated and the <see cref="CoinView"/> db will be updated.
         /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
         /// </summary>
-        /// <param name="item">The block to validate.</param>
-        public void AcceptBlock(BlockItem item)
+        /// <param name="blockValidationContext">Information about the block to validate.</param>
+        public void AcceptBlock(BlockValidationContext blockValidationContext)
         {
             this.logger.LogTrace("()");
 
@@ -279,20 +274,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 try
                 {
-                    this.ValidateBlock(new ContextInformation(item, this.Validator.ConsensusParams));
+                    this.ValidateBlock(new ContextInformation(blockValidationContext, this.Validator.ConsensusParams));
                 }
                 catch (ConsensusErrorException ex)
                 {
-                    item.Error = ex.ConsensusError;
+                    blockValidationContext.Error = ex.ConsensusError;
                 }
 
-                if (item.Error != null)
+                if (blockValidationContext.Error != null)
                 {
-                    uint256 rejectedBlockHash = item.Block.GetHash();
-                    this.logger.LogError("Block '{0}' rejected: {1}", rejectedBlockHash, item.Error.Message);
+                    uint256 rejectedBlockHash = blockValidationContext.Block.GetHash();
+                    this.logger.LogError("Block '{0}' rejected: {1}", rejectedBlockHash, blockValidationContext.Error.Message);
 
                     // Check if the error is a consensus failure.
-                    if (item.Error == ConsensusErrors.InvalidPrevTip)
+                    if (blockValidationContext.Error == ConsensusErrors.InvalidPrevTip)
                     {
                         this.logger.LogTrace("(-)[INVALID_PREV_TIP]");
                         return;
@@ -301,7 +296,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // Pull again.
                     this.Puller.SetLocation(this.Tip);
 
-                    if (item.Error == ConsensusErrors.BadWitnessNonceSize)
+                    if (blockValidationContext.Error == ConsensusErrors.BadWitnessNonceSize)
                     {
                         this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
                         this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
@@ -327,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // We really want to flush if we are at the top of the chain.
                     // Otherwise, we just allow the flush to happen if it is needed.
-                    bool forceFlush = this.Chain.Tip.HashBlock == item.ChainedBlock?.HashBlock;
+                    bool forceFlush = this.Chain.Tip.HashBlock == blockValidationContext.ChainedBlock?.HashBlock;
                     this.FlushAsync(forceFlush).GetAwaiter().GetResult();
 
                     if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
@@ -339,11 +334,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.logger.LogDebug("Block extends best chain tip to '{0}'.", this.Tip);
                     }
 
-                    this.signals.SignalBlock(item.Block);
+                    this.signals.SignalBlock(blockValidationContext.Block);
                 }
             }
 
-            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(item.ChainedBlock), item.ChainedBlock, nameof(item.Error), item.Error?.Message);
+            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}='{3}'", nameof(blockValidationContext.ChainedBlock), blockValidationContext.ChainedBlock, nameof(blockValidationContext.Error), blockValidationContext.Error?.Message);
         }
 
         /// <summary>
@@ -365,7 +360,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 // Check that the current block has not been reorged.
                 // Catching a reorg at this point will not require a rewind.
-                if (context.BlockItem.Block.Header.HashPrevBlock != this.Tip.HashBlock)
+                if (context.BlockValidationContext.Block.Header.HashPrevBlock != this.Tip.HashBlock)
                 {
                     this.logger.LogTrace("Reorganization detected.");
                     ConsensusErrors.InvalidPrevTip.Throw(); // reorg
@@ -376,10 +371,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Build the next block in the chain of headers. The chain header is most likely already created by 
                 // one of the peers so after we create a new chained block (mainly for validation) 
                 // we ask the chain headers for its version (also to prevent memory leaks). 
-                context.BlockItem.ChainedBlock = new ChainedBlock(context.BlockItem.Block.Header, context.BlockItem.Block.Header.GetHash(), this.Tip);
+                context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), this.Tip);
                 
                 // Liberate from memory the block created above if possible.
-                context.BlockItem.ChainedBlock = this.Chain.GetBlock(context.BlockItem.ChainedBlock.HashBlock) ?? context.BlockItem.ChainedBlock;
+                context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
                 context.SetBestBlock();
 
                 // == validation flow ==
@@ -389,7 +384,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.Validator.ContextualCheckBlockHeader(context);
 
                 // Calculate the consensus flags and check they are valid.
-                context.Flags = this.NodeDeployments.GetFlags(context.BlockItem.ChainedBlock);
+                context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
                 this.Validator.ContextualCheckBlock(context);
 
                 // check the block itself
@@ -408,7 +403,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             context.Set = new UnspentOutputSet();
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = GetIdsToFetch(context.BlockItem.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = this.UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
                 context.Set.SetCoins(coins.UnspentOutputs);
             }
@@ -427,10 +422,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Persist the changes to the coinview. This will likely only be stored in memory, 
             // unless the coinview treashold is reached.
             this.logger.LogTrace("Saving coinview changes.");
-            this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockItem.ChainedBlock.HashBlock).GetAwaiter().GetResult();
+            this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedBlock.HashBlock).GetAwaiter().GetResult();
 
             // Set the new tip.
-            this.Tip = context.BlockItem.ChainedBlock;
+            this.Tip = context.BlockValidationContext.ChainedBlock;
             this.logger.LogTrace("(-)[OK]");
         }
 
