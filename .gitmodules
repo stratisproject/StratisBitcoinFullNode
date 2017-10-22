@@ -1,4 +1,3 @@
 [submodule "NStratis"]
 	path = NStratis
 	url = https://github.com/fassadlr/NStratis/
-	branch = node-memleak-cleanup
