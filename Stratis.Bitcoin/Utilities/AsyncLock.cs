@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Utilities
             if (wait.IsCompleted)
                 return this.releaser;
 
-            return wait.ContinueWith((_, state) => (IDisposable)state, this.releaser.Result, 
+            return wait.ContinueWith((task, state) => (IDisposable)state, this.releaser.Result, 
                 cancel, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
     }
