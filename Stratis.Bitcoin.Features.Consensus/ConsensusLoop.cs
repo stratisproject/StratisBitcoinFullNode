@@ -288,8 +288,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 if (item.Error != null)
                 {
-                    uint256 invalidBlockHash = item.Block.GetHash();
-                    this.logger.LogError("Block '{0}' rejected: {1}", invalidBlockHash, item.Error.Message);
+                    uint256 rejectedBlockHash = item.Block.GetHash();
+                    this.logger.LogError("Block '{0}' rejected: {1}", rejectedBlockHash, item.Error.Message);
 
                     // Check if the error is a consensus failure.
                     if (item.Error == ConsensusErrors.InvalidPrevTip)
@@ -316,8 +316,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                    this.logger.LogError("Marking block '{0}' as invalid.", invalidBlockHash);
-                    this.chainState.MarkBlockInvalid(invalidBlockHash);
+                    this.logger.LogError("Marking block '{0}' as invalid.", rejectedBlockHash);
+                    this.chainState.MarkBlockInvalid(rejectedBlockHash);
                 }
                 else
                 {
