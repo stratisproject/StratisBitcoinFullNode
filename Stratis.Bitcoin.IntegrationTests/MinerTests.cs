@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 date1.timeutc = dateTimeProvider.GetUtcNow();
                 this.date = date1;
                 this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings); ;
-                this.mempoolLock = new MempoolAsyncLock();
+                this.mempoolLock = new MempoolSchedulerLock();
 
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
