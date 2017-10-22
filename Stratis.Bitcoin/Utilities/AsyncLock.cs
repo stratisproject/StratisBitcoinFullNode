@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </para>
     /// </summary>
     /// <example>
+    /// The lock can be used in async environment:
     /// <code>
     /// private AsyncLock asyncLock = new AsyncLock();
     /// ...
@@ -22,6 +23,17 @@ namespace Stratis.Bitcoin.Utilities
     ///     // Body of critical section.
     ///     ...
     ///     // Unlocking is automatic in Dispose method invoked by using statement.
+    /// }
+    /// </code>
+    /// <para>
+    /// or it can be used in non-async environment: 
+    /// </para>
+    /// <code>
+    /// using (asyncLock.Lock(cancellationToken))
+    /// {
+    ///     // Body of critical section.
+    ///     ...
+    ///     // Unlocking is again automatic in Dispose method invoked by using statement.
     /// }
     /// </code>
     /// </example>
@@ -57,6 +69,7 @@ namespace Stratis.Bitcoin.Utilities
         private readonly SemaphoreSlim semaphore;
 
         /// <summary>Helper object that allows implementation of disposable lock for convenient use with <c>using</c> statement.</summary>
+        /// <remarks>We use the disposable interfaced in a task here to avoid allocations on acquiring the lock when it is free.</remarks>
         private readonly Task<IDisposable> releaser;
 
         /// <summary>
@@ -82,6 +95,17 @@ namespace Stratis.Bitcoin.Utilities
 
             return wait.ContinueWith((task, state) => (IDisposable)state, this.releaser.Result, 
                 cancel, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
+        /// <summary>
+        /// Acquires the lock.
+        /// </summary>
+        /// <param name="cancel">Cancellation token that can be used to abort waiting for the lock.</param>
+        /// <returns>Disposable interface to enable using construct. Disposing it releases the lock.</returns>
+        public IDisposable Lock(CancellationToken cancel = default(CancellationToken))
+        {
+            this.semaphore.Wait(cancel);
+            return this.releaser.Result;
         }
     }
 }
