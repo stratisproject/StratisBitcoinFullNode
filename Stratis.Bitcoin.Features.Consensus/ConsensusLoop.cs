@@ -448,7 +448,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// This method try to load from cashe the UTXO of the next block in a background task. 
+        /// This method try to load from cache the UTXO of the next block in a background task. 
         /// </summary>
         /// <param name="flags">Information about activated features.</param>
         /// <returns>The process task.</returns>
