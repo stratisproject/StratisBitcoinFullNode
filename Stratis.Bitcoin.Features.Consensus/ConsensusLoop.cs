@@ -288,7 +288,15 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 if (item.Error != null)
                 {
-                    this.logger.LogError("Block rejected: {0}", item.Error.Message);
+                    uint256 invalidBlockHash = item.Block.GetHash();
+                    this.logger.LogError("Block '{0}' rejected: {1}", invalidBlockHash, item.Error.Message);
+
+                    // Check if the error is a consensus failure.
+                    if (item.Error == ConsensusErrors.InvalidPrevTip)
+                    {
+                        this.logger.LogTrace("(-)[INVALID_PREV_TIP]");
+                        return;
+                    }
 
                     // Pull again.
                     this.Puller.SetLocation(this.Tip);
@@ -298,6 +306,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
                         this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
                         this.Puller.RequestOptions(TransactionOptions.Witness);
+
+                        this.logger.LogTrace("(-)[BAD_WITNESS_NONCE_SIZE]");
                         return;
                     }
 
@@ -305,20 +315,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
-                    // Check if the error is a consensus failure.
-                    if (item.Error == ConsensusErrors.InvalidPrevTip)
-                    {
-                        this.logger.LogTrace("Block failure is not consensus critical.");
-                        return;
-                    }
-
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                    this.logger.LogError("Marking block as invalid.");
-                    this.chainState.MarkBlockInvalid(item.Block.GetHash());
+                    this.logger.LogError("Marking block '{0}' as invalid.", invalidBlockHash);
+                    this.chainState.MarkBlockInvalid(invalidBlockHash);
                 }
                 else
                 {
-                    this.logger.LogTrace("Block accepted '{0}' ", this.Tip);
+                    this.logger.LogTrace("Block '{0}' accepted.", this.Tip);
 
                     this.chainState.HighestValidatedPoW = this.Tip;
 
@@ -333,7 +336,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.Chain.SetTip(this.Tip);
                         this.Puller.SetLocation(this.Tip);
 
-                        this.logger.LogDebug("Block extends consensus tip to '{0}'", this.Tip);
+                        this.logger.LogDebug("Block extends best chain tip to '{0}'.", this.Tip);
                     }
 
                     this.signals.SignalBlock(item.Block);
