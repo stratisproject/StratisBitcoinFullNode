@@ -199,64 +199,47 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                try
+                BlockValidationContext blockValidationContext = new BlockValidationContext();
+
+                using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
                 {
-                    BlockValidationContext blockValidationContext = new BlockValidationContext();
+                    // This method will block until the next block is downloaded.
+                    blockValidationContext.Block = this.Puller.NextBlock(cancellationToken);
 
-                    using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
+                    if (blockValidationContext.Block == null)
                     {
-                        // This method will block until the next block is downloaded.
-                        blockValidationContext.Block = this.Puller.NextBlock(cancellationToken);
-
-                        if (blockValidationContext.Block == null)
+                        lock (this.consensusLock)
                         {
-                            lock (this.consensusLock)
+                            this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
+                            ChainedBlock lastTip = this.Tip;
+
+                            CancellationToken token = this.nodeLifetime.ApplicationStopping;
+
+                            ChainedBlock rewinded = null;
+                            while (rewinded == null)
                             {
-                                this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
-                                ChainedBlock lastTip = this.Tip;
+                                token.ThrowIfCancellationRequested();
 
-                                CancellationToken token = this.nodeLifetime.ApplicationStopping;
-
-                                ChainedBlock rewinded = null;
-                                while (rewinded == null)
+                                uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                                rewinded = this.Chain.GetBlock(hash);
+                                if (rewinded == null)
                                 {
-                                    token.ThrowIfCancellationRequested();
-
-                                    uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
-                                    rewinded = this.Chain.GetBlock(hash);
-                                    if (rewinded == null)
-                                    {
-                                        this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.", hash);
-                                    }
+                                    this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.", hash);
                                 }
-
-                                this.Tip = rewinded;
-                                this.Puller.SetLocation(rewinded);
-                                this.chainState.HighestValidatedPoW = this.Tip;
-                                this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
-
-                                continue;
                             }
+
+                            this.Tip = rewinded;
+                            this.Puller.SetLocation(rewinded);
+                            this.chainState.HighestValidatedPoW = this.Tip;
+                            this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
+
+                            continue;
                         }
                     }
-
-                    this.logger.LogTrace("Block received from puller.");
-                    this.AcceptBlock(blockValidationContext);
                 }
-                catch (Exception ex)
-                {
-                    if (ex is OperationCanceledException)
-                    {
-                        if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                            return;
-                    }
 
-                    // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
-                    // thrown so that the node and all the disposables can stop gracefully.
-                    this.logger.LogCritical(new EventId(0), ex, "Consensus loop at Tip:{0} unhandled exception {1}", this.Tip, ex.ToString());
-                    NLog.LogManager.Flush();
-                    throw;
-                }
+                this.logger.LogTrace("Block received from puller.");
+                this.AcceptBlock(blockValidationContext);
             }
         }
 
