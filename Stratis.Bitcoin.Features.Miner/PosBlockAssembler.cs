@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public PosBlockAssembler(
             ConsensusLoop consensusLoop,
             Network network,
-            MempoolAsyncLock mempoolLock,
+            MempoolSchedulerLock mempoolLock,
             TxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             StakeChain stakeChain,

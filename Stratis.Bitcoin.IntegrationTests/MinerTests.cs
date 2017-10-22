@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new MempoolValidationContext(tx, new MempoolValidationState(false));
             context.View = new MempoolCoinView(testContext.cachedCoinView, testContext.mempool, testContext.mempoolLock, null);
-            context.View.LoadView(tx).GetAwaiter().GetResult();
+            context.View.LoadViewAsync(tx).GetAwaiter().GetResult();
             return MempoolValidator.CheckSequenceLocks(chainedBlock, context, flags, uselock, false);
         }
 
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public ConsensusLoop consensus;
             public DateTimeProvider date;
             public TxMempool mempool;
-            public MempoolAsyncLock mempoolLock;
+            public MempoolSchedulerLock mempoolLock;
             public List<Transaction> txFirst;
             public Money BLOCKSUBSIDY = 50 * Money.COIN;
             public Money LOWFEE = Money.CENT;

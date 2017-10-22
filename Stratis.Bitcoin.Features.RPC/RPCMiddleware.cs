@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.RPC
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public async Task Invoke(HttpContext httpContext)
+        public async Task InvokeAsync(HttpContext httpContext)
         {
             Guard.NotNull(httpContext, nameof(httpContext));
 

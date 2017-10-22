@@ -59,7 +59,7 @@
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
-            Guard.NotNull(blockStoreCache, nameof(logger));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
             this.chain = chain;
             this.blockRepository = blockRepository;
@@ -78,7 +78,7 @@
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
@@ -87,18 +87,18 @@
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceivedAsync;
 
             this.logger.LogTrace("(-)");
         }
-
-        private async void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+        
+        private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
             try
             {
-                await this.AttachedNode_MessageReceivedAsync(node, message).ConfigureAwait(false);
+                await this.ProcessMessageAsync(node, message).ConfigureAwait(false);
             }
             catch (OperationCanceledException opx)
             {
@@ -120,7 +120,7 @@
             this.logger.LogTrace("(-)");
         }
 
-        private Task AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
+        private Task ProcessMessageAsync(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
 
@@ -182,7 +182,7 @@
             this.logger.LogTrace("(-)");
         }
 
-        private async Task SendAsBlockInventory(Node node, IEnumerable<uint256> blocks)
+        private async Task SendAsBlockInventoryAsync(Node node, IEnumerable<uint256> blocks)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(node), node?.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
 
@@ -315,7 +315,7 @@
 
             if (inventoryBlockToSend.Any())
             {
-                Task res = this.SendAsBlockInventory(node, inventoryBlockToSend);
+                Task res = this.SendAsBlockInventoryAsync(node, inventoryBlockToSend);
                 this.logger.LogTrace("(-)[SEND_INVENTORY]");
                 return res;
             }

@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly int minimumInputValue;
         private readonly int minerSleep;
 
-        protected readonly MempoolAsyncLock mempoolLock;
+        protected readonly MempoolSchedulerLock mempoolLock;
         protected readonly TxMempool mempool;
 
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Miner
             NodeSettings settings,
             CoinView coinView,
             StakeChain stakeChain,
-            MempoolAsyncLock mempoolLock,
+            MempoolSchedulerLock mempoolLock,
             TxMempool mempool,
             IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
