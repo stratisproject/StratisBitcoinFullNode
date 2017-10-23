@@ -99,6 +99,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Task.WaitAll(tasks);
             Assert.False(context.Error);
+            context.Lock.Dispose();
         }
 
         /// <summary>
@@ -137,7 +138,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void LockAndLockAsync_WithCancellationToken_PreventConcurrentExecution()
         {
-            WorkerContext context = new WorkerContext(2000);
+            WorkerContext context = new WorkerContext(5000);
 
             int taskCount = 20;
             Task[] tasks = new Task[taskCount];
@@ -158,6 +159,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             Task.WaitAll(tasks);
             Assert.False(context.Error);
+            context.Lock.Dispose();
         }
 
         /// <summary>

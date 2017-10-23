@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </code>
     /// </example>
     /// <remarks>Based on https://www.hanselman.com/blog/ComparingTwoTechniquesInNETAsynchronousCoordinationPrimitives.aspx .</remarks>
-    public sealed class AsyncLock
+    public sealed class AsyncLock : IDisposable
     {
         /// <summary>
         /// Disposable mechanism that is attached to the parent lock and releases it when it is disposed.
@@ -126,6 +126,12 @@ namespace Stratis.Bitcoin.Utilities
 
             // We are holding the lock here, so we will want unlocking.
             return this.releaser.Result;
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.semaphore.Dispose();
         }
     }
 }
