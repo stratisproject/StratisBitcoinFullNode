@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Utilities
         public AsyncLock()
         {
             this.semaphore = new SemaphoreSlim(1, 1);
-            this.releaser = Task.FromResult((IDisposable)new Releaser(this));
+            this.releaser = Task.FromResult<IDisposable>(new Releaser(this));
         }
 
         /// <summary>
