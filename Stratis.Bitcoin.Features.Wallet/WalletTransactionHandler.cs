@@ -238,7 +238,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Get total spendable balance in the account.
             var balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
-            if (balance < context.Recipients.Sum(s => s.Amount))
+            var totalToSend = context.Recipients.Sum(s => s.Amount);
+            if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
             if (context.SelectedInputs.Any())
@@ -261,10 +262,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             }
 
+            Money sum = 0;
+            int index = 0;
+            int threshold = 500;
             var coins = new List<Coin>();
-            foreach (var item in context.UnspentOutputs)
+            foreach (var item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
             {
                 coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
+                sum += item.Transaction.Amount;
+                index++;
+
+                if (index > threshold && sum > totalToSend)
+                    break;
             }
 
             // All the UTXOs are added to the builder without filtering.
