@@ -214,40 +214,33 @@ namespace Stratis.Bitcoin.Base
 			}
 		}
 
-		/// <summary>
-		/// Check if any past blocks announced by this peer is in the invalid blocks list, and set InvalidHeaderReceived flag accordingly
-		/// </summary>
-		/// <returns>True if no invalid block is received</returns>
-		public bool CheckAnnouncedBlocks()
-		{
-			var tip = this._PendingTip;
-			if (tip != null && !this.invalidHeaderReceived)
-			{
-				try
-				{
-                    this._State.invalidBlocksLock.EnterReadLock();
-					if (this._State.invalidBlocks.Count != 0)
-					{
-						foreach (var header in tip.EnumerateToGenesis())
-						{
-							if (this.invalidHeaderReceived)
-								break;
-                            this.invalidHeaderReceived |= this._State.invalidBlocks.Contains(header.HashBlock);
-						}
-					}
-				}
-				finally
-				{
-                    this._State.invalidBlocksLock.ExitReadLock();
-				}
-			}
-			return !this.invalidHeaderReceived;
-		}
+	    /// <summary>
+	    /// Check if any past blocks announced by this peer is in the invalid blocks list, and set InvalidHeaderReceived flag accordingly
+	    /// </summary>
+	    /// <returns>True if no invalid block is received</returns>
+	    public bool CheckAnnouncedBlocks()
+	    {
+	        var tip = this._PendingTip;
+	        if (tip != null && !this.invalidHeaderReceived)
+	        {
+	            if (this._State.InvalidBlocks.Count != 0)
+	            {
+	                foreach (var header in tip.EnumerateToGenesis())
+	                {
+	                    if (this.invalidHeaderReceived)
+	                        break;
+	                    this.invalidHeaderReceived |= this._State.InvalidBlocks.ContainsKey(header.HashBlock);
+	                }
+	            }
+	        }
 
-		/// <summary>
-		/// Sync the chain as headers come from the network (Default : true)
-		/// </summary>
-		public bool AutoSync
+	        return !this.invalidHeaderReceived;
+	    }
+
+        /// <summary>
+        /// Sync the chain as headers come from the network (Default : true)
+        /// </summary>
+        public bool AutoSync
 		{
 			get;
 			set;

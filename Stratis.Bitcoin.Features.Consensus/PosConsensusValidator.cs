@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             base.ExecuteBlock(context, taskScheduler);
 
             // TODO: A temporary fix till this methods is fixed in NStratis.
-            (this.stakeChain as StakeChainStore).Set(context.BlockResult.ChainedBlock, context.Stake.BlockStake);
+            (this.stakeChain as StakeChainStore).Set(context.BlockValidationContext.ChainedBlock, context.Stake.BlockStake);
 
             this.logger.LogTrace("(-)");
         }
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             base.CheckBlock(context);
 
-            Block block = context.BlockResult.Block;
+            Block block = context.BlockValidationContext.Block;
 
             // Check timestamp.
             if (block.Header.Time > this.FutureDrift(this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp()))
@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
             base.ContextualCheckBlockHeader(context);
 
-            ChainedBlock chainedBlock = context.BlockResult.ChainedBlock;
+            ChainedBlock chainedBlock = context.BlockValidationContext.ChainedBlock;
             this.logger.LogTrace("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}, block version is 0x{3:x}.", chainedBlock.Height, chainedBlock.Header.Time, chainedBlock.Previous.Header.Time, chainedBlock.Header.Version);
 
             if (chainedBlock.Header.Version < 7)
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check coinbase timestamp.
-            if (chainedBlock.Header.Time > this.FutureDrift(context.BlockResult.Block.Transactions[0].Time))
+            if (chainedBlock.Header.Time > this.FutureDrift(context.BlockValidationContext.Block.Transactions[0].Time))
             {
                 this.logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
@@ -287,7 +287,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             // Check coinstake timestamp.
             if (context.Stake.BlockStake.IsProofOfStake()
-                && !this.CheckCoinStakeTimestamp(chainedBlock.Height, chainedBlock.Header.Time, context.BlockResult.Block.Transactions[1].Time))
+                && !this.CheckCoinStakeTimestamp(chainedBlock.Height, chainedBlock.Header.Time, context.BlockValidationContext.Block.Transactions[1].Time))
             {
                 this.logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
@@ -387,14 +387,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (context.Stake.BlockStake.IsProofOfWork())
             {
-                if (context.CheckPow && !context.BlockResult.Block.Header.CheckProofOfWork())
+                if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
                 {
                     this.logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();
                 }
             }
 
-            context.NextWorkRequired = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockResult.ChainedBlock.Previous, context.Consensus,
+            context.NextWorkRequired = StakeValidator.GetNextTargetRequired(this.stakeChain, context.BlockValidationContext.ChainedBlock.Previous, context.Consensus,
                 context.Stake.BlockStake.IsProofOfStake());
 
             this.logger.LogTrace("(-)[OK]");
@@ -404,8 +404,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            ChainedBlock chainedBlock = context.BlockResult.ChainedBlock;
-            Block block = context.BlockResult.Block;
+            ChainedBlock chainedBlock = context.BlockValidationContext.ChainedBlock;
+            Block block = context.BlockValidationContext.Block;
             BlockStake blockStake = context.Stake.BlockStake;
 
             int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();

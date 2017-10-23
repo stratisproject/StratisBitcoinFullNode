@@ -1,16 +1,14 @@
 ﻿using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusManager:IBlockDownloadState, INetworkDifficulty, IGetUnspentTransaction
+    public class ConsensusManager : IBlockDownloadState, INetworkDifficulty, IGetUnspentTransaction
     {
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
@@ -20,17 +18,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         public NodeSettings NodeSettings { get; private set; }
         public Network Network { get; private set; }
         public PowConsensusValidator ConsensusValidator { get; private set; }
-        public ChainState ChainState { get; private set; }
 
         public ConsensusManager(ICheckpoints checkpoints, ConsensusLoop consensusLoop = null, IDateTimeProvider dateTimeProvider = null, NodeSettings nodeSettings = null, Network network = null,
-            PowConsensusValidator consensusValidator = null, ChainState chainState = null)
+            PowConsensusValidator consensusValidator = null)
         {
             this.ConsensusLoop = consensusLoop;
             this.DateTimeProvider = dateTimeProvider;
             this.NodeSettings = nodeSettings;
             this.Network = network;
             this.ConsensusValidator = consensusValidator;
-            this.ChainState = chainState;
             this.checkpoints = checkpoints;
         }
 
@@ -60,8 +56,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Target GetNetworkDifficulty()
         {
-            if (this.ConsensusValidator?.ConsensusParams != null && this.ChainState?.HighestValidatedPoW != null)
-                return this.ChainState?.HighestValidatedPoW?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
+            if (this.ConsensusValidator?.ConsensusParams != null && this.ConsensusLoop?.Tip != null)
+                return this.ConsensusLoop.Tip.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
             else
                 return null;
         }
@@ -69,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            var outputs = await this.ConsensusLoop.UTXOSet?.FetchCoinsAsync(new[] { trxid });
+            var outputs = await this.ConsensusLoop?.UTXOSet?.FetchCoinsAsync(new[] { trxid });
             return outputs?.UnspentOutputs?.SingleOrDefault();
         }
     }
