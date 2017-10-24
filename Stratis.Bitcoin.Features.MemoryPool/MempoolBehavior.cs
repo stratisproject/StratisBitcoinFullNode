@@ -465,7 +465,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private async Task SendAsTxInventory(Node node, IEnumerable<uint256> trxList)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(trxList), "trxList.Count", trxList?.Count());
-            Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(InventoryType.MSG_TX, s)));
+            Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(node.AddSupportedOptions(InventoryType.MSG_TX), s)));
             while (queue.Count > 0)
             {
                 InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MAX_INV_SZ).ToArray();
