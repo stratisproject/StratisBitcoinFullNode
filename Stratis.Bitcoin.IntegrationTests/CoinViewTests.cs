@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var genesis = ctx.Network.GetGenesis();
                 var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
                 var chained = MakeNext(genesisChainedBlock);
-                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, loggerFactory);
+                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
 
                 cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedBlock.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using(NodeContext ctx = NodeContext.Create())
             {
-                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, this.loggerFactory);
+                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
                 var tester = new CoinViewTester(cacheCoinView);
 
                 var coins = tester.CreateCoins(5);
@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 },
                 NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
-                BlockResult = new BlockResult { Block = block },
+                BlockValidationContext = new BlockValidationContext { Block = block },
                 Flags = consensusFlags,
             };
             Network.Main.Consensus.Options = new PowConsensusOptions();

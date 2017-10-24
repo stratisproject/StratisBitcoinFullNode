@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async Task RunOperationCanceledExceptionThrownBeforeCancellationTokenIsCancelledLogsException()
+        public async Task RunOperationCanceledExceptionThrownBeforeCancellationTokenIsCancelledLogsExceptionAsync()
         {
             var asyncLoop = new AsyncLoop("TestLoop", this.FullNodeLogger.Object, async token =>
             {
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async Task RunWithoutCancellationTokenRunsUntilExceptionOccurs()
+        public async Task RunWithoutCancellationTokenRunsUntilExceptionOccursAsync()
         {
             var asyncLoop = new AsyncLoop("TestLoop", this.FullNodeLogger.Object, async token =>
             {
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async Task RunWithCancellationTokenRunsUntilExceptionOccurs()
+        public async Task RunWithCancellationTokenRunsUntilExceptionOccursAsync()
         {
             var asyncLoop = new AsyncLoop("TestLoop", this.FullNodeLogger.Object, async token =>
             {
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async Task RunLogsStartAndStop()
+        public async Task RunLogsStartAndStopAsync()
         {
             var asyncLoop = new AsyncLoop("TestLoop", this.FullNodeLogger.Object, async token =>
             {
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async Task RunWithoutDelayRunsTaskUntilCancelled()
+        public async Task RunWithoutDelayRunsTaskUntilCancelledAsync()
         {
             var asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
             {
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public async Task RunWithDelayRunsTaskUntilCancelled()
+        public async Task RunWithDelayRunsTaskUntilCancelledAsync()
         {
             var asyncLoop = new AsyncLoop("TestLoop", NullLogger.Instance, async token =>
             {

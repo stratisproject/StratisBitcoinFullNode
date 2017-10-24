@@ -59,21 +59,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 Mock<IMempoolPersistence> mockPersist = new Mock<IMempoolPersistence>();
                 Mock<CoinView> mockCoinView = new Mock<CoinView>();
 
-                return new MempoolManager(new MempoolAsyncLock(), mempool, mockValidator.Object, null, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory);
+                return new MempoolManager(new MempoolSchedulerLock(), mempool, mockValidator.Object, null, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory);
             }
         }
 
         [Fact]
-        public async Task AddMempoolEntriesToMempool_WithNull_ThrowsNoException()
+        public async Task AddMempoolEntriesToMempool_WithNull_ThrowsNoExceptionAsync()
         {
             MempoolManager manager = this.TxExpiryManager;
             Assert.NotNull(manager);
 
-            await manager.AddMempoolEntriesToMempool(null);
+            await manager.AddMempoolEntriesToMempoolAsync(null);
         }
 
         [Fact]
-        public async Task AddMempoolEntriesToMempool_WithExpiredTx_PurgesTx()
+        public async Task AddMempoolEntriesToMempool_WithExpiredTx_PurgesTxAsync()
         {
             MempoolManager manager = this.TxExpiryManager;
             Assert.NotNull(manager);
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     Time = manager.DateTimeProvider.GetTime() - expiryInSeconds*2
                     }
             };
-            await manager.AddMempoolEntriesToMempool(txs);
+            await manager.AddMempoolEntriesToMempoolAsync(txs);
             long entries = await manager.MempoolSize();
 
             // Should not add it because it's expired
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async Task AddMempoolEntriesToMempool_WithUnexpiredTx_AddsTx()
+        public async Task AddMempoolEntriesToMempool_WithUnexpiredTx_AddsTxAsync()
         {
             MempoolManager manager = this.TxExpiryManager;
             Assert.NotNull(manager);
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     Time = manager.DateTimeProvider.GetTime() - expiryInSeconds/2
                     }
             };
-            await manager.AddMempoolEntriesToMempool(txs);
+            await manager.AddMempoolEntriesToMempoolAsync(txs);
             long entries = await manager.MempoolSize();
 
             // Not expired so should have been added

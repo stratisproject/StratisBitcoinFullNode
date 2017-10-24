@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             };
         }
 
-        public async Task Load()
+        public async Task LoadAsync()
         {
             this.logger.LogTrace("()");
 
@@ -127,12 +127,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             StakeItem item = new StakeItem { BlockId = chainedBlock.HashBlock, Height = chainedBlock.Height, BlockStake = blockStake, InStore = false };
             bool added = this.items.TryAdd(chainedBlock.HashBlock, item);
             if (added)
-                await this.Flush(false);
+                await this.FlushAsync(false);
 
             this.logger.LogTrace("(-)");
         }
 
-        public async Task Flush(bool disposeMode)
+        public async Task FlushAsync(bool disposeMode)
         {
             this.logger.LogTrace("({0}:{1})", nameof(disposeMode), disposeMode);
 

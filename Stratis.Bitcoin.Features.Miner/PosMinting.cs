@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly int minimumInputValue;
         private readonly int minerSleep;
 
-        protected readonly MempoolAsyncLock mempoolLock;
+        protected readonly MempoolSchedulerLock mempoolLock;
         protected readonly TxMempool mempool;
 
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Miner
             NodeSettings settings,
             CoinView coinView,
             StakeChain stakeChain,
-            MempoolAsyncLock mempoolLock,
+            MempoolSchedulerLock mempoolLock,
             TxMempool mempool,
             IWalletManager wallet,
             IAsyncLoopFactory asyncLoopFactory,
@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                     this.rpcGetStakingInfoModel.Errors = cee.Message;
                 }
-                catch (Exception e)
+                catch
                 {
                     this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                     throw;
@@ -415,8 +415,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (await this.StakeAndSignBlockAsync(stakeTxes, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
-                    var blockResult = new BlockResult { Block = block };
-                    await this.CheckStakeAsync(new ContextInformation(blockResult, this.network.Consensus), chainTip).ConfigureAwait(false);
+                    this.CheckStake(block, chainTip);
 
                     blockTemplate = null;
                 }
@@ -432,13 +431,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// One a new block is staked, this method is used to verify that it
         /// is a valid block and if so, it will add it to the chain.
         /// </summary>
-        /// <param name="context">Information about the new block.</param>
+        /// <param name="block">The new block.</param>
         /// <param name="chainTip">Block that was considered as a chain tip when the block staking started.</param>
-        private async Task CheckStakeAsync(ContextInformation context, ChainedBlock chainTip)
+        private void CheckStake(Block block, ChainedBlock chainTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainTip), chainTip);
-
-            Block block = context.BlockResult.Block;
 
             if (!BlockStake.IsProofOfStake(block))
             {
@@ -454,40 +451,24 @@ namespace Stratis.Bitcoin.Features.Miner
                 ConsensusErrors.PrevStakeNull.Throw();
             }
 
-            context.SetStake();
-            this.posConsensusValidator.StakeValidator.CheckProofOfStake(context, chainTip, prevBlockStake, block.Transactions[1], block.Header.Bits.ToCompact());
-
             // Validate the block.
-            this.consensusLoop.AcceptBlock(context);
+            BlockValidationContext blockValidationContext = new BlockValidationContext { Block = block };
+            this.consensusLoop.AcceptBlock(blockValidationContext);
 
-            if (context.BlockResult.ChainedBlock == null)
+            if (blockValidationContext.ChainedBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return;
             }
 
-            if (context.BlockResult.Error != null)
+            if (blockValidationContext.Error != null)
             {
                 this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
                 return;
             }
 
-            if (context.BlockResult.ChainedBlock.ChainWork <= chainTip.ChainWork)
-            {
-                this.logger.LogTrace("Chain tip's work is '{0}', newly minted block's work is only '{1}'.", context.BlockResult.ChainedBlock.ChainWork, chainTip.ChainWork);
-                this.logger.LogTrace("(-)[LOW_CHAIN_WORK]");
-                return;
-            }
-
-            // Similar logic to what's in the full node code.
-            this.chain.SetTip(context.BlockResult.ChainedBlock);
-            this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
-            this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-            await this.blockRepository.PutAsync(context.BlockResult.ChainedBlock.HashBlock, new List<Block> { block }).ConfigureAwait(false);
-            this.signals.SignalBlock(block);
-
             this.logger.LogInformation("==================================================================");
-            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", context.BlockResult.ChainedBlock.HashBlock, context.BlockResult.ChainedBlock.Height);
+            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockValidationContext.ChainedBlock.HashBlock, blockValidationContext.ChainedBlock.Height);
             this.logger.LogInformation("==================================================================");
         }
 
@@ -805,7 +786,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         var prevoutStake = new OutPoint(coin.UtxoSet.TransactionId, coin.OutputIndex);
                         long nBlockTime = 0;
 
-                        var contextInformation = new ContextInformation(new BlockResult { Block = block }, this.network.Consensus);
+                        var contextInformation = new ContextInformation(new BlockValidationContext { Block = block }, this.network.Consensus);
                         contextInformation.SetStake();
                         this.posConsensusValidator.StakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake, ref nBlockTime);
 

@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// and set the BlockStore's StoreTip to that.
         /// </para>                
         /// </summary>
-        public async Task Initialize()
+        public async Task InitializeAsync()
         {
             this.logger.LogTrace("()");
 
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         internal void ShutDown()
         {
             this.asyncLoop.Dispose();
-            this.DownloadAndStoreBlocks(CancellationToken.None, true).Wait();
+            this.DownloadAndStoreBlocksAsync(CancellationToken.None, true).Wait();
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.StoreName}.DownloadAndStoreBlocks", async token =>
             {
-                await DownloadAndStoreBlocks(this.nodeLifetime.ApplicationStopping, false);
+                await DownloadAndStoreBlocksAsync(this.nodeLifetime.ApplicationStopping, false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second,
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// a read is normally done when a peer is asking for the entire block (not just the key) 
         /// then if LazyLoadingOn = false the read will be faster on the entire block      
         /// </remarks>
-        private async Task DownloadAndStoreBlocks(CancellationToken cancellationToken, bool disposeMode)
+        private async Task DownloadAndStoreBlocksAsync(CancellationToken cancellationToken, bool disposeMode)
         {
             this.logger.LogTrace("({0}:{1})", nameof(disposeMode), disposeMode);
 
@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.blockStoreStats.CanLog)
                     this.blockStoreStats.Log();
 
-                var result = await this.stepChain.Execute(nextChainedBlock, disposeMode, cancellationToken);
+                var result = await this.stepChain.ExecuteAsync(nextChainedBlock, disposeMode, cancellationToken);
                 if (result == StepResult.Stop)
                     break;
             }

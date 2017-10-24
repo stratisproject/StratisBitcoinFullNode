@@ -1,39 +1,64 @@
 
 
-Getting started
+# Getting started - Building and running a Stratis Full Node 
+
 ---------------
 
-*On the current version of the node*
+## Supported Platforms
 
+* <b>Windows</b> - works from Windows 7 and later, on both x86 and x64 architecture. Most of the development and testing is happening here.
+* <b>Linux</b> - works and Ubuntu 14.04 and later (x64). It's been known to run on some other distros so your mileage may vary.
+* <b>MacOS</b> - works from OSX 10.12 and later. 
 
-1. Install [.NET Core](https://www.microsoft.com/net/download)
+## Prerequisites
 
-2. Clone the reposiroty 
+To install and run the node, you need
+* [.NET Core 2.0](https://www.microsoft.com/net/download/core)
+* [Git](https://git-scm.com/)
+
+## Build instructions
+
+### Get the repository and its dependencies
+
 ```
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
-```
-
-3. Checkout the master branch and initialize dependencies
-```
 cd StratisBitcoinFullNode
-git checkout master
-
-git submodule init
-git submodule update
+git submodule update --init --recursive
 ```
 
-4. Restore the project packages  
-```
-dotnet restore
-```
-5. Go into the daemon folder  
-For BTC   ```cd Stratis.BitcoinD```  
-For STRAT ```cd Stratis.StratisD```
+### Build and run the code
+With this node, you can connect to either the Stratis network or the Bitcoin network, either on MainNet or TestNet.
+So you have 4 options:
 
-6. Run the node on Main net
+1. To run a <b>Stratis</b> node on <b>MainNet</b>, do
 ```
+cd Stratis.StratisD
 dotnet run
+```  
+
+2. To run a <b>Stratis</b>  node on <b>TestNet</b>, do
 ```
+cd Stratis.StratisD
+dotnet run -testnet
+```  
+
+3. To run a <b>Bitcoin</b> node on <b>MainNet</b>, do
+```
+cd Stratis.BitcoinD
+dotnet run
+```  
+
+4. To run a <b>Bitcoin</b> node on <b>TestNet</b>, do
+```
+cd Stratis.BitcoinD
+dotnet run -testnet
+```  
+
+### Script
+We have a nifty little script that can execute all the previous commands for you, including starting the node.  
+You just need to edit the file and specify whether you want to run a Stratis or a Bitcoin node, on MainNet or Testnet.  
+It's located [here](https://gist.github.com/bokobza/e68832f5d7d4102bcb33fcde8d9a72fb#file-build-and-run-a-stratis-node-ps1).
+
 
 Docker Containers
 -------------------

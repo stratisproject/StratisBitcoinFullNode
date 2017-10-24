@@ -295,8 +295,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("Name cannot be empty.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("Name cannot be empty.", error.Message);
         }
 
         [Fact]
@@ -424,8 +423,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("A password is required.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("A password is required.", error.Message);
         }
 
         [Fact]
@@ -582,8 +580,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("A password is required.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("A password is required.", error.Message);
         }
 
         [Fact]
@@ -750,8 +747,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("Invalid name.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("Invalid name.", error.Message);
         }
 
         [Fact]
@@ -1299,8 +1295,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("A walletname is required.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("A walletname is required.", error.Message);
         }
 
         [Fact]
@@ -1404,8 +1399,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("A walletname is required.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("A walletname is required.", error.Message);
         }
 
         [Fact]
@@ -1491,8 +1485,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("Hex required.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("Hex required.", error.Message);
         }
 
         [Fact]
@@ -1628,8 +1621,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("A password is required.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("A password is required.", error.Message);
         }
 
         [Fact]
@@ -1695,8 +1687,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
-            Assert.Equal("An account name is required.", error.Description);
-            Assert.Equal("Formatting error", error.Message);
+            Assert.Equal("An account name is required.", error.Message);
         }
 
         [Fact]
@@ -1743,8 +1734,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             ErrorModel error = errorResponse.Errors[0];
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
-            Assert.Equal("Formatting error", error.Message);
-            Assert.Equal("There was an error in the model.", error.Description);
+            Assert.Equal("There was an error in the model.", error.Message);
 
         }
 
