@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         protected override void OnNextCore(Block value)
         {
-            if (DateTimeOffset.UtcNow - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
+            if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
                 if (this.chainState.IsInitialBlockDownload)
                     this.Log();
         }

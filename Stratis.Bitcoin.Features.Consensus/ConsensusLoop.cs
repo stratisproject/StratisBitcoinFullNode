@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-<<<<<<< HEAD
-=======
 using NBitcoin.Protocol;
->>>>>>> origin/master
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -88,6 +85,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlock"/> and the reorg part of <see cref="ConsensusLoop.PullerLoop"/> methods.</summary>
         private readonly object consensusLock;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>
         /// Initialize a new instance of <see cref="ConsensusLoop"/>.
         /// </summary>
@@ -101,6 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="loggerFactory">A factory to provide logger instances.</param>
         /// <param name="chainState">Holds state related to the block chain.</param>
         /// <param name="connectionManager">Connection manager of all the currently connected peers.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
@@ -114,8 +115,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             ILoggerFactory loggerFactory,
             ChainState chainState,
             IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
-
             StakeChain stakeChain = null)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
@@ -362,7 +363,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 
                 // Liberate from memory the block created above if possible.
                 context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
-                context.SetBestBlock();
+                context.SetBestBlock(this.dateTimeProvider.GetTimeOffset());
 
                 // == validation flow ==
                 
