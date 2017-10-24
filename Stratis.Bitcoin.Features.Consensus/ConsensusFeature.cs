@@ -13,21 +13,12 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusFeature : FullNodeFeature, INodeStats
     {
-        /// <summary>Factory for creating and also possibly starting application defined tasks inside async loop.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
-        /// <summary>The async loop we need to wait upon before we can shut down this feature.</summary>
-        private IAsyncLoop asyncLoop;
-
         private readonly DBreezeCoinView dBreezeCoinView;
         private readonly Network network;
         private readonly ConcurrentChain chain;
@@ -55,7 +46,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IDateTimeProvider dateTimeProvider;
 
         private readonly ConsensusManager consensusManager;
-        private readonly CacheSettings cacheSettings;
+        
+        /// <summary>Consensus statistics logger.</summary>
+        private readonly ConsensusStats consensusStats;
 
         public ConsensusFeature(
             IAsyncLoopFactory asyncLoopFactory,
@@ -75,10 +68,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider,
             ConsensusManager consensusManager,
-            CacheSettings cacheSettings,
+            ConsensusStats consensusStats,
             StakeChainStore stakeChain = null)
         {
-            this.asyncLoopFactory = asyncLoopFactory;
             this.dBreezeCoinView = dBreezeCoinView;
             this.consensusValidator = consensusValidator;
             this.chain = chain;
@@ -92,12 +84,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusLoop = consensusLoop;
             this.nodeSettings = nodeSettings;
             this.nodeDeployments = nodeDeployments;
-            this.cacheSettings = cacheSettings;
             this.stakeChain = stakeChain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
             this.consensusManager = consensusManager;
+            this.consensusStats = consensusStats;
         }
 
         /// <inheritdoc />
@@ -116,12 +108,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public override void Start()
         {
             this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
-            var cache = this.coinView as CachedCoinView;
-            if (cache != null)
-            {
-                cache.MaxItems = this.cacheSettings.MaxItems;
-            }
-            this.consensusLoop.Initialize();
+            this.consensusLoop.Start();
 
             this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
@@ -132,10 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.stakeChain?.LoadAsync().GetAwaiter().GetResult();
 
-            this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async token =>
-            {
-                await this.RunLoop(this.nodeLifetime.ApplicationStopping);
-            }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpans.RunOnce);
+            this.signals.SubscribeForBlocks(this.consensusStats);
         }
 
         /// <inheritdoc />
@@ -145,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Only then we can flush our coinview safely.
             // Otherwise there is a race condition and a new block 
             // may come from the consensus at wrong time.
-            this.asyncLoop.Dispose();
+            this.consensusLoop.Stop();
 
             var cache = this.coinView as CachedCoinView;
             if (cache != null)
@@ -155,83 +139,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             this.dBreezeCoinView.Dispose();
-        }
-
-        private Task RunLoop(CancellationToken cancellationToken)
-        {
-            try
-            {
-                var stack = new CoinViewStack(this.coinView);
-                CachedCoinView cache = stack.Find<CachedCoinView>();
-                var stats = new ConsensusStats(stack, this.coinView, this.consensusLoop, this.chainState, this.chain, this.connectionManager, this.dateTimeProvider, this.loggerFactory);
-
-                ChainedBlock lastTip = this.consensusLoop.Tip;
-                foreach (BlockResult block in this.consensusLoop.Execute(cancellationToken))
-                {
-                    if (this.consensusLoop.Tip.FindFork(lastTip) != lastTip)
-                        this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip.HashBlock, this.consensusLoop.Tip);
-
-                    lastTip = this.consensusLoop.Tip;
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (block.Error != null)
-                    {
-                        this.logger.LogError("Block rejected: {0}", block.Error.Message);
-
-                        // Pull again.
-                        this.consensusLoop.Puller.SetLocation(this.consensusLoop.Tip);
-
-                        if (block.Error == ConsensusErrors.BadWitnessNonceSize)
-                        {
-                            this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
-                            this.connectionManager.AddDiscoveredNodesRequirement(NodeServices.NODE_WITNESS);
-                            this.consensusLoop.Puller.RequestOptions(TransactionOptions.Witness);
-                            continue;
-                        }
-
-                        // Set the PoW chain back to ConsensusLoop.Tip.
-                        this.chain.SetTip(this.consensusLoop.Tip);
-                        
-                        // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                        this.logger.LogError("Marking block as invalid.");
-                        this.chainState.MarkBlockInvalid(block.Block.GetHash());
-                    }
-
-                    if (block.Error == null)
-                    {
-                        this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-
-                        // We really want to flush if we are at the top of the chain.
-                        // Otherwise, we just allow the flush to happen if it is needed.
-                        bool forceFlush = this.chain.Tip.HashBlock == block.ChainedBlock?.HashBlock;
-                        this.consensusLoop.FlushAsync(forceFlush).GetAwaiter().GetResult();
-
-                        this.signals.SignalBlock(block.Block);
-                    }
-
-                    // TODO: Replace this with a signalling object.
-                    if (stats.CanLog)
-                        stats.Log();
-                }
-            }
-            catch (Exception ex)
-            {
-                if (ex is OperationCanceledException)
-                {
-                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                        return Task.FromException(ex);
-                }
-
-                // TODO Need to revisit unhandled exceptions in a way that any process can signal an exception has been
-                // thrown so that the node and all the disposables can stop gracefully.
-                this.logger.LogDebug("Exception occurred in consensus loop: {0}", ex.ToString());
-                this.logger.LogCritical(new EventId(0), ex, "Consensus loop at Tip:{0} unhandled exception {1}", this.consensusLoop.Tip?.Height, ex.ToString());
-                NLog.LogManager.Flush();
-                throw;
-            }
-
-            return Task.CompletedTask;
         }
     }
 
@@ -264,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
                     services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                     services.AddSingleton<ConsensusController>();
-                    services.AddSingleton<CacheSettings>(new CacheSettings());
+                    services.AddSingleton<ConsensusStats>();
                 });
             });
 
@@ -273,6 +180,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public static IFullNodeBuilder UseStratisConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -297,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<StakeValidator>();
                         services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<CacheSettings>(new CacheSettings());
+                        services.AddSingleton<ConsensusStats>();
                     });
             });
 

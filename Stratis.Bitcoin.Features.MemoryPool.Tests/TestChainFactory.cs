@@ -75,8 +75,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
 
-            ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network), dateTimeProvider, loggerFactory);
-            consensus.Initialize();
+            ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network), loggerFactory, new ChainState(new FullNode()), connectionManager,new Signals.Signals());
+            consensus.Start();
 
             BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
             TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             BlockTemplate newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
-            consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+            consensus.ValidateBlock(new ContextInformation(new BlockValidationContext { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                consensus.ValidateBlock(new ContextInformation(new BlockValidationContext { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                 blocks.Add(currentBlock);
             }
 
