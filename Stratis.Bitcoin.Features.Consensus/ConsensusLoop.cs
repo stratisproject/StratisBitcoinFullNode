@@ -238,6 +238,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Rewinds coinview to a block that exists on the current best chain.
         /// Also resets consensus tip, puller's tip and chain state's consensus tip to that block.
         /// </summary>
+        /// <remarks>The caller of this method is responsible for holding <see cref="consensusLock"/>.</remarks>
         private void RewindCoinViewLocked()
         {
             this.logger.LogTrace("()");
@@ -295,6 +296,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // Check if the error is a consensus failure.
                     if (blockValidationContext.Error == ConsensusErrors.InvalidPrevTip)
                     {
+                        if (!this.Chain.Contains(this.Tip.HashBlock))
+                        {
+                            // Our consensus tip is not on the best chain, which means that the current block
+                            // we are processing might be rejected only because of that. The consensus is on wrong chain
+                            // and need to be reset.
+                            RewindCoinViewLocked();
+                        }
+
                         this.logger.LogTrace("(-)[INVALID_PREV_TIP]");
                         return;
                     }
