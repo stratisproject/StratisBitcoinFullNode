@@ -4,9 +4,8 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -70,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.logger.LogError($"Build transaction failed: {string.Join(" - ", errors.Select(s => s.ToString()))}");
 
-                throw new WalletException("Could not build transaction, please make sure you entered the correct data.");
+                throw new WalletException("Could not build a transaction, please make sure you entered the correct data.");
             }
 
             return context.Transaction;
@@ -80,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void FundTransaction(TransactionBuildContext context, Transaction transaction)
         {
             if (context.Recipients.Any())
-                throw new WalletException("Adding outputs is not allowed");
+                throw new WalletException("Adding outputs is not allowed.");
 
             // Turn the txout set into a Recipient array
             context.Recipients.AddRange(transaction.Outputs
@@ -233,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (context.UnspentOutputs.Count == 0)
             {
-                throw new WalletException($"No spendable transactions found on account {context.AccountReference.AccountName}.");
+                throw new WalletException("No spendable transactions found.");
             }
 
             // Get total spendable balance in the account.
@@ -251,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
                 if(!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
-                    throw new WalletException($"Not all the inputs in 'SelectedInputs' were found on the wallet.");
+                    throw new WalletException("Not all the selected inputs were found on the wallet.");
 
                 if (!context.AllowOtherInputs)
                 {
@@ -286,10 +285,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         private void AddRecipients(TransactionBuildContext context)
         {
             if (context.Recipients.Any(a => a.Amount == Money.Zero))
-                throw new WalletException($"No amount specified");
+                throw new WalletException("No amount specified.");
 
             if (context.Recipients.Any(a => a.SubtractFeeFromAmount))
-                throw new NotImplementedException($"Subtracting the fee from the recipient is not supported yet");
+                throw new NotImplementedException("Subtracting the fee from the recipient is not supported yet.");
 
             foreach (var recipient in context.Recipients)
                 context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
