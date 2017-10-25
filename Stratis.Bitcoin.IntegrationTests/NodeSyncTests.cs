@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Connection;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -188,6 +189,76 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     // check that a reorg did not happen.
                     Assert.Equal(hashBeforeReorg, stratisSyncer.FullNode.Chain.Tip.HashBlock);
+                }
+            }
+            finally
+            {
+                Transaction.TimeStamp = false;
+                Block.BlockSignature = false;
+            }
+        }
+
+        /// <summary>
+        /// This tests simulates scenario 2 from issue 636.
+        /// <para>
+        /// The test mines a block and roughly at the same time, but just after that, a new block at the same height 
+        /// arrives from the puller. Then another block comes from the puller extending the chain without the block we mined.
+        /// </para>
+        /// </summary>
+        /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
+        [Fact]
+        public void PullerVsMinerRaceCondition()
+        {
+            // Temporary fix so the Network static initialize will not break.
+            var m = Network.Main;
+            try
+            {
+                using (NodeBuilder builder = NodeBuilder.Create())
+                {
+                    // This represents local node.
+                    var stratisMinerLocal = builder.CreateStratisPosNode();
+
+                    // This represents remote, which blocks are received by local node using its puller.
+                    var stratisMinerRemote = builder.CreateStratisPosNode();
+
+                    builder.StartAll();
+                    stratisMinerLocal.NotInIBD();
+                    stratisMinerRemote.NotInIBD();
+
+                    stratisMinerLocal.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMinerLocal.FullNode.Network));
+                    stratisMinerRemote.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMinerRemote.FullNode.Network));
+
+                    // Let's mine block Ap and Bp.
+                    stratisMinerRemote.GenerateStratisWithMiner(2);
+
+                    // Wait for block repository for block sync to work.
+                    TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMinerRemote));
+                    stratisMinerLocal.CreateRPCClient().AddNode(stratisMinerRemote.Endpoint, true);
+
+                    TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMinerLocal, stratisMinerRemote));
+
+                    // Now disconnect the peers and mine block C2p on remote.
+                    stratisMinerLocal.CreateRPCClient().RemoveNode(stratisMinerRemote.Endpoint);
+
+                    // Mine block C2p.
+                    stratisMinerRemote.GenerateStratisWithMiner(1);
+                    Thread.Sleep(2000);
+
+                    // Now reconnect nodes and mine block C1s before C2p arrives.
+                    stratisMinerLocal.CreateRPCClient().AddNode(stratisMinerRemote.Endpoint, true);
+                    stratisMinerLocal.GenerateStratisWithMiner(1);
+
+                    // Mine block Dp.
+                    uint256 dpHash = stratisMinerRemote.GenerateStratisWithMiner(1)[0];
+
+                    // Now we wait until the local node's chain tip has correct hash of Dp.
+                    TestHelper.WaitLoop(() => stratisMinerLocal.FullNode.Chain.Tip.HashBlock.Equals(dpHash));
+
+                    // Then give it time to receive the block from the puller.
+                    Thread.Sleep(2500);
+                    
+                    // Check that local node accepted the Dp as consensus tip.
+                    Assert.Equal(stratisMinerLocal.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock, dpHash);
                 }
             }
             finally
