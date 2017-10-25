@@ -263,14 +263,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private async Task SendMempoolPayloadAsync(Node node, MempoolPayload message)
         {
             Guard.NotNull(node, nameof(node));
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Command);
             if (node != this.AttachedNode)
             {
-                this.logger.LogDebug("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedNode?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
-
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Command);
 
             if (!this.CanSend)
                 return;
@@ -329,14 +328,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private async Task ProcessInvAsync(Node node, InvPayload invPayload)
         {
             Guard.NotNull(node, nameof(node));
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
             if (node != this.AttachedNode)
             {
-                this.logger.LogDebug("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedNode?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
-
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
 
             if (invPayload.Inventory.Count > ConnectionManager.MAX_INV_SZ)
             {
@@ -400,14 +398,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
         {
             Guard.NotNull(node, nameof(node));
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
             if (node != this.AttachedNode)
             {
-                this.logger.LogDebug("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogDebug("Attached node '{0}' does not match the originating node '{1}'.", this.AttachedNode?.RemoteSocketEndpoint, node.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
-
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);            
 
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
             {
