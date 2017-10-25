@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Target NextWorkRequired { get; set; }
 
-        public BlockResult BlockResult { get; set; }
+        public BlockValidationContext BlockValidationContext { get; set; }
 
         public DeploymentFlags Flags { get; set; }
 
@@ -71,17 +71,17 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        public ContextInformation(BlockResult blockResult, NBitcoin.Consensus consensus)
+        public ContextInformation(BlockValidationContext blockValidationContext, NBitcoin.Consensus consensus)
         {
-            Guard.NotNull(blockResult, nameof(blockResult));
+            Guard.NotNull(blockValidationContext, nameof(blockValidationContext));
             Guard.NotNull(consensus, nameof(consensus));
 
-            this.BlockResult = blockResult;
+            this.BlockValidationContext = blockValidationContext;
             this.Consensus = consensus;
 
             // TODO: adding flags to determine the flow of logic is not ideal
             // a refator is in depbate on moving to a consensus rules engine
-            // this will remove hte need for flags as a validation will 
+            // this will remove hte need for flags as a validation will
             // only use the required rules (i.e if the check pow rule will be ommited form the flow)
             this.CheckPow = true;
             this.CheckMerkleRoot = true;
@@ -90,15 +90,15 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void SetBestBlock()
         {
-            this.BestBlock = new ContextBlockInformation(this.BlockResult.ChainedBlock.Previous, this.Consensus);
+            this.BestBlock = new ContextBlockInformation(this.BlockValidationContext.ChainedBlock.Previous, this.Consensus);
             this.Time = DateTimeOffset.UtcNow;
         }
 
         public void SetStake()
         {
-            this.Stake = new ContextStakeInformation()
+            this.Stake = new ContextStakeInformation
             {
-                BlockStake = new BlockStake(this.BlockResult.Block)
+                BlockStake = new BlockStake(this.BlockValidationContext.Block)
             };
         }
     }

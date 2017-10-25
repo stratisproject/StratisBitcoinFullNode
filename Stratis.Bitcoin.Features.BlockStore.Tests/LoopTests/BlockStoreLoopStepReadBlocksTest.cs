@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     public sealed class BlockStoreLoopStepDownloadBlocksTest : BlockStoreLoopStepBaseTest
     {
         /// <summary>
-        /// This test executes DownloadBlockStep the <see cref="BlockStoreInnerStepFindBlocks"/> and 
+        /// This test executes DownloadBlockStep the <see cref="BlockStoreInnerStepFindBlocks"/> and
         /// <see cref="BlockStoreInnerStepReadBlocks"/> inner steps via <see cref="DownloadBlockStep"/>
         /// </summary>
         [Fact]
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Push blocks 5 - 9 to the downloaded blocks collection
                 for (int i = 5; i <= 9; i++)
                 {
-                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock() { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
+                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
                 }
 
                 // Start processing blocks to download from block 5

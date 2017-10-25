@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using System.Net;
 
@@ -11,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
     [Route("api/[controller]")]
     public class NotificationsController : Controller
     {
-        private readonly BlockNotification blockNotification;
+        private readonly IBlockNotification blockNotification;
         private readonly ConcurrentChain chain;
 
         /// <summary>
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Controllers
         /// </summary>
         /// <param name="blockNotification">The block notification.</param>
         /// <param name="chain">The chain.</param>
-        public NotificationsController(BlockNotification blockNotification, ConcurrentChain chain)
+        public NotificationsController(IBlockNotification blockNotification, ConcurrentChain chain)
         {
             this.blockNotification = blockNotification;
             this.chain = chain;

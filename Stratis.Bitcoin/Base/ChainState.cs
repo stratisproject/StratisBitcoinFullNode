@@ -1,21 +1,26 @@
 using NBitcoin;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using Stratis.Bitcoin.Interfaces;
+using System;
+using System.Collections.Concurrent;
 
 namespace Stratis.Bitcoin.Base
 {
     public class ChainState
     {
-        private readonly FullNode fullNode;
+        /// <summary>The fullnode interface.</summary>
+        private readonly IFullNode fullNode;
 
-        private long lastUpdate;
-        private bool lastResult;
+        /// <summary>The last time the <see cref="ibdLastResult"/> was updated.</summary>
+        private long ibdLastUpdate;
+        
+        /// <summary>A cached result of the IBD method.</summary>
+        private bool ibdLastResult;
 
-        internal ReaderWriterLockSlim invalidBlocksLock = new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
-        internal HashSet<uint256> invalidBlocks = new HashSet<uint256>();
+        /// <summary>A collection of blocks that have been found to be invalid.</summary>
+        internal ConcurrentDictionary<uint256, uint256> InvalidBlocks;
+
+        /// <summary>A provider of the date and time.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
         public ChainedBlock ConsensusTip { get; set; }
@@ -24,59 +29,57 @@ namespace Stratis.Bitcoin.Base
         /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>
         public uint MaxReorgLength { get; set; }
 
-        public ChainState(FullNode fullNode)
+        public ChainState(IFullNode fullNode)
         {
             this.fullNode = fullNode;
+            this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true);
+            this.InvalidBlocks = new ConcurrentDictionary<uint256, uint256>();
         }
 
+        /// <summary>
+        /// Check if a block is marked as invalid.
+        /// </summary>
+        /// <param name="hashBlock">The block hash to check.</param>
+        /// <returns>True if the block is marked as invalid.</returns>
         public bool IsMarkedInvalid(uint256 hashBlock)
         {
-            try
-            {
-                this.invalidBlocksLock.EnterReadLock();
-                return this.invalidBlocks.Contains(hashBlock);
-            }
-            finally
-            {
-                this.invalidBlocksLock.ExitReadLock();
-            }
+            return this.InvalidBlocks.ContainsKey(hashBlock);
         }
 
-        public void MarkBlockInvalid(uint256 blockHash)
+        /// <summary>
+        /// Mark blocks as invalid to be processed by the node, this is used to prevent DOS attacks.
+        /// </summary>
+        /// <param name="hashBlock">The block hash to mark as invalid.</param>
+        public void MarkBlockInvalid(uint256 hashBlock)
         {
-            try
-            {
-                this.invalidBlocksLock.EnterWriteLock();
-                this.invalidBlocks.Add(blockHash);
-            }
-            finally
-            {
-                this.invalidBlocksLock.ExitWriteLock();
-            }
+            this.InvalidBlocks.TryAdd(hashBlock, hashBlock);
         }
 
+        /// <summary>
+        /// This method will check if the node is in a state of IBD (Initial Block Download)
+        /// </summary>
         public bool IsInitialBlockDownload
         {
             get
             {
-                if (this.lastUpdate < this.fullNode.DateTimeProvider.GetUtcNow().Ticks)
+                if (this.ibdLastUpdate < this.dateTimeProvider?.GetUtcNow().Ticks)
                 {
                     // Sample every minute.
-                    this.lastUpdate = this.fullNode.DateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
+                    this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
 
                     // If consensus is not present IBD has no meaning. Set to false to match legacy code.                    
                     var IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
-                    this.lastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
+                    this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
                 }
-                return this.lastResult;
+                return this.ibdLastResult;
             }
         }
 
         // For testing to be able to move the IBD.
         public void SetIsInitialBlockDownload(bool val, DateTime time)
         {
-            this.lastUpdate = time.Ticks;
-            this.lastResult = val;
+            this.ibdLastUpdate = time.Ticks;
+            this.ibdLastResult = val;
         }
     }
 }

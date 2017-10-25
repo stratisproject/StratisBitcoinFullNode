@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             var addressInWallet = returnedWallet.WatchedAddresses[newScript.ToString()];
             Assert.NotNull(addressInWallet);
             Assert.False(addressInWallet.Transactions.IsEmpty);
-            Assert.Equal(1, addressInWallet.Transactions.Count());
+            Assert.Single(addressInWallet.Transactions);
 
             var transactionExpected = addressInWallet.Transactions.Single().Value;
             Assert.Equal(transactionHex, transactionExpected.Hex);
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             var addressInWallet = returnedWallet.WatchedAddresses[newScript.ToString()];
             Assert.NotNull(addressInWallet);
             Assert.False(addressInWallet.Transactions.IsEmpty);
-            Assert.Equal(1, addressInWallet.Transactions.Count());
+            Assert.Single(addressInWallet.Transactions);
 
             var transactionExpected = addressInWallet.Transactions.Single().Value;
             Assert.Equal(transactionHex, transactionExpected.Hex);

@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void NBitcoinSerializeWithUnsupportedObjectThrowsException()
         {
-            Assert.Throws(typeof(NotSupportedException), () =>
+            Assert.Throws<NotSupportedException>(() =>
             {
                 string test = "Should throw exception.";
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void NBitcoinDeserializeWithNotSupportedClassThrowsException()
         {
-            Assert.Throws(typeof(NotSupportedException), () =>
+            Assert.Throws<NotSupportedException>(() =>
             {
                 string test = "Should throw exception.";
 

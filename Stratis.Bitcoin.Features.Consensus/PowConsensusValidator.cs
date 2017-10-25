@@ -46,10 +46,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public virtual void CheckBlockHeader(ContextInformation context)
         {
-            if (context.CheckPow && !context.BlockResult.Block.Header.CheckProofOfWork())
+            if (context.CheckPow && !context.BlockValidationContext.Block.Header.CheckProofOfWork())
                 ConsensusErrors.HighHash.Throw();
 
-            context.NextWorkRequired = context.BlockResult.ChainedBlock.GetWorkRequired(context.Consensus);
+            context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetWorkRequired(context.Consensus);
 
         }
 
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            Block block = context.BlockResult.Block;
+            Block block = context.BlockValidationContext.Block;
             DeploymentFlags deploymentFlags = context.Flags;
 
             int nHeight = context.BestBlock == null ? 0 : context.BestBlock.Height + 1;
@@ -162,8 +162,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            Block block = context.BlockResult.Block;
-            ChainedBlock index = context.BlockResult.ChainedBlock;
+            Block block = context.BlockValidationContext.Block;
+            ChainedBlock index = context.BlockValidationContext.ChainedBlock;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            ChainedBlock index = context.BlockResult.ChainedBlock;
+            ChainedBlock index = context.BlockValidationContext.ChainedBlock;
             UnspentOutputSet view = context.Set;
 
             view.Update(tx, index.Height);
@@ -458,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            Block block = context.BlockResult.Block;
+            Block block = context.BlockValidationContext.Block;
 
             bool mutated = false;
             uint256 hashMerkleRoot2 = this.BlockMerkleRoot(block, ref mutated);
@@ -843,7 +843,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(context.BestBlock, nameof(context.BestBlock));
             this.logger.LogTrace("()");
 
-            BlockHeader header = context.BlockResult.Block.Header;
+            BlockHeader header = context.BlockValidationContext.Block.Header;
 
             int nHeight = context.BestBlock.Height + 1;
 

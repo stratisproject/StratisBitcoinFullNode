@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Moq;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public WalletSyncManagerTest()
         {
-            this.storeSettings = new StoreSettings()
+            this.storeSettings = new StoreSettings
             {
                 Prune = false
             };
@@ -89,6 +90,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(walletSyncManager.WalletTip.HashBlock.ToString(), forkBlock.HashBlock.ToString());
         }
 
+        /// <summary>
+        /// When processing a new <see cref="Block"/> that has a previous hash that is the same as the <see cref="WalletSyncManager.WalletTip"/> pass it directly to the <see cref="WalletManager"/>
+        /// and set it as the new WalletTip.
+        /// </summary>
         [Fact]
         public void ProcessBlock_NewBlock_PreviousHashSameAsWalletTip_PassesBlockToManagerWithoutReorg()
         {
@@ -107,8 +112,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedBlock>(c => c.Header.GetHash() == expectedBlockHash)));
         }
 
+        /// <summary>
+        /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="WalletSyncManager.WalletTip"/> and is not on the best chain
+        /// look for the point at which the chain forked and remove blocks after that fork point from the <see cref="WalletManager"/>.
+        /// After removing those blocks use the <see cref="BlockStoreCache"/> to retrieve blocks on the best chain and use those to catchup the WalletManager.
+        /// Then set the incoming block as the WalletTip.
+        /// </summary>
         [Fact]
-        public void ProcessBlock_NewBlock_PreviousHashNotSameAsWalletTip_WalletTipNotOnBestChain_RemovesBlocksAfterForkOnOldChainFromWalletManager_CatchUpWalletManagerUsingBlockStoreCache()
+        public void ProcessBlock_NewBlock_BlockNotOnBestChain_ReOrgWalletManagerUsingBlockStoreCache()
         {
             var result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, Network.StratisMain, 2);
             // left side chain containing the 'old' fork.
@@ -121,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
                 {
-                    return result.LeftForkBlocks.Union(result.RightForkBlocks).Where(b => b.GetHash() == hashblock).Single();
+                    return result.LeftForkBlocks.Union(result.RightForkBlocks).Single(b => b.GetHash() == hashblock);
                 });
 
             // set 4th block of the old chain as tip. 2 ahead of the fork thus not being on the right chain.
@@ -144,8 +155,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[4]), ExpectChainedBlock(this.chain.GetBlock(5))), Times.Exactly(2));
         }
 
+        /// <summary>
+        /// When processing a new <see cref="Block"/> that has a previous hash that is not the same as the <see cref="WalletSyncManager.WalletTip"/> and is on the best chain
+        /// see which blocks are missing and retrieve blocks from the <see cref="BlockStoreCache"/> to catchup the <see cref="WalletManager"/>.
+        /// Then set the incoming block as the WalletTip.
+        /// </summary>
         [Fact]
-        public void ProcessBlock_NewBlock_PreviousHashNotSameAsWalletTip_WalletTipOnBestChain_BlockInBlockStoreCache_CatchUpWalletManagerUsingBlockStoreCache()
+        public void ProcessBlock_NewBlock__BlockOnBestChain_ReOrgWalletManagerUsingBlockStoreCache()
         {
             var result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Network.StratisMain);
             this.chain = result.Chain;
@@ -156,7 +172,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
                 {
-                    return blocks.Where(b => b.GetHash() == hashblock).Single();
+                    return blocks.Single(b => b.GetHash() == hashblock);
                 });
 
             // set 2nd block as tip
@@ -174,8 +190,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[3]), ExpectChainedBlock(this.chain.GetBlock(4))), Times.Exactly(2));
         }
 
+        /// <summary>
+        /// When using the <see cref="BlockStoreCache"/> to catchup on the <see cref="WalletManager"/> and the <see cref="Block"/> is not in the BlockStoreCache yet try to wait until it arrives.
+        /// If it does use it to catchup the WalletManager.
+        /// </summary>
         [Fact]
-        public void ProcessBlock_NewBlock_PreviousHashNotSameAsWalletTip_WalletTipOnBestChain_BlockArrivesLateInBlockStoreCache_CatchUpWalletManagerUsingBlockStoreCache()
+        public void ProcessBlock_NewBlock_BlockArrivesLateInBlockStoreCache_ReOrgWalletManagerUsingBlockStoreCache()
         {
             var result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Network.StratisMain);
             this.chain = result.Chain;
@@ -199,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     }
                     else
                     {
-                        return blocks.Where(b => b.GetHash() == hashblock).Single();
+                        return blocks.Single(b => b.GetHash() == hashblock);
                     }
                 });
 
@@ -224,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
 
-            var transaction = new Transaction()
+            var transaction = new Transaction
             {
                 Version = 15
             };
@@ -234,14 +254,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager.Verify(w => w.ProcessTransaction(transaction, null, null));
         }
 
+        /// <summary>
+        /// Updates the <see cref="WalletSyncManager.WalletTip"/> and the <see cref="WalletManager.WalletTipHash"/> using the closest <see cref="Block"/> to the provided date.
+        /// </summary>
         [Fact]
-        public void SyncFromDate_GivenDateMatchingBlocksOnChain_UpdatesWalletTipOnWalletAndWalletSyncManagers_UsingClosestBlock()
+        public void SyncFromDate_GivenDateMatchingBlocksOnChain_UpdatesUsingClosestBlock()
         {
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
              this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
-            
+
             walletSyncManager.SyncFromDate(this.chain.GetBlock(3).Header.BlockTime.DateTime.AddDays(2));
 
             var expectedHash = this.chain.GetBlock(3).HashBlock;
@@ -249,23 +272,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager.VerifySet(w => w.WalletTipHash = expectedHash);
         }
 
+        /// <summary>
+        /// Updates the <see cref="WalletSyncManager.WalletTip"/> and the <see cref="WalletManager.WalletTipHash"/> using the first <see cref="Block"/> if there is no block near the provided date.
+        /// </summary>
         [Fact]
-        public void SyncFromDate_GivenDateNotMatchingBlocksOnChain_UpdatesWalletTipOnWalletAndWalletSyncManagers_UsingFirstBlock()
+        public void SyncFromDate_GivenDateNotMatchingBlocksOnChain_UpdatesUsingFirstBlock()
         {
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
              this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
-           
-            walletSyncManager.SyncFromDate(new System.DateTime(1900,1,1)); // date before any block.
+
+            walletSyncManager.SyncFromDate(new System.DateTime(1900, 1, 1)); // date before any block.
 
             var expectedHash = this.chain.GetBlock(1).HashBlock;
             Assert.Equal(walletSyncManager.WalletTip.HashBlock, expectedHash);
             this.walletManager.VerifySet(w => w.WalletTipHash = expectedHash);
         }
 
+        /// <summary>
+        /// Updates the <see cref="WalletSyncManager.WalletTip"/> and the <see cref="WalletManager.WalletTipHash"/> using the genesis <see cref="Block"/> if there is no block on the chain.
+        /// </summary>
         [Fact]
-        public void SyncFromDate_EmptyChain_UpdatesWalletTipOnWalletAndWalletSyncManagers_UsingGenesisBlock()
+        public void SyncFromDate_EmptyChain_UpdateUsingGenesisBlock()
         {
             this.chain = new ConcurrentChain(Network.StratisMain);
 
@@ -295,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void SyncFromHeight_NoBlockWithHeightOnChain_ThrowsWalletException()
+        public void SyncFromHeight_NoBlockWithGivenHeightOnChain_ThrowsWalletException()
         {
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(1, Network.StratisMain);
 

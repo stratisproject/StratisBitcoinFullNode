@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
                 // Push blocks 5 - 9 to the downloaded blocks collection
                 for (int i = 5; i <= 9; i++)
                 {
-                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock() { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
+                    fluent.Loop.BlockPuller.InjectBlock(blocks[i].GetHash(), new DownloadedBlock { Length = blocks[i].GetSerializedSize(), Block = blocks[i] }, new CancellationToken());
                 }
 
                 // Start processing blocks to download from block 5

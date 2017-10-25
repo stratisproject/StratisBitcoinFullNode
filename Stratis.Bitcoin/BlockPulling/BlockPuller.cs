@@ -17,40 +17,40 @@ namespace Stratis.Bitcoin.BlockPulling
     /// </summary>
     /// <remarks>
     /// There are 4 important objects that hold the state of the puller and that need to be kept in sync:
-    /// <see cref="assignedBlockTasks"/>, <see cref="pendingInventoryVectors"/>, <see cref="downloadedBlocks"/>, 
+    /// <see cref="assignedBlockTasks"/>, <see cref="pendingInventoryVectors"/>, <see cref="downloadedBlocks"/>,
     /// and <see cref="peersPendingDownloads"/>.
     /// <para>
-    /// <see cref="downloadedBlocks"/> is a list of blocks that have been downloaded recently but not processed 
+    /// <see cref="downloadedBlocks"/> is a list of blocks that have been downloaded recently but not processed
     /// by the consumer of the puller.
     /// </para>
     /// <para>
-    /// When a typical consumer wants a next block from the puller, it first checks <see cref="downloadedBlocks"/>, 
+    /// When a typical consumer wants a next block from the puller, it first checks <see cref="downloadedBlocks"/>,
     /// if the block is available (the consumer does know the header of the block it wants from the puller,
-    /// if not, it simply waits until this information is available). If it is available, it is removed 
-    /// from <see cref="downloadedBlocks"/> and consumed. Otherwise, the consumer checks whether this block is being 
+    /// if not, it simply waits until this information is available). If it is available, it is removed
+    /// from <see cref="downloadedBlocks"/> and consumed. Otherwise, the consumer checks whether this block is being
     /// downloaded (or soon to be). If not, it asks the puller to request it from the connect network peers.
     /// <para>
-    /// Besides this "on demand" way of requesting blocks from peers, the consumer also tries to keep puller 
+    /// Besides this "on demand" way of requesting blocks from peers, the consumer also tries to keep puller
     /// ahead of the demand, so that the blocks are downloaded some time before they are needed.
     /// </para>
     /// </para>
     /// <para>
-    /// For a block to be considered as currently (or soon to be) being downloaded, its hash has to be 
+    /// For a block to be considered as currently (or soon to be) being downloaded, its hash has to be
     /// either in <see cref="assignedBlockTasks"/> or <see cref="pendingInventoryVectors"/>.
     /// </para>
     /// <para>
-    /// When the puller is about to request blocks from the peers, it selects which of its peers will 
-    /// be asked to provide which blocks. These assignments of block downloading tasks is kept inside 
-    /// <see cref="assignedBlockTasks"/>. Unsatisfied requests go to <see cref="pendingInventoryVectors"/>, which happens 
-    /// when the puller find out that neither of its peers can be asked for certain block. It also happens 
-    /// when something goes wrong (e.g. the peer disconnects) and the downloading request to a peer is not 
-    /// completed. Such requests need to be reassigned later. Note that it is possible for a peer 
-    /// to be operating well, but slowly, which can cause its quality score to go down and its work 
-    /// to be taken from it. However, this reassignment of the work does not mean the node is stopped 
+    /// When the puller is about to request blocks from the peers, it selects which of its peers will
+    /// be asked to provide which blocks. These assignments of block downloading tasks is kept inside
+    /// <see cref="assignedBlockTasks"/>. Unsatisfied requests go to <see cref="pendingInventoryVectors"/>, which happens
+    /// when the puller find out that neither of its peers can be asked for certain block. It also happens
+    /// when something goes wrong (e.g. the peer disconnects) and the downloading request to a peer is not
+    /// completed. Such requests need to be reassigned later. Note that it is possible for a peer
+    /// to be operating well, but slowly, which can cause its quality score to go down and its work
+    /// to be taken from it. However, this reassignment of the work does not mean the node is stopped
     /// in its current task and it is still possible that it will deliver the blocks it was asked for.
     /// Such late blocks deliveries are currently ignored and wasted.
     /// </para>
-    /// <para><see cref="peersPendingDownloads"/> is an inverse mapping to <see cref="assignedBlockTasks"/>. Each connected 
+    /// <para><see cref="peersPendingDownloads"/> is an inverse mapping to <see cref="assignedBlockTasks"/>. Each connected
     /// peer node has its list of assigned tasks here and there is an equivalence between tasks in both structures.</para>
     /// </remarks>
     public abstract class BlockPuller : IBlockPuller
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly ILogger logger;
 
         /// <summary>
-        /// Lock protecting access to <see cref="assignedBlockTasks"/>, <see cref="pendingInventoryVectors"/>, <see cref="downloadedBlocks"/>, 
+        /// Lock protecting access to <see cref="assignedBlockTasks"/>, <see cref="pendingInventoryVectors"/>, <see cref="downloadedBlocks"/>,
         /// <see cref="peersPendingDownloads"/>, <see cref="peerQuality"/>, and also <see cref="BlockPullerBehavior.Disconnected"/>.
         /// </summary>
         private readonly object lockObject = new object();
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.BlockPulling
         public virtual NodeRequirement Requirements => this.requirements;
 
         /// <summary>
-        /// Initializes a new instance of the object having a chain of block headers and a list of available nodes. 
+        /// Initializes a new instance of the object having a chain of block headers and a list of available nodes.
         /// </summary>
         /// <param name="chain">Chain of block headers.</param>
         /// <param name="nodes">Network peers of the node.</param>
@@ -209,8 +209,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Reassigns the incomplete block downloading tasks among available peer nodes.
         /// <para>
-        /// When something went wrong when the node wanted to download a block from a peer, 
-        /// the task of obtaining the block might get released from the peer. This function 
+        /// When something went wrong when the node wanted to download a block from a peer,
+        /// the task of obtaining the block might get released from the peer. This function
         /// leads to assignment of the incomplete tasks to available peer nodes.
         /// </para>
         /// </summary>
@@ -299,11 +299,11 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Schedules downloading of one or more blocks that the node is missing from one or more peer nodes.
         /// <para>
-        /// Node's quality score is being considered as a weight during the random distribution 
+        /// Node's quality score is being considered as a weight during the random distribution
         /// of the download tasks among the nodes.
         /// </para>
         /// <para>
-        /// Nodes are only asked for blocks that they should have (according to our information 
+        /// Nodes are only asked for blocks that they should have (according to our information
         /// about how long their chains are).
         /// </para>
         /// </summary>
@@ -338,7 +338,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 int? peerHeight = behavior.ChainHeadersBehavior?.PendingTip?.Height;
                 if (peerHeight >= minHeight)
                 {
-                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation()
+                    PullerDownloadAssignments.PeerInformation peerInfo = new PullerDownloadAssignments.PeerInformation
                     {
                         QualityScore = behavior.QualityScore,
                         PeerId = behavior,
@@ -424,7 +424,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="peer">Peer to be assigned the new task.</param>
         /// <param name="blockHash">If the function succeeds, this is filled with the hash of the block that will be requested from <paramref name="peer"/>.</param>
         /// <returns>
-        /// <c>true</c> if a download task was assigned to the peer, <c>false</c> otherwise, 
+        /// <c>true</c> if a download task was assigned to the peer, <c>false</c> otherwise,
         /// which indicates that there was no pending task, or that the peer is disconnected and should not be assigned any more work.
         /// </returns>
         internal bool AssignPendingDownloadTaskToPeer(BlockPullerBehavior peer, out uint256 blockHash)
@@ -455,7 +455,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="blockHash">Hash of the block to download from <paramref name="peer"/>.</param>
         /// <param name="peerDisconnected">If the function fails, this is set to <c>true</c> if the peer was marked as disconnected and thus unable to be assigned any more work.</param>
         /// <returns>
-        /// <c>true</c> if the block was assigned to the peer, <c>false</c> in case the block has already been assigned to someone, 
+        /// <c>true</c> if the block was assigned to the peer, <c>false</c> in case the block has already been assigned to someone,
         /// or if the peer is disconnected and should not be assigned any more work.
         /// </returns>
         internal bool AssignDownloadTaskToPeer(BlockPullerBehavior peer, uint256 blockHash, out bool peerDisconnected)
@@ -478,7 +478,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// Releases the block downloading task from the peer it has been assigned to 
+        /// Releases the block downloading task from the peer it has been assigned to
         /// and returns the block to the list of blocks the node wants to download.
         /// </summary>
         /// <param name="peerPendingDownloads">List of pending downloads tasks of the peer.</param>
@@ -549,8 +549,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="blockHash">Hash of the downloaded block.</param>
         /// <param name="downloadedBlock">Description of the downloaded block.</param>
         /// <returns>
-        /// <c>true</c> if the download task for the block was assigned to <paramref name="peer"/> 
-        /// and the task was removed and added to the list of downloaded blocks. 
+        /// <c>true</c> if the download task for the block was assigned to <paramref name="peer"/>
+        /// and the task was removed and added to the list of downloaded blocks.
         /// <c>false</c> if the downloaded block has been assigned to another peer
         /// or if the block was already on the list of downloaded blocks.
         /// </returns>
@@ -652,7 +652,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>
         /// Adds a downloaded block to the list of downloaded blocks.
         /// <para>
-        /// If a block with the same hash already existed in the list, 
+        /// If a block with the same hash already existed in the list,
         /// it is not replaced with the new one, but the function does not fail.
         /// </para>
         /// </summary>
