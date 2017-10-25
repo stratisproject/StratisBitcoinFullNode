@@ -262,9 +262,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="message">The message payload.</param>
         private async Task SendMempoolPayloadAsync(Node node, MempoolPayload message)
         {
+            Guard.NotNull(node, nameof(node));
             if (node != this.AttachedNode)
             {
-                this.logger.LogError("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogDebug("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
@@ -327,9 +328,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="invPayload">The inventory payload in the message.</param>
         private async Task ProcessInvAsync(Node node, InvPayload invPayload)
         {
+            Guard.NotNull(node, nameof(node));
             if (node != this.AttachedNode)
             {
-                this.logger.LogError("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogDebug("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
@@ -397,9 +399,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="getDataPayload">The payload for the message.</param>
         private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
         {
+            Guard.NotNull(node, nameof(node));
             if (node != this.AttachedNode)
             {
-                this.logger.LogError("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogDebug("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
                 this.logger.LogTrace("(-)[NODE_MISMATCH]");
                 return;
             }
