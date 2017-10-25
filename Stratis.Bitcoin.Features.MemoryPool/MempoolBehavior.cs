@@ -262,7 +262,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="message">The message payload.</param>
         private async Task SendMempoolPayloadAsync(Node node, MempoolPayload message)
         {
-            Guard.Assert(node == this.AttachedNode); // just in case
+            if (node != this.AttachedNode)
+            {
+                this.logger.LogError("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogTrace("(-)[NODE_MISMATCH]");
+                return;
+            }
+
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Command);
 
             if (!this.CanSend)
@@ -321,7 +327,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="invPayload">The inventory payload in the message.</param>
         private async Task ProcessInvAsync(Node node, InvPayload invPayload)
         {
-            Guard.Assert(node == this.AttachedNode); // just in case
+            if (node != this.AttachedNode)
+            {
+                this.logger.LogError("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogTrace("(-)[NODE_MISMATCH]");
+                return;
+            }
+
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(invPayload), nameof(invPayload.Inventory), nameof(invPayload.Inventory.Count), invPayload.Inventory.Count);
 
             if (invPayload.Inventory.Count > ConnectionManager.MAX_INV_SZ)
@@ -385,8 +397,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="getDataPayload">The payload for the message.</param>
         private async Task ProcessGetDataAsync(Node node, GetDataPayload getDataPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
-            Guard.Assert(node == this.AttachedNode); // just in case
+            if (node != this.AttachedNode)
+            {
+                this.logger.LogError("Node Mismatch ({0}:'{1}', {2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
+                this.logger.LogTrace("(-)[NODE_MISMATCH]");
+                return;
+            }
+
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);            
 
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
             {
