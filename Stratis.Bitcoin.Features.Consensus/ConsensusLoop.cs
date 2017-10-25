@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                             this.Tip = rewinded;
                             this.Puller.SetLocation(rewinded);
-                            this.chainState.HighestValidatedPoW = this.Tip;
+                            this.chainState.ConsensusTip = this.Tip;
                             this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
 
                             continue;
@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     this.logger.LogTrace("Block '{0}' accepted.", this.Tip);
 
-                    this.chainState.HighestValidatedPoW = this.Tip;
+                    this.chainState.ConsensusTip = this.Tip;
 
                     // We really want to flush if we are at the top of the chain.
                     // Otherwise, we just allow the flush to happen if it is needed.

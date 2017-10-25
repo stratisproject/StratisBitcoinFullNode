@@ -302,42 +302,6 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Check if any past blocks announced by this peer is in the invalid blocks list, and set InvalidHeaderReceived flag accordingly.
-        /// </summary>
-        /// <returns><c>true</c> if no invalid block has been received.</returns>
-        public bool CheckAnnouncedBlocks()
-        {
-            this.logger.LogTrace("()");
-
-            ChainedBlock tip = this.pendingTip;
-            if ((tip != null) && !this.invalidHeaderReceived)
-            {
-                try
-                {
-                    this.chainState.invalidBlocksLock.EnterReadLock();
-                    if (this.chainState.invalidBlocks.Count != 0)
-                    {
-                        foreach (ChainedBlock header in tip.EnumerateToGenesis())
-                        {
-                            if (this.invalidHeaderReceived)
-                                break;
-
-                            this.invalidHeaderReceived |= this.chainState.invalidBlocks.Contains(header.HashBlock);
-                        }
-                    }
-                }
-                finally
-                {
-                    this.chainState.invalidBlocksLock.ExitReadLock();
-                }
-            }
-
-            bool res = !this.invalidHeaderReceived;
-            this.logger.LogTrace("(-):{0}", res);
-            return res;
-        }
-
         private void AttachedNode_StateChanged(Node node, NodeState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
