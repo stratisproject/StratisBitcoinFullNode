@@ -265,7 +265,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                         }
                     }
                 }
-                else this.logger.LogTrace("BIP68, SigOp cost, and input validations skipped for checkpointed block at height {0}.", index.Height);
 
                 this.UpdateCoinView(context, tx);
             }
@@ -281,7 +280,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     ConsensusErrors.BadTransactionScriptError.Throw();
                 }
             }
-            else this.logger.LogTrace("Block reward validation skipped for checkpointed block at height {0}.", index.Height);
+            else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for checkpointed block at height {0}.", index.Height);
 
             this.logger.LogTrace("(-)");
         }
