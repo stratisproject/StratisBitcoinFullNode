@@ -8,7 +8,8 @@ namespace Stratis.Bitcoin.Base.Deployments
         {
 
         }
-        public DeploymentFlags(ChainedBlock nextBlock, ThresholdState[] prevBlockStates, NBitcoin.Consensus chainparams)
+
+        public DeploymentFlags(ChainedBlock nextBlock, ThresholdState[] prevBlockStates, NBitcoin.Consensus chainparams, ConcurrentChain chain)
         {
             // Do not allow blocks that contain transactions which 'overwrite' older transactions,
             // unless those are already completely spent.
@@ -32,7 +33,8 @@ namespace Stratis.Bitcoin.Base.Deployments
             // before the first had been spent.  Since those coinbases are sufficiently buried its no longer possible to create further
             // duplicate transactions descending from the known pairs either.
             // If we're on the known chain at height greater than where BIP34 activated, we can save the db accesses needed for the BIP30 check.
-            var pindexBIP34height = nextBlock.GetAncestor(chainparams.BuriedDeployments[BuriedDeployments.BIP34]);
+            ChainedBlock pindexBIP34height = chain.GetBlock(chainparams.BuriedDeployments[BuriedDeployments.BIP34]);
+            
             //Only continue to enforce if we're below BIP34 activation height or the block hash at that height doesn't correspond.
             this.EnforceBIP30 = this.EnforceBIP30 && (pindexBIP34height == null || !(pindexBIP34height.HashBlock == chainparams.BIP34Hash));
 
