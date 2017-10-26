@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -46,17 +45,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public Transaction BuildTransaction(TransactionBuildContext context)
         {
-            Guard.NotNull(context, nameof(context));
-            Guard.NotNull(context.Recipients, nameof(context.Recipients));
-            Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
-
-            context.TransactionBuilder = new TransactionBuilder();
-
-            this.AddRecipients(context);
-            this.AddCoins(context);
-            this.AddSecrets(context);
-            this.FindChangeAddress(context);
-            this.AddFee(context);
+            this.InitializeTransactionBuilder(context);
 
             if(context.Shuffle)
             {
@@ -172,6 +161,33 @@ namespace Stratis.Bitcoin.Features.Wallet
             }            
 
             return (maxSpendableAmount - fee, fee);
+        }
+
+        /// <inheritdoc />
+        public Money EstimateFee(TransactionBuildContext context)
+        {
+            this.InitializeTransactionBuilder(context);
+
+            return context.TransactionFee;
+        }
+
+        /// <summary>
+        /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
+        /// </summary>
+        /// <param name="context">Transaction build context.</param>
+        private void InitializeTransactionBuilder(TransactionBuildContext context)
+        {
+            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(context.Recipients, nameof(context.Recipients));
+            Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
+
+            context.TransactionBuilder = new TransactionBuilder();
+
+            this.AddRecipients(context);
+            this.AddCoins(context);
+            this.AddSecrets(context);
+            this.FindChangeAddress(context);
+            this.AddFee(context);
         }
 
         /// <summary>
