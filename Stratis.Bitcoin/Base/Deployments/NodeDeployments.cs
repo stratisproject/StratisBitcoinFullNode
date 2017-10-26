@@ -4,7 +4,9 @@ namespace Stratis.Bitcoin.Base.Deployments
 {
     public class NodeDeployments
     {
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
+
         public ThresholdConditionCache BIP9 { get; }
 
         /// <summary>Best chain that the node is aware of.</summary>
