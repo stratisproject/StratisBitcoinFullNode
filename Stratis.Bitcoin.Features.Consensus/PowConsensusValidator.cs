@@ -50,7 +50,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.HighHash.Throw();
 
             context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetWorkRequired(context.Consensus);
-
         }
 
         public virtual void ContextualCheckBlock(ContextInformation context)
