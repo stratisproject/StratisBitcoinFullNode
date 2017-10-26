@@ -408,7 +408,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockValidationContext.Block;
             BlockStake blockStake = context.Stake.BlockStake;
 
-            int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
+            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
 
             // Verify hash target and signature of coinstake tx.
             if (BlockStake.IsProofOfStake(block))
@@ -451,7 +451,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             else if (chainedBlock.Height == lastCheckpointHeight)
             {
                 // Copy checkpointed stake modifier.
-                CheckpointInfo checkpoint = this.checkpoints.GetCheckpoint(lastCheckpointHeight);
+                CheckpointInfo checkpoint = this.Checkpoints.GetCheckpoint(lastCheckpointHeight);
                 blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
                 this.logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }

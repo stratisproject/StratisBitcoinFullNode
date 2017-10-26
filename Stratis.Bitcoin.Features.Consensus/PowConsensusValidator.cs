@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Provider of block header hash checkpoints.</summary>
-        protected readonly ICheckpoints checkpoints;
+        protected readonly ICheckpoints Checkpoints;
 
         private readonly NBitcoin.Consensus consensusParams;
         public NBitcoin.Consensus ConsensusParams { get { return this.consensusParams; } }
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusParams = network.Consensus;
             this.consensusOptions = network.Consensus.Option<PowConsensusOptions>();
             this.PerformanceCounter = new ConsensusPerformanceCounter();
-            this.checkpoints = checkpoints;
+            this.Checkpoints = checkpoints;
         }
 
         public virtual void CheckBlockHeader(ContextInformation context)
@@ -878,7 +878,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check that the block header hash matches the known checkpointed value, if any.
-            if (!this.checkpoints.CheckHardened(nHeight, header.GetHash()))
+            if (!this.Checkpoints.CheckHardened(nHeight, header.GetHash()))
             {
                 this.logger.LogTrace("(-)[CHECKPOINT_VIOLATION]");
                 ConsensusErrors.CheckpointViolation.Throw();
