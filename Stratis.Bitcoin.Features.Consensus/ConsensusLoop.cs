@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                             // Our consensus tip is not on the best chain, which means that the current block
                             // we are processing might be rejected only because of that. The consensus is on wrong chain
                             // and need to be reset.
-                            RewindCoinViewLocked();
+                            this.RewindCoinViewLocked();
                         }
 
                         this.logger.LogTrace("(-)[INVALID_PREV_TIP]");
