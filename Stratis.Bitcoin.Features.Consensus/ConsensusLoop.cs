@@ -208,6 +208,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddBlockFetchingTime(o)))
                 {
+                    // Save the current consensus tip to later check if it changed.
+                    ChainedBlock consensusTip = this.Tip;
+
                     // This method will block until the next block is downloaded.
                     blockValidationContext.Block = this.Puller.NextBlock(cancellationToken);
 
@@ -215,28 +218,16 @@ namespace Stratis.Bitcoin.Features.Consensus
                     {
                         lock (this.consensusLock)
                         {
-                            this.logger.LogTrace("No block received from puller due to reorganization, rewinding.");
-                            ChainedBlock lastTip = this.Tip;
+                            this.logger.LogTrace("No block received from puller due to reorganization.");
 
-                            CancellationToken token = this.nodeLifetime.ApplicationStopping;
-
-                            ChainedBlock rewinded = null;
-                            while (rewinded == null)
+                            if (!consensusTip.Equals(this.Tip))
                             {
-                                token.ThrowIfCancellationRequested();
-
-                                uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
-                                rewinded = this.Chain.GetBlock(hash);
-                                if (rewinded == null)
-                                {
-                                    this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.", hash);
-                                }
+                                this.logger.LogTrace("Consensus tip changed from '{0}' to '{1}', no rewinding.", consensusTip, this.Tip);
+                                continue;
                             }
 
-                            this.Tip = rewinded;
-                            this.Puller.SetLocation(rewinded);
-                            this.chainState.HighestValidatedPoW = this.Tip;
-                            this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
+                            this.logger.LogTrace("Rewinding.");
+                            this.RewindCoinViewLocked();
 
                             continue;
                         }
@@ -246,6 +237,39 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.logger.LogTrace("Block received from puller.");
                 this.AcceptBlock(blockValidationContext);
             }
+        }
+
+        /// <summary>
+        /// Rewinds coinview to a block that exists on the current best chain.
+        /// Also resets consensus tip, puller's tip and chain state's consensus tip to that block.
+        /// </summary>
+        /// <remarks>The caller of this method is responsible for holding <see cref="consensusLock"/>.</remarks>
+        private void RewindCoinViewLocked()
+        {
+            this.logger.LogTrace("()");
+
+            ChainedBlock lastTip = this.Tip;
+            CancellationToken token = this.nodeLifetime.ApplicationStopping;
+
+            ChainedBlock rewinded = null;
+            while (rewinded == null)
+            {
+                token.ThrowIfCancellationRequested();
+
+                uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                rewinded = this.Chain.GetBlock(hash);
+                if (rewinded == null)
+                {
+                    this.logger.LogTrace("Rewound to '{0}', which is still not a part of the current best chain, rewinding further.", hash);
+                }
+            }
+
+            this.Tip = rewinded;
+            this.Puller.SetLocation(rewinded);
+            this.chainState.HighestValidatedPoW = this.Tip;
+            this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -277,6 +301,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // Check if the error is a consensus failure.
                     if (blockValidationContext.Error == ConsensusErrors.InvalidPrevTip)
                     {
+                        if (!this.Chain.Contains(this.Tip.HashBlock))
+                        {
+                            // Our consensus tip is not on the best chain, which means that the current block
+                            // we are processing might be rejected only because of that. The consensus is on wrong chain
+                            // and need to be reset.
+                            this.RewindCoinViewLocked();
+                        }
+
                         this.logger.LogTrace("(-)[INVALID_PREV_TIP]");
                         return;
                     }
