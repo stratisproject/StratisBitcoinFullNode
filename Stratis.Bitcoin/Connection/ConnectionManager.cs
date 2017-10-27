@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Connection
 				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
 				var addrman = new AddressManager();
 				addrman.Add(this.connectionManagerSettings.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
-				var addrmanBehavior = new AddressManagerBehavior(addrman);
+				var addrmanBehavior = new AddressManagerBehavior(addrman) { PeersToDiscover = 10 };
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.None;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Connection
 				cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
 				var addrman = new AddressManager();
 				addrman.Add(this.connectionManagerSettings.AddNode.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
-				var addrmanBehavior = new AddressManagerBehavior(addrman);
+				var addrmanBehavior = new AddressManagerBehavior(addrman) { PeersToDiscover = 10 };
 				addrmanBehavior.Mode = AddressManagerBehaviorMode.AdvertizeDiscover;
 				cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
 
