@@ -138,6 +138,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>'bad-txns-nonstandard-inputs' error returns a <see cref="RejectNonstandard"/> reject code.</summary>
         public static MempoolError NonstandardInputs = new MempoolError(RejectNonstandard, "bad-txns-nonstandard-inputs");
 
+        /// <summary>'bad-witness-nonstandard' error returns a <see cref="RejectNonstandard"/> reject code.</summary>
+        public static MempoolError NonstandardWitness = new MempoolError(RejectNonstandard, "bad-witness-nonstandard");
+
         /// <summary>'bad-txns-too-many-sigops' error returns a <see cref="RejectNonstandard"/> reject code.</summary>
         public static MempoolError TooManySigops = new MempoolError(RejectNonstandard, "bad-txns-too-many-sigops");
 
