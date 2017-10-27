@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Moq;
+﻿using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Xunit;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
@@ -458,6 +458,72 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             (Money max, Money fee) result = walletTransactionHandler.GetMaximumSpendableAmount(new WalletAccountReference("wallet1", "account 1"), FeeType.Low, true);
             Assert.Equal(Money.Zero, result.max);
             Assert.Equal(Money.Zero, result.fee);
+        }
+
+        /// <summary>
+        /// Tests the <see cref="WalletTransactionHandler.EstimateFee(TransactionBuildContext)"/> method by 
+        /// comparing it's fee calculation with the transaction fee computed for the same tx in the 
+        /// <see cref="WalletTransactionHandler.BuildTransaction(TransactionBuildContext)"/> method.
+        /// </summary>
+        [Fact]
+        public void EstimateFee_WithLowFee_MatchesBuildTxLowFee()
+        {
+            DataFolder dataFolder = AssureEmptyDirAsDataFolder($"TestData/WalletTransactionHandlerTest/{nameof(EstimateFee_WithLowFee_MatchesBuildTxLowFee)}");
+
+            Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
+            var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            var spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            var destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+
+            HdAddress address = new HdAddress
+            {
+                Index = 0,
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            ConcurrentChain chain = new ConcurrentChain(wallet.Network.GetGenesis().Header);
+            WalletTestsHelpers.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address);
+            TransactionData addressTransaction = address.Transactions.First();
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress> { address },
+                InternalAddresses = new List<HdAddress>()
+            });
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
+                .Returns(new FeeRate(20000));
+
+            WalletManager walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.Main, chain, NodeSettings.Default(), dataFolder,
+                walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            WalletTransactionHandler walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain, walletManager, walletFeePolicy.Object, Network.Main);
+
+            walletManager.Wallets.Add(wallet);
+
+            WalletAccountReference walletReference = new WalletAccountReference
+            {
+                AccountName = "account1",
+                WalletName = "myWallet1"
+            };
+
+            // Context to build requires password in order to sign transaction.
+            TransactionBuildContext buildContext = CreateContext(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            walletTransactionHandler.BuildTransaction(buildContext);
+
+            // Context for estimate does not need password.
+            TransactionBuildContext estimateContext = CreateContext(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            Money fee = walletTransactionHandler.EstimateFee(estimateContext);
+
+            Assert.Equal(fee, buildContext.TransactionFee);
         }
 
         public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
