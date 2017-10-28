@@ -21,6 +21,13 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </remarks>
     public class WalletTransactionHandler : IWalletTransactionHandler
     {
+        /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
+        /// <remarks>
+        /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
+        /// most regular wallets will never such a high number of UTXO.
+        /// </remarks>
+        private const int SendCountThresholdLimit = 500;
+
         private readonly ConcurrentChain chain;
         private readonly IWalletManager walletManager;
         private readonly IWalletFeePolicy walletFeePolicy;
@@ -264,7 +271,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Money sum = 0;
             int index = 0;
-            int threshold = 500;
             var coins = new List<Coin>();
             foreach (var item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
             {
@@ -272,7 +278,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 sum += item.Transaction.Amount;
                 index++;
 
-                if (index > threshold && sum > totalToSend)
+                // If threshold is reached and the total value is above the target 
+                // then its safe to stop adding UTXOs to the coin list.
+                // The primery goal is to reduce the time it takes to build a trx 
+                // when the wallet is bloate with UTXOs.
+                if (index > SendCountThresholdLimit && sum > totalToSend)
                     break;
             }
 
