@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Xunit;
 
@@ -466,9 +467,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         /// <see cref="WalletTransactionHandler.BuildTransaction(TransactionBuildContext)"/> method.
         /// </summary>
         [Fact]
-        public void EstimateFee_WithLowFee_MatchesBuildTxLowFee()
+        public void EstimateFeeWithLowFeeMatchesBuildTxLowFee()
         {
-            DataFolder dataFolder = AssureEmptyDirAsDataFolder($"TestData/WalletTransactionHandlerTest/{nameof(EstimateFee_WithLowFee_MatchesBuildTxLowFee)}");
+            string dataPath = Path.Combine("TestData", nameof(WalletTransactionHandlerTest), nameof(EstimateFeeWithLowFeeMatchesBuildTxLowFee));
+            DataFolder dataFolder = AssureEmptyDirAsDataFolder(dataPath);
 
             Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
             var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
