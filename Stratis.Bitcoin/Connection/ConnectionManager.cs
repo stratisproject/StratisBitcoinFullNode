@@ -75,8 +75,8 @@ namespace Stratis.Bitcoin.Connection
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
         public void Start()
-		{
-			this.parameters.UserAgent = "StratisBitcoin:" + GetVersion();
+        {
+            this.parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
 			this.parameters.Version = this.NodeSettings.ProtocolVersion;
 			if (this.connectionManagerSettings.Connect.Count == 0)
 			{

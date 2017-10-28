@@ -81,6 +81,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Blockchain name. Currently only "bitcoin" and "stratis" are used.</summary>
         public string Name { get; set; }
 
+        /// <summary>The node's user agent that will be shared with peers in the version handshake.</summary>
+        public string Agent { get; set; }
+
         /// <summary>URI to node's API interface.</summary>
         public Uri ApiUri { get; set; }
 
@@ -126,16 +129,18 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="name">Blockchain name. Currently only "bitcoin" and "stratis" are used.</param>
         /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
+        /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public static NodeSettings FromArguments(string[] args, string name = "bitcoin",
             Network innerNetwork = null,
-            ProtocolVersion protocolVersion = SupportedProtocolVersion)
+            ProtocolVersion protocolVersion = SupportedProtocolVersion,
+            string agent = "StratisBitcoin")
         {
             if (string.IsNullOrEmpty(name))
                 throw new ConfigurationException("A network name is mandatory");
 
-            NodeSettings nodeSettings = new NodeSettings { Name = name };
+            NodeSettings nodeSettings = new NodeSettings { Name = name, Agent = agent };
 
             // The logger factory goes in the settings with minimal configuration, 
             // that's so the settings can also log out its progress.
