@@ -2,11 +2,14 @@
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using System;
@@ -15,11 +18,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security;
-using Xunit;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Interfaces;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Broadcasting;
+using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
@@ -1781,6 +1781,33 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Single(errorResponse.Errors);
             Assert.NotNull(errorResult.StatusCode);
             Assert.Equal((int)HttpStatusCode.BadRequest, errorResult.StatusCode.Value);
+        }
+
+        [Fact]
+        public void GetTransactionFeeEstimateWithValidRequestReturnsFee()
+        {
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
+            Key key = new Key();
+            Money expectedFee = new Money(1000);
+            mockWalletTransactionHandler.Setup(m => m.EstimateFee(It.IsAny<TransactionBuildContext>()))
+                .Returns(expectedFee);
+
+            WalletController controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), Network.Main, new Mock<ConcurrentChain>().Object, It.IsAny<DataFolder>(), new Mock<IBroadcasterManager>().Object);
+            IActionResult result = controller.GetTransactionFeeEstimate(new TxFeeEstimateRequest
+            {
+                AccountName = "Account 1",
+                Amount = new Money(150000).ToString(),
+                DestinationAddress = key.PubKey.GetAddress(Network.Main).ToString(),
+                FeeType = "105",
+                WalletName = "myWallet"
+            });
+
+            JsonResult viewResult = Assert.IsType<JsonResult>(result);
+            Money actualFee = viewResult.Value as Money;
+
+            Assert.NotNull(actualFee);
+            Assert.Equal(expectedFee, actualFee);
         }
     }
 }
