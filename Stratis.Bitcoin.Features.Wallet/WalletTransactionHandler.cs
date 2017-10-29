@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
         /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
-        /// most regular wallets will never such a high number of UTXO.
+        /// most regular wallets will never reach such a high number of UTXO.
         /// </remarks>
         private const int SendCountThresholdLimit = 500;
 
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // If threshold is reached and the total value is above the target 
                 // then its safe to stop adding UTXOs to the coin list.
                 // The primery goal is to reduce the time it takes to build a trx 
-                // when the wallet is bloate with UTXOs.
+                // when the wallet is bloated with UTXOs.
                 if (index > SendCountThresholdLimit && sum > totalToSend)
                     break;
             }
