@@ -26,7 +26,7 @@ namespace Stratis.BreezeD
             var apiUri = args.GetValueOf("apiuri");
             var isTestNet = args.Contains("-testnet");
             var isStratis = args.Contains("stratis");
-            var agent = "Breeze(spv)";
+            var agent = "Breeze";
 
             NodeSettings nodeSettings;
             if (isStratis)
