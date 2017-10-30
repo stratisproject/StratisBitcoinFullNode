@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public class CustomThreadPoolTaskScheduler : TaskScheduler, IDisposable
     {

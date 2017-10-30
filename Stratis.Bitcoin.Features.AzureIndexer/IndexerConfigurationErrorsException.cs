@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
 	public class IndexerConfigurationErrorsException : Exception
 	{

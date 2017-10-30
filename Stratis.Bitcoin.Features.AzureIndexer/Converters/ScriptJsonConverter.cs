@@ -1,11 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using NBitcoin;
 
-namespace NBitcoin.Indexer.Converters
+namespace Stratis.Bitcoin.Features.AzureIndexer.Converters
 {
     public class ScriptJsonConverter : JsonConverter
     {

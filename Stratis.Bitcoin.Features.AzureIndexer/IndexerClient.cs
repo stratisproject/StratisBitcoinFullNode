@@ -1,23 +1,15 @@
 ﻿using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Table;
-using NBitcoin.DataEncoders;
-using NBitcoin.Indexer.Converters;
-using NBitcoin.Indexer.Internal;
+using NBitcoin;
 using NBitcoin.OpenAsset;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading;
-using NBitcoin;
 using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public class IndexerClient
     {

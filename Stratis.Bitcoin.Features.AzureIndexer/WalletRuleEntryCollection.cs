@@ -1,12 +1,10 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.Indexer.Internal;
+﻿using NBitcoin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Stratis.Bitcoin.Features.AzureIndexer.Internal;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public class WalletRuleEntryCollection : IEnumerable<WalletRuleEntry>
     {

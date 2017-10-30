@@ -1,4 +1,4 @@
-﻿namespace NBitcoin.Indexer
+﻿namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     using System;
     using System.Runtime.ExceptionServices;

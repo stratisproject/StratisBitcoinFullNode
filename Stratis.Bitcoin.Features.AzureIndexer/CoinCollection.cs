@@ -1,11 +1,9 @@
-﻿using NBitcoin.OpenAsset;
-using System;
+﻿using NBitcoin;
+using NBitcoin.OpenAsset;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public class CoinCollection : List<ICoin>
     {
@@ -13,10 +11,12 @@ namespace NBitcoin.Indexer
         {
 
         }
+
         public CoinCollection(IEnumerable<ICoin> enumerable)
         {
             AddRange(enumerable);
         }
+
         public ICoin this[OutPoint index]
         {
             get
@@ -51,6 +51,7 @@ namespace NBitcoin.Indexer
         {
             return WhereColored(assetId.AssetId);
         }
+
         public IEnumerable<ColoredCoin> WhereColored(AssetId assetId)
         {
             return this.OfType<ColoredCoin>().Where(c => c.AssetId == assetId);

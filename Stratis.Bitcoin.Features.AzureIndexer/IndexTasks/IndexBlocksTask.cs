@@ -1,15 +1,15 @@
 ﻿using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+using NBitcoin;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer.IndexTasks
+namespace Stratis.Bitcoin.Features.AzureIndexer.IndexTasks
 {
     public class IndexBlocksTask : IndexTask<BlockInfo>
     {

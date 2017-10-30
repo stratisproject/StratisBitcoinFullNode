@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     class AnonymousEqualityComparer<T,TComparer> : IEqualityComparer<T>
     {
@@ -17,12 +14,12 @@ namespace NBitcoin.Indexer
 
         public bool Equals(T x, T y)
         {
-            return comparer(x).Equals(comparer(y));
+            return this.comparer(x).Equals(this.comparer(y));
         }
 
         public int GetHashCode(T obj)
         {
-            return comparer(obj).GetHashCode();
+            return this.comparer(obj).GetHashCode();
         }
 
         #endregion

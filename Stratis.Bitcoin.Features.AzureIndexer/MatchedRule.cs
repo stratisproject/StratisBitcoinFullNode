@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NBitcoin.Indexer
+﻿
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public enum MatchLocation
     {
@@ -33,7 +28,7 @@ namespace NBitcoin.Indexer
 
         public override string ToString()
         {
-            return Index + "-" + MatchType.ToString();
+            return this.Index + "-" + this.MatchType.ToString();
         }
     }
 }

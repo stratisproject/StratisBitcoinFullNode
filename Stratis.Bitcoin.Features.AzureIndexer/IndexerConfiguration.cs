@@ -2,19 +2,15 @@
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Table;
-using NBitcoin.Indexer.Converters;
+using NBitcoin;
 using NBitcoin.Protocol;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public class IndexerConfiguration
     {
@@ -48,7 +44,7 @@ namespace NBitcoin.Indexer
         }
 
         protected static void Fill(IConfiguration config, IndexerConfiguration indexerConfig)
-        {
+        {  
             var account = GetValue(config, "Azure.AccountName", true);
             var key = GetValue(config, "Azure.Key", true);
             indexerConfig.StorageCredentials = new StorageCredentials(account, key);

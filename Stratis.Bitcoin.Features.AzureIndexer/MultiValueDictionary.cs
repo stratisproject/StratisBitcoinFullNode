@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Resources;
 using System.Runtime.CompilerServices;
 
-namespace NBitcoin.Indexer.Internal
+namespace Stratis.Bitcoin.Features.AzureIndexer.Internal
 {
     /// <summary>
     /// Indicates to Code Analysis that a method validates a particular parameter.
@@ -151,7 +151,7 @@ namespace NBitcoin.Indexer.Internal
             {
                 if (object.ReferenceEquals(Exceptions.resourceMan, null))
                 {
-                    ResourceManager resourceManager = new ResourceManager("NBitcoin.Indexer.Exceptions", typeof(Exceptions).GetTypeInfo().Assembly);
+                    ResourceManager resourceManager = new ResourceManager("Stratis.Bitcoin.Features.AzureIndexer.Exceptions", typeof(Exceptions).GetTypeInfo().Assembly);
                     Exceptions.resourceMan = resourceManager;
                 }
                 return Exceptions.resourceMan;

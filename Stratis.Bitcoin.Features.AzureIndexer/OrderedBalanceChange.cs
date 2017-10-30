@@ -1,17 +1,14 @@
 ﻿using Microsoft.WindowsAzure.Storage.Table;
-using NBitcoin.DataEncoders;
-using NBitcoin.Indexer.DamienG.Security.Cryptography;
+using NBitcoin;
 using NBitcoin.OpenAsset;
 using NBitcoin.Protocol;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public class OrderedBalanceChange
     {

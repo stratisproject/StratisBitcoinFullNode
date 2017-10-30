@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using NBitcoin;
 
-namespace NBitcoin.Indexer.IndexTasks
+namespace Stratis.Bitcoin.Features.AzureIndexer.IndexTasks
 {
     public class IndexBalanceTask : IndexTableEntitiesTaskBase<OrderedBalanceChange>
     {

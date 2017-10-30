@@ -1,17 +1,15 @@
 ﻿using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
-using NBitcoin.DataEncoders;
-using NBitcoin.Indexer.Converters;
+using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Features.AzureIndexer.Converters;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     internal static class Helper
     {

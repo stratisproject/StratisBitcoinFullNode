@@ -1,21 +1,20 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Table;
+using NBitcoin;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public class IndexerTrace
     {
 		static ILogger _Logger = NullLogger.Instance;
 		public static void Configure(ILoggerFactory factory)
 		{
-			_Logger = factory.CreateLogger("NBitcoin.Indexer");
+			_Logger = factory.CreateLogger("Stratis.Bitcoin.Features.AzureIndexer");
 		}
 
         internal static void ErrorWhileImportingBlockToAzure(uint256 id, Exception ex)

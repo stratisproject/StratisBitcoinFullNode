@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer.Converters
+namespace Stratis.Bitcoin.Features.AzureIndexer.Converters
 {
     public class WalletRuleConverter : JsonConverter
     {

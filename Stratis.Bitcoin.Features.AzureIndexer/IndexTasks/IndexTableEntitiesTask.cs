@@ -1,17 +1,17 @@
 ﻿using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
+using NBitcoin;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer.IndexTasks
+namespace Stratis.Bitcoin.Features.AzureIndexer.IndexTasks
 {
     public class IndexTableEntitiesTask : IndexTableEntitiesTaskBase<ITableEntity>
     {

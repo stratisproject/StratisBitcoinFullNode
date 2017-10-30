@@ -1,1 +1,1 @@
-﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("NBitcoin.Indexer.Tests")]
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Stratis.Bitcoin.Features.AzureIndexer.Tests")]
