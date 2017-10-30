@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Base
     /// <summary>
     /// The Chain Behavior is responsible for keeping a ConcurrentChain up to date with the peer, it also responds to getheaders messages.
     /// </summary>
-    public partial class ChainHeadersBehavior : NodeBehavior
+    public class ChainHeadersBehavior : NodeBehavior
     {
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -31,14 +31,15 @@ namespace Stratis.Bitcoin.Base
         /// <summary><c>true</c> to sync the chain as headers come from the network, <c>false</c> not to sync automatically.</summary>
         public bool AutoSync { get; set; }
 
+        /// <summary>
+        /// Information about the peer's announcement of its tip using "headers" message.
         /// <para>
         /// The announced tip is accepted if it seems to be valid. Validation is only done on headers 
         /// and so the announced tip may refer to invalid block.
         /// </para>
         /// </summary>
-        /// <remarks>Might be different than concurrent's chain tip, in the rare event of large fork > 2000 blocks.</remarks>
+        /// <remarks>It might be different than concurrent's chain tip, in the rare event of large fork > 2000 blocks.</remarks>
         private ChainedBlock pendingTip;
-
         /// <summary>Information about the peer's announcement of its tip using "headers" message.</summary>
         public ChainedBlock PendingTip
         {
