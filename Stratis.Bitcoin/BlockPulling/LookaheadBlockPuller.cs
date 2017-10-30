@@ -520,10 +520,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         break;
                     }
 
-                    lock (this.locationLock)
-                    {
-                        this.location = header;
-                    }
+                    this.SetLocation(header);
 
                     lock (this.bufferLock)
                     {
