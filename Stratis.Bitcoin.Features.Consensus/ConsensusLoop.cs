@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.Tip = rewinded;
             this.Puller.SetLocation(rewinded);
-            this.chainState.HighestValidatedPoW = this.Tip;
+            this.chainState.ConsensusTip = this.Tip;
             this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
 
             this.logger.LogTrace("(-)");
