@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.IndexerD": {
+      "commandName": "Project",
+      "commandLineArgs": "stratis -testnet -azemu"
+    }
+  }
+}
