@@ -1,14 +1,12 @@
-﻿using NBitcoin.Indexer.IndexTasks;
+﻿using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.AzureIndexer.IndexTasks;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public class BlockInfo
     {
@@ -103,13 +101,15 @@ namespace NBitcoin.Indexer
 
         #region IEnumerable<BlockInfo> Members
 
-        ChainedBlock _LastProcessed;
+        public ChainedBlock _LastProcessed { get; private set; }
+
         public IEnumerator<BlockInfo> GetEnumerator()
         {
             Queue<DateTime> lastLogs = new Queue<DateTime>();
             Queue<int> lastHeights = new Queue<int>();
 
             var fork = _BlockHeaders.FindFork(_Checkpoint.BlockLocator);
+            _LastProcessed = fork;
             var headers = _BlockHeaders.EnumerateAfter(fork);
             headers = headers.Where(h => h.Height >= FromHeight && h.Height <= ToHeight);
             var first = headers.FirstOrDefault();
