@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             Node attachedNode = this.AttachedNode;
-            if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            if ((attachedNode == null) || (attachedNode.State != NodeState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
                 return;
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             Node attachedNode = this.AttachedNode;
-            if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            if ((attachedNode == null) || (attachedNode.State != NodeState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
                 return;
