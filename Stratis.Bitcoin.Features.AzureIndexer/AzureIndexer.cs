@@ -1,29 +1,19 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Table;
-using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using NBitcoin.Indexer.Converters;
-using NBitcoin.Indexer.IndexTasks;
-using NBitcoin.Indexer.Internal;
+using NBitcoin;
 using NBitcoin.Protocol;
-using Newtonsoft.Json;
+using Stratis.Bitcoin.Features.AzureIndexer.IndexTasks;
+using Stratis.Bitcoin.Features.AzureIndexer.Internal;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.ExceptionServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NBitcoin.Indexer
+namespace Stratis.Bitcoin.Features.AzureIndexer
 {
     public enum IndexerCheckpoints
     {
@@ -32,6 +22,7 @@ namespace NBitcoin.Indexer
         Blocks,
         Balances
     }
+
     public class AzureIndexer
     {
         public static AzureIndexer CreateIndexer(IConfiguration config)
@@ -40,55 +31,55 @@ namespace NBitcoin.Indexer
             return indexerConfig.CreateIndexer();
         }
 
-
         private readonly IndexerConfiguration _Configuration;
         public IndexerConfiguration Configuration
         {
             get
             {
-                return _Configuration;
+                return this._Configuration;
             }
         }
+
         public AzureIndexer(IndexerConfiguration configuration)
         {
             if(configuration == null)
                 throw new ArgumentNullException("configuration");
-            TaskScheduler = TaskScheduler.Default;
-            CheckpointInterval = TimeSpan.FromMinutes(15.0);
-            _Configuration = configuration;
-            FromHeight = 0;
-            ToHeight = 99999999;
+            this.TaskScheduler = TaskScheduler.Default;
+            this.CheckpointInterval = TimeSpan.FromMinutes(15.0);
+            this._Configuration = configuration;
+            this.FromHeight = 0;
+            this.ToHeight = int.MaxValue;
         }
 
         public long IndexTransactions(ChainBase chain = null)
         {
             using(IndexerTrace.NewCorrelation("Import transactions to azure started"))
             {
-                using(var node = Configuration.ConnectToNode(false))
+                using(var node = this.Configuration.ConnectToNode(false))
                 {
 
                     node.VersionHandshake();
 
-                    var task = new IndexTransactionsTask(Configuration);
-                    task.SaveProgression = !IgnoreCheckpoints;
-                    task.Index(GetBlockFetcher(GetCheckpointInternal(IndexerCheckpoints.Transactions), node, chain), TaskScheduler);
+                    var task = new IndexTransactionsTask(this.Configuration);
+                    task.SaveProgression = !this.IgnoreCheckpoints;
+                    task.Index(this.GetBlockFetcher(this.GetCheckpointInternal(IndexerCheckpoints.Transactions), node, chain), this.TaskScheduler);
                     return task.IndexedEntities;
                 }
             }
         }
 
-        private Checkpoint GetCheckpointInternal(IndexerCheckpoints checkpoint)
+        internal Checkpoint GetCheckpointInternal(IndexerCheckpoints checkpoint)
         {
-            var chk = GetCheckpoint(checkpoint);
-            if(IgnoreCheckpoints)
-                chk = new Checkpoint(chk.CheckpointName, Configuration.Network, null, null);
+            var chk = this.GetCheckpoint(checkpoint);
+            if(this.IgnoreCheckpoints)
+                chk = new Checkpoint(chk.CheckpointName, this.Configuration.Network, null, null);
             return chk;
         }
 
         private void SetThrottling()
         {
             Helper.SetThrottling();
-            ServicePoint tableServicePoint = ServicePointManager.FindServicePoint(Configuration.CreateTableClient().BaseUri);
+            ServicePoint tableServicePoint = ServicePointManager.FindServicePoint(this.Configuration.CreateTableClient().BaseUri);
             tableServicePoint.ConnectionLimit = 1000;
         }
 
@@ -101,7 +92,7 @@ namespace NBitcoin.Indexer
             buckets.Remove(array[0].PartitionKey);
         }
 
-        TimeSpan _Timeout = TimeSpan.FromMinutes(5.0);
+        private TimeSpan _Timeout = TimeSpan.FromMinutes(5.0);
 
         /// <summary>
         /// TaskScheduler to parallelize individual object Index methods
@@ -114,52 +105,58 @@ namespace NBitcoin.Indexer
 
         public void Index(params Block[] blocks)
         {
-            var task = new IndexBlocksTask(Configuration);
-            task.Index(blocks, TaskScheduler);
+            var task = new IndexBlocksTask(this.Configuration);
+            task.Index(blocks, this.TaskScheduler);
         }
+
         public Task IndexAsync(params Block[] blocks)
         {
-            var task = new IndexBlocksTask(Configuration);
-            return task.IndexAsync(blocks, TaskScheduler);
+            var task = new IndexBlocksTask(this.Configuration);
+            return task.IndexAsync(blocks, this.TaskScheduler);
         }
+
         public void Index(params TransactionEntry.Entity[] entities)
         {
-            Index(entities.Select(e => e.CreateTableEntity()).ToArray(), Configuration.GetTransactionTable());
+            this.Index(entities.Select(e => e.CreateTableEntity()).ToArray(), this.Configuration.GetTransactionTable());
         }
+
         public Task IndexAsync(params TransactionEntry.Entity[] entities)
         {
-            return IndexAsync(entities.Select(e => e.CreateTableEntity()).ToArray(), Configuration.GetTransactionTable());
+            return this.IndexAsync(entities.Select(e => e.CreateTableEntity()).ToArray(), this.Configuration.GetTransactionTable());
         }
 
         public void Index(IEnumerable<OrderedBalanceChange> balances)
         {
-            Index(balances.Select(b => b.ToEntity()), Configuration.GetBalanceTable());
+            this.Index(balances.Select(b => b.ToEntity()), this.Configuration.GetBalanceTable());
         }
+
         public Task IndexAsync(IEnumerable<OrderedBalanceChange> balances)
         {
-            return IndexAsync(balances.Select(b => b.ToEntity()), Configuration.GetBalanceTable());
+            return this.IndexAsync(balances.Select(b => b.ToEntity()), this.Configuration.GetBalanceTable());
         }
+
         private void Index(IEnumerable<ITableEntity> entities, CloudTable table)
         {
-            var task = new IndexTableEntitiesTask(Configuration, table);
-            task.Index(entities, TaskScheduler);
+            var task = new IndexTableEntitiesTask(this.Configuration, table);
+            task.Index(entities, this.TaskScheduler);
         }
+
         private Task IndexAsync(IEnumerable<ITableEntity> entities, CloudTable table)
         {
-            var task = new IndexTableEntitiesTask(Configuration, table);
-            return task.IndexAsync(entities, TaskScheduler);
+            var task = new IndexTableEntitiesTask(this.Configuration, table);
+            return task.IndexAsync(entities, this.TaskScheduler);
         }        
         
         public long IndexBlocks(ChainBase chain = null)
         {
             using(IndexerTrace.NewCorrelation("Import blocks to azure started"))
             {
-                using(var node = Configuration.ConnectToNode(false))
+                using(var node = this.Configuration.ConnectToNode(false))
                 {
                     node.VersionHandshake();
-                    var task = new IndexBlocksTask(Configuration);
-                    task.SaveProgression = !IgnoreCheckpoints;
-                    task.Index(GetBlockFetcher(GetCheckpointInternal(IndexerCheckpoints.Blocks), node, chain), TaskScheduler);
+                    var task = new IndexBlocksTask(this.Configuration);
+                    task.SaveProgression = !this.IgnoreCheckpoints;
+                    task.Index(this.GetBlockFetcher(this.GetCheckpointInternal(IndexerCheckpoints.Blocks), node, chain), this.TaskScheduler);
                     return task.IndexedBlocks;
                 }
             }
@@ -167,18 +164,19 @@ namespace NBitcoin.Indexer
 
         public Checkpoint GetCheckpoint(IndexerCheckpoints checkpoint)
         {
-            return GetCheckpointRepository().GetCheckpoint(checkpoint.ToString().ToLowerInvariant());
+            return this.GetCheckpointRepository().GetCheckpoint(checkpoint.ToString().ToLowerInvariant());
         }
         public Task<Checkpoint> GetCheckpointAsync(IndexerCheckpoints checkpoint)
         {
-            return GetCheckpointRepository().GetCheckpointAsync(checkpoint.ToString().ToLowerInvariant());
+            return this.GetCheckpointRepository().GetCheckpointAsync(checkpoint.ToString().ToLowerInvariant());
         }
 
         public CheckpointRepository GetCheckpointRepository()
         {
-            return new CheckpointRepository(_Configuration.GetBlocksContainer(), _Configuration.Network, string.IsNullOrWhiteSpace(_Configuration.CheckpointSetName) ? "default" : _Configuration.CheckpointSetName);
+            return new CheckpointRepository(this._Configuration.GetBlocksContainer(), 
+                this._Configuration.Network, string.IsNullOrWhiteSpace(this._Configuration.CheckpointSetName) 
+                ? "default" : this._Configuration.CheckpointSetName);
         }
-
 
         /// <summary>
         /// Get a block fetcher of the specified chain from the specified checkpoint
@@ -192,13 +190,13 @@ namespace NBitcoin.Indexer
                 throw new ArgumentNullException("checkpoint");
             if(node == null)
                 throw new ArgumentNullException("node");
-            chain = chain ?? GetNodeChain(node);
+            chain = chain ?? this.GetNodeChain(node);
             IndexerTrace.CheckpointLoaded(chain.FindFork(checkpoint.BlockLocator), checkpoint.CheckpointName);
             return new BlockFetcher(checkpoint, new NodeBlocksRepository(node), chain)
             {
-                NeedSaveInterval = CheckpointInterval,
-                FromHeight = FromHeight,
-                ToHeight = ToHeight
+                NeedSaveInterval = this.CheckpointInterval,
+                FromHeight = this.FromHeight,
+                ToHeight = this.ToHeight
             };
         }
 
@@ -212,19 +210,19 @@ namespace NBitcoin.Indexer
         {
             if(checkpointName == null)
                 throw new ArgumentNullException("checkpointName");
-            return GetBlockFetcher(GetCheckpointRepository().GetCheckpoint(checkpointName), node, chain);
+            return this.GetBlockFetcher(this.GetCheckpointRepository().GetCheckpoint(checkpointName), node, chain);
         }
 
         public int IndexOrderedBalances(ChainBase chain)
         {
             using(IndexerTrace.NewCorrelation("Import balances to azure started"))
             {
-                using(var node = Configuration.ConnectToNode(false))
+                using(var node = this.Configuration.ConnectToNode(false))
                 {
                     node.VersionHandshake();
-                    var task = new IndexBalanceTask(Configuration, null);
-                    task.SaveProgression = !IgnoreCheckpoints;
-                    task.Index(GetBlockFetcher(GetCheckpointInternal(IndexerCheckpoints.Balances), node, chain), TaskScheduler);
+                    var task = new IndexBalanceTask(this.Configuration, null);
+                    task.SaveProgression = !this.IgnoreCheckpoints;
+                    task.Index(this.GetBlockFetcher(this.GetCheckpointInternal(IndexerCheckpoints.Balances), node, chain), this.TaskScheduler);
                     return task.IndexedEntities;
                 }
             }
@@ -232,19 +230,19 @@ namespace NBitcoin.Indexer
 
         internal ChainBase GetMainChain()
         {
-            return Configuration.CreateIndexerClient().GetMainChain();
+            return this.Configuration.CreateIndexerClient().GetMainChain();
         }
 
         public int IndexWalletBalances(ChainBase chain)
         {
             using(IndexerTrace.NewCorrelation("Import wallet balances to azure started"))
             {
-                using(var node = Configuration.ConnectToNode(false))
+                using(var node = this.Configuration.ConnectToNode(false))
                 {
                     node.VersionHandshake();
-                    var task = new IndexBalanceTask(Configuration, Configuration.CreateIndexerClient().GetAllWalletRules());
-                    task.SaveProgression = !IgnoreCheckpoints;
-                    task.Index(GetBlockFetcher(GetCheckpointInternal(IndexerCheckpoints.Wallets), node, chain), TaskScheduler);
+                    var task = new IndexBalanceTask(this.Configuration, this.Configuration.CreateIndexerClient().GetAllWalletRules());
+                    task.SaveProgression = !this.IgnoreCheckpoints;
+                    task.Index(this.GetBlockFetcher(this.GetCheckpointInternal(IndexerCheckpoints.Wallets), node, chain), this.TaskScheduler);
                     return task.IndexedEntities;
                 }
             }
@@ -252,7 +250,7 @@ namespace NBitcoin.Indexer
 
         public void IndexOrderedBalance(int height, Block block)
         {
-            var table = Configuration.GetBalanceTable();
+            var table = this.Configuration.GetBalanceTable();
             var blockId = block == null ? null : block.GetHash();
             var header = block == null ? null : block.Header;
 
@@ -263,12 +261,12 @@ namespace NBitcoin.Indexer
                         .Select(_ => _.ToEntity())
                         .AsEnumerable();
 
-            Index(entities, table);
+            this.Index(entities, table);
         }
 
         public void IndexTransactions(int height, Block block)
         {
-            var table = Configuration.GetTransactionTable();
+            var table = this.Configuration.GetTransactionTable();
             var blockId = block == null ? null : block.GetHash();
             var entities =
                         block
@@ -276,14 +274,14 @@ namespace NBitcoin.Indexer
                         .Select(t => new TransactionEntry.Entity(t.GetHash(), t, blockId))
                         .Select(c => c.CreateTableEntity())
                         .AsEnumerable();
-            Index(entities, table);
+            this.Index(entities, table);
         }
 
         public void IndexWalletOrderedBalance(int height, Block block, WalletRuleEntryCollection walletRules)
         {
             try
             {
-                IndexWalletOrderedBalanceAsync(height, block, walletRules).Wait();
+                this.IndexWalletOrderedBalanceAsync(height, block, walletRules).Wait();
             }
             catch(AggregateException ex)
             {
@@ -292,7 +290,7 @@ namespace NBitcoin.Indexer
         }
         public Task IndexWalletOrderedBalanceAsync(int height, Block block, WalletRuleEntryCollection walletRules)
         {
-            var table = Configuration.GetBalanceTable();
+            var table = this.Configuration.GetBalanceTable();
             var blockId = block == null ? null : block.GetHash();
 
             var entities =
@@ -302,47 +300,47 @@ namespace NBitcoin.Indexer
                     .Select(t => t.ToEntity())
                     .AsEnumerable();
 
-            return IndexAsync(entities, table);
+            return this.IndexAsync(entities, table);
         }
 
         public void IndexOrderedBalance(Transaction tx)
         {
-            var table = Configuration.GetBalanceTable();
+            var table = this.Configuration.GetBalanceTable();
             var entities = OrderedBalanceChange.ExtractScriptBalances(tx).Select(t => t.ToEntity()).AsEnumerable();
-            Index(entities, table);
+            this.Index(entities, table);
         }
         public Task IndexOrderedBalanceAsync(Transaction tx)
         {
-            var table = Configuration.GetBalanceTable();
+            var table = this.Configuration.GetBalanceTable();
             var entities = OrderedBalanceChange.ExtractScriptBalances(tx).Select(t => t.ToEntity()).AsEnumerable();
-            return IndexAsync(entities, table);
+            return this.IndexAsync(entities, table);
         }
 
         public ChainBase GetNodeChain()
         {
-            IndexerTrace.Information("Connecting to node " + Configuration.Node);
-            using(var node = Configuration.ConnectToNode(false))
+            IndexerTrace.Information("Connecting to node " + this.Configuration.Node);
+            using(var node = this.Configuration.ConnectToNode(false))
             {
                 IndexerTrace.Information("Handshaking");
                 node.VersionHandshake();
-                return GetNodeChain(node);
+                return this.GetNodeChain(node);
             }
         }
 
         public ChainBase GetNodeChain(Node node)
         {
-            var chain = new ConcurrentChain(Configuration.Network);
+            var chain = new ConcurrentChain(this.Configuration.Network);
             IndexerTrace.Information("Synchronizing with local node");
             node.SynchronizeChain(chain);
             IndexerTrace.Information("Chain loaded with height " + chain.Height);
             return chain;
         }
+
         public void IndexNodeMainChain()
         {
-            var chain = GetNodeChain();
-            IndexChain(chain);
+            var chain = this.GetNodeChain();
+            this.IndexChain(chain);
         }
-
 
         internal const int BlockHeaderPerRow = 6;
         internal void Index(ChainBase chain, int startHeight)
@@ -368,12 +366,12 @@ namespace NBitcoin.Indexer
             }
             if(chainPart != null)
                 entries.Add(chainPart);
-            Index(entries);
+            this.Index(entries);
         }
 
         private void Index(List<ChainPartEntry> chainParts)
         {
-            CloudTable table = Configuration.GetChainTable();
+            CloudTable table = this.Configuration.GetChainTable();
             TableBatchOperation batch = new TableBatchOperation();
             var last = chainParts[chainParts.Count - 1];
             foreach(var entry in chainParts)
@@ -391,7 +389,6 @@ namespace NBitcoin.Indexer
                 table.ExecuteBatchAsync(batch).GetAwaiter().GetResult();
             }
         }
-
 
         public TimeSpan CheckpointInterval
         {
@@ -411,18 +408,18 @@ namespace NBitcoin.Indexer
             set;
         }
 
-        public void IndexChain(ChainBase chain)
+        public void IndexChain(ChainBase chain, CancellationToken cancellationToken = default(CancellationToken))
         {
             if(chain == null)
                 throw new ArgumentNullException("chain");
-            SetThrottling();
+            this.SetThrottling();
 
             using(IndexerTrace.NewCorrelation("Index main chain to azure started"))
             {
-                Configuration.GetChainTable().CreateIfNotExistsAsync().GetAwaiter().GetResult();
+                this.Configuration.GetChainTable().CreateIfNotExistsAsync().GetAwaiter().GetResult();
                 IndexerTrace.InputChainTip(chain.Tip);
-                var client = Configuration.CreateIndexerClient();
-                var changes = client.GetChainChangesUntilFork(chain.Tip, true).ToList();
+                var client = this.Configuration.CreateIndexerClient();
+                var changes = client.GetChainChangesUntilFork(chain.Tip, true, cancellationToken).ToList();
 
                 var height = 0;
                 if(changes.Count != 0)
@@ -446,8 +443,7 @@ namespace NBitcoin.Indexer
                 }
 
                 IndexerTrace.IndexingChain(chain.GetBlock(height), chain.Tip);
-                Index(chain, height);
-
+                this.Index(chain, height);
             }
         }
 
