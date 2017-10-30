@@ -1,27 +1,48 @@
-<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
-		<Version>3.0.0.3</Version>
-		<Copyright>Copyright © Metaco SA 2017</Copyright>
-		<Description>Library for querying data indexed by NBitcoin.Indexer on Azure Storage</Description>
-		<PackageId>NBitcoin.Indexer</PackageId>
-		<PackageIconUrl>https://aois.blob.core.windows.net/public/Bitcoin.png</PackageIconUrl>
-		<PackageTags>bitcoin</PackageTags>
-		<PackageProjectUrl>https://github.com/MetacoSA/NBitcoin.Indexer/</PackageProjectUrl>
-		<PackageLicenseUrl>https://raw.githubusercontent.com/MetacoSA/NBitcoin.Indexer/master/LICENSE</PackageLicenseUrl>
-		<RepositoryUrl>https://github.com/MetacoSA/NBitcoin.Indexer/</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<NoWarn>1591;1573;1572;1584;1570;3021</NoWarn>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-	</PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0" />
-		<PackageReference Include="NBitcoin" Version="4.0.0.38" />
+  <PropertyGroup>
+    <Description>Stratis Bitcoin Features Azure Indexer</Description>
+    <AssemblyTitle>Stratis.Bitcoin.Features.AzureIndexer</AssemblyTitle>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Stratis.Bitcoin.Features.AzureIndexer</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Features.AzureIndexer</PackageId>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <Version>1.0.2-alpha</Version>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting" Version="2.3.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Filter" Version="1.1.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="8.5.0" />
+  </ItemGroup>
 
-		<PackageReference Include="WindowsAzure.Storage" Version="8.5.0" />
+  <ItemGroup>
+    <ProjectReference Include="..\NStratis\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.BlockStore\Stratis.Bitcoin.Features.BlockStore.csproj" />
+  </ItemGroup>
 
-	</ItemGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net462' ">
+    <DefineConstants>$(DefineConstants);NOASSEMBLYCONTEXT</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1705;IDE0008;</NoWarn>
+    <DocumentationFile></DocumentationFile>
+  </PropertyGroup>
 
 </Project>
