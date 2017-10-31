@@ -85,7 +85,7 @@
                 return true;
             }
 
-            if (await context.BlockStoreLoop.BlockRepository.ExistAsync(context.NextChainedBlock.HashBlock))
+            if (await context.BlockStoreLoop.BlockRepository.Exist(context.NextChainedBlock.HashBlock))
             {
                 this.logger.LogTrace("Chained block '{0}' already exists in the repository.", context.NextChainedBlock);
                 this.logger.LogTrace("(-)[NEXT_ALREADY_EXISTS_REPOSITORY]:true");

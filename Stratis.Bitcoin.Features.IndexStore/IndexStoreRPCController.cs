@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Transaction trx = (await this.MempoolManager?.InfoAsync(trxid))?.Trx;
 
             if (trx == null)
-                trx = await this.IndexManager?.BlockRepository?.GetTrxAsync(trxid);
+                trx = await this.IndexManager?.BlockRepository?.GetTrx(trxid);
 
             if (trx == null)
                 return null;
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedBlock block = null;
-            uint256 blockid = await this.IndexManager?.BlockRepository?.GetTrxBlockIdAsync(trxid);
+            uint256 blockid = await this.IndexManager?.BlockRepository?.GetTrxBlockId(trxid);
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
             return block;

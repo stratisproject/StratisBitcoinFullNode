@@ -135,7 +135,7 @@
             this.logger.LogTrace("()");
 
             List<Block> blocksToStore = context.Store.Select(bp => bp.Block).ToList();
-            await context.BlockStoreLoop.BlockRepository.PutAsync(lastDownloadedBlock.HashBlock, blocksToStore);
+            await context.BlockStoreLoop.BlockRepository.Put(lastDownloadedBlock.HashBlock, blocksToStore);
             context.BlocksPushedCount += blocksToStore.Count;
             this.logger.LogTrace("{0} blocks pushed to the repository, {1} blocks pushed in total.", blocksToStore.Count, context.BlocksPushedCount);
 

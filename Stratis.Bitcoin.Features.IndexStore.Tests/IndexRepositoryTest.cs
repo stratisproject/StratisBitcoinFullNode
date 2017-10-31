@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxAsync(uint256.Zero);
+                var task = repository.GetTrx(uint256.Zero);
                 task.Wait();
 
                 Assert.Equal(default(Transaction), task.Result);
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxAsync(new uint256(65));
+                var task = repository.GetTrx(new uint256(65));
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxAsync(trans.GetHash());
+                var task = repository.GetTrx(trans.GetHash());
                 task.Wait();
 
                 Assert.Equal((uint)125, task.Result.Version);
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
+                var task = repository.GetTrxBlockId(new uint256(26));
                 task.Wait();
 
                 Assert.Equal(default(uint256), task.Result);
@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
+                var task = repository.GetTrxBlockId(new uint256(26));
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
+                var task = repository.GetTrxBlockId(new uint256(26));
                 task.Wait();
 
                 Assert.Equal(new uint256(42), task.Result);
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.PutAsync(nextBlockHash, blocks);
+                var task = repository.Put(nextBlockHash, blocks);
                 task.Wait();
             }
 
@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetAsync(block.GetHash());
+                var task = repository.Get(block.GetHash());
                 task.Wait();
 
                 Assert.Equal(block.GetHash(), task.Result.GetHash());
@@ -356,7 +356,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetAsync(new uint256());
+                var task = repository.Get(new uint256());
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -378,7 +378,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.ExistAsync(block.GetHash());
+                var task = repository.Exist(block.GetHash());
                 task.Wait();
 
                 Assert.True(task.Result);
@@ -392,7 +392,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.ExistAsync(new uint256());
+                var task = repository.Exist(new uint256());
                 task.Wait();
 
                 Assert.False(task.Result);
@@ -429,13 +429,13 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 (repository as IndexRepository).SetTxIndex(true).GetAwaiter().GetResult();
 
                 // Insert a block before creating the index
-                (repository as IndexRepository).PutAsync(block.GetHash(), new List<Block> { block }).GetAwaiter().GetResult();
+                (repository as IndexRepository).Put(block.GetHash(), new List<Block> { block }).GetAwaiter().GetResult();
 
                 var task = repository.CreateIndex("Script", true, builder);
                 task.Wait();
 
                 // Insert a block after creating the index
-                (repository as IndexRepository).PutAsync(block2.GetHash(), new List<Block> { block2 }).GetAwaiter().GetResult();
+                (repository as IndexRepository).Put(block2.GetHash(), new List<Block> { block2 }).GetAwaiter().GetResult();
 
                 var index = new Index(repository as IndexRepository, "Script", true, builder);
                 indexTable = index.Table;
@@ -503,13 +503,13 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 (repository as IndexRepository).SetTxIndex(true).GetAwaiter().GetResult();
 
                 // Insert a block before creating the index
-                (repository as IndexRepository).PutAsync(block.GetHash(), new List<Block> { block }).GetAwaiter().GetResult();
+                (repository as IndexRepository).Put(block.GetHash(), new List<Block> { block }).GetAwaiter().GetResult();
 
                 var task = repository.CreateIndex("Output", false, builder);
                 task.Wait();
 
                 // Insert a block after creating the index
-                (repository as IndexRepository).PutAsync(block2.GetHash(), new List<Block> { block2 }).GetAwaiter().GetResult();
+                (repository as IndexRepository).Put(block2.GetHash(), new List<Block> { block2 }).GetAwaiter().GetResult();
 
                 var index = new Index(repository as IndexRepository, "Output", false, builder);
                 indexTable = index.Table;
@@ -552,7 +552,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.DeleteAsync(new uint256(45), new List<uint256> { block.GetHash() });
+                var task = repository.Delete(new uint256(45), new List<uint256> { block.GetHash() });
                 task.Wait();
             }
 

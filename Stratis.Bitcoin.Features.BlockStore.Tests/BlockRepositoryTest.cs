@@ -75,7 +75,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxAsync(uint256.Zero);
+                var task = repository.GetTrx(uint256.Zero);
                 task.Wait();
 
                 Assert.Equal(default(Transaction), task.Result);
@@ -98,7 +98,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxAsync(new uint256(65));
+                var task = repository.GetTrx(new uint256(65));
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -128,7 +128,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxAsync(trans.GetHash());
+                var task = repository.GetTrx(trans.GetHash());
                 task.Wait();
 
                 Assert.Equal((uint)125, task.Result.Version);
@@ -150,7 +150,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
+                var task = repository.GetTrxBlockId(new uint256(26));
                 task.Wait();
 
                 Assert.Equal(default(uint256), task.Result);
@@ -172,7 +172,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
+                var task = repository.GetTrxBlockId(new uint256(26));
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -195,7 +195,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetTrxBlockIdAsync(new uint256(26));
+                var task = repository.GetTrxBlockId(new uint256(26));
                 task.Wait();
 
                 Assert.Equal(new uint256(42), task.Result);
@@ -237,7 +237,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.PutAsync(nextBlockHash, blocks);
+                var task = repository.Put(nextBlockHash, blocks);
                 task.Wait();
             }
 
@@ -334,7 +334,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetAsync(block.GetHash());
+                var task = repository.Get(block.GetHash());
                 task.Wait();
 
                 Assert.Equal(block.GetHash(), task.Result.GetHash());
@@ -348,7 +348,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.GetAsync(new uint256());
+                var task = repository.Get(new uint256());
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -370,7 +370,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.ExistAsync(block.GetHash());
+                var task = repository.Exist(block.GetHash());
                 task.Wait();
 
                 Assert.True(task.Result);
@@ -384,7 +384,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.ExistAsync(new uint256());
+                var task = repository.Exist(new uint256());
                 task.Wait();
 
                 Assert.False(task.Result);
@@ -409,7 +409,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.DeleteAsync(new uint256(45), new List<uint256> { block.GetHash() });
+                var task = repository.Delete(new uint256(45), new List<uint256> { block.GetHash() });
                 task.Wait();
             }
 

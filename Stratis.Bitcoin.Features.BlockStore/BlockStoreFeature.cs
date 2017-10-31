@@ -94,12 +94,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public Task<Transaction> GetTrxAsync(uint256 trxid)
         {
-            return this.blockRepository.GetTrxAsync(trxid);
+            return this.blockRepository.GetTrx(trxid);
         }
 
         public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
         {
-            return this.blockRepository.GetTrxBlockIdAsync(trxid);
+            return this.blockRepository.GetTrxBlockId(trxid);
         }
 
         public override void Start()

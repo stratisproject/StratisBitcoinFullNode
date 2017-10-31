@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 foreach (uint256 blockHash in blocks)
                 {
                     // The first block that is not in disk will abort the loop.
-                    if (!await this.blockRepository.ExistAsync(blockHash).ConfigureAwait(false))
+                    if (!await this.blockRepository.Exist(blockHash).ConfigureAwait(false))
                     {
                         // NOTE: there is a very minimal possibility a reorg would happen 
                         // and post reorg blocks will now be in the 'blockHashesToAnnounce', 

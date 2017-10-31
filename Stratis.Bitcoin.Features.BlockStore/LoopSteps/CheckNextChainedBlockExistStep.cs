@@ -33,7 +33,7 @@
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
 
-            if (await this.BlockStoreLoop.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
+            if (await this.BlockStoreLoop.BlockRepository.Exist(nextChainedBlock.HashBlock))
             {
                 await this.BlockStoreLoop.BlockRepository.SetBlockHash(nextChainedBlock.HashBlock);
 

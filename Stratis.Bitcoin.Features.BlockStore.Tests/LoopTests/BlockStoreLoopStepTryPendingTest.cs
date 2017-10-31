@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                fluent.BlockRepository.Put(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                fluent.BlockRepository.Put(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                fluent.BlockRepository.Put(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 2500 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             using (var fluent = new FluentBlockStoreLoop().AsIBD())
             {
                 // Push 5 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
+                fluent.BlockRepository.Put(blocks.Take(5).Last().GetHash(), blocks.Take(5).ToList()).GetAwaiter().GetResult();
 
                 // The chain has 15 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);

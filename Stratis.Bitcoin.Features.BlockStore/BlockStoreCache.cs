@@ -82,7 +82,7 @@
 
             this.PerformanceCounter.AddCacheMissCount(1);
 
-            block = await this.blockRepository.GetAsync(blockid);
+            block = await this.blockRepository.Get(blockid);
             if (block != null)
             {
                 this.cache.Set(blockid, block, TimeSpan.FromMinutes(10));
@@ -109,7 +109,7 @@
 
             this.PerformanceCounter.AddCacheMissCount(1);
 
-            blockid = await this.blockRepository.GetTrxBlockIdAsync(trxid);
+            blockid = await this.blockRepository.GetTrxBlockId(trxid);
             if (blockid == null)
             {
                 this.logger.LogTrace("(-):null");

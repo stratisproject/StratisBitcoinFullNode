@@ -570,7 +570,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.HighestPersistedBlock().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
-                var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
+                var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.Get(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
                 var prevTrx = block.Transactions.First();
                 var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -600,7 +600,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.HighestPersistedBlock().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
-                var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
+                var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.Get(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
                 var prevTrx = block.Transactions.First();
                 var dest1 = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
                 var dest2 = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
@@ -646,7 +646,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var trxs = new List<Transaction>();
                 foreach (var index in Enumerable.Range(1, 100))
                 {
-                    var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
+                    var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.Get(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
                     var prevTrx = block.Transactions.First();
                     var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -687,7 +687,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // double-spends in blocks to pass validation when they should not.
 
                 var scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey);
-                var genBlock = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
+                var genBlock = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.Get(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
 
                 // Create a double-spend of mature coinbase txn:
                 List<Transaction> spends = new List<Transaction>(2);
@@ -824,7 +824,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.HighestPersistedBlock().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
-                var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
+                var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.Get(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
                 var prevTrx = block.Transactions.First();
                 var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
@@ -882,7 +882,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var trxs = new List<Transaction>();
                 foreach (var index in Enumerable.Range(1, 5))
                 {
-                    var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
+                    var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.Get(stratisNodeSync.FullNode.Chain.GetBlock(index).HashBlock).Result;
                     var prevTrx = block.Transactions.First();
                     var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 

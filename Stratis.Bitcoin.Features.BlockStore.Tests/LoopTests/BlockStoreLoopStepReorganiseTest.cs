@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
             using (var fluent = new FluentBlockStoreLoop())
             {
                 // Push 15 blocks to the repository
-                fluent.BlockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                fluent.BlockRepository.Put(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
 
                 // The chain has 10 blocks appended
                 var chain = new ConcurrentChain(blocks[0].Header);

@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var repository = node.FullNode.NodeService<IIndexRepository>() as IndexRepository;
 
-                repository.PutAsync(block.GetHash(), new List<Block> { block, block2 }).GetAwaiter().GetResult();
+                repository.Put(block.GetHash(), new List<Block> { block, block2 }).GetAwaiter().GetResult();
 
                 var indexTable = repository.Indexes["Output"].Table;
                 var expectedJSON = repository.Indexes["Output"].ToString();
