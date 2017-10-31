@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -82,12 +83,12 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Manager of node's network peers.</summary>
         private AddressManager addressManager;
 
-        /// <summary>Periodic task to save the chain to the database.</summary>
-        private PeriodicTask flushChainTask;
-
         /// <summary>Periodic task to save list of peers to disk.</summary>
-        private PeriodicTask flushAddressManagerTask;
+        private IAsyncLoop flushAddressManagerLoop;
 
+        /// <summary>Periodic task to save the chain to the database.</summary>
+        private IAsyncLoop flushChainLoop;
+        
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -174,11 +175,14 @@ namespace Stratis.Bitcoin.Base
             this.chainRepository.LoadAsync(this.chain).GetAwaiter().GetResult();
 
             this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
-            this.flushChainTask = new PeriodicTask("FlushChain", this.logger, (cancellation) =>
+
+            this.flushChainLoop = this.asyncLoopFactory.Run("FlushChain", async token =>
             {
-                this.chainRepository.SaveAsync(this.chain);
-            })
-            .Start(this.nodeLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
+                await this.chainRepository.SaveAsync(this.chain);
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromMinutes(5.0),
+            startAfter: TimeSpan.FromMinutes(5.0));
         }
 
         /// <summary>
@@ -207,21 +211,26 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogInformation("AddressManager is empty, discovering peers...");
             }
 
-            this.flushAddressManagerTask = new PeriodicTask("FlushAddressManager", this.logger, (cancellation) =>
+            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("FlushAddressManager", token =>
             {
                 this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
-            })
-           .Start(this.nodeLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromMinutes(5.0),
+            startAfter: TimeSpan.FromMinutes(5.0));
         }
 
         /// <inheritdoc />
         public override void Stop()
         {
             this.logger.LogInformation("Flushing address manager");
-            this.flushAddressManagerTask?.RunOnce();
+            this.flushAddressManagerLoop?.Dispose();
+            this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
 
             this.logger.LogInformation("Flushing headers chain");
-            this.flushChainTask?.RunOnce();
+            this.flushChainLoop?.Dispose();
+            this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
 
             foreach (IDisposable disposable in this.disposableResources)
             {
