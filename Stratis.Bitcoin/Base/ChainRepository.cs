@@ -6,25 +6,26 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using DBreeze.DataTypes;
+using DBreeze;
 
 namespace Stratis.Bitcoin.Base
 {
     public interface IChainRepository : IDisposable
     {
-        Task Load(ConcurrentChain chain);
-        Task Save(ConcurrentChain chain);
+        void Load(ConcurrentChain chain);
+        void Save(ConcurrentChain chain);
     }
 
     public class ChainRepository : IChainRepository
     {
-        DBreezeSingleThreadSession session;
+        private readonly DBreezeEngine dbreeze;
         private BlockLocator locator;
 
         public ChainRepository(string folder)
         {
             Guard.NotEmpty(folder, nameof(folder));
 
-            this.session = new DBreezeSingleThreadSession("DBreeze ChainRepository", folder);
+            this.dbreeze = new DBreezeEngine(folder);
         }
 
         public ChainRepository(DataFolder dataFolder)
@@ -32,15 +33,16 @@ namespace Stratis.Bitcoin.Base
         {
         }
 
-        public Task Load(ConcurrentChain chain)
+        public void Load(ConcurrentChain chain)
         {
             Guard.Assert(chain.Tip == chain.Genesis);
 
-            return this.session.Execute(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
             {
                 ChainedBlock tip = null;
                 bool first = true;
-                foreach (Row<int, BlockHeader> row in this.session.Transaction.SelectForward<int, BlockHeader>("Chain"))
+
+                foreach (Row<int, BlockHeader> row in transaction.SelectForward<int, BlockHeader>("Chain"))
                 {
                     if (tip != null && row.Value.HashPrevBlock != tip.HashBlock)
                         break;
@@ -58,14 +60,14 @@ namespace Stratis.Bitcoin.Base
 
                 this.locator = tip.GetLocator();
                 chain.SetTip(tip);
-            });
+            }
         }
 
-        public Task Save(ConcurrentChain chain)
+        public void Save(ConcurrentChain chain)
         {
             Guard.NotNull(chain, nameof(chain));
 
-            return this.session.Execute(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
             {
                 ChainedBlock fork = this.locator == null ? null : chain.FindFork(this.locator);
                 ChainedBlock tip = chain.Tip;
@@ -82,16 +84,16 @@ namespace Stratis.Bitcoin.Base
                 var orderedChainedBlocks = blocks.OrderBy(b => b.Height);
                 foreach (var block in orderedChainedBlocks)
                 {
-                    this.session.Transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
+                    transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
                 }
                 this.locator = tip.GetLocator();
-                this.session.Transaction.Commit();
-            });
+                transaction.Commit();
+            }
         }
 
         public void Dispose()
         {
-            this.session.Dispose();
+            this.dbreeze.Dispose();
         }
     }
 }
