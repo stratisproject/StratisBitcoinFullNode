@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Base
 
                     foreach (Row<int, BlockHeader> row in transaction.SelectForward<int, BlockHeader>("Chain"))
                     {
-                        if (tip != null && row.Value.HashPrevBlock != tip.HashBlock)
+                        if ((tip != null) && (row.Value.HashPrevBlock != tip.HashBlock))
                             break;
 
                         tip = new ChainedBlock(row.Value, null, tip);
