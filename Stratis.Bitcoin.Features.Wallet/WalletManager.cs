@@ -2,8 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -68,24 +66,28 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
+        /// <summary>Gets the list of wallets.</summary>
         public ConcurrentBag<Wallet> Wallets { get; }
 
+        /// <summary>The type of coin used in this manager.</summary>
         private readonly CoinType coinType;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
-        private readonly IConnectionManager connectionManager;
+        /// <summary>The chain of headers.</summary>
         private readonly ConcurrentChain chain;
-        private readonly NodeSettings settings;
-        private readonly IWalletFeePolicy walletFeePolicy;
-        private readonly IMempoolValidator mempoolValidator;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>An object capable of storing <see cref="Wallet"/>s to the file system.</summary>
         private readonly FileStorage<Wallet> fileStorage;
+
+        /// <summary>The broadcast manager.</summary>
         private readonly IBroadcasterManager broadcasterManager;
 
         public uint256 WalletTipHash { get; set; }
@@ -103,14 +105,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public WalletManager(
             ILoggerFactory loggerFactory,
-            IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
             NodeSettings settings, DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
-            IMempoolValidator mempoolValidator = null, // mempool does not exist in a light wallet
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -127,13 +127,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new ConcurrentBag<Wallet>();
 
-            this.connectionManager = connectionManager;
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
-            this.settings = settings;
-            this.walletFeePolicy = walletFeePolicy;
-            this.mempoolValidator = mempoolValidator;
             this.asyncLoopFactory = asyncLoopFactory;
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
@@ -196,9 +192,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.broadcasterManager != null)
                 this.broadcasterManager.TransactionStateChanged -= this.BroadcasterManager_TransactionStateChanged;
 
-            if (this.asyncLoop != null)
-                this.asyncLoop.Dispose();
-
+            this.asyncLoop?.Dispose();
             this.SaveWallets();
 
             this.logger.LogTrace("(-)");
@@ -234,9 +228,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
 
-            // Update the height of the we start syncing from.
-            this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
-
+            // If the chain is downloaded, we set the height of the newly created wallet to it.
+            // However, if the chain is still downloading when the user creates a wallet, 
+            // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet will be the height of the chain at that moment.
+            if (this.chain.IsDownloaded())
+            {
+                this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
+            }
+            else
+            {
+                this.UpdateWhenChainDownloaded(wallet, DateTime.Now);
+            }
+            
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
@@ -315,9 +318,19 @@ namespace Stratis.Bitcoin.Features.Wallet
                 account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
 
-            int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
-            this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
-
+            // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
+            // However, if the chain is still downloading when the user restores a wallet, 
+            // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
+            if (this.chain.IsDownloaded())
+            {
+                int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
+                this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
+            }
+            else
+            {
+                this.UpdateWhenChainDownloaded(wallet, creationTime);
+            }
+            
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
@@ -545,7 +558,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             HdAccount[] res = null;
             lock (this.lockObject)
             {
-                 res = wallet.GetAccountsByCoinType(this.coinType).ToArray();
+                res = wallet.GetAccountsByCoinType(this.coinType).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
@@ -574,7 +587,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public bool ContainsWallets { get { return this.Wallets.Any(); } }
+        public bool ContainsWallets => this.Wallets.Any();
 
         /// <summary>
         /// Gets the hash of the last block received by the wallets.
@@ -1093,9 +1106,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (similarWallets.Any())
             {
                 this.logger.LogTrace("(-)[SAME_PK_ALREADY_EXISTS]");
-                throw new WalletException($"Cannot create this wallet as a wallet with the same private key already exists. If you want to restore your wallet from scratch, " +
+                throw new WalletException("Cannot create this wallet as a wallet with the same private key already exists. If you want to restore your wallet from scratch, " +
                                                     $"please remove the file {string.Join(", ", similarWallets.Select(w => w.Name))}.{WalletFileExtension} from '{this.fileStorage.FolderPath}' and try restoring the wallet again. " +
-                                                    $"Make sure you have your mnemonic and your password handy!");
+                                                    "Make sure you have your mnemonic and your password handy!");
             }
 
             Wallet walletFile = new Wallet
@@ -1199,6 +1212,32 @@ namespace Stratis.Bitcoin.Features.Wallet
         public DateTimeOffset GetOldestWalletCreationTime()
         {
             return this.Wallets.Min(w => w.CreationTime);
+        }
+        
+        /// <summary>
+        /// Updates details of the last block synced in a wallet when the chain of headers finishes downloading.
+        /// </summary>
+        /// <param name="wallet">The wallet to update.</param>
+        /// <param name="date">The creation date of the block with which to update the wallet.</param>
+        private void UpdateWhenChainDownloaded(Wallet wallet, DateTime date)
+        {
+            this.asyncLoopFactory.RunUntil("WalletManager.DownloadChain", this.nodeLifetime.ApplicationStopping,
+                () => this.chain.IsDownloaded(),
+                () =>
+                {
+                    int heightAtDate = this.chain.GetHeightAtTime(date);
+                    this.logger.LogTrace("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
+                    this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(heightAtDate));
+                    this.SaveWallet(wallet);
+                },
+                (ex) =>
+                {
+                    // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and 
+                    // sync from the current height.
+                    this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
+                    this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
+                },
+                TimeSpans.FiveSeconds);
         }
     }
 

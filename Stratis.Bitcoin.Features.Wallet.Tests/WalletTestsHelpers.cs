@@ -1,8 +1,7 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet;
 using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -384,6 +383,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;
+            block.Header.BlockTime = DateTimeOffset.Now;
             chain.SetTip(block.Header);
             return chain;
         }
