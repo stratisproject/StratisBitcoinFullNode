@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using DBreeze.DataTypes;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -21,26 +22,9 @@ namespace Stratis.Bitcoin.Features.IndexStore
         Task<List<byte[]>> Lookup(string indexName, List<byte[]> keys);
     }
 
-    public class IndexSession:DBreezeSingleThreadSession
-    {
-        public IndexSession(string threadName, string folder):
-            base(threadName, folder)
-        {
-        }
-
-        public List<string> GetIndexTables()
-        {
-            return this.engine.Scheme.GetUserTableNamesStartingWith(IndexRepository.indexTablePrefix);
-        }
-
-        public void DeleteTable(string name)
-        {
-            this.engine.Scheme.DeleteTable(name);
-        }
-    }
-
     public class IndexRepository : BlockRepository, IIndexRepository
     {
+        private readonly HashSet<string> tableNames;
         public Dictionary<string, Index> Indexes;
         private Dictionary<string, IndexExpression> requiredIndexes;
 
@@ -57,20 +41,21 @@ namespace Stratis.Bitcoin.Features.IndexStore
         }
 
         public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory, Dictionary<string, IndexExpression> requiredIndexes = null):
-            base(network, new IndexSession("DBreeze IndexRepository", folder), loggerFactory)
+            base(network, folder, loggerFactory)
         {
             this.tableNames = new HashSet<string> { "Block", "Transaction", "Common" };
             this.Indexes = new Dictionary<string, Index>();
             this.requiredIndexes = requiredIndexes;
 
-            this.session.Execute(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 // Discover and add indexes to dictionary and tables to syncronize
-                foreach (var row in this.session.Transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
+                foreach (Row<string, string> row in transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
                 {
                     if (!row.Exists) continue;
-                    var name = row.Key.Substring(indexTablePrefix.Length);
-                    var index = Index.Parse(this, row.Value, row.Key);
+
+                    string name = row.Key.Substring(indexTablePrefix.Length);
+                    Index index = Index.Parse(this, row.Value, row.Key);
                     if (index.compiled != null)
                     {
                         this.Indexes.Add(name, index);
@@ -79,11 +64,11 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     }
                 }
 
-                // Remove any index tables that are not being used (not transactional)
-                foreach (string indexTable in (this.session as IndexSession).GetIndexTables())
-                    if (!this.session.Transaction.Select<string, string>("Common", indexTable).Exists)
-                        (this.session as IndexSession).DeleteTable(indexTable);
-            }).GetAwaiter().GetResult();
+                // Remove any index tables that are not being used (not transactional).
+                foreach (string indexTable in this.GetIndexTables())
+                    if (!transaction.Select<string, string>("Common", indexTable).Exists)
+                        this.DeleteTable(indexTable);
+            }
         }
 
         public override BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
@@ -275,6 +260,16 @@ namespace Stratis.Bitcoin.Features.IndexStore
             foreach (var index in this.Indexes.Values)
                 index.IndexTransactionDetails(transactions, true);
             base.OnDeleteTransactions(transactions);
+        }
+
+        public List<string> GetIndexTables()
+        {
+            return this.DBreeze.Scheme.GetUserTableNamesStartingWith(IndexRepository.indexTablePrefix);
+        }
+
+        public void DeleteTable(string name)
+        {
+            this.DBreeze.Scheme.DeleteTable(name);
         }
     }
 }

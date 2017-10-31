@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly DBreezeEngine dbreeze;
+        protected readonly DBreezeEngine DBreeze;
         protected readonly Network network;
 
         protected static readonly byte[] BlockHashKey = new byte[0];
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotEmpty(folder, nameof(folder));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.dbreeze = new DBreezeEngine(folder);
+            this.DBreeze = new DBreezeEngine(folder);
             this.network = network;
             this.PerformanceCounter = PerformanceCounterFactory();
         }
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
             Block genesis = this.network.GetGenesis();
 
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 bool doCommit = false;
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return null;
 
             Transaction res = null;
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 transaction.ValuesLazyLoadingIsOn = false;
 
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             uint256 res = null;
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 transaction.ValuesLazyLoadingIsOn = false;
 
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // DBreeze is faster if sort ascending by key in memory before insert
             // however we need to find how byte arrays are sorted in DBreeze.
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 transaction.SynchronizeTables("Block", "Transaction");
                 this.OnInsertBlocks(transaction, blocks);
@@ -287,7 +287,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:{1})", nameof(txIndex), txIndex);
 
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 this.SaveTxIndex(transaction, txIndex);
                 transaction.Commit();
@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("({0}:'{1}')", nameof(nextBlockHash), nextBlockHash);
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
 
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 this.SaveBlockHash(transaction, nextBlockHash);
                 transaction.Commit();
@@ -346,7 +346,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(hash, nameof(hash));
 
             Block res = null;
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 transaction.ValuesLazyLoadingIsOn = false;
 
@@ -373,7 +373,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(hash, nameof(hash));
 
             bool res = false;
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 // Lazy loading is on so we don't fetch the whole value, just the row.
                 byte[] key = hash.ToBytes();
@@ -455,7 +455,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(newlockHash, nameof(newlockHash));
             Guard.NotNull(hashes, nameof(hashes));
 
-            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
                 transaction.SynchronizeTables("Block", "Transaction");
                 transaction.ValuesLazyLoadingIsOn = false;
@@ -472,7 +472,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public void Dispose()
         {
-            this.dbreeze.Dispose();
+            this.DBreeze.Dispose();
         }
     }
 }
