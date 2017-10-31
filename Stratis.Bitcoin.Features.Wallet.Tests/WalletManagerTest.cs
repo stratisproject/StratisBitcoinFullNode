@@ -51,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;
+            block.Header.BlockTime = DateTimeOffset.Now;
             chain.SetTip(block.Header);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),
@@ -162,6 +163,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;
+            block.Header.BlockTime = DateTimeOffset.Now;
             chain.SetTip(block.Header);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, It.IsAny<ConnectionManager>(), Network.StratisMain, chain, NodeSettings.Default(),

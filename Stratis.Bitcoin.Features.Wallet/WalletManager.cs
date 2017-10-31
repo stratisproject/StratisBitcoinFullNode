@@ -234,9 +234,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
 
-            // Update the height of the we start syncing from.
-            this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
-
+            // If the chain is downloaded, we set the height of the newly created wallet to it.
+            // However, if the chain is still downloading when the user creates a wallet, 
+            // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet will be the height of the chain at that moment.
+            if (this.chain.IsDownloaded())
+            {
+                this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
+            }
+            else
+            {
+                this.UpdateWhenChainDownloaded(wallet, DateTime.Now);
+            }
+            
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
@@ -315,9 +324,19 @@ namespace Stratis.Bitcoin.Features.Wallet
                 account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
 
-            int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
-            this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
-
+            // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
+            // However, if the chain is still downloading when the user restores a wallet, 
+            // we wait until it is downloaded in order to set it. Otherwise, the height of the wallet may not be known.
+            if (this.chain.IsDownloaded())
+            {
+                int blockSyncStart = this.chain.GetHeightAtTime(creationTime);
+                this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(blockSyncStart));
+            }
+            else
+            {
+                this.UpdateWhenChainDownloaded(wallet, creationTime);
+            }
+            
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
@@ -545,7 +564,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             HdAccount[] res = null;
             lock (this.lockObject)
             {
-                 res = wallet.GetAccountsByCoinType(this.coinType).ToArray();
+                res = wallet.GetAccountsByCoinType(this.coinType).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
@@ -1199,6 +1218,32 @@ namespace Stratis.Bitcoin.Features.Wallet
         public DateTimeOffset GetOldestWalletCreationTime()
         {
             return this.Wallets.Min(w => w.CreationTime);
+        }
+        
+        /// <summary>
+        /// Updates details of the last block synced in a wallet when the chain of headers finishes downloading.
+        /// </summary>
+        /// <param name="wallet">The wallet to update.</param>
+        /// <param name="date">The creation date of the block with which to update the wallet.</param>
+        private void UpdateWhenChainDownloaded(Wallet wallet, DateTime date)
+        {
+            this.asyncLoopFactory.RunUntil("WalletManager.DownloadChain", this.nodeLifetime.ApplicationStopping,
+                () => this.chain.IsDownloaded(),
+                () =>
+                {
+                    int heightAtDate = this.chain.GetHeightAtTime(date);
+                    this.logger.LogTrace("The chain of headers has finished downloading, updating wallet '{0}' with height {1}", wallet.Name, heightAtDate);
+                    this.UpdateLastBlockSyncedHeight(wallet, this.chain.GetBlock(heightAtDate));
+                    this.SaveWallet(wallet);
+                },
+                (ex) =>
+                {
+                    // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and 
+                    // sync from the current height.
+                    this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
+                    this.UpdateLastBlockSyncedHeight(wallet, this.chain.Tip);
+                },
+                TimeSpans.FiveSeconds);
         }
     }
 
