@@ -8,24 +8,25 @@ using Stratis.Bitcoin.Features.BlockStore;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using DBreeze.DataTypes;
+using System.Collections.Concurrent;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
     public interface IIndexRepository : Stratis.Bitcoin.Features.BlockStore.IBlockRepository
     {
-        Task<bool> CreateIndex(string name, bool multiValue, string builder, string[] dependencies = null);
-        Task<bool> DropIndex(string name);
-        Task<KeyValuePair<string, Index>[]> ListIndexes(Func<KeyValuePair<string, Index>, bool> include = null);
+        Task<bool> CreateIndexAsync(string name, bool multiValue, string builder, string[] dependencies = null);
+        Task<bool> DropIndexAsync(string name);
+        KeyValuePair<string, Index>[] ListIndexes(Func<KeyValuePair<string, Index>, bool> include = null);
 
-        Task<byte[]> Lookup(string indexName, byte[] key);
-        Task<List<byte[]>> LookupMany(string indexName, byte[] key);
-        Task<List<byte[]>> Lookup(string indexName, List<byte[]> keys);
+        Task<byte[]> LookupAsync(string indexName, byte[] key);
+        Task<List<byte[]>> LookupManyAsync(string indexName, byte[] key);
+        Task<List<byte[]>> LookupAsync(string indexName, List<byte[]> keys);
     }
 
     public class IndexRepository : BlockRepository, IIndexRepository
     {
         private readonly HashSet<string> tableNames;
-        public Dictionary<string, Index> Indexes;
+        public ConcurrentDictionary<string, Index> Indexes;
         private Dictionary<string, IndexExpression> requiredIndexes;
 
         public static string indexTablePrefix { get { return "Index_"; } }
@@ -44,12 +45,15 @@ namespace Stratis.Bitcoin.Features.IndexStore
             base(network, folder, loggerFactory)
         {
             this.tableNames = new HashSet<string> { "Block", "Transaction", "Common" };
-            this.Indexes = new Dictionary<string, Index>();
+            this.Indexes = new ConcurrentDictionary<string, Index>();
             this.requiredIndexes = requiredIndexes;
 
             using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                // Discover and add indexes to dictionary and tables to syncronize
+                transaction.SynchronizeTables("Common", "Block");
+                transaction.ValuesLazyLoadingIsOn = false;
+
+                // Discover and add indexes to dictionary and tables to synchronize.
                 foreach (Row<string, string> row in transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
                 {
                     if (!row.Exists) continue;
@@ -58,7 +62,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     Index index = Index.Parse(this, row.Value, row.Key);
                     if (index.compiled != null)
                     {
-                        this.Indexes.Add(name, index);
+                        this.Indexes.AddOrReplace(name, index);
                         if (!this.tableNames.Contains(row.Key))
                             this.tableNames.Add(row.Key);
                     }
@@ -76,61 +80,69 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return new IndexStoreRepositoryPerformanceCounter();
         }
 
-        public override Task Initialize()
+        public override Task InitializeAsync()
         {
-            base.Initialize().GetAwaiter().GetResult();
+            base.InitializeAsync();
 
-            this.session.Execute(() =>
+            Task task = Task.Run(() =>
             {
-                // Ensure this is set so that the base code calls us to index blocks
-                SetTxIndex(true);
-
-                // Clean-up any invalid indexes
-                foreach (var row in this.session.Transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
-                    var name = row.Key.Substring(indexTablePrefix.Length);
-                    if (!this.Indexes.ContainsKey(name))
-                        DropIndex(name, this.session.Transaction);
-                }
+                    transaction.SynchronizeTables("Common", "Block");
 
-                // Create configured indexes that do not exist yet
-                if (this.requiredIndexes != null)
-                {
-                    foreach (var kv in this.requiredIndexes)
+                    // Ensure this is set so that the base code calls us to index blocks.
+                    SetTxIndexAsync(true);
+
+                    // Clean-up any invalid indexes.
+                    foreach (Row<string, string> row in transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
                     {
-                        if (!this.Indexes.ContainsKey(kv.Key))
+                        string name = row.Key.Substring(indexTablePrefix.Length);
+                        if (!this.Indexes.ContainsKey(name))
+                            DropIndex(name, transaction);
+                    }
+
+                    // Create configured indexes that do not exist yet.
+                    transaction.ValuesLazyLoadingIsOn = false;
+                    if (this.requiredIndexes != null)
+                    {
+                        foreach (KeyValuePair<string, IndexExpression> kv in this.requiredIndexes)
                         {
-                            var index = kv.Value;
-                            this.CreateIndex(kv.Key, index.Many, index.Builder, index.Dependencies, this.session.Transaction);
+                            if (!this.Indexes.ContainsKey(kv.Key))
+                            {
+                                IndexExpression index = kv.Value;
+                                this.CreateIndex(transaction, kv.Key, index.Many, index.Builder, index.Dependencies);
+                            }
                         }
                     }
+
+                    // One commit per transaction.
+                    transaction.Commit();
                 }
+            });
 
-                // One commit per execute
-                this.session.Transaction.Commit();
-            }).GetAwaiter().GetResult();
-
-
-            return Task.CompletedTask;
+            return task; 
         }
 
-        public Task<bool> DropIndex(string name)
+        public Task<bool> DropIndexAsync(string name)
         {
             Guard.NotNull(name, nameof(name));
 
-            return this.session.Execute(() =>
+            Task<bool> task = Task.Run(() =>
             {
-                DropIndex(name, this.session.Transaction);
-
-                this.session.Transaction.Commit();
-
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    DropIndex(name, transaction);
+                    transaction.Commit();
+                }
                 return true;
             });
+
+            return task;
         }
 
         private void DropIndex(string name, DBreeze.Transactions.Transaction transaction)
         {
-            var indexTableName = IndexTableName(name);
+            string indexTableName = IndexTableName(name);
 
             if (transaction.Select<string, string>("Common", indexTableName).Exists)
             {
@@ -141,30 +153,32 @@ namespace Stratis.Bitcoin.Features.IndexStore
             }
         }
 
-        public Task<KeyValuePair<string, Index>[]> ListIndexes(Func<KeyValuePair<string, Index>, bool> include = null)
+        public KeyValuePair<string, Index>[] ListIndexes(Func<KeyValuePair<string, Index>, bool> include = null)
         {
-            return this.session.Execute(() =>
-            {
-                return this.Indexes.Where(include).ToArray();
-            });
+            return this.Indexes.Where(include).ToArray();
         }
 
-        public Task<bool> CreateIndex(string name, bool multiValue, string builder, string[] dependencies = null)
+        public Task<bool> CreateIndexAsync(string name, bool multiValue, string builder, string[] dependencies = null)
         {
             Guard.NotNull(name, nameof(name));
             Guard.NotNull(builder, nameof(builder));
 
-            return this.session.Execute(() =>
+            Task<bool> task = Task.Run(() =>
             {
-                this.CreateIndex(name, multiValue, builder, dependencies, this.session.Transaction);
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
 
-                this.session.Transaction.Commit();
-
+                    this.CreateIndex(transaction, name, multiValue, builder, dependencies);
+                    transaction.Commit();
+                }
                 return true;
             });
+
+            return task;
         }
 
-        private void CreateIndex(string name, bool multiValue, string builder, string[] dependencies, DBreeze.Transactions.Transaction transaction)
+        private void CreateIndex(DBreeze.Transactions.Transaction dbreezeTransaction, string name, bool multiValue, string builder, string[] dependencies)
         {
             if (this.Indexes.ContainsKey(name))
                 throw new IndexStoreException("The '" + name + "' index already exists");
@@ -172,36 +186,31 @@ namespace Stratis.Bitcoin.Features.IndexStore
             var index = new Index(this, name, multiValue, builder, dependencies);
             this.Indexes[name] = index;
 
-            var dbIndex = transaction.Select<string, string>("Common", index.Table);
-            if (dbIndex.Exists)
-                transaction.RemoveAllKeys(index.Table, true);
+            Row<string, string> dbIndexRow = dbreezeTransaction.Select<string, string>("Common", index.Table);
+            if (dbIndexRow.Exists)
+                dbreezeTransaction.RemoveAllKeys(index.Table, true);
 
             if (!this.tableNames.Contains(index.Table))
                 this.tableNames.Add(index.Table);
 
             var transactions = new List<(Transaction, Block)>();
-            foreach (var row in transaction.SelectForward<byte[], Block>("Block"))
+            foreach (Row<byte[], Block> row in dbreezeTransaction.SelectForward<byte[], Block>("Block"))
             {
-                var block = row.Value;
-                var key = block.GetHash().ToBytes();
+                Block block = row.Value;
+                byte[] key = block.GetHash().ToBytes();
 
-                foreach (var transaction2 in block.Transactions)
-                    transactions.Add((transaction2, block));
+                foreach (Transaction transaction in block.Transactions)
+                    transactions.Add((transaction, block));
 
                 if (transactions.Count >= 5000)
                 {
-                    index.IndexTransactionDetails(transactions);
+                    index.IndexTransactionDetails(dbreezeTransaction, transactions);
                     transactions.Clear();
                 }
             }
 
-            index.IndexTransactionDetails(transactions);
-            transaction.Insert<string, string>("Common", index.Table, index.ToString());
-        }
-
-        public IndexSession GetSession()
-        {
-            return this.session as IndexSession;
+            index.IndexTransactionDetails(dbreezeTransaction, transactions);
+            dbreezeTransaction.Insert<string, string>("Common", index.Table, index.ToString());
         }
 
         public Network GetNetwork()
@@ -209,57 +218,86 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return this.network;
         }
 
-        public Task<byte[]> Lookup(string indexName, byte[] key)
+        public Task<byte[]> LookupAsync(string indexName, byte[] key)
         {
             Guard.NotNull(indexName, nameof(indexName));
             Guard.NotNull(key, nameof(key));
-            Guard.Assert(this.Indexes.TryGetValue(indexName, out Index index));
+
+            Index index;
+            bool indexExists = this.Indexes.TryGetValue(indexName, out index);
+
+            Guard.Assert(indexExists);
             Guard.Assert(!index.Many);
 
-            return this.session.Execute(() =>
+            Task<byte[]> task = Task.Run(() =>
             {
-                return index.LookupMultiple(new List<byte[]> { key }).ToList()[0];
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    return index.LookupMultiple(transaction, new List<byte[]> { key }).ToList()[0];
+                }
             });
+
+            return task;
         }
 
-        public Task<List<byte[]>> LookupMany(string indexName, byte[] key)
+        public Task<List<byte[]>> LookupManyAsync(string indexName, byte[] key)
         {
             Guard.NotNull(indexName, nameof(indexName));
             Guard.NotNull(key, nameof(key));
-            Guard.Assert(this.Indexes.TryGetValue(indexName, out Index index));
+
+            Index index;
+            bool indexExists = this.Indexes.TryGetValue(indexName, out index);
+
+            Guard.Assert(indexExists);
             Guard.Assert(index.Many);
 
-            return this.session.Execute(() =>
+            Task<List<byte[]>> task = Task.Run(() =>
             {
-                return index.EnumerateValues(key).ToList();
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    return index.EnumerateValues(transaction, key).ToList();
+                }
             });
+
+            return task;
         }
 
-        public Task<List<byte[]>> Lookup(string indexName, List<byte[]> keys)
+        public Task<List<byte[]>> LookupAsync(string indexName, List<byte[]> keys)
         {
             Guard.NotNull(indexName, nameof(indexName));
             Guard.NotNull(keys, nameof(keys));
-            Guard.Assert(this.Indexes.TryGetValue(indexName, out Index index));
+
+            Index index;
+            bool indexExists = this.Indexes.TryGetValue(indexName, out index);
+
+            Guard.Assert(indexExists);
             Guard.Assert(!index.Many);
 
-            return this.session.Execute(() =>
+            Task<List<byte[]>> task = Task.Run(() =>
             {
-                return index.LookupMultiple(keys).ToList();
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    return index.LookupMultiple(transaction, keys).ToList();
+                }
             });
+
+            return task;
         }
 
-        protected override void OnInsertTransactions(List<(Transaction, Block)> transactions)
+        protected override void OnInsertTransactions(DBreeze.Transactions.Transaction dbreezeTransaction, List<(Transaction, Block)> transactions)
         {
-            base.OnInsertTransactions(transactions);
-            foreach (var index in this.Indexes.Values)
-                index.IndexTransactionDetails(transactions);
+            base.OnInsertTransactions(dbreezeTransaction, transactions);
+
+            foreach (Index index in this.Indexes.Values)
+                index.IndexTransactionDetails(dbreezeTransaction, transactions);
         }
 
-        protected override void OnDeleteTransactions(List<(Transaction, Block)> transactions)
+        protected override void OnDeleteTransactions(DBreeze.Transactions.Transaction dbreezeTransaction, List<(Transaction, Block)> transactions)
         {
-            foreach (var index in this.Indexes.Values)
-                index.IndexTransactionDetails(transactions, true);
-            base.OnDeleteTransactions(transactions);
+            foreach (Index index in this.Indexes.Values)
+                index.IndexTransactionDetails(dbreezeTransaction, transactions, true);
+
+            base.OnDeleteTransactions(dbreezeTransaction, transactions);
         }
 
         public List<string> GetIndexTables()

@@ -32,13 +32,13 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (dependancies?.Length == 0)
                 dependancies = null;
 
-            return await this.IndexManager.IndexRepository.CreateIndex(name, multiValue, builder, dependancies);
+            return await this.IndexManager.IndexRepository.CreateIndexAsync(name, multiValue, builder, dependancies);
         }
 
         [ActionName("dropindex")]
         public async Task<bool> DropIndexAsync(string name)
         {
-            return await this.IndexManager.IndexRepository.DropIndex(name);
+            return await this.IndexManager.IndexRepository.DropIndexAsync(name);
         }
 
         [ActionName("listindexnames")]
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Transaction trx = (await this.MempoolManager?.InfoAsync(trxid))?.Trx;
 
             if (trx == null)
-                trx = await this.IndexManager?.BlockRepository?.GetTrx(trxid);
+                trx = await this.IndexManager?.BlockRepository?.GetTrxAsync(trxid);
 
             if (trx == null)
                 return null;
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedBlock block = null;
-            uint256 blockid = await this.IndexManager?.BlockRepository?.GetTrxBlockId(trxid);
+            uint256 blockid = await this.IndexManager?.BlockRepository?.GetTrxBlockIdAsync(trxid);
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
             return block;

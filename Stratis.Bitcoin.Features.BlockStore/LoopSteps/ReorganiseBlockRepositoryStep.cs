@@ -60,7 +60,7 @@
                     blockToDelete = blockToDelete.Previous;
                 }
 
-                await this.BlockStoreLoop.BlockRepository.Delete(blockToDelete.HashBlock, blocksToDelete);
+                await this.BlockStoreLoop.BlockRepository.DeleteAsync(blockToDelete.HashBlock, blocksToDelete);
 
                 this.BlockStoreLoop.SetStoreTip(blockToDelete);
 

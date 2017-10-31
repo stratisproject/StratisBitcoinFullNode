@@ -75,7 +75,7 @@
             uint256 blockId = new uint256(2389704);
             Block repositoryBlock = new Block();
             repositoryBlock.Header.Version = 1451;
-            this.blockRepository.Setup(b => b.Get(blockId))
+            this.blockRepository.Setup(b => b.GetAsync(blockId))
                 .Returns(Task.FromResult(repositoryBlock));
 
             var memoryCacheStub = new MemoryCacheStub();
@@ -120,7 +120,7 @@
 
             var memoryCacheStub = new MemoryCacheStub(dict);
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
-            this.blockRepository.Setup(b => b.GetTrxBlockId(txId))
+            this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
                 .Returns(Task.FromResult(blockId));
 
             var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
@@ -136,7 +136,7 @@
             uint256 txId = new uint256(3252);
             var memoryCacheStub = new MemoryCacheStub();
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
-            this.blockRepository.Setup(b => b.GetTrxBlockId(txId))
+            this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
                 .Returns(Task.FromResult((uint256)null));
 
             var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
@@ -173,7 +173,7 @@
         {
             var trans = new Transaction();
             trans.Version = 15121;
-            this.blockRepository.Setup(b => b.GetTrxBlockId(trans.GetHash()))
+            this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(trans.GetHash()))
                 .Returns(Task.FromResult((uint256)null));
 
             var memoryCacheStub = new MemoryCacheStub();

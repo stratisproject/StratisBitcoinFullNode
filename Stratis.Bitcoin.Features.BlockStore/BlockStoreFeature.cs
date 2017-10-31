@@ -94,12 +94,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public Task<Transaction> GetTrxAsync(uint256 trxid)
         {
-            return this.blockRepository.GetTrx(trxid);
+            return this.blockRepository.GetTrxAsync(trxid);
         }
 
         public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
         {
-            return this.blockRepository.GetTrxBlockId(trxid);
+            return this.blockRepository.GetTrxBlockIdAsync(trxid);
         }
 
         public override void Start()
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 
-            this.blockRepository.Initialize().GetAwaiter().GetResult();
+            this.blockRepository.InitializeAsync().GetAwaiter().GetResult();
             this.blockStoreSignaled.RelayWorker();
             this.blockStoreLoop.InitializeAsync().GetAwaiter().GetResult();
 
