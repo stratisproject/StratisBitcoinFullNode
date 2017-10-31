@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Connection;
+using System;
 using System.Diagnostics;
-using System.Text;
 using System.Threading;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -35,6 +35,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.HighestPersistedBlock().HashBlock) return false;
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash) return false;
             return true;
+        }
+
+        public static void TriggerSync(CoreNode node)
+        {
+            foreach (var connectedNode in node.FullNode.ConnectionManager.ConnectedNodes)
+                connectedNode.Behavior<ChainHeadersBehavior>().TrySync();
         }
     }
 }
