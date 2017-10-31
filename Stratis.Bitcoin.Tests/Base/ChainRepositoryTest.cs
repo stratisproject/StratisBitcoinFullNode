@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Tests.Base
             using (var repo = new ChainRepository(dir))
             {
 				var testChain = new ConcurrentChain(Network.RegTest);
-                repo.Load(testChain).GetAwaiter().GetResult();
+                repo.Load(testChain);
                 Assert.Equal(tip, testChain.Tip);
             }
         }        
