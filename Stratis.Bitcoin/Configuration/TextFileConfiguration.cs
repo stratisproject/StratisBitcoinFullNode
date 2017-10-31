@@ -39,10 +39,12 @@ namespace Stratis.Bitcoin.Configuration
             this.args = new Dictionary<string, List<string>>();
             foreach (string arg in args)
             {
+                // Split on the FIRST "=".
+                // This will allow mime-encoded - data strings end in one or more "=" to be parsed.
                 string[] splitted = arg.Split('=');
-                if (splitted.Length == 2)
-                    this.Add(splitted[0], splitted[1]);
-                if (splitted.Length == 1)
+                if (splitted.Length > 1)
+                    this.Add(splitted[0], string.Join("=", splitted.Skip(1)));
+                else
                     this.Add(splitted[0], "1");
             }
         }
@@ -75,15 +77,14 @@ namespace Stratis.Bitcoin.Configuration
                 if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
                     continue;
 
-                // Split on '='.
+                // Split on the FIRST "=".
+                // This will allow mime-encoded - data strings end in one or more "=" to be parsed.
                 string[] split = line.Split('=');
                 if (split.Length == 1)
                     throw new FormatException("Line " + lineNumber + $": \"{l}\" : No value is set");
-                if (split.Length > 2)
-                    throw new FormatException("Line " + lineNumber + $": \"{l}\" : Only one '=' was expected");
 
                 // Add to dictionary. Trim spaces around keys and values.
-                this.Add(split[0].Trim(), split[1].Trim());
+                this.Add(split[0].Trim(), string.Join("=", split.Skip(1)).Trim());
             }
         }
 
