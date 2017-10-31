@@ -72,7 +72,7 @@
                 return true;
             }
 
-            if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.HighestValidatedPoW?.Height)
+            if (context.NextChainedBlock.Height > context.BlockStoreLoop.ChainState.ConsensusTip?.Height)
             {
                 this.logger.LogTrace("(-)[NEXT_HEIGHT_GT_CONSENSUS_TIP]:true");
                 return true;

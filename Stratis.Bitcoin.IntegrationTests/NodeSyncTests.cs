@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     Thread.Sleep(2500);
                     
                     // Check that local node accepted the Dp as consensus tip.
-                    Assert.Equal(stratisMinerLocal.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock, dpHash);
+                    Assert.Equal(stratisMinerLocal.FullNode.ChainBehaviorState.ConsensusTip.HashBlock, dpHash);
                 }
             }
             finally
