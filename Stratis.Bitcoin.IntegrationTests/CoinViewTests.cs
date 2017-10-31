@@ -260,18 +260,18 @@ namespace Stratis.Bitcoin.IntegrationTests
                 using(var repo = new ChainRepository(dir.FolderName))
                 {
                     var chain = new ConcurrentChain(Network.RegTest);
-                    repo.Load(chain).GetAwaiter().GetResult();
+                    repo.Load(chain);
                     Assert.True(chain.Tip == chain.Genesis);
                     chain = new ConcurrentChain(Network.RegTest);
                     var tip = AppendBlock(chain);
-                    repo.Save(chain).GetAwaiter().GetResult();
+                    repo.Save(chain);
                     var newChain = new ConcurrentChain(Network.RegTest);
-                    repo.Load(newChain).GetAwaiter().GetResult();
+                    repo.Load(newChain);
                     Assert.Equal(tip, newChain.Tip);
                     tip = AppendBlock(chain);
-                    repo.Save(chain).GetAwaiter().GetResult();
+                    repo.Save(chain);
                     newChain = new ConcurrentChain(Network.RegTest);
-                    repo.Load(newChain).GetAwaiter().GetResult();
+                    repo.Load(newChain);
                     Assert.Equal(tip, newChain.Tip);
                 }
             }
