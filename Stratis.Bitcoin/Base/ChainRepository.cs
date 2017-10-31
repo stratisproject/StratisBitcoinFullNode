@@ -80,12 +80,13 @@ namespace Stratis.Bitcoin.Base
                     toSave = toSave.Previous;
                 }
 
-                //DBreeze faster on ordered insert
-                var orderedChainedBlocks = blocks.OrderBy(b => b.Height);
-                foreach (var block in orderedChainedBlocks)
+                // DBreeze is faster on ordered insert.
+                IOrderedEnumerable<ChainedBlock> orderedChainedBlocks = blocks.OrderBy(b => b.Height);
+                foreach (ChainedBlock block in orderedChainedBlocks)
                 {
-                    transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
+                    transaction.Insert("Chain", block.Height, block.Header);
                 }
+
                 this.locator = tip.GetLocator();
                 transaction.Commit();
             }
