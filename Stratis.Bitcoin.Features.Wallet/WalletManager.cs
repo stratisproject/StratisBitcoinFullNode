@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -106,7 +105,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public WalletManager(
             ILoggerFactory loggerFactory,
-            IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
             NodeSettings settings, DataFolder dataFolder,
@@ -194,9 +192,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.broadcasterManager != null)
                 this.broadcasterManager.TransactionStateChanged -= this.BroadcasterManager_TransactionStateChanged;
 
-            if (this.asyncLoop != null)
-                this.asyncLoop.Dispose();
-
+            this.asyncLoop?.Dispose();
             this.SaveWallets();
 
             this.logger.LogTrace("(-)");
@@ -591,7 +587,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public bool ContainsWallets { get { return this.Wallets.Any(); } }
+        public bool ContainsWallets => this.Wallets.Any();
 
         /// <summary>
         /// Gets the hash of the last block received by the wallets.
@@ -1110,9 +1106,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (similarWallets.Any())
             {
                 this.logger.LogTrace("(-)[SAME_PK_ALREADY_EXISTS]");
-                throw new WalletException($"Cannot create this wallet as a wallet with the same private key already exists. If you want to restore your wallet from scratch, " +
+                throw new WalletException("Cannot create this wallet as a wallet with the same private key already exists. If you want to restore your wallet from scratch, " +
                                                     $"please remove the file {string.Join(", ", similarWallets.Select(w => w.Name))}.{WalletFileExtension} from '{this.fileStorage.FolderPath}' and try restoring the wallet again. " +
-                                                    $"Make sure you have your mnemonic and your password handy!");
+                                                    "Make sure you have your mnemonic and your password handy!");
             }
 
             Wallet walletFile = new Wallet
