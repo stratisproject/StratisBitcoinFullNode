@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var repo = new ChainRepository(dir))
             {
-                repo.Save(chain).Wait();
+                repo.Save(chain);
             }
 
             using (var engine = new DBreezeEngine(dir))
