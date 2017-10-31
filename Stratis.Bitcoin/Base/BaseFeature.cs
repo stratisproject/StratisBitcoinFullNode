@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogInformation("Loading chain");
-            this.chainRepository.LoadAsync(this.chain);
+            this.chainRepository.LoadAsync(this.chain).GetAwaiter().GetResult();
 
             this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
             this.flushChainTask = new PeriodicTask("FlushChain", this.logger, (cancellation) =>
