@@ -40,8 +40,9 @@ namespace Stratis.Bitcoin.Configuration
             foreach (string arg in args)
             {
                 // Split on the FIRST "=".
+                // This will allow mime-encoded - data strings end in one or more "=" to be parsed.
                 string[] splitted = arg.Split('=');
-                if (splitted.Length > 1)                    
+                if (splitted.Length > 1)
                     this.Add(splitted[0], string.Join("=", splitted.Skip(1)));
                 else
                     this.Add(splitted[0], "1");
@@ -77,6 +78,7 @@ namespace Stratis.Bitcoin.Configuration
                     continue;
 
                 // Split on the FIRST "=".
+                // This will allow mime-encoded - data strings end in one or more "=" to be parsed.
                 string[] split = line.Split('=');
                 if (split.Length == 1)
                     throw new FormatException("Line " + lineNumber + $": \"{l}\" : No value is set");
