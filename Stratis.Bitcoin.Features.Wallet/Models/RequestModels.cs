@@ -1,8 +1,8 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Stratis.Bitcoin.Features.Wallet.Validations;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
@@ -104,16 +104,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string Name { get; set; }
     }
 
-    public class BuildTransactionRequest : RequestModel
+    /// <summary>
+    /// Model object for <see cref="WalletController.GetTransactionFeeEstimate"> request.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
+    public class TxFeeEstimateRequest : RequestModel
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
-        
+
         [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
-
-        [Required(ErrorMessage = "A password is required.")]
-        public string Password { get; set; }
 
         [Required(ErrorMessage = "A destination address is required.")]
         [IsBitcoinAddress()]
@@ -126,6 +127,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string FeeType { get; set; }
 
         public bool AllowUnconfirmed { get; set; }
+    }
+
+    public class BuildTransactionRequest : TxFeeEstimateRequest
+    {
+        [Required(ErrorMessage = "A password is required.")]
+        public string Password { get; set; }
     }
 
     public class SendTransactionRequest : RequestModel

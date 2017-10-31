@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (this.StoreTip.Height >= this.ChainState.HighestValidatedPoW?.Height)
+                if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
                     break;
 
                 var nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);

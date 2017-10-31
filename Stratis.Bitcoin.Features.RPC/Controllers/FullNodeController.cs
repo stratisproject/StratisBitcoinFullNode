@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (verbose != 0)
             {
                 ChainedBlock block = await this.GetTransactionBlockAsync(trxid);
-                return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.HighestValidatedPoW);
+                return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
             }
             else
                 return new TransactionBriefModel(trx);
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 version = this.FullNode?.Version.ToUint() ?? 0,
                 protocolversion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
-                blocks = this.ChainState?.HighestValidatedPoW?.Height ?? 0,
+                blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
                 timeoffset = this.ConnectionManager?.ConnectedNodes?.GetMedianTimeOffset() ?? 0,
                 connections = this.ConnectionManager?.ConnectedNodes?.Count(),
                 proxy = string.Empty,

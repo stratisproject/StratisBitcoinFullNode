@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -16,8 +17,6 @@ using System.Linq;
 using System.Net;
 using System.Security;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -161,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem creating a wallet.", e.ToString());
             }
         }
-        
+
         /// <summary>
         /// Loads a wallet previously created by the user.
         /// </summary>
@@ -335,7 +334,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                         model.TransactionsHistory.Add(receivedItem);
                     }
-                  
+
                     // add outgoing fund transaction details
                     if (transaction.SpendingDetails != null)
                     {
@@ -469,6 +468,45 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     MaxSpendableAmount = transactionResult.maximumSpendableAmount,
                     Fee = transactionResult.Fee
                 });
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Gets a transaction fee estimate.
+        /// Fee can be estimated by creating a <see cref="TransactionBuildContext"/> with no password
+        /// and then building the transaction and retreiving the fee from the context.
+        /// </summary>
+        /// <param name="request">The transaction parameters.</param>
+        /// <returns>The estimated fee for the transaction.</returns>
+        [Route("estimate-txfee")]
+        [HttpGet]
+        public IActionResult GetTransactionFeeEstimate([FromQuery]TxFeeEstimateRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+                var context = new TransactionBuildContext(
+                    new WalletAccountReference(request.WalletName, request.AccountName),
+                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
+                {
+                    FeeType = FeeParser.Parse(request.FeeType),
+                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                };
+
+                return this.Json(this.walletTransactionHandler.EstimateFee(context));
             }
             catch (Exception e)
             {
