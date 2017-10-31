@@ -80,6 +80,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly TimeSyncBehaviorState timeSyncBehaviorState;
 
+        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
+        private readonly DBreezeSerializer dbreezeSerializer;
+
         /// <summary>Manager of node's network peers.</summary>
         private AddressManager addressManager;
 
@@ -88,7 +91,7 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>Periodic task to save the chain to the database.</summary>
         private IAsyncLoop flushChainLoop;
-        
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -103,6 +106,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
+        /// <param name="dbreezeSerializer">Provider of binary (de)serialization for data stored in the database.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         public BaseFeature(
             NodeSettings nodeSettings,
@@ -116,6 +120,7 @@ namespace Stratis.Bitcoin.Base
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             TimeSyncBehaviorState timeSyncBehaviorState,
+            DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -130,6 +135,7 @@ namespace Stratis.Bitcoin.Base
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
+            this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -144,6 +150,7 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override void Start()
         {
+            this.dbreezeSerializer.Initialize();
             this.StartAddressManager();
             this.StartChain();
 
@@ -258,6 +265,7 @@ namespace Stratis.Bitcoin.Base
                 .AddFeature<BaseFeature>()
                 .FeatureServices(services =>
                 {
+                    services.AddSingleton<DBreezeSerializer>();
                     services.AddSingleton(fullNodeBuilder.NodeSettings.LoggerFactory);
                     services.AddSingleton(fullNodeBuilder.NodeSettings.DataFolder);
                     services.AddSingleton<INodeLifetime, NodeLifetime>();
