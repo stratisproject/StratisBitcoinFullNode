@@ -73,8 +73,8 @@ namespace Stratis.Bitcoin.Utilities
             this.singleThread = new CustomThreadPoolTaskScheduler(1, 100, threadName);
             var task = new Task(() =>
             {
-                DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
-                DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
+                // DBreeze.Utils.CustomSerializator.ByteArraySerializator = NBitcoinSerialize;
+                // DBreeze.Utils.CustomSerializator.ByteArrayDeSerializator = NBitcoinDeserialize;
                 this.engine = new DBreezeEngine(folder);
                 this.transaction = this.engine.GetTransaction();
             });

@@ -9,12 +9,12 @@ namespace Stratis.Bitcoin.Utilities
     /// <summary>
     /// Implementation of serialization and deserialization of objects that go into the DBreeze database.
     /// </summary>
-    public static class DBreezeSerializer
+    public class DBreezeSerializer
     {
         /// <summary>
         /// Initializes custom serializers for DBreeze engine.
         /// </summary>
-        static DBreezeSerializer()
+        public void Initialize()
         {
             CustomSerializator.ByteArraySerializator = Serializer;
             CustomSerializator.ByteArrayDeSerializator = Deserializer;
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="obj">Object to be serialized.</param>
         /// <returns>Binary data representing the serialized object.</returns>
-        internal static byte[] Serializer(object obj)
+        private byte[] Serializer(object obj)
         {
             IBitcoinSerializable serializable = obj as IBitcoinSerializable;
             if (serializable != null)
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="bytes">Binary data representing a serialized object.</param>
         /// <param name="type">Type of the serialized object.</param>
         /// <returns>Deserialized object.</returns>
-        internal static object Deserializer(byte[] bytes, Type type)
+        private object Deserializer(byte[] bytes, Type type)
         {
             if (type == typeof(Coins))
             {
