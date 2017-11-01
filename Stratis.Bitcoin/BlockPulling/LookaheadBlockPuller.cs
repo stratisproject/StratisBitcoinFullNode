@@ -372,13 +372,16 @@ namespace Stratis.Bitcoin.BlockPulling
             if (this.location == null)
                 throw new InvalidOperationException("SetLocation should have been called");
 
-            if (this.lookaheadLocation == null && !this.Chain.Contains(this.location))
+            if ((this.lookaheadLocation != null) && (this.location != null) && (this.lookaheadLocation.Height < this.location.Height))
+                this.lookaheadLocation = this.location;
+
+            if ((this.lookaheadLocation == null) && !this.Chain.Contains(this.location.HashBlock))
             {
                 this.logger.LogTrace("(-)[REORG]");
                 return;
             }
 
-            if (this.lookaheadLocation != null && !this.Chain.Contains(this.lookaheadLocation))
+            if ((this.lookaheadLocation != null) && !this.Chain.Contains(this.lookaheadLocation.HashBlock))
                 this.lookaheadLocation = null;
 
             ChainedBlock lookaheadBlock = this.lookaheadLocation ?? this.location;
@@ -517,10 +520,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         break;
                     }
 
-                    lock (this.locationLock)
-                    {
-                        this.location = header;
-                    }
+                    this.SetLocation(header);
 
                     lock (this.bufferLock)
                     {
