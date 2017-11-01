@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -12,10 +13,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     public class BackendPerformanceCounter
     {
         /// <summary>UTC timestamp when the performance counter was created.</summary>
-        // TODO: Change to IDateTimeProvider.
         private readonly DateTime start;
         /// <summary>UTC timestamp when the performance counter was created.</summary>
-        // TODO: Change to IDateTimeProvider.
         public DateTime Start { get { return this.start; } }
 
         /// <summary>Number of entities inserted to the database.</summary>
@@ -33,8 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             get
             {
-                // TODO: Change to IDateTimeProvider.</remarks>
-                return DateTime.UtcNow - this.Start;
+                return this.dateTimeProvider.GetUtcNow() - this.Start;
             }
         }
 
@@ -60,13 +58,17 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public BackendPerformanceCounter()
+        /// <param name="dateTimeProvider"></param>
+        public BackendPerformanceCounter(IDateTimeProvider dateTimeProvider)
         {
-            // TODO: Change to IDateTimeProvider.
-            this.start = DateTime.UtcNow;
+            this.dateTimeProvider = dateTimeProvider;
+            this.start = this.dateTimeProvider.GetUtcNow();
         }
 
         /// <inheritdoc />
@@ -120,9 +122,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             var snap = new BackendPerformanceSnapshot(this.insertedEntities, this.insertTime, this.queriedEntities, this.queryTime)
             {
                 Start = this.Start,
-                // TODO: Change to IDateTimeProvider.
                 // TODO: Would it not be better for these two guys to be part of the constructor? Either implicitly or explicitly.
-                Taken = DateTime.UtcNow
+                Taken = this.dateTimeProvider.GetUtcNow()
             };
             return snap;
         }
@@ -154,11 +155,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public long TotalInsertedEntities { get { return this.totalInsertedEntities; } }
 
         /// <summary>UTC timestamp when the snapshotted performance counter was created.</summary>
-        // TODO: Change to IDateTimeProvider.
         public DateTime Start { get; set; }
 
         /// <summary>UTC timestamp when the snapshot was taken.</summary>
-        // TODO: Change to IDateTimeProvider.
         public DateTime Taken { get; set; }
 
         /// <summary>Time span between the creation of the performance counter and the creation of its snapshot.</summary>

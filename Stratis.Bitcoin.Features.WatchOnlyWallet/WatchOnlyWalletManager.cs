@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities.FileStorage;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
@@ -25,16 +26,25 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public WatchOnlyWallet Wallet { get; private set; }
 
         private readonly CoinType coinType;
+        
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
+        
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
         private readonly FileStorage<WatchOnlyWallet> fileStorage;
 
-        public WatchOnlyWalletManager(ILoggerFactory loggerFactory, Network network, DataFolder dataFolder)
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public WatchOnlyWalletManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network, DataFolder dataFolder)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.fileStorage = new FileStorage<WatchOnlyWallet>(dataFolder.WalletPath);
+            this.dateTimeProvider = dateTimeProvider;
         }
 
         /// <inheritdoc />
@@ -151,7 +161,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             {
                 Network = this.network,
                 CoinType = this.coinType,
-                CreationTime = DateTimeOffset.Now,
+                CreationTime = this.dateTimeProvider.GetTimeOffset(),
                 WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>()
             };
 

@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.MaxItems = CacheMaxItemsDefault;
             this.lockobj = new ReaderWriterLock();
             this.unspents = new Dictionary<uint256, CacheItem>();
-            this.PerformanceCounter = new CachePerformanceCounter();
+            this.PerformanceCounter = new CachePerformanceCounter(this.dateTimeProvider);
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
         }
 
