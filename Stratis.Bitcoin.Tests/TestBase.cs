@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,6 +20,8 @@ namespace Stratis.Bitcoin.Tests
         public TestBase()
         {
             this.loggerFactory = new LoggerFactory();
+            DBreezeSerializer serializer = new DBreezeSerializer();
+            serializer.Initialize();
         }
 
         public static DataFolder AssureEmptyDirAsDataFolder(string dir)
