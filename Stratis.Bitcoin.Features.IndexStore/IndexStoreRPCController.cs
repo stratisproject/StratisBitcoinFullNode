@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (verbose != 0)
             {
                 ChainedBlock block = await this.GetTransactionBlockAsync(trxid);
-                return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.HighestValidatedPoW);
+                return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
             }
             else
                 return new TransactionBriefModel(trx);

@@ -596,10 +596,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     }
                 }
 
-                return this.StatusCode((int)HttpStatusCode.BadRequest);
+                throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }

@@ -22,8 +22,12 @@ namespace Stratis.Bitcoin.Base
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above HighestValidatedPoW.</summary>
-        public ChainedBlock HighestValidatedPoW { get; set; }
+        /// <summary>ChainBehaviors sharing this state will not broadcast headers which are above <see cref="ConsensusTip"/>.</summary>
+        public ChainedBlock ConsensusTip { get; set; }
+
+        /// <summary>Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.</summary>
+        /// <remarks>TODO: This should be removed once consensus options are part of network.</remarks>
+        public uint MaxReorgLength { get; set; }
 
         public ChainState(IFullNode fullNode)
         {

@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IConnectionManager connectionManager;
         private readonly INodeLifetime nodeLifetime;
         private readonly Signals.Signals signals;
-        
+
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
         private readonly NodeSettings nodeSettings;
@@ -90,17 +90,19 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dateTimeProvider = dateTimeProvider;
             this.consensusManager = consensusManager;
             this.consensusStats = consensusStats;
+
+            this.chainState.MaxReorgLength = this.network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
         }
 
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            if (this.chainState?.HighestValidatedPoW != null)
+            if (this.chainState?.ConsensusTip != null)
             {
                 benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     this.chainState.HighestValidatedPoW.Height.ToString().PadRight(8) +
+                                     this.chainState.ConsensusTip.Height.ToString().PadRight(8) +
                                      " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) +
-                                     this.chainState.HighestValidatedPoW.HashBlock);
+                                     this.chainState.ConsensusTip.HashBlock);
             }
         }
 
@@ -110,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
             this.consensusLoop.Start();
 
-            this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
+            this.chainState.ConsensusTip = this.consensusLoop.Tip;
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             var flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
