@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="chain">The chain.</param>        
         public static bool IsDownloaded(this ConcurrentChain chain)
         {
-            return chain.Tip.Header.BlockTime.ToUnixTimeSeconds() > (DateTimeOffset.Now.ToUnixTimeSeconds() - TimeSpan.FromHours(1).TotalSeconds);
+            return chain.Tip.Header.BlockTime.ToUnixTimeSeconds() > (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - TimeSpan.FromHours(1).TotalSeconds);
         }
 
         /// <summary>

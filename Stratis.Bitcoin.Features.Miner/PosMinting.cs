@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 var stakeTxes = new List<StakeTx>();
-                List<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
+                IEnumerable<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
 
                 FetchCoinsResponse coinset = await this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).ConfigureAwait(false);
 
@@ -737,8 +737,6 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 context.Logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
 
-                bool kernelFound = false;
-
                 // Script of the first coinstake input.
                 Script scriptPubKeyKernel = scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
                 if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
@@ -748,7 +746,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
                 }
 
-                for (uint n = 0; (n < searchInterval) && !kernelFound; n++)
+                for (uint n = 0; n < searchInterval; n++)
                 {
                     if (context.Result.KernelFoundIndex != CoinstakeWorkerResult.KernelNotFound)
                     {
@@ -810,7 +808,6 @@ namespace Stratis.Bitcoin.Features.Miner
                             context.Result.KernelCoin = coin;
 
                             context.Logger.LogTrace("Kernel accepted, coinstake input is '{0}', stopping work.", prevoutStake);
-                            kernelFound = true;
                         }
                         else context.Logger.LogTrace("Kernel found, but worker #{0} announced its kernel earlier, stopping work.", context.Result.KernelFoundIndex);
 

@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.dateTimeProvider = dateTimeProvider;
 
             this.PendingStorage = new ConcurrentDictionary<uint256, BlockPair>();
-            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.logger);
+            this.blockStoreStats = new BlockStoreStats(this.BlockRepository, cache, this.dateTimeProvider, this.logger);
         }
 
         /// <summary>
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (this.StoreTip.Height >= this.ChainState.HighestValidatedPoW?.Height)
+                if (this.StoreTip.Height >= this.ChainState.ConsensusTip?.Height)
                     break;
 
                 var nextChainedBlock = this.Chain.GetBlock(this.StoreTip.Height + 1);

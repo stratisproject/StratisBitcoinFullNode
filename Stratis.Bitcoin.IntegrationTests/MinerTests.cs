@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
 
                 LoggerFactory loggerFactory = new LoggerFactory();
-                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network), loggerFactory);
+                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network), dateTimeProvider, loggerFactory);
                 var nodeSettings = NodeSettings.Default();
 
                 ConnectionManager connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());

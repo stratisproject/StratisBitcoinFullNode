@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
@@ -10,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     {
         public static AccountRoot CreateAccountRoot(CoinType coinType)
         {
-            return new AccountRoot
+            return new AccountRoot()
             {
                 Accounts = new List<HdAccount>(),
                 CoinType = coinType
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public static AccountRoot CreateAccountRootWithHdAccountHavingAddresses(string accountName, CoinType coinType)
         {
-            return new AccountRoot
+            return new AccountRoot()
             {
                 Accounts = new List<HdAccount> {
                     new HdAccount {

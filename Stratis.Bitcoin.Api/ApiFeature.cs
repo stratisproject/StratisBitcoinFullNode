@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Api
                     KeepaliveMonitor monitor = this.apiFeatureOptions.KeepaliveMonitor;
 
                     // check the trashold to trigger a shutdown
-                    if (monitor.LastBeat.Add(monitor.KeepaliveInterval) < DateTime.UtcNow)
+                    if (monitor.LastBeat.Add(monitor.KeepaliveInterval) < this.fullNode.DateTimeProvider.GetUtcNow())
                         this.fullNode.Stop();
 
                     return Task.CompletedTask;

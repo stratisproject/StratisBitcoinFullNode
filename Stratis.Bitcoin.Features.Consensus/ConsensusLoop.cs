@@ -88,6 +88,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>
         /// Initialize a new instance of <see cref="ConsensusLoop"/>.
         /// </summary>
@@ -101,6 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="loggerFactory">A factory to provide logger instances.</param>
         /// <param name="chainState">Holds state related to the block chain.</param>
         /// <param name="connectionManager">Connection manager of all the currently connected peers.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
         /// <param name="stakeChain">Information holding POS data chained.</param>
@@ -115,6 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ILoggerFactory loggerFactory,
             ChainState chainState,
             IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
             ICheckpoints checkpoints,
             StakeChain stakeChain = null)
@@ -145,6 +150,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.Puller = puller;
             this.NodeDeployments = nodeDeployments;
             this.checkpoints = checkpoints;
+            this.dateTimeProvider = dateTimeProvider;
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
@@ -266,7 +272,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.Tip = rewinded;
             this.Puller.SetLocation(rewinded);
-            this.chainState.HighestValidatedPoW = this.Tip;
+            this.chainState.ConsensusTip = this.Tip;
             this.logger.LogInformation("Reorg detected, rewinding from '{0}' to '{1}'.", lastTip, this.Tip);
 
             this.logger.LogTrace("(-)");
@@ -338,7 +344,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     this.logger.LogTrace("Block '{0}' accepted.", this.Tip);
 
-                    this.chainState.HighestValidatedPoW = this.Tip;
+                    this.chainState.ConsensusTip = this.Tip;
 
                     // We really want to flush if we are at the top of the chain.
                     // Otherwise, we just allow the flush to happen if it is needed.
@@ -395,7 +401,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 
                 // Liberate from memory the block created above if possible.
                 context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
-                context.SetBestBlock();
+                context.SetBestBlock(this.dateTimeProvider.GetTimeOffset());
 
                 // == validation flow ==
                 

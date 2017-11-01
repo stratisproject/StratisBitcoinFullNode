@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Api.Controllers
             if (this.apiFeatureOptions.KeepaliveMonitor == null)
                 return new ObjectResult("Keepalive Disabled") {StatusCode = 405}; // (405) Method Not Allowed 
 
-            this.apiFeatureOptions.KeepaliveMonitor.LastBeat = DateTime.UtcNow;
+            this.apiFeatureOptions.KeepaliveMonitor.LastBeat = this.fullNode.DateTimeProvider.GetUtcNow();
 
             return this.Ok();
         }

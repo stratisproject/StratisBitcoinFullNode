@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -32,7 +33,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public bool UseConsensusLib { get; set; }
 
-        public PowConsensusValidator(Network network, ICheckpoints checkpoints, ILoggerFactory loggerFactory)
+        /// <summary>Provider of time functions.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
+        public PowConsensusValidator(Network network, ICheckpoints checkpoints, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(network.Consensus.Option<PowConsensusOptions>(), nameof(network.Consensus.Options));
@@ -40,7 +44,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.consensusParams = network.Consensus;
             this.consensusOptions = network.Consensus.Option<PowConsensusOptions>();
-            this.PerformanceCounter = new ConsensusPerformanceCounter();
+            this.dateTimeProvider = dateTimeProvider;
+            this.PerformanceCounter = new ConsensusPerformanceCounter(this.dateTimeProvider);
             this.Checkpoints = checkpoints;
         }
 

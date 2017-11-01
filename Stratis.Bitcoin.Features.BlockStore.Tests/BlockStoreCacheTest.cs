@@ -4,6 +4,7 @@
     using Microsoft.Extensions.Logging;
     using Moq;
     using NBitcoin;
+    using Stratis.Bitcoin.Base;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Xunit;
@@ -22,7 +23,7 @@
             this.blockRepository = new Mock<IBlockRepository>();
             this.cache = new Mock<IMemoryCache>();
 
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, this.cache.Object, this.loggerFactory);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, this.cache.Object, DateTimeProvider.Default, this.loggerFactory);
         }
 
         [Fact]
@@ -79,7 +80,7 @@
                 .Returns(Task.FromResult(repositoryBlock));
 
             var memoryCacheStub = new MemoryCacheStub();
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, DateTimeProvider.Default, this.loggerFactory);
 
             var result = this.blockStoreCache.GetBlockAsync(blockId);
             result.Wait();
@@ -100,7 +101,7 @@
             dict.Add(blockId, block);
 
             var memoryCacheStub = new MemoryCacheStub(dict);
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, DateTimeProvider.Default, this.loggerFactory);
 
             var result = this.blockStoreCache.GetBlockByTrxAsync(txId);
             result.Wait();
@@ -119,7 +120,7 @@
             dict.Add(blockId, block);
 
             var memoryCacheStub = new MemoryCacheStub(dict);
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, DateTimeProvider.Default, this.loggerFactory);
             this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
                 .Returns(Task.FromResult(blockId));
 
@@ -135,7 +136,7 @@
         {
             uint256 txId = new uint256(3252);
             var memoryCacheStub = new MemoryCacheStub();
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, DateTimeProvider.Default, this.loggerFactory);
             this.blockRepository.Setup(b => b.GetTrxBlockIdAsync(txId))
                 .Returns(Task.FromResult((uint256)null));
 
@@ -160,7 +161,7 @@
             dict.Add(blockId, block);
 
             var memoryCacheStub = new MemoryCacheStub(dict);
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, DateTimeProvider.Default, this.loggerFactory);
 
             var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
             result.Wait();
@@ -177,7 +178,7 @@
                 .Returns(Task.FromResult((uint256)null));
 
             var memoryCacheStub = new MemoryCacheStub();
-            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, this.loggerFactory);
+            this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, memoryCacheStub, DateTimeProvider.Default, this.loggerFactory);
 
             var result = this.blockStoreCache.GetTrxAsync(trans.GetHash());
             result.Wait();

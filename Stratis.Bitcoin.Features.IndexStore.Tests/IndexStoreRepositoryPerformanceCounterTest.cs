@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using Stratis.Bitcoin.Features.IndexStore;
 using Xunit;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
         public IndexStoreRepositoryPerformanceCounterTest()
         {
-            this.performanceCounter = new IndexStoreRepositoryPerformanceCounter();
+            this.performanceCounter = new IndexStoreRepositoryPerformanceCounter(DateTimeProvider.Default);
         }
 
         [Fact]

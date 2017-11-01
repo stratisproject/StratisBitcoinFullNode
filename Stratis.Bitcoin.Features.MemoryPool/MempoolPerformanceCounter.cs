@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Stratis.Bitcoin.Base;
+using System;
 using System.Text;
 using System.Threading;
 
@@ -21,19 +22,24 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Counter of number of memory pool hits.</summary>
         private long hitCount;
 
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>
         /// Constructs a memory pool performance counter.
         /// </summary>
-        public MempoolPerformanceCounter()
+        /// <param name="dateTimeProvider">Provider of date time functionality.</param>
+        public MempoolPerformanceCounter(IDateTimeProvider dateTimeProvider)
         {
-            this.Start = DateTime.UtcNow;
+            this.dateTimeProvider = dateTimeProvider;
+            this.Start = this.dateTimeProvider.GetUtcNow();
         }
 
         /// <summary>Gets the start time of the performance counter.</summary>
         public DateTime Start { get; }
 
         /// <summary>Gets the amount of elapsed time between the start and now.</summary>
-        public TimeSpan Elapsed => DateTime.UtcNow - this.Start;
+        public TimeSpan Elapsed => this.dateTimeProvider.GetUtcNow() - this.Start;
 
         /// <summary>Gets the number of transactions in the memory pool.</summary>
         public long MempoolSize => this.mempoolSize;
