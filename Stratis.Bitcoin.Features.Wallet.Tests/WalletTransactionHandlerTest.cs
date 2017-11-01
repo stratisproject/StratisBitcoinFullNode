@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { WalletTestsHelpers.CreateAccount("account 1") }
             });
@@ -346,7 +346,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(accountAddress2);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { account }
             });
@@ -383,7 +383,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(accountAddress2);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { account }
             });
@@ -422,7 +422,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(accountAddress2);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { account }
             });
@@ -450,7 +450,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(accountAddress2);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { account }
             });

@@ -682,7 +682,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Network = WalletHelpers.GetNetwork("mainnet"),
                 CreationTime = new DateTime(2017, 6, 19, 1, 1, 1),
                 AccountsRoot = new List<AccountRoot> {
-                    new AccountRoot(DateTimeProvider.Default)
+                    new AccountRoot()
                     {
                         CoinType = (CoinType)Network.Main.Consensus.CoinType,
                         LastBlockSyncedHeight = 15
@@ -808,7 +808,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var addresses = new List<HdAddress> {address};
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { new HdAccount
                 {
@@ -863,7 +863,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var addresses = new List<HdAddress> {address, changeAddress};
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { new HdAccount
                 {
@@ -937,7 +937,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var addresses = new List<HdAddress> {address, changeAddress};
 
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { new HdAccount
                 {
@@ -1031,7 +1031,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { new HdAccount
                 {
@@ -1130,7 +1130,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var addresses = new List<HdAddress> {address, changeAddress, changeAddress2};
             Wallet wallet = WalletTestsHelpers.CreateWallet(walletName);
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { new HdAccount
                 {

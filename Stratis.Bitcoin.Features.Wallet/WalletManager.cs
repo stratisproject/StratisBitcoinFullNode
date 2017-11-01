@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletCreationAccountsCount; i++)
             {
-                HdAccount account = wallet.AddNewAccount(password, this.coinType);
+                HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 account.CreateAddresses(this.network, UnusedAddressesBuffer);
                 account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
@@ -319,7 +319,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
-                HdAccount account = wallet.AddNewAccount(password, this.coinType);
+                HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 account.CreateAddresses(this.network, UnusedAddressesBuffer);
                 account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
@@ -379,7 +379,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 // No unused account was found, create a new one.
-                account = wallet.AddNewAccount(password, this.coinType);
+                account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
             }
 
             // save the changes to the file
@@ -1124,7 +1124,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 ChainCode = chainCode,
                 CreationTime = creationTime ?? this.dateTimeProvider.GetTimeOffset(),
                 Network = this.network,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot(this.dateTimeProvider) { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
+                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
             };
 
             // create a folder if none exists and persist the file

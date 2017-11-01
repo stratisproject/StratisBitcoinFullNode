@@ -656,7 +656,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var wallet = WalletTestsHelpers.GenerateBlankWallet("testWallet", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Clear();
 
-            var result = wallet.AddNewAccount("password", (CoinType)network.Consensus.CoinType);
+            var result = wallet.AddNewAccount("password", (CoinType)network.Consensus.CoinType, DateTimeOffset.UtcNow);
 
             Assert.Equal(1, wallet.AccountsRoot.ElementAt(0).Accounts.Count);
             var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
@@ -680,7 +680,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var wallet = WalletTestsHelpers.GenerateBlankWallet("testWallet", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount { Name = "unused" });
 
-            var result = wallet.AddNewAccount("password", (CoinType)network.Consensus.CoinType);
+            var result = wallet.AddNewAccount("password", (CoinType)network.Consensus.CoinType, DateTimeOffset.UtcNow);
 
             Assert.Equal(2, wallet.AccountsRoot.ElementAt(0).Accounts.Count);
             var extKey = new ExtKey(Key.Parse(wallet.EncryptedSeed, "password", wallet.Network), wallet.ChainCode);
@@ -1002,12 +1002,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password");
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount { Name = "Account 0" });
             wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount { Name = "Account 1" });
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 CoinType = CoinType.Stratis,
                 Accounts = new List<HdAccount> { new HdAccount { Name = "Account 2" } }
             });
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 CoinType = CoinType.Bitcoin,
                 Accounts = new List<HdAccount> { new HdAccount { Name = "Account 3" } }
@@ -1099,7 +1099,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password");
             wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
             wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 15;
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 CoinType = CoinType.Bitcoin,
                 LastBlockSyncedHeight = 12
@@ -1189,7 +1189,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             wallet.AccountsRoot.ElementAt(0).CoinType = CoinType.Stratis;
             wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHeight = 15;
             wallet.AccountsRoot.ElementAt(0).LastBlockSyncedHash = new uint256(15);
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 CoinType = CoinType.Bitcoin,
                 LastBlockSyncedHeight = 12,
@@ -1265,7 +1265,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 InternalAddresses = WalletTestsHelpers.CreateUnspentTransactionsOfBlockHeights(Network.Main, 2, 9, 10)
             });
 
-            wallet.AccountsRoot.Add(new AccountRoot(DateTimeProvider.Default)
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 CoinType = CoinType.Stratis,
                 Accounts = new List<HdAccount>

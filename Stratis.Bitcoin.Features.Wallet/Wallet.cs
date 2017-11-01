@@ -15,6 +15,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class Wallet
     {
+        /// <summary>
+        /// Initializes a new instance of the wallet.
+        /// </summary>
         public Wallet()
         {
             this.AccountsRoot = new List<AccountRoot>();
@@ -137,13 +140,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/>
         /// <param name="password">The password used to decrypt the wallet's <see cref="EncryptedSeed"/>.</param>
         /// <param name="coinType">The type of coin this account is for.</param>
+        /// <param name="accountCreationTime">Creation time of the account to be created.</param>
         /// <returns>A new HD account.</returns>
-        public HdAccount AddNewAccount(string password, CoinType coinType)
+        public HdAccount AddNewAccount(string password, CoinType coinType, DateTimeOffset accountCreationTime)
         {
             Guard.NotEmpty(password, nameof(password));
 
             var accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
-            return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network);
+            return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network, accountCreationTime);
         }
 
         /// <summary>
@@ -228,16 +232,11 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class AccountRoot
     {
-        /// <summary>Provider of date time functionality.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
         /// <summary>
-        /// Initializes a new instance of the wallet.
+        /// Initializes a new instance of the object.
         /// </summary>
-        /// <param name="dateTimeProvider">Provider of date time functionality.</param>
-        public AccountRoot(IDateTimeProvider dateTimeProvider)
+        public AccountRoot()
         {
-            this.dateTimeProvider = dateTimeProvider;
             this.Accounts = new List<HdAccount>();
         }
 
@@ -313,8 +312,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="encryptedSeed">The encrypted private key for this wallet.</param>
         /// <param name="chainCode">The chain code for this wallet.</param>
         /// <param name="network">The network for which this account will be created.</param>
+        /// <param name="accountCreationTime">Creation time of the account to be created.</param>
         /// <returns>A new HD account.</returns>
-        public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network)
+        public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network, DateTimeOffset accountCreationTime)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 InternalAddresses = new List<HdAddress>(),
                 Name = $"account {newAccountIndex}",
                 HdPath = accountHdPath,
-                CreationTime = this.dateTimeProvider.GetTimeOffset()
+                CreationTime = accountCreationTime
             };
 
             accounts.Add(newAccount);
