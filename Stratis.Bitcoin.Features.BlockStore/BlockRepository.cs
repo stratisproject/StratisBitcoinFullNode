@@ -436,8 +436,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Lazy loading is on so we don't fetch the whole value, just the row.
                     byte[] key = hash.ToBytes();
                     Row<byte[], Block> blockRow = transaction.Select<byte[], Block>("Block", key);
-                    if (blockRow.Exists) this.PerformanceCounter.AddRepositoryHitCount(1);
-                    else this.PerformanceCounter.AddRepositoryMissCount(1);
+                    if (blockRow.Exists)
+                    {
+                        this.PerformanceCounter.AddRepositoryHitCount(1);
+                        res = true;
+                    }
+                    else
+                    {
+                        this.PerformanceCounter.AddRepositoryMissCount(1);
+                    }
                 }
 
                 this.logger.LogTrace("(-):{0}", res);
