@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Access to DBreeze database.</summary>
         protected readonly DBreezeEngine DBreeze;
         protected readonly Network network;
 
