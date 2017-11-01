@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Act
             string[] result = textFileConfiguration.GetAll("azurekey");
             // Assert
-            Assert.Equal(1, result.Length);
+            Assert.Single(result);
             Assert.Equal("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==", result[0]);
         }
 
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Act
             string[] result = textFileConfiguration.GetAll("azurekey");
             // Assert
-            Assert.Equal(1, result.Length);
+            Assert.Single(result);
             Assert.Equal("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==", result[0]);
         }
     }
