@@ -530,7 +530,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables("Block", "Transaction");
+                    transaction.SynchronizeTables("Block", "Common", "Transaction");
                     transaction.ValuesLazyLoadingIsOn = false;
 
                     List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);

@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
             using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                transaction.SynchronizeTables("Common", "Block");
+                transaction.SynchronizeTables("Block", "Common");
                 transaction.ValuesLazyLoadingIsOn = false;
 
                 // Discover and add indexes to dictionary and tables to synchronize.
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             {
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables("Common", "Block");
+                    transaction.SynchronizeTables("Block", "Common");
 
                     // Ensure this is set so that the base code calls us to index blocks.
                     SaveTxIndex(transaction, true);
