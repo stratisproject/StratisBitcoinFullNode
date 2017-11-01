@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Xunit;
 using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -26,6 +27,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
+            DBreezeSerializer serializer = new DBreezeSerializer();
+            serializer.Initialize();
         }
 
         private void BlockRepositoryBench()
