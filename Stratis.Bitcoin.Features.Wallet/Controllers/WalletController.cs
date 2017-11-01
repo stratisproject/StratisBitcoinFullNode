@@ -596,7 +596,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     }
                 }
 
-                throw new TimeoutException("Transaction propogation has timed out. Lost connection?");
+                throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
             }
             catch (Exception e)
             {
