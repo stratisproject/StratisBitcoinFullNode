@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(trxid, nameof(trxid));
 
             if (!this.TxIndex)
-                return null;
+                return Task.FromResult(default(Transaction));
 
             Task<Transaction> task = Task.Run(() =>
             {
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (!this.TxIndex)
             {
                 this.logger.LogTrace("(-)[NO_TXINDEX]:null");
-                return null;
+                return Task.FromResult(default(uint256));
             }
 
             Task<uint256> task = Task.Run(() =>
