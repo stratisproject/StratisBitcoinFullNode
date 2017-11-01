@@ -518,10 +518,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return blocks;
         }
 
-        public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
+        public Task DeleteAsync(uint256 newBlockHash, List<uint256> hashes)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newlockHash), newlockHash, nameof(hashes), nameof(hashes.Count), hashes?.Count);
-            Guard.NotNull(newlockHash, nameof(newlockHash));
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newBlockHash), newBlockHash, nameof(hashes), nameof(hashes.Count), hashes?.Count);
+            Guard.NotNull(newBlockHash, nameof(newBlockHash));
             Guard.NotNull(hashes, nameof(hashes));
 
             Task task = Task.Run(() =>
@@ -535,7 +535,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
                     this.OnDeleteBlocks(transaction, blocks);
-                    this.SaveBlockHash(transaction, newlockHash);
+                    this.SaveBlockHash(transaction, newBlockHash);
                     transaction.Commit();
                 }
 
