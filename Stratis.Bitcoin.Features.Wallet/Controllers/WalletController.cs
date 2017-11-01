@@ -596,7 +596,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     }
                 }
 
-                return this.StatusCode((int)HttpStatusCode.BadRequest);
+                throw new TimeoutException("Transaction propogation has timed out. Lost connection?");
             }
             catch (Exception e)
             {
