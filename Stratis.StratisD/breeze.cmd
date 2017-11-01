@@ -1,0 +1,1 @@
+dotnet exec bin\Debug\netcoreapp2.0\Stratis.StratisD.dll -testnet -apiuri=http://127.0.01:37221

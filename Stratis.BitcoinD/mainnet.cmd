@@ -1,0 +1,1 @@
+dotnet run -datadir="Z:\StratisBitcoinData"

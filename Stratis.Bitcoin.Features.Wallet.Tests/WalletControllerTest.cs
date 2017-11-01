@@ -1464,8 +1464,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Hex = new uint256(15555).ToString()
             }).GetAwaiter().GetResult();
 
-            StatusCodeResult viewResult = Assert.IsType<StatusCodeResult>(result);
-            Assert.Equal(400, viewResult.StatusCode);
+            ErrorResult errorResult = Assert.IsType<ErrorResult>(result);
+            ErrorResponse errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(400, error.Status);
+            Assert.NotNull(error.Message);
         }
 
         [Fact]

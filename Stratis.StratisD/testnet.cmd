@@ -1,0 +1,1 @@
+dotnet exec bin\Debug\netcoreapp2.0\Stratis.StratisD.dll -testnet -walletname=strattest2 -walletpassword=123456abcABC
