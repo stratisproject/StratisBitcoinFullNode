@@ -82,16 +82,14 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public override Task InitializeAsync()
         {
-            base.InitializeAsync();
-
-            Task task = Task.Run(() =>
+            Task task = base.InitializeAsync().ContinueWith((o) => 
             {
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
                     transaction.SynchronizeTables("Common", "Block");
 
                     // Ensure this is set so that the base code calls us to index blocks.
-                    SetTxIndexAsync(true);
+                    SaveTxIndex(transaction, true);
 
                     // Clean-up any invalid indexes.
                     foreach (Row<string, string> row in transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
