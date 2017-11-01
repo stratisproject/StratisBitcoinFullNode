@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return res;
         }
 
-        private void SaveTxIndex(DBreeze.Transactions.Transaction dbreezeTransaction, bool txIndex)
+        protected void SaveTxIndex(DBreeze.Transactions.Transaction dbreezeTransaction, bool txIndex)
         {
             this.logger.LogTrace("({0}:{1})", nameof(txIndex), txIndex);
 
