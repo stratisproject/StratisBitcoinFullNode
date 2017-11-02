@@ -32,13 +32,13 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (dependancies?.Length == 0)
                 dependancies = null;
 
-            return await this.IndexManager.IndexRepository.CreateIndex(name, multiValue, builder, dependancies);
+            return await this.IndexManager.IndexRepository.CreateIndexAsync(name, multiValue, builder, dependancies);
         }
 
         [ActionName("dropindex")]
         public async Task<bool> DropIndexAsync(string name)
         {
-            return await this.IndexManager.IndexRepository.DropIndex(name);
+            return await this.IndexManager.IndexRepository.DropIndexAsync(name);
         }
 
         [ActionName("listindexnames")]

@@ -7,6 +7,8 @@ using NBitcoin;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Newtonsoft.Json;
+using DBreeze;
+using DBreeze.DataTypes;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -85,22 +87,23 @@ namespace Stratis.Bitcoin.Features.IndexStore
         public string Table { get; private set; }
 
         private IndexRepository repository;
-        private readonly IndexSession session;
         private Comparer comparer = new Comparer();
         private ByteListComparer byteListComparer = new ByteListComparer();
+
+        private readonly DBreezeEngine dbreeze;
 
         public Index(IndexRepository repository) 
             :base(false, null)
         {
             this.repository = repository;
-            this.session = repository.GetSession();
+            this.dbreeze = repository.GetDbreezeEngine();
         }
 
         public Index(IndexRepository repository, string name, bool multiValue, string builder, string[] dependencies = null)
             :base(multiValue, builder, dependencies)
         {
             this.repository = repository;
-            this.session = repository.GetSession();
+            this.dbreeze = repository.GetDbreezeEngine();
             this.Name = name;
             this.Table = repository.IndexTableName(name);
 
@@ -144,16 +147,18 @@ namespace Stratis.Bitcoin.Features.IndexStore
         public event recordIndexed recordAdded;
         public event recordIndexed recordRemoved;
 
-        public IEnumerable<byte[]> LookupMultiple(List<byte[]> keyList)
+        public IEnumerable<byte[]> LookupMultiple(DBreeze.Transactions.Transaction transaction, List<byte[]> keyList)
         {
             if (this.Many)
                 throw new IndexStoreException("Index '" + this.Name + "' can't be multi-value");
 
-            foreach (var key in keyList)
+            transaction.ValuesLazyLoadingIsOn = false;
+
+            foreach (byte[] key in keyList)
             {
                 if (key != null)
                 {
-                    var trxId = this.session.Transaction.Select<byte[], byte[]>(this.Table, key);
+                    Row<byte[], byte[]> trxId = transaction.Select<byte[], byte[]>(this.Table, key);
 
                     if (trxId.Exists)
                     {
@@ -166,50 +171,52 @@ namespace Stratis.Bitcoin.Features.IndexStore
             }
         }
 
-        public IEnumerable<byte[]> EnumerateValues(byte[] key)
+        public IEnumerable<byte[]> EnumerateValues(DBreeze.Transactions.Transaction transaction, byte[] key)
         {
             if (!this.Many)
                 throw new IndexStoreException("Index '" + this.Name + "' should be multi-value");
 
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>(this.Table, key);
+            transaction.ValuesLazyLoadingIsOn = false;
+
+            Row<byte[], byte[]> addrRow = transaction.Select<byte[], byte[]>(this.Table, key);
             if (addrRow.Exists)
             {
-                // Get the current blob size
-                var sizeBytes = addrRow.GetValuePart(0, sizeof(uint));
+                // Get the current blob size.
+                byte[] sizeBytes = addrRow.GetValuePart(0, sizeof(uint));
                 if (BitConverter.IsLittleEndian) sizeBytes = sizeBytes.Reverse();
                 uint size = BitConverter.ToUInt32(sizeBytes, 0);
 
                 for (uint offset = 0; offset < size;)
                 {
-                    var itemSizeBytes = addrRow.GetValuePart(offset, sizeof(uint));
-                    var itemSize = BitConverter.ToUInt32(itemSizeBytes, 0);
+                    byte[] itemSizeBytes = addrRow.GetValuePart(offset, sizeof(uint));
+                    uint itemSize = BitConverter.ToUInt32(itemSizeBytes, 0);
                     yield return addrRow.GetValuePart(offset + 2, itemSize);
                     offset += (itemSize + 2);
                 }
             }
         }
 
-        public int IndexTransactionDetails(List<(Transaction, Block)> transactions, bool remove = false)
+        public int IndexTransactionDetails(DBreeze.Transactions.Transaction dbreezeTransaction, List<(Transaction, Block)> transactions, bool remove = false)
         {
             if (this.Many)
-                return IndexTransactionDetailsMany(transactions, remove);
+                return IndexTransactionDetailsMany(dbreezeTransaction, transactions, remove);
             else
-                return IndexTransactionDetailsOne(transactions, remove);
+                return IndexTransactionDetailsOne(dbreezeTransaction, transactions, remove);
         }
 
-        private int IndexTransactionDetailsOne(List<(Transaction, Block)> transactions, bool remove = false)
+        private int IndexTransactionDetailsOne(DBreeze.Transactions.Transaction dbreezeTransaction, List<(Transaction, Block)> transactions, bool remove = false)
         {
             var itemDict = new Dictionary<byte[], byte[]>(this.comparer);
 
-            foreach (var (transaction, block) in transactions)
+            foreach ((Transaction transaction, Block block) in transactions)
             {
-                var blockId = block.GetHash();
-                var trxId = transaction.GetHash();
+                uint256 blockId = block.GetHash();
+                uint256 trxId = transaction.GetHash();
                 
                 foreach (object[] kv in this.compiled(transaction, block, this.repository.GetNetwork()))
                 {
-                    var key = kv[0].ToBytes();
-                    var value = kv[1].ToBytes();
+                    byte[] key = kv[0].ToBytes();
+                    byte[] value = kv[1].ToBytes();
                     itemDict[key] = value;
                 }
             }
@@ -220,19 +227,19 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
             int count = 0;
 
-            // Index scripts
+            // Index scripts.
             foreach (KeyValuePair<byte[], byte[]> kv in itemList)
             {
                 count++;
                 if (remove)
                 {
-                    this.session.Transaction.RemoveKey<byte[]>(this.Table, kv.Key);
+                    dbreezeTransaction.RemoveKey<byte[]>(this.Table, kv.Key);
                     if (recordRemoved != null)
                         recordRemoved(this, kv.Key, kv.Value);
                 }
                 else
                 {
-                    this.session.Transaction.Insert<byte[], byte[]>(this.Table, kv.Key, kv.Value);
+                    dbreezeTransaction.Insert<byte[], byte[]>(this.Table, kv.Key, kv.Value);
                     if (recordAdded != null)
                         recordAdded(this, kv.Key, kv.Value);
                 }
@@ -241,19 +248,19 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return count;
         }
 
-        private int IndexTransactionDetailsMany(List<(Transaction, Block)> transactions, bool remove = false)
+        private int IndexTransactionDetailsMany(DBreeze.Transactions.Transaction dbreezeTransaction, List<(Transaction, Block)> transactions, bool remove = false)
         {
             var itemDict = new Dictionary<byte[], HashSet<byte[]>>(this.comparer);
 
-            foreach (var (transaction, block) in transactions)
+            foreach ((Transaction transaction, Block block) in transactions)
             {
-                var blockId = block.GetHash();
-                var trxId = transaction.GetHash();
+                uint256 blockId = block.GetHash();
+                uint256 trxId = transaction.GetHash();
 
                 foreach (object[] kv in this.compiled(transaction, block, this.repository.GetNetwork()))
                 {
-                    var key = kv[0].ToBytes();
-                    var value = kv[1].ToBytes();
+                    byte[] key = kv[0].ToBytes();
+                    byte[] value = kv[1].ToBytes();
 
                     HashSet<byte[]> set = itemDict.TryGet(key);
                     if (set == null)
@@ -271,13 +278,13 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
             int count = 0;
 
-            // Index scripts
+            // Index scripts.
             foreach (KeyValuePair<byte[], HashSet<byte[]>> kv in itemList)
             {
                 count++;
                 if (remove)
                 {
-                    this.DeleteValues(kv.Key, kv.Value);
+                    this.DeleteValues(dbreezeTransaction, kv.Key, kv.Value);
 
                     if (recordRemoved != null)
                         foreach (var value in kv.Value)
@@ -286,7 +293,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 }
                 else
                 {
-                    this.InsertValues(kv.Key, kv.Value);
+                    this.InsertValues(dbreezeTransaction, kv.Key, kv.Value);
 
                     if (recordAdded != null)
                         foreach (var value in kv.Value)
@@ -297,33 +304,33 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return count;
         }
 
-        // Append values to bag of values
-        private int InsertValues(byte[] key, HashSet<byte[]> values)
+        // Append values to bag of values.
+        private int InsertValues(DBreeze.Transactions.Transaction dbreezeTransaction, byte[] key, HashSet<byte[]> values)
         {
             if (values.Count == 0)
                 return 0;
 
             uint size = 0;
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>(this.Table, key);
+            Row<byte[], byte[]> addrRow = dbreezeTransaction.Select<byte[], byte[]>(this.Table, key);
 
             if (addrRow.Exists)
             {
-                // Get the current size of the stored blob
-                var bytes = addrRow.GetValuePart(0, sizeof(uint));
+                // Get the current size of the stored blob.
+                byte[] bytes = addrRow.GetValuePart(0, sizeof(uint));
                 if (BitConverter.IsLittleEndian) bytes = bytes.Reverse();
                 size = BitConverter.ToUInt32(bytes, 0);
             }
 
             uint appendSize = 0;
-            foreach (var value in values)
+            foreach (byte[] value in values)
                 appendSize += (2 + (uint)value.Length);
 
-            // Force the value's size to a power of 2 that will fit all the additional values
+            // Force the value's size to a power of 2 that will fit all the additional values.
             if (addrRow.Value == null || ((4 + size + appendSize) > addrRow.Value.Length))
             {
                 uint growSize = 1;
                 for (; growSize < (4 + size + appendSize); growSize *= 2) { }
-                this.session.Transaction.InsertPart<byte[], byte[]>(this.Table, key, new byte[] { 0 /* Dummy */}, growSize - 1);
+                dbreezeTransaction.InsertPart<byte[], byte[]>(this.Table, key, new byte[] { 0 /* Dummy */}, growSize - 1);
             }
 
             var appendBuffer = new byte[appendSize];
@@ -331,29 +338,29 @@ namespace Stratis.Bitcoin.Features.IndexStore
             foreach (var value in values)
             {
                 byte[] valueBytes = ((ushort)value.Length).ToBytes().Concat(value.ToBytes());
-                this.session.Transaction.InsertPart<byte[], byte[]>(this.Table, key, valueBytes, appendPos);
+                dbreezeTransaction.InsertPart<byte[], byte[]>(this.Table, key, valueBytes, appendPos);
                 appendPos += (uint)valueBytes.Length;
             }
 
             byte[] sizeBytes = (size + appendSize).ToBytes();
 
-            this.session.Transaction.InsertPart<byte[], byte[]>(this.Table, key, sizeBytes, 0);
+            dbreezeTransaction.InsertPart<byte[], byte[]>(this.Table, key, sizeBytes, 0);
 
             return values.Count;
         }
 
-        // Remove values from bag of values
-        private int DeleteValues(byte[] key, HashSet<byte[]> list)
+        // Remove values from bag of values.
+        private int DeleteValues(DBreeze.Transactions.Transaction dbreezeTransaction, byte[] key, HashSet<byte[]> list)
         {
             if (list.Count == 0)
                 return 0;
 
-            var addrRow = this.session.Transaction.Select<byte[], byte[]>(this.Table, key);
+            Row<byte[], byte[]> addrRow = dbreezeTransaction.Select<byte[], byte[]>(this.Table, key);
             if (!addrRow.Exists)
                 return 0;
 
             // Get the current blob size
-            var sizeBytes = addrRow.GetValuePart(0, sizeof(uint));
+            byte[] sizeBytes = addrRow.GetValuePart(0, sizeof(uint));
             if (BitConverter.IsLittleEndian) sizeBytes = sizeBytes.Reverse();
             uint size = BitConverter.ToUInt32(sizeBytes, 0);
 
@@ -373,8 +380,8 @@ namespace Stratis.Bitcoin.Features.IndexStore
             {
                 if (keepOffset < offset)
                 {
-                    var keepBytes = (new ArraySegment<byte>(value, (int)keepOffset, (int)(offset - keepOffset))).ToBytes();
-                    this.session.Transaction.InsertPart<byte[], byte[]>(this.Table, key, keepBytes, rebuildOffset);
+                    byte[] keepBytes = (new ArraySegment<byte>(value, (int)keepOffset, (int)(offset - keepOffset))).ToBytes();
+                    dbreezeTransaction.InsertPart<byte[], byte[]>(this.Table, key, keepBytes, rebuildOffset);
                     rebuildOffset += (uint)keepBytes.Length;
                 }
             }
@@ -404,7 +411,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
             if (removeCnt > 0)
             {
                 FlushRebuild();
-                this.session.Transaction.InsertPart<byte[], byte[]>(this.Table, key, rebuildOffset.ToBytes(), 0);
+                dbreezeTransaction.InsertPart<byte[], byte[]>(this.Table, key, rebuildOffset.ToBytes(), 0);
             }
 
             return removeCnt;
