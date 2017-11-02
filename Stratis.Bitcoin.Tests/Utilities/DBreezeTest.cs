@@ -146,9 +146,9 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 {
                     var data2 = new uint256[data.Length];
                     int i = 0;
-                    foreach (Row<byte[], byte[]> row in transaction.SelectForward<byte[], byte[]>("Table"))
+                    foreach (Row<int, byte[]> row in transaction.SelectForward<int, byte[]>("Table"))
                     {
-                        data2[i++] = new uint256(row.Key, false);
+                        data2[i++] = new uint256(row.Value, false);
                     }
 
                     Assert.True(data.SequenceEqual(data2));
@@ -168,10 +168,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
                     new uint256(10),
                 };
 
+                int i = 0;
                 using (DBreeze.Transactions.Transaction tx = engine.GetTransaction())
                 {
                     foreach (uint256 d in data)
-                        tx.Insert("Table", d.ToBytes(false), d.ToBytes());
+                        tx.Insert<int, byte[]>("Table", i++, d.ToBytes(false));
 
                     tx.Commit();
                 }
