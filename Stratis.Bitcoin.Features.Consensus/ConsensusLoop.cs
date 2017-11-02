@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 try
                 {
-                    this.ValidateBlock(new ContextInformation(blockValidationContext, this.Validator.ConsensusParams));
+                    this.ValidateAndExecuteBlock(new ContextInformation(blockValidationContext, this.Validator.ConsensusParams));
                 }
                 catch (ConsensusErrorException ex)
                 {
@@ -362,16 +362,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Validate a block using the consensus rules.
+        /// Validates a block using the consensus rules.
         /// </summary>
-        /// <remarks>
-        /// WARNING: This method can only be called from <see cref="ConsensusLoop.AcceptBlock"/>, 
-        /// it the requirement is to validate a block without affecting the consensus db then <see cref="ContextInformation.OnlyCheck"/> must be set to true.
-        /// </remarks>
-        /// <remarks>
-        /// TODO: This method can be broken in two parts (and remove the WARNING) where one part will only validate (anything before the context.OnlyCheck flag) and second part will also effect state (update the CoinView DB).
-        /// </remarks>
-        /// <param name="context">A context that contains all information required to validate the block.</param>
         public void ValidateBlock(ContextInformation context)
         {
             this.logger.LogTrace("()");
@@ -383,7 +375,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (context.BlockValidationContext.Block.Header.HashPrevBlock != this.Tip.HashBlock)
                 {
                     this.logger.LogTrace("Reorganization detected.");
-                    ConsensusErrors.InvalidPrevTip.Throw(); // reorg
+                    ConsensusErrors.InvalidPrevTip.Throw();
                 }
 
                 this.logger.LogTrace("Validating new block.");
@@ -392,13 +384,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // one of the peers so after we create a new chained block (mainly for validation) 
                 // we ask the chain headers for its version (also to prevent memory leaks). 
                 context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), this.Tip);
-                
+
                 // Liberate from memory the block created above if possible.
                 context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
                 context.SetBestBlock(this.dateTimeProvider.GetTimeOffset());
 
-                // == validation flow ==
-                
+                // == Validation flow ==
+
                 // Check the block header is correct.
                 this.Validator.CheckBlockHeader(context);
                 this.Validator.ContextualCheckBlockHeader(context);
@@ -407,15 +399,22 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
                 this.Validator.ContextualCheckBlock(context);
 
-                // check the block itself
+                // Check the block itself.
                 this.Validator.CheckBlock(context);
             }
 
-            if (context.OnlyCheck)
-            {
-                this.logger.LogTrace("(-)[CHECK_ONLY]");
-                return;
-            }
+            this.logger.LogTrace("(-)[OK]");
+        }
+
+        /// <summary>
+        /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
+        /// </summary>
+        /// <param name="context">A context that contains all information required to validate the block.</param>
+        private void ValidateAndExecuteBlock(ContextInformation context)
+        {
+            this.logger.LogTrace("()");
+
+            this.ValidateBlock(context);
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
