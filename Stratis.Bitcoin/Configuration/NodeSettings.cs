@@ -98,6 +98,9 @@ namespace Stratis.Bitcoin.Configuration
 
         public TextFileConfiguration ConfigReader { get; private set; }
 
+        /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
+        public bool SyncTimeEnabled { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// <para>This constructor does not load the configuration itself.</para>
@@ -219,6 +222,9 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.Logger.LogDebug("FallbackTxFeeRate set to {0}.", nodeSettings.FallbackTxFeeRate);
             nodeSettings.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", nodeSettings.Network.MinRelayTxFee));
             nodeSettings.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", nodeSettings.MinRelayTxFeeRate);
+
+            nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
+            nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
 
             try
             {
