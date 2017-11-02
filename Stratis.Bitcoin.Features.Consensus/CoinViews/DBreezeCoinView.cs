@@ -10,6 +10,7 @@ using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using DBreeze;
 using Stratis.Bitcoin.Base;
+using DBreeze;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {

@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Access to DBreeze database.</summary>
         protected readonly DBreezeEngine DBreeze;
         protected readonly Network network;
 
@@ -44,11 +45,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
         public bool TxIndex { get; private set; }
 
-        /// <summary>Represents the last block stored to disk.</summary>
-        public ChainedBlock HighestPersistedBlock { get; internal set; }
-
         /// <summary>Provider of time functions.</summary>
         protected readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>Represents the last block stored to disk.</summary>
+        public ChainedBlock HighestPersistedBlock { get; internal set; }
 
         public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
