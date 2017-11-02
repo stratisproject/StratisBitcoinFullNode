@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 BlockHeader expectedHeader = node.FullNode.Chain?.GetBlock(hash)?.Header;
                 BlockHeader actualHeader = rpc.GetBlockHeader(0);
 
-                // Assert block header fields match
+                // Assert block header fields match.
                 Assert.Equal(expectedHeader.Version, actualHeader.Version);
                 Assert.Equal(expectedHeader.HashPrevBlock, actualHeader.HashPrevBlock);
                 Assert.Equal(expectedHeader.HashMerkleRoot, actualHeader.HashMerkleRoot);
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(expectedHeader.Bits, actualHeader.Bits);
                 Assert.Equal(expectedHeader.Nonce, actualHeader.Nonce);
 
-                // Assert header hash matches genesis hash
+                // Assert header hash matches genesis hash.
                 Assert.Equal(Network.RegTest.GenesisHash, actualHeader.GetHash());
             }
         }
