@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogInformation("Loading chain");
-            await this.chainRepository.Load(this.chain).ConfigureAwait(false);
+            await this.chainRepository.LoadAsync(this.chain).ConfigureAwait(false);
 
             this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
 
