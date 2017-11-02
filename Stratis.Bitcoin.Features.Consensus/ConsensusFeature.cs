@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public override void Start()
         {
             this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
-            this.consensusLoop.StartAsync();
+            this.consensusLoop.StartAsync().GetAwaiter().GetResult();
 
             this.chainState.ConsensusTip = this.consensusLoop.Tip;
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
