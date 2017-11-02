@@ -13,6 +13,7 @@ using Xunit;
 using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -27,6 +28,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
+            DBreezeSerializer serializer = new DBreezeSerializer();
+            serializer.Initialize();
         }
 
         private void BlockRepositoryBench()
@@ -83,7 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
                 {
-                    blockRepo.SetTxIndex(true).Wait();
+                    blockRepo.SetTxIndexAsync(true).Wait();
 
                     var lst = new List<Block>();
                     for (int i = 0; i < 5; i++)
@@ -117,7 +120,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
 
                     // delete
-                    blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] {lst.ElementAt(2).GetHash()}.ToList());
+                    blockRepo.DeleteAsync(lst.ElementAt(2).GetHash(), new[] {lst.ElementAt(2).GetHash()}.ToList()).GetAwaiter().GetResult();
                     var deleted = blockRepo.GetAsync(lst.ElementAt(2).GetHash()).GetAwaiter().GetResult();
                     Assert.Null(deleted);
                 }
@@ -131,11 +134,11 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
                 {
-                    blockRepo.Initialize().GetAwaiter().GetResult();
+                    blockRepo.InitializeAsync().GetAwaiter().GetResult();
 
                     Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
                     var hash = new Block().GetHash();
-                    blockRepo.SetBlockHash(hash).GetAwaiter().GetResult();
+                    blockRepo.SetBlockHashAsync(hash).GetAwaiter().GetResult();
                     Assert.Equal(hash, blockRepo.BlockHash);
                 }
             }

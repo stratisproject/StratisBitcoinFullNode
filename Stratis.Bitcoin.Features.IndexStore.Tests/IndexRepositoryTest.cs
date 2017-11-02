@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.SetTxIndex(false);
+                var task = repository.SetTxIndexAsync(false);
                 task.Wait();
             }
 
@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.SetBlockHash(new uint256(56));
+                var task = repository.SetBlockHashAsync(new uint256(56));
                 task.Wait();
             }
 
@@ -427,12 +427,12 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                (repository as IndexRepository).SetTxIndex(true).GetAwaiter().GetResult();
+                (repository as IndexRepository).SetTxIndexAsync(true).GetAwaiter().GetResult();
 
                 // Insert a block before creating the index
                 (repository as IndexRepository).PutAsync(block.GetHash(), new List<Block> { block }).GetAwaiter().GetResult();
 
-                var task = repository.CreateIndex("Script", true, builder);
+                var task = repository.CreateIndexAsync("Script", true, builder);
                 task.Wait();
 
                 // Insert a block after creating the index
@@ -501,12 +501,12 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                (repository as IndexRepository).SetTxIndex(true).GetAwaiter().GetResult();
+                (repository as IndexRepository).SetTxIndexAsync(true).GetAwaiter().GetResult();
 
                 // Insert a block before creating the index
                 (repository as IndexRepository).PutAsync(block.GetHash(), new List<Block> { block }).GetAwaiter().GetResult();
 
-                var task = repository.CreateIndex("Output", false, builder);
+                var task = repository.CreateIndexAsync("Output", false, builder);
                 task.Wait();
 
                 // Insert a block after creating the index
@@ -574,7 +574,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
         private Features.IndexStore.IIndexRepository SetupRepository(Network main, string dir)
         {
             var repository = new IndexRepository(main, dir, DateTimeProvider.Default, this.loggerFactory);
-            repository.Initialize().GetAwaiter().GetResult();
+            repository.InitializeAsync().GetAwaiter().GetResult();
 
             return repository;
         }

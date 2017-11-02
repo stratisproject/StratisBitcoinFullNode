@@ -35,7 +35,7 @@
 
             if (await this.BlockStoreLoop.BlockRepository.ExistAsync(nextChainedBlock.HashBlock))
             {
-                await this.BlockStoreLoop.BlockRepository.SetBlockHash(nextChainedBlock.HashBlock);
+                await this.BlockStoreLoop.BlockRepository.SetBlockHashAsync(nextChainedBlock.HashBlock);
 
                 this.BlockStoreLoop.SetStoreTip(nextChainedBlock);
 

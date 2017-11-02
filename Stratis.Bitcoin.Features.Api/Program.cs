@@ -2,9 +2,8 @@
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin;
 
-namespace Stratis.Bitcoin.Api
+namespace Stratis.Bitcoin.Features.Api
 {
     public class Program
     {

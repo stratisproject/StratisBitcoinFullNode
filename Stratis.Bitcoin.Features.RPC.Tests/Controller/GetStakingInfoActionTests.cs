@@ -22,10 +22,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             string dir = AssureEmptyDir("TestData/GetStakingInfoActionTests/GetStakingInfo_StakingEnabled");
             IFullNode fullNode = this.BuildStakingNode(dir);
-            Task.Run(() =>
-            {
-                fullNode.Run();
-            });
+            var fullNodeRunTask = fullNode.RunAsync();
 
             INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
@@ -42,6 +39,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             nodeLifetime.StopApplication();
             nodeLifetime.ApplicationStopped.WaitHandle.WaitOne();
             fullNode.Dispose();
+            
+            Assert.False(fullNodeRunTask.IsFaulted);
         }
 
         /// <summary>
@@ -54,10 +53,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             IFullNode fullNode = this.BuildStakingNode(dir, false);
             var node = fullNode as FullNode;
 
-            Task.Run(() =>
-            {
-                fullNode.Run();
-            });
+            var fullNodeRunTask = fullNode.RunAsync();
 
             INodeLifetime nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
@@ -90,6 +86,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             nodeLifetime.StopApplication();
             nodeLifetime.ApplicationStopped.WaitHandle.WaitOne();
             fullNode.Dispose();
+
+            Assert.False(fullNodeRunTask.IsFaulted);
         }
     }
 }

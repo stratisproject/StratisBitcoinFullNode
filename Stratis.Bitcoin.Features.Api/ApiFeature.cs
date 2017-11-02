@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Api.Models;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Features.Api.Models;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Api
+namespace Stratis.Bitcoin.Features.Api
 {
     /// <summary>
     /// Provides an Api to the full node
