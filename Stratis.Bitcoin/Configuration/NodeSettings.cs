@@ -224,6 +224,7 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", nodeSettings.MinRelayTxFeeRate);
 
             nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
+            nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
 
             try
             {
