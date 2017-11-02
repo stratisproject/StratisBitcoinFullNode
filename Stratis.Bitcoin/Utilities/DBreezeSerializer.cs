@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="obj">Object to be serialized.</param>
         /// <returns>Binary data representing the serialized object.</returns>
-        private byte[] Serializer(object obj)
+        internal byte[] Serializer(object obj)
         {
             IBitcoinSerializable serializable = obj as IBitcoinSerializable;
             if (serializable != null)
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="bytes">Binary data representing a serialized object.</param>
         /// <param name="type">Type of the serialized object.</param>
         /// <returns>Deserialized object.</returns>
-        private object Deserializer(byte[] bytes, Type type)
+        internal object Deserializer(byte[] bytes, Type type)
         {
             if (type == typeof(Coins))
             {
