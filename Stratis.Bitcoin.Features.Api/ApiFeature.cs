@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Api.Models;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Features.Api.Models;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Api
+namespace Stratis.Bitcoin.Features.Api
 {
     /// <summary>
     /// Provides an Api to the full node
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Api
                     KeepaliveMonitor monitor = this.apiFeatureOptions.KeepaliveMonitor;
 
                     // check the trashold to trigger a shutdown
-                    if (monitor.LastBeat.Add(monitor.KeepaliveInterval) < DateTime.UtcNow)
+                    if (monitor.LastBeat.Add(monitor.KeepaliveInterval) < this.fullNode.DateTimeProvider.GetUtcNow())
                         this.fullNode.Stop();
 
                     return Task.CompletedTask;

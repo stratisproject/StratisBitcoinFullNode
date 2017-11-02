@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 using DBreeze.DataTypes;
 using System.Collections.Concurrent;
 
@@ -29,20 +30,20 @@ namespace Stratis.Bitcoin.Features.IndexStore
         public ConcurrentDictionary<string, Index> Indexes;
         private Dictionary<string, IndexExpression> requiredIndexes;
 
-        public static string indexTablePrefix { get { return "Index_"; } }
+        private const string IndexTablePrefix = "Index_";
 
         public string IndexTableName(string indexName)
         {
-            return indexTablePrefix + indexName;
+            return IndexTablePrefix + indexName;
         }
 
-        public IndexRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, IndexSettings indexSettings = null)
-            : this(network, dataFolder.IndexPath, loggerFactory, indexSettings.indexes)
+        public IndexRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IndexSettings indexSettings = null)
+            : this(network, dataFolder.IndexPath, dateTimeProvider, loggerFactory, indexSettings.indexes)
         {
         }
 
-        public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory, Dictionary<string, IndexExpression> requiredIndexes = null):
-            base(network, folder, loggerFactory)
+        public IndexRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Dictionary<string, IndexExpression> requiredIndexes = null):
+            base(network, folder, dateTimeProvider, loggerFactory)
         {
             this.tableNames = new HashSet<string> { "Block", "Transaction", "Common" };
             this.Indexes = new ConcurrentDictionary<string, Index>();
@@ -54,11 +55,11 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 transaction.ValuesLazyLoadingIsOn = false;
 
                 // Discover and add indexes to dictionary and tables to synchronize.
-                foreach (Row<string, string> row in transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
+                foreach (Row<string, string> row in transaction.SelectForwardStartsWith<string, string>("Common", IndexTablePrefix))
                 {
                     if (!row.Exists) continue;
 
-                    string name = row.Key.Substring(indexTablePrefix.Length);
+                    string name = row.Key.Substring(IndexTablePrefix.Length);
                     Index index = Index.Parse(this, row.Value, row.Key);
                     if (index.compiled != null)
                     {
@@ -77,7 +78,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public override BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
         {
-            return new IndexStoreRepositoryPerformanceCounter();
+            return new IndexStoreRepositoryPerformanceCounter(this.dateTimeProvider);
         }
 
         public override Task InitializeAsync()
@@ -92,9 +93,9 @@ namespace Stratis.Bitcoin.Features.IndexStore
                     SaveTxIndex(transaction, true);
 
                     // Clean-up any invalid indexes.
-                    foreach (Row<string, string> row in transaction.SelectForwardStartsWith<string, string>("Common", indexTablePrefix))
+                    foreach (Row<string, string> row in transaction.SelectForwardStartsWith<string, string>("Common", IndexTablePrefix))
                     {
-                        string name = row.Key.Substring(indexTablePrefix.Length);
+                        string name = row.Key.Substring(IndexTablePrefix.Length);
                         if (!this.Indexes.ContainsKey(name))
                             DropIndex(name, transaction);
                     }
@@ -300,7 +301,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public List<string> GetIndexTables()
         {
-            return this.DBreeze.Scheme.GetUserTableNamesStartingWith(IndexRepository.indexTablePrefix);
+            return this.DBreeze.Scheme.GetUserTableNamesStartingWith(IndexTablePrefix);
         }
 
         public void DeleteTable(string name)

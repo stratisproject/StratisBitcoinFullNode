@@ -33,7 +33,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Access to DBreeze database.</summary>
         protected readonly DBreezeEngine DBreeze;
         protected readonly Network network;
 
@@ -47,12 +46,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Represents the last block stored to disk.</summary>
         public ChainedBlock HighestPersistedBlock { get; internal set; }
 
-        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.BlockPath, loggerFactory)
+        /// <summary>Provider of time functions.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
+        public BlockRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
@@ -60,12 +62,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.DBreeze = new DBreezeEngine(folder);
             this.network = network;
+            this.dateTimeProvider = dateTimeProvider;
+
             this.PerformanceCounter = PerformanceCounterFactory();
         }
 
         public virtual BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
         {
-            return new BlockStoreRepositoryPerformanceCounter();
+            return new BlockStoreRepositoryPerformanceCounter(this.dateTimeProvider);
         }
 
         public virtual Task InitializeAsync()

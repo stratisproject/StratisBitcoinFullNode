@@ -1,5 +1,6 @@
 ﻿using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 chain.Setup(c => c.Tip).Returns(new ChainedBlock(new BlockHeader(), 1));
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain.Object, NodeSettings.Default(),
-                       new DataFolder(new NodeSettings { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                    new DataFolder(new NodeSettings { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException" }), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain.Object, walletManager, new Mock<IWalletFeePolicy>().Object, Network.Main);
 
                 walletManager.Wallets.Add(wallet);
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 });
 
                 var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(),
-                      new DataFolder(new NodeSettings { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionFeeTooLowThrowsWalletException" }), walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                    new DataFolder(new NodeSettings { DataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionFeeTooLowThrowsWalletException" }), walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain, walletManager, walletFeePolicy.Object, Network.Main);
 
                 walletManager.Wallets.Add(wallet);
@@ -163,7 +164,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .Returns(new FeeRate(20000));
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), dataFolder,
-                walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain, walletManager, walletFeePolicy.Object, Network.Main);
 
             walletManager.Wallets.Add(wallet);
@@ -237,7 +238,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));
             var overrideFeeRate = new FeeRate(20000);
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain, walletManager, walletFeePolicy.Object, Network.Main);
 
             walletManager.Wallets.Add(wallet);
@@ -302,12 +303,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { WalletTestsHelpers.CreateAccount("account 1") }
             });
@@ -327,7 +328,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
 
@@ -345,7 +346,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(accountAddress2);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { account }
             });
@@ -364,7 +365,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
 
@@ -382,7 +383,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(accountAddress2);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { account }
             });
@@ -403,7 +404,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, walletFeePolicy.Object, Network.Main);
 
@@ -421,7 +422,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(accountAddress2);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { account }
             });
@@ -439,7 +440,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
 
             var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, It.IsAny<ConcurrentChain>(), walletManager, It.IsAny<WalletFeePolicy>(), Network.Main);
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
@@ -449,7 +450,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(accountAddress2);
 
             var wallet = WalletTestsHelpers.CreateWallet("wallet1");
-            wallet.AccountsRoot.Add(new AccountRoot
+            wallet.AccountsRoot.Add(new AccountRoot()
             {
                 Accounts = new List<HdAccount> { account }
             });
@@ -505,8 +506,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
                 .Returns(new FeeRate(20000));
 
-            WalletManager walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), dataFolder,
-                walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime());
+            var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, chain, NodeSettings.Default(), dataFolder,
+                walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
             WalletTransactionHandler walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, chain, walletManager, walletFeePolicy.Object, Network.Main);
 
             walletManager.Wallets.Add(wallet);

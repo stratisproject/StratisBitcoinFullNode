@@ -1,24 +1,26 @@
 ﻿using System;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
     public class IndexStoreCachePerformanceCounter : BlockStoreCachePerformanceCounter
     {
-        public IndexStoreCachePerformanceCounter():
-            base("IndexStore")
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
+        /// <param name="dateTimeProvider">Provider of date time functionality.</param>
+        public IndexStoreCachePerformanceCounter(IDateTimeProvider dateTimeProvider) :
+            base(dateTimeProvider, "IndexStore")
         {
-
         }
+
         public override BlockStoreCachePerformanceSnapshot Snapshot()
         {
-#if !(PORTABLE || NETCORE)
-			Thread.MemoryBarrier();
-#endif
             var snap = new IndexStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount)
             {
                 Start = this.Start,
-                Taken = DateTime.UtcNow
+                Taken = this.dateTimeProvider.GetUtcNow()
             };
             return snap;
         }
@@ -26,7 +28,6 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
     public class IndexStoreCachePerformanceSnapshot : BlockStoreCachePerformanceSnapshot
     {
-
         public IndexStoreCachePerformanceSnapshot(long cacheHitCount, long cacheMissCount, long cacheRemoveCount, long cacheSetCount)
             : base(cacheHitCount, cacheMissCount, cacheRemoveCount, cacheSetCount, "IndexStore")
         {

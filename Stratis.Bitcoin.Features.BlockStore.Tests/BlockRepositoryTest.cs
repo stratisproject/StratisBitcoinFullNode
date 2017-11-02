@@ -2,6 +2,7 @@
 {
     using DBreeze;
     using NBitcoin;
+    using Stratis.Bitcoin.Base;
     using Stratis.Bitcoin.Tests;
     using System.Collections.Generic;
     using System.Linq;
@@ -429,7 +430,7 @@
 
         private BlockStore.IBlockRepository SetupRepository(Network main, string dir)
         {
-            var repository = new BlockRepository(main, dir, this.loggerFactory);
+            var repository = new BlockRepository(main, dir, DateTimeProvider.Default, this.loggerFactory);
             repository.InitializeAsync().GetAwaiter().GetResult();
 
             return repository;

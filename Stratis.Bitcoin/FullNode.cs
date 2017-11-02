@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin
             {
                 StringBuilder benchLogs = new StringBuilder();
 
-                benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
+                benchLogs.AppendLine("======Node stats====== " + this.DateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture) + " agent " +
                                      this.ConnectionManager.Parameters.UserAgent);
 
                 // Display node stats grouped together.

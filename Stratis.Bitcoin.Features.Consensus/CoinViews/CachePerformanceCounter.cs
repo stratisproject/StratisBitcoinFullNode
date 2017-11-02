@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -11,10 +12,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     public class CachePerformanceCounter
     {
         /// <summary>UTC timestamp when the performance counter was created.</summary>
-        // TODO: Change to IDateTimeProvider.
-        DateTime start;
+        private DateTime start;
+
         /// <summary>UTC timestamp when the performance counter was created.</summary>
-        // TODO: Change to IDateTimeProvider.
         public DateTime Start { get { return this.start; } }
 
         /// <summary>Number of cache queries for which the result was not found in the cache.</summary>
@@ -32,18 +32,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             get
             {
-                // TODO: Change to IDateTimeProvider.
-                return DateTime.UtcNow - this.Start;
+                return this.dateTimeProvider.GetUtcNow() - this.Start;
             }
         }
+
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public CachePerformanceCounter()
+        /// <param name="dateTimeProvider">Provider of date time functionality.</param>
+        public CachePerformanceCounter(IDateTimeProvider dateTimeProvider)
         {
-            // TODO: Change to IDateTimeProvider.
-            this.start = DateTime.UtcNow;
+            this.dateTimeProvider = dateTimeProvider;
+            this.start = this.dateTimeProvider.GetUtcNow();
         }
 
         /// <summary>
@@ -73,9 +76,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             var snap = new CachePerformanceSnapshot(this.missCount, this.hitCount)
             {
                 Start = this.Start,
-                // TODO: Change to IDateTimeProvider.
                 // TODO: Would it not be better for these two guys to be part of the constructor? Either implicitly or explicitly.
-                Taken = DateTime.UtcNow
+                Taken = this.dateTimeProvider.GetUtcNow()
             };
             return snap;
         }
@@ -97,11 +99,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public long TotalMissCount { get { return this.missCount; } }
 
         /// <summary>UTC timestamp when the snapshotted performance counter was created.</summary>
-        // TODO: Change to IDateTimeProvider.
         public DateTime Start { get; internal set; }
 
         /// <summary>UTC timestamp when the snapshot was taken.</summary>
-        // TODO: Change to IDateTimeProvider.
         public DateTime Taken { get; internal set; }
 
         /// <summary>Time span between the creation of the performance counter and the creation of its snapshot.</summary>

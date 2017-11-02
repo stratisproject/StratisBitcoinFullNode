@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Utilities;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using DBreeze;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -37,14 +38,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         public BackendPerformanceCounter PerformanceCounter { get { return this.performanceCounter; } }
 
+        /// <summary>Provider of time functions.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="dataFolder">Information about path locations to important folders and files on disk.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        public DBreezeCoinView(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.CoinViewPath, loggerFactory)
+        public DBreezeCoinView(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.CoinViewPath, dateTimeProvider, loggerFactory)
         {
         }
 
@@ -53,8 +58,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="folder">Path to the folder with coinview database files.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        public DBreezeCoinView(Network network, string folder, ILoggerFactory loggerFactory)
+        public DBreezeCoinView(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
@@ -62,7 +68,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dbreeze = new DBreezeEngine(folder);
             this.network = network;
-            this.performanceCounter = new BackendPerformanceCounter();
+            this.dateTimeProvider = dateTimeProvider;
+            this.performanceCounter = new BackendPerformanceCounter(this.dateTimeProvider);
         }
 
         /// <summary>

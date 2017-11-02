@@ -1,15 +1,16 @@
 ﻿using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
-using Stratis.Bitcoin.Api;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.BreezeD
 {
@@ -18,7 +19,7 @@ namespace Stratis.BreezeD
         private const string DefaultBitcoinUri = "http://localhost:37220";
         private const string DefaultStratisUri = "http://localhost:37221";
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             IFullNodeBuilder fullNodeBuilder = null;
 
@@ -57,7 +58,7 @@ namespace Stratis.BreezeD
             IFullNode node = fullNodeBuilder.Build();
 
             // Start Full Node - this will also start the API.
-            node.Run();
+            await node.RunAsync();
         }
     }
 }

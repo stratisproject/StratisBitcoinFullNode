@@ -16,8 +16,8 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         public void Initialize()
         {
-            CustomSerializator.ByteArraySerializator = Serializer;
-            CustomSerializator.ByteArrayDeSerializator = Deserializer;
+            CustomSerializator.ByteArraySerializator = this.Serializer;
+            CustomSerializator.ByteArrayDeSerializator = this.Deserializer;
         }
 
         /// <summary>

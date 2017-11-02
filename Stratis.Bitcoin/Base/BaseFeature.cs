@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.dbreezeSerializer.Initialize();
             this.StartAddressManager();
-            this.StartChain();
+            this.StartChainAsync().GetAwaiter().GetResult();
 
             NodeConnectionParameters connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Base
         /// Initializes node's chain repository.
         /// Creates periodic task to persist changes to the database.
         /// </summary>
-        private void StartChain()
+        private async Task StartChainAsync()
         {
             if (!Directory.Exists(this.dataFolder.ChainPath))
             {
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogInformation("Loading chain");
-            this.chainRepository.LoadAsync(this.chain).GetAwaiter().GetResult();
+            await this.chainRepository.LoadAsync(this.chain).ConfigureAwait(false);
 
             this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
 

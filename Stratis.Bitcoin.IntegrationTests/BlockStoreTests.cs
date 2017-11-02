@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Xunit;
 using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
                 {
                     var lst = new List<Block>();
                     for (int i = 0; i < 30; i++)
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
                 {
                     blockRepo.SetTxIndexAsync(true).Wait();
 
@@ -131,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
                 {
                     blockRepo.InitializeAsync().GetAwaiter().GetResult();
 

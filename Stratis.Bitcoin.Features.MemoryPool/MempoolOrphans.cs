@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public async Task<int> LimitOrphanTxSizeAsync(int maxOrphanTx)
         {
             int nEvicted = 0;
-            var nNow = this.dateTimeProvider.GetTime();
+            long nNow = this.dateTimeProvider.GetTime();
             if (this.nNextSweep <= nNow)
             {
                 // Sweep out expired orphan pool entries:
