@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             FetchCoinsResponse fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray()).ConfigureAwait(false);
             using (this.lockobj.LockWrite())
             {
-                await this.flushingTask.ConfigureAwait(false);
+                this.flushingTask.Wait();
                 uint256 innerblockHash = fetchedCoins.BlockHash;
                 if (this.blockHash == null)
                 {
