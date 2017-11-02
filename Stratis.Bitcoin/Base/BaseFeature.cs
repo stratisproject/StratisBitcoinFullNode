@@ -80,14 +80,17 @@ namespace Stratis.Bitcoin.Base
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly TimeSyncBehaviorState timeSyncBehaviorState;
 
+        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
+        private readonly DBreezeSerializer dbreezeSerializer;
+
         /// <summary>Manager of node's network peers.</summary>
         private AddressManager addressManager;
 
-        /// <summary>Periodic task to save the chain to the database.</summary>
-        private PeriodicTask flushChainTask;
-
         /// <summary>Periodic task to save list of peers to disk.</summary>
-        private PeriodicTask flushAddressManagerTask;
+        private IAsyncLoop flushAddressManagerLoop;
+
+        /// <summary>Periodic task to save the chain to the database.</summary>
+        private IAsyncLoop flushChainLoop;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -103,6 +106,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
         /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
+        /// <param name="dbreezeSerializer">Provider of binary (de)serialization for data stored in the database.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         public BaseFeature(
             NodeSettings nodeSettings,
@@ -116,6 +120,7 @@ namespace Stratis.Bitcoin.Base
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             TimeSyncBehaviorState timeSyncBehaviorState,
+            DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -130,6 +135,7 @@ namespace Stratis.Bitcoin.Base
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
+            this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -144,6 +150,7 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override void Start()
         {
+            this.dbreezeSerializer.Initialize();
             this.StartAddressManager();
             this.StartChainAsync().GetAwaiter().GetResult();
 
@@ -172,14 +179,17 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogInformation("Loading chain");
-            await this.chainRepository.Load(this.chain).ConfigureAwait(false);
+            await this.chainRepository.LoadAsync(this.chain).ConfigureAwait(false);
 
             this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
-            this.flushChainTask = new PeriodicTask("FlushChain", this.logger, (cancellation) =>
+
+            this.flushChainLoop = this.asyncLoopFactory.Run("FlushChain", async token =>
             {
-                this.chainRepository.Save(this.chain);
-            })
-            .Start(this.nodeLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
+                await this.chainRepository.SaveAsync(this.chain);
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromMinutes(5.0),
+            startAfter: TimeSpan.FromMinutes(5.0));
         }
 
         /// <summary>
@@ -208,21 +218,26 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogInformation("AddressManager is empty, discovering peers...");
             }
 
-            this.flushAddressManagerTask = new PeriodicTask("FlushAddressManager", this.logger, (cancellation) =>
+            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("FlushAddressManager", token =>
             {
                 this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
-            })
-           .Start(this.nodeLifetime.ApplicationStopping, TimeSpan.FromMinutes(5.0), true);
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromMinutes(5.0),
+            startAfter: TimeSpan.FromMinutes(5.0));
         }
 
         /// <inheritdoc />
         public override void Stop()
         {
             this.logger.LogInformation("Flushing address manager");
-            this.flushAddressManagerTask?.RunOnce();
+            this.flushAddressManagerLoop?.Dispose();
+            this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
 
             this.logger.LogInformation("Flushing headers chain");
-            this.flushChainTask?.RunOnce();
+            this.flushChainLoop?.Dispose();
+            this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
 
             foreach (IDisposable disposable in this.disposableResources)
             {
@@ -250,6 +265,7 @@ namespace Stratis.Bitcoin.Base
                 .AddFeature<BaseFeature>()
                 .FeatureServices(services =>
                 {
+                    services.AddSingleton<DBreezeSerializer>();
                     services.AddSingleton(fullNodeBuilder.NodeSettings.LoggerFactory);
                     services.AddSingleton(fullNodeBuilder.NodeSettings.DataFolder);
                     services.AddSingleton<INodeLifetime, NodeLifetime>();

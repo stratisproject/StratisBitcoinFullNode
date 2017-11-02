@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             using (var repo = new ChainRepository(dir))
             {
-                repo.Save(chain).Wait();
+                repo.SaveAsync(chain).GetAwaiter().GetResult();
             }
 
             using (var engine = new DBreezeEngine(dir))
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Tests.Base
             using (var repo = new ChainRepository(dir))
             {
 				var testChain = new ConcurrentChain(Network.RegTest);
-                repo.Load(testChain).GetAwaiter().GetResult();
+                repo.LoadAsync(testChain).GetAwaiter().GetResult();
                 Assert.Equal(tip, testChain.Tip);
             }
         }        

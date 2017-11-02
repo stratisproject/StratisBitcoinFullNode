@@ -5,24 +5,27 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
+using DBreeze.DataTypes;
+using DBreeze;
 
 namespace Stratis.Bitcoin.Base
 {
     public interface IChainRepository : IDisposable
     {
-        Task Load(ConcurrentChain chain);
-        Task Save(ConcurrentChain chain);
+        Task LoadAsync(ConcurrentChain chain);
+        Task SaveAsync(ConcurrentChain chain);
     }
 
     public class ChainRepository : IChainRepository
     {
-        DBreezeSingleThreadSession _Session;
+        private readonly DBreezeEngine dbreeze;
+        private BlockLocator locator;
 
         public ChainRepository(string folder)
         {
             Guard.NotEmpty(folder, nameof(folder));
 
-            this._Session = new DBreezeSingleThreadSession("DBreeze ChainRepository", folder);
+            this.dbreeze = new DBreezeEngine(folder);
         }
 
         public ChainRepository(DataFolder dataFolder)
@@ -30,65 +33,78 @@ namespace Stratis.Bitcoin.Base
         {
         }
 
-        BlockLocator _Locator;
-        public Task Load(ConcurrentChain chain)
+        public Task LoadAsync(ConcurrentChain chain)
         {
             Guard.Assert(chain.Tip == chain.Genesis);
 
-            return this._Session.Execute(() =>
+            Task task = Task.Run(() =>
             {
-                ChainedBlock tip = null;
-                bool first = true;
-                foreach (var row in this._Session.Transaction.SelectForward<int, BlockHeader>("Chain"))
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    if (tip != null && row.Value.HashPrevBlock != tip.HashBlock)
-                        break;
-                    tip = new ChainedBlock(row.Value, null, tip);
+                    ChainedBlock tip = null;
+                    bool first = true;
 
-                    if (first)
+                    foreach (Row<int, BlockHeader> row in transaction.SelectForward<int, BlockHeader>("Chain"))
                     {
-                        first = false;
-                        Guard.Assert(tip.HashBlock == chain.Genesis.HashBlock); // can't swap networks
+                        if ((tip != null) && (row.Value.HashPrevBlock != tip.HashBlock))
+                            break;
+
+                        tip = new ChainedBlock(row.Value, null, tip);
+                        if (first)
+                        {
+                            first = false;
+                            Guard.Assert(tip.HashBlock == chain.Genesis.HashBlock); // can't swap networks
+                        }
                     }
+
+                    if (tip == null)
+                        return;
+
+                    this.locator = tip.GetLocator();
+                    chain.SetTip(tip);
                 }
-                if (tip == null)
-                    return;
-                this._Locator = tip.GetLocator();
-                chain.SetTip(tip);
             });
+
+            return task;
         }
 
-        public Task Save(ConcurrentChain chain)
+        public Task SaveAsync(ConcurrentChain chain)
         {
             Guard.NotNull(chain, nameof(chain));
 
-            return this._Session.Execute(() =>
+            Task task = Task.Run(() =>
             {
-                var fork = this._Locator == null ? null : chain.FindFork(this._Locator);
-                var tip = chain.Tip;
-                var toSave = tip;
-
-                List<ChainedBlock> blocks = new List<ChainedBlock>();
-                while (toSave != fork)
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    blocks.Add(toSave);
-                    toSave = toSave.Previous;
-                }
+                    ChainedBlock fork = this.locator == null ? null : chain.FindFork(this.locator);
+                    ChainedBlock tip = chain.Tip;
+                    ChainedBlock toSave = tip;
 
-                //DBreeze faster on ordered insert
-                var orderedChainedBlocks = blocks.OrderBy(b => b.Height);
-                foreach (var block in orderedChainedBlocks)
-                {
-                    this._Session.Transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
+                    List<ChainedBlock> blocks = new List<ChainedBlock>();
+                    while (toSave != fork)
+                    {
+                        blocks.Add(toSave);
+                        toSave = toSave.Previous;
+                    }
+
+                    // DBreeze is faster on ordered insert.
+                    IOrderedEnumerable<ChainedBlock> orderedChainedBlocks = blocks.OrderBy(b => b.Height);
+                    foreach (ChainedBlock block in orderedChainedBlocks)
+                    {
+                        transaction.Insert("Chain", block.Height, block.Header);
+                    }
+
+                    this.locator = tip.GetLocator();
+                    transaction.Commit();
                 }
-                this._Locator = tip.GetLocator();
-                this._Session.Transaction.Commit();
             });
+
+            return task;
         }
 
         public void Dispose()
         {
-            this._Session.Dispose();
+            this.dbreeze.Dispose();
         }
     }
 }
