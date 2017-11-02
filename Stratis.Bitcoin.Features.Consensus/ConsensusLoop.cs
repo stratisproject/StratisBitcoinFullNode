@@ -10,8 +10,12 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -410,7 +414,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
         /// </summary>
         /// <param name="context">A context that contains all information required to validate the block.</param>
-        private void ValidateAndExecuteBlock(ContextInformation context)
+        internal void ValidateAndExecuteBlock(ContextInformation context)
         {
             this.logger.LogTrace("()");
 
