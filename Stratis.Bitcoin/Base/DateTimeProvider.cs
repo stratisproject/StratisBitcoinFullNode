@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Base
     public interface IDateTimeProvider
     {
         /// <summary>
-        ///     Get the current time in Linux format
+        /// Get the current time in Linux format.
         /// </summary>
         long GetTime();
 
@@ -61,6 +61,9 @@ namespace Stratis.Bitcoin.Base
             defaultInstance = new DateTimeProvider();
         }
 
+        /// <summary>
+        /// Initializes instance of the object.
+        /// </summary>
         public DateTimeProvider()
         {
             this.adjustedTimeOffset = TimeSpan.Zero;

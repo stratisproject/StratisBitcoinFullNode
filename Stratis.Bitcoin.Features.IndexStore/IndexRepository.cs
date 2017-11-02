@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 using DBreeze.DataTypes;
 using System.Collections.Concurrent;
 
@@ -36,8 +37,8 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return indexTablePrefix + indexName;
         }
 
-        public IndexRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, IndexSettings indexSettings = null)
-            : this(network, dataFolder.IndexPath, loggerFactory, indexSettings.indexes)
+        public IndexRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IndexSettings indexSettings = null)
+            : this(network, dataFolder.IndexPath, dateTimeProvider, loggerFactory, indexSettings.indexes)
         {
         }
 
@@ -77,7 +78,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public override BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
         {
-            return new IndexStoreRepositoryPerformanceCounter();
+            return new IndexStoreRepositoryPerformanceCounter(this.dateTimeProvider);
         }
 
         public override Task InitializeAsync()

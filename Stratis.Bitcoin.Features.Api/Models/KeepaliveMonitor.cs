@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stratis.Bitcoin.Api.Models
+namespace Stratis.Bitcoin.Features.Api.Models
 {
     public class KeepaliveMonitor
     {

@@ -1,6 +1,7 @@
 ﻿using System;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin
 {
@@ -11,7 +12,10 @@ namespace Stratis.Bitcoin
     {
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         INodeLifetime NodeLifetime { get; }
-        
+
+        /// <summary>Provider of date time functionality.</summary>
+        IDateTimeProvider DateTimeProvider { get; }
+
         /// <summary>Access to DI services and features registered for the full node.</summary>
         IFullNodeServiceProvider Services { get; }
 

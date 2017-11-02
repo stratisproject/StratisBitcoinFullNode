@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Script = NBitcoin.Script;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {
@@ -150,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 ChainCode = extendedKey.ChainCode,
                 CreationTime = DateTimeOffset.Now,
                 Network = Network.Main,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
+                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
             };
 
             return (walletFile, extendedKey);
@@ -199,7 +200,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             foreach (var wallet in walletManager.Wallets)
             {
-                wallet.AccountsRoot.Add(new AccountRoot
+                wallet.AccountsRoot.Add(new AccountRoot()
                 {
                     CoinType = CoinType.Bitcoin,
                     Accounts = new List<HdAccount>

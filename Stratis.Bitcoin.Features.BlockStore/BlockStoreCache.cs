@@ -7,6 +7,7 @@
     using Microsoft.Extensions.Logging;
     using NBitcoin;
     using Stratis.Bitcoin.Utilities;
+    using Stratis.Bitcoin.Base;
 
     public interface IBlockStoreCache : IDisposable
     {
@@ -30,25 +31,29 @@
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public BlockStoreCache(IBlockRepository blockRepository, ILoggerFactory loggerFactory)
-            : this(blockRepository, new MemoryCache(new MemoryCacheOptions()), loggerFactory)
+        /// <summary>Provider of time functions.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockStoreCache(IBlockRepository blockRepository, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(blockRepository, new MemoryCache(new MemoryCacheOptions()), dateTimeProvider, loggerFactory)
         {
         }
 
-        public BlockStoreCache(IBlockRepository blockRepository, IMemoryCache memoryCache, ILoggerFactory loggerFactory)
+        public BlockStoreCache(IBlockRepository blockRepository, IMemoryCache memoryCache, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(memoryCache, nameof(memoryCache));
 
             this.blockRepository = blockRepository;
             this.cache = memoryCache;
+            this.dateTimeProvider = dateTimeProvider;
             this.PerformanceCounter = this.BlockStoreCachePerformanceCounterFactory();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public virtual BlockStoreCachePerformanceCounter BlockStoreCachePerformanceCounterFactory()
         {
-            return new BlockStoreCachePerformanceCounter();
+            return new BlockStoreCachePerformanceCounter(this.dateTimeProvider);
         }
 
         public void Expire(uint256 blockid)

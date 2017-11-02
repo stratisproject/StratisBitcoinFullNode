@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
     using System.Threading.Tasks;
     using Xunit;
     using Newtonsoft.Json;
+    using Stratis.Bitcoin.Base;
 
     public class IndexRepositoryTest : TestBase
     {
