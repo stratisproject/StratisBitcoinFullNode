@@ -16,7 +16,12 @@ namespace Stratis.StratisD
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
+        {
+            MainAsync(args).Wait();
+        }
+
+        public static async Task MainAsync(string[] args)
         {
             Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
             NodeSettings nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
