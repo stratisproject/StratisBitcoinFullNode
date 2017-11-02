@@ -1,13 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
 
-namespace Stratis.Bitcoin.Api
+namespace Stratis.Bitcoin.Features.Api
 {
     /// <summary>
     /// An asynchronous action filter whose role is to log details from the Http requests to the API.

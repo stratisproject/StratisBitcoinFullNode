@@ -52,9 +52,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
-
         private readonly StakeValidator stakeValidator;
         public StakeValidator StakeValidator { get { return this.stakeValidator; } }
 
@@ -65,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly PosConsensusOptions consensusOptions;
 
         public PosConsensusValidator(StakeValidator stakeValidator, ICheckpoints checkpoints, Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : base(network, checkpoints, loggerFactory)
+            : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             Guard.NotNull(network.Consensus.Option<PosConsensusOptions>(), nameof(network.Consensus.Options));
 
@@ -75,7 +72,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chain = chain;
             this.coinView = coinView;
             this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
-            this.dateTimeProvider = dateTimeProvider;
         }
 
         public override void CheckBlockReward(ContextInformation context, Money nFees, ChainedBlock chainedBlock, Block block)
@@ -408,7 +404,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Block block = context.BlockValidationContext.Block;
             BlockStake blockStake = context.Stake.BlockStake;
 
-            int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
+            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
 
             // Verify hash target and signature of coinstake tx.
             if (BlockStake.IsProofOfStake(block))
@@ -451,7 +447,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             else if (chainedBlock.Height == lastCheckpointHeight)
             {
                 // Copy checkpointed stake modifier.
-                CheckpointInfo checkpoint = this.checkpoints.GetCheckpoint(lastCheckpointHeight);
+                CheckpointInfo checkpoint = this.Checkpoints.GetCheckpoint(lastCheckpointHeight);
                 blockStake.StakeModifierV2 = checkpoint.StakeModifierV2;
                 this.logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }

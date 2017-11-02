@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Xunit;
 using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
                 {
                     var lst = new List<Block>();
                     for (int i = 0; i < 30; i++)
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
                 {
                     blockRepo.SetTxIndex(true).Wait();
 
@@ -128,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var dir = TestDirectory.Create())
             {
-                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, this.loggerFactory))
+                using (var blockRepo = new BlockRepository(Network.Main, dir.FolderName, DateTimeProvider.Default, this.loggerFactory))
                 {
                     blockRepo.Initialize().GetAwaiter().GetResult();
 
@@ -158,7 +159,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeSync.GenerateStratisWithMiner(10); // coinbase maturity = 10
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.HighestPersistedBlock().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 // sync both nodes

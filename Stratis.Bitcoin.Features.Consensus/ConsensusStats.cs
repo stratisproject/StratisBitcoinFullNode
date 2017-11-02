@@ -5,9 +5,10 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Signals;
 using System;
 using System.Text;
-using Stratis.Bitcoin.Signals;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -27,7 +28,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ChainState chainState;
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connectionManager;
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
 
         public ConsensusStats(
             CoinView coinView, 
@@ -35,6 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ChainState chainState, 
             ConcurrentChain chain, 
             IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory)
         {
             CoinViewStack stack = new CoinViewStack(coinView);
@@ -51,10 +58,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainState = chainState;
             this.chain = chain;
             this.connectionManager = connectionManager;
+            this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public void Log()
+        public async Task LogAsync()
         {
             StringBuilder benchLogs = new StringBuilder();
 
@@ -65,11 +73,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 benchLogs.AppendLine("Downloaded:".PadRight(LoggingConfiguration.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
                 benchLogs.AppendLine("==========================");
             }
-
-            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().Result)?.Height);
+            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.bottom.GetBlockHashAsync().ConfigureAwait(false))?.Height);
             if (this.cache != null)
             {
-                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().Result)?.Height);
+                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.cache.GetBlockHashAsync().ConfigureAwait(false))?.Height);
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
             }
 
@@ -95,9 +102,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         protected override void OnNextCore(Block value)
         {
-            if (DateTimeOffset.UtcNow - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
+            if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
                 if (this.chainState.IsInitialBlockDownload)
-                    this.Log();
+                    this.LogAsync().GetAwaiter().GetResult();
         }
     }
 }

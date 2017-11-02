@@ -113,13 +113,15 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 }
                 else
                 {
-                    // if we reorged and the fork point is before the earliest wallet height start to
+                    // If we reorged and the fork point is before the earliest wallet height start to
                     // sync from the fork point.
-                    if (earliestWalletHeight.Value > this.walletTip.Height)
+                    // We'll also get into this branch if the chain has been deleted but wallets are present.
+                    // In this case, the wallet tip will be null so the next statement will be skipped.
+                    if (this.walletTip != null && earliestWalletHeight.Value > this.walletTip.Height)
                     {
                         earliestWalletHeight = this.walletTip.Height;
                     }
-
+                    
                     this.SyncFromHeight(earliestWalletHeight.Value);
                 }
 
