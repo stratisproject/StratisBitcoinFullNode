@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <PreserveCompilationContext>true</PreserveCompilationContext>
-    <AssemblyName>Stratis.Bitcoin.Api</AssemblyName>
+    <AssemblyName>Stratis.Bitcoin.Features.Api</AssemblyName>
     <OutputType>Library</OutputType>
     <PackageId>Stratis.Bitcoin.Api</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>

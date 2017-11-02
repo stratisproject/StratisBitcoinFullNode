@@ -1,9 +1,9 @@
 ﻿using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
-using Stratis.Bitcoin.Api;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Utilities;
