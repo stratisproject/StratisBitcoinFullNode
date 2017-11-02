@@ -42,26 +42,26 @@ namespace Stratis.Bitcoin.Tests.Base
             var chain = new ConcurrentChain(Network.RegTest);
             var tip = this.AppendBlock(chain);
 
-            using (var session = new DBreezeSingleThreadSession("session", dir))
+            using (var engine = new DBreezeEngine(dir))
             {
-                session.Execute(() =>
+                using (DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
                 {
-                    var toSave = tip;
+                    ChainedBlock toSave = tip;
                     List<ChainedBlock> blocks = new List<ChainedBlock>();
                     while (toSave != null)
                     {
                         blocks.Insert(0, toSave);
                         toSave = toSave.Previous;
                     }
+
                     foreach (var block in blocks)
                     {
-                        session.Transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
+                        transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
                     }
 
-                    session.Transaction.Commit();
-                }).Wait();
+                    transaction.Commit();
+                }
             }
-
             using (var repo = new ChainRepository(dir))
             {
 				var testChain = new ConcurrentChain(Network.RegTest);

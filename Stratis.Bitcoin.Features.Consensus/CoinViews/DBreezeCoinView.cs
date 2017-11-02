@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
+using DBreeze;
 using Stratis.Bitcoin.Base;
 using DBreeze;
 
