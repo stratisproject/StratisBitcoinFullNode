@@ -98,6 +98,9 @@ namespace Stratis.Bitcoin.Configuration
 
         public TextFileConfiguration ConfigReader { get; private set; }
 
+        /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
+        public bool SyncTimeEnabled { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// <para>This constructor does not load the configuration itself.</para>
@@ -172,6 +175,7 @@ namespace Stratis.Bitcoin.Configuration
                 var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
                 nodeSettings.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
                 nodeSettings.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
+                nodeSettings.SyncTimeEnabled = configTemp.GetOrDefault<bool>("synctime", true);
             }
 
             if (nodeSettings.Testnet && nodeSettings.RegTest)

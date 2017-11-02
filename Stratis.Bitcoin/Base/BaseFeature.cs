@@ -143,6 +143,8 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override void Start()
         {
+            this.logger.LogTrace("()");
+
             this.StartAddressManager();
             this.StartChain();
 
@@ -150,12 +152,19 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager) { PeersToDiscover = 10 });
-            connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(this.timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
+
+            if (this.nodeSettings.SyncTimeEnabled)
+            {
+                connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(this.timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
+            }
+            else this.logger.LogDebug("Time synchronization with peers is disabled.");
 
             this.disposableResources.Add(this.timeSyncBehaviorState);
             this.disposableResources.Add(this.chainRepository);
             this.disposableResources.Add(this.connectionManager);
             this.disposableResources.Add(this.nodeSettings.LoggerFactory);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
