@@ -45,15 +45,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; }
         public bool TxIndex { get; private set; }
 
+        /// <summary>Provider of time functions.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>Represents the last block stored to disk.</summary>
         public ChainedBlock HighestPersistedBlock { get; internal set; }
 
-        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.BlockPath, loggerFactory)
+        public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
+        public BlockRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
