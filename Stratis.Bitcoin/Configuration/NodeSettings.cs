@@ -175,7 +175,6 @@ namespace Stratis.Bitcoin.Configuration
                 var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
                 nodeSettings.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
                 nodeSettings.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
-                nodeSettings.SyncTimeEnabled = configTemp.GetOrDefault<bool>("synctime", true);
             }
 
             if (nodeSettings.Testnet && nodeSettings.RegTest)
@@ -223,6 +222,8 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.Logger.LogDebug("FallbackTxFeeRate set to {0}.", nodeSettings.FallbackTxFeeRate);
             nodeSettings.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", nodeSettings.Network.MinRelayTxFee));
             nodeSettings.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", nodeSettings.MinRelayTxFeeRate);
+
+            nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
 
             try
             {
