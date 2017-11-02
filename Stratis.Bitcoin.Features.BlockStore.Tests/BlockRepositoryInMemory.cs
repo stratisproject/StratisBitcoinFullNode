@@ -16,10 +16,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         public BlockRepositoryInMemory()
         {
-            Initialize();
+            InitializeAsync();
         }
 
-        public Task Initialize()
+        public Task InitializeAsync()
         {
             this.store = new ConcurrentDictionary<uint256, Block>();
             this.PerformanceCounter = new BlockStoreRepositoryPerformanceCounter(DateTimeProvider.Default);
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.store.TryRemove(hash, out block);
             }
 
-            SetBlockHash(newlockHash);
+            SetBlockHashAsync(newlockHash);
 
             return Task.FromResult<object>(null);
         }
@@ -58,12 +58,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.store.TryAdd(block.Header.GetHash(), block);
             }
 
-            SetBlockHash(nextBlockHash);
+            SetBlockHashAsync(nextBlockHash);
 
             return Task.FromResult<object>(null);
         }
 
-        public Task SetBlockHash(uint256 nextBlockHash)
+        public Task SetBlockHashAsync(uint256 nextBlockHash)
         {
             this.BlockHash = nextBlockHash;
 
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             throw new NotImplementedException();
         }
 
-        public Task SetTxIndex(bool txIndex)
+        public Task SetTxIndexAsync(bool txIndex)
         {
             this.TxIndex = txIndex;
 

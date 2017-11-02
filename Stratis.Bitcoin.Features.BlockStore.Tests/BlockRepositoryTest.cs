@@ -281,7 +281,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.SetTxIndex(false);
+                var task = repository.SetTxIndexAsync(false);
                 task.Wait();
             }
 
@@ -307,7 +307,7 @@
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.SetBlockHash(new uint256(56));
+                var task = repository.SetBlockHashAsync(new uint256(56));
                 task.Wait();
             }
 
@@ -431,7 +431,7 @@
         private BlockStore.IBlockRepository SetupRepository(Network main, string dir)
         {
             var repository = new BlockRepository(main, dir, DateTimeProvider.Default, this.loggerFactory);
-            repository.Initialize().GetAwaiter().GetResult();
+            repository.InitializeAsync().GetAwaiter().GetResult();
 
             return repository;
         }

@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.signals.SubscribeForBlocks(this.blockStoreSignaled);
 
-            this.blockRepository.Initialize().GetAwaiter().GetResult();
+            this.blockRepository.InitializeAsync().GetAwaiter().GetResult();
             this.blockStoreSignaled.RelayWorker();
             this.blockStoreLoop.InitializeAsync().GetAwaiter().GetResult();
 
