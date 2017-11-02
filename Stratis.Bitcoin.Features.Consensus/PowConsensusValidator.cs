@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILogger logger;
 
         /// <summary>Provider of block header hash checkpoints.</summary>
-        protected readonly ICheckpoints checkpoints;
+        protected readonly ICheckpoints Checkpoints;
 
         private readonly NBitcoin.Consensus consensusParams;
         public NBitcoin.Consensus ConsensusParams { get { return this.consensusParams; } }
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusOptions = network.Consensus.Option<PowConsensusOptions>();
             this.dateTimeProvider = dateTimeProvider;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.dateTimeProvider);
-            this.checkpoints = checkpoints;
+            this.Checkpoints = checkpoints;
         }
 
         public virtual void CheckBlockHeader(ContextInformation context)
@@ -55,7 +55,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.HighHash.Throw();
 
             context.NextWorkRequired = context.BlockValidationContext.ChainedBlock.GetWorkRequired(context.Consensus);
-
         }
 
         public virtual void ContextualCheckBlock(ContextInformation context)
@@ -172,20 +171,28 @@ namespace Stratis.Bitcoin.Features.Consensus
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = context.Set;
 
+            int lastCheckpointHeight = this.Checkpoints.GetLastCheckpointHeight();
+            bool doFullValidation = index.Height > lastCheckpointHeight;
+
             this.PerformanceCounter.AddProcessedBlocks(1);
             taskScheduler = taskScheduler ?? TaskScheduler.Default;
-            if (flags.EnforceBIP30)
+
+            if (doFullValidation)
             {
-                foreach (Transaction tx in block.Transactions)
+                if (flags.EnforceBIP30)
                 {
-                    UnspentOutputs coins = view.AccessCoins(tx.GetHash());
-                    if ((coins != null) && !coins.IsPrunable)
+                    foreach (Transaction tx in block.Transactions)
                     {
-                        this.logger.LogTrace("(-)[BAD_TX_BIP_30]");
-                        ConsensusErrors.BadTransactionBIP30.Throw();
+                        UnspentOutputs coins = view.AccessCoins(tx.GetHash());
+                        if ((coins != null) && !coins.IsPrunable)
+                        {
+                            this.logger.LogTrace("(-)[BAD_TX_BIP_30]");
+                            ConsensusErrors.BadTransactionBIP30.Throw();
+                        }
                     }
                 }
             }
+            else this.logger.LogTrace("BIP30 validation skipped for checkpointed block at height {0}.", index.Height);
 
             long nSigOpsCost = 0;
             Money nFees = Money.Zero;
@@ -194,83 +201,91 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 this.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
-                if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                if (doFullValidation)
                 {
-                    int[] prevheights;
-
-                    if (!view.HaveInputs(tx))
+                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
                     {
-                        this.logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
-                        ConsensusErrors.BadTransactionMissingInput.Throw();
-                    }
+                        int[] prevheights;
 
-                    prevheights = new int[tx.Inputs.Count];
-                    // Check that transaction is BIP68 final.
-                    // BIP68 lock checks (as opposed to nLockTime checks) must
-                    // be in ConnectBlock because they require the UTXO set.
-                    for (int j = 0; j < tx.Inputs.Count; j++)
-                    {
-                        prevheights[j] = (int)view.AccessCoins(tx.Inputs[j].PrevOut.Hash).Height;
-                    }
-
-                    if (!tx.CheckSequenceLocks(prevheights, index, flags.LockTimeFlags))
-                    {
-                        this.logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
-                        ConsensusErrors.BadTransactionNonFinal.Throw();
-                    }
-                }
-                // GetTransactionSigOpCost counts 3 types of sigops:
-                // * legacy (always),
-                // * p2sh (when P2SH enabled in flags and excludes coinbase),
-                // * witness (when witness enabled in flags and excludes coinbase).
-                nSigOpsCost += this.GetTransactionSigOpCost(tx, view, flags);
-                if (nSigOpsCost > this.consensusOptions.MaxBlockSigopsCost)
-                    ConsensusErrors.BadBlockSigOps.Throw();
-
-                // TODO: Simplify this condition.
-                if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
-                {
-                    this.CheckInputs(tx, view, index.Height);
-                    nFees += view.GetValueIn(tx) - tx.TotalOut;
-                    Transaction localTx = tx;
-                    PrecomputedTransactionData txData = new PrecomputedTransactionData(tx);
-                    for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
-                    {
-                        this.PerformanceCounter.AddProcessedInputs(1);
-                        TxIn input = tx.Inputs[inputIndex];
-                        int inputIndexCopy = inputIndex;
-                        TxOut txout = view.GetOutputFor(input);
-                        var checkInput = new Task<bool>(() =>
+                        if (!view.HaveInputs(tx))
                         {
-                            if (this.UseConsensusLib)
+                            this.logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
+                            ConsensusErrors.BadTransactionMissingInput.Throw();
+                        }
+
+                        prevheights = new int[tx.Inputs.Count];
+                        // Check that transaction is BIP68 final.
+                        // BIP68 lock checks (as opposed to nLockTime checks) must
+                        // be in ConnectBlock because they require the UTXO set.
+                        for (int j = 0; j < tx.Inputs.Count; j++)
+                        {
+                            prevheights[j] = (int)view.AccessCoins(tx.Inputs[j].PrevOut.Hash).Height;
+                        }
+
+                        if (!tx.CheckSequenceLocks(prevheights, index, flags.LockTimeFlags))
+                        {
+                            this.logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
+                            ConsensusErrors.BadTransactionNonFinal.Throw();
+                        }
+                    }
+
+                    // GetTransactionSigOpCost counts 3 types of sigops:
+                    // * legacy (always),
+                    // * p2sh (when P2SH enabled in flags and excludes coinbase),
+                    // * witness (when witness enabled in flags and excludes coinbase).
+                    nSigOpsCost += this.GetTransactionSigOpCost(tx, view, flags);
+                    if (nSigOpsCost > this.consensusOptions.MaxBlockSigopsCost)
+                        ConsensusErrors.BadBlockSigOps.Throw();
+
+                    // TODO: Simplify this condition.
+                    if (!tx.IsCoinBase && (!context.IsPoS || (context.IsPoS && !tx.IsCoinStake)))
+                    {
+                        this.CheckInputs(tx, view, index.Height);
+                        nFees += view.GetValueIn(tx) - tx.TotalOut;
+                        Transaction localTx = tx;
+                        PrecomputedTransactionData txData = new PrecomputedTransactionData(tx);
+                        for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
+                        {
+                            this.PerformanceCounter.AddProcessedInputs(1);
+                            TxIn input = tx.Inputs[inputIndex];
+                            int inputIndexCopy = inputIndex;
+                            TxOut txout = view.GetOutputFor(input);
+                            var checkInput = new Task<bool>(() =>
                             {
-                                Script.BitcoinConsensusError error;
-                                return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint)inputIndexCopy, flags.ScriptFlags, out error);
-                            }
-                            else
-                            {
-                                var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                var ctx = new ScriptEvaluationContext();
-                                ctx.ScriptVerify = flags.ScriptFlags;
-                                return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
-                            }
-                        });
-                        checkInput.Start(taskScheduler);
-                        checkInputs.Add(checkInput);
+                                if (this.UseConsensusLib)
+                                {
+                                    Script.BitcoinConsensusError error;
+                                    return Script.VerifyScriptConsensus(txout.ScriptPubKey, tx, (uint)inputIndexCopy, flags.ScriptFlags, out error);
+                                }
+                                else
+                                {
+                                    var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
+                                    var ctx = new ScriptEvaluationContext();
+                                    ctx.ScriptVerify = flags.ScriptFlags;
+                                    return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+                                }
+                            });
+                            checkInput.Start(taskScheduler);
+                            checkInputs.Add(checkInput);
+                        }
                     }
                 }
 
                 this.UpdateCoinView(context, tx);
             }
 
-            this.CheckBlockReward(context, nFees, index, block);
-
-            bool passed = checkInputs.All(c => c.GetAwaiter().GetResult());
-            if (!passed)
+            if (doFullValidation)
             {
-                this.logger.LogTrace("(-)[BAD_TX_SCRIPT]");
-                ConsensusErrors.BadTransactionScriptError.Throw();
+                this.CheckBlockReward(context, nFees, index, block);
+
+                bool passed = checkInputs.All(c => c.GetAwaiter().GetResult());
+                if (!passed)
+                {
+                    this.logger.LogTrace("(-)[BAD_TX_SCRIPT]");
+                    ConsensusErrors.BadTransactionScriptError.Throw();
+                }
             }
+            else this.logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for checkpointed block at height {0}.", index.Height);
 
             this.logger.LogTrace("(-)");
         }
@@ -884,7 +899,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Check that the block header hash matches the known checkpointed value, if any.
-            if (!this.checkpoints.CheckHardened(nHeight, header.GetHash()))
+            if (!this.Checkpoints.CheckHardened(nHeight, header.GetHash()))
             {
                 this.logger.LogTrace("(-)[CHECKPOINT_VIOLATION]");
                 ConsensusErrors.CheckpointViolation.Throw();
