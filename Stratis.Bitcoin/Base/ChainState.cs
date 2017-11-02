@@ -1,7 +1,7 @@
+using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Interfaces;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Base
@@ -18,11 +18,7 @@ namespace Stratis.Bitcoin.Base
         private bool ibdLastResult;
 
         /// <summary>A collection of blocks that have been found to be invalid.</summary>
-        /// <remarks>All access to this object has to be protected by <see cref="invalidBlocksLock"/>.</remarks>
-        private readonly HashSet<uint256> invalidBlocks;
-
-        /// <summary>Lock object to protect access to <see cref="invalidBlocks"/>.</summary>
-        private object invalidBlocksLock = new object();
+        private readonly ConcurrentHashSet<uint256> invalidBlocks;
 
         /// <summary>A provider of the date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -38,7 +34,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.fullNode = fullNode;
             this.dateTimeProvider = this.fullNode.NodeService<IDateTimeProvider>(true);
-            this.invalidBlocks = new HashSet<uint256>();
+            this.invalidBlocks = new ConcurrentHashSet<uint256>();
         }
 
         /// <summary>
@@ -48,10 +44,7 @@ namespace Stratis.Bitcoin.Base
         /// <returns>True if the block is marked as invalid.</returns>
         public bool IsMarkedInvalid(uint256 hashBlock)
         {
-            lock (this.invalidBlocksLock)
-            {
-                return this.invalidBlocks.Contains(hashBlock);
-            }
+            return this.invalidBlocks.Contains(hashBlock);
         }
 
         /// <summary>
@@ -60,10 +53,7 @@ namespace Stratis.Bitcoin.Base
         /// <param name="hashBlock">The block hash to mark as invalid.</param>
         public void MarkBlockInvalid(uint256 hashBlock)
         {
-            lock (this.invalidBlocksLock)
-            {
-                this.invalidBlocks.Add(hashBlock);
-            }
+            this.invalidBlocks.Add(hashBlock);
         }
 
         /// <summary>
@@ -79,7 +69,7 @@ namespace Stratis.Bitcoin.Base
                     this.ibdLastUpdate = this.dateTimeProvider.GetUtcNow().AddMinutes(1).Ticks;
 
                     // If consensus is not present IBD has no meaning. Set to false to match legacy code.                    
-                    var IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
+                    IBlockDownloadState IBDStateProvider = this.fullNode.NodeService<IBlockDownloadState>(true); 
                     this.ibdLastResult = IBDStateProvider == null ? false : IBDStateProvider.IsInitialBlockDownload();
                 }
                 return this.ibdLastResult;
