@@ -426,7 +426,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// strongly erases the goals of using async in those methods.</remarks>
         private void WaitOngoingTasks()
         {
-            Task.WhenAll(this.flushingTask, this.rewindingTask);
+            Task.WaitAll(this.flushingTask, this.rewindingTask);
         }
     }
 }
