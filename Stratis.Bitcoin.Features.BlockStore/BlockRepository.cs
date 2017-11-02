@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
         }
 
-        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
+        public BlockRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
