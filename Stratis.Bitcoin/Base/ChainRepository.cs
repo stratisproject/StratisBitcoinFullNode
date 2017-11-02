@@ -18,7 +18,9 @@ namespace Stratis.Bitcoin.Base
 
     public class ChainRepository : IChainRepository
     {
+        /// <summary>Access to DBreeze database.</summary>
         private readonly DBreezeEngine dbreeze;
+
         private BlockLocator locator;
 
         public ChainRepository(string folder)
