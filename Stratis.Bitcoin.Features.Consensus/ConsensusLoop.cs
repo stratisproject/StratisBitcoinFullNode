@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly Signals.Signals signals;
 
         /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlock"/> and the reorg part of <see cref="ConsensusLoop.PullerLoop"/> methods.</summary>
-        private readonly object consensusLock;
+        private readonly AsyncLock consensusLock;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(signals, nameof(signals));
 
-            this.consensusLock = new object();
+            this.consensusLock = new AsyncLock();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (blockValidationContext.Block == null)
                     {
-                        lock (this.consensusLock)
+                        using (this.consensusLock.Lock())
                         {
                             this.logger.LogTrace("No block received from puller due to reorganization.");
 
@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            lock (this.consensusLock)
+            using (this.consensusLock.Lock())
             {
                 try
                 {
