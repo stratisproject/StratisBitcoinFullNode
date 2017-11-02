@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             BlockTemplate newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
-            consensus.ValidateBlock(new ContextInformation(new BlockValidationContext { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+            consensus.ValidateAndExecuteBlock(new ContextInformation(new BlockValidationContext { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                consensus.ValidateBlock(new ContextInformation(new BlockValidationContext { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                consensus.ValidateAndExecuteBlock(new ContextInformation(new BlockValidationContext { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                 blocks.Add(currentBlock);
             }
 

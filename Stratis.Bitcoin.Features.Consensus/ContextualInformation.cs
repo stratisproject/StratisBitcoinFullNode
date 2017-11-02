@@ -60,8 +60,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public bool CheckPow { get; set; }
 
-        public bool OnlyCheck { get; set; }
-
         public bool IsPoS
         {
             get { return this.Stake != null; }
@@ -85,7 +83,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             // only use the required rules (i.e if the check pow rule will be ommited form the flow)
             this.CheckPow = true;
             this.CheckMerkleRoot = true;
-            this.OnlyCheck = false;
         }
 
         public void SetBestBlock(DateTimeOffset now)

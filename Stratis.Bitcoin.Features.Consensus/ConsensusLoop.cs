@@ -10,8 +10,12 @@ using Stratis.Bitcoin.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -83,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly Signals.Signals signals;
 
         /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlock"/> and the reorg part of <see cref="ConsensusLoop.PullerLoop"/> methods.</summary>
-        private readonly object consensusLock;
+        private readonly AsyncLock consensusLock;
 
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
@@ -135,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(signals, nameof(signals));
 
-            this.consensusLock = new object();
+            this.consensusLock = new AsyncLock();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -222,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (blockValidationContext.Block == null)
                     {
-                        lock (this.consensusLock)
+                        using (this.consensusLock.Lock())
                         {
                             this.logger.LogTrace("No block received from puller due to reorganization.");
 
@@ -288,11 +292,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            lock (this.consensusLock)
+            using (this.consensusLock.Lock())
             {
                 try
                 {
-                    this.ValidateBlock(new ContextInformation(blockValidationContext, this.Validator.ConsensusParams));
+                    this.ValidateAndExecuteBlock(new ContextInformation(blockValidationContext, this.Validator.ConsensusParams));
                 }
                 catch (ConsensusErrorException ex)
                 {
@@ -368,16 +372,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Validate a block using the consensus rules.
+        /// Validates a block using the consensus rules.
         /// </summary>
-        /// <remarks>
-        /// WARNING: This method can only be called from <see cref="ConsensusLoop.AcceptBlock"/>, 
-        /// it the requirement is to validate a block without affecting the consensus db then <see cref="ContextInformation.OnlyCheck"/> must be set to true.
-        /// </remarks>
-        /// <remarks>
-        /// TODO: This method can be broken in two parts (and remove the WARNING) where one part will only validate (anything before the context.OnlyCheck flag) and second part will also effect state (update the CoinView DB).
-        /// </remarks>
-        /// <param name="context">A context that contains all information required to validate the block.</param>
         public void ValidateBlock(ContextInformation context)
         {
             this.logger.LogTrace("()");
@@ -389,7 +385,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (context.BlockValidationContext.Block.Header.HashPrevBlock != this.Tip.HashBlock)
                 {
                     this.logger.LogTrace("Reorganization detected.");
-                    ConsensusErrors.InvalidPrevTip.Throw(); // reorg
+                    ConsensusErrors.InvalidPrevTip.Throw();
                 }
 
                 this.logger.LogTrace("Validating new block.");
@@ -398,13 +394,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // one of the peers so after we create a new chained block (mainly for validation) 
                 // we ask the chain headers for its version (also to prevent memory leaks). 
                 context.BlockValidationContext.ChainedBlock = new ChainedBlock(context.BlockValidationContext.Block.Header, context.BlockValidationContext.Block.Header.GetHash(), this.Tip);
-                
+
                 // Liberate from memory the block created above if possible.
                 context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
                 context.SetBestBlock(this.dateTimeProvider.GetTimeOffset());
 
-                // == validation flow ==
-                
+                // == Validation flow ==
+
                 // Check the block header is correct.
                 this.Validator.CheckBlockHeader(context);
                 this.Validator.ContextualCheckBlockHeader(context);
@@ -423,11 +419,18 @@ namespace Stratis.Bitcoin.Features.Consensus
                 else this.logger.LogTrace("Block validation partially skipped because block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
             }
 
-            if (context.OnlyCheck)
-            {
-                this.logger.LogTrace("(-)[CHECK_ONLY]");
-                return;
-            }
+            this.logger.LogTrace("(-)[OK]");
+        }
+
+        /// <summary>
+        /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
+        /// </summary>
+        /// <param name="context">A context that contains all information required to validate the block.</param>
+        internal void ValidateAndExecuteBlock(ContextInformation context)
+        {
+            this.logger.LogTrace("()");
+
+            this.ValidateBlock(context);
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
