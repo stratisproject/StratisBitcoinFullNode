@@ -1,11 +1,12 @@
-﻿using Stratis.Bitcoin.Features.BlockStore;
+﻿using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.BlockStore;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
     public class IndexStoreRepositoryPerformanceCounter : BlockStoreRepositoryPerformanceCounter
     {
-        public IndexStoreRepositoryPerformanceCounter()
-            : base("IndexStore")
+        public IndexStoreRepositoryPerformanceCounter(IDateTimeProvider dateTimeProvider)
+            : base(dateTimeProvider, "IndexStore")
         {
         }
     }

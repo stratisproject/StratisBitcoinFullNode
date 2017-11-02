@@ -7,12 +7,13 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Utilities;
+using System.Threading.Tasks;
 
 namespace Stratis.BitcoinD
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
 
             NodeSettings nodeSettings = NodeSettings.FromArguments(args);
@@ -26,7 +27,7 @@ namespace Stratis.BitcoinD
                 .AddRPC()
                 .Build();
 
-            node.Run();
+            await node.RunAsync();
         }
     }
 }

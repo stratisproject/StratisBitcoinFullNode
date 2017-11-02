@@ -85,6 +85,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlock"/> and the reorg part of <see cref="ConsensusLoop.PullerLoop"/> methods.</summary>
         private readonly object consensusLock;
 
+        /// <summary>Provider of block header hash checkpoints.</summary>
+        private readonly ICheckpoints checkpoints;
+
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>
         /// Initialize a new instance of <see cref="ConsensusLoop"/>.
         /// </summary>
@@ -98,7 +104,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="loggerFactory">A factory to provide logger instances.</param>
         /// <param name="chainState">Holds state related to the block chain.</param>
         /// <param name="connectionManager">Connection manager of all the currently connected peers.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
+        /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
@@ -111,8 +119,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             ILoggerFactory loggerFactory,
             ChainState chainState,
             IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
-
+            ICheckpoints checkpoints,
             StakeChain stakeChain = null)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
@@ -140,6 +149,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.UTXOSet = utxoSet;
             this.Puller = puller;
             this.NodeDeployments = nodeDeployments;
+            this.checkpoints = checkpoints;
+            this.dateTimeProvider = dateTimeProvider;
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
@@ -148,11 +159,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Initialize components in <see cref="ConsensusLoop"/>.
         /// </summary>
-        public void Start()
+        public async Task StartAsync()
         {
             this.logger.LogTrace("()");
 
-            uint256 utxoHash = this.UTXOSet.GetBlockHashAsync().GetAwaiter().GetResult();
+            uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
@@ -390,7 +401,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 
                 // Liberate from memory the block created above if possible.
                 context.BlockValidationContext.ChainedBlock = this.Chain.GetBlock(context.BlockValidationContext.ChainedBlock.HashBlock) ?? context.BlockValidationContext.ChainedBlock;
-                context.SetBestBlock();
+                context.SetBestBlock(this.dateTimeProvider.GetTimeOffset());
 
                 // == validation flow ==
                 
@@ -400,10 +411,16 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // Calculate the consensus flags and check they are valid.
                 context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
-                this.Validator.ContextualCheckBlock(context);
 
-                // check the block itself
-                this.Validator.CheckBlock(context);
+                int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
+                if (context.BlockValidationContext.ChainedBlock.Height > lastCheckpointHeight)
+                {
+                    this.Validator.ContextualCheckBlock(context);
+
+                    // Check the block itself.
+                    this.Validator.CheckBlock(context);
+                }
+                else this.logger.LogTrace("Block validation partially skipped because block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
             }
 
             if (context.OnlyCheck)

@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -10,10 +11,13 @@ using System.Linq;
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
-    /// A wallet
+    /// A wallet.
     /// </summary>
     public class Wallet
     {
+        /// <summary>
+        /// Initializes a new instance of the wallet.
+        /// </summary>
         public Wallet()
         {
             this.AccountsRoot = new List<AccountRoot>();
@@ -136,13 +140,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/>
         /// <param name="password">The password used to decrypt the wallet's <see cref="EncryptedSeed"/>.</param>
         /// <param name="coinType">The type of coin this account is for.</param>
+        /// <param name="accountCreationTime">Creation time of the account to be created.</param>
         /// <returns>A new HD account.</returns>
-        public HdAccount AddNewAccount(string password, CoinType coinType)
+        public HdAccount AddNewAccount(string password, CoinType coinType, DateTimeOffset accountCreationTime)
         {
             Guard.NotEmpty(password, nameof(password));
 
             var accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
-            return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network);
+            return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network, accountCreationTime);
         }
 
         /// <summary>
@@ -227,6 +232,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class AccountRoot
     {
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
         public AccountRoot()
         {
             this.Accounts = new List<HdAccount>();
@@ -304,8 +312,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="encryptedSeed">The encrypted private key for this wallet.</param>
         /// <param name="chainCode">The chain code for this wallet.</param>
         /// <param name="network">The network for which this account will be created.</param>
+        /// <param name="accountCreationTime">Creation time of the account to be created.</param>
         /// <returns>A new HD account.</returns>
-        public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network)
+        public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network, DateTimeOffset accountCreationTime)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
@@ -333,7 +342,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 InternalAddresses = new List<HdAddress>(),
                 Name = $"account {newAccountIndex}",
                 HdPath = accountHdPath,
-                CreationTime = DateTimeOffset.Now
+                CreationTime = accountCreationTime
             };
 
             accounts.Add(newAccount);

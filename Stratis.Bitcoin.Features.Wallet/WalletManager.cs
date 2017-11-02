@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -90,6 +91,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The broadcast manager.</summary>
         private readonly IBroadcasterManager broadcasterManager;
 
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         public uint256 WalletTipHash { get; set; }
 
         // TODO: a second lookup dictionary is proposed to lookup for spent outputs
@@ -111,6 +115,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
+            IDateTimeProvider dateTimeProvider,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -134,6 +139,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
+            this.dateTimeProvider = dateTimeProvider;
 
             // register events
             if (this.broadcasterManager != null)
@@ -172,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.logger.LogTrace("()");
 
                 this.SaveWallets();
-                this.logger.LogInformation("Wallets saved to file at {0}.", DateTime.Now);
+                this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
 
                 this.logger.LogTrace("(-)");
                 return Task.CompletedTask;
@@ -223,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletCreationAccountsCount; i++)
             {
-                HdAccount account = wallet.AddNewAccount(password, this.coinType);
+                HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 account.CreateAddresses(this.network, UnusedAddressesBuffer);
                 account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
@@ -313,7 +319,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
-                HdAccount account = wallet.AddNewAccount(password, this.coinType);
+                HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 account.CreateAddresses(this.network, UnusedAddressesBuffer);
                 account.CreateAddresses(this.network, UnusedAddressesBuffer, true);
             }
@@ -373,7 +379,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 // No unused account was found, create a new one.
-                account = wallet.AddNewAccount(password, this.coinType);
+                account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
             }
 
             // save the changes to the file
@@ -1116,9 +1122,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Name = name,
                 EncryptedSeed = encryptedSeed,
                 ChainCode = chainCode,
-                CreationTime = creationTime ?? DateTimeOffset.Now,
+                CreationTime = creationTime ?? this.dateTimeProvider.GetTimeOffset(),
                 Network = this.network,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
+                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = this.coinType } },
             };
 
             // create a folder if none exists and persist the file

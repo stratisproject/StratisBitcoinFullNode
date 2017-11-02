@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
     using System.Threading.Tasks;
     using Xunit;
     using Newtonsoft.Json;
+    using Stratis.Bitcoin.Base;
 
     public class IndexRepositoryTest : TestBase
     {
@@ -572,7 +573,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
         private Features.IndexStore.IIndexRepository SetupRepository(Network main, string dir)
         {
-            var repository = new IndexRepository(main, dir, this.loggerFactory);
+            var repository = new IndexRepository(main, dir, DateTimeProvider.Default, this.loggerFactory);
             repository.InitializeAsync().GetAwaiter().GetResult();
 
             return repository;

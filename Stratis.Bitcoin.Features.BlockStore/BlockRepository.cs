@@ -3,6 +3,7 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -60,12 +61,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.DBreeze = new DBreezeEngine(folder);
             this.network = network;
+            this.dateTimeProvider = dateTimeProvider;
+
             this.PerformanceCounter = PerformanceCounterFactory();
         }
 
         public virtual BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
         {
-            return new BlockStoreRepositoryPerformanceCounter();
+            return new BlockStoreRepositoryPerformanceCounter(this.dateTimeProvider);
         }
 
         public virtual Task InitializeAsync()
