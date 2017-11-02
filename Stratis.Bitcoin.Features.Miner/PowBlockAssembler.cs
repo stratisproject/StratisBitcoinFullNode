@@ -317,7 +317,6 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 CheckPow = false,
                 CheckMerkleRoot = false,
-                OnlyCheck = true
             };
 
             this.consensusLoop.ValidateBlock(context);
