@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             List<uint256> missedTxIds = new List<uint256>();
             using (this.lockobj.LockRead())
             {
-                await this.WaitOngoingTasksAsync().ConfigureAwait(false);
+                this.WaitOngoingTasks();
                 for (int i = 0; i < txIds.Length; i++)
                 {
                     CacheItem cache;
@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (this.lockobj.LockWrite())
             {
-                await this.WaitOngoingTasksAsync().ConfigureAwait(false);
+                this.WaitOngoingTasks();
                 if (this.innerBlockHash == null)
                 {
                     this.logger.LogTrace("(-)[NULL_INNER_TIP]");
@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override async Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+        public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -336,11 +336,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (this.lockobj.LockWrite())
             {
-                await this.WaitOngoingTasksAsync().ConfigureAwait(false);
+                this.WaitOngoingTasks();
                 if ((this.blockHash != null) && (oldBlockHash != this.blockHash))
                 {
                     this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
-                    throw new InvalidOperationException("Invalid oldBlockHash");
+                    return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
                 }
 
                 this.blockHash = nextBlockHash;
@@ -374,6 +374,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
 
             this.logger.LogTrace("(-)");
+            return Task.FromResult(true);
         }
 
         /// <inheritdoc />
@@ -387,7 +388,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             Task<uint256> rewindingInner = null;
             using (this.lockobj.LockWrite())
             {
-                await this.WaitOngoingTasksAsync().ConfigureAwait(false);
+                this.WaitOngoingTasks();
                 if (this.blockHash == this.innerBlockHash)
                     this.unspents.Clear();
 
@@ -421,9 +422,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>
         /// Wait until flushing and rewinding task complete if any is in progress.
         /// </summary>
-        private async Task WaitOngoingTasksAsync()
+        /// <remarks>TODO: This is blocking call and is used in async methods, which quite 
+        /// strongly erases the goals of using async in those methods.</remarks>
+        private void WaitOngoingTasks()
         {
-            await Task.WhenAll(this.flushingTask, this.rewindingTask).ConfigureAwait(false);
+            Task.WhenAll(this.flushingTask, this.rewindingTask);
         }
     }
 }
