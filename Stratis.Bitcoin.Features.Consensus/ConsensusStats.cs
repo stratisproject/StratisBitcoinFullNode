@@ -5,9 +5,10 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Signals;
 using System;
 using System.Text;
-using Stratis.Bitcoin.Signals;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -61,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public void Log()
+        public async Task LogAsync()
         {
             StringBuilder benchLogs = new StringBuilder();
 
@@ -72,11 +73,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 benchLogs.AppendLine("Downloaded:".PadRight(LoggingConfiguration.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
                 benchLogs.AppendLine("==========================");
             }
-
-            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(this.bottom.GetBlockHashAsync().Result)?.Height);
+            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.bottom.GetBlockHashAsync().ConfigureAwait(false))?.Height);
             if (this.cache != null)
             {
-                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(this.cache.GetBlockHashAsync().Result)?.Height);
+                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.cache.GetBlockHashAsync().ConfigureAwait(false))?.Height);
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
             }
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
                 if (this.chainState.IsInitialBlockDownload)
-                    this.Log();
+                    this.LogAsync().GetAwaiter().GetResult();
         }
     }
 }

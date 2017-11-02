@@ -1,9 +1,6 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
-using Stratis.Bitcoin;
-using Stratis.Bitcoin.Builder;
+﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Stratis.Bitcoin.Api.Controllers
+namespace Stratis.Bitcoin.Features.Api.Controllers
 {
     [Route("api/[controller]")]
     public class NodeController : Controller
