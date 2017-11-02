@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
                 if (this.chainState.IsInitialBlockDownload)
-                    this.Log();
+                    this.LogAsync().GetAwaiter().GetResult();
         }
     }
 }

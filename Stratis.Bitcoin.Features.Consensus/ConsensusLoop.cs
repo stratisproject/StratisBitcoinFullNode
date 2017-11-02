@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Initialize components in <see cref="ConsensusLoop"/>.
         /// </summary>
-        public void Start()
+        public async Task StartAsync()
         {
             this.logger.LogTrace("()");
 

@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async Task AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfull()
+        public async Task AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfullAsync()
         {
             string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfullAsync));
             Directory.CreateDirectory(dataDir);
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// </summary>
         /// <seealso cref="https://www.codeproject.com/Articles/835098/NBitcoin-Build-Them-All"/>
         [Fact]
-        public async Task AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfull()
+        public async Task AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfullAsync()
         {
             string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfullAsync));
             Directory.CreateDirectory(dataDir);
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// </summary>
         /// <seealso cref="https://www.codeproject.com/Articles/835098/NBitcoin-Build-Them-All"/>
         [Fact]
-        public async Task AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfull()
+        public async Task AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfullAsync()
         {
             string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfullAsync));
             Directory.CreateDirectory(dataDir);
@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// </summary>
         /// <seealso cref="https://www.codeproject.com/Articles/835098/NBitcoin-Build-Them-All"/>
         [Fact]
-        public async Task AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfull()
+        public async Task AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfullAsync()
         {
             string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfullAsync));
             Directory.CreateDirectory(dataDir);
@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Validate P2WPKH transaction in memory pool.
         /// </summary>
         [Fact]
-        public async Task AcceptToMemoryPool_WithP2WPKHValidTxns_IsSuccessfull()
+        public async Task AcceptToMemoryPool_WithP2WPKHValidTxns_IsSuccessfullAsync()
         {
             string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithP2WPKHValidTxns_IsSuccessfullAsync));
             Directory.CreateDirectory(dataDir);
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Validate P2WSH transaction in memory pool.
         /// </summary>
         [Fact]
-        public async Task AcceptToMemoryPool_WithP2WSHValidTxns_IsSuccessfull()
+        public async Task AcceptToMemoryPool_WithP2WSHValidTxns_IsSuccessfullAsync()
         {
             string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithP2WSHValidTxns_IsSuccessfullAsync));
             Directory.CreateDirectory(dataDir);
@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Validate SegWit transaction in memory pool.
         /// </summary>
         [Fact]
-        public async Task AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfull()
+        public async Task AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfullAsync()
         {
             string dataDir = Path.Combine("TestData", nameof(MempoolValidatorTest), nameof(this.AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfullAsync));
             Directory.CreateDirectory(dataDir);
