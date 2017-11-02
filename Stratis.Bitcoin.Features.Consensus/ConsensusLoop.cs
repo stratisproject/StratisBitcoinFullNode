@@ -153,11 +153,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>
         /// Initialize components in <see cref="ConsensusLoop"/>.
         /// </summary>
-        public void Start()
+        public async Task StartAsync()
         {
             this.logger.LogTrace("()");
 
-            uint256 utxoHash = this.UTXOSet.GetBlockHashAsync().GetAwaiter().GetResult();
+            uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);

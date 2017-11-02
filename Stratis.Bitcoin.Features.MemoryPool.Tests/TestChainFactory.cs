@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 {
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <param name="network">Network to create the chain on.</param>
         /// <param name="scriptPubKey">Public key to create blocks/txs with.</param>
         /// <returns>Context object representing the test chain.</returns>
-        public static ITestChainContext Create(Network network, Script scriptPubKey, string dataDir)
+        public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
         {
             NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dataDir}" }, network.Name, network);
             if (dataDir != null)
@@ -76,7 +77,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
 
             ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals());
-            consensus.Start();
+            await consensus.StartAsync();
 
             BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
             TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
