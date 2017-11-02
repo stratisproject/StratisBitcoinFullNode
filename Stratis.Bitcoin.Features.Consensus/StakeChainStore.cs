@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 next = next.Previous;
             }
 
-            await this.dBreezeCoinView.GetStakeAsync(load);
+            await this.dBreezeCoinView.GetStakeAsync(load).ConfigureAwait(false);
 
             // All block stake items should be in store.
             if (load.Any(l => l.BlockStake == null))
