@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private static long medianTimePast;
 
         protected readonly ConsensusLoop consensusLoop;
-        protected readonly MempoolAsyncLock mempoolLock;
+        protected readonly MempoolSchedulerLock mempoolLock;
         protected readonly TxMempool mempool;
         protected readonly IDateTimeProvider dateTimeProvider;
 
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public PowBlockAssembler(
             ConsensusLoop consensusLoop,
             Network network,
-            MempoolAsyncLock mempoolLock,
+            MempoolSchedulerLock mempoolLock,
             TxMempool mempool,
             IDateTimeProvider dateTimeProvider,
             ChainedBlock chainTip,
@@ -217,7 +217,6 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(scriptPubKeyIn), nameof(scriptPubKeyIn.Length), scriptPubKeyIn.Length, nameof(fMineWitnessTx), fMineWitnessTx);
 
-            long nTimeStart = this.dateTimeProvider.GetUtcNow().Ticks / TicksPerMicrosecond;
             this.pblock = this.pblocktemplate.Block; // Pointer for convenience.
             this.scriptPubKeyIn = scriptPubKeyIn;
 
@@ -250,7 +249,6 @@ namespace Stratis.Bitcoin.Features.Miner
             int nDescendantsUpdated = 0;
             this.AddTransactions(nPackagesSelected, nDescendantsUpdated);
 
-            long nTime1 = this.dateTimeProvider.GetUtcNow().Ticks / TicksPerMicrosecond;
             lastBlockTx = this.blockTx;
             lastBlockSize = this.blockSize;
             lastBlockWeight = this.blockWeight;
@@ -315,14 +313,14 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            var context = new ContextInformation(new BlockResult { Block = this.pblock }, this.network.Consensus)
+            var context = new ContextInformation(new BlockValidationContext { Block = this.pblock }, this.network.Consensus)
             {
                 CheckPow = false,
                 CheckMerkleRoot = false,
                 OnlyCheck = true
             };
 
-            this.consensusLoop.AcceptBlock(context);
+            this.consensusLoop.ValidateBlock(context);
 
             this.logger.LogTrace("(-)");
         }

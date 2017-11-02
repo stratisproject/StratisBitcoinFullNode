@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             // Act
             string[] result = textFileConfiguration.GetAll("test");
             // Assert
-            Assert.Equal(0, result.Length);
+            Assert.Empty(result);
         }
 
         /// <summary>
@@ -79,6 +79,36 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
             Assert.Equal(2, result.Length);
             Assert.Equal("testValue", result[0]);
             Assert.Equal("testValue2", result[1]);
+        }
+
+        /// <summary>
+        /// Assert that we can pass mime-encoded-data as values
+        /// </summary>
+        [Fact]
+        public void GetMimeValueWithFileString()
+        {
+            // Arrange
+            var textFileConfiguration = new TextFileConfiguration("azurekey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==");
+            // Act
+            string[] result = textFileConfiguration.GetAll("azurekey");
+            // Assert
+            Assert.Single(result);
+            Assert.Equal("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==", result[0]);
+        }
+
+        /// <summary>
+        /// Assert that we can pass mime-encoded-data as values
+        /// </summary>
+        [Fact]
+        public void GetMimeValueWithStringArgs()
+        {
+            // Arrange
+            var textFileConfiguration = new TextFileConfiguration(new string[] { "azurekey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==" });
+            // Act
+            string[] result = textFileConfiguration.GetAll("azurekey");
+            // Assert
+            Assert.Single(result);
+            Assert.Equal("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==", result[0]);
         }
     }
 }

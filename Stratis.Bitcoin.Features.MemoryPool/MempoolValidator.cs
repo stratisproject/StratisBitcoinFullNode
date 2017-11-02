@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private const int MaxFeeEstimationTipAge = 3 * 60 * 60;
 
         /// <summary>A lock for managing asynchronous access to memory pool.</summary>
-        private readonly MempoolAsyncLock mempoolLock;
+        private readonly MempoolSchedulerLock mempoolLock;
 
         /// <summary>Date and time information provider.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="nodeSettings">Full node settings.</param>
         public MempoolValidator(
             TxMempool memPool, 
-            MempoolAsyncLock mempoolLock,
+            MempoolSchedulerLock mempoolLock,
             PowConsensusValidator consensusValidator, 
             IDateTimeProvider dateTimeProvider, 
             MempoolSettings mempoolSettings,
@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
-            this.PerformanceCounter = new MempoolPerformanceCounter();
+            this.PerformanceCounter = new MempoolPerformanceCounter(this.dateTimeProvider);
             this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
         }
 
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             try
             {
                 List<uint256> vHashTxToUncache = new List<uint256>();
-                await this.AcceptToMemoryPoolWorker(state, tx, vHashTxToUncache);
+                await this.AcceptToMemoryPoolWorkerAsync(state, tx, vHashTxToUncache);
                 //if (!res) {
                 //    BOOST_FOREACH(const uint256& hashTx, vHashTxToUncache)
                 //        pcoinsTip->Uncache(hashTx);
@@ -419,7 +419,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="state">Validation state for creating the validation context.</param>
         /// <param name="tx">The transaction to validate.</param>
         /// <param name="vHashTxnToUncache">Not currently used</param>
-        private async Task AcceptToMemoryPoolWorker(MempoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
+        private async Task AcceptToMemoryPoolWorkerAsync(MempoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
         {
             var context = new MempoolValidationContext(tx, state);
 
@@ -427,7 +427,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // create the MemPoolCoinView and load relevant utxoset
             context.View = new MempoolCoinView(this.coinView, this.memPool, this.mempoolLock, this);
-            await context.View.LoadView(context.Transaction).ConfigureAwait(false);
+            await context.View.LoadViewAsync(context.Transaction).ConfigureAwait(false);
 
             // adding to the mem pool can only be done sequentially
              // use the sequential scheduler for that.
@@ -551,6 +551,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(MempoolErrors.Coinbase).Throw();
 
             // TODO: Implement Witness Code
+            // Bitcoin Ref: https://github.com/bitcoin/bitcoin/blob/ea729d55b4dbd17a53ced474a8457d4759cfb5a5/src/validation.cpp#L463-L467
             //// Reject transactions with witness before segregated witness activates (override with -prematurewitness)
             bool witnessEnabled = false;//IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus());
             //if (!GetBoolArg("-prematurewitness",false) && tx.HasWitness() && !witnessEnabled) {
@@ -574,6 +575,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Validate the transaction is a standard transaction.
         /// Checks the version number, transaction size, input signature size,
         /// output script template, single output, & dust outputs.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp##L82-L144"/>
         /// </summary>
         /// <param name="context">Current validation context.</param>
         /// <param name="witnessEnabled">Whether witness is enabled.</param>
@@ -617,7 +619,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxOut txout in tx.Outputs)
             {
                 ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
-                if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))
+                if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     context.State.Fail(MempoolErrors.Scriptpubkey).Throw();
                 }
@@ -629,7 +631,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //{
                 //  context.State.Fail(new MempoolError(MempoolErrors.RejectNonstandard, "bare-multisig")).Throw();
                 //}
-                else if (txout.IsDust(minRelayTxFee))
+                else if (txout.IsDust(this.minRelayTxFee))
                 {
                     context.State.Fail(MempoolErrors.Dust).Throw();
                 }
@@ -687,7 +689,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 context.State.Fail(MempoolErrors.MinFeeNotMet, $" {context.Fees} < {mempoolRejectFee}").Throw();
             }
-            else if (this.mempoolSettings.RelayPriority && context.ModifiedFees < minRelayTxFee.GetFee(context.EntrySize) &&
+            else if (this.mempoolSettings.RelayPriority && context.ModifiedFees < this.minRelayTxFee.GetFee(context.EntrySize) &&
                      !TxMempool.AllowFree(context.Entry.GetPriority(this.chain.Height + 1)))
             {
                 // Require that free transactions have sufficient priority to be mined in the next block.
@@ -734,10 +736,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (this.mempoolSettings.NodeSettings.RequireStandard && !this.AreInputsStandard(context.Transaction, context.View))
                 context.State.Invalid(MempoolErrors.NonstandardInputs).Throw();
 
-            // TODO: Implement Witness Code
-            //// Check for non-standard witness in P2WSH
-            //if (tx.HasWitness && requireStandard && !IsWitnessStandard(Trx, context.View))
-            //  state.Invalid(new MempoolError(MempoolErrors.REJECT_NONSTANDARD, "bad-witness-nonstandard")).Throw();
+            // Check for non-standard witness in P2WSH
+            if (context.Transaction.HasWitness && this.mempoolSettings.NodeSettings.RequireStandard && !this.IsWitnessStandard(context.Transaction, context.View))
+                context.State.Invalid(MempoolErrors.NonstandardWitness).Throw();
 
             context.SigOpsCost = this.consensusValidator.GetTransactionSigOpCost(context.Transaction, context.View.Set,
                 new DeploymentFlags { ScriptFlags = ScriptVerify.Standard });
@@ -881,10 +882,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // Finally in addition to paying more fees than the conflicts the
                 // new transaction must pay for its own bandwidth.
                 Money nDeltaFees = context.ModifiedFees - context.ConflictingFees;
-                if (nDeltaFees < minRelayTxFee.GetFee(context.EntrySize))
+                if (nDeltaFees < this.minRelayTxFee.GetFee(context.EntrySize))
                 {
                     context.State.Fail(MempoolErrors.Insufficientfee,
-                            $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {minRelayTxFee.GetFee(context.EntrySize)}").Throw();
+                            $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {this.minRelayTxFee.GetFee(context.EntrySize)}").Throw();
                 }
             }
         }
@@ -1144,14 +1145,87 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>
         /// Whether transaction is witness standard.
-        /// Not implemented.
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L196"/>
         /// </summary>
         /// <param name="tx">Transaction to verify.</param>
         /// <param name="mapInputs">Map of previous transactions that have outputs we're spending.</param>
         /// <returns>Whether transaction is witness standard.</returns>
         private bool IsWitnessStandard(Transaction tx, MempoolCoinView mapInputs)
         {
-            // TODO: Implement Witness Code
+            if (tx.IsCoinBase)
+                return true; // Coinbases are skipped.
+
+            foreach (TxIn input in tx.Inputs)
+            {
+                // We don't care if witness for this input is empty, since it must not be bloated.
+                // If the script is invalid without witness, it would be caught sooner or later during validation.
+                if (input.WitScript == null)
+                    continue;
+
+                TxOut prev = mapInputs.GetOutputFor(input);
+
+                // Get the scriptPubKey corresponding to this input.
+                Script prevScript = prev.ScriptPubKey;
+                if (prevScript.IsPayToScriptHash)
+                {
+                    // If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
+                    // into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
+                    // If the check fails at this stage, we know that this txid must be a bad one.
+                    PayToScriptHashSigParameters sigParams = PayToScriptHashTemplate.Instance.ExtractScriptSigParameters(input.ScriptSig);
+                    if (sigParams == null || sigParams.RedeemScript == null)
+                        return false;
+
+                    prevScript = sigParams.RedeemScript;
+                }
+
+                // Non-witness program must not be associated with any witness.
+                if (!prevScript.IsWitness)
+                    return false;
+
+                // Check P2WSH standard limits.
+                WitProgramParameters wit = PayToWitTemplate.Instance.ExtractScriptPubKeyParameters2(prevScript);
+                if (wit == null)
+                    return false;
+
+                // Version 0 segregated witness program validation.
+                if (wit.Version == 0 && wit.Program.Length == 32)
+                {
+                    const int MaxStandardP2wshScriptSize = 3600;
+                    const int MaxStandardP2wshStackItems = 100;
+                    const int MaxStandardP2wshStackItemSize = 80;
+
+                    WitScript witness = input.WitScript;
+
+                    // Get P2WSH script from top of stack.
+                    Script scriptPubKey = Script.FromBytesUnsafe(witness.GetUnsafePush(witness.PushCount - 1));
+
+                    // Stack items are remainder of stack.
+                    int sizeWitnessStack = witness.PushCount - 1;
+
+                    // Get the witness stack items.
+                    List<byte[]> stack = new List<byte[]>();
+                    for (int i = 0; i < sizeWitnessStack; i++)
+                    {
+                        stack.Add(witness.GetUnsafePush(i));
+                    }
+
+                    // Validate P2WSH script isn't larger than max length.
+                    if (scriptPubKey.ToBytes(true).Length > MaxStandardP2wshScriptSize)
+                        return false;
+
+                    // Validate number items in witness stack isn't larger than max.
+                    if (sizeWitnessStack > MaxStandardP2wshStackItems)
+                        return false;
+
+                    // Validate size of each of the witness stack items.
+                    for (int j = 0; j < sizeWitnessStack; j++)
+                    {
+                        if (stack[j].Length > MaxStandardP2wshStackItemSize)
+                            return false;
+                    }
+                }
+            }
+
             return true;
         }
     }

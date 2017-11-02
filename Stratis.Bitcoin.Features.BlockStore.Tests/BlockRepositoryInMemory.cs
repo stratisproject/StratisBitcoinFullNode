@@ -1,12 +1,13 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
-{
-    using NBitcoin;
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Base;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-    public class BlockRepositoryInMemory : Bitcoin.Features.BlockStore.IBlockRepository
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
+{
+    public class BlockRepositoryInMemory : BlockStore.IBlockRepository
     {
         private ConcurrentDictionary<uint256, Block> store;
         public uint256 BlockHash { get; private set; }
@@ -21,7 +22,7 @@
         public Task Initialize()
         {
             this.store = new ConcurrentDictionary<uint256, Block>();
-            this.PerformanceCounter = new BlockStoreRepositoryPerformanceCounter();
+            this.PerformanceCounter = new BlockStoreRepositoryPerformanceCounter(DateTimeProvider.Default);
 
             return Task.FromResult<object>(null);
         }

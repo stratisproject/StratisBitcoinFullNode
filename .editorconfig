@@ -22,3 +22,13 @@ csharp_style_expression_bodied_properties = false:suggestion
 csharp_style_expression_bodied_indexers = false:suggestion
 csharp_style_expression_bodied_accessors = false:suggestion
 csharp_style_inlined_variable_declaration = false:suggestion
+
+# Async suffix
+dotnet_naming_rule.async_methods_end_with_async.symbols  = any_async_methods
+dotnet_naming_rule.async_methods_end_with_async.style    = end_with_async
+dotnet_naming_rule.async_methods_end_with_async.severity = warning
+dotnet_naming_symbols.any_async_methods.applicable_kinds           = method
+dotnet_naming_symbols.any_async_methods.applicable_accessibilities = *
+dotnet_naming_symbols.any_async_methods.required_modifiers         = async
+dotnet_naming_style.end_with_async.required_suffix = Async
+dotnet_naming_style.end_with_async.capitalization  = pascal_case

@@ -5,6 +5,7 @@
     using System.Threading;
 
     using Stratis.Bitcoin.Configuration.Logging;
+    using Stratis.Bitcoin.Base;
 
     public class BlockStoreCachePerformanceCounter
     {
@@ -19,17 +20,21 @@
         public string Name { get; private set; }
         public DateTime Start { get; private set; }
 
-        public BlockStoreCachePerformanceCounter(string name = "BlockStore")
+        /// <summary>Provider of date time functionality.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockStoreCachePerformanceCounter(IDateTimeProvider dateTimeProvider, string name = "BlockStore")
         {
             this.Name = name;
-            this.Start = DateTime.UtcNow;
+            this.dateTimeProvider = dateTimeProvider;
+            this.Start = this.dateTimeProvider.GetUtcNow();
         }
 
         public TimeSpan Elapsed
         {
             get
             {
-                return DateTime.UtcNow - this.Start;
+                return this.dateTimeProvider.GetUtcNow() - this.Start;
             }
         }
 
@@ -87,13 +92,10 @@
 
         public virtual BlockStoreCachePerformanceSnapshot Snapshot()
         {
-#if !(PORTABLE || NETCORE)
-            Thread.MemoryBarrier();
-#endif
             var snap = new BlockStoreCachePerformanceSnapshot(this.CacheHitCount, this.CacheMissCount, this.CacheRemoveCount, this.CacheSetCount, this.Name)
             {
                 Start = this.Start,
-                Taken = DateTime.UtcNow
+                Taken = this.dateTimeProvider.GetUtcNow()
             };
             return snap;
         }

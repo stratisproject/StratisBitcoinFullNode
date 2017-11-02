@@ -38,12 +38,12 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly ILogger logger;
 
         /// <summary>
-        /// Token that allows cancellation of async tasks. 
+        /// Token that allows cancellation of async tasks.
         /// It is used during component shutdown.
         /// </summary>
         private readonly CancellationTokenSource cancellationToken = new CancellationTokenSource();
         /// <summary>
-        /// Token that allows cancellation of async tasks. 
+        /// Token that allows cancellation of async tasks.
         /// It is used during component shutdown.
         /// </summary>
         public CancellationTokenSource CancellationTokenSource => this.cancellationToken;
@@ -105,14 +105,14 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="message">Received message.</param>
         private void Node_MessageReceived(Node node, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(node), node?.RemoteSocketEndpoint);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
             message.Message.IfPayloadIs<BlockPayload>((block) =>
             {
                 // There are two pullers for each peer connection and each is having its own puller behavior.
                 // Both these behaviors get notification from the node when it receives a message,
                 // even if the origin of the message was from the other puller behavior.
-                // Therefore we first make a quick check whether this puller behavior was the one 
+                // Therefore we first make a quick check whether this puller behavior was the one
                 // who should deal with this block.
                 uint256 blockHash = block.Object.Header.GetHash();
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     foreach (Transaction tx in block.Object.Transactions)
                         tx.CacheHashes();
 
-                    DownloadedBlock downloadedBlock = new DownloadedBlock()
+                    DownloadedBlock downloadedBlock = new DownloadedBlock
                     {
                         Block = block.Object,
                         Length = (int)message.Length,
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <summary>
-        /// If there are any more blocks the node wants to download, this method assigns and starts 
+        /// If there are any more blocks the node wants to download, this method assigns and starts
         /// a new download task for a specific peer node that this behavior represents.
         /// </summary>
         internal void AssignPendingVector()
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             Node attachedNode = this.AttachedNode;
-            if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            if ((attachedNode == null) || (attachedNode.State != NodeState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
                 return;
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             Node attachedNode = this.AttachedNode;
-            if (attachedNode == null || attachedNode.State != NodeState.HandShaked || !this.puller.Requirements.Check(attachedNode.PeerVersion))
+            if ((attachedNode == null) || (attachedNode.State != NodeState.HandShaked) || !this.puller.Requirements.Check(attachedNode.PeerVersion))
             {
                 this.logger.LogTrace("(-)[ATTACHED_NODE]");
                 return;

@@ -1,16 +1,14 @@
 ﻿using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusManager:IBlockDownloadState, INetworkDifficulty, IGetUnspentTransaction
+    public class ConsensusManager : IBlockDownloadState, INetworkDifficulty, IGetUnspentTransaction
     {
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
@@ -60,8 +58,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Target GetNetworkDifficulty()
         {
-            if (this.ConsensusValidator?.ConsensusParams != null && this.ChainState?.HighestValidatedPoW != null)
-                return this.ChainState?.HighestValidatedPoW?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
+            if ((this.ConsensusValidator?.ConsensusParams != null) && (this.ChainState?.ConsensusTip != null))
+                return this.ChainState?.ConsensusTip?.GetWorkRequired(this.ConsensusValidator.ConsensusParams);
             else
                 return null;
         }
@@ -69,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            var outputs = await this.ConsensusLoop.UTXOSet?.FetchCoinsAsync(new[] { trxid });
+            var outputs = await this.ConsensusLoop?.UTXOSet?.FetchCoinsAsync(new[] { trxid });
             return outputs?.UnspentOutputs?.SingleOrDefault();
         }
     }

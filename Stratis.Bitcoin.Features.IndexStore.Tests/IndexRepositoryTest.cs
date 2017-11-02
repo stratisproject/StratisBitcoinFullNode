@@ -14,6 +14,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
     using System.Threading.Tasks;
     using Xunit;
     using Newtonsoft.Json;
+    using Stratis.Bitcoin.Base;
 
     public class IndexRepositoryTest : TestBase
     {
@@ -263,13 +264,13 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
                 foreach (var item in blockDict)
                 {
-                    var bl = blocks.Where(b => b.GetHash() == new uint256(item.Key)).Single();
+                    var bl = blocks.Single(b => b.GetHash() == new uint256(item.Key));
                     Assert.Equal(bl.Header.GetHash(), new Block(item.Value).Header.GetHash());
                 }
 
                 foreach (var item in transDict)
                 {
-                    var bl = blocks.Where(b => b.Transactions.Any(t => t.GetHash() == new uint256(item.Key))).Single();
+                    var bl = blocks.Single(b => b.Transactions.Any(t => t.GetHash() == new uint256(item.Key)));
                     Assert.Equal(bl.GetHash(), new uint256(item.Value));
                 }
             }
@@ -406,7 +407,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
             var block = new Block();
             var trans = new Transaction();
             Key key = new Key(); // generate a random private key
-            var scriptPubKeyOut = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(key.PubKey); 
+            var scriptPubKeyOut = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(key.PubKey);
             trans.Outputs.Add(new TxOut(100, scriptPubKeyOut));
             block.Transactions.Add(trans);
             var hash = trans.GetHash().ToBytes();
@@ -415,7 +416,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
             block2.Header.HashPrevBlock = block.GetHash();
             var trans2 = new Transaction();
             Key key2 = new Key(); // generate a random private key
-            var scriptPubKeyOut2 = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(key2.PubKey); 
+            var scriptPubKeyOut2 = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(key2.PubKey);
             trans2.Outputs.Add(new TxOut(200, scriptPubKeyOut2));
             block2.Transactions.Add(trans2);
             var hash2 = trans2.GetHash().ToBytes();
@@ -437,7 +438,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 // Insert a block after creating the index
                 (repository as IndexRepository).PutAsync(block2.GetHash(), new List<Block> { block2 }).GetAwaiter().GetResult();
 
-                var index = new Index(repository as IndexRepository, "Script", true, builder);                
+                var index = new Index(repository as IndexRepository, "Script", true, builder);
                 indexTable = index.Table;
                 expectedJSON = index.ToString();
             }
@@ -459,7 +460,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 compare[5] = 36;
                 hash.CopyTo(compare, 6);
                 Assert.True((new Index.Comparer()).Equals(compare, IndexedRow.Value));
-                
+
                 // Block2 has been indexed?
                 var IndexedRow2 = transaction.Select<byte[], byte[]>(indexTable, trans2.Outputs[0].ScriptPubKey.Hash.ToBytes());
                 Assert.True(IndexedRow2.Exists);
@@ -552,7 +553,7 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
-                var task = repository.DeleteAsync(new uint256(45), new List<uint256>() { block.GetHash() });
+                var task = repository.DeleteAsync(new uint256(45), new List<uint256> { block.GetHash() });
                 task.Wait();
             }
 
@@ -565,14 +566,14 @@ namespace Stratis.Bitcoin.Features.IndexStore.Tests
                 var transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
                 Assert.Equal(new uint256(45), blockHashKeyRow.Value);
-                Assert.Equal(0, blockDict.Count);
-                Assert.Equal(0, transDict.Count);
+                Assert.Empty(blockDict);
+                Assert.Empty(transDict);
             }
         }
 
         private Features.IndexStore.IIndexRepository SetupRepository(Network main, string dir)
         {
-            var repository = new IndexRepository(main, dir, this.loggerFactory);
+            var repository = new IndexRepository(main, dir, DateTimeProvider.Default, this.loggerFactory);
             repository.Initialize().GetAwaiter().GetResult();
 
             return repository;

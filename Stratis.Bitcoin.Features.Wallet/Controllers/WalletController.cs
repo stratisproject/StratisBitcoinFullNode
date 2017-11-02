@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
@@ -29,12 +31,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IWalletSyncManager walletSyncManager;
         private readonly CoinType coinType;
+        
+        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
+
         private readonly IConnectionManager connectionManager;
         private readonly ConcurrentChain chain;
         private readonly DataFolder dataFolder;
+        
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
         private readonly IBroadcasterManager broadcasterManager;
+
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
 
         public WalletController(
             ILoggerFactory loggerFactory,
@@ -45,7 +55,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             Network network,
             ConcurrentChain chain,
             DataFolder dataFolder,
-            IBroadcasterManager broadcasterManager)
+            IBroadcasterManager broadcasterManager,
+            IDateTimeProvider dateTimeProvider)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -57,6 +68,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.dataFolder = dataFolder;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.broadcasterManager = broadcasterManager;
+            this.dateTimeProvider = dateTimeProvider;
         }
 
         /// <summary>
@@ -125,8 +137,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -134,7 +145,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: request.Mnemonic);
 
                 // start syncing the wallet from the creation date
-                this.walletSyncManager.SyncFromDate(DateTime.Now);
+                this.walletSyncManager.SyncFromDate(this.dateTimeProvider.GetUtcNow());
 
                 return this.Json(mnemonic.ToString());
             }
@@ -165,8 +176,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -206,8 +216,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -252,8 +261,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -294,8 +302,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -328,7 +335,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                         model.TransactionsHistory.Add(receivedItem);
                     }
-                  
+
                     // add outgoing fund transaction details
                     if (transaction.SpendingDetails != null)
                     {
@@ -404,8 +411,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -452,8 +458,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -464,6 +469,45 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     MaxSpendableAmount = transactionResult.maximumSpendableAmount,
                     Fee = transactionResult.Fee
                 });
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Gets a transaction fee estimate.
+        /// Fee can be estimated by creating a <see cref="TransactionBuildContext"/> with no password
+        /// and then building the transaction and retreiving the fee from the context.
+        /// </summary>
+        /// <param name="request">The transaction parameters.</param>
+        /// <returns>The estimated fee for the transaction.</returns>
+        [Route("estimate-txfee")]
+        [HttpGet]
+        public IActionResult GetTransactionFeeEstimate([FromQuery]TxFeeEstimateRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+                var context = new TransactionBuildContext(
+                    new WalletAccountReference(request.WalletName, request.AccountName),
+                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
+                {
+                    FeeType = FeeParser.Parse(request.FeeType),
+                    MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                };
+
+                return this.Json(this.walletTransactionHandler.EstimateFee(context));
             }
             catch (Exception e)
             {
@@ -486,13 +530,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
-            var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-
+            
             try
             {
+                var destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
                 var context = new TransactionBuildContext(
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
@@ -535,8 +578,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -565,10 +607,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     }
                 }
 
-                return this.StatusCode((int)HttpStatusCode.BadRequest);
+                throw new TimeoutException("Transaction propagation has timed out. Lost connection?");
             }
             catch (Exception e)
             {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -612,8 +655,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -641,8 +683,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -670,8 +711,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -698,8 +738,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                var errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
+                return BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -726,11 +765,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             if (!this.ModelState.IsValid)
             {
-                return this.BadRequest();
+                return BuildErrorResponse(this.ModelState);
             }
+
             var block = this.chain.GetBlock(uint256.Parse(model.Hash));
             this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
+        }
+
+        /// <summary>
+        /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
+        /// </summary>
+        /// <returns>A result containing the errors.</returns>
+        private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
+        {
+            List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
+            return ErrorHelpers.BuildErrorResponse(
+                HttpStatusCode.BadRequest, 
+                string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)), 
+                string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
         }
     }
 }

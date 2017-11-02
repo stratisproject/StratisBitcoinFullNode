@@ -102,14 +102,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolManager mempoolManager = CreateTestMempool(settings, out unused);
 
             MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
-            mempoolManager.LoadPool(fileName).GetAwaiter().GetResult();
+            mempoolManager.LoadPoolAsync(fileName).GetAwaiter().GetResult();
             long actualSize = mempoolManager.MempoolSize().GetAwaiter().GetResult();
 
             Assert.Equal(0, actualSize);
         }
 
         [Fact]
-        public async Task LoadPoolTest_WithGoodTransactions()
+        public async Task LoadPoolTest_WithGoodTransactionsAsync()
         {
             string fileName = "mempool.dat";
             var tx1_parent = new Transaction("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000");
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
 
             long expectedSize = 2;
-            await mempoolManager.LoadPool(fileName);
+            await mempoolManager.LoadPoolAsync(fileName);
             long actualSize = await mempoolManager.MempoolSize();
             TxMempoolEntry actualEntry = txMemPool.MapTx.TryGet(tx1.GetHash());
             long? actualTx1FeedDelta = actualEntry?.feeDelta;
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async Task LoadPoolTest_WithExpiredTransaction_PurgesTx()
+        public async Task LoadPoolTest_WithExpiredTransaction_PurgesTxAsync()
         {
             string fileName = "mempool.dat";
             var tx1_parent = new Transaction("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000");
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MemPoolSaveResult result = (new MempoolPersistence(settings, new LoggerFactory())).Save(toSave, fileName);
 
             long expectedSize = 1;
-            await mempoolManager.LoadPool(fileName);
+            await mempoolManager.LoadPoolAsync(fileName);
             long actualSize = await mempoolManager.MempoolSize();
             TxMempoolEntry actualEntry = txMemPool.MapTx.TryGet(tx1.GetHash());
             Assert.Null(actualEntry);
@@ -269,12 +269,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
             NodeSettings nodeSettings = NodeSettings.Default();
             txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings);
-            var mempoolLock = new MempoolAsyncLock();
+            var mempoolLock = new MempoolSchedulerLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
             var mempoolPersistence = new MempoolPersistence(settings, new LoggerFactory());
             NBitcoin.Network.Main.Consensus.Options = new PosConsensusOptions();
-            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new Checkpoints(NBitcoin.Network.Main), new LoggerFactory());
+            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new Checkpoints(NBitcoin.Network.Main), dateTimeProvider, new LoggerFactory());
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, new LoggerFactory(), settings);
             var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Bitcoin.Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, new LoggerFactory());
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, new LoggerFactory());

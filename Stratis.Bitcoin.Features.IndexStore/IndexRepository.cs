@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
     {
         public IndexSession(string threadName, string folder):
             base(threadName, folder)
-        {            
+        {
         }
 
         public List<string> GetIndexTables()
@@ -51,18 +52,18 @@ namespace Stratis.Bitcoin.Features.IndexStore
             return indexTablePrefix + indexName;
         }
 
-        public IndexRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, IndexSettings indexSettings = null)
-            : this(network, dataFolder.IndexPath, loggerFactory, indexSettings.indexes)
+        public IndexRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IndexSettings indexSettings = null)
+            : this(network, dataFolder.IndexPath, dateTimeProvider, loggerFactory, indexSettings.indexes)
         {
         }
 
-        public IndexRepository(Network network, string folder, ILoggerFactory loggerFactory, Dictionary<string, IndexExpression> requiredIndexes = null):
-            base(network, new IndexSession("DBreeze IndexRepository", folder), loggerFactory)
+        public IndexRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Dictionary<string, IndexExpression> requiredIndexes = null):
+            base(network, new IndexSession("DBreeze IndexRepository", folder), dateTimeProvider, loggerFactory)
         {
-            this.tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
+            this.tableNames = new HashSet<string> { "Block", "Transaction", "Common" };
             this.Indexes = new Dictionary<string, Index>();
             this.requiredIndexes = requiredIndexes;
- 
+
             this.session.Execute(() =>
             {
                 // Discover and add indexes to dictionary and tables to syncronize
@@ -88,7 +89,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
 
         public override BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
         {
-            return new IndexStoreRepositoryPerformanceCounter();
+            return new IndexStoreRepositoryPerformanceCounter(this.dateTimeProvider);
         }
 
         public override Task Initialize()
@@ -125,7 +126,7 @@ namespace Stratis.Bitcoin.Features.IndexStore
                 this.session.Transaction.Commit();
             }).GetAwaiter().GetResult();
 
- 
+
             return Task.CompletedTask;
         }
 
@@ -211,8 +212,8 @@ namespace Stratis.Bitcoin.Features.IndexStore
             }
 
             index.IndexTransactionDetails(transactions);
-            transaction.Insert<string, string>("Common", index.Table, index.ToString());            
-        }        
+            transaction.Insert<string, string>("Common", index.Table, index.ToString());
+        }
 
         public IndexSession GetSession()
         {
@@ -269,12 +270,12 @@ namespace Stratis.Bitcoin.Features.IndexStore
             foreach (var index in this.Indexes.Values)
                 index.IndexTransactionDetails(transactions);
         }
-        
+
         protected override void OnDeleteTransactions(List<(Transaction, Block)> transactions)
         {
             foreach (var index in this.Indexes.Values)
                 index.IndexTransactionDetails(transactions, true);
             base.OnDeleteTransactions(transactions);
-        }       
+        }
     }
 }

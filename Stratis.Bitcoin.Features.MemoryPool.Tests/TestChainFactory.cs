@@ -69,25 +69,25 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new PowConsensusOptions();
-            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network), loggerFactory);
+            PowConsensusValidator consensusValidator = new PowConsensusValidator(network, new Checkpoints(network), dateTimeProvider, loggerFactory);
             ConcurrentChain chain = new ConcurrentChain(network);
-            CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), loggerFactory);
+            CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
 
             ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
 
-            ConsensusLoop consensus = new ConsensusLoop(consensusValidator, chain, cachedCoinView, blockPuller, new NodeDeployments(network), loggerFactory);
-            await consensus.InitializeAsync();
+            ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals());
+            consensus.Start();
 
             BlockPolicyEstimator blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
             TxMempool mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
-            MempoolAsyncLock mempoolLock = new MempoolAsyncLock();
+            MempoolSchedulerLock mempoolLock = new MempoolSchedulerLock();
 
             // Simple block creation, nothing special yet:
             PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             BlockTemplate newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
-            consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+            consensus.ValidateBlock(new ContextInformation(new BlockValidationContext { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                consensus.ValidateBlock(new ContextInformation(new BlockValidationContext { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                 blocks.Add(currentBlock);
             }
 
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var blockInfoList = new List<BlockInfo>();
             List<long> lst = blockinfoarr.Cast<long>().ToList();
             for (int i = 0; i < lst.Count; i += 2)
-                blockInfoList.Add(new BlockInfo() { extraNonce = (int)lst[i], nonce = (uint)lst[i + 1] });
+                blockInfoList.Add(new BlockInfo { extraNonce = (int)lst[i], nonce = (uint)lst[i + 1] });
             return blockInfoList;
         }
 
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <param name="mempool">Memory pool for transactions.</param>
         /// <param name="date">Date and time provider.</param>
         /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockAssembler CreatePowBlockAssembler(Network network, ConsensusLoop consensus, ConcurrentChain chain, MempoolAsyncLock mempoolLock, TxMempool mempool, IDateTimeProvider date, LoggerFactory loggerFactory)
+        private static PowBlockAssembler CreatePowBlockAssembler(Network network, ConsensusLoop consensus, ConcurrentChain chain, MempoolSchedulerLock mempoolLock, TxMempool mempool, IDateTimeProvider date, LoggerFactory loggerFactory)
         {
             AssemblerOptions options = new AssemblerOptions();
 

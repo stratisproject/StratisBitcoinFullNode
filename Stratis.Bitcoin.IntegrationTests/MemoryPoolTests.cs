@@ -532,7 +532,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var settings = NodeSettings.Default();
             var pool = new TxMempool(DateTimeProvider.Default, new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
-            var scheduler = new AsyncLock();
+            var scheduler = new SchedulerLock();
             var rand = new Random();
 
             var value = 10000;
@@ -800,11 +800,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
 
                 // Test LimitOrphanTxSize() function:
-                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(40).Wait();
+                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSizeAsync(40).Wait();
                 Assert.True(stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Count <= 40);
-                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(10).Wait();
+                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSizeAsync(10).Wait();
                 Assert.True(stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Count <= 10);
-                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSize(0).Wait();
+                stratisNode.FullNode.MempoolManager().Orphans.LimitOrphanTxSizeAsync(0).Wait();
                 Assert.True(!stratisNode.FullNode.MempoolManager().Orphans.OrphansList().Any());
             }
         }
@@ -821,7 +821,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 stratisNodeSync.GenerateStratis(101); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.HighestValidatedPoW.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
+                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.HighestPersistedBlock().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 var block = stratisNodeSync.FullNode.BlockStoreManager().BlockRepository.GetAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;

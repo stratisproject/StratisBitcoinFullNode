@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Utilities
 			if(outputIndex >= this._Outputs.Length)
 				return null;
 			return this._Outputs[outputIndex];
-		}		
+		}
 
 		public bool Spend(uint outputIndex)
 		{
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Utilities
 		static TxIn NonCoinbaseTxIn = new TxIn(new OutPoint(uint256.One, 0));
 		public Coins ToCoins()
 		{
-			var coins = new Coins()
+			var coins = new Coins
 			{
 				CoinBase = this.IsCoinbase,
 				Height = this.Height,

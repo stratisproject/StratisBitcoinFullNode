@@ -190,13 +190,13 @@ namespace Stratis.Bitcoin
 
             this.logger.LogInformation("Starting node...");
 
-            // start all registered features
+            // Start all registered features.
             this.fullNodeFeatureExecutor.Start();
 
-            // start connecting to peers
+            // Start connecting to peers.
             this.ConnectionManager.Start();
 
-            // Fire INodeLifetime.Started
+            // Fire INodeLifetime.Started.
             this.nodeLifetime.NotifyStarted();
 
             this.StartPeriodicLog();
@@ -236,18 +236,18 @@ namespace Stratis.Bitcoin
         /// </summary>
         private void StartPeriodicLog()
         {
-            this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
+            IAsyncLoop periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
             {
                 StringBuilder benchLogs = new StringBuilder();
 
-                benchLogs.AppendLine("======Node stats====== " + DateTime.UtcNow.ToString(CultureInfo.InvariantCulture) + " agent " +
+                benchLogs.AppendLine("======Node stats====== " + this.DateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture) + " agent " +
                                      this.ConnectionManager.Parameters.UserAgent);
 
-                // Display node stats grouped together
+                // Display node stats grouped together.
                 foreach (var feature in this.Services.Features.OfType<INodeStats>())
                     feature.AddNodeStats(benchLogs);
 
-                // Now display the other stats
+                // Now display the other stats.
                 foreach (var feature in this.Services.Features.OfType<IFeatureStats>())
                     feature.AddFeatureStats(benchLogs);
 
@@ -260,6 +260,8 @@ namespace Stratis.Bitcoin
                 this.nodeLifetime.ApplicationStopping,
                 repeatEvery: TimeSpans.FiveSeconds,
                 startAfter: TimeSpans.FiveSeconds);
+
+            this.Resources.Add(periodicLogLoop);
         }
 
         /// <inheritdoc />

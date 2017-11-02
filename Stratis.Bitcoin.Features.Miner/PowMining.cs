@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         const int InnerLoopCount = 0x10000;
 
+        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
         private readonly Network network;
@@ -113,81 +114,71 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
 
-                try
+                ChainedBlock chainTip = this.consensusLoop.Tip;
+                if (this.chain.Tip != chainTip)
                 {
-                    ChainedBlock chainTip = this.consensusLoop.Tip;
-                    if (this.chain.Tip != chainTip)
-                    {
-                        Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
-                        continue;
-                    }
-
-                    BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
-
-                    if (Block.BlockSignature)
-                    {
-                        // POS: make sure the POS consensus rules are valid 
-                        if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
-                        {
-                            continue;
-                        }
-                    }
-
-                    this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
-                    Block pblock = pblockTemplate.Block;
-
-                    while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
-                    {
-                        this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
-
-                        ++pblock.Header.Nonce;
-                        --maxTries;
-                    }
-
-                    if (maxTries == 0)
-                        break;
-
-                    if (pblock.Header.Nonce == InnerLoopCount)
-                        continue;
-
-                    var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
-
-                    if (newChain.ChainWork <= chainTip.ChainWork)
-                        continue;
-
-                    this.chain.SetTip(newChain);
-
-                    var blockResult = new BlockResult { Block = pblock };
-                    this.consensusLoop.AcceptBlock(new ContextInformation(blockResult, this.network.Consensus));
-                    this.consensusLoop.Puller.SetLocation(newChain);
-
-                    if (blockResult.ChainedBlock == null)
-                        break; // Reorg.
-
-                    if (blockResult.Error != null)
-                        return blocks;
-
-                    // Push the block to disk, so it is available when peers ask for it.
-                    this.blockRepository.PutAsync(blockResult.ChainedBlock.HashBlock, new List<Block> { pblock }).GetAwaiter().GetResult();
-
-                    // Similar logic to what's in the full node code.
-                    this.chainState.HighestValidatedPoW = this.consensusLoop.Tip;
-                    this.signals.SignalBlock(pblock);
-
-                    this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockResult.Block) ? "POS" : "POW", blockResult.ChainedBlock);
-
-                    nHeight++;
-                    blocks.Add(pblock.GetHash());
-
-                    pblockTemplate = null;
+                    Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
+                    continue;
                 }
-                catch (ConsensusErrorException cer)
+
+                BlockTemplate pblockTemplate = this.blockAssemblerFactory.Create(chainTip).CreateNewBlock(reserveScript.reserveSfullNodecript);
+
+                if (Block.BlockSignature)
                 {
-                    if (cer.ConsensusError == ConsensusErrors.InvalidPrevTip)
+                    // POS: make sure the POS consensus rules are valid 
+                    if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
+                    {
+                        continue;
+                    }
+                }
+
+                this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
+                Block pblock = pblockTemplate.Block;
+
+                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
+                {
+                    this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
+
+                    ++pblock.Header.Nonce;
+                    --maxTries;
+                }
+
+                if (maxTries == 0)
+                    break;
+
+                if (pblock.Header.Nonce == InnerLoopCount)
+                    continue;
+
+                var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
+
+                if (newChain.ChainWork <= chainTip.ChainWork)
+                    continue;
+
+                var blockValidationContext = new BlockValidationContext { Block = pblock };
+
+                this.consensusLoop.AcceptBlock(blockValidationContext);
+
+                if (blockValidationContext.ChainedBlock == null)
+                {
+                    this.logger.LogTrace("(-)[REORG-2]");
+                    return blocks;
+                }
+
+                if (blockValidationContext.Error != null)
+                {
+                    if (blockValidationContext.Error == ConsensusErrors.InvalidPrevTip)
                         continue;
 
-                    throw;
+                    this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
+                    return blocks;
                 }
+
+                this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(blockValidationContext.Block) ? "POS" : "POW", blockValidationContext.ChainedBlock);
+
+                nHeight++;
+                blocks.Add(pblock.GetHash());
+
+                pblockTemplate = null;
             }
 
             return blocks;

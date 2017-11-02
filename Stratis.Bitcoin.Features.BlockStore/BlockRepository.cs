@@ -1,6 +1,7 @@
 ﻿using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using System;
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly Network network;
 
         protected static readonly byte[] BlockHashKey = new byte[0];
-        protected HashSet<string> tableNames = new HashSet<string>() { "Block", "Transaction", "Common" };
+        protected HashSet<string> tableNames = new HashSet<string> { "Block", "Transaction", "Common" };
         protected static readonly byte[] TxIndexKey = new byte[1];
 
         public uint256 BlockHash { get; private set; }
@@ -45,17 +46,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Represents the last block stored to disk.</summary>
         public ChainedBlock HighestPersistedBlock { get; internal set; }
 
-        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.BlockPath, loggerFactory)
+        /// <summary>Provider of time functions.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
-            : this(network, (new DBreezeSingleThreadSession($"DBreeze BlockRepository", folder)), loggerFactory)
+        public BlockRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(network, (new DBreezeSingleThreadSession($"DBreeze BlockRepository", folder)), dateTimeProvider, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, DBreezeSingleThreadSession session, ILoggerFactory loggerFactory)
+        public BlockRepository(Network network, DBreezeSingleThreadSession session, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(session, nameof(session));
@@ -63,12 +67,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.session = session;
             this.network = network;
+            this.dateTimeProvider = dateTimeProvider;
+
             this.PerformanceCounter = PerformanceCounterFactory();
         }
 
         public virtual BlockStoreRepositoryPerformanceCounter PerformanceCounterFactory()
         {
-            return new BlockStoreRepositoryPerformanceCounter();
+            return new BlockStoreRepositoryPerformanceCounter(this.dateTimeProvider);
         }
 
         public virtual Task Initialize()
@@ -256,7 +262,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(blocks, nameof(blocks));
 
             // dbreeze is faster if sort ascending by key in memory before insert
-            // however we need to find how byte arrays are sorted in dbreeze this link can help 
+            // however we need to find how byte arrays are sorted in dbreeze this link can help
             // https://docs.google.com/document/pub?id=1IFkXoX3Tc2zHNAQN9EmGSXZGbabMrWmpmVxFsLxLsw
 
             Task res = this.session.Execute(() =>

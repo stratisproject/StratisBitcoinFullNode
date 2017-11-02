@@ -161,6 +161,10 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         public bool SwitchedOffLimitReached { get; private set; }
 
+        /// <summary>Periodically shows a console warning to inform the user that the system time needs adjustment,
+        /// otherwise the node may not perform correctly on the network.</summary>
+        private IAsyncLoop warningLoop;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -298,7 +302,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            this.asyncLoopFactory.Run($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
+            this.warningLoop = this.asyncLoopFactory.Run($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
             {
                 this.logger.LogTrace("()");
 
@@ -351,7 +355,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("()");
 
-            // TODO: Dispose async loop.
+            this.warningLoop?.Dispose();
 
             this.logger.LogTrace("(-)");
         }
@@ -446,7 +450,7 @@ namespace Stratis.Bitcoin.Base
                     VersionPayload version = node.PeerVersion;
                     if (version != null)
                     {
-                        TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetUtcNow();
+                        TimeSpan timeOffset = version.Timestamp - this.dateTimeProvider.GetTimeOffset();
                         if (timeOffset != null) this.state.AddTimeData(address, timeOffset, node.Inbound);
                     }
                     else this.logger.LogTrace("Node '{0}' does not have an initialized time offset.", node.RemoteSocketEndpoint);                    

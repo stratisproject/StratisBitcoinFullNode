@@ -1,5 +1,6 @@
 ﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
+    using Stratis.Bitcoin.Base;
     using System;
     using Xunit;
 
@@ -9,7 +10,7 @@
 
         public BlockStoreCachePerformanceCounterTest()
         {
-            this.performanceCounter = new BlockStoreCachePerformanceCounter();
+            this.performanceCounter = new BlockStoreCachePerformanceCounter(DateTimeProvider.Default);
         }
 
         [Fact]

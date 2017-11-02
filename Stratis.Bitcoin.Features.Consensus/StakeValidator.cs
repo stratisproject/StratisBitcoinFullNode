@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private bool IsConfirmedInNPrevBlocks(UnspentOutputs utxoSet, ChainedBlock pindexFrom, long maxDepth)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}/{5}',{6}:{7})", nameof(utxoSet), utxoSet.TransactionId, utxoSet.Height, nameof(pindexFrom), pindexFrom.HashBlock, pindexFrom.Height, nameof(maxDepth), maxDepth);
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:'{4}',{5}:{6})", nameof(utxoSet), utxoSet.TransactionId, utxoSet.Height, nameof(pindexFrom), pindexFrom, nameof(maxDepth), maxDepth);
             
             int actualDepth = pindexFrom.Height - (int)utxoSet.Height;
             bool res = actualDepth < maxDepth;
@@ -167,10 +167,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         private void CheckStakeKernelHash(ContextInformation context, ChainedBlock prevChainedBlock, uint headerBits, uint prevBlockTime,
             BlockStake prevBlockStake, UnspentOutputs stakingCoins, OutPoint prevout, uint transactionTime)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}.{8}:'{9}',{10}:'{11}/{12}',{13}:'{14}/{15}',{16}:{17})",
+            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}.{8}:'{9}',{10}:'{11}/{12}',{13}:'{14}',{15}:{16})",
                 nameof(prevChainedBlock), prevChainedBlock.HashBlock, prevChainedBlock.Height, nameof(headerBits), headerBits, nameof(prevBlockTime), prevBlockTime, 
                 nameof(prevBlockStake), nameof(prevBlockStake.HashProof), prevBlockStake.HashProof, nameof(stakingCoins), stakingCoins.TransactionId, stakingCoins.Height,
-                nameof(prevout), prevout.Hash, prevout.N, nameof(transactionTime), transactionTime);
+                nameof(prevout), prevout, nameof(transactionTime), transactionTime);
 
             if (transactionTime < stakingCoins.Time)
             {
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void CheckKernel(ContextInformation context, ChainedBlock pindexPrev, uint nBits, long nTime, OutPoint prevout, ref long pBlockTime)
         {
-            this.logger.LogTrace("({0}:'{1}/{2}',{3}:{4:X},{5}:{6},{7}:'{8}.{9}')", nameof(pindexPrev), pindexPrev.HashBlock, pindexPrev.Height, 
+            this.logger.LogTrace("({0}:'{1}',{2}:0x{3:X},{4}:{5},{6}:'{7}.{8}')", nameof(pindexPrev), pindexPrev, 
                 nameof(nBits), nBits, nameof(nTime), nTime, nameof(prevout), prevout.Hash, prevout.N);
 
             // TODO: https://github.com/stratisproject/StratisBitcoinFullNode/issues/397
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (index == null)
                 throw new ArgumentNullException(nameof(index));
 
-            clogger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(index), index.HashBlock, index.Height, nameof(proofOfStake), proofOfStake);
+            clogger.LogTrace("({0}:'{1}',{2}:{3})", nameof(index), index, nameof(proofOfStake), proofOfStake);
 
             BlockStake blockStake = stakeChain.Get(index.HashBlock);
 
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </remarks>
         public static Target GetNextTargetRequired(StakeChain stakeChain, ChainedBlock chainedBlock, NBitcoin.Consensus consensus, bool proofOfStake)
         {
-            clogger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(chainedBlock), chainedBlock?.HashBlock, chainedBlock?.Height, nameof(proofOfStake), proofOfStake);
+            clogger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedBlock), chainedBlock, nameof(proofOfStake), proofOfStake);
 
             // Genesis block.
             if (chainedBlock == null)

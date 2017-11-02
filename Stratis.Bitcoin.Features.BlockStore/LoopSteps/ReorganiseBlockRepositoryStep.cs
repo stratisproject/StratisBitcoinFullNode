@@ -41,15 +41,18 @@
         /// <inheritdoc/>
         internal override async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, CancellationToken cancellationToken, bool disposeMode)
         {
-            this.logger.LogTrace("{0}:'{1}/{2}',{3}:{4}", nameof(nextChainedBlock), nextChainedBlock.HashBlock, nextChainedBlock.Height, nameof(disposeMode), disposeMode);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(nextChainedBlock), nextChainedBlock, nameof(disposeMode), disposeMode);
 
             if (this.BlockStoreLoop.StoreTip.HashBlock != nextChainedBlock.Header.HashPrevBlock)
             {
                 if (disposeMode)
+                {
+                    this.logger.LogTrace("(-)[DISPOSE]:{0}", StepResult.Stop);
                     return StepResult.Stop;
+                }
 
                 var blocksToDelete = new List<uint256>();
-                var blockToDelete = this.BlockStoreLoop.StoreTip;
+                ChainedBlock blockToDelete = this.BlockStoreLoop.StoreTip;
 
                 while (this.BlockStoreLoop.Chain.GetBlock(blockToDelete.HashBlock) == null)
                 {
@@ -61,9 +64,11 @@
 
                 this.BlockStoreLoop.SetStoreTip(blockToDelete);
 
+                this.logger.LogTrace("(-)[MISMATCH]:{0}", StepResult.Stop);
                 return StepResult.Stop;
             }
 
+            this.logger.LogTrace("(-):{0}", StepResult.Next);
             return StepResult.Next;
         }
     }

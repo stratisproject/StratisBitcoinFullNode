@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -36,14 +37,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         public BackendPerformanceCounter PerformanceCounter { get { return this.performanceCounter; } }
 
+        /// <summary>Provider of time functions.</summary>
+        protected readonly IDateTimeProvider dateTimeProvider;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="dataFolder">Information about path locations to important folders and files on disk.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        public DBreezeCoinView(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.CoinViewPath, loggerFactory)
+        public DBreezeCoinView(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.CoinViewPath, dateTimeProvider, loggerFactory)
         {
         }
 
@@ -52,8 +57,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="folder">Path to the folder with coinview database files.</param>
+        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        public DBreezeCoinView(Network network, string folder, ILoggerFactory loggerFactory)
+        public DBreezeCoinView(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
@@ -61,13 +67,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.session = new DBreezeSingleThreadSession("DBreeze CoinView", folder);
             this.network = network;
-            this.performanceCounter = new BackendPerformanceCounter();
+            this.dateTimeProvider = dateTimeProvider;
+            this.performanceCounter = new BackendPerformanceCounter(this.dateTimeProvider);
         }
 
         /// <summary>
         /// Initializes the database tables used by the coinview.
         /// </summary>
-        public Task Initialize()
+        public Task InitializeAsync()
         {
             this.logger.LogTrace("()");
 
@@ -281,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Persists unsaved POS blocks information to the database.
         /// </summary>
         /// <param name="stakeEntries">List of POS block information to be examined and persists if unsaved.</param>
-        public Task PutStake(IEnumerable<StakeItem> stakeEntries)
+        public Task PutStakeAsync(IEnumerable<StakeItem> stakeEntries)
         {
             return this.session.Execute(() =>
             {
@@ -314,7 +321,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Retrieves POS blocks information from the database.
         /// </summary>
         /// <param name="blocklist">List of partially initialized POS block information that is to be fully initialized with the values from the database.</param>
-        public Task GetStake(IEnumerable<StakeItem> blocklist)
+        public Task GetStakeAsync(IEnumerable<StakeItem> blocklist)
         {
             return this.session.Execute(() =>
             {
@@ -333,7 +340,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// TODO: Do we need this method? 
-        public Task DeleteStake(uint256 blockid, BlockStake blockStake)
+        public Task DeleteStakeAsync(uint256 blockid, BlockStake blockStake)
         {
             // TODO: Implement delete stake on rewind.
             throw new NotImplementedException();

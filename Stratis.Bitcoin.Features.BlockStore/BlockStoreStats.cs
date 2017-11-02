@@ -3,6 +3,7 @@
     using System;
     using System.Text;
     using Microsoft.Extensions.Logging;
+    using Stratis.Bitcoin.Base;
 
     public sealed class BlockStoreStats
     {
@@ -14,20 +15,24 @@
         private BlockStoreRepositoryPerformanceSnapshot lastRepositorySnapshot;
         private BlockStoreCachePerformanceSnapshot lastCacheSnapshot;
 
-        public BlockStoreStats(IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILogger logger)
+        /// <summary>Provider of time functions.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockStoreStats(IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, IDateTimeProvider dateTimeProvider, ILogger logger)
         {
             this.repository = blockRepository;
             this.cache = blockStoreCache as BlockStoreCache;
             this.logger = logger;
             this.lastRepositorySnapshot = this.repository?.PerformanceCounter.Snapshot();
             this.lastCacheSnapshot = this.cache?.PerformanceCounter.Snapshot();
+            this.dateTimeProvider = dateTimeProvider;
         }
 
         public bool CanLog
         {
             get
             {
-                return (DateTimeOffset.UtcNow - this.lastRepositorySnapshot.Taken) > TimeSpan.FromSeconds(10.0);
+                return (this.dateTimeProvider.GetUtcNow() - this.lastRepositorySnapshot.Taken) > TimeSpan.FromSeconds(10.0);
             }
         }
 

@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         [ActionName("getrawtransaction")]
-        public async Task<TransactionModel> GetRawTransaction(string txid, int verbose = 0)
+        public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0)
         {
             uint256 trxid;
             if (!uint256.TryParse(txid, out trxid))
@@ -70,8 +70,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (verbose != 0)
             {
-                ChainedBlock block = await this.GetTransactionBlock(trxid);
-                return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.HighestValidatedPoW);
+                ChainedBlock block = await this.GetTransactionBlockAsync(trxid);
+                return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
             }
             else
                 return new TransactionBriefModel(trx);
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="includeMemPool">Whether to include the mempool</param>
         /// <returns>The GetTxOut rpc format</returns>
         [ActionName("gettxout")]
-        public async Task<GetTxOutModel> GetTxOut(string txid, uint vout, bool includeMemPool = true)
+        public async Task<GetTxOutModel> GetTxOutAsync(string txid, uint vout, bool includeMemPool = true)
         {
             uint256 trxid;
             if (!uint256.TryParse(txid, out trxid))
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 unspentOutputs = await this.FullNode.NodeService<IGetUnspentTransaction>()?.GetUnspentTransactionAsync(trxid);
             }
-            
+
             if(unspentOutputs == null)
             {
                 return null;
@@ -119,11 +119,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionName("getinfo")]
         public GetInfoModel GetInfo()
         {
-            var model = new GetInfoModel()
+            var model = new GetInfoModel
             {
                 version = this.FullNode?.Version.ToUint() ?? 0,
                 protocolversion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
-                blocks = this.ChainState?.HighestValidatedPoW?.Height ?? 0,
+                blocks = this.ChainState?.ConsensusTip?.Height ?? 0,
                 timeoffset = this.ConnectionManager?.ConnectedNodes?.GetMedianTimeOffset() ?? 0,
                 connections = this.ConnectionManager?.ConnectedNodes?.Count(),
                 proxy = string.Empty,
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return model;
         }
 
-        private async Task<ChainedBlock> GetTransactionBlock(uint256 trxid)
+        private async Task<ChainedBlock> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedBlock block = null;
             uint256 blockid = await this.FullNode.NodeFeature<IBlockStore>()?.GetTrxBlockIdAsync(trxid);

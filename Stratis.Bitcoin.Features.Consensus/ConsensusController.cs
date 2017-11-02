@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public uint256 GetBestBlockHash()
         {
             Guard.NotNull(this.ChainState, nameof(this.ChainState));
-            return this.ChainState?.HighestValidatedPoW?.HashBlock;
+            return this.ChainState?.ConsensusTip?.HashBlock;
         }
 
         [ActionName("getblockhash")]

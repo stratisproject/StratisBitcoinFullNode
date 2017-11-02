@@ -5,19 +5,20 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Signals;
 using System;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusStats
+    public class ConsensusStats : SignalObserver<Block>
     {
-        private CachedCoinView cache;
-        private DBreezeCoinView dbreeze;
-        private CoinView bottom;
+        private readonly CachedCoinView cache;
+        private readonly DBreezeCoinView dbreeze;
+        private readonly CoinView bottom;
 
-        private LookaheadBlockPuller lookaheadPuller;
+        private readonly LookaheadBlockPuller lookaheadPuller;
         private ConsensusPerformanceSnapshot lastSnapshot;
         private BackendPerformanceSnapshot lastSnapshot2;
         private CachePerformanceSnapshot lastSnapshot3;
@@ -27,18 +28,23 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ChainState chainState;
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connectionManager;
+
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Provider of date time functionality.</summary>
+        private readonly IDateTimeProvider dateTimeProvider;
+
         public ConsensusStats(
-            CoinViewStack stack, 
             CoinView coinView, 
             ConsensusLoop consensusLoop, 
             ChainState chainState, 
             ConcurrentChain chain, 
             IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory)
         {
-            stack = new CoinViewStack(coinView);
+            CoinViewStack stack = new CoinViewStack(coinView);
             this.cache = stack.Find<CachedCoinView>();
             this.dbreeze = stack.Find<DBreezeCoinView>();
             this.bottom = stack.Bottom;
@@ -52,15 +58,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chainState = chainState;
             this.chain = chain;
             this.connectionManager = connectionManager;
+            this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-        }
-
-        public bool CanLog
-        {
-            get
-            {
-                return this.chainState.IsInitialBlockDownload && (DateTimeOffset.UtcNow - this.lastSnapshot.Taken) > TimeSpan.FromSeconds(5.0);
-            }
         }
 
         public async Task LogAsync()
@@ -99,6 +98,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             benchLogs.AppendLine(this.connectionManager.GetStats());
             this.logger.LogInformation(benchLogs.ToString());
+        }
+
+        protected override void OnNextCore(Block value)
+        {
+            if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
+                if (this.chainState.IsInitialBlockDownload)
+                    this.Log();
         }
     }
 }
