@@ -243,10 +243,10 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
-/Stratis.Bitcoin.IntegrationTests/TestData
-/Stratis.Bitcoin.IntegrationTests/ValidSomeBlocks
-/Stratis.BitcoinD/Properties/launchSettings.json
-/Stratis.Bitcoin.Tests/TestData/
-/Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests/TestData
-/Stratis.StratisD/Logs
-/Stratis.BitcoinD/Logs
+/src/Stratis.Bitcoin.IntegrationTests/TestData
+/src/Stratis.Bitcoin.IntegrationTests/ValidSomeBlocks
+/src/Stratis.BitcoinD/Properties/launchSettings.json
+/src/Stratis.Bitcoin.Tests/TestData/
+/src/Stratis.Bitcoin.Tests/Stratis.Bitcoin.Tests/TestData
+/src/Stratis.StratisD/Logs
+/src/Stratis.BitcoinD/Logs
