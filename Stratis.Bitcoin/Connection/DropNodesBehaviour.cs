@@ -3,6 +3,8 @@ using System.Linq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -14,12 +16,21 @@ namespace Stratis.Bitcoin.Connection
     /// </summary>
     public class DropNodesBehaviour : NodeBehavior
     {
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connection;
         private readonly decimal dropThreshold;
 
-        public DropNodesBehaviour(ConcurrentChain chain, IConnectionManager connectionManager)
+        public DropNodesBehaviour(ConcurrentChain chain, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.loggerFactory = loggerFactory;
+
             this.chain = chain;
             this.connection = connectionManager;
 
@@ -30,6 +41,8 @@ namespace Stratis.Bitcoin.Connection
 
         private void AttachedNodeOnMessageReceived(Node node, IncomingMessage message)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+
             message.Message.IfPayloadIs<VersionPayload>(version =>
             {
                 NodesGroup nodeGroup = this.connection.DiscoveredNodeGroup ?? this.connection.ConnectNodeGroup;
@@ -40,21 +53,31 @@ namespace Stratis.Bitcoin.Connection
                     if (version.StartHeight < this.chain.Height)
                         this.AttachedNode.DisconnectAsync($"Node at height = {version.StartHeight} too far behind current height");
             });
+
+            this.logger.LogTrace("(-)");
         }
 
         protected override void AttachCore()
         {
+            this.logger.LogTrace("()");
+
             this.AttachedNode.MessageReceived += this.AttachedNodeOnMessageReceived;
+
+            this.logger.LogTrace("(-)");
         }
 
         protected override void DetachCore()
         {
+            this.logger.LogTrace("()");
+
             this.AttachedNode.MessageReceived -= this.AttachedNodeOnMessageReceived;
+
+            this.logger.LogTrace("(-)");
         }
 
         public override object Clone()
         {
-            return new DropNodesBehaviour(this.chain, this.connection);
+            return new DropNodesBehaviour(this.chain, this.connection, this.loggerFactory);
         }
     }
 }

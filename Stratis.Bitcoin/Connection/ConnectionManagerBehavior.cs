@@ -3,12 +3,17 @@ using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
 {
 	public class ConnectionManagerBehavior : NodeBehavior
 	{
-	    private readonly ILogger logger;
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
 
         public ConnectionManager ConnectionManager { get; private set; }
         public bool Inbound { get; private set; }
@@ -17,16 +22,18 @@ namespace Stratis.Bitcoin.Connection
 
         private ChainHeadersBehavior chainHeadersBehavior;
 
-        public ConnectionManagerBehavior(bool inbound, IConnectionManager connectionManager, ILogger logger)
+        public ConnectionManagerBehavior(bool inbound, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
 		{
-		    this.logger = logger;
-		    this.Inbound = inbound;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.loggerFactory = loggerFactory;
+
+            this.Inbound = inbound;
 			this.ConnectionManager = connectionManager as ConnectionManager;
 		}
 
 		public override object Clone()
 		{
-			return new ConnectionManagerBehavior(this.Inbound, this.ConnectionManager, this.logger)
+			return new ConnectionManagerBehavior(this.Inbound, this.ConnectionManager, this.loggerFactory)
 			{
 				OneTry = this.OneTry,
 				Whitelisted = this.Whitelisted,
@@ -35,22 +42,32 @@ namespace Stratis.Bitcoin.Connection
 
 		protected override void AttachCore()
 		{
-			this.AttachedNode.StateChanged += AttachedNode_StateChanged;
+            this.logger.LogTrace("()");
+
+            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
 			this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
 			this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
-		}
 
-		private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
+            this.logger.LogTrace("(-)");
+        }
+
+        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
 		{
-			if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.Whitelisted)
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+
+            if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.Whitelisted)
 			{
 				node.DisconnectAsync("Invalid block received");
 			}
-		}
 
-		private void AttachedNode_StateChanged(Node node, NodeState oldState)
+            this.logger.LogTrace("(-)");
+        }
+
+        private void AttachedNode_StateChanged(Node node, NodeState oldState)
 		{
-			if (node.State == NodeState.HandShaked)
+            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
+
+            if (node.State == NodeState.HandShaked)
 			{
 				this.ConnectionManager.AddConnectedNode(node);
 				this.logger.LogInformation("Node {0} connected ({1}), agent {2}, height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
@@ -66,12 +83,18 @@ namespace Stratis.Bitcoin.Connection
 
                 this.ConnectionManager.RemoveConnectedNode(node);
 			}
-		}
 
-		protected override void DetachCore()
+            this.logger.LogTrace("(-)");
+        }
+
+        protected override void DetachCore()
 		{
-			this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
+            this.logger.LogTrace("()");
+
+            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
 			this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
-		}
-	}
+
+            this.logger.LogTrace("(-)");
+        }
+    }
 }
