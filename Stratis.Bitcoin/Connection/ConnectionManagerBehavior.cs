@@ -15,6 +15,12 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>
+        /// Instance logger that we use for logging of INFO level messages that are visible on the console.
+        /// <para>Unlike <see cref="logger"/>, this one is created without prefix for the nicer console output.</para>
+        /// </summary>
+        private readonly ILogger infoLogger;
+
         public ConnectionManager ConnectionManager { get; private set; }
         public bool Inbound { get; private set; }
         public bool Whitelisted { get; internal set; }
@@ -25,6 +31,7 @@ namespace Stratis.Bitcoin.Connection
         public ConnectionManagerBehavior(bool inbound, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
 		{
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
 
             this.Inbound = inbound;
@@ -70,16 +77,16 @@ namespace Stratis.Bitcoin.Connection
             if (node.State == NodeState.HandShaked)
 			{
 				this.ConnectionManager.AddConnectedNode(node);
-				this.logger.LogInformation("Node {0} connected ({1}), agent {2}, height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
+				this.infoLogger.LogInformation("Node {0} connected ({1}), agent {2}, height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
 				node.SendMessageAsync(new SendHeadersPayload());
 			}
 
 			if ((node.State == NodeState.Failed) || (node.State == NodeState.Offline))
 			{
-			    this.logger.LogInformation("Node {0} offline.", node.RemoteSocketEndpoint);
+			    this.infoLogger.LogInformation("Node {0} offline.", node.RemoteSocketEndpoint);
 
                 if (node.DisconnectReason != null && !string.IsNullOrEmpty(node.DisconnectReason.Reason))
-				    this.logger.LogInformation("Reason: {0}", node.DisconnectReason.Reason);
+				    this.infoLogger.LogInformation("Reason: {0}", node.DisconnectReason.Reason);
 
                 this.ConnectionManager.RemoveConnectedNode(node);
 			}
