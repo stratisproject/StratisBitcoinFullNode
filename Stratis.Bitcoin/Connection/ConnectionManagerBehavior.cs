@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Connection
         public ConnectionManagerBehavior(bool inbound, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
 		{
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.infoLogger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
 
             this.Inbound = inbound;
