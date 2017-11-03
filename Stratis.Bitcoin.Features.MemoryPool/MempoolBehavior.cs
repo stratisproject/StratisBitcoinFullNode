@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            if (invPayload.Inventory.Count > ConnectionManager.MAX_INV_SZ)
+            if (invPayload.Inventory.Count > ConnectionManager.MaxInventorySize)
             {
                 this.logger.LogTrace("(-)[MAX_INV_SZ]");
                 //Misbehaving(pfrom->GetId(), 20); // TODO: Misbehaving
@@ -486,7 +486,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Queue<InventoryVector> queue = new Queue<InventoryVector>(trxList.Select(s => new InventoryVector(node.AddSupportedOptions(InventoryType.MSG_TX), s)));
             while (queue.Count > 0)
             {
-                InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MAX_INV_SZ).ToArray();
+                InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
                 if (node.IsConnected)
                 {
                     this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", node.RemoteSocketEndpoint);

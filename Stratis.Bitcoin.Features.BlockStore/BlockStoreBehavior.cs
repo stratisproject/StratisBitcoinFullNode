@@ -189,7 +189,7 @@
             var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s)));
             while (queue.Count > 0)
             {
-                var items = queue.TakeAndRemove(ConnectionManager.MAX_INV_SZ).ToArray();
+                var items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
                 if (node.IsConnected)
                 {
                     this.logger.LogTrace("Sending inventory message to peer '{0}'.", node?.RemoteSocketEndpoint);

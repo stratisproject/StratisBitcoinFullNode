@@ -26,15 +26,19 @@ namespace Stratis.Bitcoin.Connection
                 case "add":
                     this.ConnectionManager.AddNodeAddress(endpoint);
                     break;
+
                 case "remove":
                     this.ConnectionManager.RemoveNodeAddress(endpoint);
                     break;
+
                 case "onetry":
                     this.ConnectionManager.Connect(endpoint);
                     break;
+
                 default:
                     throw new ArgumentException("command");
             }
+
             return true;
         }
 
@@ -51,7 +55,7 @@ namespace Stratis.Bitcoin.Connection
             List<Node> nodes = this.ConnectionManager.ConnectedNodes.ToList();
             foreach (Node node in nodes)
             {
-                if (node != null && node.RemoteSocketAddress != null)
+                if ((node != null) && (node.RemoteSocketAddress != null))
                 {
                     PeerNodeModel peerNode = new PeerNodeModel
                     {
@@ -86,6 +90,5 @@ namespace Stratis.Bitcoin.Connection
 
             return peerList;
         }
-
     }
 }

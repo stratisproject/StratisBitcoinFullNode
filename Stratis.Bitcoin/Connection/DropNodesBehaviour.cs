@@ -3,6 +3,8 @@ using System.Linq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -14,47 +16,68 @@ namespace Stratis.Bitcoin.Connection
     /// </summary>
     public class DropNodesBehaviour : NodeBehavior
     {
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connection;
         private readonly decimal dropThreshold;
 
-        public DropNodesBehaviour(ConcurrentChain chain, IConnectionManager connectionManager)
+        public DropNodesBehaviour(ConcurrentChain chain, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.loggerFactory = loggerFactory;
+
             this.chain = chain;
             this.connection = connectionManager;
 
             // 80% of current max connections, the last 20% will only 
-            // connect to nodes ahead of the current best chain
+            // connect to nodes ahead of the current best chain.
             this.dropThreshold = 0.8M; 
         }
 
         private void AttachedNodeOnMessageReceived(Node node, IncomingMessage message)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
+
             message.Message.IfPayloadIs<VersionPayload>(version =>
             {
-                var nodeGroup = this.connection.DiscoveredNodeGroup ?? this.connection.ConnectNodeGroup;
-                // find how much 20% max nodes 
-                var thresholdCount = Math.Round(nodeGroup.MaximumNodeConnection * this.dropThreshold, MidpointRounding.ToEven);
+                NodesGroup nodeGroup = this.connection.DiscoveredNodeGroup ?? this.connection.ConnectNodeGroup;
+                // Find how much 20% max nodes.
+                decimal thresholdCount = Math.Round(nodeGroup.MaximumNodeConnection * this.dropThreshold, MidpointRounding.ToEven);
 
                 if (thresholdCount < this.connection.ConnectedNodes.Count())
                     if (version.StartHeight < this.chain.Height)
                         this.AttachedNode.DisconnectAsync($"Node at height = {version.StartHeight} too far behind current height");
             });
+
+            this.logger.LogTrace("(-)");
         }
 
         protected override void AttachCore()
         {
+            this.logger.LogTrace("()");
+
             this.AttachedNode.MessageReceived += this.AttachedNodeOnMessageReceived;
+
+            this.logger.LogTrace("(-)");
         }
 
         protected override void DetachCore()
         {
+            this.logger.LogTrace("()");
+
             this.AttachedNode.MessageReceived -= this.AttachedNodeOnMessageReceived;
+
+            this.logger.LogTrace("(-)");
         }
 
         public override object Clone()
         {
-            return new DropNodesBehaviour(this.chain, this.connection);
+            return new DropNodesBehaviour(this.chain, this.connection, this.loggerFactory);
         }
     }
 }

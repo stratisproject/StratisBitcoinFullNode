@@ -42,24 +42,35 @@ namespace Stratis.Bitcoin.Connection
 
     public class ConnectionManager : IConnectionManager
     {
-        // The maximum number of entries in an 'inv' protocol message
-        public const int MAX_INV_SZ = 50000;
+        // The maximum number of entries in an 'inv' protocol message.
+        public const int MaxInventorySize = 50000;
+
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        private readonly INodeLifetime nodeLifetime;
 
         private readonly NodesCollection connectedNodes = new NodesCollection();
+        public IReadOnlyNodesCollection ConnectedNodes { get { return this.connectedNodes; } }
+
         private readonly Dictionary<Node, PerformanceSnapshot> downloads = new Dictionary<Node, PerformanceSnapshot>();
         private NodeServices discoveredNodeRequiredService = NodeServices.Network;
         private readonly ConnectionManagerSettings connectionManagerSettings;
-        private readonly Network network;
-        private readonly NodeConnectionParameters parameters;
-        private readonly NodeSettings nodeSettings;
-        private readonly ILogger logger;
-        private readonly INodeLifetime nodeLifetime;
 
+        private readonly Network network;
         public Network Network { get { return this.network; } }
+
+        private readonly NodeConnectionParameters parameters;
         public NodeConnectionParameters Parameters { get { return this.parameters; } }
+
+        private readonly NodeSettings nodeSettings;
         public NodeSettings NodeSettings { get { return this.nodeSettings; } }
-        public IReadOnlyNodesCollection ConnectedNodes { get { return this.connectedNodes; } }
-        public List<NodeServer> Servers { get; } = new List<NodeServer>();
+
+        public List<NodeServer> Servers { get; }
+
         public NodesGroup ConnectNodeGroup { get; private set; }
         public NodesGroup AddNodeNodeGroup { get; private set; }
         public NodesGroup DiscoveredNodeGroup { get; set; }
@@ -72,26 +83,36 @@ namespace Stratis.Bitcoin.Connection
             this.connectionManagerSettings = nodeSettings.ConnectionManager;
             this.parameters = parameters;
             this.parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
+
+            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.Servers = new List<NodeServer>();
         }
+
         public void Start()
         {
+            this.logger.LogTrace("()");
+
             this.parameters.UserAgent = $"{this.NodeSettings.Agent}:{this.GetVersion()}";
             this.parameters.Version = this.NodeSettings.ProtocolVersion;
+
             if (this.connectionManagerSettings.Connect.Count == 0)
             {
                 NodeConnectionParameters cloneParameters = this.parameters.Clone();
-                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.logger));
+                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
                 this.DiscoveredNodeGroup = CreateNodeGroup(cloneParameters, this.discoveredNodeRequiredService);
-                this.DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; //is the default, but I want to use it
+                this.DiscoveredNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByNetwork; // It is the default, but I want to use it.
             }
             else
             {
                 NodeConnectionParameters cloneParameters = this.parameters.Clone();
-                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.logger));
+                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
                 cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
+
                 var addrman = new AddressManager();
                 addrman.Add(this.connectionManagerSettings.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
+
                 var addrmanBehavior = new AddressManagerBehavior(addrman) { PeersToDiscover = 10 };
                 addrmanBehavior.Mode = AddressManagerBehaviorMode.None;
                 cloneParameters.TemplateBehaviors.Add(addrmanBehavior);
@@ -103,7 +124,7 @@ namespace Stratis.Bitcoin.Connection
 
             {
                 NodeConnectionParameters cloneParameters = this.parameters.Clone();
-                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.logger));
+                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory));
                 cloneParameters.TemplateBehaviors.Remove<AddressManagerBehavior>();
                 var addrman = new AddressManager();
                 addrman.Add(this.connectionManagerSettings.AddNode.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
@@ -116,7 +137,7 @@ namespace Stratis.Bitcoin.Connection
                 this.AddNodeNodeGroup.CustomGroupSelector = WellKnownGroupSelectors.ByEndpoint;
             }
 
-            // Related the groups to each other to prevent duplicate connections
+            // Related the groups to each other to prevent duplicate connections.
             RelatedNodesGroups relGroups = new RelatedNodesGroups();
             relGroups.Register("Discovered", this.DiscoveredNodeGroup);
             relGroups.Register("Connect", this.ConnectNodeGroup);
@@ -130,38 +151,48 @@ namespace Stratis.Bitcoin.Connection
             foreach (NodeServerEndpoint listen in this.connectionManagerSettings.Listen)
             {
                 NodeConnectionParameters cloneParameters = this.parameters.Clone();
-                var server = new NodeServer(this.Network);
-                server.LocalEndpoint = listen.Endpoint;
-                server.ExternalEndpoint = this.connectionManagerSettings.ExternalEndpoint;
+                var server = new NodeServer(this.Network)
+                {
+                    LocalEndpoint = listen.Endpoint,
+                    ExternalEndpoint = this.connectionManagerSettings.ExternalEndpoint
+                };
+
                 this.Servers.Add(server);
-                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this, this.logger)
+                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this, this.loggerFactory)
                 {
                     Whitelisted = listen.Whitelisted
                 });
+
                 server.InboundNodeConnectionParameters = cloneParameters;
                 server.Listen();
+
                 logs.Append(listen.Endpoint.Address + ":" + listen.Endpoint.Port);
                 if (listen.Whitelisted)
                     logs.Append(" (whitelisted)");
                 logs.AppendLine();
             }
             this.logger.LogInformation(logs.ToString());
+
+            this.logger.LogTrace("(-)");
         }
 
         public void AddDiscoveredNodesRequirement(NodeServices services)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(services), services);
+
             this.discoveredNodeRequiredService |= services;
             NodesGroup group = this.DiscoveredNodeGroup;
-            if (group != null &&
-               !group.Requirements.RequiredServices.HasFlag(services))
+            if ((group != null) && !group.Requirements.RequiredServices.HasFlag(services))
             {
                 group.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
                 foreach (Node node in group.ConnectedNodes)
                 {
                     if (!node.PeerVersion.Services.HasFlag(services))
-                        node.DisconnectAsync("The peer does not support the required services requirement");
+                        node.DisconnectAsync("The peer does not support the required services requirement.");
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         public string GetStats()
@@ -178,7 +209,8 @@ namespace Stratis.Bitcoin.Connection
                     if (this.downloads.TryGetValue(node, out lastSnapshot))
                     {
                         BlockPullerBehavior behavior = node.Behaviors.OfType<BlockPullerBehavior>()
-                                                                    .FirstOrDefault(b => b.Puller.GetType() == typeof(LookaheadBlockPuller));
+                            .FirstOrDefault(b => b.Puller.GetType() == typeof(LookaheadBlockPuller));
+
                         PerformanceSnapshot diff = newSnapshot - lastSnapshot;
                         diffTotal = new PerformanceSnapshot(diff.TotalReadenBytes + diffTotal.TotalReadenBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken };
                         builder.Append((node.RemoteSocketAddress + ":" + node.RemoteSocketPort).PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diff.WrittenBytesPerSecond));
@@ -187,18 +219,22 @@ namespace Stratis.Bitcoin.Connection
                             int intQuality = (int)behavior.QualityScore;
                             builder.Append("\tQualityScore: " + intQuality + (intQuality < 10 ? "\t" : "") + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
                         }
+
                         builder.AppendLine();
                     }
+
                     this.downloads.AddOrReplace(node, newSnapshot);
                 }
+
                 builder.AppendLine("=================");
                 builder.AppendLine("Total".PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + ToKBSec(diffTotal.WrittenBytesPerSecond));
                 builder.AppendLine("==========================");
 
-                //TODO: Hack, we should just clean nodes that are not connect anymore
+                //TODO: Hack, we should just clean nodes that are not connect anymore.
                 if (this.downloads.Count > 1000)
                     this.downloads.Clear();
             }
+
             return builder.ToString();
         }
 
@@ -216,6 +252,7 @@ namespace Stratis.Bitcoin.Connection
                     (" agent " + node.PeerVersion.UserAgent + ", ").PadRight(LoggingConfiguration.ColumnLength + 2) +
                     " height=" + chainHeadersBehavior.PendingTip.Height);
             }
+
             return builder.ToString();
         }
 
@@ -227,11 +264,16 @@ namespace Stratis.Bitcoin.Connection
 
         private NodesGroup CreateNodeGroup(NodeConnectionParameters cloneParameters, NodeServices requiredServices)
         {
-            return new NodesGroup(this.Network, cloneParameters, new NodeRequirement
+            this.logger.LogTrace("({0}:{1})", nameof(requiredServices), requiredServices);
+
+            var res = new NodesGroup(this.Network, cloneParameters, new NodeRequirement
             {
                 MinVersion = this.NodeSettings.ProtocolVersion,
                 RequiredServices = requiredServices,
             });
+
+            this.logger.LogTrace("(-)");
+            return res;
         }
 
         private string GetVersion()
@@ -242,26 +284,37 @@ namespace Stratis.Bitcoin.Connection
 
         public void Dispose()
         {
-            if (this.DiscoveredNodeGroup != null)
-                this.DiscoveredNodeGroup.Dispose();
-            if (this.ConnectNodeGroup != null)
-                this.ConnectNodeGroup.Dispose();
-            if (this.AddNodeNodeGroup != null)
-                this.AddNodeNodeGroup.Dispose();
+            this.logger.LogTrace("()");
+
+            this.DiscoveredNodeGroup?.Dispose();
+            this.ConnectNodeGroup?.Dispose();
+            this.AddNodeNodeGroup?.Dispose();
+
             foreach (NodeServer server in this.Servers)
                 server.Dispose();
+
             foreach (Node node in this.connectedNodes.Where(n => n.Behaviors.Find<ConnectionManagerBehavior>().OneTry))
                 node.Disconnect();
+
+            this.logger.LogTrace("(-)");
         }
 
         internal void AddConnectedNode(Node node)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(node), node.RemoteSocketEndpoint);
+
             this.connectedNodes.Add(node);
+
+            this.logger.LogTrace("(-)");
         }
 
         internal void RemoveConnectedNode(Node node)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(node), node.RemoteSocketEndpoint);
+
             this.connectedNodes.Remove(node);
+
+            this.logger.LogTrace("(-)");
         }
 
         public Node FindNodeByEndpoint(IPEndPoint endpoint)
@@ -281,27 +334,40 @@ namespace Stratis.Bitcoin.Connection
 
         public void AddNodeAddress(IPEndPoint endpoint)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
+
             AddressManager addrman = AddressManagerBehavior.GetAddrman(this.AddNodeNodeGroup.NodeConnectionParameters);
             addrman.Add(new NetworkAddress(endpoint));
             this.AddNodeNodeGroup.MaximumNodeConnection++;
+
+            this.logger.LogTrace("(-)");
         }
 
         public void RemoveNodeAddress(IPEndPoint endpoint)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
+
             Node node = this.connectedNodes.FindByEndpoint(endpoint);
             if (node != null)
                 node.DisconnectAsync("Requested by user");
+
+            this.logger.LogTrace("(-)");
         }
 
         public Node Connect(IPEndPoint endpoint)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
+
             NodeConnectionParameters cloneParameters = this.parameters.Clone();
-            cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.logger)
+            cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory)
             {
                 OneTry = true
             });
-            var node = Node.Connect(this.Network, endpoint, cloneParameters);
+
+            Node node = Node.Connect(this.Network, endpoint, cloneParameters);
             node.VersionHandshake();
+
+            this.logger.LogTrace("(-)");
             return node;
         }
     }

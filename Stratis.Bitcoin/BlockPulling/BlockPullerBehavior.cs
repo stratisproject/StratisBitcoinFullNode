@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.BlockPulling
     public class BlockPullerBehavior : NodeBehavior, IBlockPullerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;

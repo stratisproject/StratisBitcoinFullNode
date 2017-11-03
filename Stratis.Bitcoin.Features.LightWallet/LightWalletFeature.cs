@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
@@ -26,6 +27,12 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
     public class LightWalletFeature : FullNodeFeature, INodeStats, IFeatureStats
     {
+        /// <summary>Logger factory to create loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
 
@@ -52,6 +59,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
         /// <param name="nodeLifetime">The node lifetime.</param>
         /// <param name="walletFeePolicy">The wallet fee policy.</param>
+        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         public LightWalletFeature(
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
@@ -61,7 +69,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IWalletFeePolicy walletFeePolicy,
-            BroadcasterBehavior broadcasterBehavior)
+            BroadcasterBehavior broadcasterBehavior,
+            ILoggerFactory loggerFactory)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -72,12 +81,14 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.nodeLifetime = nodeLifetime;
             this.walletFeePolicy = walletFeePolicy;
             this.broadcasterBehavior = broadcasterBehavior;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.loggerFactory = loggerFactory;
         }
 
         /// <inheritdoc />
         public override void Start()
         {
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager));
+            this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager, this.loggerFactory));
 
             this.walletManager.Start();
             this.walletSyncManager.Start();
