@@ -17,6 +17,12 @@
     <Version>1.0.4-alpha</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Deployments\**" />
+    <EmbeddedResource Remove="Deployments\**" />
+    <None Remove="Deployments\**" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
   </ItemGroup>
@@ -28,7 +34,6 @@
 
   <ItemGroup>
     <Folder Include="CoinViews\" />
-    <Folder Include="Deployments\" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
