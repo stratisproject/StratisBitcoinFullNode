@@ -23,8 +23,8 @@ namespace Stratis.Bitcoin.Connection
             this.chain = chain;
             this.connection = connectionManager;
 
-            // 80% of current max connections, the last 20% will only 
-            // connect to nodes ahead of the current best chain
+            // 80 % of current max connections, the last 20 % will only 
+            // connect to nodes ahead of the current best chain.
             this.dropThreshold = 0.8M; 
         }
 
@@ -32,9 +32,9 @@ namespace Stratis.Bitcoin.Connection
         {
             message.Message.IfPayloadIs<VersionPayload>(version =>
             {
-                var nodeGroup = this.connection.DiscoveredNodeGroup ?? this.connection.ConnectNodeGroup;
-                // find how much 20% max nodes 
-                var thresholdCount = Math.Round(nodeGroup.MaximumNodeConnection * this.dropThreshold, MidpointRounding.ToEven);
+                NodesGroup nodeGroup = this.connection.DiscoveredNodeGroup ?? this.connection.ConnectNodeGroup;
+                // Find how much 20 % max nodes.
+                decimal thresholdCount = Math.Round(nodeGroup.MaximumNodeConnection * this.dropThreshold, MidpointRounding.ToEven);
 
                 if (thresholdCount < this.connection.ConnectedNodes.Count())
                     if (version.StartHeight < this.chain.Height)

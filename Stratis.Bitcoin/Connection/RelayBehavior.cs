@@ -10,7 +10,6 @@ namespace Stratis.Bitcoin.Connection
 		{
 		}
 
-
 		public override object Clone()
 		{
 			return new RelayBehavior();
