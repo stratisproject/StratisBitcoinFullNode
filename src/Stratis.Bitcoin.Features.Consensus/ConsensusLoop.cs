@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>A signaler that used to signal messages between features.</summary>
         private readonly Signals.Signals signals;
 
-        /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlock"/> and the reorg part of <see cref="ConsensusLoop.PullerLoop"/> methods.</summary>
+        /// <summary>A lock object that synchronizes access to the <see cref="ConsensusLoop.AcceptBlockAsync"/> and the reorg part of <see cref="ConsensusLoop.PullerLoopAsync"/> methods.</summary>
         private readonly AsyncLock consensusLock;
 
         /// <summary>Provider of block header hash checkpoints.</summary>
@@ -177,15 +177,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // TODO: this rewind code may never happen. 
                 // The node will complete loading before connecting to peers so the  
                 // chain will never know if a reorg happened.
-                utxoHash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                utxoHash = await this.UTXOSet.Rewind().ConfigureAwait(false);
             }
             this.Puller.SetLocation(this.Tip);
 
-            this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", token =>
+            this.asyncLoop = this.asyncLoopFactory.Run($"Consensus Loop", async (token) =>
             {
-                this.PullerLoop(this.nodeLifetime.ApplicationStopping);
-
-                return Task.CompletedTask;
+                await this.PullerLoopAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
             }, 
             this.nodeLifetime.ApplicationStopping, 
             repeatEvery: TimeSpans.RunOnce);
@@ -198,7 +196,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         public void Stop()
         {
-            this.asyncLoop?.Dispose();
+            this.asyncLoop.Dispose();
         }
 
         /// <summary>
@@ -210,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// In this case a rewind of the <see cref="CoinView"/> db will be triggered to roll back consensus until a block is found that is in the best chain.
         /// </remarks>
         /// <param name="cancellationToken">A cancellation token that will stop the loop.</param>
-        private void PullerLoop(CancellationToken cancellationToken)
+        private async Task PullerLoopAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -226,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     if (blockValidationContext.Block == null)
                     {
-                        using (this.consensusLock.Lock())
+                        using (await this.consensusLock.LockAsync().ConfigureAwait(false))
                         {
                             this.logger.LogTrace("No block received from puller due to reorganization.");
 
@@ -237,7 +235,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                             }
 
                             this.logger.LogTrace("Rewinding.");
-                            this.RewindCoinViewLocked();
+                            await this.RewindCoinViewLockedAsync().ConfigureAwait(false);
 
                             continue;
                         }
@@ -245,7 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
 
                 this.logger.LogTrace("Block received from puller.");
-                this.AcceptBlock(blockValidationContext);
+                await this.AcceptBlockAsync(blockValidationContext).ConfigureAwait(false);
             }
         }
 
@@ -254,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Also resets consensus tip, puller's tip and chain state's consensus tip to that block.
         /// </summary>
         /// <remarks>The caller of this method is responsible for holding <see cref="consensusLock"/>.</remarks>
-        private void RewindCoinViewLocked()
+        private async Task RewindCoinViewLockedAsync()
         {
             this.logger.LogTrace("()");
 
@@ -266,7 +264,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 token.ThrowIfCancellationRequested();
 
-                uint256 hash = this.UTXOSet.Rewind().GetAwaiter().GetResult();
+                uint256 hash = await this.UTXOSet.Rewind().ConfigureAwait(false);
                 rewinded = this.Chain.GetBlock(hash);
                 if (rewinded == null)
                 {
@@ -288,15 +286,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
         /// </summary>
         /// <param name="blockValidationContext">Information about the block to validate.</param>
-        public void AcceptBlock(BlockValidationContext blockValidationContext)
+        public async Task AcceptBlockAsync(BlockValidationContext blockValidationContext)
         {
             this.logger.LogTrace("()");
 
-            using (this.consensusLock.Lock())
+            using (await this.consensusLock.LockAsync().ConfigureAwait(false))
             {
                 try
                 {
-                    this.ValidateAndExecuteBlock(new ContextInformation(blockValidationContext, this.Validator.ConsensusParams));
+                    await this.ValidateAndExecuteBlockAsync(new ContextInformation(blockValidationContext, this.Validator.ConsensusParams)).ConfigureAwait(false);
                 }
                 catch (ConsensusErrorException ex)
                 {
@@ -316,7 +314,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                             // Our consensus tip is not on the best chain, which means that the current block
                             // we are processing might be rejected only because of that. The consensus is on wrong chain
                             // and need to be reset.
-                            this.RewindCoinViewLocked();
+                            await this.RewindCoinViewLockedAsync().ConfigureAwait(false);
                         }
 
                         this.logger.LogTrace("(-)[INVALID_PREV_TIP]");
@@ -353,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // We really want to flush if we are at the top of the chain.
                     // Otherwise, we just allow the flush to happen if it is needed.
                     bool forceFlush = this.Chain.Tip.HashBlock == blockValidationContext.ChainedBlock?.HashBlock;
-                    this.FlushAsync(forceFlush).GetAwaiter().GetResult();
+                    await this.FlushAsync(forceFlush).ConfigureAwait(false);
 
                     if (this.Tip.ChainWork > this.Chain.Tip.ChainWork)
                     {
@@ -426,7 +424,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Validates a block using the consensus rules and executes it (processes it and adds it as a tip to consensus).
         /// </summary>
         /// <param name="context">A context that contains all information required to validate the block.</param>
-        internal void ValidateAndExecuteBlock(ContextInformation context)
+        internal async Task ValidateAndExecuteBlockAsync(ContextInformation context)
         {
             this.logger.LogTrace("()");
 
@@ -439,7 +437,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             using (new StopwatchDisposable(o => this.Validator.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
                 uint256[] ids = GetIdsToFetch(context.BlockValidationContext.Block, context.Flags.EnforceBIP30);
-                FetchCoinsResponse coins = this.UTXOSet.FetchCoinsAsync(ids).GetAwaiter().GetResult();
+                FetchCoinsResponse coins = await this.UTXOSet.FetchCoinsAsync(ids).ConfigureAwait(false);
                 context.Set.SetCoins(coins.UnspentOutputs);
             }
 
@@ -457,7 +455,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Persist the changes to the coinview. This will likely only be stored in memory, 
             // unless the coinview treashold is reached.
             this.logger.LogTrace("Saving coinview changes.");
-            this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedBlock.HashBlock).GetAwaiter().GetResult();
+            await this.UTXOSet.SaveChangesAsync(context.Set.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.BlockValidationContext.ChainedBlock.HashBlock).ConfigureAwait(false);
 
             // Set the new tip.
             this.Tip = context.BlockValidationContext.ChainedBlock;
@@ -472,7 +470,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("({0}:{1})", nameof(force), force);
 
-            await (this.UTXOSet as CachedCoinView)?.FlushAsync(force);
+            if (this.UTXOSet is CachedCoinView cachedCoinView)
+                await cachedCoinView.FlushAsync(force).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }
@@ -481,22 +480,18 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// This method try to load from cache the UTXO of the next block in a background task. 
         /// </summary>
         /// <param name="flags">Information about activated features.</param>
-        /// <returns>The process task.</returns>
-        private Task TryPrefetchAsync(DeploymentFlags flags)
+        private async void TryPrefetchAsync(DeploymentFlags flags)
         {
             this.logger.LogTrace("({0}:{1})", nameof(flags), flags);
-
-            Task prefetching = Task.FromResult<bool>(true);
 
             if (this.UTXOSet is CachedCoinView)
             {
                 Block nextBlock = this.Puller.TryGetLookahead(0);
                 if (nextBlock != null)
-                    prefetching = this.UTXOSet.FetchCoinsAsync(GetIdsToFetch(nextBlock, flags.EnforceBIP30));
+                    await this.UTXOSet.FetchCoinsAsync(GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
-            return prefetching;
         }
 
         /// <summary>

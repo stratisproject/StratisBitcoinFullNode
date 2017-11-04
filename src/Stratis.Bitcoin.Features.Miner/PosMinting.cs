@@ -454,7 +454,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Validate the block.
             BlockValidationContext blockValidationContext = new BlockValidationContext { Block = block };
-            this.consensusLoop.AcceptBlock(blockValidationContext);
+            this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
             if (blockValidationContext.ChainedBlock == null)
             {
