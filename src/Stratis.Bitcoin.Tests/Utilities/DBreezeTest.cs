@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
     /// </summary>
     public class DBreezeTest : TestBase
     {
-        /// <summary>Access to DBreeze database.</summary>
+        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
         private readonly DBreezeSerializer dbreezeSerializer;
 
         /// <summary>
