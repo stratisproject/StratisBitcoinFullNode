@@ -189,13 +189,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .SetGenesis(genesis)
                 .SetPort(18444)
                 .SetRPCPort(18442)
-                .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] {(65)})
-                .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] {(196)})
-                .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] {(65 + 128)})
-                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] {0x01, 0x42})
-                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] {0x01, 0x43})
-                .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] {(0x04), (0x88), (0xB2), (0x1E)})
-                .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] {(0x04), (0x88), (0xAD), (0xE4)});
+                .SetBase58Bytes(Base58Type.PUBKEY_ADDRESS, new byte[] { (65) })
+                .SetBase58Bytes(Base58Type.SCRIPT_ADDRESS, new byte[] { (196) })
+                .SetBase58Bytes(Base58Type.SECRET_KEY, new byte[] { (65 + 128) })
+                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_NO_EC, new byte[] { 0x01, 0x42 })
+                .SetBase58Bytes(Base58Type.ENCRYPTED_SECRET_KEY_EC, new byte[] { 0x01, 0x43 })
+                .SetBase58Bytes(Base58Type.EXT_PUBLIC_KEY, new byte[] { (0x04), (0x88), (0xB2), (0x1E) })
+                .SetBase58Bytes(Base58Type.EXT_SECRET_KEY, new byte[] { (0x04), (0x88), (0xAD), (0xE4) });
 
             return builder.BuildAndRegister();
         }
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private Action<IFullNodeBuilder> callback;
 
-        public StratisBitcoinPowRunner(Action<IFullNodeBuilder> callback = null):base()
+        public StratisBitcoinPowRunner(Action<IFullNodeBuilder> callback = null) : base()
         {
             this.callback = callback;
         }
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void Start(string dataDir)
         {
 
-            var args = NodeSettings.FromArguments( new string[] {"-conf=bitcoin.conf", "-datadir=" + dataDir});
+            var args = NodeSettings.FromArguments(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
 
             var node = BuildFullNode(args, this.callback);
 
@@ -363,16 +363,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // kill all dotnet instances no us
                 //foreach (var dotnet in Process.GetProcessesByName("dotnet"))
                 //{
-                //	if (Process.GetCurrentProcess().Id == dotnet.Id)
-                //		continue;
-                //	try
-                //	{
-                //		dotnet.Kill();
-                //	}
-                //	catch
-                //	{
-                //		// ignored
-                //	}
+                //    if (Process.GetCurrentProcess().Id == dotnet.Id)
+                //        continue;
+                //    try
+                //    {
+                //        dotnet.Kill();
+                //    }
+                //    catch
+                //    {
+                //        // ignored
+                //    }
                 //}
                 Thread.Sleep(1000);
                 Directory.Delete(caller, true);
@@ -594,10 +594,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             get
             {
-                if(this._Runner is StratisBitcoinPosRunner)
-                   return ((StratisBitcoinPosRunner)this._Runner).FullNode;
+                if (this._Runner is StratisBitcoinPosRunner)
+                    return ((StratisBitcoinPosRunner)this._Runner).FullNode;
 
-                return ((StratisBitcoinPowRunner) this._Runner).FullNode;
+                return ((StratisBitcoinPowRunner)this._Runner).FullNode;
             }
         }
 
@@ -720,16 +720,16 @@ namespace Stratis.Bitcoin.IntegrationTests
             int i = 0;
             while (i < ports.Length)
             {
-                var port = RandomUtils.GetUInt32()%4000;
+                var port = RandomUtils.GetUInt32() % 4000;
                 port = port + 10000;
                 if (ports.Any(p => p == port))
                     continue;
                 try
                 {
-                    TcpListener l = new TcpListener(IPAddress.Loopback, (int) port);
+                    TcpListener l = new TcpListener(IPAddress.Loopback, (int)port);
                     l.Start();
                     l.Stop();
-                    ports[i] = (int) port;
+                    ports[i] = (int)port;
                     i++;
                 }
                 catch (SocketException)
@@ -942,25 +942,25 @@ namespace Stratis.Bitcoin.IntegrationTests
                     //{
 
 
-                    //	var blockResult = new BlockResult { Block = block };
-                    //	fullNode.ConsensusLoop.AcceptBlock(blockResult);
+                    //    var blockResult = new BlockResult { Block = block };
+                    //    fullNode.ConsensusLoop.AcceptBlock(blockResult);
 
 
-                    //	// similar logic to what's in the full node code
-                    //	if (blockResult.Error == null)
-                    //	{
-                    //		fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
-                    //		//if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
-                    //		//{
-                    //		//	var unused = cache.FlushAsync();
-                    //		//}
-                    //		fullNode.Signals.Blocks.Broadcast(block);
-                    //	}
+                    //    // similar logic to what's in the full node code
+                    //    if (blockResult.Error == null)
+                    //    {
+                    //        fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
+                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedBlock.HashBlock)
+                    //        //{
+                    //        //    var unused = cache.FlushAsync();
+                    //        //}
+                    //        fullNode.Signals.Blocks.Broadcast(block);
+                    //    }
                     //}
                     //catch (ConsensusErrorException)
                     //{
-                    //	// set back the old tip
-                    //	fullNode.Chain.SetTip(oldTip);
+                    //    // set back the old tip
+                    //    fullNode.Chain.SetTip(oldTip);
                     //}
                 }
             }
@@ -971,7 +971,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void BroadcastBlocks(Block[] blocks)
         {
-            using(var node = CreateNodeClient())
+            using (var node = CreateNodeClient())
             {
                 node.VersionHandshake();
                 BroadcastBlocks(blocks, node);
@@ -981,7 +981,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void BroadcastBlocks(Block[] blocks, Node node)
         {
             Block lastSent = null;
-            foreach(var block in blocks)
+            foreach (var block in blocks)
             {
                 node.SendMessageAsync(new InvPayload(block));
                 node.SendMessageAsync(new BlockPayload(block));
@@ -996,60 +996,66 @@ namespace Stratis.Bitcoin.IntegrationTests
             return Generate(blockCount, includeMempool);
         }
 
-        class TransactionNode
+        private class TransactionNode
         {
+            public uint256 Hash = null;
+            public Transaction Transaction = null;
+            public List<TransactionNode> DependsOn = new List<TransactionNode>();
+
             public TransactionNode(Transaction tx)
             {
                 this.Transaction = tx;
                 this.Hash = tx.GetHash();
             }
-            public uint256 Hash = null;
-            public Transaction Transaction = null;
-            public List<TransactionNode> DependsOn = new List<TransactionNode>();
         }
 
         private List<Transaction> Reorder(List<Transaction> transactions)
         {
-            if(transactions.Count == 0)
+            if (transactions.Count == 0)
                 return transactions;
+
             var result = new List<Transaction>();
             var dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
-            foreach(var transaction in dictionary.Select(d => d.Value))
+            foreach (var transaction in dictionary.Select(d => d.Value))
             {
-                foreach(var input in transaction.Transaction.Inputs)
+                foreach (var input in transaction.Transaction.Inputs)
                 {
                     var node = dictionary.TryGet(input.PrevOut.Hash);
-                    if(node != null)
+                    if (node != null)
                     {
                         transaction.DependsOn.Add(node);
                     }
                 }
             }
-            while(dictionary.Count != 0)
+
+            while (dictionary.Count != 0)
             {
-                foreach(var node in dictionary.Select(d => d.Value).ToList())
+                foreach (var node in dictionary.Select(d => d.Value).ToList())
                 {
-                    foreach(var parent in node.DependsOn.ToList())
+                    foreach (var parent in node.DependsOn.ToList())
                     {
-                        if(!dictionary.ContainsKey(parent.Hash))
+                        if (!dictionary.ContainsKey(parent.Hash))
                             node.DependsOn.Remove(parent);
                     }
-                    if(node.DependsOn.Count == 0)
+
+                    if (node.DependsOn.Count == 0)
                     {
                         result.Add(node.Transaction);
                         dictionary.Remove(node.Hash);
                     }
                 }
             }
+
             return result;
         }
 
         private BitcoinSecret GetFirstSecret(RPCClient rpc)
         {
-            if(this.MinerSecret != null)
+            if (this.MinerSecret != null)
                 return this.MinerSecret;
+
             var dest = rpc.ListSecrets().FirstOrDefault();
-            if(dest == null)
+            if (dest == null)
             {
                 var address = rpc.GetNewAddress();
                 dest = rpc.DumpPrivKey(address);

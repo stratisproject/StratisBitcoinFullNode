@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="password">The password used to encrypt sensitive info.</param>
         /// <param name="name">The name of the wallet.</param>
         /// <param name="passphrase">The passphrase used in the seed.</param>
-        /// <param name="mnemonic">The user's mnemonic for the wallet.</param>		
+        /// <param name="mnemonic">The user's mnemonic for the wallet.</param>
         /// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
         Mnemonic CreateWallet(string password, string name, string passphrase = null, string mnemonic = null);
 
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <param name="password">The user's password.</param>
         /// <param name="name">The name of the wallet.</param>
-        /// <param name="mnemonic">The user's mnemonic for the wallet.</param>		
+        /// <param name="mnemonic">The user's mnemonic for the wallet.</param>
         /// <param name="passphrase">The passphrase used in the seed.</param>
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns>The recovered wallet.</returns>
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         string GetExtPubKey(WalletAccountReference accountReference);
 
         /// <summary>
-        /// Gets the lowest LastBlockSyncedHeight of all loaded wallet accountroots.
+        /// Gets the lowest LastBlockSyncedHeight of all loaded wallet account roots.
         /// </summary>
         /// <returns>The lowest LastBlockSyncedHeight or null if there are no account roots yet.</returns>
         int? GetEarliestWalletHeight();
