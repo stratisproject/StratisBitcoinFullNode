@@ -5,6 +5,7 @@ using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -344,7 +345,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             };
 
             Network.Main.Consensus.Options = new PowConsensusOptions();
-            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main), DateTimeProvider.Default, new LoggerFactory());
+            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, NodeSettings.Default()), DateTimeProvider.Default, new LoggerFactory());
             //validator.CheckBlockHeader(context);
             validator.ContextualCheckBlock(context);
             validator.CheckBlock(context);
