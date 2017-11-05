@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Miner
             if (this.minerSettings.Mine || this.minerSettings.Stake)
             {
                 services.Features.EnsureFeature<BlockStoreFeature>();
-                var blockSettings = services.ServiceProvider.GetService<StoreSettings>();
+                StoreSettings blockSettings = services.ServiceProvider.GetService<StoreSettings>();
                 if (blockSettings.Prune)
                     throw new ConfigurationException("BlockStore prune mode is incompatible with mining and staking.");
             }
