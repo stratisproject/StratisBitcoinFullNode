@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -127,6 +128,15 @@ namespace Stratis.Bitcoin.Features.Miner
             if (services.ServiceProvider.GetService<PosMinting>() != null)
             {
                 services.Features.EnsureFeature<WalletFeature>();
+            }
+
+            // Mining and staking require block store feature.
+            if (this.minerSettings.Mine || this.minerSettings.Stake)
+            {
+                services.Features.EnsureFeature<BlockStoreFeature>();
+                var blockSettings = services.ServiceProvider.GetService<StoreSettings>();
+                if (blockSettings.Prune)
+                    throw new ConfigurationException("BlockStore prune mode is incompatible with mining and staking.");
             }
         }
     }
