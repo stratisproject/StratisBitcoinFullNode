@@ -340,9 +340,15 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
+                    DateTime? rejectedUntil = null;
+                    // Special handling of block that is invalid because of its header time that is 
+                    // too far in the future. 
+                    if (blockValidationContext.Error == ConsensusErrors.BlockTimestampTooFar)
+                        rejectedUntil = Utils.UnixTimeToDateTime(blockValidationContext.Block.Header.Time).UtcDateTime;
+
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                    this.logger.LogError("Marking block '{0}' as invalid.", rejectedBlockHash);
-                    this.chainState.MarkBlockInvalid(rejectedBlockHash);
+                    this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, rejectedUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", rejectedUntil.Value) : "");
+                    this.chainState.MarkBlockInvalid(rejectedBlockHash, rejectedUntil);
                 }
                 else
                 {
