@@ -74,7 +74,7 @@ after_build:
 test_script:
 - ps: |
       Write-Host "[$env:configuration] STARTED dotnet test" -foregroundcolor "magenta"
-      cd $env:APPVEYOR_BUILD_FOLDER
+      cd $env:APPVEYOR_BUILD_FOLDER/src
       
       $anyFailures = $FALSE;
       
