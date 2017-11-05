@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -139,9 +140,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet/stratis test/main.</param>
-        public Checkpoints(Network network)
+        /// <param name="settings">Settings for full node - used to see if checkpoints have been disabled or not.</param>
+        public Checkpoints(Network network, NodeSettings settings)
         {
-            if (network.Equals(Network.Main)) this.checkpoints = bitcoinMainnetCheckpoints;
+            if (settings != null && !settings.UseCheckpoints) this.checkpoints = new Dictionary<int, CheckpointInfo>(); 
+            else if (network.Equals(Network.Main)) this.checkpoints = bitcoinMainnetCheckpoints;
             else if (network.Equals(Network.TestNet)) this.checkpoints = bitcoinTestnetCheckpoints;
             else if (network.Equals(Network.RegTest)) this.checkpoints = new Dictionary<int, CheckpointInfo>();
             else if (network.Equals(Network.StratisMain)) this.checkpoints = stratisMainnetCheckpoints;

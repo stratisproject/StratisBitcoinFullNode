@@ -96,6 +96,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Minimum relay transcation fee for network.</summary>
         public FeeRate MinRelayTxFeeRate { get; set; }
 
+        /// <summary>Whether use of checkpoints is enabled or not.</summary>
+        public bool UseCheckpoints { get; set; }
+
         public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
@@ -225,6 +228,9 @@ namespace Stratis.Bitcoin.Configuration
 
             nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
+
+            nodeSettings.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
+            nodeSettings.Logger.LogDebug("Checkpoints are {0}.", nodeSettings.UseCheckpoints ? "enabled" : "disabled");
 
             try
             {

@@ -138,13 +138,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
 
                 LoggerFactory loggerFactory = new LoggerFactory();
-                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network), dateTimeProvider, loggerFactory);
                 var nodeSettings = NodeSettings.Default();
+                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network, nodeSettings), dateTimeProvider, loggerFactory);
 
                 ConnectionManager connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
 
-                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network));
+                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, nodeSettings));
                 await this.consensus.StartAsync();
 
                 this.entry.Fee(11);
