@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -143,7 +144,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="settings">Settings for full node - used to see if checkpoints have been disabled or not.</param>
         public Checkpoints(Network network, NodeSettings settings)
         {
-            if (settings != null && !settings.UseCheckpoints) this.checkpoints = new Dictionary<int, CheckpointInfo>(); 
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(settings, nameof(settings));
+
+            if (!settings.UseCheckpoints) this.checkpoints = new Dictionary<int, CheckpointInfo>(); 
             else if (network.Equals(Network.Main)) this.checkpoints = bitcoinMainnetCheckpoints;
             else if (network.Equals(Network.TestNet)) this.checkpoints = bitcoinTestnetCheckpoints;
             else if (network.Equals(Network.RegTest)) this.checkpoints = new Dictionary<int, CheckpointInfo>();

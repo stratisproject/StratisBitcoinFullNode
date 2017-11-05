@@ -461,6 +461,11 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
                 builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
                 builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
+                builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
+                builder.AppendLine($"-checkpoints=<0 or 1>     Use checkpoints. Default 1.");
+                builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
+                builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
+                builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
 
                 defaults.Logger.LogInformation(builder.ToString());
 
