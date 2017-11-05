@@ -34,17 +34,17 @@ init:
 #---------------------------------#
 before_build:
 - ps: |
-      Write-Host "[$env:configuration] STARTED dotnet restore" -foregroundcolor "magenta"
+      Write-Host "[$env:configuration] STARTED submodule update" -foregroundcolor "magenta"
       
       # Initialize dependencies
       git submodule update --init --recursive
-
-      dotnet restore -v m
-      Write-Host "[$env:configuration] FINISHED dotnet restore" -foregroundcolor "magenta"
+      
+      Write-Host "[$env:configuration] FINISHED submodule update" -foregroundcolor "magenta"
       if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode) }
     
 build_script:
 - ps: |
+      cd src
       Write-Host "[$env:configuration] STARTED dotnet build" -foregroundcolor "magenta"
       dotnet build -c $env:configuration -v m 
       Write-Host "[$env:configuration] FINISHED dotnet build" -foregroundcolor "magenta"
@@ -74,7 +74,7 @@ after_build:
 test_script:
 - ps: |
       Write-Host "[$env:configuration] STARTED dotnet test" -foregroundcolor "magenta"
-      cd $env:APPVEYOR_BUILD_FOLDER
+      cd $env:APPVEYOR_BUILD_FOLDER/src
       
       $anyFailures = $FALSE;
       

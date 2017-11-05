@@ -1,8 +1,9 @@
 #!/bin/bash
 dotnet --info
-echo STARTED dotnet restore
-dotnet restore -v m
+echo STARTED submodule update
+git submodule update --init --recursive
 echo STARTED dotnet build
+cd src
 dotnet build -c Release ${path} -v m
 
 echo STARTED dotnet test
