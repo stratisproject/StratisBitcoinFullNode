@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 string minto = this.minerSettings.MineAddress;
                 // if (string.IsNullOrEmpty(minto)) ;
-                //	TODO: get an address from the wallet.
+                //    TODO: get an address from the wallet.
 
                 if (!string.IsNullOrEmpty(minto))
                 {
