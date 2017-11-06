@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         [ActionName("createindex")]
+        [ActionDescription("Creates and index in the index store.")]
         public async Task<bool>CreateIndexAsync(string name, bool multiValue, string builder, string[] dependancies = null)
         {
             if (dependancies?.Length == 0)
@@ -36,18 +37,21 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         [ActionName("dropindex")]
+        [ActionDescription("Drops an index from the index store.")]
         public async Task<bool> DropIndexAsync(string name)
         {
             return await this.IndexManager.IndexRepository.DropIndexAsync(name);
         }
 
         [ActionName("listindexnames")]
+        [ActionDescription("Lists the names of the indexes in the index store.")]
         public string[] ListIndexNames()
         {
             return this.IndexManager.IndexRepository.Indexes.Keys.ToArray();
         }
 
         [ActionName("describeindex")]
+        [ActionDescription("Describes an index in the index store.")]
         public string[] DescribeIndex(string name)
         {
             if (!this.IndexManager.IndexRepository.Indexes.TryGetValue(name, out Index index))
@@ -57,6 +61,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         [ActionName("getrawtransaction")]
+        [ActionDescription("Gets a raw transaction from the index store.")]
         public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0)
         {
             uint256 trxid;
