@@ -133,15 +133,17 @@ namespace Stratis.Bitcoin.Configuration.Logging
             LogManager.Configuration.LoggingRules.Remove(nullPreInitRule);
 
             // Configure main file target, configured using command line or node configuration file settings.
-            var mainTarget = new FileTarget();
-            mainTarget.Name = "main";
-            mainTarget.FileName = Path.Combine(folder.LogPath, "node.txt");
-            mainTarget.ArchiveFileName = Path.Combine(folder.LogPath, "node-${date:universalTime=true:format=yyyy-MM-dd}.txt");
-            mainTarget.ArchiveNumbering = ArchiveNumberingMode.Sequence;
-            mainTarget.ArchiveEvery = FileArchivePeriod.Day;
-            mainTarget.MaxArchiveFiles = 7;
-            mainTarget.Layout = "[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}";
-            mainTarget.Encoding = Encoding.UTF8;
+            var mainTarget = new FileTarget
+            {
+                Name = "main",
+                FileName = Path.Combine(folder.LogPath, "node.txt"),
+                ArchiveFileName = Path.Combine(folder.LogPath, "node-${date:universalTime=true:format=yyyy-MM-dd}.txt"),
+                ArchiveNumbering = ArchiveNumberingMode.Sequence,
+                ArchiveEvery = FileArchivePeriod.Day,
+                MaxArchiveFiles = 7,
+                Layout = "[${longdate:universalTime=true} ${threadid}${mdlc:item=id}] ${level:uppercase=true}: ${callsite} ${message}",
+                Encoding = Encoding.UTF8
+            };
 
             LogManager.Configuration.AddTarget(mainTarget);
 
@@ -162,8 +164,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     // Increase selected categories to Debug.
                     foreach (string key in settings.DebugArgs)
                     {
-                        string category;
-                        if (!keyCategories.TryGetValue(key.Trim(), out category))
+                        if (!keyCategories.TryGetValue(key.Trim(), out var category))
                         {
                             // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
                             category = key.Trim();
@@ -248,8 +249,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                         // Increase selected categories to Debug.
                         foreach (string key in settings.DebugArgs)
                         {
-                            string category;
-                            if (!keyCategories.TryGetValue(key.Trim(), out category))
+                            if (!keyCategories.TryGetValue(key.Trim(), out var category))
                             {
                                 // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
                                 category = key.Trim();

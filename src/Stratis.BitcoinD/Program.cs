@@ -15,27 +15,25 @@ namespace Stratis.BitcoinD
     {
         public static async Task Main(string[] args)
         {
-            NodeSettings nodeSettings;
             try
             {
-                nodeSettings = NodeSettings.FromArguments(args);
+                NodeSettings nodeSettings = NodeSettings.FromArguments(args);
+
+                var node = new FullNodeBuilder()
+                    .UseNodeSettings(nodeSettings)
+                    .UseConsensus()
+                    .UseBlockStore()
+                    .UseMempool()
+                    .AddMining()
+                    .AddRPC()
+                    .Build();
+
+                await node.RunAsync();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("There was a problem in the arguments passed. Details: '{0}'", ex.Message);
-                return;
+                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
             }
-            
-            var node = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseConsensus()
-                .UseBlockStore()
-                .UseMempool()
-                .AddMining()
-                .AddRPC()
-                .Build();
-
-            await node.RunAsync();
         }
     }
 }
