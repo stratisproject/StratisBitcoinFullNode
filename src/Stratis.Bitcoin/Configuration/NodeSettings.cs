@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             if (!Directory.Exists(nodeSettings.DataDir))
-                throw new ConfigurationException("Data directory does not exists");
+                throw new ConfigurationException($"Data directory {nodeSettings.DataDir} does not exists.");
 
             if (nodeSettings.ConfigurationFile == null)
             {

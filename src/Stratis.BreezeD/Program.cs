@@ -30,22 +30,30 @@ namespace Stratis.BreezeD
             var agent = "Breeze";
 
             NodeSettings nodeSettings;
-            if (isStratis)
+            try
             {
-                if (NodeSettings.PrintHelp(args, Network.StratisMain))
-                    return;
+                if (isStratis)
+                {
+                    if (NodeSettings.PrintHelp(args, Network.StratisMain))
+                        return;
 
-                var network = isTestNet ? Network.StratisTest : Network.StratisMain;
-                if (isTestNet)
-                    args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack 
+                    var network = isTestNet ? Network.StratisTest : Network.StratisMain;
+                    if (isTestNet)
+                        args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack 
 
-                nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent);
-                nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
+                    nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent);
+                    nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
+                }
+                else
+                {
+                    nodeSettings = NodeSettings.FromArguments(args, agent: agent);
+                    nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultBitcoinUri : apiUri);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                nodeSettings = NodeSettings.FromArguments(args, agent: agent);
-                nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultBitcoinUri : apiUri);
+                Console.WriteLine("There was a problem in the arguments passed. Details: '{0}'", ex.Message);
+                return;
             }
 
             fullNodeBuilder = new FullNodeBuilder()
