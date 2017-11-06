@@ -127,15 +127,27 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                var listMethods = new List<string>();
+                var listMethods = new List<string[]>();
                 foreach (var descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
                 {
+                    var attr = descriptor.MethodInfo.CustomAttributes.Where(x => x.AttributeType == typeof(ActionDescription)).FirstOrDefault();
+                    var description = attr?.ConstructorArguments.FirstOrDefault().ToString() ?? "";
+
                     var parameters = new List<string>();
                     foreach (var param in descriptor.Parameters.OfType<ControllerParameterDescriptor>())
                         if (!param.ParameterInfo.IsRetval)
-                            parameters.Add(param.ParameterInfo.ToString());
+                        {
+                            string value = $"<{param.ParameterInfo.Name.ToLower()}>";
 
-                    listMethods.Add($"{descriptor.ActionName}({string.Join(", ", parameters.ToArray())})");
+                            if (param.ParameterInfo.HasDefaultValue)
+                                value = $"[{value}]";
+
+                            parameters.Add(value);
+                        }
+
+                    string method = $"{descriptor.ActionName} {string.Join(" ", parameters.ToArray())}";
+
+                    listMethods.Add(new string[] { method, description });
                 }
 
                 return this.Json(listMethods);

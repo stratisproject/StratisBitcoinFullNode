@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                         var response = client.GetStringAsync(ApiURI + "api/rpc/listmethods").GetAwaiter().GetResult();
 
-                        Assert.StartsWith("[\"", response);
+                        Assert.StartsWith("[[\"", response);
                     }
                 }
             }
