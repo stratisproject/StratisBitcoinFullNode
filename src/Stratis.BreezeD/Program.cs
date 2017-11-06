@@ -21,23 +21,22 @@ namespace Stratis.BreezeD
 
         public static async Task Main(string[] args)
         {
-            IFullNodeBuilder fullNodeBuilder = null;
-
-            // Get the API uri. 
-            var apiUri = args.GetValueOf("apiuri");
-            var isTestNet = args.Contains("-testnet");
-            var isStratis = args.Contains("stratis");
-            var agent = "Breeze";
-
-            NodeSettings nodeSettings;
             try
             {
+                // Get the API uri. 
+                var apiUri = args.GetValueOf("apiuri");
+                var isTestNet = args.Contains("-testnet");
+                var isStratis = args.Contains("stratis");
+                var agent = "Breeze";
+
+                NodeSettings nodeSettings;
+
                 if (isStratis)
                 {
                     if (NodeSettings.PrintHelp(args, Network.StratisMain))
                         return;
 
-                    var network = isTestNet ? Network.StratisTest : Network.StratisMain;
+                    Network network = isTestNet ? Network.StratisTest : Network.StratisMain;
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack 
 
@@ -49,24 +48,23 @@ namespace Stratis.BreezeD
                     nodeSettings = NodeSettings.FromArguments(args, agent: agent);
                     nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultBitcoinUri : apiUri);
                 }
+
+                IFullNodeBuilder fullNodeBuilder = new FullNodeBuilder()
+                    .UseNodeSettings(nodeSettings)
+                    .UseLightWallet()
+                    .UseBlockNotification()
+                    .UseTransactionNotification()
+                    .UseApi();
+
+                IFullNode node = fullNodeBuilder.Build();
+
+                // Start Full Node - this will also start the API.
+                await node.RunAsync();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("There was a problem in the arguments passed. Details: '{0}'", ex.Message);
-                return;
+                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
             }
-
-            fullNodeBuilder = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseLightWallet()
-                .UseBlockNotification()
-                .UseTransactionNotification()
-                .UseApi();
-
-            IFullNode node = fullNodeBuilder.Build();
-
-            // Start Full Node - this will also start the API.
-            await node.RunAsync();
         }
     }
 }
