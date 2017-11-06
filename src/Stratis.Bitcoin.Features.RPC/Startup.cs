@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
@@ -10,7 +8,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NBitcoin;
 using NBitcoin.JsonConverters;
-using Stratis.Bitcoin.Configuration.Settings;
+using System;
+using System.IO;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -45,7 +44,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             RPCAuthorization authorizedAccess = new RPCAuthorization();
             var cookieStr = "__cookie__:" + new uint256(RandomUtils.GetBytes(32));
-            File.WriteAllText(fullNode.DataFolder.RPCCookieFile, cookieStr);
+            File.WriteAllText(fullNode.DataFolder.RpcCookieFile, cookieStr);
             authorizedAccess.Authorized.Add(cookieStr);
             var settings = fullNode.NodeService<RpcSettings>();
             if (settings.RpcPassword != null)
