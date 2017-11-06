@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Stratis.BitcoinD": {
+      "commandName": "Project"
+    },
+    "Stratis.BitcoinD Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet"
+    }
+  }
+}
