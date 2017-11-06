@@ -1,4 +1,3 @@
-using System;
 using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
@@ -51,8 +50,8 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
+            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
             this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
 
             this.logger.LogTrace("(-)");
@@ -61,11 +60,6 @@ namespace Stratis.Bitcoin.Connection
         private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
-            if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.Whitelisted)
-            {
-                node.DisconnectAsync("Invalid block received");
-            }
 
             this.logger.LogTrace("(-)");
         }
@@ -99,8 +93,8 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
+            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
+            this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
 
             this.logger.LogTrace("(-)");
         }
