@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Microsoft.AspNetCore.Mvc;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
 {

@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using NBitcoin;
-using NBitcoin.BitcoinCore;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Xunit;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

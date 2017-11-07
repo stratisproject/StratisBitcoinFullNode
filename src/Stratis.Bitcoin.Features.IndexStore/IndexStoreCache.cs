@@ -1,8 +1,7 @@
-﻿using System;
-using Microsoft.Extensions.Caching.Memory;
-using Stratis.Bitcoin.Features.BlockStore;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.BlockStore;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {

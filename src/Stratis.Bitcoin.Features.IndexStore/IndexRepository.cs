@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using NBitcoin;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Features.BlockStore;
-using System.Linq;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Base;
-using DBreeze.DataTypes;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using DBreeze.DataTypes;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {

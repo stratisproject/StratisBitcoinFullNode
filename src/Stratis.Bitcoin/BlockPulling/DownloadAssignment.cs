@@ -1,8 +1,5 @@
-﻿using NBitcoin;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
+﻿using System.Diagnostics;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.BlockPulling
 {

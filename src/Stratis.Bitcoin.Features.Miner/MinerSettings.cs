@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Text;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using System;
-using System.Text;
 
 namespace Stratis.Bitcoin.Features.Miner
 {

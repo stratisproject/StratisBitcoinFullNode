@@ -1,8 +1,7 @@
-﻿using Stratis.Bitcoin.Features.Wallet.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
+using Stratis.Bitcoin.Features.Wallet.Models;
 
 namespace Stratis.Bitcoin.Features.Wallet.Helpers
 {

@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.IndexStore;
-using Stratis.Bitcoin.Features.RPC.Models;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.RPC.Models;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
 {

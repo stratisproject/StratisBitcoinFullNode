@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Text;
 using DBreeze;
+using DBreeze.DataTypes;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
-using DBreeze.DataTypes;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {

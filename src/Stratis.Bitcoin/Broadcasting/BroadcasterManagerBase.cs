@@ -1,14 +1,9 @@
-﻿using Stratis.Bitcoin.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Connection;
-using System.Collections.Concurrent;
-using ConcurrentCollections;
+﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
+using ConcurrentCollections;
+using NBitcoin;
+using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Broadcasting
 {

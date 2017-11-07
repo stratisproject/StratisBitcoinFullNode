@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using NBitcoin;
-using NBitcoin.BitcoinCore;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 

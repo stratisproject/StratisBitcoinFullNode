@@ -1,8 +1,8 @@
-﻿using DBreeze.Utils;
+﻿using System;
+using System.Linq;
+using DBreeze.Utils;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
-using System;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Utilities
 {

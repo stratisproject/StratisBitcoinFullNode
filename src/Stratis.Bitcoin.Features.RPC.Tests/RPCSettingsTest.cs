@@ -1,11 +1,10 @@
-﻿namespace Stratis.Bitcoin.Features.RPC.Tests
-{
-    using Stratis.Bitcoin.Builder;
-    using Stratis.Bitcoin.Configuration;
-    using Stratis.Bitcoin.Features.RPC;
-    using Stratis.Bitcoin.Tests;
-    using Xunit;
+﻿using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests;
+using Xunit;
 
+namespace Stratis.Bitcoin.Features.RPC.Tests
+{
     public class RPCSettingsTest : TestBase
     {
         [Fact]

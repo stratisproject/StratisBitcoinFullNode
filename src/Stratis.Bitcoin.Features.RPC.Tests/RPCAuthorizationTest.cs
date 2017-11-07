@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Features.RPC;
+﻿using System.Net;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests

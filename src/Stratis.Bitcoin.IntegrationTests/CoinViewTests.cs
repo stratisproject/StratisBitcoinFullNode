@@ -1,4 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Crypto;
@@ -9,11 +14,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
 using Xunit;
 using static NBitcoin.Transaction;
 

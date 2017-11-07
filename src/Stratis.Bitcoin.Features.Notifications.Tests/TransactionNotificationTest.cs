@@ -1,7 +1,7 @@
-﻿using Moq;
+﻿using System;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Signals;
-using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Notifications.Tests

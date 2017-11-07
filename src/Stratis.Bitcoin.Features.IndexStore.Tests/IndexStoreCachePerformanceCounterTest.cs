@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using Stratis.Bitcoin.Features.IndexStore;
-using Xunit;
 using Stratis.Bitcoin.Base;
+using Xunit;
 
 namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {

@@ -1,8 +1,6 @@
-﻿using Stratis.Bitcoin.Utilities;
-using System;
-using System.Net;
+﻿using System;
 using System.Threading;
-using System.Threading.Tasks;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -8,7 +9,6 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
-using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Notifications.Tests")]
 

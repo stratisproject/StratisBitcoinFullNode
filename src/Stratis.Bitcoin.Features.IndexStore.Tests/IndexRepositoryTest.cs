@@ -1,21 +1,13 @@
-﻿using Stratis.Bitcoin;
+﻿using System.Collections.Generic;
+using System.Linq;
+using DBreeze;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Tests;
-using Stratis.Bitcoin.Features.IndexStore;
+using Xunit;
 
 namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {
-    using DBreeze;
-    using Moq;
-    using NBitcoin;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Xunit;
-    using Newtonsoft.Json;
-    using Stratis.Bitcoin.Base;
-
     public class IndexRepositoryTest : TestBase
     {
         [Fact]

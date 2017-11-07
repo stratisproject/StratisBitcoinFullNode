@@ -1,10 +1,10 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
-{
-    using Microsoft.Extensions.Caching.Memory;
-    using System;
-    using System.Collections.Generic;
-    using Microsoft.Extensions.Primitives;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
+{
     internal class CacheEntryStub : ICacheEntry
     {
         private object key;

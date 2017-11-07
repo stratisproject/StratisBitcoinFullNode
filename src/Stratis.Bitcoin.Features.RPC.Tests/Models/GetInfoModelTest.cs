@@ -1,9 +1,6 @@
-﻿using NBitcoin;
+﻿using System.Linq;
+using NBitcoin;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Xunit;
 

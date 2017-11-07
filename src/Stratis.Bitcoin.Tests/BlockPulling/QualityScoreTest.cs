@@ -1,9 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Stratis.Bitcoin.BlockPulling;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockPulling

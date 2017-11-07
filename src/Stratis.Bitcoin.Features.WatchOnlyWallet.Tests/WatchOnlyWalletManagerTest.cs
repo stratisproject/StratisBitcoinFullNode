@@ -4,11 +4,11 @@ using System.IO;
 using System.Linq;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Tests.Logging;
 using Xunit;
-using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
 {
