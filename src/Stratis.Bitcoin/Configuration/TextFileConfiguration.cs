@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Configuration
     public class TextFileConfiguration
     {
         /// <summary>Application command line arguments as a mapping of argument name to list of its values.</summary>
-        private Dictionary<string, List<string>> args;
+        private readonly Dictionary<string, List<string>> args;
 
         /// <summary>
         /// Initializes the instance of the object using command line arguments.
@@ -47,15 +47,6 @@ namespace Stratis.Bitcoin.Configuration
                 else
                     this.Add(splitted[0], "1");
             }
-        }
-
-        /// <summary>
-        /// Initializes the instance of the object using already parsed argument mapping.
-        /// </summary>
-        /// <param name="args">Arguments in form of a mapping of argument name to list of its values.</param>
-        public TextFileConfiguration(Dictionary<string, List<string>> args)
-        {
-            this.args = args;
         }
 
         /// <summary>
@@ -96,8 +87,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="value">Argument value.</param>
         private void Add(string key, string value)
         {
-            List<string> list;
-            if (!this.args.TryGetValue(key, out list))
+            if (!this.args.TryGetValue(key, out var list))
             {
                 list = new List<string>();
                 this.args.Add(key, list);
@@ -129,30 +119,18 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Checks whether the list of arguments contains specific argument name.
-        /// </summary>
-        /// <param name="key">Name of the argument to check for. If it is not found, an alternative argument name with additional '-' prefix will be checked.</param>
-        /// <returns><c>true</c> if the list of arguments contains <paramref name="key"/>.</returns>
-        public bool Contains(string key)
-        {
-            return this.args.ContainsKey(key)
-                || this.args.ContainsKey($"-{key}");
-        }
-
-        /// <summary>
         /// Retrieves all values of a specific argument name. This looks up for the argument name with and without a dash prefix.
         /// </summary>
         /// <param name="key">Name of the argument.</param>
         /// <returns>Values for the specified argument.</returns>
         public string[] GetAll(string key)
         {
-            List<string> values;
-            List<string> dashValues;
             // Get the values without the - prefix.
-            if (!this.args.TryGetValue(key, out values))
+            if (!this.args.TryGetValue(key, out var values))
                 values = new List<string>();
+
             // Get the values with the - prefix.
-            if (!this.args.TryGetValue($"-{key}", out dashValues))
+            if (!this.args.TryGetValue($"-{key}", out var dashValues))
                 dashValues = new List<string>();
 
             return values.Concat(dashValues).ToArray();
@@ -167,13 +145,12 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Value of the argument or a default value if no value was set.</returns>
         public T GetOrDefault<T>(string key, T defaultValue)
         {
-            List<string> values;
-            if (!this.args.TryGetValue(key, out values))
+            if (!this.args.TryGetValue(key, out var values))
                 if (!this.args.TryGetValue($"-{key}", out values))
                     return defaultValue;
 
             if (values.Count != 1)
-                throw new ConfigurationException("Duplicate value for key " + key);
+                throw new ConfigurationException($"Duplicate value for key {key}.");
 
             try
             {
@@ -181,7 +158,7 @@ namespace Stratis.Bitcoin.Configuration
             }
             catch (FormatException)
             {
-                throw new ConfigurationException("Key " + key + " should be of type " + typeof(T).Name);
+                throw new ConfigurationException($"Key {key} should be of type {typeof(T).Name}.");
             }
         }
 
@@ -208,22 +185,23 @@ namespace Stratis.Bitcoin.Configuration
 
                 throw new FormatException();
             }
-            else if (typeof(T) == typeof(string))
+
+            if (typeof(T) == typeof(string))
             {
                 return (T)(object)str;
             }
-            else if (typeof(T) == typeof(int))
+
+            if (typeof(T) == typeof(int))
             {
                 return (T)(object)int.Parse(str, CultureInfo.InvariantCulture);
             }
-            else if (typeof(T) == typeof(Uri))
+
+            if (typeof(T) == typeof(Uri))
             {
                 return (T)(object)new Uri(str);
             }
-            else
-            {
-                throw new NotSupportedException("Configuration value does not support type " + typeof(T).Name);
-            }
+
+            throw new NotSupportedException("Configuration value does not support type " + typeof(T).Name);
         }
 
         // TODO: Can we delete these?

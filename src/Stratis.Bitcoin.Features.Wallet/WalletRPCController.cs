@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
 
         [ActionName("sendtoaddress")]
+        [ActionDescription("Sends money to a bitcoin address.")]
         public uint256 SendToAddress(BitcoinAddress bitcoinAddress, Money amount)
         {
             var account = this.GetAccount();

@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 return this._ChainBuilder = this._ChainBuilder ?? new ChainBuilder(this.Network);
             }
         }
-        
+
         DBreezeCoinView _PersistentCoinView;
         public DBreezeCoinView PersistentCoinView
         {
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Dispose()
         {
-            foreach(var item in this._CleanList)
+            foreach (var item in this._CleanList)
                 item.Dispose();
             this._TestDirectory.Dispose(); //Not into cleanlist because it must run last
         }
@@ -82,6 +82,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
             this._PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
             this._CleanList.Add(this._PersistentCoinView);
-        }		
+        }
     }
 }

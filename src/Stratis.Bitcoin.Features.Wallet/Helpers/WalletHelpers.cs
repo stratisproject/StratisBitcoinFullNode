@@ -18,13 +18,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Helpers
         {
             Guard.NotEmpty(network, nameof(network));
 
-	        var selectNetwork =  Network.GetNetwork(network.ToLowerInvariant());
+            Network selectNetwork = Network.GetNetwork(network.ToLowerInvariant());
 
-			if (selectNetwork == null)
-				throw new ArgumentException($"Network '{network}' is not a valid network.");
+            if (selectNetwork == null)
+                throw new ArgumentException($"Network '{network}' is not a valid network.");
 
-	        return selectNetwork;
+            return selectNetwork;
         }
-
     }
 }
