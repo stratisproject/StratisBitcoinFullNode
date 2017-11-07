@@ -335,8 +335,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <returns>Returns true if the folder was successfully removed and false otherwise.</returns>
         public static bool CleanupTestFolder(string folder)
         {
-            bool tryKill = true;
-            while (true)
+            for (bool tryKill = true; ; tryKill = false)
             {
                 try
                 {
@@ -352,7 +351,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
                 if (!tryKill)
                     return false;
-                tryKill = false;
                 foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
                 {
                     if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
