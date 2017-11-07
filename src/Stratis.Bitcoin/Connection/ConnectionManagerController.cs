@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         [ActionName("addnode")]
+        [ActionDescription("Adds a node to the connection manager.")]
         public bool AddNode(string endpointStr, string command)
         {
             Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
@@ -48,6 +49,7 @@ namespace Stratis.Bitcoin.Connection
         /// <see cref="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
         /// <returns>List of connected peer nodes</returns>
         [ActionName("getpeerinfo")]
+        [ActionDescription("Gets peer information from the connection manager.")]
         public List<PeerNodeModel> GetPeerInfo()
         {
             List<PeerNodeModel> peerList = new List<PeerNodeModel>();

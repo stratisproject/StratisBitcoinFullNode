@@ -2,9 +2,20 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using System;
 
 namespace Stratis.Bitcoin
 {
+    [AttributeUsage(AttributeTargets.Method)]
+    public class ActionDescription : Attribute
+    {
+        public string Description { get; private set; }
+
+        public ActionDescription(string description)
+        {
+            this.Description = description;
+        }
+    }
     public abstract class FeatureController : Controller
     {
         protected IFullNode FullNode;
