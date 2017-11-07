@@ -366,9 +366,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public static NodeBuilder Create([CallerMemberNameAttribute] string caller = null, string version = "0.13.1")
         {
-            version = version ?? "0.13.1";
-            if (!Directory.Exists("TestData"))
-                Directory.CreateDirectory("TestData");
+            Directory.CreateDirectory("TestData");
             var path = EnsureDownloaded(version);
             caller = Path.Combine("TestData", caller);
             CleanupTestFolder(caller);
