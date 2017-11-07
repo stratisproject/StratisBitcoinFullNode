@@ -296,6 +296,8 @@ namespace Stratis.Bitcoin.Configuration
                 nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
             }
 
+            nodeSettings.ConnectionManager.BanTime = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantime);
+
             return nodeSettings;
         }
 

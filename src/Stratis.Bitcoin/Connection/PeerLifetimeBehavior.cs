@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Base;
 namespace Stratis.Bitcoin.Connection
 {
     /// <summary>
-    /// A behaviour that will manage the lifetime of peers
+    /// A behaviour that will manage the lifetime of peers.
     /// </summary>
     public class PeerLifetimeBehavior : NodeBehavior
     {
@@ -19,10 +19,13 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Instance of the <see cref="ConnectionManager"/>.</summary>
         public ConnectionManager ConnectionManager { get; private set; }
 
+        /// <summary>Instance of the <see cref="ChainHeadersBehavior"/> that belongs to the same peer as this behaviour.</summary>
         private ChainHeadersBehavior chainHeadersBehavior;
 
+        /// <summary>Instance of the <see cref="ConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
         private ConnectionManagerBehavior connectionManagerBehavior;
 
         public PeerLifetimeBehavior(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IPeerLifetime peerLifetime)
@@ -33,11 +36,13 @@ namespace Stratis.Bitcoin.Connection
             this.ConnectionManager = connectionManager as ConnectionManager;
         }
 
+        /// <inheritdoc />
         public override object Clone()
         {
             return new PeerLifetimeBehavior(this.ConnectionManager, this.loggerFactory, this.peerLifetime);
         }
 
+        /// <inheritdoc />
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
@@ -53,7 +58,6 @@ namespace Stratis.Bitcoin.Connection
                 }
             }
 
-            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
             this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
             this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
             this.connectionManagerBehavior = this.AttachedNode.Behaviors.Find<ConnectionManagerBehavior>();
@@ -61,6 +65,11 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Receive message payloads from the peer.
+        /// </summary>
+        /// <param name="node">The peers that is sending the message.</param>
+        /// <param name="message">The message payload.</param>
         private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
@@ -69,23 +78,17 @@ namespace Stratis.Bitcoin.Connection
             {
                 this.peerLifetime.BanPeer(node.RemoteSocketEndpoint);
                 node.DisconnectAsync("Invalid block received");
+                this.logger.LogTrace("Invalid block received from peer '{0}'", node.RemoteSocketEndpoint);
             }
 
             this.logger.LogTrace("(-)");
         }
 
-        private void AttachedNode_StateChanged(Node node, NodeState oldState)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
-
-            this.logger.LogTrace("(-)");
-        }
-
+        /// <inheritdoc />
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
             this.AttachedNode.MessageReceived -= this.AttachedNode_MessageReceived;
 
             this.logger.LogTrace("(-)");
