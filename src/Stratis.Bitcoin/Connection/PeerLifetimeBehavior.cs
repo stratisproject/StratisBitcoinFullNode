@@ -5,6 +5,9 @@ using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Connection
 {
+    /// <summary>
+    /// A behaviour that will manage the lifetime of peers
+    /// </summary>
     public class PeerLifetimeBehavior : NodeBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
@@ -16,7 +19,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public IConnectionManager ConnectionManager { get; private set; }
+        public ConnectionManager ConnectionManager { get; private set; }
 
         private ChainHeadersBehavior chainHeadersBehavior;
 
@@ -27,7 +30,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.peerLifetime = peerLifetime;
-            this.ConnectionManager = connectionManager;
+            this.ConnectionManager = connectionManager as ConnectionManager;
         }
 
         public override object Clone()
@@ -38,6 +41,17 @@ namespace Stratis.Bitcoin.Connection
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
+
+            var node = this.AttachedNode;
+            if (node.State == NodeState.Connected)
+            {
+                if (this.peerLifetime.IsBanned(node.RemoteSocketEndpoint))
+                {
+                    this.logger.LogDebug("Node '{0}' was previously banned", node.RemoteSocketEndpoint);
+                    node.DisconnectAsync("A banned node tried to connect");
+                    return;
+                }
+            }
 
             this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
             this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
@@ -53,6 +67,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
             {
+                this.peerLifetime.BanPeer(node.RemoteSocketEndpoint);
                 node.DisconnectAsync("Invalid block received");
             }
 
@@ -62,12 +77,6 @@ namespace Stratis.Bitcoin.Connection
         private void AttachedNode_StateChanged(Node node, NodeState oldState)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(node), node.RemoteSocketEndpoint, nameof(oldState), oldState, nameof(node.State), node.State);
-
-            if (this.peerLifetime.IsBanned(node.RemoteSocketEndpoint))
-            {
-                this.logger.LogDebug("Node '{0}' agent '{1}' was previously banned", node.RemoteSocketEndpoint, node.PeerVersion.UserAgent);
-                node.DisconnectAsync("Banned node trying to connect");
-            }
 
             this.logger.LogTrace("(-)");
         }

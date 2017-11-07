@@ -92,6 +92,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Periodic task to save the chain to the database.</summary>
         private IAsyncLoop flushChainLoop;
 
+        /// <summary>A handler that can manage the lifetime of network peers.</summary>
+        private IPeerLifetime peerLifetime;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -121,7 +124,8 @@ namespace Stratis.Bitcoin.Base
             IAsyncLoopFactory asyncLoopFactory,
             TimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IPeerLifetime peerLifetime)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -131,6 +135,7 @@ namespace Stratis.Bitcoin.Base
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
+            this.peerLifetime = Guard.NotNull(peerLifetime, nameof(peerLifetime));
             this.dateTimeProvider = dateTimeProvider;
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
@@ -160,6 +165,7 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager) { PeersToDiscover = 10 });
+            connectionParameters.TemplateBehaviors.Add(new PeerLifetimeBehavior(this.connectionManager, this.loggerFactory, this.peerLifetime));
 
             if (this.nodeSettings.SyncTimeEnabled)
             {
@@ -278,6 +284,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton(fullNodeBuilder.NodeSettings.LoggerFactory);
                     services.AddSingleton(fullNodeBuilder.NodeSettings.DataFolder);
                     services.AddSingleton<INodeLifetime, NodeLifetime>();
+                    services.AddSingleton<IPeerLifetime, PeerLifetime>();
                     services.AddSingleton<FullNodeFeatureExecutor>();
                     services.AddSingleton<Signals.Signals>().AddSingleton<ISignals, Signals.Signals>(provider => provider.GetService<Signals.Signals>());
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });

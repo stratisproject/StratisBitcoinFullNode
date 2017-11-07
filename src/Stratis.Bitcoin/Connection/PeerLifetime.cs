@@ -32,16 +32,16 @@ namespace Stratis.Bitcoin.Connection
     /// </summary>
     public class MemoryBanStore : IBanStore
     {
-        private readonly ConcurrentDictionary<IPEndPoint, DateTime> banned = new ConcurrentDictionary<IPEndPoint, DateTime>();
+        private readonly ConcurrentDictionary<IPAddress, DateTime> banned = new ConcurrentDictionary<IPAddress, DateTime>();
 
         public void BanPeer(IPEndPoint endPoint, DateTime banUntil)
         {
-            this.banned.AddOrUpdate(endPoint, banUntil, (point, time) => banUntil);
+            this.banned.AddOrUpdate(endPoint.Address, banUntil, (point, time) => banUntil);
         }
 
         public DateTime? TryGetBanedPeer(IPEndPoint endPoint)
         {
-            if (this.banned.TryGetValue(endPoint, out DateTime banUntil))
+            if (this.banned.TryGetValue(endPoint.Address, out DateTime banUntil))
                 return banUntil;
 
             return null;
@@ -62,11 +62,11 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Functionality of date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        public PeerLifetime(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IBanStore banStore, IDateTimeProvider dateTimeProvider)
+        public PeerLifetime(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider)//, IBanStore banStore)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.connectionManager = connectionManager;
-            this.banStore = banStore;
+            this.banStore =  new MemoryBanStore();// banStore;
             this.dateTimeProvider = dateTimeProvider;
         }
 

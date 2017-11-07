@@ -77,12 +77,7 @@ namespace Stratis.Bitcoin.Connection
 
             if ((node.State == NodeState.Failed) || (node.State == NodeState.Offline))
             {
-                this.infoLogger.LogInformation("Node {0} offline.", node.RemoteSocketEndpoint);
-
-                NodeDisconnectReason reason = node.DisconnectReason;
-                if ((reason != null) && !string.IsNullOrEmpty(reason.Reason))
-                    this.infoLogger.LogInformation("Reason: {0}", reason.Reason);
-
+                this.infoLogger.LogInformation("Node {0} offline reason {1}.", node.RemoteSocketEndpoint, node.DisconnectReason?.Reason);
                 this.ConnectionManager.RemoveConnectedNode(node);
             }
 
