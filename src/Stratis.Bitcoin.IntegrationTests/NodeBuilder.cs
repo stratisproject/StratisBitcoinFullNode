@@ -333,9 +333,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </summary>
         /// <param name="folder">The folder to remove.</param>
         /// <returns>Returns true if the folder was successfully removed and false otherwise.</returns>
-        public static bool CleanupTestFolder(string folder)
+        public static bool CleanupTestFolder(string folder, bool tryKill = true)
         {
-            for (bool tryKill = true; ; tryKill = false)
+            for (int retry = 0; retry < 2; retry++)
             {
                 try
                 {
@@ -349,17 +349,20 @@ namespace Stratis.Bitcoin.IntegrationTests
                 catch (Exception)
                 {
                 }
-                if (!tryKill)
-                    return false;
-                foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
+
+                if (tryKill)
                 {
-                    if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
-                    {
-                        bitcoind.Kill();
-                    }
+                    tryKill = false;
+
+                    foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
+                        if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
+                            bitcoind.Kill();
+
+                    Thread.Sleep(1000);
                 }
-                Thread.Sleep(1000);
             }
+
+            return false;
         }
 
         public static NodeBuilder Create([CallerMemberNameAttribute] string caller = null, string version = "0.13.1")
