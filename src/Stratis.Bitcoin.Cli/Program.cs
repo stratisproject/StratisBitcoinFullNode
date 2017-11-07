@@ -1,9 +1,9 @@
-﻿using NBitcoin;
+﻿using System;
+using System.Linq;
+using NBitcoin;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC;
-using System;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Cli
 {

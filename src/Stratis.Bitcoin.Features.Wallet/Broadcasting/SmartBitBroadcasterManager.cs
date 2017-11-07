@@ -1,15 +1,11 @@
-﻿using Stratis.Bitcoin.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
-using System.Threading.Tasks;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
-using System.Threading;
+﻿using System;
 using System.Net.Http;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using NBitcoin;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting

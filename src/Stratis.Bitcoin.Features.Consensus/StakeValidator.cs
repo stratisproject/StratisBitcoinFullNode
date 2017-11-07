@@ -1,14 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NLog.Extensions.Logging;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {

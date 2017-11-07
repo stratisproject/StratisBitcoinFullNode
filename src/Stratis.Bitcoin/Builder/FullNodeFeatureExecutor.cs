@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Builder
 {

@@ -1,4 +1,3 @@
-using System;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 

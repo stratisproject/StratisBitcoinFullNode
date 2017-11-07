@@ -1,8 +1,8 @@
-﻿using NBitcoin;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using NBitcoin;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests

@@ -1,9 +1,9 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Features.BlockStore;
-using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {

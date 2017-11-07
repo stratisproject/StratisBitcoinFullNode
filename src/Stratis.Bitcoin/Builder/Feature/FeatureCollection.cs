@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Stratis.Bitcoin.Utilities;
 using System.Globalization;
+using System.Linq;
 
 namespace Stratis.Bitcoin.Builder.Feature
 {

@@ -1,8 +1,4 @@
 ﻿using NBitcoin;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.Wallet;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests

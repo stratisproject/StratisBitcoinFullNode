@@ -1,14 +1,10 @@
-﻿using Stratis.Bitcoin.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using Stratis.Bitcoin.Broadcasting;
+﻿using System;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Base;
+using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
-using NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {

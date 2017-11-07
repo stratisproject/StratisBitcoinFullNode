@@ -1,17 +1,17 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
-{
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using NBitcoin.Protocol;
-    using NBitcoin.Protocol.Behaviors;
-    using Stratis.Bitcoin.Base;
-    using Stratis.Bitcoin.Connection;
-    using Stratis.Bitcoin.Utilities;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Protocol;
+using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Utilities;
 
+namespace Stratis.Bitcoin.Features.BlockStore
+{
     public interface IBlockStoreBehavior : INodeBehavior
     {
         bool CanRespondeToGetDataPayload { get; set; }

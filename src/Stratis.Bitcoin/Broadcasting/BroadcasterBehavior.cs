@@ -1,18 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Broadcasting;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NBitcoin.Protocol;
+using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Broadcasting
 {

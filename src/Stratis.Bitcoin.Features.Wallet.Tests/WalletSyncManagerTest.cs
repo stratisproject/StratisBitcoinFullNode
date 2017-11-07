@@ -1,16 +1,14 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using NBitcoin;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using Moq;
+using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
-using System.Collections.ObjectModel;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
 {

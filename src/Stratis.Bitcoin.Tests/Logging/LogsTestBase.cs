@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
-using Stratis.Bitcoin.Features.RPC;
 
 namespace Stratis.Bitcoin.Tests.Logging
 {

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
-using Moq;
 using Newtonsoft.Json.Linq;
-using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests

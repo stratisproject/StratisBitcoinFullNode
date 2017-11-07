@@ -1,4 +1,6 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using System;
+using System.Threading.Tasks;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -6,8 +8,6 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Threading.Tasks;
 
 namespace Stratis.BitcoinD
 {

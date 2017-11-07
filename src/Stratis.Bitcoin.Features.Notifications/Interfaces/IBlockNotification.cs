@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.BlockPulling;
 
 namespace Stratis.Bitcoin.Features.Notifications.Interfaces
 {

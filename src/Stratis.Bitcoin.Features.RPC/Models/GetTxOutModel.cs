@@ -1,6 +1,5 @@
 ﻿using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC.Models

@@ -1,19 +1,19 @@
-﻿using Moq;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Tests;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Notifications;
+using Stratis.Bitcoin.Features.Wallet.Tests;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
 using Xunit;
-using Stratis.Bitcoin.Features.Wallet.Notifications;
-using System.Threading;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.LightWallet.Tests
 {

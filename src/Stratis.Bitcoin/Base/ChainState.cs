@@ -1,8 +1,7 @@
+using System;
 using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Interfaces;
-using System;
-using System.Collections.Generic;
 
 namespace Stratis.Bitcoin.Base
 {

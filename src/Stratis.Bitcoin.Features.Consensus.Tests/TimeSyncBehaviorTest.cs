@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests

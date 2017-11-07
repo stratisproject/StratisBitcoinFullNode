@@ -1,7 +1,7 @@
-﻿using Stratis.Bitcoin.Base;
-using System;
+﻿using System;
 using System.Text;
 using System.Threading;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {

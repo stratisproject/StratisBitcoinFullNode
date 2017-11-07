@@ -1,5 +1,5 @@
-﻿using NBitcoin;
-using System.Threading;
+﻿using System.Threading;
+using NBitcoin;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.BlockPulling

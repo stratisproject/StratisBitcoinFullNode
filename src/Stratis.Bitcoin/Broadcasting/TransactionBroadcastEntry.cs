@@ -1,7 +1,5 @@
-﻿using NBitcoin;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Broadcasting
 {

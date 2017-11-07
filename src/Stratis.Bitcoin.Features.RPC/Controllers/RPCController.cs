@@ -5,7 +5,6 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Utilities.JsonErrors;

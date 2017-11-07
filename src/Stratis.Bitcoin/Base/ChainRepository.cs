@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DBreeze;
+using DBreeze.DataTypes;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
-using DBreeze.DataTypes;
-using DBreeze;
 
 namespace Stratis.Bitcoin.Base
 {

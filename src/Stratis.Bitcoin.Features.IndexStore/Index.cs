@@ -1,14 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Collections.Generic;
-using DBreeze.Utils;
-using NBitcoin;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
-using Newtonsoft.Json;
 using DBreeze;
 using DBreeze.DataTypes;
+using DBreeze.Utils;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
+using NBitcoin;
+using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {
