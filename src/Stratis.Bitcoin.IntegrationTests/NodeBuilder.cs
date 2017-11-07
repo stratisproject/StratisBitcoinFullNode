@@ -328,55 +328,50 @@ namespace Stratis.Bitcoin.IntegrationTests
 
     public class NodeBuilder : IDisposable
     {
+        /// <summary>
+        /// Deletes test folders. Stops "bitcoind" if required.
+        /// </summary>
+        /// <param name="folder">The folder to remove.</param>
+        /// <param name="tryKill">If set to true will try to stop "bitcoind" if running.</param>
+        /// <returns>Returns true if the folder was successfully removed and false otherwise.</returns>
+        public static bool CleanupTestFolder(string folder, bool tryKill = true)
+        {
+            for (int retry = 0; retry < 2; retry++)
+            {
+                try
+                {
+                    Directory.Delete(folder, true);
+                    return true;
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    return true;
+                }
+                catch (Exception)
+                {
+                }
+
+                if (tryKill)
+                {
+                    tryKill = false;
+
+                    foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
+                        if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
+                            bitcoind.Kill();
+
+                    Thread.Sleep(1000);
+                }
+            }
+
+            return false;
+        }
+
         public static NodeBuilder Create([CallerMemberNameAttribute] string caller = null, string version = "0.13.1")
         {
-            version = version ?? "0.13.1";
-            if (!Directory.Exists("TestData"))
-                Directory.CreateDirectory("TestData");
+            Directory.CreateDirectory("TestData");
             var path = EnsureDownloaded(version);
             caller = Path.Combine("TestData", caller);
-            bool retryDelete = true;
-            try
-            {
-                Directory.Delete(caller, true);
-                retryDelete = false;
-            }
-            catch (DirectoryNotFoundException)
-            {
-                retryDelete = false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (IOException)
-            {
-            }
-            if (retryDelete)
-            {
-                foreach (var bitcoind in Process.GetProcessesByName("bitcoind"))
-                {
-                    if (bitcoind.MainModule.FileName.Contains("Stratis.Bitcoin.IntegrationTests"))
-                    {
-                        bitcoind.Kill();
-                    }
-                }
-                // kill all dotnet instances no us
-                //foreach (var dotnet in Process.GetProcessesByName("dotnet"))
-                //{
-                //    if (Process.GetCurrentProcess().Id == dotnet.Id)
-                //        continue;
-                //    try
-                //    {
-                //        dotnet.Kill();
-                //    }
-                //    catch
-                //    {
-                //        // ignored
-                //    }
-                //}
-                Thread.Sleep(1000);
-                Directory.Delete(caller, true);
-            }
+            CleanupTestFolder(caller);
             Directory.CreateDirectory(caller);
             return new NodeBuilder(caller, path);
         }
@@ -508,13 +503,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var child = Path.Combine(this._Root, this.last.ToString());
             this.last++;
-            try
-            {
-                Directory.Delete(child, true);
-            }
-            catch (DirectoryNotFoundException)
-            {
-            }
+
+            NodeBuilder.CleanupTestFolder(child);
 
             return child;
         }
@@ -603,13 +593,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private void CleanFolder()
         {
-            try
-            {
-                Directory.Delete(this._Folder, true);
-            }
-            catch (DirectoryNotFoundException)
-            {
-            }
+            NodeBuilder.CleanupTestFolder(this._Folder);
         }
 
 #if !NOSOCKET
