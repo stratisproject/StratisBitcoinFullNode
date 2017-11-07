@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                var listMethods = new List<object>();
+                var listMethods = new List<Models.RpcCommandModel>();
                 foreach (var descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
                 {
                     var attr = descriptor.MethodInfo.CustomAttributes.Where(x => x.AttributeType == typeof(ActionDescription)).FirstOrDefault();
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
                     string method = $"{descriptor.ActionName} {string.Join(" ", parameters.ToArray())}";
 
-                    listMethods.Add(new { command = method, description = description });
+                    listMethods.Add(new Models.RpcCommandModel { Command = method.Trim(), Description = description });
                 }
 
                 return this.Json(listMethods);
