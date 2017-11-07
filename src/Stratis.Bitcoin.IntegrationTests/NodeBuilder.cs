@@ -328,6 +328,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
     public class NodeBuilder : IDisposable
     {
+        /// <summary>
+        /// Deletes test folders. Stops "bitcoind" if required.
+        /// </summary>
+        /// <param name="folder">The folder to remove.</param>
+        /// <returns>Returns true if the folder was successfully removed and false otherwise.</returns>
         public static bool CleanupTestFolder(string folder)
         {
             bool tryKill = true;
