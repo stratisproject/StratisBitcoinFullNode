@@ -2,7 +2,7 @@
 dotnet --info
 echo STARTED dotnet build
 cd src
-dotnet build -c Release ${path} -v m
+dotnet build -c Release ${path} -v m /p:TargetFrameworks=netstandard1.6
 
 echo STARTED dotnet test
 
@@ -16,7 +16,7 @@ fi
 
 echo "Processing $testProject file.."; 
 cd $testProject
-COMMAND="dotnet test --no-build -c Release -v m"
+COMMAND="dotnet test --no-build -c Release -v m /p:TargetFrameworks=netstandard1.6"
 $COMMAND
 EXITCODE=$?
 echo exit code for $testProject: $EXITCODE
