@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Cli
         /// <summary>
         /// The expected sequence of arguments is [network-name] [rpc-command] [rpc-params].
         /// </summary>
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             try
             {
