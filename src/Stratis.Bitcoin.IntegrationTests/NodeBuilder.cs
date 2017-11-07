@@ -332,6 +332,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Deletes test folders. Stops "bitcoind" if required.
         /// </summary>
         /// <param name="folder">The folder to remove.</param>
+        /// <param name="tryKill">If set to true will try to stop "bitcoind" if running.</param>
         /// <returns>Returns true if the folder was successfully removed and false otherwise.</returns>
         public static bool CleanupTestFolder(string folder, bool tryKill = true)
         {
