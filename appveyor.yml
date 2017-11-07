@@ -32,16 +32,6 @@ init:
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
-before_build:
-- ps: |
-      Write-Host "[$env:configuration] STARTED submodule update" -foregroundcolor "magenta"
-      
-      # Initialize dependencies
-      git submodule update --init --recursive
-      
-      Write-Host "[$env:configuration] FINISHED submodule update" -foregroundcolor "magenta"
-      if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode) }
-    
 build_script:
 - ps: |
       cd src
@@ -81,7 +71,7 @@ test_script:
       foreach ($testFolder in ls *.Tests) {
 
             # exclude integration tests
-            if ($testFolder -like '*Integration.Tests*' -Or $testFolder -like '*IntegrationTests*') { continue }
+            if ($testFolder -like '*Integration.Tests*' -Or $testFolder -like '*IntegrationTests*' -Or $testFolder -like '*NBitcoin.Tests*') { continue }
             
             Push-Location $testFolder
 
