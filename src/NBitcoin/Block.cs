@@ -1,12 +1,12 @@
-﻿using NBitcoin.BouncyCastle.Math;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 namespace NBitcoin
 {
@@ -22,7 +22,7 @@ namespace NBitcoin
     {
         internal const int Size = 80;
 
-        /// <summary>Current header version./// </summary>
+        /// <summary>Current header version.</summary>
         public const int CurrentVersion = 7;
 
         private static BigInteger Pow256 = BigInteger.ValueOf(2).Pow(256);
@@ -147,7 +147,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// If called, <see cref="GetHash"/> becomes cached, only use if you believe the instance will 
+        /// If called, <see cref="GetHash"/> becomes cached, only use if you believe the instance will
         /// not be modified after calculation. Calling it a second type invalidate the cache.
         /// </summary>
         public void CacheHashes()
@@ -204,7 +204,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="now">The expected date.</param>
         /// <param name="consensus">Consensus.</param>
-        /// <param name="prev">Previous block.</param>		
+        /// <param name="prev">Previous block.</param>
         public void UpdateTime(DateTimeOffset now, Consensus consensus, ChainedBlock prev)
         {
             DateTimeOffset nOldTime = this.BlockTime;
@@ -224,7 +224,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="now">The expected date.</param>
         /// <param name="network">Network.</param>
-        /// <param name="prev">Previous block.</param>		
+        /// <param name="prev">Previous block.</param>
         public void UpdateTime(DateTimeOffset now, Network network, ChainedBlock prev)
         {
             this.UpdateTime(now, network.Consensus, prev);
