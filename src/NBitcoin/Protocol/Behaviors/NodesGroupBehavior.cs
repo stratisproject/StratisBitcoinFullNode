@@ -5,7 +5,7 @@
     /// </summary>
     internal class NodesGroupBehavior : NodeBehavior
     {
-        internal NodesGroup parent;
+        internal NodesGroup Parent;
 
         public NodesGroupBehavior()
         {
@@ -13,7 +13,7 @@
 
         public NodesGroupBehavior(NodesGroup parent)
         {
-            this.parent = parent;
+            this.Parent = parent;
         }
 
         protected override void AttachCore()
@@ -30,14 +30,14 @@
         {
             if (node.State == NodeState.HandShaked)
             {
-                this.parent._ConnectedNodes.Add(node);
+                this.Parent._ConnectedNodes.Add(node);
             }
 
             if ((node.State == NodeState.Failed) || (node.State == NodeState.Disconnecting) || (node.State == NodeState.Offline))
             {
-                if (this.parent._ConnectedNodes.Remove(node))
+                if (this.Parent._ConnectedNodes.Remove(node))
                 {
-                    this.parent.StartConnecting();
+                    this.Parent.StartConnecting();
                 }
             }
         }
@@ -46,7 +46,7 @@
 
         public override object Clone()
         {
-            return new NodesGroupBehavior(this.parent);
+            return new NodesGroupBehavior(this.Parent);
         }
 
         #endregion
