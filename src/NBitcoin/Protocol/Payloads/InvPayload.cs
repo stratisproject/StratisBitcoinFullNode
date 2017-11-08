@@ -62,7 +62,7 @@ namespace NBitcoin.Protocol
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return GetEnumerator();
+            return this.GetEnumerator();
         }
     }
 }

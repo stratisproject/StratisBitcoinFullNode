@@ -1,13 +1,7 @@
 ﻿using NBitcoin.DataEncoders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NBitcoin.Protocol
 {
-
     public enum RejectCode : byte
     {
         MALFORMED = 0x01,
@@ -19,6 +13,7 @@ namespace NBitcoin.Protocol
         INSUFFICIENTFEE = 0x42,
         CHECKPOINT = 0x43
     }
+
     public enum RejectCodeType
     {
         Common,
@@ -26,117 +21,103 @@ namespace NBitcoin.Protocol
         Transaction,
         Block
     }
-#if !PORTABLE
 
     /// <summary>
-    /// A transaction or block are rejected being transmitted through tx or block messages
+    /// A transaction or block are rejected being transmitted through tx or block messages.
     /// </summary>
     [Payload("reject")]
     public class RejectPayload : Payload
     {
-        VarString _Message = new VarString();
-        /// <summary>
-        /// "tx" or "block"
-        /// </summary>
+        /// <summary>"tx" or "block".</summary>
+        private VarString message = new VarString();
+        /// <summary>"tx" or "block".</summary>
         public string Message
         {
             get
             {
-                return Encoders.ASCII.EncodeData(_Message.GetString(true));
+                return Encoders.ASCII.EncodeData(this.message.GetString(true));
             }
             set
             {
-                _Message = new VarString(Encoders.ASCII.DecodeData(value));
+                this.message = new VarString(Encoders.ASCII.DecodeData(value));
             }
         }
-        byte _Code;
+
+        private byte code;
         public RejectCode Code
         {
             get
             {
-                return (RejectCode)_Code;
+                return (RejectCode)this.code;
             }
             set
             {
-                _Code = (byte)value;
+                this.code = (byte)value;
             }
         }
+
+        /// <summary>Details of the error.</summary>
+        private VarString reason = new VarString();
+        /// <summary>Details of the error.</summary>
+        public string Reason
+        {
+            get
+            {
+                return Encoders.ASCII.EncodeData(this.reason.GetString(true));
+            }
+            set
+            {
+                this.reason = new VarString(Encoders.ASCII.DecodeData(value));
+            }
+        }
+
+        /// <summary>The hash being rejected.</summary>
+        private uint256 hash;
+        /// <summary>The hash being rejected.</summary>
+        public uint256 Hash { get { return this.hash; } set { this.hash = value; } }
 
         public RejectCodeType CodeType
         {
             get
             {
-                switch(Code)
+                switch (this.Code)
                 {
                     case RejectCode.MALFORMED:
                         return RejectCodeType.Common;
+
                     case RejectCode.OBSOLETE:
-                        if(Message == "block")
-                            return RejectCodeType.Block;
-                        else
-                            return RejectCodeType.Version;
+                        if (this.Message == "block") return RejectCodeType.Block;
+                        else return RejectCodeType.Version;
+
                     case RejectCode.DUPLICATE:
-                        if(Message == "tx")
-                            return RejectCodeType.Transaction;
-                        else
-                            return RejectCodeType.Version;
+                        if (this.Message == "tx") return RejectCodeType.Transaction;
+                        else return RejectCodeType.Version;
+
                     case RejectCode.NONSTANDARD:
                     case RejectCode.DUST:
                     case RejectCode.INSUFFICIENTFEE:
                         return RejectCodeType.Transaction;
+
                     case RejectCode.CHECKPOINT:
                         return RejectCodeType.Block;
+
                     case RejectCode.INVALID:
-                        if(Message == "tx")
-                            return RejectCodeType.Transaction;
-                        else
-                            return RejectCodeType.Block;
+                        if (this.Message == "tx") return RejectCodeType.Transaction;
+                        else return RejectCodeType.Block;
+
                     default:
                         return RejectCodeType.Common;
                 }
             }
         }
 
-        VarString _Reason = new VarString();
-        /// <summary>
-        /// Details of the error
-        /// </summary>
-        public string Reason
-        {
-            get
-            {
-                return Encoders.ASCII.EncodeData(_Reason.GetString(true));
-            }
-            set
-            {
-                _Reason = new VarString(Encoders.ASCII.DecodeData(value));
-            }
-        }
-
-        uint256 _Hash;
-        /// <summary>
-        /// The hash being rejected
-        /// </summary>
-        public uint256 Hash
-        {
-            get
-            {
-                return _Hash;
-            }
-            set
-            {
-                _Hash = value;
-            }
-        }
-
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref _Message);
-            stream.ReadWrite(ref _Code);
-            stream.ReadWrite(ref _Reason);
-            if(Message == "tx" || Message == "block")
-                stream.ReadWrite(ref _Hash);
+            stream.ReadWrite(ref this.message);
+            stream.ReadWrite(ref this.code);
+            stream.ReadWrite(ref this.reason);
+            if ((this.Message == "tx") || (this.Message == "block"))
+                stream.ReadWrite(ref this.hash);
         }
     }
-#endif
 }
