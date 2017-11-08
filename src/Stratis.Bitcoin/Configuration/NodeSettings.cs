@@ -110,6 +110,12 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Whether use of checkpoints is enabled or not.</summary>
         public bool UseCheckpoints { get; set; }
 
+        /// <summary>
+        /// If this block is in the chain assume that it and its ancestors are valid and skip their script verification. 
+        /// Null to not assume valid blocks and therefore validate all blocks.
+        /// </summary>
+        public uint256 BlockAssumedValid { get; set; }
+
         public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
@@ -230,6 +236,10 @@ namespace Stratis.Bitcoin.Configuration
 
             nodeSettings.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
             nodeSettings.Logger.LogDebug("Checkpoints are {0}.", nodeSettings.UseCheckpoints ? "enabled" : "disabled");
+
+            nodeSettings.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", null);
+            if (nodeSettings.BlockAssumedValid == 0) // 0 means validate all blocks
+                nodeSettings.BlockAssumedValid = null;
 
             try
             {
@@ -464,6 +474,7 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
                 builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
                 builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
+                builder.AppendLine($"-assumevalid=<hex>        If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification(0 to verify all). Defaults to network specific value.");
 
                 defaults.Logger.LogInformation(builder.ToString());
 
