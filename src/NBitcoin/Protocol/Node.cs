@@ -1428,7 +1428,7 @@ namespace NBitcoin.Protocol
 				this.SendMessageAsync(new MempoolPayload());
 				var invs = listener.ReceivePayload<InvPayload>(cancellationToken).Inventory.Select(i => i.Hash).ToList();
 				var result = invs;
-				while(invs.Count == InvPayload.MAX_INV_SZ)
+				while(invs.Count == InvPayload.MaxInventorySize)
 				{
 					invs = listener.ReceivePayload<InvPayload>(cancellationToken).Inventory.Select(i => i.Hash).ToList();
 					result.AddRange(invs);

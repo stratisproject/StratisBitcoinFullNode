@@ -1,42 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace NBitcoin.Protocol
 {
-	/// <summary>
-	/// Ask for transaction, block or merkle block
-	/// </summary>
-	[Payload("getdata")]
-	public class GetDataPayload : Payload
-	{
-		public GetDataPayload()
-		{
-		}
-		public GetDataPayload(params InventoryVector[] vectors)
-		{
-			inventory.AddRange(vectors);
-		}
-		List<InventoryVector> inventory = new List<InventoryVector>();
+    /// <summary>
+    /// Ask for transaction, block or merkle block.
+    /// </summary>
+    [Payload("getdata")]
+    public class GetDataPayload : Payload
+    {
+        private List<InventoryVector> inventory = new List<InventoryVector>();
+        public List<InventoryVector> Inventory { set { this.inventory = value; } get { return this.inventory; } }
 
-		public List<InventoryVector> Inventory
-		{
-			set
-			{
-				inventory = value;
-			}
-			get
-			{
-				return inventory;
-			}
-		}
+        public GetDataPayload()
+        {
+        }
 
-		public override void ReadWriteCore(BitcoinStream stream)
-		{
-			stream.ReadWrite(ref inventory);
-		}
-	}
+        public GetDataPayload(params InventoryVector[] vectors)
+        {
+            this.inventory.AddRange(vectors);
+        }
+
+        public override void ReadWriteCore(BitcoinStream stream)
+        {
+            stream.ReadWrite(ref this.inventory);
+        }
+    }
 }
-

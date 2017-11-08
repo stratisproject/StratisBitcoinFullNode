@@ -1,69 +1,54 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NBitcoin.Protocol
+﻿namespace NBitcoin.Protocol
 {
-	/// <summary>
-	/// Ask for the block hashes (inv) that happened since BlockLocators
-	/// </summary>
-	[Payload("getblocks")]
-	public class GetBlocksPayload : Payload
-	{
-		public GetBlocksPayload(BlockLocator locator)
-		{
-			BlockLocators = locator;
-		}
-		public GetBlocksPayload()
-		{
+    /// <summary>
+    /// Ask for the block hashes (inv) that happened since BlockLocators.
+    /// </summary>
+    [Payload("getblocks")]
+    public class GetBlocksPayload : Payload
+    {
+        private uint version = (uint)ProtocolVersion.PROTOCOL_VERSION;
+        public ProtocolVersion Version
+        {
+            get
+            {
+                return (ProtocolVersion)this.version;
+            }
+            set
+            {
+                this.version = (uint)value;
+            }
+        }
 
-		}
-		uint version = (uint)ProtocolVersion.PROTOCOL_VERSION;
-		public ProtocolVersion Version
-		{
-			get
-			{
-				return (ProtocolVersion)version;
-			}
-			set
-			{
-				version = (uint)value;
-			}
-		}
+        private BlockLocator blockLocators;
+        public BlockLocator BlockLocators
+        {
+            get
+            {
+                return this.blockLocators;
+            }
+            set
+            {
+                this.blockLocators = value;
+            }
+        }
 
-		BlockLocator blockLocators;
+        private uint256 hashStop = uint256.Zero;
+        public uint256 HashStop { get { return this.hashStop; } set { this.hashStop = value; } }
 
-		public BlockLocator BlockLocators
-		{
-			get
-			{
-				return blockLocators;
-			}
-			set
-			{
-				blockLocators = value;
-			}
-		}
-		uint256 _HashStop = uint256.Zero;
-		public uint256 HashStop
-		{
-			get
-			{
-				return _HashStop;
-			}
-			set
-			{
-				_HashStop = value;
-			}
-		}
+        public GetBlocksPayload()
+        {
+        }
 
-		public override void ReadWriteCore(BitcoinStream stream)
-		{
-			stream.ReadWrite(ref version);
-			stream.ReadWrite(ref blockLocators);
-			stream.ReadWrite(ref _HashStop);
-		}
-	}
+        public GetBlocksPayload(BlockLocator locator)
+        {
+            this.BlockLocators = locator;
+        }
+
+        public override void ReadWriteCore(BitcoinStream stream)
+        {
+            stream.ReadWrite(ref this.version);
+            stream.ReadWrite(ref this.blockLocators);
+            stream.ReadWrite(ref this.hashStop);
+        }
+    }
 }

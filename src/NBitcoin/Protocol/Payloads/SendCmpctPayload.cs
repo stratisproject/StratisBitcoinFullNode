@@ -1,53 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NBitcoin.Protocol
+﻿namespace NBitcoin.Protocol
 {
-	[Payload("sendcmpct")]
-	public class SendCmpctPayload : Payload
-	{
-		public SendCmpctPayload()
-		{
+    [Payload("sendcmpct")]
+    public class SendCmpctPayload : Payload
+    {
+        private byte preferHeaderAndIDs;
+        public bool PreferHeaderAndIDs
+        {
+            get
+            {
+                return this.preferHeaderAndIDs == 1;
+            }
+            set
+            {
+                this.preferHeaderAndIDs = value ? (byte)1 : (byte)0;
+            }
+        }
 
-		}
-		public SendCmpctPayload(bool preferHeaderAndIDs)
-		{
-			PreferHeaderAndIDs = preferHeaderAndIDs;
-		}
-		byte _PreferHeaderAndIDs;
-		public bool PreferHeaderAndIDs
-		{
-			get
-			{
-				return _PreferHeaderAndIDs == 1;
-			}
-			set
-			{
-				_PreferHeaderAndIDs = value ? (byte)1 : (byte)0;
-			}
-		}
+        private ulong version = 1;
+        public ulong Version { get { return version; } set { version = value; } }
 
+        public SendCmpctPayload()
+        {
+        }
 
-		ulong _Version = 1;
-		public ulong Version
-		{
-			get
-			{
-				return _Version;
-			}
-			set
-			{
-				_Version = value;
-			}
-		}
+        public SendCmpctPayload(bool preferHeaderAndIDs)
+        {
+            this.PreferHeaderAndIDs = preferHeaderAndIDs;
+        }
 
-		public override void ReadWriteCore(BitcoinStream stream)
-		{
-			stream.ReadWrite(ref _PreferHeaderAndIDs);
-			stream.ReadWrite(ref _Version);
-		}
-	}
+        public override void ReadWriteCore(BitcoinStream stream)
+        {
+            stream.ReadWrite(ref this.preferHeaderAndIDs);
+            stream.ReadWrite(ref this.version);
+        }
+    }
 }

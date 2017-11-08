@@ -1,48 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NBitcoin.Protocol
+﻿namespace NBitcoin.Protocol
 {
-	[Payload("ping")]
-	public class PingPayload : Payload
-	{
+    [Payload("ping")]
+    public class PingPayload : Payload
+    {
+        private ulong nonce;
+        public ulong Nonce { get { return this.nonce; } set { this.nonce = value; } }
 
-		public PingPayload()
-		{
-			_Nonce = RandomUtils.GetUInt64();
-		}
-		private ulong _Nonce;
-		public ulong Nonce
-		{
-			get
-			{
-				return _Nonce;
-			}
-			set
-			{
-				_Nonce = value;
-			}
-		}
+        public PingPayload()
+        {
+            this.nonce = RandomUtils.GetUInt64();
+        }
 
-		public override void ReadWriteCore(BitcoinStream stream)
-		{
-			stream.ReadWrite(ref _Nonce);
-		}
+        public override void ReadWriteCore(BitcoinStream stream)
+        {
+            stream.ReadWrite(ref this.nonce);
+        }
 
-		public PongPayload CreatePong()
-		{
-			return new PongPayload()
-			{
-				Nonce = Nonce
-			};
-		}
+        public PongPayload CreatePong()
+        {
+            return new PongPayload()
+            {
+                Nonce = this.Nonce
+            };
+        }
 
-		public override string ToString()
-		{
-			return base.ToString() + " : " + Nonce;
-		}
-	}
+        public override string ToString()
+        {
+            return base.ToString() + " : " + this.Nonce;
+        }
+    }
 }
