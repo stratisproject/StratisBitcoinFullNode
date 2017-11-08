@@ -432,8 +432,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="transactionPayload">The payload for the message.</param>
         private async Task ProcessTxPayloadAsync(Node node, TxPayload transactionPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Object), transactionPayload?.Object?.GetHash());
-            Transaction trx = transactionPayload.Object;
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Obj), transactionPayload?.Obj?.GetHash());
+            Transaction trx = transactionPayload.Obj;
             uint256 trxHash = trx.GetHash();
 
             // add to local filter

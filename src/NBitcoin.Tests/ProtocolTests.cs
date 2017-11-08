@@ -252,7 +252,7 @@ namespace NBitcoin.Tests
 					node.SendMessageAsync(new FilterLoadPayload(filter));
 					node.SendMessageAsync(new GetDataPayload(new InventoryVector(InventoryType.MSG_FILTERED_BLOCK, block.GetHash())));
 					var merkle = list.ReceivePayload<MerkleBlockPayload>();
-					var tree = merkle.Object.PartialMerkleTree;
+					var tree = merkle.Obj.PartialMerkleTree;
 					Assert.True(tree.Check(block.Header.HashMerkleRoot));
 					Assert.True(tree.GetMatchedTransactions().Count() > 1);
 					Assert.True(tree.GetMatchedTransactions().Contains(knownTx));
@@ -260,7 +260,7 @@ namespace NBitcoin.Tests
 					List<Transaction> matched = new List<Transaction>();
 					for(int i = 0; i < tree.GetMatchedTransactions().Count(); i++)
 					{
-						matched.Add(list.ReceivePayload<TxPayload>().Object);
+						matched.Add(list.ReceivePayload<TxPayload>().Obj);
 					}
 					Assert.True(matched.Count > 1);
 					tree = tree.Trim(knownTx);
@@ -282,8 +282,8 @@ namespace NBitcoin.Tests
 					node.SendMessageAsync(new GetDataPayload(new InventoryVector(InventoryType.MSG_FILTERED_BLOCK, Network.RegTest.GetGenesis().GetHash())));
 
 					merkle = list.ReceivePayload<MerkleBlockPayload>();
-					tree = merkle.Object.PartialMerkleTree;
-					Assert.True(tree.Check(merkle.Object.Header.HashMerkleRoot));
+					tree = merkle.Obj.PartialMerkleTree;
+					Assert.True(tree.Check(merkle.Obj.Header.HashMerkleRoot));
 					Assert.True(!tree.GetMatchedTransactions().Contains(knownTx));
 				}
 			}
@@ -678,7 +678,7 @@ namespace NBitcoin.Tests
 				}));
 
 				var block = node.ReceiveMessage<BlockPayload>();
-				Assert.True(block.Object.CheckMerkleRoot());
+				Assert.True(block.Obj.CheckMerkleRoot());
 			}
 		}
 

@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         private void ProcessTxPayload(TxPayload txPayload)
         {
-            var transaction = txPayload.Object;
+            var transaction = txPayload.Obj;
             var trxHash = transaction.GetHash();
 
             if (this.notifiedTransactions.TransactionsReceived.ContainsKey(trxHash))
