@@ -2,56 +2,60 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace NBitcoin
 {
     /// <summary>
-    /// Thread safe class representing a chain of headers from genesis
+    /// Thread safe class representing a chain of headers from genesis.
     /// </summary>
     public class ConcurrentChain : ChainBase
     {
-        Dictionary<uint256, ChainedBlock> _BlocksById = new Dictionary<uint256, ChainedBlock>();
-        Dictionary<int, ChainedBlock> _BlocksByHeight = new Dictionary<int, ChainedBlock>();
-        ReaderWriterLock @lock = new ReaderWriterLock();
+        private Dictionary<uint256, ChainedBlock> blocksById = new Dictionary<uint256, ChainedBlock>();
+        private Dictionary<int, ChainedBlock> blocksByHeight = new Dictionary<int, ChainedBlock>();
+        private ReaderWriterLock lockObject = new ReaderWriterLock();
+
+        private volatile ChainedBlock tip;
+        public override ChainedBlock Tip { get { return this.tip; } }
+
+        public override int Height { get { return this.Tip.Height; } }
 
         public ConcurrentChain()
         {
-
         }
+
         public ConcurrentChain(BlockHeader genesis)
         {
-            SetTip(new ChainedBlock(genesis, 0));
+            this.SetTip(new ChainedBlock(genesis, 0));
         }
+
         public ConcurrentChain(Network network)
         {
             if (network != null)
             {
-                var genesis = network.GetGenesis();
-                SetTip(new ChainedBlock(genesis.Header, 0));
+                Block genesis = network.GetGenesis();
+                this.SetTip(new ChainedBlock(genesis.Header, 0));
             }
         }
 
         public ConcurrentChain(byte[] bytes)
         {
-            Load(bytes);
+            this.Load(bytes);
         }
 
         public void Load(byte[] chain)
         {
-            Load(new MemoryStream(chain));
+            this.Load(new MemoryStream(chain));
         }
 
         public void Load(Stream stream)
         {
-            Load(new BitcoinStream(stream, false));
+            this.Load(new BitcoinStream(stream, false));
         }
 
         public void Load(BitcoinStream stream)
         {
-            using (@lock.LockWrite())
+            using (this.lockObject.LockWrite())
             {
                 try
                 {
@@ -64,13 +68,13 @@ namespace NBitcoin
                         stream.ReadWrite(ref header);
                         if (height == 0)
                         {
-                            _BlocksByHeight.Clear();
-                            _BlocksById.Clear();
-                            _Tip = null;
-                            SetTipNoLock(new ChainedBlock(header, 0));
+                            this.blocksByHeight.Clear();
+                            this.blocksById.Clear();
+                            this.tip = null;
+                            this.SetTipLocked(new ChainedBlock(header, 0));
                         }
-                        else
-                            SetTipNoLock(new ChainedBlock(header, id.Value, Tip));
+                        else this.SetTipLocked(new ChainedBlock(header, id.Value, this.Tip));
+
                         height++;
                     }
                 }
@@ -83,22 +87,22 @@ namespace NBitcoin
         public byte[] ToBytes()
         {
             MemoryStream ms = new MemoryStream();
-            WriteTo(ms);
+            this.WriteTo(ms);
             return ms.ToArray();
         }
 
         public void WriteTo(Stream stream)
         {
-            WriteTo(new BitcoinStream(stream, true));
+            this.WriteTo(new BitcoinStream(stream, true));
         }
 
         public void WriteTo(BitcoinStream stream)
         {
-            using (@lock.LockRead())
+            using (this.lockObject.LockRead())
             {
-                for (int i = 0; i < Tip.Height + 1; i++)
+                for (int i = 0; i < this.Tip.Height + 1; i++)
                 {
-                    var block = GetBlockNoLock(i);
+                    ChainedBlock block = GetBlockLocked(i);
                     stream.ReadWrite(block.HashBlock.AsBitcoinSerializable());
                     stream.ReadWrite(block.Header);
                 }
@@ -108,65 +112,63 @@ namespace NBitcoin
         public ConcurrentChain Clone()
         {
             ConcurrentChain chain = new ConcurrentChain();
-            chain._Tip = _Tip;
-            using (@lock.LockRead())
+            chain.tip = this.tip;
+            using (this.lockObject.LockRead())
             {
-                foreach (var kv in _BlocksById)
+                foreach (KeyValuePair<uint256, ChainedBlock> kv in this.blocksById)
                 {
-                    chain._BlocksById.Add(kv.Key, kv.Value);
+                    chain.blocksById.Add(kv.Key, kv.Value);
                 }
-                foreach (var kv in _BlocksByHeight)
+
+                foreach (KeyValuePair<int, ChainedBlock> kv in this.blocksByHeight)
                 {
-                    chain._BlocksByHeight.Add(kv.Key, kv.Value);
+                    chain.blocksByHeight.Add(kv.Key, kv.Value);
                 }
             }
             return chain;
         }
 
-        /// <summary>
-        /// Force a new tip for the chain
-        /// </summary>
-        /// <param name="pindex"></param>
-        /// <returns>forking point</returns>
+        /// <inheritdoc />
         public override ChainedBlock SetTip(ChainedBlock block)
         {
-            using (@lock.LockWrite())
+            using (this.lockObject.LockWrite())
             {
-                return SetTipNoLock(block);
+                return this.SetTipLocked(block);
             }
         }
 
-        private ChainedBlock SetTipNoLock(ChainedBlock block)
+        private ChainedBlock SetTipLocked(ChainedBlock block)
         {
-            int height = Tip == null ? -1 : Tip.Height;
-            foreach (var orphaned in EnumerateThisToFork(block))
+            int height = this.Tip == null ? -1 : this.Tip.Height;
+            foreach (ChainedBlock orphaned in this.EnumerateThisToFork(block))
             {
-                _BlocksById.Remove(orphaned.HashBlock);
-                _BlocksByHeight.Remove(orphaned.Height);
+                this.blocksById.Remove(orphaned.HashBlock);
+                this.blocksByHeight.Remove(orphaned.Height);
                 height--;
             }
-            var fork = GetBlockNoLock(height);
-            foreach(var newBlock in block.EnumerateToGenesis()
-                .TakeWhile(c => c != fork))
+
+            ChainedBlock fork = this.GetBlockLocked(height);
+            foreach (ChainedBlock newBlock in block.EnumerateToGenesis().TakeWhile(c => c != fork))
             {
-                _BlocksById.AddOrReplace(newBlock.HashBlock, newBlock);
-                _BlocksByHeight.AddOrReplace(newBlock.Height, newBlock);
+                this.blocksById.AddOrReplace(newBlock.HashBlock, newBlock);
+                this.blocksByHeight.AddOrReplace(newBlock.Height, newBlock);
             }
-            _Tip = block;
+
+            this.tip = block;
             return fork;
         }
 
-
-
         private IEnumerable<ChainedBlock> EnumerateThisToFork(ChainedBlock block)
         {
-            if (_Tip == null)
+            if (this.tip == null)
                 yield break;
-            var tip = _Tip;
+
+            ChainedBlock tip = this.tip;
             while (true)
             {
                 if (object.ReferenceEquals(null, block) || object.ReferenceEquals(null, tip))
                     throw new InvalidOperationException("No fork found between the two chains");
+
                 if (tip.Height > block.Height)
                 {
                     yield return tip;
@@ -180,7 +182,9 @@ namespace NBitcoin
                 {
                     if (tip.HashBlock == block.HashBlock)
                         break;
+
                     yield return tip;
+
                     block = block.Previous;
                     tip = tip.Previous;
                 }
@@ -191,44 +195,26 @@ namespace NBitcoin
 
         public override ChainedBlock GetBlock(uint256 id)
         {
-            using (@lock.LockRead())
+            using (this.lockObject.LockRead())
             {
                 ChainedBlock result;
-                _BlocksById.TryGetValue(id, out result);
+                this.blocksById.TryGetValue(id, out result);
                 return result;
             }
         }
 
-        private ChainedBlock GetBlockNoLock(int height)
+        private ChainedBlock GetBlockLocked(int height)
         {
             ChainedBlock result;
-            _BlocksByHeight.TryGetValue(height, out result);
+            this.blocksByHeight.TryGetValue(height, out result);
             return result;
         }
 
         public override ChainedBlock GetBlock(int height)
         {
-            using (@lock.LockRead())
+            using (this.lockObject.LockRead())
             {
-                return GetBlockNoLock(height);
-            }
-        }
-
-
-        volatile ChainedBlock _Tip;
-        public override ChainedBlock Tip
-        {
-            get
-            {
-                return _Tip;
-            }
-        }
-
-        public override int Height
-        {
-            get
-            {
-                return Tip.Height;
+                return this.GetBlockLocked(height);
             }
         }
 
@@ -240,12 +226,13 @@ namespace NBitcoin
             ChainedBlock block = null;
             while (true)
             {
-                using (@lock.LockRead())
+                using (this.lockObject.LockRead())
                 {
-                    block = GetBlockNoLock(i);
+                    block = this.GetBlockLocked(i);
                     if (block == null)
                         yield break;
                 }
+
                 yield return block;
                 i++;
             }
@@ -253,36 +240,34 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return Tip == null ? "no tip" : Tip.Height.ToString();
+            return this.Tip == null ? "no tip" : this.Tip.Height.ToString();
         }
-
-
-
     }
 
     internal class ReaderWriterLock
     {
-        ReaderWriterLockSlim @lock = new ReaderWriterLockSlim();
+        ReaderWriterLockSlim lockObject = new ReaderWriterLockSlim();
 
         public IDisposable LockRead()
         {
-            return new ActionDisposable(() => @lock.EnterReadLock(), () => @lock.ExitReadLock());
+            return new ActionDisposable(() => this.lockObject.EnterReadLock(), () => this.lockObject.ExitReadLock());
         }
         public IDisposable LockWrite()
         {
-            return new ActionDisposable(() => @lock.EnterWriteLock(), () => @lock.ExitWriteLock());
+            return new ActionDisposable(() => this.lockObject.EnterWriteLock(), () => this.lockObject.ExitWriteLock());
         }
 
         internal bool TryLockWrite(out IDisposable locked)
         {
             locked = null;
-            if (this.@lock.TryEnterWriteLock(0))
+            if (this.lockObject.TryEnterWriteLock(0))
             {
                 locked = new ActionDisposable(() =>
                 {
-                }, () => this.@lock.ExitWriteLock());
+                }, () => this.lockObject.ExitWriteLock());
                 return true;
             }
+
             return false;
         }
     }

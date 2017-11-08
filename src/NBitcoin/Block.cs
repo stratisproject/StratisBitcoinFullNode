@@ -107,38 +107,38 @@ namespace NBitcoin
 
         public uint256 GetHash()
         {
-            uint256 h = null;
+            uint256 hash = null;
             uint256[] hashes = this.hashes;
 
             if (hashes != null)
-                h = hashes[0];
+                hash = hashes[0];
 
-            if (h != null)
-                return h;
+            if (hash != null)
+                return hash;
 
             if (Block.BlockSignature)
             {
                 if (this.version > 6)
-                    h = Hashes.Hash256(this.ToBytes());
+                    hash = Hashes.Hash256(this.ToBytes());
                 else
-                    h = this.GetPoWHash();
+                    hash = this.GetPoWHash();
             }
             else
             {
                 using (HashStream hs = new HashStream())
                 {
                     this.ReadWrite(new BitcoinStream(hs, true));
-                    h = hs.GetHash();
+                    hash = hs.GetHash();
                 }
             }
 
             hashes = this.hashes;
             if (hashes != null)
             {
-                hashes[0] = h;
+                hashes[0] = hash;
             }
 
-            return h;
+            return hash;
         }
 
         public uint256 GetPoWHash()
