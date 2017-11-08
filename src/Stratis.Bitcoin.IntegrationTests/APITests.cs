@@ -4,14 +4,14 @@ using System.Net.Http.Headers;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Api;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Models;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                         var response = client.GetStringAsync(ApiURI + "api/rpc/listmethods").GetAwaiter().GetResult();
 
-                        Assert.StartsWith("[\"", response);
+                        Assert.StartsWith("[{\"", response);
                     }
                 }
             }

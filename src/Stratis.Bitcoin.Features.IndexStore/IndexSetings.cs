@@ -1,7 +1,7 @@
-﻿using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.BlockStore;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.BlockStore;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {

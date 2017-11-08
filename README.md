@@ -71,10 +71,7 @@ Our full node is currently in alpha.
 
 ```
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
-cd StratisBitcoinFullNode
-
-git submodule init
-git submodule update
+cd StratisBitcoinFullNode\src
 
 dotnet restore
 dotnet build

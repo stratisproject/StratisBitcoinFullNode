@@ -1,8 +1,8 @@
-﻿using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Threading;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

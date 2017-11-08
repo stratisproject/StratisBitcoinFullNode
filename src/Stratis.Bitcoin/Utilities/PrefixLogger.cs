@@ -1,7 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
+﻿using System;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration.Logging;
-using System;
 
 namespace Stratis.Bitcoin.Utilities
 {

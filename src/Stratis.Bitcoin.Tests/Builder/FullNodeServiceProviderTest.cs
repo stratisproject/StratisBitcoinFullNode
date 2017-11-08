@@ -1,9 +1,9 @@
-﻿using Moq;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Moq;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Builder.Feature;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder

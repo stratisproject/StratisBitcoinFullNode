@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using NBitcoin.RPC;
-using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
@@ -127,15 +124,27 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
-                var listMethods = new List<string>();
+                var listMethods = new List<Models.RpcCommandModel>();
                 foreach (var descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
                 {
+                    var attr = descriptor.MethodInfo.CustomAttributes.Where(x => x.AttributeType == typeof(ActionDescription)).FirstOrDefault();
+                    var description = attr?.ConstructorArguments.FirstOrDefault().Value as string ?? "";
+
                     var parameters = new List<string>();
                     foreach (var param in descriptor.Parameters.OfType<ControllerParameterDescriptor>())
                         if (!param.ParameterInfo.IsRetval)
-                            parameters.Add(param.ParameterInfo.ToString());
+                        {
+                            string value = $"<{param.ParameterInfo.Name.ToLower()}>";
 
-                    listMethods.Add($"{descriptor.ActionName}({string.Join(", ", parameters.ToArray())})");
+                            if (param.ParameterInfo.HasDefaultValue)
+                                value = $"[{value}]";
+
+                            parameters.Add(value);
+                        }
+
+                    string method = $"{descriptor.ActionName} {string.Join(" ", parameters.ToArray())}";
+
+                    listMethods.Add(new Models.RpcCommandModel { Command = method.Trim(), Description = description });
                 }
 
                 return this.Json(listMethods);

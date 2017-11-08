@@ -1,8 +1,8 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+using System.Linq;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {

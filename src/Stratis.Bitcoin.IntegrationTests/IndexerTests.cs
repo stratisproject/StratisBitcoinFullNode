@@ -71,8 +71,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(response1);
                 Assert.True(response2);
                 Assert.Equal(2, result?.Count);
-                Assert.Equal("Output", (string)result[0]);
-                Assert.Equal("Script", (string)result[1]);
+                Assert.Contains("Output", result);
+                Assert.Contains("Script", result);
             }
         }
         

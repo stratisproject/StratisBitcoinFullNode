@@ -1,11 +1,11 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
-{
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 
+namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+{
     /// <summary>
     /// Reorganises the <see cref="BlockRepository"/>.
     /// <para>

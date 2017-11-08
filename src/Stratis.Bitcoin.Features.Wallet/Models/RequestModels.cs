@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Stratis.Bitcoin.Features.Wallet.Validations;
-using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {

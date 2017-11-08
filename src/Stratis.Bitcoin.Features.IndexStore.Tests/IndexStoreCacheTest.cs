@@ -1,16 +1,11 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using Microsoft.Extensions.Primitives;
-using Stratis.Bitcoin.Features.IndexStore;
-using IIndexRepository = Stratis.Bitcoin.Features.IndexStore.IIndexRepository;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Base;
+using Xunit;
 
 namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {

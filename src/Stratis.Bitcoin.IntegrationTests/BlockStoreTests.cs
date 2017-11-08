@@ -2,18 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.BitcoinCore;
-using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Xunit;
-using BlockRepository = Stratis.Bitcoin.Features.BlockStore.BlockRepository;
-using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

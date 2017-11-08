@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using NBitcoin;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Builder
 {

@@ -1,6 +1,6 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using System;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder.Feature

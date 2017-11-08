@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Generic;
+using System.IO;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using System.Collections.Generic;
-using System.IO;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Fee
 {

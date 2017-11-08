@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {

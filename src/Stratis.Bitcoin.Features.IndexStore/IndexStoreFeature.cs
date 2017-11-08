@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -8,7 +9,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
-using System;
 
 namespace Stratis.Bitcoin.Features.IndexStore
 {

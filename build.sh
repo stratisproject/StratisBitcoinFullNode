@@ -1,7 +1,5 @@
 #!/bin/bash
 dotnet --info
-echo STARTED submodule update
-git submodule update --init --recursive
 echo STARTED dotnet build
 cd src
 dotnet build -c Release ${path} -v m
@@ -12,7 +10,7 @@ ANYFAILURES=false
 for testProject in *.Tests; do
 
 # exclude integration tests
-if [[ "$testProject" == *"Integration.Tests"* ]] || [[ "$testProject" == *"IntegrationTests"* ]] ; then
+if [[ "$testProject" == *"Integration.Tests"* ]] || [[ "$testProject" == *"IntegrationTests"* ]] || [[ "$testProject" == *"NBitcoin.Tests"* ]] ; then
     continue
 fi
 

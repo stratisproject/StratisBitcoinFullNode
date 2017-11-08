@@ -1,10 +1,10 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.BlockStore.LoopSteps;
 using Xunit;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 

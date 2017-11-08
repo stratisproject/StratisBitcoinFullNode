@@ -1,20 +1,10 @@
-﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
+﻿using System.Buffers;
 using System.IO;
-using System.Linq;
-using System.Security.Claims;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Authentication;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Formatters;
-using Moq;
-using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.RPC;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests

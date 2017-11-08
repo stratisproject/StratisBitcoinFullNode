@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class TestDirectory : IDisposable
     {
-        public static TestDirectory Create([CallerMemberNameAttribute]string name = null, bool clean = true)
+        public static TestDirectory Create([CallerMemberName]string name = null, bool clean = true)
         {
             var directory = new TestDirectory(Path.Combine("TestData", name), clean);
             directory.EnsureExists();

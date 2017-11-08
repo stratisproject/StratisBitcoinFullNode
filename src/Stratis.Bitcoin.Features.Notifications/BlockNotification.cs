@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {

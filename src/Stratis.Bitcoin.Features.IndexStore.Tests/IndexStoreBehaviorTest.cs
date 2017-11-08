@@ -1,15 +1,9 @@
-﻿using Moq;
-using NBitcoin;
-using NBitcoin.Protocol;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging.Abstractions;
-using Stratis.Bitcoin.Features.IndexStore;
-using Xunit;
-using IIndexRepository = Stratis.Bitcoin.Features.IndexStore.IIndexRepository;
 using Microsoft.Extensions.Logging;
+using Moq;
+using NBitcoin;
+using Xunit;
 
 namespace Stratis.Bitcoin.Features.IndexStore.Tests
 {

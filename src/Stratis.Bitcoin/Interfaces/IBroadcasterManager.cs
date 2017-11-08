@@ -1,10 +1,7 @@
-﻿using NBitcoin;
-using NBitcoin.Protocol.Behaviors;
-using Stratis.Bitcoin.Broadcasting;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
+using NBitcoin;
+using Stratis.Bitcoin.Broadcasting;
 
 namespace Stratis.Bitcoin.Interfaces
 {

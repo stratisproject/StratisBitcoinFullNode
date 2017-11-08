@@ -1,4 +1,8 @@
-﻿using DBreeze;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using DBreeze;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -6,10 +10,6 @@ using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {

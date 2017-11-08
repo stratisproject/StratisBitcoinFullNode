@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Linq;
+using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
@@ -10,9 +13,6 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
-using System;
-using System.Linq;
-using System.Text;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {

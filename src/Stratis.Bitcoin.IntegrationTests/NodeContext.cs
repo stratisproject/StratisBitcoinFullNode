@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
+        public static NodeContext Create([CallerMemberName]string name = null, Network network = null, bool clean = true)
         {
             return new NodeContext(name, network, clean);
         }
