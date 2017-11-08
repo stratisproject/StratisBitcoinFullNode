@@ -1,69 +1,54 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NBitcoin.Protocol
+﻿namespace NBitcoin.Protocol
 {
     /// <summary>
-    /// Ask for the block hashes (inv) that happened since BlockLocators
+    /// Ask for the block hashes (inv) that happened since BlockLocators.
     /// </summary>
     [Payload("getblocks")]
     public class GetBlocksPayload : Payload
     {
-        public GetBlocksPayload(BlockLocator locator)
-        {
-            BlockLocators = locator;
-        }
-        public GetBlocksPayload()
-        {
-
-        }
-        uint version = (uint)ProtocolVersion.PROTOCOL_VERSION;
+        private uint version = (uint)ProtocolVersion.PROTOCOL_VERSION;
         public ProtocolVersion Version
         {
             get
             {
-                return (ProtocolVersion)version;
+                return (ProtocolVersion)this.version;
             }
             set
             {
-                version = (uint)value;
+                this.version = (uint)value;
             }
         }
 
-        BlockLocator blockLocators;
-
+        private BlockLocator blockLocators;
         public BlockLocator BlockLocators
         {
             get
             {
-                return blockLocators;
+                return this.blockLocators;
             }
             set
             {
-                blockLocators = value;
+                this.blockLocators = value;
             }
         }
-        uint256 _HashStop = uint256.Zero;
-        public uint256 HashStop
+
+        private uint256 hashStop = uint256.Zero;
+        public uint256 HashStop { get { return this.hashStop; } set { this.hashStop = value; } }
+
+        public GetBlocksPayload()
         {
-            get
-            {
-                return _HashStop;
-            }
-            set
-            {
-                _HashStop = value;
-            }
+        }
+
+        public GetBlocksPayload(BlockLocator locator)
+        {
+            this.BlockLocators = locator;
         }
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref version);
-            stream.ReadWrite(ref blockLocators);
-            stream.ReadWrite(ref _HashStop);
+            stream.ReadWrite(ref this.version);
+            stream.ReadWrite(ref this.blockLocators);
+            stream.ReadWrite(ref this.hashStop);
         }
     }
 }
