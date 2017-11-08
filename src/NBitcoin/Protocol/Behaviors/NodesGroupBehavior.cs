@@ -1,66 +1,54 @@
-﻿#if !NOSOCKET
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace NBitcoin.Protocol.Behaviors
+﻿namespace NBitcoin.Protocol.Behaviors
 {
-	/// <summary>
-	/// Maintain connection to a given set of nodes
-	/// </summary>
-	internal class NodesGroupBehavior : NodeBehavior
-	{
+    /// <summary>
+    /// Maintain connection to a given set of nodes.
+    /// </summary>
+    internal class NodesGroupBehavior : NodeBehavior
+    {
+        internal NodesGroup parent;
 
-		internal NodesGroup _Parent;
-		public NodesGroupBehavior(NodesGroup parent)
-		{
-			_Parent = parent;
-		}
+        public NodesGroupBehavior()
+        {
+        }
 
-		NodesGroupBehavior()
-		{
-		}
+        public NodesGroupBehavior(NodesGroup parent)
+        {
+            this.parent = parent;
+        }
 
+        protected override void AttachCore()
+        {
+            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
+        }
 
-		protected override void AttachCore()
-		{
-			AttachedNode.StateChanged += AttachedNode_StateChanged;
-		}
+        protected override void DetachCore()
+        {
+            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
+        }
 
-		protected override void DetachCore()
-		{
-			AttachedNode.StateChanged -= AttachedNode_StateChanged;
-		}
+        void AttachedNode_StateChanged(Node node, NodeState oldState)
+        {
+            if (node.State == NodeState.HandShaked)
+            {
+                this.parent._ConnectedNodes.Add(node);
+            }
 
+            if ((node.State == NodeState.Failed) || (node.State == NodeState.Disconnecting) || (node.State == NodeState.Offline))
+            {
+                if (this.parent._ConnectedNodes.Remove(node))
+                {
+                    this.parent.StartConnecting();
+                }
+            }
+        }
 
-		void AttachedNode_StateChanged(Node node, NodeState oldState)
-		{
-			if(node.State == NodeState.HandShaked)
-			{
-				_Parent._ConnectedNodes.Add(node);
-			}
-			if(node.State == NodeState.Failed || node.State == NodeState.Disconnecting || node.State == NodeState.Offline)
-			{
-				if(_Parent._ConnectedNodes.Remove(node))
-				{
-					_Parent.StartConnecting();
-				}
-			}
-		}
+        #region ICloneable Members
 
+        public override object Clone()
+        {
+            return new NodesGroupBehavior(this.parent);
+        }
 
-
-		#region ICloneable Members
-
-		public override object Clone()
-		{
-			return new NodesGroupBehavior(_Parent);
-		}
-
-		#endregion
-	}
+        #endregion
+    }
 }
-#endif
