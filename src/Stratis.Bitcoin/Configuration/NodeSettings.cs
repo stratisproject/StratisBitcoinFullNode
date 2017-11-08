@@ -123,7 +123,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Default node configuration.</returns>
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
-            return NodeSettings.FromArguments(new string[0], innerNetwork: network);
+            NodeSettings nodeSettings = new NodeSettings();
+            nodeSettings.FromArguments(new string[0], innerNetwork: network);
+            return nodeSettings;
         }
 
         /// <summary>
@@ -137,7 +139,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public static NodeSettings FromArguments(string[] args, string name = "bitcoin",
+        public NodeSettings FromArguments(string[] args, string name = "bitcoin",
             Network innerNetwork = null,
             ProtocolVersion protocolVersion = SupportedProtocolVersion,
             string agent = "StratisBitcoin")
@@ -145,96 +147,97 @@ namespace Stratis.Bitcoin.Configuration
             if (string.IsNullOrEmpty(name))
                 throw new ConfigurationException("A network name is mandatory.");
 
-            NodeSettings nodeSettings = new NodeSettings { Name = name, Agent = agent };
+            this.Name = name;
+            this.Agent = agent;
 
             // The logger factory goes in the settings with minimal configuration, 
             // that's so the settings can also log out its progress.
-            nodeSettings.LoggerFactory.AddConsoleWithFilters(out ConsoleLoggerSettings consoleSettings);
-            nodeSettings.LoggerFactory.AddNLog();
-            nodeSettings.Logger = nodeSettings.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
+            this.LoggerFactory.AddConsoleWithFilters(out ConsoleLoggerSettings consoleSettings);
+            this.LoggerFactory.AddNLog();
+            this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
             if (innerNetwork != null)
-                nodeSettings.Network = innerNetwork;
+                this.Network = innerNetwork;
 
-            nodeSettings.ProtocolVersion = protocolVersion;
-            nodeSettings.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-            nodeSettings.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+            this.ProtocolVersion = protocolVersion;
+            this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+            this.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths
-            if (nodeSettings.DataDir != null && nodeSettings.ConfigurationFile != null)
+            if (this.DataDir != null && this.ConfigurationFile != null)
             {
-                bool isRelativePath = Path.GetFullPath(nodeSettings.ConfigurationFile).Length > nodeSettings.ConfigurationFile.Length;
+                bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
                 if (isRelativePath)
-                    nodeSettings.ConfigurationFile = Path.Combine(nodeSettings.DataDir, nodeSettings.ConfigurationFile);
+                    this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
-            nodeSettings.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
-            nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
+            this.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
+            this.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
 
-            if (nodeSettings.ConfigurationFile != null)
+            if (this.ConfigurationFile != null)
             {
-                AssertConfigFileExists(nodeSettings);
-                var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
-                nodeSettings.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
-                nodeSettings.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
+                AssertConfigFileExists(this);
+                var configTemp = TextFileConfiguration.Parse(File.ReadAllText(this.ConfigurationFile));
+                this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
+                this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
             }
 
-            if (nodeSettings.Testnet && nodeSettings.RegTest)
+            if (this.Testnet && this.RegTest)
                 throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
-            nodeSettings.Network = nodeSettings.GetNetwork();
-            if (nodeSettings.DataDir == null)
+            this.Network = this.GetNetwork();
+            if (this.DataDir == null)
             {
-                nodeSettings.SetDefaultDataDir(Path.Combine("StratisNode", nodeSettings.Name), nodeSettings.Network);
+                this.SetDefaultDataDir(Path.Combine("StratisNode", this.Name), this.Network);
             }
 
-            if (!Directory.Exists(nodeSettings.DataDir))
-                throw new ConfigurationException($"Data directory {nodeSettings.DataDir} does not exist.");
+            if (!Directory.Exists(this.DataDir))
+                throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
 
-            if (nodeSettings.ConfigurationFile == null)
+            if (this.ConfigurationFile == null)
             {
-                nodeSettings.ConfigurationFile = nodeSettings.GetDefaultConfigurationFile();
+                this.ConfigurationFile = this.GetDefaultConfigurationFile();
             }
 
             var consoleConfig = new TextFileConfiguration(args);
-            var config = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
-            nodeSettings.ConfigReader = config;
+            var config = TextFileConfiguration.Parse(File.ReadAllText(this.ConfigurationFile));
+            this.ConfigReader = config;
             consoleConfig.MergeInto(config);
 
-            nodeSettings.DataFolder = new DataFolder(nodeSettings);
-            if (!Directory.Exists(nodeSettings.DataFolder.CoinViewPath))
-                Directory.CreateDirectory(nodeSettings.DataFolder.CoinViewPath);
+            this.DataFolder = new DataFolder(this);
+            if (!Directory.Exists(this.DataFolder.CoinViewPath))
+                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
 
             // Set the configuration filter and file path.
-            nodeSettings.Log.Load(config);
-            nodeSettings.LoggerFactory.AddFilters(nodeSettings.Log, nodeSettings.DataFolder);
-            nodeSettings.LoggerFactory.ConfigureConsoleFilters(consoleSettings, nodeSettings.Log);
+            this.Log.Load(config);
+            this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
+            this.LoggerFactory.ConfigureConsoleFilters(consoleSettings, this.Log);
 
-            nodeSettings.Logger.LogInformation("Data directory set to '{0}'.", nodeSettings.DataDir);
-            nodeSettings.Logger.LogInformation("Configuration file set to '{0}'.", nodeSettings.ConfigurationFile);
+            this.Logger.LogInformation("Data directory set to '{0}'.", this.DataDir);
+            this.Logger.LogInformation("Configuration file set to '{0}'.", this.ConfigurationFile);
 
-            nodeSettings.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.RegTest || nodeSettings.Testnet));
-            nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
-            nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
+            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.RegTest || this.Testnet));
+            this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
+            this.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
 
-            nodeSettings.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", nodeSettings.Network.IsTest(), nodeSettings.Network.IsBitcoin());
-            nodeSettings.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.MinTxFee));
-            nodeSettings.Logger.LogDebug("MinTxFeeRate set to {0}.", nodeSettings.MinTxFeeRate);
-            nodeSettings.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.FallbackFee));
-            nodeSettings.Logger.LogDebug("FallbackTxFeeRate set to {0}.", nodeSettings.FallbackTxFeeRate);
-            nodeSettings.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", nodeSettings.Network.MinRelayTxFee));
-            nodeSettings.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", nodeSettings.MinRelayTxFeeRate);
+            this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
+            this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
+            this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
+            this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee));
+            this.Logger.LogDebug("FallbackTxFeeRate set to {0}.", this.FallbackTxFeeRate);
+            this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee));
+            this.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", this.MinRelayTxFeeRate);
 
-            nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
-            nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
+            this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
+            this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            nodeSettings.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
-            nodeSettings.Logger.LogDebug("Checkpoints are {0}.", nodeSettings.UseCheckpoints ? "enabled" : "disabled");
+            this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
+            this.Logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
 
             try
             {
-                nodeSettings.ConnectionManager.Connect.AddRange(config.GetAll("connect")
-                    .Select(c => ConvertToEndpoint(c, nodeSettings.Network.DefaultPort)));
+                this.ConnectionManager.Connect.AddRange(config.GetAll("connect")
+                    .Select(c => ConvertToEndpoint(c, this.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -243,18 +246,18 @@ namespace Stratis.Bitcoin.Configuration
 
             try
             {
-                nodeSettings.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
-                        .Select(c => ConvertToEndpoint(c, nodeSettings.Network.DefaultPort)));
+                this.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
+                        .Select(c => ConvertToEndpoint(c, this.Network.DefaultPort)));
             }
             catch (FormatException)
             {
                 throw new ConfigurationException("Invalid 'addnode' parameter.");
             }
 
-            var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
+            var port = config.GetOrDefault<int>("port", this.Network.DefaultPort);
             try
             {
-                nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("bind")
+                this.ConnectionManager.Listen.AddRange(config.GetAll("bind")
                         .Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), false)));
             }
             catch (FormatException)
@@ -264,7 +267,7 @@ namespace Stratis.Bitcoin.Configuration
 
             try
             {
-                nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
+                this.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
                         .Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), true)));
             }
             catch (FormatException)
@@ -272,9 +275,9 @@ namespace Stratis.Bitcoin.Configuration
                 throw new ConfigurationException("Invalid 'listen' parameter");
             }
 
-            if (nodeSettings.ConnectionManager.Listen.Count == 0)
+            if (this.ConnectionManager.Listen.Count == 0)
             {
-                nodeSettings.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
+                this.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
             }
 
             var externalIp = config.GetOrDefault<string>("externalip", null);
@@ -282,7 +285,7 @@ namespace Stratis.Bitcoin.Configuration
             {
                 try
                 {
-                    nodeSettings.ConnectionManager.ExternalEndpoint = ConvertToEndpoint(externalIp, port);
+                    this.ConnectionManager.ExternalEndpoint = ConvertToEndpoint(externalIp, port);
                 }
                 catch (FormatException)
                 {
@@ -290,12 +293,12 @@ namespace Stratis.Bitcoin.Configuration
                 }
             }
 
-            if (nodeSettings.ConnectionManager.ExternalEndpoint == null)
+            if (this.ConnectionManager.ExternalEndpoint == null)
             {
-                nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
+                this.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Network.DefaultPort);
             }
 
-            return nodeSettings;
+            return this;
         }
 
         /// <summary>

@@ -35,7 +35,8 @@ namespace Stratis.Bitcoin.Cli
 
                 // The first argument is the network name
                 var network = Network.GetNetwork(args.First());
-                NodeSettings nodeSettings = NodeSettings.FromArguments(args, blockchain, network);
+
+                NodeSettings nodeSettings = new NodeSettings().FromArguments(args, blockchain, network);
 
                 var rpcSettings = new RpcSettings();
                 rpcSettings.Load(nodeSettings);

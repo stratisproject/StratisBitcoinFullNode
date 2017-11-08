@@ -22,7 +22,7 @@ namespace Stratis.BitcoinD
         {
             try
             {
-                NodeSettings nodeSettings = NodeSettings.FromArguments(args);
+                NodeSettings nodeSettings = new NodeSettings().FromArguments(args);
 
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
