@@ -258,7 +258,7 @@ namespace NBitcoin.Protocol
 								{
 									Message = message,
 									Socket = Socket,
-									Length = counter.ReadenBytes,
+									Length = counter.ReadBytes,
 									Node = Node
 								});
 							}
@@ -1382,7 +1382,7 @@ namespace NBitcoin.Protocol
 					int maxQueued = 0;
 					while(remaining.Count != 0)
 					{
-						var block = listener.ReceivePayload<BlockPayload>(cancellationToken).Object;
+						var block = listener.ReceivePayload<BlockPayload>(cancellationToken).Obj;
 						maxQueued = Math.Max(listener.MessageQueue.Count, maxQueued);
 						if(remaining.Peek() == block.GetHash())
 						{
@@ -1485,7 +1485,7 @@ namespace NBitcoin.Protocol
 									if(payload is NotFoundPayload)
 										batchResult.Add(null);
 									else
-										batchResult.Add(((TxPayload)payload).Object);
+										batchResult.Add(((TxPayload)payload).Obj);
 								}
 							}
 						}

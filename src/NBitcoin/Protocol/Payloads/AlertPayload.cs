@@ -1,9 +1,9 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin.Protocol
 {
@@ -144,8 +144,8 @@ namespace NBitcoin.Protocol
 
         #endregion
 
-        // FIXME: why do we need version parameter? 
-        // it shouldn't be called "version" because the it a field with the same name 
+        // FIXME: why do we need version parameter?
+        // it shouldn't be called "version" because the it a field with the same name
         public void UpdateSignature(Key key)
         {
             if (key == null)
