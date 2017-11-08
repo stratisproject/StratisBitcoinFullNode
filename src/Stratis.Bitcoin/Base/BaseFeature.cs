@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager) { PeersToDiscover = 10 });
-            connectionParameters.TemplateBehaviors.Add(new PeerLifetimeBehavior(this.connectionManager, this.loggerFactory, this.peerLifetime));
+            connectionParameters.TemplateBehaviors.Add(new PeerLifetimeBehavior(this.loggerFactory, this.peerLifetime));
 
             if (this.nodeSettings.SyncTimeEnabled)
             {

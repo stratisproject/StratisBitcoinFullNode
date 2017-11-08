@@ -63,13 +63,13 @@ namespace Stratis.Bitcoin.Connection
             if (node.State == NodeState.HandShaked)
             {
                 this.ConnectionManager.AddConnectedNode(node);
-                this.infoLogger.LogInformation("Node '{0}' connected ('{1}'), agent '{2}', height '{3}'", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
+                this.infoLogger.LogInformation("Node '{0}' connected ({1}), agent '{2}', height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
                 node.SendMessageAsync(new SendHeadersPayload());
             }
 
             if ((node.State == NodeState.Failed) || (node.State == NodeState.Offline))
             {
-                this.infoLogger.LogInformation("Node '{0}' offline. reason '{1}'.", node.RemoteSocketEndpoint, node.DisconnectReason?.Reason);
+                this.infoLogger.LogInformation("Node '{0}' offline, reason: '{1}'.", node.RemoteSocketEndpoint, node.DisconnectReason?.Reason ?? "unknown");
                 this.ConnectionManager.RemoveConnectedNode(node);
             }
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -10,10 +11,10 @@ using System.Net;
 namespace Stratis.Bitcoin.Connection
 {
     /// <summary>
-    /// A class that will manage the lifetime of connected peers and be in charge of banning malicious peers.
+    /// Contract for network peer banning provider.
     /// </summary>
     /// <remarks>
-    /// By default peers are banned for 24 hours, this value can change using configuration (-bantime=[seconds]).
+    /// Peers are banned for <see cref="ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds"/> seconds (default is 24h), this value can change using configuration (-bantime=[seconds]).
     /// </remarks>
     public interface IPeerLifetime
     {
@@ -28,7 +29,7 @@ namespace Stratis.Bitcoin.Connection
         /// Check if a peer is banned.
         /// </summary>
         /// <param name="endpoint">The endpoint to check if it was banned.</param>
-        /// <returns><c>True</c>If the peer was banned.</returns>
+        /// <returns><c>true</c> if the peer was banned.</returns>
         bool IsBanned(IPEndPoint endpoint);
     }
 
@@ -41,22 +42,23 @@ namespace Stratis.Bitcoin.Connection
         /// Set a peer endpoint to a banned state.
         /// </summary>
         /// <param name="endpoint">The endpoint to set that it was banned.</param>
-        /// <param name="banUntil">The date when the ban will expire.</param>
+        /// <param name="banUntil">The UTC date of when the ban will expire.</param>
         void BanPeer(IPEndPoint endpoint, DateTime banUntil);
 
         /// <summary>
         /// Get information about a banned peer.
         /// </summary>
         /// <param name="endpoint">The endpoint to query.</param>
-        /// <returns>The <see cref="DateTime"/> of the end of the ban or null if the peer was not found.</returns>
+        /// <returns>The expiration time of the peer's ban, or <c>null</c> if the peer was not found.</returns>
         DateTime? TryGetBannedPeer(IPEndPoint endpoint);
     }
 
     /// <summary>
-    /// A temporary memory store for banned peers.
+    /// A memory store for banned peers.
     /// </summary>
     public class MemoryBanStore : IBanStore
     {
+        /// <summary>A collection that will store banned peers.</summary>
         private readonly ConcurrentDictionary<IPAddress, DateTime> banned = new ConcurrentDictionary<IPAddress, DateTime>();
 
         /// <inheritdoc />
@@ -75,7 +77,8 @@ namespace Stratis.Bitcoin.Connection
     }
 
     /// <summary>
-    /// A class that manages the lifetime of a peer.
+    /// An implementation of<see cref="IPeerLifetime"/>.
+    /// This will manage banning of peers and checking for banned peers.
     /// </summary>
     public class PeerLifetime : IPeerLifetime
     {
@@ -108,25 +111,25 @@ namespace Stratis.Bitcoin.Connection
         {
             Guard.NotNull(endpoint, nameof(endpoint));
 
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(endpoint), endpoint, nameof(reason), reason);
 
-            var banPeer = true;
-            var peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
+            bool banPeer = true;
+            Node peer = this.connectionManager.ConnectedNodes.FindByEndpoint(endpoint);
             if (peer != null)
             {
                 ConnectionManagerBehavior peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
                     banPeer = false;
-                    this.logger.LogDebug("Peer '{0}' banned for reason: '{1}'", endpoint, reason);
+                    this.logger.LogDebug("Peer '{0}' banned for reason '{1}'.", endpoint, reason ?? "unknown");
                     peer.DisconnectAsync($"The peer was banned, reason: {reason}");
                 }
-                else this.logger.LogTrace("Peer '{0}' whitelisted, reason: '{1}', not banned!", reason, endpoint);
+                else this.logger.LogTrace("Peer '{0}' is whitelisted, for reason '{1}' it was not banned!", endpoint, reason ?? "unknown");
             }
 
             if (banPeer)
             {
-                this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(this.connectionManagerSettings.BanTime));
+                this.banStore.BanPeer(endpoint, this.dateTimeProvider.GetUtcNow().AddSeconds(this.connectionManagerSettings.BanTimeSeconds));
             }
 
             this.logger.LogTrace("(-)");
@@ -137,7 +140,9 @@ namespace Stratis.Bitcoin.Connection
         {
             Guard.NotNull(endpoint, nameof(endpoint));
 
-            var peerBannedUntil = this.banStore.TryGetBannedPeer(endpoint);
+            this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
+
+            DateTime? peerBannedUntil = this.banStore.TryGetBannedPeer(endpoint);
 
             return peerBannedUntil > this.dateTimeProvider.GetUtcNow();
         }

@@ -1,9 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
@@ -13,6 +7,12 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.Configuration
                 nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
             }
 
-            nodeSettings.ConnectionManager.BanTime = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantime);
+            nodeSettings.ConnectionManager.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
 
             return nodeSettings;
         }
@@ -466,6 +466,8 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
                 builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
                 builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
+                builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
+
 
                 defaults.Logger.LogInformation(builder.ToString());
 

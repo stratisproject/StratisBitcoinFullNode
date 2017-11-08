@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Base
                     this.pendingTip = chainedPendingTip; 
                 }
 
-                if ((this.invalidHeaderReceived == false) && (newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
+                if ((!this.invalidHeaderReceived) && (newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
                     this.TrySync();
             }
 
