@@ -48,7 +48,7 @@ namespace NBitcoin.Protocol
 
 	public class NodesCollection : IEnumerable<Node>, IReadOnlyNodesCollection
 	{
-		class Bridge : MessageListener<IncomingMessage>
+		class Bridge : IMessageListener<IncomingMessage>
 		{
 			MessageProducer<IncomingMessage> _Prod;
 			public Bridge(MessageProducer<IncomingMessage> prod)

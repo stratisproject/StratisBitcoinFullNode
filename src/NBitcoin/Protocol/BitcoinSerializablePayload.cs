@@ -1,30 +1,22 @@
 ﻿namespace NBitcoin.Protocol
 {
-	public class BitcoinSerializablePayload<T> : Payload where T : IBitcoinSerializable, new()
-	{
-		public BitcoinSerializablePayload()
-		{
+    public class BitcoinSerializablePayload<T> : Payload where T : IBitcoinSerializable, new()
+    {
+        private T @object = new T();
+        public T Object { get { return this.@object; } set { this.@object = value; } }
 
-		}
-		public BitcoinSerializablePayload(T obj)
-		{
-			_Object = obj;
-		}
-		T _Object = new T();
-		public T Object
-		{
-			get
-			{
-				return _Object;
-			}
-			set
-			{
-				_Object = value;
-			}
-		}
-		public override void ReadWriteCore(BitcoinStream stream)
-		{
-			stream.ReadWrite(ref _Object);
-		}
-	}
+        public BitcoinSerializablePayload()
+        {
+        }
+
+        public BitcoinSerializablePayload(T obj)
+        {
+            this.@object = obj;
+        }
+
+        public override void ReadWriteCore(BitcoinStream stream)
+        {
+            stream.ReadWrite(ref this.@object);
+        }
+    }
 }

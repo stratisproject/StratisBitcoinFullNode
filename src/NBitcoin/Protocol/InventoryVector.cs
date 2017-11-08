@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NBitcoin.Protocol
+﻿namespace NBitcoin.Protocol
 {
 	public enum InventoryType : uint
 	{
@@ -22,56 +16,48 @@ namespace NBitcoin.Protocol
 		MSG_WITNESS_TX = MSG_TX | MSG_WITNESS_FLAG,
 		MSG_FILTERED_WITNESS_BLOCK = MSG_FILTERED_BLOCK | MSG_WITNESS_FLAG
 	}
+
 	public class InventoryVector : Payload, IBitcoinSerializable
 	{
-		uint type;
-		uint256 hash = uint256.Zero;
+		private uint type;
+        public InventoryType Type
+        {
+            get
+            {
+                return (InventoryType)this.type;
+            }
+            set
+            {
+                this.type = (uint)value;
+            }
+        }
 
-		public InventoryVector()
+        private uint256 hash = uint256.Zero;
+        public uint256 Hash { get { return this.hash; } set { this.hash = value; } }
+
+        public InventoryVector()
 		{
-
 		}
+
 		public InventoryVector(InventoryType type, uint256 hash)
 		{
-			Type = type;
-			Hash = hash;
-		}
-		public InventoryType Type
-		{
-			get
-			{
-				return (InventoryType)type;
-			}
-			set
-			{
-				type = (uint)value;
-			}
-		}
-		public uint256 Hash
-		{
-			get
-			{
-				return hash;
-			}
-			set
-			{
-				hash = value;
-			}
+			this.Type = type;
+			this.Hash = hash;
 		}
 
 		#region IBitcoinSerializable Members
 
 		public override void ReadWriteCore(BitcoinStream stream)
 		{
-			stream.ReadWrite(ref type);
-			stream.ReadWrite(ref hash);
+			stream.ReadWrite(ref this.type);
+			stream.ReadWrite(ref this.hash);
 		}
 
 		#endregion
 
 		public override string ToString()
 		{
-			return Type.ToString();
+			return this.Type.ToString();
 		}
 	}
 }
