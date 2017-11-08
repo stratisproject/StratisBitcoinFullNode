@@ -5,129 +5,126 @@ namespace NBitcoin.Protocol.Payloads
     [Payload("utxos")]
     public class UTxOutputPayload : Payload
     {
-        private UTxOutputs _uTxOutputs;
+        private UTxOutputs uTxOutputs;
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            _uTxOutputs = new UTxOutputs();
-            stream.ReadWrite(ref _uTxOutputs);
+            this.uTxOutputs = new UTxOutputs();
+            stream.ReadWrite(ref this.uTxOutputs);
         }
     }
 
     public class UTxOutputs : IBitcoinSerializable
     {
-        private VarString _bitmap;
-        private int _chainHeight;
-        private uint256 _chainTipHash;
-        private UTxOut[] _outputs;
-
+        private int chainHeight;
         public int ChainHeight
         {
             get
             {
-                return _chainHeight;
+                return this.chainHeight;
             }
             internal set
             {
-                _chainHeight = value;
+                this.chainHeight = value;
             }
         }
 
+        private uint256 chainTipHash;
         public uint256 ChainTipHash
         {
             get
             {
-                return _chainTipHash;
+                return this.chainTipHash;
             }
             internal set
             {
-                _chainTipHash = value;
+                this.chainTipHash = value;
             }
         }
 
+        private VarString bitmap;
         public BitArray Bitmap
         {
             get
             {
-                return new BitArray(_bitmap.ToBytes());
+                return new BitArray(this.bitmap.ToBytes());
             }
             internal set
             {
-                var bits = value;
-                var buffer = new BitReader(bits).ToWriter().ToBytes();
-                _bitmap = new VarString(buffer);
+                BitArray bits = value;
+                byte[] buffer = new BitReader(bits).ToWriter().ToBytes();
+                this.bitmap = new VarString(buffer);
             }
         }
 
+        private UTxOut[] outputs;
         public UTxOut[] Outputs
         {
             get
             {
-                return _outputs;
+                return this.outputs;
             }
             internal set
             {
-                _outputs = value;
+                this.outputs = value;
             }
         }
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref _chainHeight);
-            stream.ReadWrite(ref _chainTipHash);
-            stream.ReadWrite(ref _bitmap);
-            stream.ReadWrite(ref _outputs);
+            stream.ReadWrite(ref this.chainHeight);
+            stream.ReadWrite(ref this.chainTipHash);
+            stream.ReadWrite(ref this.bitmap);
+            stream.ReadWrite(ref this.outputs);
         }
     }
 
     public class UTxOut : IBitcoinSerializable
     {
-        private uint _version;
-        private uint _height;
-        private TxOut _txOut;
-
+        private uint version;
         public uint Version
         {
             get
             {
-                return _version;
+                return this.version;
             }
             internal set
             {
-                _version = value;
+                this.version = value;
             }
         }
 
+        private uint height;
         public uint Height
         {
             get
             {
-                return _height;
+                return this.height;
             }
             internal set
             {
-                _height = value;
+                this.height = value;
             }
         }
 
+        private TxOut txOut;
         public TxOut Output
         {
             get
             {
-                return _txOut;
+                return this.txOut;
             }
             internal set
             {
-                _txOut = value;
+                this.txOut = value;
             }
         }
 
         public void ReadWrite(BitcoinStream stream)
         {
-            stream.ReadWrite(ref _version);
-            stream.ReadWrite(ref _height);
-            stream.ReadWrite(ref _txOut);
+            stream.ReadWrite(ref this.version);
+            stream.ReadWrite(ref this.height);
+            stream.ReadWrite(ref this.txOut);
         }
     }
-
 }
