@@ -144,8 +144,8 @@ namespace NBitcoin.Protocol
 
         #endregion
 
-        // FIXME: why do we need version parameter? 
-        // it shouldn't be called "version" because the it a field with the same name 
+        // FIXME: why do we need version parameter?
+        // it shouldn't be called "version" because the it a field with the same name
         public void UpdateSignature(Key key)
         {
             if (key == null)
