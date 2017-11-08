@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Base
         private IAsyncLoop flushChainLoop;
 
         /// <summary>A handler that can manage the lifetime of network peers.</summary>
-        private readonly IPeerBannig peerBannig;
+        private readonly IPeerBanning peerBanning;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Base
             TimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
-            IPeerBannig peerBannig)
+            IPeerBanning peerBanning)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Base
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
-            this.peerBannig = Guard.NotNull(peerBannig, nameof(peerBannig));
+            this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
             this.dateTimeProvider = dateTimeProvider;
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager) { PeersToDiscover = 10 });
-            connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBannig));
+            connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning));
 
             if (this.nodeSettings.SyncTimeEnabled)
             {
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton(fullNodeBuilder.NodeSettings.LoggerFactory);
                     services.AddSingleton(fullNodeBuilder.NodeSettings.DataFolder);
                     services.AddSingleton<INodeLifetime, NodeLifetime>();
-                    services.AddSingleton<IPeerBannig, PeerBannig>();
+                    services.AddSingleton<IPeerBanning, PeerBanning>();
                     services.AddSingleton<FullNodeFeatureExecutor>();
                     services.AddSingleton<Signals.Signals>().AddSingleton<ISignals, Signals.Signals>(provider => provider.GetService<Signals.Signals>());
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });

@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Connection
         private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Handle the lifetime of a peer.</summary>
-        private readonly IPeerBannig peerBannig;
+        private readonly IPeerBanning peerBanning;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -25,17 +25,17 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance of the <see cref="ConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
         private ConnectionManagerBehavior connectionManagerBehavior;
 
-        public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBannig peerBannig)
+        public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBanning peerBanning)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
-            this.peerBannig = peerBannig;
+            this.peerBanning = peerBanning;
         }
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new PeerBanningBehavior(this.loggerFactory, this.peerBannig);
+            return new PeerBanningBehavior(this.loggerFactory, this.peerBanning);
         }
 
         /// <inheritdoc />
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Connection
             var node = this.AttachedNode;
             if (node.State == NodeState.Connected)
             {
-                if (this.peerBannig.IsBanned(node.RemoteSocketEndpoint))
+                if (this.peerBanning.IsBanned(node.RemoteSocketEndpoint))
                 {
                     this.logger.LogDebug("Node '{0}' was previously banned.", node.RemoteSocketEndpoint);
                     node.DisconnectAsync("A banned node tried to connect.");
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
             {
-                this.peerBannig.BanPeer(node.RemoteSocketEndpoint);
+                this.peerBanning.BanPeer(node.RemoteSocketEndpoint);
                 this.logger.LogTrace("Invalid block received from peer '{0}'.", node.RemoteSocketEndpoint);
                 node.DisconnectAsync("Invalid block received.");
             }

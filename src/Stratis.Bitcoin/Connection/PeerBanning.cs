@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Connection
     /// <remarks>
     /// Peers are banned for <see cref="ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds"/> seconds (default is 24h), this value can change using configuration (-bantime=[seconds]).
     /// </remarks>
-    public interface IPeerBannig
+    public interface IPeerBanning
     {
         /// <summary>
         /// Set a peer as banned.
@@ -77,10 +77,10 @@ namespace Stratis.Bitcoin.Connection
     }
 
     /// <summary>
-    /// An implementation of<see cref="IPeerBannig"/>.
+    /// An implementation of<see cref="IPeerBanning"/>.
     /// This will manage banning of peers and checking for banned peers.
     /// </summary>
-    public class PeerBannig : IPeerBannig
+    public class PeerBanning : IPeerBanning
     {
         /// <summary>A connection manager of peers.</summary>
         private readonly IConnectionManager connectionManager;
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Functionality of date and time.</summary>
         private readonly ConnectionManagerSettings connectionManagerSettings;
 
-        public PeerBannig(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings)//, IBanStore banStore)
+        public PeerBanning(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, NodeSettings nodeSettings)//, IBanStore banStore)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.connectionManager = connectionManager;
