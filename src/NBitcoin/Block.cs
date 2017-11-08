@@ -182,26 +182,6 @@ namespace NBitcoin
         /// <summary>
         /// Set time to consensus acceptable value.
         /// </summary>
-        /// <param name="network">Network.</param>
-        /// <param name="prev">Previous block.</param>
-        public void UpdateTime(Network network, ChainedBlock prev)
-        {
-            this.UpdateTime(DateTimeOffset.UtcNow, network, prev);
-        }
-
-        /// <summary>
-        /// Set time to consensus acceptable value
-        /// </summary>
-        /// <param name="consensus">Consensus</param>
-        /// <param name="prev">previous block</param>
-        public void UpdateTime(Consensus consensus, ChainedBlock prev)
-        {
-            this.UpdateTime(DateTimeOffset.UtcNow, consensus, prev);
-        }
-
-        /// <summary>
-        /// Set time to consensus acceptable value.
-        /// </summary>
         /// <param name="now">The expected date.</param>
         /// <param name="consensus">Consensus.</param>
         /// <param name="prev">Previous block.</param>
