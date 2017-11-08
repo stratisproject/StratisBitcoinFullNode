@@ -28,7 +28,7 @@ namespace NBitcoin.Protocol.Behaviors
         /// <summary>
         /// The minimum number of peers to discover before trying to connect to a node using the AddressManager (Default: 1000).
         /// </summary>
-        public int PeersToDiscover { get; private set; }
+        public int PeersToDiscover { get; set; }
 
         public AddressManagerBehaviorMode Mode { get; set; }
 
