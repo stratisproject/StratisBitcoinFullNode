@@ -19,11 +19,16 @@ namespace Stratis.BreezeD
         private const string DefaultBitcoinUri = "http://localhost:37220";
         private const string DefaultStratisUri = "http://localhost:37221";
 
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
+        {
+            MainAsync(args).Wait();
+        }
+
+        public static async Task MainAsync(string[] args)
         {
             try
             {
-                // Get the API uri. 
+                // Get the API uri.
                 var apiUri = args.GetValueOf("apiuri");
                 var isTestNet = args.Contains("-testnet");
                 var isStratis = args.Contains("stratis");
@@ -38,7 +43,7 @@ namespace Stratis.BreezeD
 
                     Network network = isTestNet ? Network.StratisTest : Network.StratisMain;
                     if (isTestNet)
-                        args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack 
+                        args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
 
                     nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent);
                     nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
