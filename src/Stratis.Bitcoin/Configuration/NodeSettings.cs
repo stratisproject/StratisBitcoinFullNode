@@ -43,8 +43,16 @@ namespace Stratis.Bitcoin.Configuration
         /// Initializes a new instance of the object.
         /// <para>This constructor does not load the configuration itself.</para>
         /// </summary>
-        public NodeSettings()
+        public NodeSettings(string name = "bitcoin", Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ConfigurationException("A network name is mandatory.");
+
+            this.Name = name;
+            this.Agent = agent;
+            this.Network = innerNetwork;
+            this.ProtocolVersion = protocolVersion;
+
             this.ConnectionManager = new ConnectionManagerSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new ExtendedLoggerFactory();
@@ -123,8 +131,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Default node configuration.</returns>
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
-            NodeSettings nodeSettings = new NodeSettings();
-            nodeSettings.LoadArguments(new string[0], innerNetwork: network);
+            NodeSettings nodeSettings = new NodeSettings(innerNetwork: network);
+            nodeSettings.LoadArguments(new string[0]);
             return nodeSettings;
         }
 
@@ -139,27 +147,15 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public NodeSettings LoadArguments(string[] args, string name = "bitcoin",
-            Network innerNetwork = null,
-            ProtocolVersion protocolVersion = SupportedProtocolVersion,
-            string agent = "StratisBitcoin")
+        public NodeSettings LoadArguments(string[] args)
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ConfigurationException("A network name is mandatory.");
-
-            this.Name = name;
-            this.Agent = agent;
-
             // The logger factory goes in the settings with minimal configuration, 
             // that's so the settings can also log out its progress.
             this.LoggerFactory.AddConsoleWithFilters(out ConsoleLoggerSettings consoleSettings);
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
 
-            if (innerNetwork != null)
-                this.Network = innerNetwork;
-
-            this.ProtocolVersion = protocolVersion;
+            
             this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
             this.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
 

@@ -27,7 +27,7 @@ namespace Stratis.StratisD
             try
             {
                 Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                NodeSettings nodeSettings = new NodeSettings().LoadArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
+                NodeSettings nodeSettings = new NodeSettings("stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(args);
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
 

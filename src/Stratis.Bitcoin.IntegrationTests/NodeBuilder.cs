@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Start(string dataDir)
         {
-            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, "stratis", InitStratisRegTest(), ProtocolVersion.ALT_PROTOCOL_VERSION);
+            NodeSettings nodeSettings = new NodeSettings("stratis", InitStratisRegTest(), ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(new string[] { "-conf=stratis.conf", "-datadir=" + dataDir });
 
             var node = BuildFullNode(nodeSettings, this.callback);
 
