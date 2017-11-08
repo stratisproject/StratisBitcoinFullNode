@@ -1,9 +1,9 @@
-﻿using NBitcoin.Crypto;
-using NBitcoin.DataEncoders;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NBitcoin.Crypto;
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin.Protocol
 {
