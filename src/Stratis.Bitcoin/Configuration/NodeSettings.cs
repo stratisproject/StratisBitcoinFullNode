@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Configuration
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
             NodeSettings nodeSettings = new NodeSettings();
-            nodeSettings.FromArguments(new string[0], innerNetwork: network);
+            nodeSettings.LoadArguments(new string[0], innerNetwork: network);
             return nodeSettings;
         }
 
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public NodeSettings FromArguments(string[] args, string name = "bitcoin",
+        public NodeSettings LoadArguments(string[] args, string name = "bitcoin",
             Network innerNetwork = null,
             ProtocolVersion protocolVersion = SupportedProtocolVersion,
             string agent = "StratisBitcoin")

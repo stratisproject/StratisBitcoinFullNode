@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void MinTxFee_OnStratisNetwork_IsStratisDefault()
         {
             ILoggerFactory loggerFactory = new LoggerFactory();
-            NodeSettings nodeSettings = new NodeSettings().FromArguments(new string[0], innerNetwork: Network.StratisTest);
+            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[0], innerNetwork: Network.StratisTest);
             LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, nodeSettings);
             Assert.Equal(new FeeRate(Network.StratisTest.FallbackFee), policy.FallbackTxFeeRate);
         }
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void MinTxFee_OnBitcoinNetwork_IsBitcoinDefault()
         {
             ILoggerFactory loggerFactory = new LoggerFactory();
-            NodeSettings nodeSettings = new NodeSettings().FromArguments(new string[0], innerNetwork: Network.TestNet);
+            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[0], innerNetwork: Network.TestNet);
             LightWalletFixedFeePolicy policy = new LightWalletFixedFeePolicy(loggerFactory, nodeSettings);
             Assert.Equal(new FeeRate(Network.TestNet.FallbackFee), policy.FallbackTxFeeRate);
         }

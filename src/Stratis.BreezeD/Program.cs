@@ -45,13 +45,13 @@ namespace Stratis.BreezeD
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
 
-                    nodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent);
+                    nodeSettings.LoadArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent);
                     nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultStratisUri : apiUri);
                 }
                 else
                 {
 
-                    nodeSettings.FromArguments(args, agent: agent);
+                    nodeSettings.LoadArguments(args, agent: agent);
                     nodeSettings.ApiUri = new Uri(string.IsNullOrEmpty(apiUri) ? DefaultBitcoinUri : apiUri);
                 }
 
