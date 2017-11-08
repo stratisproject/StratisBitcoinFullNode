@@ -317,47 +317,6 @@ namespace NBitcoin.Tests
 			}
 		}
 
-
-		[Fact]
-		[Trait("Protocol", "Protocol")]
-		public void CanMaintainChainWithChainBehavior()
-		{
-			using(var builder = NodeBuilder.Create())
-			{
-				var node = builder.CreateNode(true).CreateNodeClient();
-				builder.Nodes[0].Generate(600);
-				var rpc = builder.Nodes[0].CreateRPCClient();
-				var chain = node.GetChain(rpc.GetBlockHash(500));
-				Assert.True(chain.Height == 500);
-				using(var tester = new NodeServerTester())
-				{
-					var n1 = tester.Node1;
-					n1.Behaviors.Add(new ChainBehavior(chain));
-					n1.VersionHandshake();
-					Assert.True(n1.MyVersion.StartHeight == 500);
-					var n2 = tester.Node2;
-					Assert.True(n2.MyVersion.StartHeight == 0);
-					Assert.True(n2.PeerVersion.StartHeight == 500);
-					Assert.True(n1.State == NodeState.HandShaked);
-					Assert.True(n2.State == NodeState.HandShaked);
-					var behavior = new ChainBehavior(new ConcurrentChain(Network.RegTest));
-					n2.Behaviors.Add(behavior);
-					TestUtils.Eventually(() => behavior.Chain.Height == 500);
-					var chain2 = n2.GetChain(rpc.GetBlockHash(500));
-					Assert.True(chain2.Height == 500);
-					var chain1 = n1.GetChain(rpc.GetBlockHash(500));
-					Assert.True(chain1.Height == 500);
-					chain1 = n1.GetChain(rpc.GetBlockHash(499));
-					Assert.True(chain1.Height == 499);
-
-					//Should not broadcast above HighestValidatorPoW
-					n1.Behaviors.Find<ChainBehavior>().SharedState.HighestValidatedPoW = chain1.GetBlock(300);
-					chain1 = n2.GetChain(rpc.GetBlockHash(499));
-					Assert.True(chain1.Height == 300);
-				}
-			}
-		}
-
 		[Fact]
 		[Trait("Protocol", "Protocol")]
 		public void CanCancelConnection()
