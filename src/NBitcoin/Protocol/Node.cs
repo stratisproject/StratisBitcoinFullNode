@@ -258,7 +258,7 @@ namespace NBitcoin.Protocol
 								{
 									Message = message,
 									Socket = Socket,
-									Length = counter.ReadenBytes,
+									Length = counter.ReadBytes,
 									Node = Node
 								});
 							}

@@ -113,7 +113,7 @@ namespace NBitcoin.Protocol
                 object payload = this.payloadObject;
                 payloadStream.ReadWrite(payloadType, ref payload);
                 if (unknown)
-                    ((UnknowPayload)payload)._Command = this.Command;
+                    ((UnknowPayload)payload).command = this.Command;
 
                 this.Payload = (Payload)payload;
             }

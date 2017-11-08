@@ -1,177 +1,133 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace NBitcoin
 {
-	public class PerformanceSnapshot
-	{
+    public class PerformanceSnapshot
+    {
+        private readonly long totalWrittenBytes;
+        public long TotalWrittenBytes { get { return this.totalWrittenBytes; } }
 
-		public PerformanceSnapshot(long readen, long written)
-		{
-			_TotalWrittenBytes = written;
-			_TotalReadenBytes = readen;
-		}
-		private readonly long _TotalWrittenBytes;
-		public long TotalWrittenBytes
-		{
-			get
-			{
-				return _TotalWrittenBytes;
-			}
-		}
+        private long totalReadBytes;
+        public long TotalReadBytes { get { return this.totalReadBytes; } set { this.totalReadBytes = value; } }
 
-		long _TotalReadenBytes;
-		public long TotalReadenBytes
-		{
-			get
-			{
-				return _TotalReadenBytes;
-			}
-			set
-			{
-				_TotalReadenBytes = value;
-			}
-		}
-		public TimeSpan Elapsed
-		{
-			get
-			{
-				return Taken - Start;
-			}
-		}
-		public ulong ReadenBytesPerSecond
-		{
-			get
-			{
-				return (ulong)((double)TotalReadenBytes / Elapsed.TotalSeconds);
-			}
-		}
-		public ulong WrittenBytesPerSecond
-		{
-			get
-			{
-				return (ulong)((double)TotalWrittenBytes / Elapsed.TotalSeconds);
-			}
-		}
+        public TimeSpan Elapsed
+        {
+            get
+            {
+                return this.Taken - this.Start;
+            }
+        }
 
-		public static PerformanceSnapshot operator -(PerformanceSnapshot end, PerformanceSnapshot start)
-		{
-			if(end.Start != start.Start)
-			{
-				throw new InvalidOperationException("Performance snapshot should be taken from the same point of time");
-			}
-			if(end.Taken < start.Taken)
-			{
-				throw new InvalidOperationException("The difference of snapshot can't be negative");
-			}
-			return new PerformanceSnapshot(end.TotalReadenBytes - start.TotalReadenBytes,
-											end.TotalWrittenBytes - start.TotalWrittenBytes)
-			{
-				Start = start.Taken,
-				Taken = end.Taken
-			};
-		}
+        public ulong ReadenBytesPerSecond
+        {
+            get
+            {
+                return (ulong)((double)this.TotalReadBytes / this.Elapsed.TotalSeconds);
+            }
+        }
 
-		public override string ToString()
-		{
-			return "Read : " + ToKBSec(ReadenBytesPerSecond) + ", Write : " + ToKBSec(WrittenBytesPerSecond);
-		}
+        public ulong WrittenBytesPerSecond
+        {
+            get
+            {
+                return (ulong)((double)this.TotalWrittenBytes / this.Elapsed.TotalSeconds);
+            }
+        }
 
-		private string ToKBSec(ulong bytesPerSec)
-		{
-			double speed = ((double)bytesPerSec / 1024.0);
-			return speed.ToString("0.00") + " KB/S)";
-		}
+        public PerformanceSnapshot(long readen, long written)
+        {
+            this.totalWrittenBytes = written;
+            this.totalReadBytes = readen;
+        }
 
-		public DateTime Start
-		{
-			get;
-			set;
-		}
+        public static PerformanceSnapshot operator -(PerformanceSnapshot end, PerformanceSnapshot start)
+        {
+            if (end.Start != start.Start)
+            {
+                throw new InvalidOperationException("Performance snapshot should be taken from the same point of time");
+            }
 
-		public DateTime Taken
-		{
-			get;
-			set;
-		}
-	}
-	public class PerformanceCounter
-	{
-		public PerformanceCounter()
-		{
-			_Start = DateTime.UtcNow;
-		}
+            if (end.Taken < start.Taken)
+            {
+                throw new InvalidOperationException("The difference of snapshot can't be negative");
+            }
 
-		long _WrittenBytes;
-		public long WrittenBytes
-		{
-			get
-			{
-				return _WrittenBytes;
-			}
-		}
+            return new PerformanceSnapshot(end.TotalReadBytes - start.TotalReadBytes, end.TotalWrittenBytes - start.TotalWrittenBytes)
+            {
+                Start = start.Taken,
+                Taken = end.Taken
+            };
+        }
 
+        public override string ToString()
+        {
+            return "Read : " + ToKBSec(this.ReadenBytesPerSecond) + ", Write : " + ToKBSec(this.WrittenBytesPerSecond);
+        }
 
-		public void AddWritten(long count)
-		{
-			Interlocked.Add(ref _WrittenBytes, count);
-		}
-		public void AddReaden(long count)
-		{
-			Interlocked.Add(ref _ReadenBytes, count);
-		}
+        private string ToKBSec(ulong bytesPerSec)
+        {
+            double speed = ((double)bytesPerSec / 1024.0);
+            return speed.ToString("0.00") + " KB/S)";
+        }
 
-		long _ReadenBytes;
-		public long ReadenBytes
-		{
-			get
-			{
-				return _ReadenBytes;
-			}
-		}
+        public DateTime Start { get; set; }
 
-		public PerformanceSnapshot Snapshot()
-		{
-#if !(PORTABLE || NETCORE)
-			Thread.MemoryBarrier();
-#endif
-			var snap = new PerformanceSnapshot(ReadenBytes, WrittenBytes)
-			{
-				Start = Start,
-				Taken = DateTime.UtcNow
-			};
-			return snap;
-		}
+        public DateTime Taken { get; set; }
+    }
 
-		DateTime _Start;
-		public DateTime Start
-		{
-			get
-			{
-				return _Start;
-			}
-		}
-		public TimeSpan Elapsed
-		{
-			get
-			{
-				return DateTime.UtcNow - Start;
-			}
-		}
+    public class PerformanceCounter
+    {
+        private DateTime start;
+        public DateTime Start { get { return this.start; } }
+        public TimeSpan Elapsed
+        {
+            get
+            {
+                return DateTime.UtcNow - this.Start;
+            }
+        }
 
-		public override string ToString()
-		{
-			return Snapshot().ToString();
-		}
+        private long writtenBytes;
+        public long WrittenBytes { get { return this.writtenBytes; } }
 
-		internal void Add(PerformanceCounter counter)
-		{
-			AddWritten(counter.WrittenBytes);
-			AddReaden(counter.ReadenBytes);
-		}
-	}
+        private long readBytes;
+        public long ReadBytes { get { return this.readBytes; } }
+
+        public PerformanceCounter()
+        {
+            this.start = DateTime.UtcNow;
+        }
+
+        public void AddWritten(long count)
+        {
+            Interlocked.Add(ref this.writtenBytes, count);
+        }
+
+        public void AddRead(long count)
+        {
+            Interlocked.Add(ref this.readBytes, count);
+        }
+
+        public PerformanceSnapshot Snapshot()
+        {
+            var snap = new PerformanceSnapshot(this.ReadBytes, this.WrittenBytes)
+            {
+                Start = this.Start,
+                Taken = DateTime.UtcNow
+            };
+            return snap;
+        }
+
+        public override string ToString()
+        {
+            return Snapshot().ToString();
+        }
+
+        internal void Add(PerformanceCounter counter)
+        {
+            this.AddWritten(counter.WrittenBytes);
+            this.AddRead(counter.ReadBytes);
+        }
+    }
 }

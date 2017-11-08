@@ -609,7 +609,7 @@ namespace NBitcoin.Tests
 				var diff = end - begin;
 				Assert.True(diff.Start == begin.Taken);
 				Assert.True(diff.Taken == end.Taken);
-				Assert.True(diff.TotalReadenBytes == end.TotalReadenBytes - begin.TotalReadenBytes);
+				Assert.True(diff.TotalReadBytes == end.TotalReadBytes - begin.TotalReadBytes);
 				Assert.True(diff.TotalWrittenBytes == end.TotalWrittenBytes - begin.TotalWrittenBytes);
 
 				Assert.True(blocks.Count == 100);
