@@ -1,53 +1,42 @@
-﻿#if !NOSOCKET
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 
 namespace NBitcoin.Protocol
 {
     /// <summary>
-    /// An available peer address in the bitcoin network is announce (unsollicited or after a getaddr)
+    /// An available peer address in the bitcoin network is announce (unsollicited or after a getaddr).
     /// </summary>
     [Payload("addr")]
     public class AddrPayload : Payload, IBitcoinSerializable
     {
-        NetworkAddress[] addr_list = new NetworkAddress[0];
-        public NetworkAddress[] Addresses
-        {
-            get
-            {
-                return addr_list;
-            }
-        }
+        private NetworkAddress[] addr_list = new NetworkAddress[0];
+        public NetworkAddress[] Addresses { get { return this.addr_list; } }
 
         public AddrPayload()
         {
-
         }
+
         public AddrPayload(NetworkAddress address)
         {
-            addr_list = new NetworkAddress[] { address };
+            this.addr_list = new NetworkAddress[] { address };
         }
+
         public AddrPayload(NetworkAddress[] addresses)
         {
-            addr_list = addresses.ToArray();
+            this.addr_list = addresses.ToArray();
         }
 
         #region IBitcoinSerializable Members
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref addr_list);
+            stream.ReadWrite(ref this.addr_list);
         }
 
         #endregion
 
         public override string ToString()
         {
-            return Addresses.Length + " address(es)";
+            return this.Addresses.Length + " address(es)";
         }
     }
 }
-#endif

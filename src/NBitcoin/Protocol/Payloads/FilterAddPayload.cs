@@ -1,38 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NBitcoin.Protocol
+﻿namespace NBitcoin.Protocol
 {
     [Payload("filteradd")]
     public class FilterAddPayload : Payload
     {
-        public FilterAddPayload()
-        {
-
-        }
-        public FilterAddPayload(byte[] data)
-        {
-            _Data = data;
-        }
-        byte[] _Data;
+        private byte[] data;
         public byte[] Data
         {
             get
             {
-                return _Data;
+                return this.data;
             }
             set
             {
-                _Data = value;
+                this.data = value;
             }
+        }
+
+        public FilterAddPayload()
+        {
+        }
+
+        public FilterAddPayload(byte[] data)
+        {
+            this.data = data;
         }
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWriteAsVarString(ref _Data);
+            stream.ReadWriteAsVarString(ref this.data);
         }
     }
 }

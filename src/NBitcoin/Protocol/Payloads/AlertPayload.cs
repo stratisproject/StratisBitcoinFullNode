@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NBitcoin.Protocol
 {
@@ -13,62 +11,67 @@ namespace NBitcoin.Protocol
     public class AlertPayload : Payload, IBitcoinSerializable
     {
         /// <summary>
-        /// Used for knowing if an alert is valid in past of future
+        /// Used for knowing if an alert is valid in past of future.
         /// </summary>
-        public DateTimeOffset? Now
-        {
-            get;
-            set;
-        }
+        public DateTimeOffset? Now { get; set; }
 
-        VarString payload;
-        VarString signature;
+        private VarString payload;
+        private VarString signature;
 
-        int version;
-        long relayUntil;
-        long expiration;
+        private int version;
+        private long relayUntil;
+        private int id;
+        private int cancel;
+        private int[] setCancel = new int[0];
+        private int minVer;
+        private int maxVer;
+        private VarString[] setSubVer = new VarString[0];
+        private int priority;
+        private VarString comment;
+        private VarString statusBar;
+        private VarString reserved;
+
+        private long expiration;
         public DateTimeOffset Expiration
         {
             get
             {
-                return Utils.UnixTimeToDateTime((uint)expiration);
+                return Utils.UnixTimeToDateTime((uint)this.expiration);
             }
             set
             {
-                expiration = Utils.DateTimeToUnixTime(value);
+                this.expiration = Utils.DateTimeToUnixTime(value);
             }
         }
-
-        int id;
-        int cancel;
-        int[] setCancel = new int[0];
-        int minVer;
-        int maxVer;
-        VarString[] setSubVer = new VarString[0];
-        int priority;
-        VarString comment;
-        VarString statusBar;
-        VarString reserved;
 
         public string[] SetSubVer
         {
             get
             {
                 List<string> messages = new List<string>();
-                foreach(var v in setSubVer)
+                foreach (VarString ver in this.setSubVer)
                 {
-                    messages.Add(Encoders.ASCII.EncodeData(v.GetString()));
+                    messages.Add(Encoders.ASCII.EncodeData(ver.GetString()));
                 }
                 return messages.ToArray();
             }
             set
             {
                 List<VarString> messages = new List<VarString>();
-                foreach(var v in value)
+                foreach (var v in value)
                 {
                     messages.Add(new VarString(Encoders.ASCII.DecodeData(v)));
                 }
-                setSubVer = messages.ToArray();
+                this.setSubVer = messages.ToArray();
+            }
+        }
+
+        public bool IsInEffect
+        {
+            get
+            {
+                DateTimeOffset now = this.Now ?? DateTimeOffset.Now;
+                return now < this.Expiration;
             }
         }
 
@@ -76,22 +79,23 @@ namespace NBitcoin.Protocol
         {
             get
             {
-                return Encoders.ASCII.EncodeData(comment.GetString());
+                return Encoders.ASCII.EncodeData(this.comment.GetString());
             }
             set
             {
-                comment = new VarString(Encoders.ASCII.DecodeData(value));
+                this.comment = new VarString(Encoders.ASCII.DecodeData(value));
             }
         }
+
         public string StatusBar
         {
             get
             {
-                return Encoders.ASCII.EncodeData(statusBar.GetString());
+                return Encoders.ASCII.EncodeData(this.statusBar.GetString());
             }
             set
             {
-                statusBar = new VarString(Encoders.ASCII.DecodeData(value));
+                this.statusBar = new VarString(Encoders.ASCII.DecodeData(value));
             }
         }
 
@@ -99,34 +103,34 @@ namespace NBitcoin.Protocol
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref payload);
-            if(!stream.Serializing)
+            stream.ReadWrite(ref this.payload);
+            if (!stream.Serializing)
             {
-                var payloadStream = new BitcoinStream(payload.GetString());
+                var payloadStream = new BitcoinStream(this.payload.GetString());
                 payloadStream.CopyParameters(stream);
 
-                ReadWritePayloadFields(payloadStream);
+                this.ReadWritePayloadFields(payloadStream);
 
             }
 
-            stream.ReadWrite(ref signature);
+            stream.ReadWrite(ref this.signature);
         }
 
         private void ReadWritePayloadFields(BitcoinStream payloadStream)
         {
-            payloadStream.ReadWrite(ref version);
-            payloadStream.ReadWrite(ref relayUntil);
-            payloadStream.ReadWrite(ref expiration);
-            payloadStream.ReadWrite(ref id);
-            payloadStream.ReadWrite(ref cancel);
-            payloadStream.ReadWrite(ref setCancel);
-            payloadStream.ReadWrite(ref minVer);
-            payloadStream.ReadWrite(ref maxVer);
-            payloadStream.ReadWrite(ref setSubVer);
-            payloadStream.ReadWrite(ref priority);
-            payloadStream.ReadWrite(ref comment);
-            payloadStream.ReadWrite(ref statusBar);
-            payloadStream.ReadWrite(ref reserved);
+            payloadStream.ReadWrite(ref this.version);
+            payloadStream.ReadWrite(ref this.relayUntil);
+            payloadStream.ReadWrite(ref this.expiration);
+            payloadStream.ReadWrite(ref this.id);
+            payloadStream.ReadWrite(ref this.cancel);
+            payloadStream.ReadWrite(ref this.setCancel);
+            payloadStream.ReadWrite(ref this.minVer);
+            payloadStream.ReadWrite(ref this.maxVer);
+            payloadStream.ReadWrite(ref this.setSubVer);
+            payloadStream.ReadWrite(ref this.priority);
+            payloadStream.ReadWrite(ref this.comment);
+            payloadStream.ReadWrite(ref this.statusBar);
+            payloadStream.ReadWrite(ref this.reserved);
         }
 
         private void UpdatePayload(BitcoinStream stream)
@@ -134,8 +138,8 @@ namespace NBitcoin.Protocol
             MemoryStream ms = new MemoryStream();
             var seria = new BitcoinStream(ms, true);
             seria.CopyParameters(stream);
-            ReadWritePayloadFields(seria);
-            payload = new VarString(ms.ToArray());
+            this.ReadWritePayloadFields(seria);
+            this.payload = new VarString(ms.ToArray());
         }
 
         #endregion
@@ -144,15 +148,15 @@ namespace NBitcoin.Protocol
         // it shouldn't be called "version" because the it a field with the same name 
         public void UpdateSignature(Key key)
         {
-            if(key == null)
+            if (key == null)
                 throw new ArgumentNullException("key");
-            UpdatePayload();
-            signature = new VarString(key.Sign(Hashes.Hash256(payload.GetString())).ToDER());
+            this.UpdatePayload();
+            this.signature = new VarString(key.Sign(Hashes.Hash256(this.payload.GetString())).ToDER());
         }
 
         public void UpdatePayload(ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION)
         {
-            UpdatePayload(new BitcoinStream(new byte[0])
+            this.UpdatePayload(new BitcoinStream(new byte[0])
             {
                 ProtocolVersion = protocolVersion
             });
@@ -160,37 +164,28 @@ namespace NBitcoin.Protocol
 
         public bool CheckSignature(Network network)
         {
-            if(network == null)
+            if (network == null)
                 throw new ArgumentNullException("network");
             return CheckSignature(network.AlertPubKey);
         }
 
         public bool CheckSignature(PubKey key)
         {
-            if(key == null)
+            if (key == null)
                 throw new ArgumentNullException("key");
-            return key.Verify(Hashes.Hash256(payload.GetString()), signature.GetString());
+            return key.Verify(Hashes.Hash256(this.payload.GetString()), this.signature.GetString());
         }
 
-        public bool IsInEffect
+        public bool AppliesTo(int version, string subVerIn)
         {
-            get
-            {
-                DateTimeOffset now = Now ?? DateTimeOffset.Now;
-                return now < Expiration;
-            }
-        }
-
-        public bool AppliesTo(int nVersion, string strSubVerIn)
-        {
-            return IsInEffect
-                    && minVer <= nVersion && nVersion <= maxVer
-                    && (SetSubVer.Length == 0 || SetSubVer.Contains(strSubVerIn));
+            return this.IsInEffect
+                    && (this.minVer <= version) && (version <= this.maxVer)
+                    && ((this.SetSubVer.Length == 0) || this.SetSubVer.Contains(subVerIn));
         }
 
         public override string ToString()
         {
-            return StatusBar;
+            return this.StatusBar;
         }
     }
 }

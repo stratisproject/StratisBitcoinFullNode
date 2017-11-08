@@ -1,16 +1,7 @@
-﻿#if !NOSOCKET
-using NBitcoin.DataEncoders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using System.Reflection;
-
-#if WINDOWS_UWP
-using Windows.ApplicationModel;
-#endif
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin.Protocol
 {
@@ -18,6 +9,7 @@ namespace NBitcoin.Protocol
     public enum NodeServices : ulong
     {
         Nothing = 0,
+
         /// <summary>
         /// NODE_NETWORK means that the node is capable of serving the block chain. It is currently
         /// set by all Bitcoin Core nodes, and is unset by SPV clients or other peers that just want
@@ -43,180 +35,181 @@ namespace NBitcoin.Protocol
         /// </summary> 
         NODE_WITNESS = (1 << 3),
     }
+
     [Payload("version")]
     public class VersionPayload : Payload, IBitcoinSerializable
     {
-        static string _NUserAgent;
-        public static string GetNBitcoinUserAgent()
-        {
-            if(_NUserAgent == null)
-            {
-#if WINDOWS_UWP
-                // get the app version
-                Package package = Package.Current;
-                var version = package.Id.Version;
-                _NUserAgent = "/NBitcoin:" + version.Major + "." + version.Minor + "." + version.Build + "/";
-#else
-#if !NETCORE
-                var version = typeof(VersionPayload).Assembly.GetName().Version;
-#else
-                var version = typeof(VersionPayload).GetTypeInfo().Assembly.GetName().Version;
-#endif
-                _NUserAgent = "/NBitcoin:" + version.Major + "." + version.MajorRevision + "." + version.Build + "/";
-#endif
+        private static string userAgent;
 
-            }
-            return _NUserAgent;
-        }
-        uint version;
-
+        private uint version;
         public ProtocolVersion Version
         {
             get
             {
-                if(version == 10300) //A version number of 10300 is converted to 300 before being processed
+                // A version number of 10300 is converted to 300 before being processed.
+                if (this.version == 10300)
                     return (ProtocolVersion)(300);  //https://en.bitcoin.it/wiki/Version_Handshake
-                return (ProtocolVersion)version;
+
+                return (ProtocolVersion)this.version;
             }
             set
             {
-                if(value == (ProtocolVersion)10300)
+                if (value == (ProtocolVersion)10300)
                     value = (ProtocolVersion)300;
-                version = (uint)value;
+
+                this.version = (uint)value;
             }
         }
-        ulong services;
 
+        private ulong services;
         public NodeServices Services
         {
             get
             {
-                return (NodeServices)services;
+                return (NodeServices)this.services;
             }
             set
             {
-                services = (ulong)value;
+                this.services = (ulong)value;
             }
         }
 
-        long timestamp;
-
+        private long timestamp;
         public DateTimeOffset Timestamp
         {
             get
             {
-                return Utils.UnixTimeToDateTime((uint)timestamp);
+                return Utils.UnixTimeToDateTime((uint)this.timestamp);
             }
             set
             {
-                timestamp = Utils.DateTimeToUnixTime(value);
+                this.timestamp = Utils.DateTimeToUnixTime(value);
             }
         }
 
-        NetworkAddress addr_recv = new NetworkAddress();
+        private NetworkAddress addr_recv = new NetworkAddress();
         public IPEndPoint AddressReceiver
         {
             get
             {
-                return addr_recv.Endpoint;
+                return this.addr_recv.Endpoint;
             }
             set
             {
-                addr_recv.Endpoint = value;
+                this.addr_recv.Endpoint = value;
             }
         }
-        NetworkAddress addr_from = new NetworkAddress();
+
+        private NetworkAddress addr_from = new NetworkAddress();
         public IPEndPoint AddressFrom
         {
             get
             {
-                return addr_from.Endpoint;
+                return this.addr_from.Endpoint;
             }
             set
             {
-                addr_from.Endpoint = value;
+                this.addr_from.Endpoint = value;
             }
         }
 
-        ulong nonce;
+        private ulong nonce;
         public ulong Nonce
         {
             get
             {
-                return nonce;
+                return this.nonce;
             }
             set
             {
-                nonce = value;
+                this.nonce = value;
             }
         }
-        int start_height;
 
+        private int start_height;
         public int StartHeight
         {
             get
             {
-                return start_height;
+                return this.start_height;
             }
             set
             {
-                start_height = value;
+                this.start_height = value;
             }
         }
 
-        bool relay;
+        private bool relay;
         public bool Relay
         {
             get
             {
-                return relay;
+                return this.relay;
             }
             set
             {
-                relay = value;
+                this.relay = value;
             }
         }
 
-        VarString user_agent;
+        private VarString user_agent;
         public string UserAgent
         {
             get
             {
-                return Encoders.ASCII.EncodeData(user_agent.GetString());
+                return Encoders.ASCII.EncodeData(this.user_agent.GetString());
             }
             set
             {
-                user_agent = new VarString(Encoders.ASCII.DecodeData(value));
+                this.user_agent = new VarString(Encoders.ASCII.DecodeData(value));
             }
+        }
+
+        public static string GetNBitcoinUserAgent()
+        {
+            if (userAgent == null)
+            {
+                Version version = typeof(VersionPayload).GetTypeInfo().Assembly.GetName().Version;
+                userAgent = "/NBitcoin:" + version.Major + "." + version.MajorRevision + "." + version.Build + "/";
+            }
+
+            return userAgent;
         }
 
         #region IBitcoinSerializable Members
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref version);
-            using(stream.ProtocolVersionScope((ProtocolVersion)version))
+            stream.ReadWrite(ref this.version);
+            using (stream.ProtocolVersionScope((ProtocolVersion)this.version))
             {
-                stream.ReadWrite(ref services);
-                stream.ReadWrite(ref timestamp);
-                using(stream.ProtocolVersionScope(ProtocolVersion.CADDR_TIME_VERSION - 1)) //No time field in version message
+                stream.ReadWrite(ref this.services);
+                stream.ReadWrite(ref this.timestamp);
+
+                // No time field in version message.
+                using (stream.ProtocolVersionScope(ProtocolVersion.CADDR_TIME_VERSION - 1))
                 {
-                    stream.ReadWrite(ref addr_recv);
+                    stream.ReadWrite(ref this.addr_recv);
                 }
-                if(version >= 106)
+
+                if (this.version >= 106)
                 {
-                    using(stream.ProtocolVersionScope(ProtocolVersion.CADDR_TIME_VERSION - 1)) //No time field in version message
+                    // No time field in version message.
+                    using (stream.ProtocolVersionScope(ProtocolVersion.CADDR_TIME_VERSION - 1))
                     {
-                        stream.ReadWrite(ref addr_from);
+                        stream.ReadWrite(ref this.addr_from);
                     }
-                    stream.ReadWrite(ref nonce);
-                    stream.ReadWrite(ref user_agent);
-                    if(version < 60002)
-                        if(user_agent.Length != 0)
-                            throw new FormatException("Should not find user agent for current version " + version);
-                    stream.ReadWrite(ref start_height);
-                    if(version >= 70001)
-                        stream.ReadWrite(ref relay);
+                    stream.ReadWrite(ref this.nonce);
+                    stream.ReadWrite(ref this.user_agent);
+                    if (this.version < 60002)
+                    {
+                        if (this.user_agent.Length != 0)
+                            throw new FormatException("Should not find user agent for current version " + this.version);
+                    }
+
+                    stream.ReadWrite(ref this.start_height);
+                    if (this.version >= 70001)
+                        stream.ReadWrite(ref this.relay);
                 }
             }
         }
@@ -225,8 +218,7 @@ namespace NBitcoin.Protocol
 
         public override string ToString()
         {
-            return Version.ToString();
+            return this.Version.ToString();
         }
     }
 }
-#endif

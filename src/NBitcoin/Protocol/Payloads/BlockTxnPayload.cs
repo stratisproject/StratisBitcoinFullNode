@@ -1,42 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace NBitcoin.Protocol
 {
     [Payload("blocktxn")]
     public class BlockTxnPayload : Payload
     {
-
-        uint256 _BlockId;
+        private uint256 blockId;
         public uint256 BlockId
         {
             get
             {
-                return _BlockId;
+                return this.blockId;
             }
             set
             {
-                _BlockId = value;
+                this.blockId = value;
             }
         }
 
-
-        private List<Transaction> _Transactions = new List<Transaction>();
+        private List<Transaction> transactions = new List<Transaction>();
         public List<Transaction> Transactions
         {
             get
             {
-                return _Transactions;
+                return this.transactions;
             }
         }
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref _BlockId);
-            stream.ReadWrite(ref _Transactions);
+            stream.ReadWrite(ref this.blockId);
+            stream.ReadWrite(ref this.transactions);
         }
     }
 }
