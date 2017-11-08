@@ -41,8 +41,11 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>
         /// Initializes a new instance of the object.
-        /// <para>This constructor does not load the configuration itself.</para>
         /// </summary>
+        /// <param name="name">Blockchain name. Currently only "bitcoin" and "stratis" are used.</param>
+        /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
+        /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         public NodeSettings(string name = "bitcoin", Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
         {
             if (string.IsNullOrEmpty(name))
@@ -141,10 +144,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <para>This includes loading configuration from file.</para>
         /// </summary>
         /// <param name="args">Application command line arguments.</param>
-        /// <param name="name">Blockchain name. Currently only "bitcoin" and "stratis" are used.</param>
-        /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
-        /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadArguments(string[] args)
