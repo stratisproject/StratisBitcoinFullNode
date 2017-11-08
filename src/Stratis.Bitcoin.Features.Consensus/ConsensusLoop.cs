@@ -33,6 +33,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
         public ConsensusError Error { get; set; }
+
+        /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
+        public bool SkipValidation { get; set; }
     }
     
     /// <summary>
@@ -414,31 +417,33 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
 
                 // Check whether to use checkpoint to skip block validation.
-                bool skipBlockValidation = false; //TODO: Move this flag into context
+                context.BlockValidationContext.SkipValidation = false; 
                 if (this.nodeSettings.UseCheckpoints)
                 {
                     int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
-                    skipBlockValidation = context.BlockValidationContext.ChainedBlock.Height <= this.checkpoints.GetLastCheckpointHeight();
-                    if (skipBlockValidation)
-                        this.logger.LogTrace("Block validation partially skipped for block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
+                    context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= this.checkpoints.GetLastCheckpointHeight();
+                    if (context.BlockValidationContext.SkipValidation)
+                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
                 }
 
-                // Check whether to use assumevalid to skip validation.
-                if (!skipBlockValidation && (this.nodeSettings.BlockAssumedValid != null))
+                // Check whether to use assumevalid switch to skip validation.
+                if (!context.BlockValidationContext.SkipValidation && (this.nodeSettings.BlockAssumedValid != null))
                 {
                     ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.nodeSettings.BlockAssumedValid);
-                    skipBlockValidation =  (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
-                    if (skipBlockValidation)
-                        this.logger.LogTrace("Block validation partially skipped for block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
+                    context.BlockValidationContext.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
+                    if (context.BlockValidationContext.SkipValidation)
+                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
                 }
 
-                if (!skipBlockValidation)
+                if (!context.BlockValidationContext.SkipValidation)
                 {
                     this.Validator.ContextualCheckBlock(context);
 
                     // Check the block itself.
                     this.Validator.CheckBlock(context);
                 }
+                else
+                    this.logger.LogTrace("Block validator skipped for block at height {0}.", context.BlockValidationContext.ChainedBlock.Height);
             }
 
             this.logger.LogTrace("(-)[OK]");
