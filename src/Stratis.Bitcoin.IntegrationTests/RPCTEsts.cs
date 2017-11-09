@@ -1,13 +1,12 @@
-﻿using NBitcoin;
+﻿using System;
+using System.IO;
+using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.IndexStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -163,39 +162,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                     nodeB.VersionHandshake();
                     var resp = rpc.SendCommand("getblockhash", "0").ResultString;
                     Assert.Equal("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206", resp);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Tests whether the RPC method "createindex" can be called and returns the expected string result suitable for console output.
-        /// We are also testing whether all arguments can be passed as strings.
-        /// </summary>
-        [Fact]
-        public void CanCreateIndexByStringArgs()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
-                {
-                    fullNodeBuilder
-                    .UseConsensus()
-                    .UseIndexStore()
-                    .UseMempool()
-                    .AddRPC();
-                });
-                builder.StartAll();
-                RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
-                {
-                    nodeB.VersionHandshake();
-                    var args = new List<string>();
-                    args.Add("testindex");
-                    args.Add("false");
-                    args.Add("(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })");
-                    var resp = rpc.SendCommand("createindex", args.ToArray()).ResultString;
-
-                    Assert.Equal("True", resp);
                 }
             }
         }
