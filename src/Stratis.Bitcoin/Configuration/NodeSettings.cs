@@ -166,9 +166,7 @@ namespace Stratis.Bitcoin.Configuration
                     this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
-            this.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
-            this.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
-
+            // Find out if we need to run on testnet or regtest from the config file. 
             if (this.ConfigurationFile != null)
             {
                 AssertConfigFileExists(this);
@@ -177,9 +175,12 @@ namespace Stratis.Bitcoin.Configuration
                 this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
             }
 
+            this.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
+            this.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
+
             if (this.Testnet && this.RegTest)
                 throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
-
+            
             this.Network = this.GetNetwork();
             if (this.DataDir == null)
             {
