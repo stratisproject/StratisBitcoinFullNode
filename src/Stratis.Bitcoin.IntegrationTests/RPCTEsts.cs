@@ -1,12 +1,8 @@
-﻿using System;
-using System.IO;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.IndexStore;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.RPC;
+using System;
+using System.IO;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
