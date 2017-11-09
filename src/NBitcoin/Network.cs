@@ -556,8 +556,8 @@ namespace NBitcoin
             consensus.ruleChangeActivationThreshold = this.ruleChangeActivationThreshold;
             consensus.subsidyHalvingInterval = this.subsidyHalvingInterval;
             consensus.minimumChainWork = this.minimumChainWork;
-            consensus.GetPoWHash = GetPoWHash;
-            consensus.coinType = CoinType;
+            consensus.GetPoWHash = this.GetPoWHash;
+            consensus.coinType = this.CoinType;
             consensus.litecoinWorkCalculation = this.litecoinWorkCalculation;
             consensus.LastPOWBlock = this.LastPOWBlock;
             consensus.ProofOfStakeLimit = this.ProofOfStakeLimit;
