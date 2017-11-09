@@ -197,24 +197,13 @@ namespace NBitcoin
             this.buriedDeployments = new BuriedDeploymentsArray(this);
             this.bIP9Deployments = new BIP9DeploymentsArray(this);
         }
+
         private readonly BuriedDeploymentsArray buriedDeployments;
-        public BuriedDeploymentsArray BuriedDeployments
-        {
-            get
-            {
-                return this.buriedDeployments;
-            }
-        }
+        public BuriedDeploymentsArray BuriedDeployments => this.buriedDeployments;
 
 
         private readonly BIP9DeploymentsArray bIP9Deployments;
-        public BIP9DeploymentsArray BIP9Deployments
-        {
-            get
-            {
-                return this.bIP9Deployments;
-            }
-        }
+        public BIP9DeploymentsArray BIP9Deployments => this.bIP9Deployments;
 
         int subsidyHalvingInterval;
         public int SubsidyHalvingInterval
@@ -521,21 +510,24 @@ namespace NBitcoin
             }
         }
 
-        bool frozen = false;
+        private bool frozen = false;
         public void Freeze()
         {
-            frozen = true;
+            this.frozen = true;
         }
+
         private void EnsureNotFrozen()
         {
-            if(frozen)
+            if (this.frozen)
+            {
                 throw new InvalidOperationException("This instance can't be modified");
+            }
         }
 
         public virtual Consensus Clone()
         {
             var consensus = new Consensus();
-            Fill(consensus);
+            this.Fill(consensus);
             return consensus;
         }
 
@@ -565,6 +557,7 @@ namespace NBitcoin
 
         }
     }
+
     public partial class Network
     {
         private uint magic;
@@ -771,6 +764,7 @@ namespace NBitcoin
         {
             return Parse<IBitcoinString>(str, this);
         }
+
         public T Parse<T>(string str) where T : IBitcoinString
         {
             return Parse<T>(str, this);

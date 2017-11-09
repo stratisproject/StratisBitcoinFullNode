@@ -8,7 +8,6 @@ using System.Net;
 
 namespace NBitcoin
 {
-
     public partial class Network
     {
         static Network()
@@ -335,10 +334,10 @@ namespace NBitcoin
                 .SetBech32(Bech32Type.WITNESS_SCRIPT_ADDRESS, "bc");
 
             var seed = new[] { "101.200.198.155", "103.24.76.21", "104.172.24.79" };
-            var vFixedSeeds = new List<NetworkAddress>();
+            var fixedSeeds = new List<NetworkAddress>();
             // Convert the pnSeeds array into usable address objects.
             Random rand = new Random();
-            TimeSpan nOneWeek = TimeSpan.FromDays(7);
+            TimeSpan oneWeek = TimeSpan.FromDays(7);
             for (int i = 0; i < seed.Length; i++)
             {
                 // It'll only connect to one or two seed nodes because once it connects,
@@ -346,12 +345,12 @@ namespace NBitcoin
                 NetworkAddress addr = new NetworkAddress();
                 // Seed nodes are given a random 'last seen time' of between one and two
                 // weeks ago.
-                addr.Time = DateTime.UtcNow - (TimeSpan.FromSeconds(rand.NextDouble() * nOneWeek.TotalSeconds)) - nOneWeek;
+                addr.Time = DateTime.UtcNow - (TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds)) - oneWeek;
                 addr.Endpoint = Utils.ParseIpEndpoint(seed[i], builder.Port);
-                vFixedSeeds.Add(addr);
+                fixedSeeds.Add(addr);
             }
 
-            builder.AddSeeds(vFixedSeeds);
+            builder.AddSeeds(fixedSeeds);
             return builder.BuildAndRegister();
         }
 
