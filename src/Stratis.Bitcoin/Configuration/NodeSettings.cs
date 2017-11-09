@@ -5,7 +5,6 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NLog.Extensions.Logging;
@@ -59,6 +58,9 @@ namespace Stratis.Bitcoin.Configuration
             this.ConnectionManager = new ConnectionManagerSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new ExtendedLoggerFactory();
+            this.LoggerFactory.AddConsoleWithFilters();
+            this.LoggerFactory.AddNLog();
+            this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
         }
 
         /// <summary>Factory to create instance logger.</summary>
@@ -148,13 +150,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         public NodeSettings LoadArguments(string[] args)
         {
-            // The logger factory goes in the settings with minimal configuration, 
-            // that's so the settings can also log out its progress.
-            this.LoggerFactory.AddConsoleWithFilters(out ConsoleLoggerSettings consoleSettings);
-            this.LoggerFactory.AddNLog();
-            this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
-
-            
+            // By default, we look for a file named '<network>.conf' in the network's data directory, 
+            // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
             this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
             this.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
 
@@ -190,6 +187,7 @@ namespace Stratis.Bitcoin.Configuration
             if (!Directory.Exists(this.DataDir))
                 throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
 
+            // If no configuration file path is passed in the args, load the default file.
             if (this.ConfigurationFile == null)
             {
                 this.ConfigurationFile = this.GetDefaultConfigurationFile();
@@ -344,9 +342,11 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Path to the configuration file.</returns>
         private string GetDefaultConfigurationFile()
         {
-            string config = Path.Combine(this.DataDir, $"{this.Name}.conf");
-            this.Logger.LogInformation("Configuration file set to '{0}'.", config);
-            if (!File.Exists(config))
+            string configFilePath = Path.Combine(this.DataDir, $"{this.Name}.conf");
+            this.Logger.LogInformation("Configuration file set to '{0}'.", configFilePath);
+
+            // Create a config file if none exist.
+            if (!File.Exists(configFilePath))
             {
                 this.Logger.LogInformation("Creating configuration file...");
 
@@ -358,9 +358,9 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine("#rpcbind=127.0.0.1");
                 builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
                 builder.AppendLine("#rpcallowip=127.0.0.1");
-                File.WriteAllText(config, builder.ToString());
+                File.WriteAllText(configFilePath, builder.ToString());
             }
-            return config;
+            return configFilePath;
         }
 
         /// <summary>
