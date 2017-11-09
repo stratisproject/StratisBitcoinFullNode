@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Configuration
             // Find out if we need to run on testnet or regtest from the config file. 
             if (this.ConfigurationFile != null)
             {
-                AssertConfigFileExists(this);
+                AssertConfigFileExists(this.ConfigurationFile);
                 var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
                 this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
                 this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
@@ -298,12 +298,12 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>
         /// Asserts the configuration file exists.
         /// </summary>
-        /// <param name="nodeSettings">Node configuration containing information about the configuration file path.</param>
+        /// <param name="configurationFilePath">The configuration file path.</param>
         /// <exception cref="ConfigurationException">Thrown if the configuration file does not exist.</exception>
-        private static void AssertConfigFileExists(NodeSettings nodeSettings)
+        private static void AssertConfigFileExists(string configurationFilePath)
         {
-            if (!File.Exists(nodeSettings.ConfigurationFile))
-                throw new ConfigurationException("Configuration file does not exist.");
+            if (!File.Exists(configurationFilePath))
+                throw new ConfigurationException($"Configuration file does not exist at {configurationFilePath}.");
         }
 
         /// <summary>
