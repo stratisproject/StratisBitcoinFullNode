@@ -202,36 +202,24 @@ namespace Stratis.Bitcoin.Builder
             foreach (var configureFeature in this.featuresRegistrationDelegates)
                 configureFeature(this.Features);
 
-            // unregister features that depend on not registered features
-            while (true)
-            {
-                bool dependencyViolationFound = false;
-
-                for (int i = 0; i < this.Features.FeatureRegistrations.Count; ++i)
-                {
-                    try
-                    {
-                        this.Features.FeatureRegistrations[i].EnsureDependencies(this.Features.FeatureRegistrations);
-                    }
-                    catch (MissingDependencyException e)
-                    {
-                        dependencyViolationFound = true;
-
-                        var logger = this.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilder).FullName);
-                        logger.LogCritical("Feature {0} cannot be built because it depends on other features that were not registered: {1}",
-                            this.Features.FeatureRegistrations[i].FeatureType.Name, e.Message);
-
-                        this.Features.FeatureRegistrations.RemoveAt(i);
-                    }
-                }
-
-                if (!dependencyViolationFound)
-                    break;
-            }
-
             // configure features startup
             foreach (var featureRegistration in this.Features.FeatureRegistrations)
+            {
+                try
+                {
+                    featureRegistration.EnsureDependencies(this.Features.FeatureRegistrations);
+                }
+                catch (MissingDependencyException e)
+                {
+                    var logger = this.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilder).FullName);
+                    logger.LogCritical("Feature {0} cannot be configured because it depends on other features that were not registered: {1}",
+                        featureRegistration.FeatureType.Name, e.Message);
+
+                    continue;
+                }
+
                 featureRegistration.BuildFeature(this.Services);
+            }
 
             return this.Services;
         }
