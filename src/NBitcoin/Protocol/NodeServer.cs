@@ -197,7 +197,7 @@ namespace NBitcoin.Protocol
 						{
 							Socket = client,
 							Message = message,
-							Length = counter.ReadenBytes,
+							Length = counter.ReadBytes,
 							Node = null,
 						});
 						if(message.Payload is VersionPayload)

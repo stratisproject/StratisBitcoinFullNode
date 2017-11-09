@@ -2,76 +2,74 @@
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NBitcoin.Protocol
 {
-	[AttributeUsage(AttributeTargets.Class)]
-	public class PayloadAttribute : Attribute
-	{
-		static Dictionary<string, Type> _NameToType;
-		static Dictionary<Type, string> _TypeToName;
+    [AttributeUsage(AttributeTargets.Class)]
+    public class PayloadAttribute : Attribute
+    {
+        private static Dictionary<string, Type> nameToType;
+        private static Dictionary<Type, string> typeToName;
+        public string Name { get; set; }
 
-		static PayloadAttribute()
-		{
-			_NameToType = new Dictionary<string, Type>();
-			_TypeToName = new Dictionary<Type, string>();
-			foreach(var pair in
-				GetLoadableTypes(typeof(PayloadAttribute).GetTypeInfo().Assembly)
-				.Where(t => t.Namespace == typeof(PayloadAttribute).Namespace)
-				.Where(t => t.IsDefined(typeof(PayloadAttribute), true))
-				.Select(t =>
-					new
-					{
-						Attr = t.GetCustomAttributes(typeof(PayloadAttribute), true).OfType<PayloadAttribute>().First(),
-						Type = t
-					}))
-			{
-				_NameToType.Add(pair.Attr.Name, pair.Type.AsType());
-				_TypeToName.Add(pair.Type.AsType(), pair.Attr.Name);
-			}
-		}
+        static PayloadAttribute()
+        {
+            nameToType = new Dictionary<string, Type>();
+            typeToName = new Dictionary<Type, string>();
 
-		static IEnumerable<TypeInfo> GetLoadableTypes(Assembly assembly)
-		{
-			try
-			{
-				return assembly.DefinedTypes;
-			}
-			catch(ReflectionTypeLoadException e)
-			{
-				return e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
-			}
-		}
+            foreach (var pair in GetLoadableTypes(typeof(PayloadAttribute).GetTypeInfo().Assembly)
+                .Where(t => t.Namespace == typeof(PayloadAttribute).Namespace)
+                .Where(t => t.IsDefined(typeof(PayloadAttribute), true))
+                .Select(t =>
+                    new
+                    {
+                        Attr = t.GetCustomAttributes(typeof(PayloadAttribute), true).OfType<PayloadAttribute>().First(),
+                        Type = t
+                    }))
+            {
+                nameToType.Add(pair.Attr.Name, pair.Type.AsType());
+                typeToName.Add(pair.Type.AsType(), pair.Attr.Name);
+            }
+        }
 
-		public static string GetCommandName<T>()
-		{
-			return GetCommandName(typeof(T));
-		}
-		public static Type GetCommandType(string commandName)
-		{
-			Type result;
-			if(!_NameToType.TryGetValue(commandName, out result))
-				return typeof(UnknowPayload);
-			return result;
-		}
-		public PayloadAttribute(string commandName)
-		{
-			Name = commandName;
-		}
-		public string Name
-		{
-			get;
-			set;
-		}
+        public PayloadAttribute(string commandName)
+        {
+            this.Name = commandName;
+        }
 
-		internal static string GetCommandName(Type type)
-		{
-			string result;
-			if(!_TypeToName.TryGetValue(type, out result))
-				throw new ArgumentException(type.FullName + " is not a payload");
-			return result;
-		}
-	}
+        private static IEnumerable<TypeInfo> GetLoadableTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.DefinedTypes;
+            }
+            catch (ReflectionTypeLoadException e)
+            {
+                return e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
+            }
+        }
+
+        public static string GetCommandName<T>()
+        {
+            return GetCommandName(typeof(T));
+        }
+
+        public static Type GetCommandType(string commandName)
+        {
+            Type result;
+            if (!nameToType.TryGetValue(commandName, out result))
+                return typeof(UnknowPayload);
+
+            return result;
+        }
+
+        internal static string GetCommandName(Type type)
+        {
+            string result;
+            if (!typeToName.TryGetValue(type, out result))
+                throw new ArgumentException(type.FullName + " is not a payload");
+
+            return result;
+        }
+    }
 }

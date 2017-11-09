@@ -289,7 +289,7 @@ namespace NBitcoin
 				var readen = Inner.ReadEx(data, offset, count, ReadCancellationToken);
 				if(readen == 0)
 					throw new EndOfStreamException("No more byte to read");
-				Counter.AddReaden(readen);
+				Counter.AddRead(readen);
 
 			}
 		}
@@ -316,7 +316,7 @@ namespace NBitcoin
 				if(readen == -1)
 					throw new EndOfStreamException("No more byte to read");
 				data = (byte)readen;
-				Counter.AddReaden(1);
+				Counter.AddRead(1);
 			}
 		}
 
