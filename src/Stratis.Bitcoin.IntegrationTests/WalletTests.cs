@@ -3,7 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Xunit;
 
@@ -83,7 +83,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using(NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode();
+                this.InitializeTestWallet(stratisNodeSync);
                 builder.StartAll();
                 var rpc = stratisNodeSync.CreateRPCClient();
                 rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 10);
@@ -96,7 +97,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using(NodeBuilder builder = NodeBuilder.Create())
             {
-                var stratisNodeSync = builder.CreateStratisPowNode();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode();
+                this.InitializeTestWallet(stratisNodeSync);
                 builder.StartAll();
                 var rpc = stratisNodeSync.CreateRPCClient();
                 rpc.SendCommand(NBitcoin.RPC.RPCOperations.generate, 101);
@@ -461,6 +463,17 @@ namespace Stratis.Bitcoin.IntegrationTests
                 MinConfirmations = minConfirmations,
                 FeeType = feeType
             };
+        }
+
+        /// <summary>
+        /// Copies the test wallet into data folder for node if it isnt' already present.
+        /// </summary>
+        /// <param name="node">Core node for the test.</param>
+        private void InitializeTestWallet(CoreNode node)
+        {
+            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
+            if (!File.Exists(testWalletPath))
+                File.Copy("Data/test.wallet.json", testWalletPath);
         }
     }
 }
