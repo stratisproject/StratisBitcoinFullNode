@@ -14,44 +14,40 @@ namespace NBitcoin
 {
     public class DNSSeedData
     {
-        string name, host;
-        public string Name
-        {
-            get
-            {
-                return name;
-            }
-        }
-        public string Host
-        {
-            get
-            {
-                return host;
-            }
-        }
+        private IPAddress[] addresses;
+
+        public string Name { get; }
+
+        public string Host { get; }
+
         public DNSSeedData(string name, string host)
         {
-            this.name = name;
-            this.host = host;
+            this.Name = name;
+            this.Host = host;
         }
-        IPAddress[] _Addresses = null;
+
         public IPAddress[] GetAddressNodes()
         {
-            if(_Addresses != null)
-                return _Addresses;
+            if (this.addresses != null)
+            {
+                return this.addresses;
+            }
+
             try
             {
-                _Addresses = Dns.GetHostAddressesAsync(host).Result;
+                this.addresses = Dns.GetHostAddressesAsync(this.Host).Result;
             }
             catch(AggregateException ex)
             {
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
             }
-            return _Addresses;
+
+            return this.addresses;
         }
+
         public override string ToString()
         {
-            return name + " (" + host + ")";
+            return this.Name + " (" + this.Host + ")";
         }
     }
 
@@ -563,8 +559,8 @@ namespace NBitcoin
         private uint magic;
         private byte[] alertPubKeyArray;
         private PubKey alertPubKey;
-        private List<DNSSeedData> seeds = new List<DNSSeedData>();
-        private List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
+        private readonly List<DNSSeedData> seeds = new List<DNSSeedData>();
+        private readonly List<NetworkAddress> fixedSeeds = new List<NetworkAddress>();
         private Block genesis;
         private Consensus consensus = new Consensus();
 
