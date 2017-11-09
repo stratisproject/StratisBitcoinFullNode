@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Configuration
             if (this.ConfigurationFile != null)
             {
                 AssertConfigFileExists(this);
-                var configTemp = TextFileConfiguration.Parse(File.ReadAllText(this.ConfigurationFile));
+                var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
                 this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
                 this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
             }
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             var consoleConfig = new TextFileConfiguration(args);
-            var config = TextFileConfiguration.Parse(File.ReadAllText(this.ConfigurationFile));
+            var config = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
             this.ConfigReader = config;
             consoleConfig.MergeInto(config);
 
