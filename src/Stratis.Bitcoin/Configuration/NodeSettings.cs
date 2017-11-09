@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Configuration
             this.Network = this.GetNetwork();
             if (this.DataDir == null)
             {
-                this.SetDefaultDataDir(Path.Combine("StratisNode", this.Name), this.Network);
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Name), this.Network);
             }
 
             if (!Directory.Exists(this.DataDir))
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Configuration
             // If no configuration file path is passed in the args, load the default file.
             if (this.ConfigurationFile == null)
             {
-                this.ConfigurationFile = this.GetDefaultConfigurationFile();
+                this.ConfigurationFile = this.CreateDefaultConfigurationFile();
             }
 
             var consoleConfig = new TextFileConfiguration(args);
@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Configuration
         /// Creates a default configuration file if no configuration file is found.
         /// </summary>
         /// <returns>Path to the configuration file.</returns>
-        private string GetDefaultConfigurationFile()
+        private string CreateDefaultConfigurationFile()
         {
             string configFilePath = Path.Combine(this.DataDir, $"{this.Name}.conf");
             this.Logger.LogInformation("Configuration file set to '{0}'.", configFilePath);
@@ -378,25 +378,27 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Finds a location of the default data directory respecting different operating system specifics.
+        /// Creates default data directories respecting different operating system specifics.
         /// </summary>
         /// <param name="appName">Name of the node, which will be reflected in the name of the data directory.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        private void SetDefaultDataDir(string appName, Network network)
+        /// <returns>The top-level data directory path.</returns>
+        private string CreateDefaultDataDirectories(string appName, Network network)
         {
-            string directory = null;
+            string directoryPath;
 
+            // Directory paths are different between Windows or Linux/OSX systems.
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var home = Environment.GetEnvironmentVariable("HOME");
                 if (!string.IsNullOrEmpty(home))
                 {
                     this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
-                    directory = Path.Combine(home, "." + appName.ToLowerInvariant());
+                    directoryPath = Path.Combine(home, "." + appName.ToLowerInvariant());
                 }
                 else
                 {
-                    throw new DirectoryNotFoundException("Could not find suitable datadir.");
+                    throw new DirectoryNotFoundException("Could not find HOME directory.");
                 }
             }
             else
@@ -405,25 +407,21 @@ namespace Stratis.Bitcoin.Configuration
                 if (!string.IsNullOrEmpty(localAppData))
                 {
                     this.Logger.LogInformation("Using APPDATA environment variable for initializing application data.");
-                    directory = Path.Combine(localAppData, appName);
+                    directoryPath = Path.Combine(localAppData, appName);
                 }
                 else
                 {
-                    throw new DirectoryNotFoundException("Could not find suitable datadir.");
+                    throw new DirectoryNotFoundException("Could not find APPDATA directory.");
                 }
             }
 
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            // Create the data directories if they don't exist. 
+            Directory.CreateDirectory(directoryPath);
+            directoryPath = Path.Combine(directoryPath, network.Name);
+            Directory.CreateDirectory(directoryPath);
 
-            directory = Path.Combine(directory, network.Name);
-            if (!Directory.Exists(directory))
-            {
-                this.Logger.LogInformation("Creating data directory...");
-                Directory.CreateDirectory(directory);
-            }
-
-            this.DataDir = directory;
+            this.Logger.LogInformation("Data directory initialized with path {0}.", directoryPath);
+            return directoryPath;
         }
 
         /// <summary>
