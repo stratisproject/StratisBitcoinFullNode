@@ -12,15 +12,15 @@ using System.Linq;
 
 namespace NBitcoin
 {
-	/// <summary>
-	/// Nodes collect new transactions into a block, hash them into a hash tree,
-	/// and scan through nonce values to make the block's hash satisfy proof-of-work
-	/// requirements.  When they solve the proof-of-work, they broadcast the block
-	/// to everyone and the block is added to the block chain.  The first transaction
-	/// in the block is a special one that creates a new coin owned by the creator
-	/// of the block.
-	/// </summary>
-	public class BlockHeader : IBitcoinSerializable
+    /// <summary>
+    /// Nodes collect new transactions into a block, hash them into a hash tree,
+    /// and scan through nonce values to make the block's hash satisfy proof-of-work
+    /// requirements.  When they solve the proof-of-work, they broadcast the block
+    /// to everyone and the block is added to the block chain.  The first transaction
+    /// in the block is a special one that creates a new coin owned by the creator
+    /// of the block.
+    /// </summary>
+    public class BlockHeader : IBitcoinSerializable
 	{
 		internal const int Size = 80;
 
@@ -229,7 +229,7 @@ namespace NBitcoin
 		}
 		public bool CheckProofOfWork(Consensus consensus)
 		{
-			consensus = consensus ?? Consensus.Main;
+			consensus = consensus ?? Network.Main.Consensus;
 			var bits = Bits.ToBigInteger();
 			if(bits.CompareTo(BigInteger.Zero) <= 0 || bits.CompareTo(Pow256) >= 0)
 				return false;
