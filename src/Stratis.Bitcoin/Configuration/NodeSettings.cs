@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Configuration
             // Set the configuration filter and file path.
             this.Log.Load(config);
             this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
-            this.LoggerFactory.ConfigureConsoleFilters(consoleSettings, this.Log);
+            this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
 
             this.Logger.LogInformation("Data directory set to '{0}'.", this.DataDir);
             this.Logger.LogInformation("Configuration file set to '{0}'.", this.ConfigurationFile);
