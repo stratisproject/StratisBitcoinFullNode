@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
 
@@ -27,14 +28,14 @@ namespace Stratis.Bitcoin.Features.RPC
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             rpcSettings.Load(nodeSettings);
-            this.rpcSettings = rpcSettings;            
+            this.rpcSettings = rpcSettings;
         }
 
         public override void Start()
         {
             if (this.rpcSettings.Server)
             {
-                // TODO: The web host wants to create IServiceProvider, so build (but not start) 
+                // TODO: The web host wants to create IServiceProvider, so build (but not start)
                 // earlier, if you want to use dependency injection elsewhere
                 this.fullNode.RPCHost = new WebHostBuilder()
                 .UseKestrel()
@@ -79,10 +80,22 @@ namespace Stratis.Bitcoin.Features.RPC
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderRPCExtension
     {
         public static IFullNodeBuilder AddRPC(this IFullNodeBuilder fullNodeBuilder, Action<RpcSettings> setup = null)
         {
+            try
+            {
+                fullNodeBuilder.Features.EnsureFeatureRegistered<MempoolFeature>();
+            }
+            catch (MissingDependencyException)
+            {
+                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderRPCExtension).FullName);
+                logger.LogCritical($"Feature {typeof(RPCFeature).Name} can not be enabled because it depends on other features that were not registered");
+
+                return fullNodeBuilder;
+            }
+
             LoggingConfiguration.RegisterFeatureNamespace<RPCFeature>("rpc");
 
             fullNodeBuilder.ConfigureFeature(features =>
@@ -98,8 +111,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 service.AddSingleton<ConnectionManagerController>();
                 service.AddSingleton<RpcSettings>(new RpcSettings(setup));
                 service.AddSingleton<RPCController>();
-            });   
-            
+            });
+
             return fullNodeBuilder;
         }
     }

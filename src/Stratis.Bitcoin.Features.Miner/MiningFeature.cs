@@ -7,7 +7,9 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Controllers;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
@@ -144,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Miner
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderMiningExtension
     {
         /// <summary>
         /// Adds a mining feature to the node being initialized.
@@ -182,6 +184,20 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder, Action<MinerSettings> setup = null)
         {
+            try
+            {
+                fullNodeBuilder.Features.EnsureFeatureRegistered<MempoolFeature>();
+                fullNodeBuilder.Features.EnsureFeatureRegistered<RPCFeature>();
+                fullNodeBuilder.Features.EnsureFeatureRegistered<WalletFeature>();
+            }
+            catch (MissingDependencyException)
+            {
+                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderMiningExtension).FullName);
+                logger.LogCritical($"Feature {typeof(MiningFeature).Name} can not be enabled because it depends on other features that were not registered");
+
+                return fullNodeBuilder;
+            }
+
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
 
             fullNodeBuilder.ConfigureFeature(features =>

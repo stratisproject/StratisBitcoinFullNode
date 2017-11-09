@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Builder
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderNodeSettingsExtension
     {
         /// <summary>
         /// Makes the full node builder use specific node settings.

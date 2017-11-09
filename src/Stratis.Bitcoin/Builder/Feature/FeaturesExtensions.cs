@@ -24,5 +24,19 @@ namespace Stratis.Bitcoin.Builder.Feature
 
             return features;
         }
+
+        /// <summary>
+        /// Ensures a dependency feature type is present in the registered features list.
+        /// </summary>
+        /// <typeparam name="T">The dependency feature type.</typeparam>
+        /// <param name="registeredFeatures">List of registered features.</param>
+        /// <exception cref="MissingDependencyException">Thrown if feature type is missing.</exception>
+        public static void EnsureFeatureRegistered<T>(this IFeatureCollection registeredFeatures) where T : FullNodeFeature
+        {
+            if (!registeredFeatures.FeatureRegistrations.OfType<T>().Any())
+            {
+                throw new MissingDependencyException($"Dependency feature {typeof(T)} cannot be found.");
+            }
+        }
     }
 }
