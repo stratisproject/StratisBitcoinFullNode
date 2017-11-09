@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Configuration
             try
             {
                 this.ConnectionManager.Connect.AddRange(config.GetAll("connect")
-                    .Select(c => ConvertToEndpoint(c, this.Network.DefaultPort)));
+                    .Select(c => ConvertIpAddressToEndpoint(c, this.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.Configuration
             try
             {
                 this.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
-                        .Select(c => ConvertToEndpoint(c, this.Network.DefaultPort)));
+                        .Select(c => ConvertIpAddressToEndpoint(c, this.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Configuration
             try
             {
                 this.ConnectionManager.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), false)));
+                        .Select(c => new NodeServerEndpoint(ConvertIpAddressToEndpoint(c, port), false)));
             }
             catch (FormatException)
             {
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Configuration
             try
             {
                 this.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
-                        .Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), true)));
+                        .Select(c => new NodeServerEndpoint(ConvertIpAddressToEndpoint(c, port), true)));
             }
             catch (FormatException)
             {
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Configuration
             {
                 try
                 {
-                    this.ConnectionManager.ExternalEndpoint = ConvertToEndpoint(externalIp, port);
+                    this.ConnectionManager.ExternalEndpoint = ConvertIpAddressToEndpoint(externalIp, port);
                 }
                 catch (FormatException)
                 {
@@ -307,33 +307,41 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Converts string to IP end point.
+        /// Converts a string to an IP endpoint.
         /// </summary>
-        /// <param name="str">String to convert.</param>
-        /// <param name="defaultPort">Port to use if <paramref name="str"/> does not specify it.</param>
+        /// <param name="ipAddress">String to convert.</param>
+        /// <param name="port">Port to use if <paramref name="ipAddress"/> does not specify it.</param>
         /// <returns>IP end point representation of the string.</returns>
-        public static IPEndPoint ConvertToEndpoint(string str, int defaultPort)
+        /// <remarks>
+        /// IP addresses can have a port specified such that the format of <paramref name="ipAddress"/> is as such: address:port.
+        /// IPv4 and IPv6 addresses are supported.
+        /// In the case where the default port is passed and the IP address has a port specified in it, the IP address's port will take precedence.
+        /// Examples of addresses that are supported are: 15.61.23.23, 15.61.23.23:1500, [1233:3432:2434:2343:3234:2345:6546:4534], [1233:3432:2434:2343:3234:2345:6546:4534]:8333.</remarks>
+        public static IPEndPoint ConvertIpAddressToEndpoint(string ipAddress, int port)
         {
-            int portOut = defaultPort;
-            string hostOut = "";
-            int colon = str.LastIndexOf(':');
+            // Checks the validity of the parameters passed.
+            Guard.NotEmpty(ipAddress, nameof(ipAddress));
+            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
+            {
+                throw new ConfigurationException($"Port {port} was outside of the values that can assigned for a port [{IPEndPoint.MinPort}-{IPEndPoint.MaxPort}].");
+            }
+
+            int colon = ipAddress.LastIndexOf(':');
+           
             // if a : is found, and it either follows a [...], or no other : is in the string, treat it as port separator
             bool fHaveColon = colon != -1;
-            bool fBracketed = fHaveColon && (str[0] == '[' && str[colon - 1] == ']'); // if there is a colon, and in[0]=='[', colon is not 0, so in[colon-1] is safe
-            bool fMultiColon = fHaveColon && (str.LastIndexOf(':', colon - 1) != -1);
+            bool fBracketed = fHaveColon && (ipAddress[0] == '[' && ipAddress[colon - 1] == ']'); // if there is a colon, and in[0]=='[', colon is not 0, so in[colon-1] is safe
+            bool fMultiColon = fHaveColon && (ipAddress.LastIndexOf(':', colon - 1) != -1);
             if (fHaveColon && (colon == 0 || fBracketed || !fMultiColon))
             {
-                if (int.TryParse(str.Substring(colon + 1), out var n) && n > 0 && n < 0x10000)
+                if (int.TryParse(ipAddress.Substring(colon + 1), out var n) && n > IPEndPoint.MinPort && n < IPEndPoint.MaxPort)
                 {
-                    str = str.Substring(0, colon);
-                    portOut = n;
+                    ipAddress = ipAddress.Substring(0, colon);
+                    port = n;
                 }
             }
-            if (str.Length > 0 && str[0] == '[' && str[str.Length - 1] == ']')
-                hostOut = str.Substring(1, str.Length - 2);
-            else
-                hostOut = str;
-            return new IPEndPoint(IPAddress.Parse(str), portOut);
+            
+            return new IPEndPoint(IPAddress.Parse(ipAddress), port);
         }
 
         /// <summary>
