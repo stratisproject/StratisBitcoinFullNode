@@ -126,26 +126,15 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         public static IFullNodeBuilder UseWallet(this IFullNodeBuilder fullNodeBuilder)
         {
-            try
-            {
-                fullNodeBuilder.Features.EnsureFeatureRegistered<MempoolFeature>();
-                fullNodeBuilder.Features.EnsureFeatureRegistered<BlockStoreFeature>();
-                fullNodeBuilder.Features.EnsureFeatureRegistered<RPCFeature>();
-            }
-            catch (MissingDependencyException)
-            {
-                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderWalletExtension).FullName);
-                logger.LogCritical($"Feature {typeof(WalletFeature).Name} can not be enabled because it depends on other features that were not registered");
-
-                return fullNodeBuilder;
-            }
-
             LoggingConfiguration.RegisterFeatureNamespace<WalletFeature>("wallet");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
                 .AddFeature<WalletFeature>()
+                .DependOn<MempoolFeature>()
+                .DependOn<BlockStoreFeature>()
+                .DependOn<RPCFeature>()
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<IWalletSyncManager, WalletSyncManager>();

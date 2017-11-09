@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Builder.Feature
     public interface IFeatureRegistration
     {
         /// <summary>
-        /// Type of the feature startup class. If it implements ConfigureServices method, 
+        /// Type of the feature startup class. If it implements ConfigureServices method,
         /// it is invoked to configure the feature's services.
         /// </summary>
         Type FeatureStartupType { get; }
@@ -40,6 +40,20 @@ namespace Stratis.Bitcoin.Builder.Feature
         /// <typeparam name="TStartup">Type of feature startup class to use.</typeparam>
         /// <returns>This interface to allow fluent code.</returns>
         IFeatureRegistration UseStartup<TStartup>();
+
+        /// <summary>
+        /// Adds a feature type to the dependency feature list.
+        /// </summary>
+        /// <typeparam name="TImplementation">Type of the registered feature class.</typeparam>
+        /// <returns>This interface to allow fluent code.</returns>
+        IFeatureRegistration DependOn<TImplementation>() where TImplementation : class, IFullNodeFeature;
+
+        /// <summary>
+        /// Ensures dependency feature types are present in the registered features list.
+        /// </summary>
+        /// <param name="featureRegistrations">List of registered features.</param>
+        /// <exception cref="MissingDependencyException">Thrown if feature type is missing.</exception>
+        void EnsureDependencies(List<IFeatureRegistration> featureRegistrations);
     }
 
     /// <summary>
@@ -56,6 +70,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         {
             this.ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
             this.FeatureType = typeof(TImplementation);
+            this.dependencies = new List<Type>();
         }
 
         /// <inheritdoc />
@@ -63,6 +78,9 @@ namespace Stratis.Bitcoin.Builder.Feature
 
         /// <inheritdoc />
         public Type FeatureType { get; private set; }
+
+        /// <summary> List of dependency features that should be registered in order to add this feature.</summary>
+        private List<Type> dependencies;
 
         /// <inheritdoc />
         public void BuildFeature(IServiceCollection serviceCollection)
@@ -96,6 +114,26 @@ namespace Stratis.Bitcoin.Builder.Feature
         {
             this.FeatureStartupType = typeof(TStartup);
             return this;
+        }
+
+        /// <inheritdoc />
+        public IFeatureRegistration DependOn<TImplementation>() where TImplementation : class, IFullNodeFeature
+        {
+            this.dependencies.Add(typeof(TImplementation));
+
+            return this;
+        }
+
+        /// <inheritdoc />
+        public void EnsureDependencies(List<IFeatureRegistration> featureRegistrations)
+        {
+            foreach (Type dependency in this.dependencies)
+            {
+                if (!featureRegistrations.Any(x => x.FeatureType == dependency))
+                {
+                    throw new MissingDependencyException($"Dependency feature {dependency.Name} cannot be found.");
+                }
+            }
         }
 
         /// <summary>

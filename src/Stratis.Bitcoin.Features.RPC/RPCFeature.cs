@@ -84,24 +84,13 @@ namespace Stratis.Bitcoin.Features.RPC
     {
         public static IFullNodeBuilder AddRPC(this IFullNodeBuilder fullNodeBuilder, Action<RpcSettings> setup = null)
         {
-            try
-            {
-                fullNodeBuilder.Features.EnsureFeatureRegistered<MempoolFeature>();
-            }
-            catch (MissingDependencyException)
-            {
-                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderRPCExtension).FullName);
-                logger.LogCritical($"Feature {typeof(RPCFeature).Name} can not be enabled because it depends on other features that were not registered");
-
-                return fullNodeBuilder;
-            }
-
             LoggingConfiguration.RegisterFeatureNamespace<RPCFeature>("rpc");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
                 .AddFeature<RPCFeature>()
+                .DependOn<MempoolFeature>()
                 .FeatureServices(services => services.AddSingleton(fullNodeBuilder));
             });
 

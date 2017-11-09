@@ -63,22 +63,11 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder UseWatchOnlyWallet(this IFullNodeBuilder fullNodeBuilder)
         {
-            try
-            {
-                fullNodeBuilder.Features.EnsureFeatureRegistered<WalletFeature>();
-            }
-            catch (MissingDependencyException)
-            {
-                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderWatchOnlyWalletExtension).FullName);
-                logger.LogCritical($"Feature {typeof(WatchOnlyWallet).Name} can not be enabled because it depends on other features that were not registered");
-
-                return fullNodeBuilder;
-            }
-
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
                     .AddFeature<WatchOnlyWalletFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IWatchOnlyWalletManager, WatchOnlyWalletManager>();

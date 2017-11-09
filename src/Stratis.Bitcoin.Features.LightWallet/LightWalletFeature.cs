@@ -178,24 +178,12 @@ namespace Stratis.Bitcoin.Features.LightWallet
     {
         public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder)
         {
-            try
-            {
-                fullNodeBuilder.Features.EnsureFeatureRegistered<BlockNotificationFeature>();
-                fullNodeBuilder.Features.EnsureFeatureRegistered<WalletFeature>();
-            }
-            catch (MissingDependencyException)
-            {
-                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderLightWalletExtension).FullName);
-                logger.LogCritical($"Feature {typeof(LightWalletFeature).Name} can not be enabled because it depends on other features that were not registered");
-
-                return fullNodeBuilder;
-            }
-
-
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
                     .AddFeature<LightWalletFeature>()
+                    .DependOn<BlockNotificationFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IWalletSyncManager, LightWalletSyncManager>();

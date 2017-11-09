@@ -130,18 +130,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Full node builder.</returns>
         public static IFullNodeBuilder UseMempool(this IFullNodeBuilder fullNodeBuilder, Action<MempoolSettings> setup = null)
         {
-            try
-            {
-                fullNodeBuilder.Features.EnsureFeatureRegistered<ConsensusFeature>();
-            }
-            catch (MissingDependencyException)
-            {
-                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderMempoolExtension).FullName);
-                logger.LogCritical($"Feature {typeof(MempoolFeature).Name} can not be enabled because it depends on other features that were not registered");
-
-                return fullNodeBuilder;
-            }
-
             LoggingConfiguration.RegisterFeatureNamespace<MempoolFeature>("mempool");
             LoggingConfiguration.RegisterFeatureNamespace<BlockPolicyEstimator>("estimatefee");
 
@@ -149,6 +137,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 features
                 .AddFeature<MempoolFeature>()
+                .DependOn<ConsensusFeature>()
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<MempoolSchedulerLock>();

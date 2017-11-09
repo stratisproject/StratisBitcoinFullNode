@@ -184,26 +184,15 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder, Action<MinerSettings> setup = null)
         {
-            try
-            {
-                fullNodeBuilder.Features.EnsureFeatureRegistered<MempoolFeature>();
-                fullNodeBuilder.Features.EnsureFeatureRegistered<RPCFeature>();
-                fullNodeBuilder.Features.EnsureFeatureRegistered<WalletFeature>();
-            }
-            catch (MissingDependencyException)
-            {
-                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderMiningExtension).FullName);
-                logger.LogCritical($"Feature {typeof(MiningFeature).Name} can not be enabled because it depends on other features that were not registered");
-
-                return fullNodeBuilder;
-            }
-
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
                     .AddFeature<MiningFeature>()
+                    .DependOn<MempoolFeature>()
+                    .DependOn<RPCFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<PowMining>();

@@ -35,24 +35,13 @@ namespace Stratis.Bitcoin.Features.IndexStore
     {
         public static IFullNodeBuilder UseIndexStore(this IFullNodeBuilder fullNodeBuilder, Action<IndexSettings> setup = null)
         {
-            try
-            {
-                fullNodeBuilder.Features.EnsureFeatureRegistered<BlockStoreFeature>();
-                fullNodeBuilder.Features.EnsureFeatureRegistered<MempoolFeature>();
-                fullNodeBuilder.Features.EnsureFeatureRegistered<RPCFeature>();
-            }
-            catch (MissingDependencyException)
-            {
-                var logger = fullNodeBuilder.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilderIndexStoreExtension).FullName);
-                logger.LogCritical($"Feature {typeof(IndexStoreFeature).Name} can not be enabled because it depends on other features that were not registered");
-
-                return fullNodeBuilder;
-            }
-
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
                 .AddFeature<IndexStoreFeature>()
+                .DependOn<BlockStoreFeature>()
+                .DependOn<MempoolFeature>()
+                .DependOn<RPCFeature>()
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<IIndexRepository, IndexRepository>();

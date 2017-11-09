@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Builder
         private bool fullNodeBuilt;
 
         /// <summary>Collection of features available to and/or used by the node.</summary>
-        public IFeatureCollection Features { get; }
+        public IFeatureCollection Features { get; private set; }
 
         /// <inheritdoc />
         public NodeSettings NodeSettings { get; set; }
@@ -192,7 +193,7 @@ namespace Stratis.Bitcoin.Builder
         {
             this.Services = new ServiceCollection();
 
-            // register services before features 
+            // register services before features
             // as some of the features may depend on independent services
             foreach (var configureServices in this.configureServicesDelegates)
                 configureServices(this.Services);
@@ -200,6 +201,33 @@ namespace Stratis.Bitcoin.Builder
             // configure features
             foreach (var configureFeature in this.featuresRegistrationDelegates)
                 configureFeature(this.Features);
+
+            // unregister features that depend on not registered features
+            while (true)
+            {
+                bool dependencyViolationFound = false;
+
+                for (int i = 0; i < this.Features.FeatureRegistrations.Count; ++i)
+                {
+                    try
+                    {
+                        this.Features.FeatureRegistrations[i].EnsureDependencies(this.Features.FeatureRegistrations);
+                    }
+                    catch (MissingDependencyException e)
+                    {
+                        dependencyViolationFound = true;
+
+                        var logger = this.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilder).FullName);
+                        logger.LogCritical("Feature {0} cannot be built because it depends on other features that were not registered: {1}",
+                            this.Features.FeatureRegistrations[i].FeatureType.Name, e.Message);
+
+                        this.Features.FeatureRegistrations.RemoveAt(i);
+                    }
+                }
+
+                if (!dependencyViolationFound)
+                    break;
+            }
 
             // configure features startup
             foreach (var featureRegistration in this.Features.FeatureRegistrations)
