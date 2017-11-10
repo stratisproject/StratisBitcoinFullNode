@@ -20,6 +20,9 @@ namespace Stratis.Bitcoin.Builder
         /// <summary>Collection of DI services.</summary>
         IServiceCollection Services { get; }
 
+        /// <summary>Collection of features</summary>
+        IFeatureCollection Features { get; }
+
         /// <summary>
         /// Constructs the full node with the required features, services, and settings.
         /// </summary>
@@ -27,14 +30,14 @@ namespace Stratis.Bitcoin.Builder
         IFullNode Build();
 
         /// <summary>
-        /// Adds features to the builder. 
+        /// Adds features to the builder.
         /// </summary>
         /// <param name="configureFeatures">A method that adds features to the collection.</param>
         /// <returns>Interface to allow fluent code.</returns>
         IFullNodeBuilder ConfigureFeature(Action<IFeatureCollection> configureFeatures);
 
         /// <summary>
-        /// Adds services to the builder. 
+        /// Adds services to the builder.
         /// </summary>
         /// <param name="configureServices">A method that adds services to the builder.</param>
         /// <returns>Interface to allow fluent code.</returns>

@@ -1,13 +1,17 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using NLog.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Interfaces;
 
@@ -117,7 +121,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderMempoolExtension
     {
         /// <summary>
         /// Include the memory pool feature and related services in the full node.
@@ -133,6 +137,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 features
                 .AddFeature<MempoolFeature>()
+                .DependOn<ConsensusFeature>()
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<MempoolSchedulerLock>();

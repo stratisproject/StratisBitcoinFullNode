@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
@@ -109,7 +110,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     return Task.CompletedTask;
 
                 // check segwit activation on the chain of headers
-                // if segwit is active signal to only connect to 
+                // if segwit is active signal to only connect to
                 // nodes that also signal they are segwit nodes
                 DeploymentFlags flags = this.nodeDeployments.GetFlags(this.walletSyncManager.WalletTip);
                 if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
@@ -173,7 +174,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static class LightWalletFeatureExtension
+    public static class FullNodeBuilderLightWalletExtension
     {
         public static IFullNodeBuilder UseLightWallet(this IFullNodeBuilder fullNodeBuilder)
         {
@@ -181,6 +182,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
             {
                 features
                     .AddFeature<LightWalletFeature>()
+                    .DependOn<BlockNotificationFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IWalletSyncManager, LightWalletSyncManager>();

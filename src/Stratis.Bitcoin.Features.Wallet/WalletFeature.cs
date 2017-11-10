@@ -2,12 +2,16 @@
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Broadcasting;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -118,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderWalletExtension
     {
         public static IFullNodeBuilder UseWallet(this IFullNodeBuilder fullNodeBuilder)
         {
@@ -128,6 +132,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 features
                 .AddFeature<WalletFeature>()
+                .DependOn<MempoolFeature>()
+                .DependOn<BlockStoreFeature>()
+                .DependOn<RPCFeature>()
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
