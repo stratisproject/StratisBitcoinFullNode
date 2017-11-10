@@ -87,10 +87,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IEnumerable<UnspentOutputs> memOutputs = mempoolcoins.Select(s => new UnspentOutputs(TxMempool.MempoolHeight, s));
             coins.UnspentOutputs = coins.UnspentOutputs.Concat(memOutputs).ToArray();
 
-            // the UTXO set might have been updated with a recently received block 
+            // the UTXO set might have been updated with a recently received block
             // but the block has not yet arrived to the mempool and remove the pending trx
             // from the pool (a race condition), block validation doesn't lock the mempool.
-            // its safe to ignore duplicats on the UTXO set as duplicates mean a trx is in 
+            // its safe to ignore duplicats on the UTXO set as duplicates mean a trx is in
             // a block and the block will soon remove the trx from the pool.
             this.Set.TrySetCoins(coins.UnspentOutputs);
         }
@@ -123,7 +123,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         /// <param name="tx">Memory pool transaction.</param>
         /// <param name="nHeight">Chain height.</param>
-        /// <param name="inChainInputValue">Chain input value(not used).</param>
         /// <returns>Tuple of priority value and sum of all txin values that are already in blockchain.</returns>
         public (double priority, Money inChainInputValue) GetPriority(Transaction tx, int nHeight)
         {
@@ -197,7 +196,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return this.Set.GetValueIn(tx);
         }
-        
+
         /// <summary>
         /// Gets the transaction output for a transaction input.
         /// </summary>

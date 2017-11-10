@@ -54,7 +54,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolSignaled">Observes block signal notifications from signals.</param>
         /// <param name="mempoolBehavior">Memory pool node behavior for managing attached node messages.</param>
         /// <param name="mempoolManager">Memory pool manager for managing external access to memory pool.</param>
+        /// <param name="nodeSettings">User defined node settings.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
+        /// <param name="mempoolSettings">Mempool settings.</param>
         public MempoolFeature(
             IConnectionManager connectionManager,
             Signals.Signals signals,
