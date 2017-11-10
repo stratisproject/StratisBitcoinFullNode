@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Utilities;
 
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 features
                 .AddFeature<RPCFeature>()
-                .DependOn<MempoolFeature>()
+                .DependOn<ConsensusFeature>()
                 .FeatureServices(services => services.AddSingleton(fullNodeBuilder));
             });
 
