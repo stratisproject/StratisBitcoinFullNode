@@ -211,11 +211,10 @@ namespace Stratis.Bitcoin.Builder
                 }
                 catch (MissingDependencyException e)
                 {
-                    var logger = this.NodeSettings.LoggerFactory.CreateLogger(typeof(FullNodeBuilder).FullName);
-                    logger.LogCritical("Feature {0} cannot be configured because it depends on other features that were not registered: {1}",
-                        featureRegistration.FeatureType.Name, e.Message);
+                    this.NodeSettings.Logger.LogCritical("Feature {0} cannot be configured because it depends on other features that were not registered",
+                        featureRegistration.FeatureType.Name);
 
-                    continue;
+                    throw e;
                 }
 
                 featureRegistration.BuildFeature(this.Services);
