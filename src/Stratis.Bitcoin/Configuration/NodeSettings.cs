@@ -1,9 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
@@ -13,6 +7,12 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -237,7 +237,16 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
             nodeSettings.Logger.LogDebug("Checkpoints are {0}.", nodeSettings.UseCheckpoints ? "enabled" : "disabled");
 
-            nodeSettings.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", null);
+            // TODO: Figure out where to put defaults so they are easy to configure.
+            uint256 defaultAssumeValid = null;
+            if (!nodeSettings.Network.IsBitcoin() && nodeSettings.Network.IsTest())
+            {
+                // Block Height 184096 https://chainz.cryptoid.info/strat-test/block.dws?184096.htm
+                defaultAssumeValid = new uint256("0x74427b2f85b5d9658ee81f7e73526441311122f2b23702b794be557ba43ca43e");
+            }
+            // TODO: Add defaults for bitcoin and mainnet networks.
+
+            nodeSettings.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", defaultAssumeValid);
             if (nodeSettings.BlockAssumedValid == 0) // 0 means validate all blocks
                 nodeSettings.BlockAssumedValid = null;
 
