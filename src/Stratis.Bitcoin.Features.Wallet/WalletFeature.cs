@@ -44,6 +44,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
         /// <param name="chain">The chain of blocks.</param>
+        /// <param name="connectionManager">The connection manager.</param>
+        /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
         public WalletFeature(
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,

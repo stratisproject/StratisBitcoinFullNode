@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public string Name { get; private set; }
         public DateTime Start { get; set; }
         public DateTime Taken { get; set; }
-  
+
         public BlockStoreCachePerformanceSnapshot(long cacheHitCount, long cacheMissCount, long cacheRemoveCount, long cacheSetCount, string name = "BlockStore")
         {
             this.cacheHitCount = cacheHitCount;

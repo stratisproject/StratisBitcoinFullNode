@@ -46,9 +46,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private bool preferHeaderAndIDs;
 
         public BlockStoreBehavior(
-            ConcurrentChain chain, 
-            BlockRepository blockRepository, 
-            IBlockStoreCache blockStoreCache, 
+            ConcurrentChain chain,
+            BlockRepository blockRepository,
+            IBlockStoreCache blockStoreCache,
             ILoggerFactory loggerFactory)
             : this(chain, blockRepository as IBlockRepository, blockStoreCache, loggerFactory)
         {
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-)");
         }
-        
+
         private async void AttachedNode_MessageReceivedAsync(Node node, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node?.RemoteSocketEndpoint, nameof(message), message?.Message?.Command);
@@ -164,10 +164,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(node), node?.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
             Guard.Assert(node != null);
 
-            // TODO: bring logic from core 
+            // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
-                // TODO: check if we need to add support for "not found" 
+                // TODO: check if we need to add support for "not found"
                 Block block = await this.blockStoreCache.GetBlockAsync(item.Hash).ConfigureAwait(false);
 
                 if (block != null)
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 var items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
                 if (node.IsConnected)
                 {
-                    this.logger.LogTrace("Sending inventory message to peer '{0}'.", node?.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Sending inventory message to peer '{0}'.", node.RemoteSocketEndpoint);
                     await node.SendMessageAsync(new InvPayload(items));
                 }
             }

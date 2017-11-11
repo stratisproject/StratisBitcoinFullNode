@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Api
                 .UseUrls(fullNode.Settings.ApiUri.ToString())
                 .ConfigureServices(collection =>
                 {
-                    if (services == null || fullNode == null)
+                    if (services == null)
                     {
                         return;
                     }

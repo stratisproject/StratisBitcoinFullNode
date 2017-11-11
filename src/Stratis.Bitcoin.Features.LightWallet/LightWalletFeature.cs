@@ -60,6 +60,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
         /// <param name="nodeLifetime">The node lifetime.</param>
         /// <param name="walletFeePolicy">The wallet fee policy.</param>
+        /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         public LightWalletFeature(
             IWalletSyncManager walletSyncManager,
