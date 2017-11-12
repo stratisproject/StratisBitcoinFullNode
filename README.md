@@ -1,4 +1,4 @@
-| Windows | Linux | OS X
+| Windows | Linux | OS X 
 | :---- | :------ | :---- |
 [![Windows build status][1]][2] | [![Linux build status][3]][4] | [![OS X build status][5]][6] | 
 
