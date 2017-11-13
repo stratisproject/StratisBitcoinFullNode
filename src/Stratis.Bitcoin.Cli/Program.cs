@@ -72,6 +72,7 @@ namespace Stratis.Bitcoin.Cli
                         RPCClient rpc = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"));
 
                         // Execute the RPC command
+                        Console.WriteLine($"Sending RPC command '{string.Join(" ", args.Skip(1))}' to 'http://{nodeEndPoint}'...");
                         RPCResponse response = rpc.SendCommand(args.ElementAt(1), args.Skip(2).ToArray());
 
                         // Return the result as a string to the console.
@@ -79,7 +80,7 @@ namespace Stratis.Bitcoin.Cli
                     }
                     catch (Exception err)
                     {
-                        Console.WriteLine(ExceptionToString(err));
+                        Console.WriteLine(err.Message);
                     }
                 }
                 else
@@ -93,6 +94,7 @@ namespace Stratis.Bitcoin.Cli
                         try
                         {
                             // Get the response.
+                            Console.WriteLine($"Sending API command to {url}...");
                             var response = client.GetStringAsync(url).GetAwaiter().GetResult();
                             
                             // Format and return the result as a string to the console.
