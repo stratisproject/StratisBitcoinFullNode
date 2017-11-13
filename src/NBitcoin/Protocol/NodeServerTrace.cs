@@ -1,59 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NBitcoin.Protocol
 {
     public static class NodeServerTrace
     {
-
-        static TraceSource _Trace = new TraceSource("NBitcoin.NodeServer");
-        internal static TraceSource Trace
-        {
-            get
-            {
-                return _Trace;
-            }
-        }
+        private static TraceSource trace = new TraceSource("NBitcoin.NodeServer");
+        internal static TraceSource Trace { get { return trace; } }
 
         public static void Transfer(Guid activityId)
         {
-            // NETSTDCONV
-            // _Trace.TraceTransfer(0, "t", activityId);
         }
 
         public static void ErrorWhileRetrievingDNSSeedIp(string name, Exception ex)
         {
-            _Trace.TraceEvent(TraceEventType.Warning, 0, "Impossible to resolve dns for seed " + name + " " + Utils.ExceptionToString(ex));
+            trace.TraceEvent(TraceEventType.Warning, 0, "Impossible to resolve dns for seed " + name + " " + Utils.ExceptionToString(ex));
         }
-
 
         public static void Warning(string msg, Exception ex)
         {
-            _Trace.TraceEvent(TraceEventType.Warning, 0, msg + " " + Utils.ExceptionToString(ex));
+            trace.TraceEvent(TraceEventType.Warning, 0, msg + " " + Utils.ExceptionToString(ex));
         }
 
         public static void ExternalIpReceived(string ip)
         {
-            _Trace.TraceInformation("External ip received : " + ip);
+            trace.TraceInformation("External ip received : " + ip);
         }
 
         internal static void ExternalIpFailed(Exception ex)
         {
-            _Trace.TraceEvent(TraceEventType.Error, 0, "External ip cannot be detected " + Utils.ExceptionToString(ex));
+            trace.TraceEvent(TraceEventType.Error, 0, "External ip cannot be detected " + Utils.ExceptionToString(ex));
         }
 
         internal static void Information(string info)
         {
-            _Trace.TraceInformation(info);
+            trace.TraceInformation(info);
         }
 
         internal static void Error(string msg, Exception ex)
         {
-            _Trace.TraceEvent(TraceEventType.Error, 0, msg + " " + Utils.ExceptionToString(ex));
+            trace.TraceEvent(TraceEventType.Error, 0, msg + " " + Utils.ExceptionToString(ex));
         }
 
         internal static void Warning(string msg)
@@ -63,7 +49,7 @@ namespace NBitcoin.Protocol
 
         internal static void PeerTableRemainingPeerToGet(int count)
         {
-            _Trace.TraceInformation("Remaining peer to get : " + count);
+            trace.TraceInformation("Remaining peer to get : " + count);
         }
 
         internal static void ConnectionToSelfDetected()
@@ -73,7 +59,7 @@ namespace NBitcoin.Protocol
 
         internal static void Verbose(string str)
         {
-            _Trace.TraceEvent(TraceEventType.Verbose, 0, str);
+            trace.TraceEvent(TraceEventType.Verbose, 0, str);
         }
     }
 }

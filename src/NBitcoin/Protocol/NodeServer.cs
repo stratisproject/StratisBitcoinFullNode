@@ -1,144 +1,150 @@
-﻿#if !NOSOCKET
-using System;
-using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
-using NBitcoin.BitcoinCore;
 
 namespace NBitcoin.Protocol
 {
     public delegate void NodeServerNodeEventHandler(NodeServer sender, Node node);
     public delegate void NodeServerMessageEventHandler(NodeServer sender, IncomingMessage message);
+
     public class NodeServer : IDisposable
     {
-        private readonly Network _Network;
-        public Network Network
-        {
-            get
-            {
-                return _Network;
-            }
-        }
-        private readonly ProtocolVersion _Version;
-        public ProtocolVersion Version
-        {
-            get
-            {
-                return _Version;
-            }
-        }
+        public Network Network { get; private set; }
 
-        /// <summary>
-        /// The parameters that will be cloned and applied for each node connecting to the NodeServer
-        /// </summary>
-        public NodeConnectionParameters InboundNodeConnectionParameters
-        {
-            get;
-            set;
-        }
+        public ProtocolVersion Version { get; private set; }
 
-        public NodeServer(Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION,
-            int internalPort = -1)
-        {
-            AllowLocalPeers = true;
-            InboundNodeConnectionParameters = new NodeConnectionParameters();
-            internalPort = internalPort == -1 ? network.DefaultPort : internalPort;
-            _LocalEndpoint = new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), internalPort);
-            MaxConnections = 125;
-            _Network = network;
-            _ExternalEndpoint = new IPEndPoint(_LocalEndpoint.Address, Network.DefaultPort);
-            _Version = version;
-            var listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
-            _MessageProducer.AddMessageListener(listener);
-            OwnResource(listener);
-            _ConnectedNodes = new NodesCollection();
-            _ConnectedNodes.Added += _Nodes_NodeAdded;
-            _ConnectedNodes.Removed += _Nodes_NodeRemoved;
-            _ConnectedNodes.MessageProducer.AddMessageListener(listener);
-            _Trace = new TraceCorrelation(NodeServerTrace.Trace, "Node server listening on " + LocalEndpoint);
-        }
+        /// <summary>The parameters that will be cloned and applied for each node connecting to <see cref="NodeServer"/>.</summary>
+        public NodeConnectionParameters InboundNodeConnectionParameters { get; set; }
 
+        public bool AllowLocalPeers { get; set; }
 
-        public event NodeServerNodeEventHandler NodeRemoved;
-        public event NodeServerNodeEventHandler NodeAdded;
-        public event NodeServerMessageEventHandler MessageReceived;
+        public int MaxConnections { get; set; }
 
-        void _Nodes_NodeRemoved(object sender, NodeEventArgs node)
-        {
-            var removed = NodeRemoved;
-            if(removed != null)
-                removed(this, node.Node);
-        }
-
-        void _Nodes_NodeAdded(object sender, NodeEventArgs node)
-        {
-            var added = NodeAdded;
-            if(added != null)
-                added(this, node.Node);
-        }
-
-        public bool AllowLocalPeers
-        {
-            get;
-            set;
-        }
-
-        public int MaxConnections
-        {
-            get;
-            set;
-        }
-
-
-        private IPEndPoint _LocalEndpoint;
+        private IPEndPoint localEndpoint;
         public IPEndPoint LocalEndpoint
         {
             get
             {
-                return _LocalEndpoint;
+                return this.localEndpoint;
             }
             set
             {
-                _LocalEndpoint = Utils.EnsureIPv6(value);
+                this.localEndpoint = Utils.EnsureIPv6(value);
             }
         }
 
-        Socket socket;
-        TraceCorrelation _Trace;
+        private Socket socket;
+        private TraceCorrelation trace;
 
         public bool IsListening
         {
             get
             {
-                return socket != null;
+                return this.socket != null;
             }
+        }
+
+
+        internal readonly MessageProducer<IncomingMessage> messageProducer = new MessageProducer<IncomingMessage>();
+        internal readonly MessageProducer<object> internalMessageProducer = new MessageProducer<object>();
+
+        public MessageProducer<IncomingMessage> AllMessages { get; private set; }
+
+        volatile IPEndPoint externalEndpoint;
+        public IPEndPoint ExternalEndpoint
+        {
+            get
+            {
+                return this.externalEndpoint;
+            }
+            set
+            {
+                this.externalEndpoint = Utils.EnsureIPv6(value);
+            }
+        }
+
+        public NodesCollection ConnectedNodes { get; private set; }
+
+        private List<IDisposable> resources = new List<IDisposable>();
+
+        private CancellationTokenSource cancel = new CancellationTokenSource();
+
+        private ulong nonce;
+        public ulong Nonce
+        {
+            get
+            {
+                if (this.nonce == 0)
+                    this.nonce = RandomUtils.GetUInt64();
+
+                return this.nonce;
+            }
+            set
+            {
+                this.nonce = value;
+            }
+        }
+
+        public event NodeServerNodeEventHandler NodeRemoved;
+        public event NodeServerNodeEventHandler NodeAdded;
+        public event NodeServerMessageEventHandler MessageReceived;
+
+        public NodeServer(Network network, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, int internalPort = -1)
+        {
+            this.AllowLocalPeers = true;
+            this.InboundNodeConnectionParameters = new NodeConnectionParameters();
+
+            internalPort = internalPort == -1 ? network.DefaultPort : internalPort;
+            this.localEndpoint = new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), internalPort);
+
+            this.MaxConnections = 125;
+            this.Network = network;
+            this.externalEndpoint = new IPEndPoint(this.localEndpoint.Address, this.Network.DefaultPort);
+            this.Version = version;
+
+            var listener = new EventLoopMessageListener<IncomingMessage>(ProcessMessage);
+            this.messageProducer.AddMessageListener(listener);
+            this.OwnResource(listener);
+
+            this.ConnectedNodes = new NodesCollection();
+            this.ConnectedNodes.Added += Nodes_NodeAdded;
+            this.ConnectedNodes.Removed += Nodes_NodeRemoved;
+            this.ConnectedNodes.MessageProducer.AddMessageListener(listener);
+
+            this.AllMessages = new MessageProducer<IncomingMessage>();
+            this.trace = new TraceCorrelation(NodeServerTrace.Trace, "Node server listening on " + this.LocalEndpoint);
+        }
+
+        private void Nodes_NodeRemoved(object sender, NodeEventArgs node)
+        {
+            this.NodeRemoved?.Invoke(this, node.Node);
+        }
+
+        private void Nodes_NodeAdded(object sender, NodeEventArgs node)
+        {
+            this.NodeAdded?.Invoke(this, node.Node);
         }
 
         public void Listen(int maxIncoming = 8)
         {
-            if(socket != null)
+            if (this.socket != null)
                 throw new InvalidOperationException("Already listening");
-            using(_Trace.Open())
+
+            using (this.trace.Open())
             {
                 try
                 {
-                    socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
-                    socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                    this.socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                    this.socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 
-                    socket.Bind(LocalEndpoint);
-                    socket.Listen(maxIncoming);
+                    this.socket.Bind(this.LocalEndpoint);
+                    this.socket.Listen(maxIncoming);
                     NodeServerTrace.Information("Listening...");
-                    BeginAccept();
+                    this.BeginAccept();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     NodeServerTrace.Error("Error while opening the Protocol server", ex);
                     throw;
@@ -148,77 +154,83 @@ namespace NBitcoin.Protocol
 
         private void BeginAccept()
         {
-            if(_Cancel.IsCancellationRequested)
+            if (this.cancel.IsCancellationRequested)
             {
                 NodeServerTrace.Information("Stop accepting connection...");
                 return;
             }
+
             NodeServerTrace.Information("Accepting connection...");
             var args = new SocketAsyncEventArgs();
             args.Completed += Accept_Completed;
-            if(!socket.AcceptAsync(args))
-                EndAccept(args);
+            if (!this.socket.AcceptAsync(args))
+                this.EndAccept(args);
         }
 
         private void Accept_Completed(object sender, SocketAsyncEventArgs e)
         {
-            EndAccept(e);
+            this.EndAccept(e);
         }
 
         private void EndAccept(SocketAsyncEventArgs args)
         {
-            using(_Trace.Open())
+            using (this.trace.Open())
             {
                 Socket client = null;
                 try
                 {
-                    if(args.SocketError != SocketError.Success)
+                    if (args.SocketError != SocketError.Success)
                         throw new SocketException((int)args.SocketError);
+
                     client = args.AcceptSocket;
-                    if(_Cancel.IsCancellationRequested)
+                    if (this.cancel.IsCancellationRequested)
                         return;
+
                     NodeServerTrace.Information("Client connection accepted : " + client.RemoteEndPoint);
-                    var cancel = CancellationTokenSource.CreateLinkedTokenSource(_Cancel.Token);
+                    var cancel = CancellationTokenSource.CreateLinkedTokenSource(this.cancel.Token);
                     cancel.CancelAfter(TimeSpan.FromSeconds(10));
 
                     var stream = new NetworkStream(client, false);
-                    while(true)
+                    while (true)
                     {
-                        if (ConnectedNodes.Count >= MaxConnections)
+                        if (this.ConnectedNodes.Count >= this.MaxConnections)
                         {
                             NodeServerTrace.Information("MaxConnections limit reached");
                             Utils.SafeCloseSocket(client);
                             break;
                         }
                         cancel.Token.ThrowIfCancellationRequested();
+
                         PerformanceCounter counter;
-                        var message = Message.ReadNext(stream, Network, Version, cancel.Token, out counter);
-                        _MessageProducer.PushMessage(new IncomingMessage()
+                        Message message = Message.ReadNext(stream, this.Network, this.Version, cancel.Token, out counter);
+                        this.messageProducer.PushMessage(new IncomingMessage()
                         {
                             Socket = client,
                             Message = message,
                             Length = counter.ReadBytes,
                             Node = null,
                         });
-                        if(message.Payload is VersionPayload)
+
+                        if (message.Payload is VersionPayload)
                             break;
-                        else
-                            NodeServerTrace.Error("The first message of the remote peer did not contained a Version payload", null);
+
+                        NodeServerTrace.Error("The first message of the remote peer did not contained a Version payload", null);
                     }
                 }
-                catch(OperationCanceledException)
+                catch (OperationCanceledException)
                 {
                     Utils.SafeCloseSocket(client);
-                    if(!_Cancel.Token.IsCancellationRequested)
+                    if (!this.cancel.Token.IsCancellationRequested)
                     {
                         NodeServerTrace.Error("The remote connecting failed to send a message within 10 seconds, dropping connection", null);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    if(_Cancel.IsCancellationRequested)
+                    if (this.cancel.IsCancellationRequested)
                         return;
-                    if(client == null)
+
+                    if (client == null)
                     {
                         NodeServerTrace.Error("Error while accepting connection ", ex);
                         Thread.Sleep(3000);
@@ -229,50 +241,25 @@ namespace NBitcoin.Protocol
                         NodeServerTrace.Error("Invalid message received from the remote connecting node", ex);
                     }
                 }
-                BeginAccept();
+
+                this.BeginAccept();
             }
         }
 
-        internal readonly MessageProducer<IncomingMessage> _MessageProducer = new MessageProducer<IncomingMessage>();
-        internal readonly MessageProducer<object> _InternalMessageProducer = new MessageProducer<object>();
-
-        MessageProducer<IncomingMessage> _AllMessages = new MessageProducer<IncomingMessage>();
-        public MessageProducer<IncomingMessage> AllMessages
+        internal void ExternalAddressDetected(IPAddress ipAddress)
         {
-            get
+            if (!this.ExternalEndpoint.Address.IsRoutable(this.AllowLocalPeers) && ipAddress.IsRoutable(this.AllowLocalPeers))
             {
-                return _AllMessages;
+                NodeServerTrace.Information("New externalAddress detected " + ipAddress);
+                this.ExternalEndpoint = new IPEndPoint(ipAddress, this.ExternalEndpoint.Port);
             }
         }
 
-        volatile IPEndPoint _ExternalEndpoint;
-        public IPEndPoint ExternalEndpoint
+        private void ProcessMessage(IncomingMessage message)
         {
-            get
-            {
-                return _ExternalEndpoint;
-            }
-            set
-            {
-                _ExternalEndpoint = Utils.EnsureIPv6(value);
-            }
-        }
-
-
-        internal void ExternalAddressDetected(IPAddress iPAddress)
-        {
-            if(!ExternalEndpoint.Address.IsRoutable(AllowLocalPeers) && iPAddress.IsRoutable(AllowLocalPeers))
-            {
-                NodeServerTrace.Information("New externalAddress detected " + iPAddress);
-                ExternalEndpoint = new IPEndPoint(iPAddress, ExternalEndpoint.Port);
-            }
-        }
-
-        void ProcessMessage(IncomingMessage message)
-        {
-            AllMessages.PushMessage(message);
+            this.AllMessages.PushMessage(message);
             TraceCorrelation trace = null;
-            if(message.Node != null)
+            if (message.Node != null)
             {
                 trace = message.Node.TraceCorrelation;
             }
@@ -280,32 +267,33 @@ namespace NBitcoin.Protocol
             {
                 trace = new TraceCorrelation(NodeServerTrace.Trace, "Processing inbound message " + message.Message);
             }
-            using(trace.Open(false))
+
+            using (trace.Open(false))
             {
-                ProcessMessageCore(message);
+                this.ProcessMessageCore(message);
             }
         }
 
         private void ProcessMessageCore(IncomingMessage message)
         {
-            if(message.Message.Payload is VersionPayload)
+            if (message.Message.Payload is VersionPayload)
             {
-                var version = message.AssertPayload<VersionPayload>();
-                var connectedToSelf = version.Nonce == Nonce;
-                if(message.Node != null && connectedToSelf)
+                VersionPayload version = message.AssertPayload<VersionPayload>();
+                bool connectedToSelf = version.Nonce == this.Nonce;
+                if ((message.Node != null) && connectedToSelf)
                 {
                     NodeServerTrace.ConnectionToSelfDetected();
                     message.Node.DisconnectAsync();
                     return;
                 }
 
-                if(message.Node == null)
+                if (message.Node == null)
                 {
-                    var remoteEndpoint = version.AddressFrom;
-                    if(!remoteEndpoint.Address.IsRoutable(AllowLocalPeers))
+                    IPEndPoint remoteEndpoint = version.AddressFrom;
+                    if (!remoteEndpoint.Address.IsRoutable(this.AllowLocalPeers))
                     {
-                        //Send his own endpoint
-                        remoteEndpoint = new IPEndPoint(((IPEndPoint)message.Socket.RemoteEndPoint).Address, Network.DefaultPort);
+                        // Send his own endpoint.
+                        remoteEndpoint = new IPEndPoint(((IPEndPoint)message.Socket.RemoteEndPoint).Address, this.Network.DefaultPort);
                     }
 
                     var peer = new NetworkAddress()
@@ -313,11 +301,11 @@ namespace NBitcoin.Protocol
                         Endpoint = remoteEndpoint,
                         Time = DateTimeOffset.UtcNow
                     };
-                    var node = new Node(peer, Network, CreateNodeConnectionParameters(), message.Socket, version);
 
-                    if(connectedToSelf)
+                    var node = new Node(peer, this.Network, CreateNodeConnectionParameters(), message.Socket, version);
+                    if (connectedToSelf)
                     {
-                        node.SendMessage(CreateNodeConnectionParameters().CreateVersion(node.Peer.Endpoint, Network));
+                        node.SendMessage(CreateNodeConnectionParameters().CreateVersion(node.Peer.Endpoint, this.Network));
                         NodeServerTrace.ConnectionToSelfDetected();
                         node.Disconnect();
                         return;
@@ -327,17 +315,17 @@ namespace NBitcoin.Protocol
                     cancel.CancelAfter(TimeSpan.FromSeconds(10.0));
                     try
                     {
-                        ConnectedNodes.Add(node);
-                        node.StateChanged += node_StateChanged;
+                        this.ConnectedNodes.Add(node);
+                        node.StateChanged += Node_StateChanged;
                         node.RespondToHandShake(cancel.Token);
                     }
-                    catch(OperationCanceledException ex)
+                    catch (OperationCanceledException ex)
                     {
                         NodeServerTrace.Error("The remote node did not respond fast enough (10 seconds) to the handshake completion, dropping connection", ex);
                         node.DisconnectAsync();
                         throw;
                     }
-                    catch(Exception)
+                    catch (Exception)
                     {
                         node.DisconnectAsync();
                         throw;
@@ -345,133 +333,97 @@ namespace NBitcoin.Protocol
                 }
             }
 
-            var messageReceived = MessageReceived;
-            if(messageReceived != null)
-                messageReceived(this, message);
+            this.MessageReceived?.Invoke(this, message);
         }
 
-        void node_StateChanged(Node node, NodeState oldState)
+        private void Node_StateChanged(Node node, NodeState oldState)
         {
-            if(node.State == NodeState.Disconnecting ||
-                node.State == NodeState.Failed ||
-                node.State == NodeState.Offline)
-                ConnectedNodes.Remove(node);
+            if ((node.State == NodeState.Disconnecting)
+                || (node.State == NodeState.Failed)
+                || (node.State == NodeState.Offline))
+                this.ConnectedNodes.Remove(node);
         }
 
-        private readonly NodesCollection _ConnectedNodes = new NodesCollection();
-        public NodesCollection ConnectedNodes
-        {
-            get
-            {
-                return _ConnectedNodes;
-            }
-        }
-
-
-        List<IDisposable> _Resources = new List<IDisposable>();
         IDisposable OwnResource(IDisposable resource)
         {
-            if(_Cancel.IsCancellationRequested)
+            if (this.cancel.IsCancellationRequested)
             {
                 resource.Dispose();
                 return Scope.Nothing;
             }
+
             return new Scope(() =>
             {
-                lock(_Resources)
+                lock (this.resources)
                 {
-                    _Resources.Add(resource);
+                    this.resources.Add(resource);
                 }
             }, () =>
             {
-                lock(_Resources)
+                lock (this.resources)
                 {
-                    _Resources.Remove(resource);
+                    this.resources.Remove(resource);
                 }
             });
         }
-        #region IDisposable Members
 
-        CancellationTokenSource _Cancel = new CancellationTokenSource();
         public void Dispose()
         {
-            if(!_Cancel.IsCancellationRequested)
+            if (!this.cancel.IsCancellationRequested)
             {
-                _Cancel.Cancel();
-                _Trace.LogInside(() => NodeServerTrace.Information("Stopping node server..."));
-                lock(_Resources)
+                this.cancel.Cancel();
+                this.trace.LogInside(() => NodeServerTrace.Information("Stopping node server..."));
+                lock (this.resources)
                 {
-                    foreach(var resource in _Resources)
+                    foreach (IDisposable resource in this.resources)
                         resource.Dispose();
                 }
                 try
                 {
-                    _ConnectedNodes.DisconnectAll();
+                    this.ConnectedNodes.DisconnectAll();
                 }
                 finally
                 {
-                    if(socket != null)
+                    if (this.socket != null)
                     {
-                        Utils.SafeCloseSocket(socket);
-                        socket = null;
+                        Utils.SafeCloseSocket(this.socket);
+                        this.socket = null;
                     }
                 }
             }
         }
 
-        #endregion
-
         internal NodeConnectionParameters CreateNodeConnectionParameters()
         {
-            var myExternal = Utils.EnsureIPv6(ExternalEndpoint);
-            var param2 = InboundNodeConnectionParameters.Clone();
-            param2.Nonce = Nonce;
-            param2.Version = Version;
+            IPEndPoint myExternal = Utils.EnsureIPv6(this.ExternalEndpoint);
+            NodeConnectionParameters param2 = this.InboundNodeConnectionParameters.Clone();
+            param2.Nonce = this.Nonce;
+            param2.Version = this.Version;
             param2.AddressFrom = myExternal;
             return param2;
         }
 
-        ulong _Nonce;
-        public ulong Nonce
-        {
-            get
-            {
-                if(_Nonce == 0)
-                {
-                    _Nonce = RandomUtils.GetUInt64();
-                }
-                return _Nonce;
-            }
-            set
-            {
-                _Nonce = value;
-            }
-        }
-
-
-
         public bool IsConnectedTo(IPEndPoint endpoint)
         {
-            return _ConnectedNodes.FindByEndpoint(endpoint) != null;
+            return this.ConnectedNodes.FindByEndpoint(endpoint) != null;
         }
 
         public Node FindOrConnect(IPEndPoint endpoint)
         {
-            while(true)
+            while (true)
             {
-                var node = _ConnectedNodes.FindByEndpoint(endpoint);
-                if(node != null)
+                Node node = this.ConnectedNodes.FindByEndpoint(endpoint);
+                if (node != null)
                     return node;
-                node = Node.Connect(Network, endpoint, CreateNodeConnectionParameters());
-                node.StateChanged += node_StateChanged;
-                if(!_ConnectedNodes.Add(node))
+
+                node = Node.Connect(this.Network, endpoint, CreateNodeConnectionParameters());
+                node.StateChanged += Node_StateChanged;
+                if (!this.ConnectedNodes.Add(node))
                 {
                     node.DisconnectAsync();
                 }
-                else
-                    return node;
+                else return node;
             }
         }
     }
 }
-#endif

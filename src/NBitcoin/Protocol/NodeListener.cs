@@ -1,87 +1,71 @@
-﻿#if !NOSOCKET
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace NBitcoin.Protocol
 {
     public class NodeListener : PollMessageListener<IncomingMessage>, IDisposable
     {
-        private readonly Node _Node;
-        public Node Node
-        {
-            get
-            {
-                return _Node;
-            }
-        }
-        IDisposable _Subscription;
+        public Node Node { get; private set; }
+        private IDisposable subscription;
+        private List<Func<IncomingMessage, bool>> predicates = new List<Func<IncomingMessage, bool>>();
+
         public NodeListener(Node node)
         {
-            _Subscription = node.MessageProducer.AddMessageListener(this);
-            _Node = node;
+            this.subscription = node.MessageProducer.AddMessageListener(this);
+            this.Node = node;
         }
 
         public NodeListener Where(Func<IncomingMessage, bool> predicate)
         {
-            _Predicates.Add(predicate);
-            return this;
-        }
-        public NodeListener OfType<TPayload>() where TPayload : Payload
-        {
-            _Predicates.Add(i => i.Message.Payload is TPayload);
+            this.predicates.Add(predicate);
             return this;
         }
 
-        public TPayload ReceivePayload<TPayload>(CancellationToken cancellationToken = default(CancellationToken))
-            where TPayload : Payload
+        public NodeListener OfType<TPayload>() where TPayload : Payload
         {
-            if(!Node.IsConnected)
+            this.predicates.Add(i => i.Message.Payload is TPayload);
+            return this;
+        }
+
+        public TPayload ReceivePayload<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
+        {
+            if (!this.Node.IsConnected)
                 throw new InvalidOperationException("The node is not in a connected state");
+
             Queue<IncomingMessage> pushedAside = new Queue<IncomingMessage>();
             try
             {
-                while(true)
+                while (true)
                 {
-                    var message = ReceiveMessage(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, Node._Connection.Cancel.Token).Token);
-                    if(_Predicates.All(p => p(message)))
+                    IncomingMessage message = ReceiveMessage(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.Node._Connection.Cancel.Token).Token);
+                    if (this.predicates.All(p => p(message)))
                     {
-                        if(message.Message.Payload is TPayload)
+                        if (message.Message.Payload is TPayload)
                             return (TPayload)message.Message.Payload;
-                        else
-                        {
-                            pushedAside.Enqueue(message);
-                        }
+
+                        pushedAside.Enqueue(message);
                     }
                 }
             }
-            catch(OperationCanceledException)
+            catch (OperationCanceledException)
             {
-                if(Node._Connection.Cancel.IsCancellationRequested)
+                if (this.Node._Connection.Cancel.IsCancellationRequested)
                     throw new InvalidOperationException("The node is not in a connected state");
+
                 throw;
             }
             finally
             {
-                while(pushedAside.Count != 0)
-                    PushMessage(pushedAside.Dequeue());
+                while (pushedAside.Count != 0)
+                    this.PushMessage(pushedAside.Dequeue());
             }
         }
 
-        List<Func<IncomingMessage, bool>> _Predicates = new List<Func<IncomingMessage, bool>>();
-
-        #region IDisposable Members
-
         public void Dispose()
         {
-            if(_Subscription != null)
-                _Subscription.Dispose();
+            this.subscription?.Dispose();
         }
-
-        #endregion
     }
 }
-#endif

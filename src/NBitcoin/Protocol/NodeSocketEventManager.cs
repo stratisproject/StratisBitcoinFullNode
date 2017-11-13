@@ -12,7 +12,9 @@ namespace NBitcoin.Protocol
     {
         private SocketAsyncEventArgs socketEvent;
 
-        private NodeSocketEventManager() { }
+        private NodeSocketEventManager()
+        {
+        }
 
         /// <summary>
         /// Creates a <see cref="NodeSocketEventManager"/> with a instance of <see cref="SocketAsyncEventArgs"/>.
@@ -39,6 +41,7 @@ namespace NBitcoin.Protocol
             {
                 if (this.socketEvent == null)
                     this.socketEvent = new SocketAsyncEventArgs();
+
                 return this.socketEvent;
             }
         }
