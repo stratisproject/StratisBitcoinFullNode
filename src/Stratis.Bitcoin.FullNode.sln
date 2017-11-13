@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2006
+VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331FD3-D493-46A9-928B-B786FC6F3103}"
 	ProjectSection(SolutionItems) = preProject
@@ -24,10 +24,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Api.Tests", "Stratis.Bitcoin.Api.Tests\Stratis.Bitcoin.Api.Tests.csproj", "{E538B76A-513F-46D5-9F14-E35E79B484CA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.LightWallet", "Stratis.Bitcoin.Features.LightWallet\Stratis.Bitcoin.Features.LightWallet.csproj", "{B03C69FA-F8AE-4037-B241-821DD00BC0E4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.IndexStore", "Stratis.Bitcoin.Features.IndexStore\Stratis.Bitcoin.Features.IndexStore.csproj", "{0DE2C73D-1F93-4668-AF56-E88CEA29BBF0}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.IndexStore.Tests", "Stratis.Bitcoin.Features.IndexStore.Tests\Stratis.Bitcoin.Features.IndexStore.Tests.csproj", "{6C42E194-78AB-43DD-837C-838ED6989F89}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.WatchOnlyWallet", "Stratis.Bitcoin.Features.WatchOnlyWallet\Stratis.Bitcoin.Features.WatchOnlyWallet.csproj", "{87C7B091-95DA-4818-B4D5-DF403A483F53}"
 EndProject
@@ -117,14 +113,6 @@ Global
 		{B03C69FA-F8AE-4037-B241-821DD00BC0E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B03C69FA-F8AE-4037-B241-821DD00BC0E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B03C69FA-F8AE-4037-B241-821DD00BC0E4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0DE2C73D-1F93-4668-AF56-E88CEA29BBF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0DE2C73D-1F93-4668-AF56-E88CEA29BBF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0DE2C73D-1F93-4668-AF56-E88CEA29BBF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0DE2C73D-1F93-4668-AF56-E88CEA29BBF0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6C42E194-78AB-43DD-837C-838ED6989F89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6C42E194-78AB-43DD-837C-838ED6989F89}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6C42E194-78AB-43DD-837C-838ED6989F89}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6C42E194-78AB-43DD-837C-838ED6989F89}.Release|Any CPU.Build.0 = Release|Any CPU
 		{87C7B091-95DA-4818-B4D5-DF403A483F53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{87C7B091-95DA-4818-B4D5-DF403A483F53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87C7B091-95DA-4818-B4D5-DF403A483F53}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -218,8 +206,6 @@ Global
 		{94FEB14E-D123-486D-A24D-D2BE725D96E3} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{E538B76A-513F-46D5-9F14-E35E79B484CA} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{B03C69FA-F8AE-4037-B241-821DD00BC0E4} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
-		{0DE2C73D-1F93-4668-AF56-E88CEA29BBF0} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
-		{6C42E194-78AB-43DD-837C-838ED6989F89} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{87C7B091-95DA-4818-B4D5-DF403A483F53} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 		{6E821949-A691-49DB-AC40-42D4CD759546} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{5E0010F1-50B8-4FC5-A9C2-38D7DF73A0D2} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}

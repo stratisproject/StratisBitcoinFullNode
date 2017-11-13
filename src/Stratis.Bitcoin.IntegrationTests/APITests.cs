@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Xunit;
+using System.IO;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -61,6 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                        .AddRPC();
                     });
 
+                    this.InitializeTestWallet(nodeA);
                     builder.StartAll();
 
                     var fullNode = nodeA.FullNode;
@@ -228,6 +230,17 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 this.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Copies the test wallet into data folder for node if it isnt' already present.
+        /// </summary>
+        /// <param name="node">Core node for the test.</param>
+        private void InitializeTestWallet(CoreNode node)
+        {
+            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
+            if (!File.Exists(testWalletPath))
+                File.Copy("Data/test.wallet.json", testWalletPath);
         }
     }
 }

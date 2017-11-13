@@ -738,7 +738,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 context.Logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", coin.Address.Address, coin.TxOut.Value);
 
                 // Script of the first coinstake input.
-                Script scriptPubKeyKernel = scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
+                Script scriptPubKeyKernel = coin.TxOut.ScriptPubKey;
                 if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
                     && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
                 {
@@ -793,7 +793,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         {
                             context.Logger.LogTrace("Kernel found with solution hash '{0}'.", contextInformation.Stake.HashProofOfStake);
 
-                            BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
                             Wallet.Wallet wallet = this.walletManager.GetWalletByName(coin.Secret.WalletName);
                             context.CoinstakeContext.Key = wallet.GetExtendedPrivateKeyForAddress(coin.Secret.WalletPassword, coin.Address).PrivateKey;
 

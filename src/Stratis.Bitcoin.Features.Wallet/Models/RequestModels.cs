@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// Model object to use as input to the Api request for getting the maximum spendable amount on an account. 
+    /// Model object to use as input to the Api request for getting the maximum spendable amount on an account.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class WalletMaximumBalanceRequest : RequestModel
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// Model object for <see cref="WalletController.GetTransactionFeeEstimate"> request.
+    /// Model object for <see cref="WalletController.GetTransactionFeeEstimate"/> request.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class TxFeeEstimateRequest : RequestModel
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [Required]
         public string WalletName { get; set; }
-        
+
         /// <summary>
         /// The name of the account for which to get the address.
         /// </summary>
@@ -160,10 +160,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         [Required]
         public string WalletName { get; set; }
-        
+
         [Required]
         public string AccountName { get; set; }
-        
+
         [Required]
         public string Count { get; set; }
     }
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         [Required]
         public string WalletName { get; set; }
-        
+
         [Required]
         public string AccountName { get; set; }
     }
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [Required]
         public string WalletName { get; set; }
-        
+
         /// <summary>
         /// The password for this wallet.
         /// </summary>

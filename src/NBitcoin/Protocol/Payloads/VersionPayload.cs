@@ -31,8 +31,8 @@ namespace NBitcoin.Protocol
         NODE_BLOOM = (1 << 2),
 
         /// <summary> Indicates that a node can be asked for blocks and transactions including
-        /// witness data. 
-        /// </summary> 
+        /// witness data.
+        /// </summary>
         NODE_WITNESS = (1 << 3),
     }
 

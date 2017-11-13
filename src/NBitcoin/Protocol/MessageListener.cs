@@ -1,151 +1,112 @@
-﻿#if !NOSOCKET
-
-using System;
+﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NBitcoin.Protocol
 {
-	public interface MessageListener<in T>
-	{
-		void PushMessage(T message);
-	}
+    public interface IMessageListener<in T>
+    {
+        void PushMessage(T message);
+    }
 
-	public class NullMessageListener<T> : MessageListener<T>
-	{
-		#region MessageListener<T> Members
+    public class NullMessageListener<T> : IMessageListener<T>
+    {
+        public void PushMessage(T message)
+        {
+        }
+    }
 
-		public void PushMessage(T message)
-		{
-		}
+    public class NewThreadMessageListener<T> : IMessageListener<T>
+    {
+        private readonly Action<T> process;
+        public NewThreadMessageListener(Action<T> process)
+        {
+            this.process = process ?? throw new ArgumentNullException("process");
+        }
 
-		#endregion
-	}
+        public void PushMessage(T message)
+        {
+            if (message != null)
+            {
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        this.process(message);
+                    }
+                    catch (Exception ex)
+                    {
+                        NodeServerTrace.Error("Unexpected expected during message loop", ex);
+                    }
+                });
+            }
+        }
+    }
 
-	public class NewThreadMessageListener<T> : MessageListener<T>
-	{
-		readonly Action<T> _Process;
-		public NewThreadMessageListener(Action<T> process)
-		{
-			if(process == null)
-				throw new ArgumentNullException("process");
-			_Process = process;
-		}
+    public class EventLoopMessageListener<T> : IMessageListener<T>, IDisposable
+    {
+        private BlockingCollection<T> messageQueue = new BlockingCollection<T>(new ConcurrentQueue<T>());
+        public BlockingCollection<T> MessageQueue { get { return this.messageQueue; } }
 
-		#region MessageListener<T> Members
+        private CancellationTokenSource cancellationSource = new CancellationTokenSource();
 
-		public void PushMessage(T message)
-		{
-			if(message != null)
-				Task.Factory.StartNew(() =>
-				{
-					try
-					{
-						_Process(message);
-					}
-					catch(Exception ex)
-					{
-						NodeServerTrace.Error("Unexpected expected during message loop", ex);
-					}
-				});
-		}
+        public EventLoopMessageListener(Action<T> processMessage)
+        {
+            new Thread(new ThreadStart(() =>
+            {
+                try
+                {
+                    while (!this.cancellationSource.IsCancellationRequested)
+                    {
+                        T message = this.messageQueue.Take(this.cancellationSource.Token);
+                        if (message != null)
+                        {
+                            try
+                            {
+                                processMessage(message);
+                            }
+                            catch (Exception ex)
+                            {
+                                NodeServerTrace.Error("Unexpected expected during message loop", ex);
+                            }
+                        }
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            })).Start();
+        }
 
-		#endregion
-	}
+        public void PushMessage(T message)
+        {
+            this.messageQueue.Add(message);
+        }
 
-	public class EventLoopMessageListener<T> : MessageListener<T>, IDisposable
-	{
-		public EventLoopMessageListener(Action<T> processMessage)
-		{
-			new Thread(new ThreadStart(() =>
-			{
-				try
-				{
-					while(!cancellationSource.IsCancellationRequested)
-					{
-						var message = _MessageQueue.Take(cancellationSource.Token);
-						if(message != null)
-						{
-							try
-							{
-								processMessage(message);
-							}
-							catch(Exception ex)
-							{
-								NodeServerTrace.Error("Unexpected expected during message loop", ex);
-							}
-						}
-					}
-				}
-				catch(OperationCanceledException)
-				{
-				}
-			})).Start();
-		}
+        public void Dispose()
+        {
+            if (this.cancellationSource.IsCancellationRequested)
+                return;
 
-		BlockingCollection<T> _MessageQueue = new BlockingCollection<T>(new ConcurrentQueue<T>());
-		public BlockingCollection<T> MessageQueue
-		{
-			get
-			{
-				return _MessageQueue;
-			}
-		}
+            this.cancellationSource.Cancel();
+            this.cancellationSource.Dispose();
+        }
+    }
 
-		#region MessageListener Members
+    public class PollMessageListener<T> : IMessageListener<T>
+    {
+        private BlockingCollection<T> messageQueue = new BlockingCollection<T>(new ConcurrentQueue<T>());
+        public BlockingCollection<T> MessageQueue { get { return this.messageQueue; } }
 
-		public void PushMessage(T message)
-		{
-			_MessageQueue.Add(message);
-		}
+        public virtual T ReceiveMessage(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return this.MessageQueue.Take(cancellationToken);
+        }
 
-		#endregion
-
-		#region IDisposable Members
-
-		CancellationTokenSource cancellationSource = new CancellationTokenSource();
-
-		public void Dispose()
-		{
-			if(cancellationSource.IsCancellationRequested)
-				return;
-
-			cancellationSource.Cancel();
-			cancellationSource.Dispose();
-		}
-
-		#endregion
-	}
-
-	public class PollMessageListener<T> : MessageListener<T>
-	{
-		BlockingCollection<T> _MessageQueue = new BlockingCollection<T>(new ConcurrentQueue<T>());
-		public BlockingCollection<T> MessageQueue
-		{
-			get
-			{
-				return _MessageQueue;
-			}
-		}
-
-		public virtual T ReceiveMessage(CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return MessageQueue.Take(cancellationToken);
-		}
-
-		#region MessageListener Members
-
-		public virtual void PushMessage(T message)
-		{
-			_MessageQueue.Add(message);
-		}
-
-		#endregion
-	}
+        public virtual void PushMessage(T message)
+        {
+            this.messageQueue.Add(message);
+        }
+    }
 }
-
-#endif

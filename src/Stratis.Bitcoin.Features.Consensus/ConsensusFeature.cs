@@ -35,10 +35,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly NodeSettings nodeSettings;
         private readonly NodeDeployments nodeDeployments;
         private readonly StakeChainStore stakeChain;
-        
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-        
+
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IDateTimeProvider dateTimeProvider;
 
         private readonly ConsensusManager consensusManager;
-        
+
         /// <summary>Consensus statistics logger.</summary>
         private readonly ConsensusStats consensusStats;
 
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             // First, we need to wait for the consensus loop to finish.
             // Only then we can flush our coinview safely.
-            // Otherwise there is a race condition and a new block 
+            // Otherwise there is a race condition and a new block
             // may come from the consensus at wrong time.
             this.consensusLoop.Stop();
 
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderConsensusExtension
     {
         public static IFullNodeBuilder UseConsensus(this IFullNodeBuilder fullNodeBuilder)
         {

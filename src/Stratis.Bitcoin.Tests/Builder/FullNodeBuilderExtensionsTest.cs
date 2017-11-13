@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         [Fact]
         public void UseNodeSettingsConfiguresNodeBuilderWithNodeSettings()
         {
-            IFullNodeBuilderExtensions.UseDefaultNodeSettings(this.fullNodeBuilder);
+            FullNodeBuilderNodeSettingsExtension.UseDefaultNodeSettings(this.fullNodeBuilder);
 
             Assert.NotNull(this.fullNodeBuilder.NodeSettings);
             Assert.Equal(NodeSettings.Default().ConfigurationFile, this.fullNodeBuilder.NodeSettings.ConfigurationFile);
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
             nodeSettings.Testnet = true;
 
-            IFullNodeBuilderExtensions.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
+            FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
 
             Assert.NotNull(this.fullNodeBuilder.NodeSettings);
             Assert.Equal(nodeSettings.ConfigurationFile, this.fullNodeBuilder.NodeSettings.ConfigurationFile);
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
 
-            IFullNodeBuilderExtensions.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
+            FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
 
             Assert.NotNull(this.fullNodeBuilder.NodeSettings);
             Assert.Equal(nodeSettings.ConfigurationFile, this.fullNodeBuilder.NodeSettings.ConfigurationFile);
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             nodeSettings.ConfigurationFile = "TestData/FullNodeBuilder/UseNodeSettingsConfFile";
             nodeSettings.DataDir = "TestData/FullNodeBuilder/UseNodeSettings";
 
-            IFullNodeBuilderExtensions.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
+            FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
 
             Assert.NotNull(this.fullNodeBuilder.NodeSettings);
             Assert.Equal(nodeSettings.ConfigurationFile, this.fullNodeBuilder.NodeSettings.ConfigurationFile);

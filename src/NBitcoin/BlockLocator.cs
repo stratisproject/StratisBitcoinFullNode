@@ -2,35 +2,25 @@
 
 namespace NBitcoin
 {
-	/// <summary>
-	/// Compact representation of one's chain position which can be used to find forks with another chain
-	/// </summary>
-	public class BlockLocator : IBitcoinSerializable
-	{
-		public BlockLocator()
-		{
+    /// <summary>
+    /// Compact representation of one's chain position which can be used to find forks with another chain.
+    /// </summary>
+    public class BlockLocator : IBitcoinSerializable
+    {
+        public BlockLocator()
+        {
+        }
 
-		}
-		List<uint256> vHave = new List<uint256>();
-		public List<uint256> Blocks
-		{
-			get
-			{
-				return vHave;
-			}
-			set
-			{
-				vHave = value;
-			}
-		}
+        private List<uint256> blocks = new List<uint256>();
+        public List<uint256> Blocks { get { return this.blocks; } set { this.blocks = value; } }
 
-		#region IBitcoinSerializable Members
+        #region IBitcoinSerializable Members
 
-		public void ReadWrite(BitcoinStream stream)
-		{
-			stream.ReadWrite(ref vHave);
-		}
+        public void ReadWrite(BitcoinStream stream)
+        {
+            stream.ReadWrite(ref this.blocks);
+        }
 
-		#endregion
-	}
+        #endregion
+    }
 }

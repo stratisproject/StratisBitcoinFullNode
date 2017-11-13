@@ -1,8 +1,8 @@
-﻿using NBitcoin.Crypto;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NBitcoin.Crypto;
 
 namespace NBitcoin.Protocol
 {

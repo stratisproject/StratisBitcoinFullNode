@@ -159,9 +159,9 @@ namespace NBitcoin.Protocol.Behaviors
                 });
             }
 
-            if ((message.Message.Payload is PongPayload pong) 
-                && this.Mode.HasFlag(PingPongMode.SendPing) 
-                && (this.currentPing != null) 
+            if ((message.Message.Payload is PongPayload pong)
+                && this.Mode.HasFlag(PingPongMode.SendPing)
+                && (this.currentPing != null)
                 && (this.currentPing.Nonce == pong.Nonce))
             {
                 this.Latency = DateTimeOffset.UtcNow - this.dateSent;
