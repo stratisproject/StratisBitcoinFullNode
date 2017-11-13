@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Miner
             AssemblerFactory blockAssemblerFactory,
             IBlockRepository blockRepository,
             ChainState chainState,
-            Signals.Signals signals, 
+            Signals.Signals signals,
             INodeLifetime nodeLifetime,
             NodeSettings settings,
             CoinView coinView,
