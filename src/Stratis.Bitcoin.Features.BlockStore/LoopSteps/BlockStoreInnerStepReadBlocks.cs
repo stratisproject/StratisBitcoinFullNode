@@ -1,21 +1,23 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.BlockPulling;
+
+namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using static Stratis.Bitcoin.BlockPulling.BlockPuller;
-    using System;
-    using System.Collections.Generic;
+    using static BlockPuller;
 
     /// <summary>
-    /// Reads blocks from the <see cref="BlockPuller"/> in a loop and removes block 
+    /// Reads blocks from the <see cref="BlockPuller"/> in a loop and removes block
     /// from the <see cref="BlockStoreInnerStepContext.DownloadStack"/>.
     /// <para>
     /// If the block exists in the puller add the the downloaded block to the store to
-    /// push to the repository. If <see cref="BlockStoreInnerStepContext.ShouldBlocksBePushedToRepository"/> returns
+    /// push to the repository. If <see cref="BlockStoreInnerStepReadBlocks.ShouldBlocksBePushedToRepository"/> returns
     /// true, push the blocks in the <see cref="BlockStoreInnerStepContext.Store"/> to the block repository.
-    /// </para> 
+    /// </para>
     /// <para>
     /// When the download stack is empty return a <see cref="InnerStepResult.Stop"/> result causing the <see cref="BlockStoreLoop"/> to
     /// start again.
@@ -105,7 +107,7 @@
             return chainedBlockToStore;
         }
 
-        /// <summary> Determines whether or not its time for <see cref="BlockStoreInnerStepReadBlocks"/> 
+        /// <summary> Determines whether or not its time for <see cref="BlockStoreInnerStepReadBlocks"/>
         /// to push (persist) the downloaded blocks to the repository.</summary>
         private bool ShouldBlocksBePushedToRepository(BlockStoreInnerStepContext context)
         {
@@ -118,7 +120,7 @@
             bool downloadStackEmpty = !context.DownloadStack.Any();
             bool pushTimeReached = lastFlushDiff > BlockStoreInnerStepContext.MaxDownloadStackFlushTimeMs;
 
-            this.logger.LogTrace("Insert block size is {0} bytes{1}, download stack contains {2} blocks, last flush time was {3} ms ago{4}.", 
+            this.logger.LogTrace("Insert block size is {0} bytes{1}, download stack contains {2} blocks, last flush time was {3} ms ago{4}.",
                 context.InsertBlockSize, pushBufferSizeReached ? " (threshold reached)" : "", context.DownloadStack.Count, lastFlushDiff, pushTimeReached ? " (threshold reached)" : "");
 
             bool res = pushBufferSizeReached || downloadStackEmpty || pushTimeReached;

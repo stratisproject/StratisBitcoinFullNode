@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Connection;
-using System;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests.Controller

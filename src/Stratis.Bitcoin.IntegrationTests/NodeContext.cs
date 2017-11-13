@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 return this._ChainBuilder = this._ChainBuilder ?? new ChainBuilder(this.Network);
             }
         }
-        
+
         DBreezeCoinView _PersistentCoinView;
         public DBreezeCoinView PersistentCoinView
         {
@@ -63,14 +63,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        public static NodeContext Create([CallerMemberNameAttribute]string name = null, Network network = null, bool clean = true)
+        public static NodeContext Create([CallerMemberName]string name = null, Network network = null, bool clean = true)
         {
             return new NodeContext(name, network, clean);
         }
 
         public void Dispose()
         {
-            foreach(var item in this._CleanList)
+            foreach (var item in this._CleanList)
                 item.Dispose();
             this._TestDirectory.Dispose(); //Not into cleanlist because it must run last
         }
@@ -82,6 +82,6 @@ namespace Stratis.Bitcoin.IntegrationTests
             this._PersistentCoinView = new DBreezeCoinView(this._Network, this._TestDirectory.FolderName, DateTimeProvider.Default, this.loggerFactory);
             this._PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
             this._CleanList.Add(this._PersistentCoinView);
-        }		
+        }
     }
 }

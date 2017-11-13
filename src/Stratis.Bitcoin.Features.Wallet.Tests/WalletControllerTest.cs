@@ -1,4 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -13,13 +20,6 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Security;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests

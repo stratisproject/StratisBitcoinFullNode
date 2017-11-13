@@ -3,15 +3,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.RPC.Controllers
@@ -41,6 +40,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         [ActionName("stop")]
+        [ActionDescription("Stops the full node.")]
         public Task Stop()
         {
             if (this.FullNode != null)
@@ -52,6 +52,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         [ActionName("getrawtransaction")]
+        [ActionDescription("Gets a raw, possibly pooled, transaction from the full node.")]
         public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0)
         {
             uint256 trxid;
@@ -85,6 +86,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="includeMemPool">Whether to include the mempool</param>
         /// <returns>The GetTxOut rpc format</returns>
         [ActionName("gettxout")]
+        [ActionDescription("Gets the unspent outputs of a transaction id and vout number.")]
         public async Task<GetTxOutModel> GetTxOutAsync(string txid, uint vout, bool includeMemPool = true)
         {
             uint256 trxid;
@@ -110,6 +112,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
 
         [ActionName("getblockcount")]
+        [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
         {
             var consensusLoop = this.FullNode.Services.ServiceProvider.GetRequiredService<ConsensusLoop>();
@@ -117,6 +120,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         [ActionName("getinfo")]
+        [ActionDescription("Gets general information about the full node.")]
         public GetInfoModel GetInfo()
         {
             var model = new GetInfoModel
@@ -152,6 +156,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <param name="isJsonFormat">Indicates whether to provide data in Json or binary format.</param>
         /// <returns>The block header rpc format.</returns>
         [ActionName("getblockheader")]
+        [ActionDescription("Gets the block header of the block identified by the hash.")]
         public BlockHeaderModel GetBlockHeader(string hash, bool isJsonFormat = true)
         {
             Guard.NotNull(hash, nameof(hash));

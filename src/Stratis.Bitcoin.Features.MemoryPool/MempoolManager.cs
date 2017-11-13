@@ -1,14 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -45,16 +44,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="validator">Memory pool validator for validating transactions.</param>
         /// <param name="orphans">Memory pool orphans for managing orphan transactions.</param>
         /// <param name="dateTimeProvider">Date and time information provider.</param>
-        /// <param name="nodeArgs">Settings from the node.</param>
         /// <param name="mempoolSettings">Settings for memory pool.</param>
         /// <param name="mempoolPersistence">Memory pool persistence methods for loading and saving from storage.</param>
+        /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         public MempoolManager(
-            MempoolSchedulerLock mempoolLock, 
+            MempoolSchedulerLock mempoolLock,
             TxMempool memPool,
-            IMempoolValidator validator, 
-            MempoolOrphans orphans, 
-            IDateTimeProvider dateTimeProvider, 
+            IMempoolValidator validator,
+            MempoolOrphans orphans,
+            IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             IMempoolPersistence mempoolPersistence,
             CoinView coinView,

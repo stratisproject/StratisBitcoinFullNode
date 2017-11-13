@@ -1,7 +1,7 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
-using System;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {

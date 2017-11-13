@@ -1,5 +1,5 @@
-﻿using NBitcoin;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {

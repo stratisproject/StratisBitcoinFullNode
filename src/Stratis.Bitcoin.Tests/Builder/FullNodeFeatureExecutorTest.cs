@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using System;
-using System.Collections.Generic;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder

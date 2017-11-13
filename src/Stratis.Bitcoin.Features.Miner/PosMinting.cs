@@ -1,4 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
 using NBitcoin.Protocol;
@@ -11,11 +16,6 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -454,7 +454,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Validate the block.
             BlockValidationContext blockValidationContext = new BlockValidationContext { Block = block };
-            this.consensusLoop.AcceptBlock(blockValidationContext);
+            this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
             if (blockValidationContext.ChainedBlock == null)
             {

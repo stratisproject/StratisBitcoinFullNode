@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -8,9 +11,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.IO;
-using System.Linq;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Notifications.Tests

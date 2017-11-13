@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         [ActionName("getbestblockhash")]
+        [ActionDescription("Get the hash of the block at the consensus tip.")]
         public uint256 GetBestBlockHash()
         {
             Guard.NotNull(this.ChainState, nameof(this.ChainState));
@@ -27,6 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         [ActionName("getblockhash")]
+        [ActionDescription("Gets the hash of the block at the given height.")]
         public uint256 GetBlockHash(int height)
         {
             Guard.NotNull(this.ConsensusLoop, nameof(this.ConsensusLoop));

@@ -1,5 +1,5 @@
-﻿using NBitcoin;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {

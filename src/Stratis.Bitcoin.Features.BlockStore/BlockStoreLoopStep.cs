@@ -1,13 +1,12 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
+﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Utilities;
+
+namespace Stratis.Bitcoin.Features.BlockStore
 {
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using Microsoft.Extensions.Logging;
-    using NBitcoin;
-    using Stratis.Bitcoin.Utilities;
-
     /// <summary>
     /// The chain of block store loop steps that is executed when the
     /// BlockStoreLoop's DownloadAndStoreBlocks is called.
@@ -27,7 +26,7 @@
         /// <summary>
         /// Executes the chain of <see cref="BlockStoreLoop"/> steps.
         /// <para>
-        /// Each step will return a <see cref="BlockStoreLoopStepResult"/> which will either:
+        /// Each step will return a <see cref="StepResult"/> which will either:
         /// <list>
         ///     <item>1: Break out of the foreach loop.</item>
         ///     <item>2: Continue execution of the foreach loop.</item>
@@ -35,7 +34,7 @@
         /// </para>
         /// </summary>
         /// <param name="nextChainedBlock">Next chained block to process.</param>
-        /// <param name="disposeMode">This is <c>true</c> if <see cref="BlockStoreLoop.Flush"/> was called.</param>
+        /// <param name="disposeMode">This is <c>true</c> if <see cref="BlockStoreLoop.ShutDown"/> was called.</param>
         /// <param name="cancellationToken">Cancellation token to check.</param>
         /// <returns>BlockStoreLoopStepResult</returns>
         internal async Task<StepResult> ExecuteAsync(ChainedBlock nextChainedBlock, bool disposeMode, CancellationToken cancellationToken)

@@ -6,7 +6,6 @@ using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.JsonConverters;
-using Script = NBitcoin.Script;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {

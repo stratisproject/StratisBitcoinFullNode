@@ -1,14 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -432,8 +432,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="transactionPayload">The payload for the message.</param>
         private async Task ProcessTxPayloadAsync(Node node, TxPayload transactionPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Object), transactionPayload?.Object?.GetHash());
-            Transaction trx = transactionPayload.Object;
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(node), node.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Obj), transactionPayload?.Obj?.GetHash());
+            Transaction trx = transactionPayload.Obj;
             uint256 trxHash = trx.GetHash();
 
             // add to local filter

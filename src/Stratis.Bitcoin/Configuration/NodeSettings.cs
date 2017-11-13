@@ -1,3 +1,9 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
@@ -7,12 +13,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using System;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -39,8 +39,19 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Default value for Maximum tip age in seconds to consider node in initial block download.</summary>
         public const int DefaultMaxTipAge = 24 * 60 * 60;
 
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// <para>This constructor does not load the configuration itself.</para>
+        /// </summary>
+        public NodeSettings()
+        {
+            this.ConnectionManager = new ConnectionManagerSettings();
+            this.Log = new LogSettings();
+            this.LoggerFactory = new ExtendedLoggerFactory();
+        }
+
         /// <summary>Factory to create instance logger.</summary>
-        public ILoggerFactory LoggerFactory { get; private set; }
+        public ILoggerFactory LoggerFactory { get; }
 
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; private set; }
@@ -93,33 +104,24 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Fall back transaction fee for network.</summary>
         public FeeRate FallbackTxFeeRate { get; set; }
 
-        /// <summary>Minimum relay transcation fee for network.</summary>
+        /// <summary>Minimum relay transaction fee for network.</summary>
         public FeeRate MinRelayTxFeeRate { get; set; }
+
+        /// <summary>Whether use of checkpoints is enabled or not.</summary>
+        public bool UseCheckpoints { get; set; }
 
         public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
         public bool SyncTimeEnabled { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the object.
-        /// <para>This constructor does not load the configuration itself.</para>
-        /// </summary>
-        public NodeSettings()
-        {
-            this.ConnectionManager = new ConnectionManagerSettings();
-            this.Log = new LogSettings();
-            this.LoggerFactory = new ExtendedLoggerFactory();
-        }
-
+        
         /// <summary>
         /// Initializes default configuration.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <returns>Default node configuration.</returns>
-        public static NodeSettings Default(Network network = null,
-            ProtocolVersion protocolVersion = SupportedProtocolVersion)
+        public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
             return NodeSettings.FromArguments(new string[0], innerNetwork: network);
         }
@@ -141,7 +143,7 @@ namespace Stratis.Bitcoin.Configuration
             string agent = "StratisBitcoin")
         {
             if (string.IsNullOrEmpty(name))
-                throw new ConfigurationException("A network name is mandatory");
+                throw new ConfigurationException("A network name is mandatory.");
 
             NodeSettings nodeSettings = new NodeSettings { Name = name, Agent = agent };
 
@@ -178,7 +180,7 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             if (nodeSettings.Testnet && nodeSettings.RegTest)
-                throw new ConfigurationException("Invalid combination of -regtest and -testnet");
+                throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
 
             nodeSettings.Network = nodeSettings.GetNetwork();
             if (nodeSettings.DataDir == null)
@@ -187,7 +189,7 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             if (!Directory.Exists(nodeSettings.DataDir))
-                throw new ConfigurationException("Data directory does not exists");
+                throw new ConfigurationException($"Data directory {nodeSettings.DataDir} does not exist.");
 
             if (nodeSettings.ConfigurationFile == null)
             {
@@ -215,7 +217,7 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
             nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
 
-            nodeSettings.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'", nodeSettings.Network.IsTest(), nodeSettings.Network.IsBitcoin());
+            nodeSettings.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", nodeSettings.Network.IsTest(), nodeSettings.Network.IsBitcoin());
             nodeSettings.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.MinTxFee));
             nodeSettings.Logger.LogDebug("MinTxFeeRate set to {0}.", nodeSettings.MinTxFeeRate);
             nodeSettings.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.FallbackFee));
@@ -226,6 +228,9 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
 
+            nodeSettings.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
+            nodeSettings.Logger.LogDebug("Checkpoints are {0}.", nodeSettings.UseCheckpoints ? "enabled" : "disabled");
+
             try
             {
                 nodeSettings.ConnectionManager.Connect.AddRange(config.GetAll("connect")
@@ -233,7 +238,7 @@ namespace Stratis.Bitcoin.Configuration
             }
             catch (FormatException)
             {
-                throw new ConfigurationException("Invalid connect parameter");
+                throw new ConfigurationException("Invalid 'connect' parameter.");
             }
 
             try
@@ -243,7 +248,7 @@ namespace Stratis.Bitcoin.Configuration
             }
             catch (FormatException)
             {
-                throw new ConfigurationException("Invalid addnode parameter");
+                throw new ConfigurationException("Invalid 'addnode' parameter.");
             }
 
             var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
@@ -254,7 +259,7 @@ namespace Stratis.Bitcoin.Configuration
             }
             catch (FormatException)
             {
-                throw new ConfigurationException("Invalid bind parameter");
+                throw new ConfigurationException("Invalid 'bind' parameter");
             }
 
             try
@@ -264,7 +269,7 @@ namespace Stratis.Bitcoin.Configuration
             }
             catch (FormatException)
             {
-                throw new ConfigurationException("Invalid listen parameter");
+                throw new ConfigurationException("Invalid 'listen' parameter");
             }
 
             if (nodeSettings.ConnectionManager.Listen.Count == 0)
@@ -281,7 +286,7 @@ namespace Stratis.Bitcoin.Configuration
                 }
                 catch (FormatException)
                 {
-                    throw new ConfigurationException("Invalid externalip parameter");
+                    throw new ConfigurationException("Invalid 'externalip' parameter");
                 }
             }
 
@@ -301,7 +306,7 @@ namespace Stratis.Bitcoin.Configuration
         private static void AssertConfigFileExists(NodeSettings nodeSettings)
         {
             if (!File.Exists(nodeSettings.ConfigurationFile))
-                throw new ConfigurationException("Configuration file does not exists");
+                throw new ConfigurationException("Configuration file does not exist.");
         }
 
         /// <summary>
@@ -321,8 +326,7 @@ namespace Stratis.Bitcoin.Configuration
             bool fMultiColon = fHaveColon && (str.LastIndexOf(':', colon - 1) != -1);
             if (fHaveColon && (colon == 0 || fBracketed || !fMultiColon))
             {
-                int n;
-                if (int.TryParse(str.Substring(colon + 1), out n) && n > 0 && n < 0x10000)
+                if (int.TryParse(str.Substring(colon + 1), out var n) && n > 0 && n < 0x10000)
                 {
                     str = str.Substring(0, colon);
                     portOut = n;
@@ -393,7 +397,7 @@ namespace Stratis.Bitcoin.Configuration
                 }
                 else
                 {
-                    throw new DirectoryNotFoundException("Could not find suitable datadir");
+                    throw new DirectoryNotFoundException("Could not find suitable datadir.");
                 }
             }
             else
@@ -406,7 +410,7 @@ namespace Stratis.Bitcoin.Configuration
                 }
                 else
                 {
-                    throw new DirectoryNotFoundException("Could not find suitable datadir");
+                    throw new DirectoryNotFoundException("Could not find suitable datadir.");
                 }
             }
 
@@ -455,6 +459,11 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
                 builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
                 builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
+                builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
+                builder.AppendLine($"-checkpoints=<0 or 1>     Use checkpoints. Default 1.");
+                builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
+                builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
+                builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
 
                 defaults.Logger.LogInformation(builder.ToString());
 

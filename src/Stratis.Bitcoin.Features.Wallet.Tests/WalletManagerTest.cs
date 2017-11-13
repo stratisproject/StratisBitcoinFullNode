@@ -1,4 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -10,11 +15,6 @@ using Stratis.Bitcoin.Features.Wallet.JsonConverters;
 using Stratis.Bitcoin.Tests.Logging;
 using Stratis.Bitcoin.Tests.Utilities;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests

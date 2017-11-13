@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Company>NStratis</Company>
+    <Copyright>Copyright © Stratis Platform SA 2017</Copyright>
+    <Description>The C# Bitcoin Library based on NBitcoin</Description>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <Version>4.0.0.33</Version>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
+    <RootNamespace>NBitcoin</RootNamespace>
+    <PackageId>NStratis</PackageId>
+    <Authors>NStratis</Authors>
+    <Product>NStratis</Product>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETSTANDARD1_6;NETCORE;NOSTRNORMALIZE;NOCUSTOMSSLVALIDATION;</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;NETSTANDARD1_6;NETCORE;NOSTRNORMALIZE;NOCUSTOMSSLVALIDATION;</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="BitcoinStream.Partial.tt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="NStratis.HashLib" Version="1.0.0.1" />
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="4.3.0" />
+    <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
+    <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
+    <PackageReference Include="System.Net.Requests" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+</Project>

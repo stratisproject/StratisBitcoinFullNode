@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities.FileStorage;
-using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {

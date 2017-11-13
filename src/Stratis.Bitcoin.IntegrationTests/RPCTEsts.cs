@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.RPC;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.IndexStore;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.RPC;
+using System;
+using System.IO;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -167,39 +163,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// Tests whether the RPC method "createindex" can be called and returns the expected string result suitable for console output.
-        /// We are also testing whether all arguments can be passed as strings.
-        /// </summary>
-        [Fact]
-        public void CanCreateIndexByStringArgs()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create())
-            {
-                CoreNode nodeA = builder.CreateStratisPowNode(false, fullNodeBuilder =>
-                {
-                    fullNodeBuilder
-                    .UseConsensus()
-                    .UseIndexStore()
-                    .UseMempool()
-                    .AddRPC();
-                });
-                builder.StartAll();
-                RPCClient rpc = nodeA.CreateRPCClient();
-                using (Node nodeB = nodeA.CreateNodeClient())
-                {
-                    nodeB.VersionHandshake();
-                    var args = new List<string>();
-                    args.Add("testindex");
-                    args.Add("false");
-                    args.Add("(t,b,n) => t.Inputs.Select((i, N) => new object[] { new object[] { i.PrevOut.Hash, i.PrevOut.N }, t.GetHash() })");
-                    var resp = rpc.SendCommand("createindex", args.ToArray()).ResultString;
-
-                    Assert.Equal("True", resp);
-                }
-            }
-        }
-
-        /// <summary>
         /// Tests whether the RPC method "generate" can be called and returns a string result suitable for console output.
         /// We are also testing whether all arguments can be passed as strings.
         /// </summary>
@@ -209,16 +172,27 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create())
             {
                 CoreNode nodeA = builder.CreateStratisPowNode();
+                this.InitializeTestWallet(nodeA);
                 builder.StartAll();
                 RPCClient rpc = nodeA.CreateRPCClient();
                 using (Node nodeB = nodeA.CreateNodeClient())
                 {
                     nodeB.VersionHandshake();
-                    var resp = rpc.SendCommand("generate", "1").ResultString;
+                    string resp = rpc.SendCommand("generate", "1").ResultString;
                     Assert.StartsWith("[" + Environment.NewLine + "  \"", resp);
                 }
             }
         }
 
+        /// <summary>
+        /// Copies the test wallet into data folder for node if it isnt' already present.
+        /// </summary>
+        /// <param name="node">Core node for the test.</param>
+        private void InitializeTestWallet(CoreNode node)
+        {
+            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
+            if (!File.Exists(testWalletPath))
+                File.Copy("Data/test.wallet.json", testWalletPath);
+        }
     }
 }

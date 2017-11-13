@@ -1,8 +1,8 @@
-﻿using NBitcoin;
+﻿using System.Linq;
+using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
-using System.Linq;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {

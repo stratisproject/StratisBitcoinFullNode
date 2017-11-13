@@ -1,4 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -10,10 +14,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.BlockStore.Tests")]
 
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderBlockStoreExtension
     {
         public static IFullNodeBuilder UseBlockStore(this IFullNodeBuilder fullNodeBuilder, Action<StoreSettings> setup = null)
         {

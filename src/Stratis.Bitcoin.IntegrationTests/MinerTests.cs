@@ -1,4 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
@@ -13,10 +17,6 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public ChainedBlock CreateBlockIndex(ChainedBlock prev)
         {
-            ChainedBlock index = new ChainedBlock(new BlockHeader(), new BlockHeader().GetHash(), prev );
+            ChainedBlock index = new ChainedBlock(new BlockHeader(), new BlockHeader().GetHash(), prev);
             return index;
         }
 
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             public TestContext()
             {
-                
+
             }
 
             public async Task InitializeAsync()
@@ -138,13 +138,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
 
                 LoggerFactory loggerFactory = new LoggerFactory();
-                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network), dateTimeProvider, loggerFactory);
                 var nodeSettings = NodeSettings.Default();
+                PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network, nodeSettings), dateTimeProvider, loggerFactory);
 
                 ConnectionManager connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
 
-                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network));
+                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, nodeSettings));
                 await this.consensus.StartAsync();
 
                 this.entry.Fee(11);
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).CreateNewBlock(this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                this.consensus.ValidateAndExecuteBlock(new ContextInformation(new BlockValidationContext { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                await this.consensus.ValidateAndExecuteBlockAsync(new ContextInformation(new BlockValidationContext { Block = this.newBlock.Block }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     pblock.Header.Nonce = this.blockinfo[i].nonce;
 
                     this.chain.SetTip(pblock.Header);
-                    this.consensus.ValidateAndExecuteBlock(new ContextInformation(new BlockValidationContext { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                    await this.consensus.ValidateAndExecuteBlockAsync(new ContextInformation(new BlockValidationContext { Block = pblock }, this.network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
                     blocks.Add(pblock);
                 }
 
@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             // Calculate a fee on child transaction that will put the package just
             // below the block min tx fee (assuming 1 child tx of the same size).
-            var feeToUse = blockMinFeeRate.GetFee(2*freeTxSize) - 1;
+            var feeToUse = blockMinFeeRate.GetFee(2 * freeTxSize) - 1;
 
             tx = tx.Clone();
             tx.Inputs[0].PrevOut.Hash = hashFreeTx;
@@ -500,7 +500,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.Inputs[0].PrevOut.Hash = context.txFirst[1].GetHash();
             tx.Inputs[0].ScriptSig = new Script(OpcodeType.OP_1);
             tx.Inputs[0].PrevOut.N = 0;
-            tx.Inputs[0].Sequence =  new Sequence(TimeSpan.FromMinutes(10)); // txFirst[1] is the 3rd block
+            tx.Inputs[0].Sequence = new Sequence(TimeSpan.FromMinutes(10)); // txFirst[1] is the 3rd block
             tx.Outputs[0].Value = context.BLOCKSUBSIDY - context.HIGHFEE;
             tx.Outputs[0].ScriptPubKey = new Script(OpcodeType.OP_1);
             tx.LockTime = 0;
@@ -645,20 +645,20 @@ namespace Stratis.Bitcoin.IntegrationTests
             //// Create an actual 209999-long block chain (without valid blocks).
             //while (chain.Tip.Height < 209999)
             //{
-            //	//var block = new Block();
-            //	//block.Header.HashPrevBlock = chain.Tip.HashBlock;
-            //	//block.Header.Version = 1;
-            //	//block.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
-            //	//var coinbase = new Transaction();
-            //	//coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
-            //	//coinbase.AddOutput(new TxOut(network.GetReward(chain.Height + 1), new Script()));
-            //	//block.AddTransaction(coinbase);
-            //	//block.UpdateMerkleRoot();
-            //	//block.Header.Nonce = 0;
-            //	//block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
-            //	//chain.SetTip(block.Header);
-            //	//consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
-            //	//blocks.Add(block);
+            //    //var block = new Block();
+            //    //block.Header.HashPrevBlock = chain.Tip.HashBlock;
+            //    //block.Header.Version = 1;
+            //    //block.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
+            //    //var coinbase = new Transaction();
+            //    //coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
+            //    //coinbase.AddOutput(new TxOut(network.GetReward(chain.Height + 1), new Script()));
+            //    //block.AddTransaction(coinbase);
+            //    //block.UpdateMerkleRoot();
+            //    //block.Header.Nonce = 0;
+            //    //block.Header.Bits = block.Header.GetWorkRequired(network, chain.Tip);
+            //    //chain.SetTip(block.Header);
+            //    //consensus.AcceptBlock(new ContextInformation(new BlockResult { Block = block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+            //    //blocks.Add(block);
 
             //}
             //pblocktemplate = AssemblerForTest(consensus, network, date as DateTimeProvider, mempool, scheduler, chain).CreateNewBlock(scriptPubKey);
@@ -668,17 +668,17 @@ namespace Stratis.Bitcoin.IntegrationTests
             //// Extend to a 210000-long block chain.
             //while (chain.Tip.Height < 210000)
             //{
-            //	var block = new Block();
-            //	block.Header.HashPrevBlock = chain.Tip.HashBlock;
-            //	block.Header.Version = 1;
-            //	block.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
-            //	var coinbase = new Transaction();
-            //	coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
-            //	coinbase.AddOutput(new TxOut(network.GetReward(chain.Height + 1), new Script()));
-            //	block.AddTransaction(coinbase);
-            //	block.UpdateMerkleRoot();
-            //	block.Header.Nonce = 0;
-            //	chain.SetTip(new ChainedBlock(block.Header, block.GetHash(), chain.Tip));
+            //    var block = new Block();
+            //    block.Header.HashPrevBlock = chain.Tip.HashBlock;
+            //    block.Header.Version = 1;
+            //    block.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
+            //    var coinbase = new Transaction();
+            //    coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
+            //    coinbase.AddOutput(new TxOut(network.GetReward(chain.Height + 1), new Script()));
+            //    block.AddTransaction(coinbase);
+            //    block.UpdateMerkleRoot();
+            //    block.Header.Nonce = 0;
+            //    chain.SetTip(new ChainedBlock(block.Header, block.GetHash(), chain.Tip));
             //}
             //pblocktemplate = AssemblerForTest(consensus, network, date as DateTimeProvider, mempool, scheduler, chain).CreateNewBlock(scriptPubKey);
             //Assert.NotNull(pblocktemplate);
@@ -686,44 +686,44 @@ namespace Stratis.Bitcoin.IntegrationTests
             //// Delete the dummy blocks again.
             //while (chain.Tip.Height > nHeight)
             //{
-            //	chain.SetTip(chain.Tip.Previous);
+            //    chain.SetTip(chain.Tip.Previous);
             //}
 
             //TODO: fix this test
-            //	// mempool-dependent transactions (not added)
-            //	tx.Inputs[0].PrevOut.Hash = hash;
-            //	prevheights[0] = chainActive.Tip().Height + 1;
-            //	tx.LockTime = 0;
-            //	tx.Inputs[0].Sequence = 0;
-            //	BOOST_CHECK(CheckFinalTx(tx, flags)); // Locktime passes
-            //	BOOST_CHECK(TestSequenceLocks(tx, flags)); // Sequence locks pass
-            //	tx.Inputs[0].Sequence = 1;
-            //	BOOST_CHECK(!TestSequenceLocks(tx, flags)); // Sequence locks fail
-            //	tx.Inputs[0].Sequence = CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG;
-            //	BOOST_CHECK(TestSequenceLocks(tx, flags)); // Sequence locks pass
-            //	tx.Inputs[0].Sequence = CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG | 1;
-            //	BOOST_CHECK(!TestSequenceLocks(tx, flags)); // Sequence locks fail
+            //    // mempool-dependent transactions (not added)
+            //    tx.Inputs[0].PrevOut.Hash = hash;
+            //    prevheights[0] = chainActive.Tip().Height + 1;
+            //    tx.LockTime = 0;
+            //    tx.Inputs[0].Sequence = 0;
+            //    BOOST_CHECK(CheckFinalTx(tx, flags)); // Locktime passes
+            //    BOOST_CHECK(TestSequenceLocks(tx, flags)); // Sequence locks pass
+            //    tx.Inputs[0].Sequence = 1;
+            //    BOOST_CHECK(!TestSequenceLocks(tx, flags)); // Sequence locks fail
+            //    tx.Inputs[0].Sequence = CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG;
+            //    BOOST_CHECK(TestSequenceLocks(tx, flags)); // Sequence locks pass
+            //    tx.Inputs[0].Sequence = CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG | 1;
+            //    BOOST_CHECK(!TestSequenceLocks(tx, flags)); // Sequence locks fail
 
-            //	BOOST_CHECK(pblocktemplate = AssemblerForTest(consensus, network).CreateNewBlock(scriptPubKey));
+            //    BOOST_CHECK(pblocktemplate = AssemblerForTest(consensus, network).CreateNewBlock(scriptPubKey));
 
             //TODO: fix this test
-            //	// None of the of the absolute height/time locked tx should have made
-            //	// it into the template because we still check IsFinalTx in CreateNewBlock,
-            //	// but relative locked txs will if inconsistently added to mempool.
-            //	// For now these will still generate a valid template until BIP68 soft fork
-            //	BOOST_CHECK_EQUAL(pblocktemplate.block.vtx.size(), 3);
-            //	// However if we advance height by 1 and time by 512, all of them should be mined
-            //	for (int i = 0; i < CBlockIndex::nMedianTimeSpan; i++)
-            //		chainActive.Tip().GetAncestor(chainActive.Tip().Height - i).Time += 512; //Trick the MedianTimePast
-            //	chainActive.Tip().Height++;
-            //	SetMockTime(chainActive.Tip().GetMedianTimePast() + 1);
+            //    // None of the of the absolute height/time locked tx should have made
+            //    // it into the template because we still check IsFinalTx in CreateNewBlock,
+            //    // but relative locked txs will if inconsistently added to mempool.
+            //    // For now these will still generate a valid template until BIP68 soft fork
+            //    BOOST_CHECK_EQUAL(pblocktemplate.block.vtx.size(), 3);
+            //    // However if we advance height by 1 and time by 512, all of them should be mined
+            //    for (int i = 0; i < CBlockIndex::nMedianTimeSpan; i++)
+            //        chainActive.Tip().GetAncestor(chainActive.Tip().Height - i).Time += 512; //Trick the MedianTimePast
+            //    chainActive.Tip().Height++;
+            //    SetMockTime(chainActive.Tip().GetMedianTimePast() + 1);
 
-            //	BOOST_CHECK(pblocktemplate = AssemblerForTest(consensus, network).CreateNewBlock(scriptPubKey));
-            //	BOOST_CHECK_EQUAL(pblocktemplate.block.vtx.size(), 5);
+            //    BOOST_CHECK(pblocktemplate = AssemblerForTest(consensus, network).CreateNewBlock(scriptPubKey));
+            //    BOOST_CHECK_EQUAL(pblocktemplate.block.vtx.size(), 5);
 
-            //	chainActive.Tip().Height--;
-            //	SetMockTime(0);
-            //	mempool.clear();
+            //    chainActive.Tip().Height--;
+            //    SetMockTime(0);
+            //    mempool.clear();
 
         }
     }

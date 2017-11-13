@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Text;
 using DBreeze;
+using DBreeze.DataTypes;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
-using DBreeze.DataTypes;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
     /// </summary>
     public class DBreezeTest : TestBase
     {
-        /// <summary>Access to DBreeze database.</summary>
+        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
         private readonly DBreezeSerializer dbreezeSerializer;
 
         /// <summary>

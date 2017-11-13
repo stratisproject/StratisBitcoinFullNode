@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// TODO
     /// </summary>
     /// <remarks>
-    /// These are the criteria for a new block to be accepted as a valid POS block at version 3 of the protocol, 
-    /// which has been active since 6 August 2016 07:03:21 (Unix epoch time > 1470467000). All timestamps 
+    /// These are the criteria for a new block to be accepted as a valid POS block at version 3 of the protocol,
+    /// which has been active since 6 August 2016 07:03:21 (Unix epoch time > 1470467000). All timestamps
     /// are Unix epoch timestamps with seconds precision.
     /// <list type="bullet">
     /// <item>New block's timestamp ('BlockTime') MUST be strictly greater than previous block's timestamp.</item>
@@ -23,17 +23,17 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// <item>Coinstake transaction's (second transaction in the block with at least one input and at least 2 outputs and first output being empty) timestamp
     /// MUST be equal to 'BlockTime' and it MUST have lower 4 bits set to 0 (i.e. be divisible by 16) - see <see cref="StakeTimestampMask"/>.</item>
     /// <item>Block's header 'nBits' field MUST be set to the correct POS target value.</item>
-    /// <item>All transactions in the block must be final, which means their 'nLockTime' is either zero, or it is lower than current block's height 
+    /// <item>All transactions in the block must be final, which means their 'nLockTime' is either zero, or it is lower than current block's height
     /// or node's 'AdjustedTime'. 'AdjustedTime' is the synchronized time among the node and its peers.</item>
     /// <item>Coinstake transaction MUST be signed correctly.</item>
     /// <item>Coinstake transaction's kernel (first) input MUST not be created within last <see cref="PosConsensusOptions.StakeMinConfirmations"/> blocks,
     /// i.e. it MUST have that many confirmation at least.</item>
     /// <item>Coinstake transaction's kernel must meet the staking target using this formula:
-    /// <code>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) < target * weight</code>
+    /// <code>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) target * weight</code>
     /// <para>
-    /// where 'stakingCoins' is the coinstake's kernel UTXO, 'prevout' is the kernel's output in that transaction, 
-    /// 'prevout.Hash' is the hash of that transaction; 'transactionTime' is coinstake's transaction time; 'target' is the target as 
-    /// in 'Bits' block header; 'weight' is the value of the kernel's input. 
+    /// where 'stakingCoins' is the coinstake's kernel UTXO, 'prevout' is the kernel's output in that transaction,
+    /// 'prevout.Hash' is the hash of that transaction; 'transactionTime' is coinstake's transaction time; 'target' is the target as
+    /// in 'Bits' block header; 'weight' is the value of the kernel's input.
     /// </para>
     /// </item>
     /// <item>Block's height MUST NOT be more than 500 blocks back - i.e. reorganizations longer than 500 are not allowed.</item>
@@ -80,10 +80,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (BlockStake.IsProofOfStake(block))
             {
-                // proof of stake invalidates previous inputs 
-                // and spends the inputs to new outputs with the 
-                // additional stake reward, next calculate the  
-                // reward does not exceed the consensus rules  
+                // proof of stake invalidates previous inputs
+                // and spends the inputs to new outputs with the
+                // additional stake reward, next calculate the
+                // reward does not exceed the consensus rules
 
                 Money stakeReward = block.Transactions[1].TotalOut - context.Stake.TotalCoinStakeValueIn;
                 Money calcStakeReward = nFees + this.GetProofOfStakeReward(chainedBlock.Height);

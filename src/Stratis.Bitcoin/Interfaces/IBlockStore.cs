@@ -1,5 +1,5 @@
-﻿using NBitcoin;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Interfaces
 {

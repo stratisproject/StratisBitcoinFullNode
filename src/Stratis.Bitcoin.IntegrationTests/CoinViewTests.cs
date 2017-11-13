@@ -1,18 +1,19 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
 using Xunit;
 using static NBitcoin.Transaction;
 
@@ -23,18 +24,23 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
 
+        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
+        private readonly DBreezeSerializer dbreezeSerializer;
+
         /// <summary>
         /// Initializes logger factory for tests in this class.
         /// </summary>
         public CoinViewTests()
         {
             this.loggerFactory = new LoggerFactory();
+            this.dbreezeSerializer = new DBreezeSerializer();
+            this.dbreezeSerializer.Initialize();
         }
 
         [Fact]
         public void TestDBreezeSerialization()
         {
-            using(NodeContext ctx = NodeContext.Create())
+            using (NodeContext ctx = NodeContext.Create())
             {
                 var genesis = ctx.Network.GetGenesis();
                 var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
@@ -58,7 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TestCacheCoinView()
         {
-            using(NodeContext ctx = NodeContext.Create())
+            using (NodeContext ctx = NodeContext.Create())
             {
                 var genesis = ctx.Network.GetGenesis();
                 var genesisChainedBlock = new ChainedBlock(genesis.Header, 0);
@@ -93,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanRewind()
         {
-            using(NodeContext ctx = NodeContext.Create())
+            using (NodeContext ctx = NodeContext.Create())
             {
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
                 var tester = new CoinViewTester(cacheCoinView);
@@ -159,15 +165,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.False(tester.Exists(coin2[0]));
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));
-
-
             }
         }
 
         [Fact]
         public void CanHandleReorgs()
         {
-            using(NodeBuilder builder = NodeBuilder.Create())
+            using (NodeBuilder builder = NodeBuilder.Create())
             {
                 var stratisNode = builder.CreateStratisPowNode();
                 var coreNode1 = builder.CreateNode();
@@ -207,9 +211,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TestDBreezeInsertOrder()
         {
-            using(NodeContext ctx = NodeContext.Create())
+            using (NodeContext ctx = NodeContext.Create())
             {
-                using(var engine = new DBreeze.DBreezeEngine(ctx.FolderName + "/2"))
+                using (var engine = new DBreeze.DBreezeEngine(ctx.FolderName + "/2"))
                 {
                     var data = new[]
                     {
@@ -231,6 +235,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                             tx.Insert("Table", d.ToBytes(false), d.ToBytes());
                         tx.Commit();
                     }
+
                     var data2 = new uint256[data.Length];
                     using(var tx = engine.GetTransaction())
                     {
@@ -240,6 +245,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                             data2[i++] = new uint256(row.Key, false);
                         }
                     }
+
                     Assert.True(data.SequenceEqual(data2));
                 }
             }
@@ -255,9 +261,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanSaveChainIncrementally()
         {
-            using(var dir = TestDirectory.Create())
+            using (var dir = TestDirectory.Create())
             {
-                using(var repo = new ChainRepository(dir.FolderName))
+                using (var repo = new ChainRepository(dir.FolderName))
                 {
                     var chain = new ConcurrentChain(Network.RegTest);
                     repo.LoadAsync(chain).GetAwaiter().GetResult();
@@ -281,7 +287,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             ChainedBlock last = null;
             var nonce = RandomUtils.GetUInt32();
-            foreach(var chain in chains)
+            foreach (var chain in chains)
             {
                 var block = new Block();
                 block.AddTransaction(new Transaction());
@@ -305,6 +311,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             fileName = Path.Combine("TestData", fileName);
             if(File.Exists(fileName))
                 return File.ReadAllBytes(fileName);
+
             HttpClient client = new HttpClient();
             client.Timeout = TimeSpan.FromMinutes(10);
             var data = client.GetByteArrayAsync(url).Result;
@@ -336,8 +343,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 BlockValidationContext = new BlockValidationContext { Block = block },
                 Flags = consensusFlags,
             };
+
             Network.Main.Consensus.Options = new PowConsensusOptions();
-            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main), DateTimeProvider.Default, new LoggerFactory());
+            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, NodeSettings.Default()), DateTimeProvider.Default, new LoggerFactory());
             //validator.CheckBlockHeader(context);
             validator.ContextualCheckBlock(context);
             validator.CheckBlock(context);

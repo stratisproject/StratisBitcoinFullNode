@@ -1,8 +1,8 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore
-{
-    using NBitcoin;
-    using Stratis.Bitcoin.Utilities;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
+namespace Stratis.Bitcoin.Features.BlockStore
+{
     public sealed class BlockPair
     {
         /// <summary>

@@ -1,9 +1,6 @@
-﻿using NBitcoin;
+﻿using System.Threading.Tasks;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Interfaces
 {

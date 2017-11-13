@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using NBitcoin;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
 {
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// the next step <see cref="DownloadBlockStep"/>.
     /// </para>
     /// <para>
-    /// If in IBD (Initial Block Download) and batch count is not yet reached, 
+    /// If in IBD (Initial Block Download) and batch count is not yet reached,
     /// return a Break result causing the <see cref="BlockStoreLoop"/> to break out of the while loop
     /// and start again.
     /// </para>
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     /// Loop over the pending blocks and push to the repository in batches.
     /// if a stop condition is met break from the inner loop and return a Continue() result.
     /// This will cause the <see cref="BlockStoreLoop"/> to skip over <see cref="DownloadBlockStep"/> and start
-    /// the loop again. 
+    /// the loop again.
     /// </para>
     /// </summary>
     internal sealed class ProcessPendingStorageStep : BlockStoreLoopStep
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <summary>
-        /// When the node disposes, process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until 
+        /// When the node disposes, process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until
         /// its empty
         /// </summary>
         private async Task<StepResult> ProcessWhenDisposingAsync(ProcessPendingStorageContext context)
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <summary>
-        /// When the node is in IBD wait for <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/> to be true then continuously process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until 
+        /// When the node is in IBD wait for <see cref="BlockStoreLoop.PendingStorageBatchThreshold"/> to be true then continuously process all the blocks in <see cref="BlockStoreLoop.PendingStorage"/> until
         /// a stop condition is found, the blocks will be pushed to the repository in batches of size <see cref="BlockStoreLoop.MaxPendingInsertBlockSize"/>.
         /// </summary>
         private async Task<StepResult> ProcessWhenInIBDAsync(ProcessPendingStorageContext context)
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         }
 
         /// <summary>
-        /// When the node is NOT in IBD, process and push the blocks in <see cref="BlockStoreLoop.PendingStorage"/> immediately 
+        /// When the node is NOT in IBD, process and push the blocks in <see cref="BlockStoreLoop.PendingStorage"/> immediately
         /// to the block repository without checking batch size.
         /// </summary>
         private async Task<StepResult> ProcessWhenNotInIBDAsync(ProcessPendingStorageContext context)
@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
     }
 
     /// <summary>
-    /// Context class thats used by <see cref="ProcessPendingStorageStep"/> 
+    /// Context class thats used by <see cref="ProcessPendingStorageStep"/>
     /// </summary>
     internal sealed class ProcessPendingStorageContext
     {
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.LoopSteps
         /// The last item that was dequeued from <see cref="PendingBlockPairsToStore"/>.
         /// </summary>
         internal BlockPair PendingBlockPairToStore;
-        
+
         /// <summary>
         /// A collection of blocks that are pending to be pushed to store.
         /// </summary>

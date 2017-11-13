@@ -1,6 +1,6 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
-using System;
 
 namespace Stratis.Bitcoin.Signals
 {

@@ -1,14 +1,17 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Controllers;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
-using System;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -98,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 string minto = this.minerSettings.MineAddress;
                 // if (string.IsNullOrEmpty(minto)) ;
-                //	TODO: get an address from the wallet.
+                //    TODO: get an address from the wallet.
 
                 if (!string.IsNullOrEmpty(minto))
                 {
@@ -128,13 +131,22 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 services.Features.EnsureFeature<WalletFeature>();
             }
+
+            // Mining and staking require block store feature.
+            if (this.minerSettings.Mine || this.minerSettings.Stake)
+            {
+                services.Features.EnsureFeature<BlockStoreFeature>();
+                StoreSettings blockSettings = services.ServiceProvider.GetService<StoreSettings>();
+                if (blockSettings.Prune)
+                    throw new ConfigurationException("BlockStore prune mode is incompatible with mining and staking.");
+            }
         }
     }
 
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderMiningExtension
     {
         /// <summary>
         /// Adds a mining feature to the node being initialized.
@@ -178,6 +190,9 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 features
                     .AddFeature<MiningFeature>()
+                    .DependOn<MempoolFeature>()
+                    .DependOn<RPCFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<PowMining>();

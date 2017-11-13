@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -12,11 +17,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Base
     /// The ConnectionManager feature is also part of the base but may go in a feature of its own.
     /// The base features are the minimal components required to connect to peers and maintain the best chain.
     /// <para>
-    /// The base node services for a node are: 
+    /// The base node services for a node are:
     /// <list type="bullet">
     /// <item>the ConcurrentChain to keep track of the best chain,</item>
     /// <item>the ConnectionManager to connect with the network,</item>
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Base
                                     this.chain.Tip.Height.ToString().PadRight(8) +
                                     " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.chain.Tip.HashBlock);
         }
-        
+
         /// <inheritdoc />
         public override void Start()
         {
@@ -202,8 +202,8 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>
-        /// Initializes node's address manager. Loads previously known peers from the file 
-        /// or creates new peer file if it does not exist. Creates periodic task to persist changes 
+        /// Initializes node's address manager. Loads previously known peers from the file
+        /// or creates new peer file if it does not exist. Creates periodic task to persist changes
         /// in peers to disk.
         /// </summary>
         private void StartAddressManager()
@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Base
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderBaseFeatureExtension
     {
         /// <summary>
         /// Makes the full node use all the required features - <see cref="BaseFeature"/>.

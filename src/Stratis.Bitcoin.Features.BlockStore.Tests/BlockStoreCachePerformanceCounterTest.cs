@@ -1,9 +1,9 @@
-﻿namespace Stratis.Bitcoin.Features.BlockStore.Tests
-{
-    using Stratis.Bitcoin.Base;
-    using System;
-    using Xunit;
+﻿using System;
+using Stratis.Bitcoin.Base;
+using Xunit;
 
+namespace Stratis.Bitcoin.Features.BlockStore.Tests
+{
     public class BlockStoreCachePerformanceCounterTest
     {
         private BlockStoreCachePerformanceCounter performanceCounter;

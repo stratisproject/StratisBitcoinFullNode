@@ -1,9 +1,9 @@
-﻿using Moq;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Moq;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Builder.Feature;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             var fullnodeServiceProvider = new FullNodeServiceProvider(this.serviceProvider.Object, types);
             var result = fullnodeServiceProvider.Features.ToList();
 
-            Assert.Equal(2, result.Count);			
+            Assert.Equal(2, result.Count);
             Assert.Equal(typeof(TestFeatureStub), result[0].GetType());
             Assert.Equal(typeof(TestFeatureStub2), result[1].GetType());
         }

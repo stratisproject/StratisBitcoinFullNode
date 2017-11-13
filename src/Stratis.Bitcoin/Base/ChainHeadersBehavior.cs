@@ -2,12 +2,12 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
-using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Base
 {

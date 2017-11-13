@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using System;
-using System.Collections.Generic;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder.Feature
@@ -12,9 +12,9 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         [Fact]
         public void FeatureServicesAddServiceCollectionToDelegates()
         {
-            var collection = new ServiceCollection();			
+            var collection = new ServiceCollection();
             var registration = new FeatureRegistration<FeatureRegistrationFullNodeFeature>();
-            
+
             registration.FeatureServices(d => { d.AddSingleton<FeatureCollection>(); });
 
             Assert.Equal(typeof(FeatureRegistrationFullNodeFeature), registration.FeatureType);
@@ -28,13 +28,13 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 
         [Fact]
         public void UseStartupSetsFeatureStartupType()
-        {			
+        {
             var registration = new FeatureRegistration<FeatureRegistrationFullNodeFeature>();
             Assert.Null(registration.FeatureStartupType);
 
             registration.UseStartup<ServiceCollection>();
 
-            Assert.Equal(typeof(ServiceCollection), registration.FeatureStartupType);		
+            Assert.Equal(typeof(ServiceCollection), registration.FeatureStartupType);
         }
 
         [Fact]
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             registration.BuildFeature(collection);
 
             var descriptors = collection as IList<ServiceDescriptor>;
-            Assert.Equal(3, descriptors.Count);			
+            Assert.Equal(3, descriptors.Count);
             Assert.Equal(typeof(FeatureRegistrationFullNodeFeature), descriptors[0].ImplementationType);
             Assert.Equal(ServiceLifetime.Singleton, descriptors[0].Lifetime);
             Assert.Equal(typeof(IFullNodeFeature), descriptors[1].ServiceType);
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
 
         [Fact]
         public void BuildFeatureWithFeatureStartupTypeBootstrapsStartupAndInvokesStartupWithCollection()
-        {						
+        {
             var collection = new ServiceCollection();
             var registration = new FeatureRegistration<FeatureRegistrationFullNodeFeature>();
             registration.FeatureServices(d => { d.AddSingleton<FeatureCollection>(); });
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         private class FeatureNonStaticStartup
         {
             public void ConfigureServices(IServiceCollection services)
-            {			
+            {
             }
         }
 
@@ -121,4 +121,3 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         }
     }
 }
-

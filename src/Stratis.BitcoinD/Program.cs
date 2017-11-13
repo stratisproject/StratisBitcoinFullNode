@@ -1,33 +1,44 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using System;
+using System.Threading.Tasks;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
-using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Utilities;
-using System.Threading.Tasks;
 
 namespace Stratis.BitcoinD
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
+            MainAsync(args).Wait();
+        }
 
-            NodeSettings nodeSettings = NodeSettings.FromArguments(args);
+        public static async Task MainAsync(string[] args)
+        {
+            try
+            {
+                NodeSettings nodeSettings = NodeSettings.FromArguments(args);
 
-            var node = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseConsensus()
-                .UseBlockStore()
-                .UseMempool()
-                .AddMining()
-                .AddRPC()
-                .Build();
+                var node = new FullNodeBuilder()
+                    .UseNodeSettings(nodeSettings)
+                    .UseConsensus()
+                    .UseBlockStore()
+                    .UseMempool()
+                    .AddMining()
+                    .AddRPC()
+                    .Build();
 
-            await node.RunAsync();
+                await node.RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
+            }
         }
     }
 }

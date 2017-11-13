@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 #if !NOASSEMBLYCONTEXT
 using System.Runtime.Loader;
 #endif
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Utilities
 {

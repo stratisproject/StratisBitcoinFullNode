@@ -1,15 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.BlockPulling
@@ -114,18 +109,18 @@ namespace Stratis.Bitcoin.BlockPulling
                 // even if the origin of the message was from the other puller behavior.
                 // Therefore we first make a quick check whether this puller behavior was the one
                 // who should deal with this block.
-                uint256 blockHash = block.Object.Header.GetHash();
+                uint256 blockHash = block.Obj.Header.GetHash();
                 if (this.puller.CheckBlockTaskAssignment(this, blockHash))
                 {
                     this.logger.LogTrace("Received block '{0}', length {1} bytes.", blockHash, message.Length);
 
-                    block.Object.Header.CacheHashes();
-                    foreach (Transaction tx in block.Object.Transactions)
+                    block.Obj.Header.CacheHashes();
+                    foreach (Transaction tx in block.Obj.Transactions)
                         tx.CacheHashes();
 
                     DownloadedBlock downloadedBlock = new DownloadedBlock
                     {
-                        Block = block.Object,
+                        Block = block.Obj,
                         Length = (int)message.Length,
                     };
 

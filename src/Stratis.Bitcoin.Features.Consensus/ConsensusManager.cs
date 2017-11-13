@@ -1,10 +1,10 @@
-﻿using NBitcoin;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {

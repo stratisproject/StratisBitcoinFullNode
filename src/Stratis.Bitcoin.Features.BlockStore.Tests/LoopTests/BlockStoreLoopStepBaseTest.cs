@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.IO;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -8,8 +10,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Tests;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.IO;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
 {

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Miner.Models;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -53,6 +53,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <remarks>It is possible that less than the required number of blocks will be mined because the generating function only 
         /// tries all possible header nonces values.</remarks>
         [ActionName("generate")]
+        [ActionDescription("Tries to mine a given number of blocks and returns a list of block header hashes.")]
         public List<uint256> Generate(int blockCount)
         {
             this.logger.LogTrace("({0}:{1})", nameof(blockCount), blockCount);
@@ -74,6 +75,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="walletPassword">The password of the wallet.</param>
         /// <returns></returns>
         [ActionName("startstaking")]
+        [ActionDescription("Starts staking a wallet.")]
         public bool StartStaking(string walletName, string walletPassword)
         {
             this.logger.LogTrace("({0}:{1})", nameof(walletName), walletName);
@@ -131,6 +133,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="isJsonFormat">Indicates whether to provide data in JSON or binary format.</param>
         /// <returns>Staking information RPC response.</returns>
         [ActionName("getstakinginfo")]
+        [ActionDescription("Gets the staking information.")]
         public GetStakingInfoModel GetStakingInfo(bool isJsonFormat = true)
         {
             this.logger.LogTrace("({0}:{1})", nameof(isJsonFormat), isJsonFormat);

@@ -54,8 +54,7 @@ namespace Stratis.Bitcoin.Features.Api
 
         public override void Stop()
         {
-            if (this.asyncLoop != null)
-                this.asyncLoop.Dispose();
+            this.asyncLoop?.Dispose();
 
             // Make sure we are releasing the listening ip address / port.
             if (this.webHost != null)

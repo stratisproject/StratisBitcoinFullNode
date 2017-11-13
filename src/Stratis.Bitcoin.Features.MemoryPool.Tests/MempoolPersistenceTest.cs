@@ -1,15 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
             var mempoolPersistence = new MempoolPersistence(settings, new LoggerFactory());
             NBitcoin.Network.Main.Consensus.Options = new PosConsensusOptions();
-            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new Checkpoints(NBitcoin.Network.Main), dateTimeProvider, new LoggerFactory());
+            var consensusValidator = new PowConsensusValidator(NBitcoin.Network.Main, new Checkpoints(NBitcoin.Network.Main, nodeSettings), dateTimeProvider, new LoggerFactory());
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, consensusValidator, dateTimeProvider, mempoolSettings, chain, coins, new LoggerFactory(), settings);
             var mempoolOrphans = new MempoolOrphans(mempoolLock, txMemPool, chain, new Bitcoin.Signals.Signals(), mempoolValidator, consensusValidator, coins, dateTimeProvider, mempoolSettings, new LoggerFactory());
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, mempoolOrphans, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, new LoggerFactory());

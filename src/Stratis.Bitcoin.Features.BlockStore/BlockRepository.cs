@@ -1,4 +1,8 @@
-﻿using DBreeze;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using DBreeze;
 using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
@@ -6,10 +10,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return task;
         }
 
-        virtual protected void OnInsertBlocks(DBreeze.Transactions.Transaction dbreezeTransaction, List<Block> blocks)
+        protected virtual void OnInsertBlocks(DBreeze.Transactions.Transaction dbreezeTransaction, List<Block> blocks)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blocks), nameof(blocks.Count), blocks?.Count);
 
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        virtual protected void OnInsertTransactions(DBreeze.Transactions.Transaction dbreezeTransaction, List<(Transaction, Block)> transactions)
+        protected virtual void OnInsertTransactions(DBreeze.Transactions.Transaction dbreezeTransaction, List<(Transaction, Block)> transactions)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(transactions), nameof(transactions.Count), transactions?.Count);
 
@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 res = row.Value;
             }
             else
-            { 
+            {
                 this.PerformanceCounter.AddRepositoryMissCount(1);
             }
 
@@ -521,7 +521,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(blocks.Count), blocks?.Count);
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(blocks.Count), blocks.Count);
             return blocks;
         }
 

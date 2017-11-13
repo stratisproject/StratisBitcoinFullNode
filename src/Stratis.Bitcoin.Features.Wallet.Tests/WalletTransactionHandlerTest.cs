@@ -1,15 +1,14 @@
-﻿using Moq;
-using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Tests.Logging;
-using Stratis.Bitcoin.Utilities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Moq;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Tests.Logging;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests

@@ -4,15 +4,16 @@ using System.Net.Http.Headers;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Api;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Models;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.RPC;
 using Xunit;
+using System.IO;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -61,6 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                        .AddRPC();
                     });
 
+                    this.InitializeTestWallet(nodeA);
                     builder.StartAll();
 
                     var fullNode = nodeA.FullNode;
@@ -220,7 +222,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                         var response = client.GetStringAsync(ApiURI + "api/rpc/listmethods").GetAwaiter().GetResult();
 
-                        Assert.StartsWith("[\"", response);
+                        Assert.StartsWith("[{\"", response);
                     }
                 }
             }
@@ -228,6 +230,17 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 this.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Copies the test wallet into data folder for node if it isnt' already present.
+        /// </summary>
+        /// <param name="node">Core node for the test.</param>
+        private void InitializeTestWallet(CoreNode node)
+        {
+            string testWalletPath = Path.Combine(node.DataFolder, "test.wallet.json");
+            if (!File.Exists(testWalletPath))
+                File.Copy("Data/test.wallet.json", testWalletPath);
         }
     }
 }

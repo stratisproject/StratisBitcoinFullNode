@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         [ActionName("getrawmempool")]
+        [ActionDescription("Lists the contents of the memory pool.")]
         public Task<List<uint256>> GetRawMempool()
         {
             return this.MempoolManager.GetMempoolAsync();

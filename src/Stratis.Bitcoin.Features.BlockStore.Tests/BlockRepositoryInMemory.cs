@@ -1,9 +1,9 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Base;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
