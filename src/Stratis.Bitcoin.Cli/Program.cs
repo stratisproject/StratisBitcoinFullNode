@@ -32,9 +32,9 @@ namespace Stratis.Bitcoin.Cli
                     builder.AppendLine();
                     builder.AppendLine("Command line arguments:");
                     builder.AppendLine();
-                    builder.AppendLine($"[network-name]            Name of the network - e.g. \"stratis\".");
-                    builder.AppendLine($"[command]                 Name of RPC method or API <controller>/<method>.");
-                    builder.AppendLine($"[arguments]               Argument by position (RPC) or Name = Value pairs (API).");
+                    builder.AppendLine("[network-name]            Name of the network - e.g. \"stratis\".");
+                    builder.AppendLine("[command]                 Name of RPC method or API <controller>/<method>.");
+                    builder.AppendLine("[arguments]               Argument by position (RPC) or Name = Value pairs (API).");
                     Console.WriteLine(builder);
                     return;
                 }
