@@ -86,6 +86,7 @@ namespace NBitcoin.Protocol
 
         public NodesCollection()
         {
+            this.MessageProducer = new MessageProducer<IncomingMessage>();
             this.bridge = new Bridge(this.MessageProducer);
             this.nodes = new ConcurrentDictionary<Node, Node>(new NodeComparer());
         }
