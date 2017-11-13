@@ -35,6 +35,7 @@ namespace NBitcoin.Protocol
         public NodeConnectionParameters()
         {
             this.ReuseBuffer = true;
+            this.TemplateBehaviors = new NodeBehaviorsCollection(null);
             this.TemplateBehaviors.Add(new PingPongBehavior());
             this.Version = ProtocolVersion.PROTOCOL_VERSION;
             this.IsRelay = true;
@@ -44,7 +45,6 @@ namespace NBitcoin.Protocol
             this.SendBufferSize = 1000 * 1000;
             this.UserAgent = VersionPayload.GetNBitcoinUserAgent();
             this.PreferredTransactionOptions = TransactionOptions.All;
-            this.TemplateBehaviors = new NodeBehaviorsCollection(null);
         }
 
         public NodeConnectionParameters Clone()
