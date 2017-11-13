@@ -378,6 +378,7 @@ namespace NBitcoin.Protocol
                     foreach (IDisposable resource in this.resources)
                         resource.Dispose();
                 }
+
                 try
                 {
                     this.ConnectedNodes.DisconnectAll();

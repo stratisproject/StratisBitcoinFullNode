@@ -39,7 +39,7 @@ namespace NBitcoin.Protocol
             {
                 while (true)
                 {
-                    IncomingMessage message = ReceiveMessage(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.Node._Connection.Cancel.Token).Token);
+                    IncomingMessage message = ReceiveMessage(CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.Node.connection.Cancel.Token).Token);
                     if (this.predicates.All(p => p(message)))
                     {
                         if (message.Message.Payload is TPayload)
@@ -51,7 +51,7 @@ namespace NBitcoin.Protocol
             }
             catch (OperationCanceledException)
             {
-                if (this.Node._Connection.Cancel.IsCancellationRequested)
+                if (this.Node.connection.Cancel.IsCancellationRequested)
                     throw new InvalidOperationException("The node is not in a connected state");
 
                 throw;
