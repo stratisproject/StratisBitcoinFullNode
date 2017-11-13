@@ -8,7 +8,7 @@ using Xunit;
 namespace Stratis.Bitcoin.Tests.Builder.Feature
 {
     /// <summary>
-    /// Tests checking for feature dependencies
+    /// Tests checking for feature dependencies.
     /// </summary>
     public class FeaturesDependencyCheckingTest
     {
@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                 throw new NotImplementedException();
             }
 
+            /// <inheritdoc />
             public void ValidateDependencies(IFullNodeServiceProvider services)
             {
                 throw new NotImplementedException();
