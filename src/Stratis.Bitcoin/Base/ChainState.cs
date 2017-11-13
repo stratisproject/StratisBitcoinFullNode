@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using ConcurrentCollections;
 using NBitcoin;
 using Stratis.Bitcoin.Interfaces;
