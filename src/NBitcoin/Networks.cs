@@ -1,10 +1,10 @@
-﻿using NBitcoin.BouncyCastle.Math;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using NBitcoin.BouncyCastle.Math;
+using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 
 namespace NBitcoin
 {
@@ -291,12 +291,12 @@ namespace NBitcoin
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
             // a large 4-byte int at any alignment.
-            var pchMessageStart = new byte[4];
-            pchMessageStart[0] = 0x70;
-            pchMessageStart[1] = 0x35;
-            pchMessageStart[2] = 0x22;
-            pchMessageStart[3] = 0x05;
-            var magic = BitConverter.ToUInt32(pchMessageStart, 0); //0x5223570; 
+            var messageStart = new byte[4];
+            messageStart[0] = 0x70;
+            messageStart[1] = 0x35;
+            messageStart[2] = 0x22;
+            messageStart[3] = 0x05;
+            var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
 
             Assert(consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
@@ -365,12 +365,12 @@ namespace NBitcoin
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
             // a large 4-byte int at any alignment.
-            var pchMessageStart = new byte[4];
-            pchMessageStart[0] = 0x71;
-            pchMessageStart[1] = 0x31;
-            pchMessageStart[2] = 0x21;
-            pchMessageStart[3] = 0x11;
-            var magic = BitConverter.ToUInt32(pchMessageStart, 0); //0x5223570; 
+            var messageStart = new byte[4];
+            messageStart[0] = 0x71;
+            messageStart[1] = 0x31;
+            messageStart[2] = 0x21;
+            messageStart[3] = 0x11;
+            var magic = BitConverter.ToUInt32(messageStart, 0); //0x5223570; 
 
             var genesis = Network.StratisMain.GetGenesis().Clone();
             genesis.Header.Time = 1493909211;
@@ -424,12 +424,12 @@ namespace NBitcoin
             consensus.PowAllowMinDifficultyBlocks = true;
             consensus.PowNoRetargeting = true;
 
-            var pchMessageStart = new byte[4];
-            pchMessageStart[0] = 0xcd;
-            pchMessageStart[1] = 0xf2;
-            pchMessageStart[2] = 0xc0;
-            pchMessageStart[3] = 0xef;
-            var magic = BitConverter.ToUInt32(pchMessageStart, 0); 
+            var messageStart = new byte[4];
+            messageStart[0] = 0xcd;
+            messageStart[1] = 0xf2;
+            messageStart[2] = 0xc0;
+            messageStart[3] = 0xef;
+            var magic = BitConverter.ToUInt32(messageStart, 0); 
 
             var genesis = Network.StratisMain.GetGenesis().Clone();
             genesis.Header.Time = 1494909211;

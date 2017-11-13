@@ -1,14 +1,14 @@
-﻿using NBitcoin.BouncyCastle.Math;
-using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
-using NBitcoin.Stealth;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using NBitcoin.BouncyCastle.Math;
+using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
+using NBitcoin.Stealth;
 
 namespace NBitcoin
 {
@@ -37,7 +37,7 @@ namespace NBitcoin
             {
                 this.addresses = Dns.GetHostAddressesAsync(this.Host).Result;
             }
-            catch(AggregateException ex)
+            catch (AggregateException ex)
             {
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
             }
@@ -47,7 +47,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return this.Name + " (" + this.Host + ")";
+            return $"{this.Name}({this.Host})";
         }
     }
 
@@ -78,27 +78,30 @@ namespace NBitcoin
     {
         internal byte[][] base58Prefixes = new byte[12][];
         internal Bech32Encoder[] bech32Encoders = new Bech32Encoder[2];
+
         public Bech32Encoder GetBech32Encoder(Bech32Type type, bool throws)
         {
-            var encoder = bech32Encoders[(int)type];
-            if(encoder == null && throws)
-                throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " + Enum.GetName(typeof(Bech32Type), type));
+            var encoder = this.bech32Encoders[(int) type];
+            if (encoder == null && throws)
+                throw new NotImplementedException("The network " + this + " does not have any prefix for bech32 " +
+                                                  Enum.GetName(typeof(Bech32Type), type));
             return encoder;
         }
 
         public byte[] GetVersionBytes(Base58Type type, bool throws)
         {
-            var prefix = base58Prefixes[(int)type];
-            if(prefix == null && throws)
-                throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " + Enum.GetName(typeof(Base58Type), type));
+            var prefix = this.base58Prefixes[(int) type];
+            if (prefix == null && throws)
+                throw new NotImplementedException("The network " + this + " does not have any prefix for base58 " +
+                                                  Enum.GetName(typeof(Base58Type), type));
             return prefix?.ToArray();
         }
 
         internal static string CreateBase58(Base58Type type, byte[] bytes, Network network)
         {
-            if(network == null)
+            if (network == null)
                 throw new ArgumentNullException("network");
-            if(bytes == null)
+            if (bytes == null)
                 throw new ArgumentNullException("bytes");
             var versionBytes = network.GetVersionBytes(type, true);
             return Encoders.Base58Check.EncodeData(versionBytes.Concat(bytes));
@@ -106,11 +109,11 @@ namespace NBitcoin
 
         internal static string CreateBech32(Bech32Type type, byte[] bytes, byte witnessVersion, Network network)
         {
-            if(network == null)
+            if (network == null)
                 throw new ArgumentNullException("network");
-            if(bytes == null)
+            if (bytes == null)
                 throw new ArgumentNullException("bytes");
-            var encoder = network.GetBech32Encoder(type, true);
+            Bech32Encoder encoder = network.GetBech32Encoder(type, true);
             return encoder.Encode(witnessVersion, bytes);
         }
     }
@@ -121,10 +124,12 @@ namespace NBitcoin
         /// Height in coinbase
         /// </summary>
         BIP34,
+
         /// <summary>
         /// Height in OP_CLTV
         /// </summary>
         BIP65,
+
         /// <summary>
         /// Strict DER signature
         /// </summary>
@@ -144,413 +149,126 @@ namespace NBitcoin
 
         public class BuriedDeploymentsArray
         {
-            Consensus _Parent;
-            int[] _Heights;
+            readonly Consensus parent;
+            readonly int[] heights;
+
             public BuriedDeploymentsArray(Consensus parent)
             {
-                _Parent = parent;
-                _Heights = new int[Enum.GetValues(typeof(BuriedDeployments)).Length];
+                this.parent = parent;
+                this.heights = new int[Enum.GetValues(typeof(BuriedDeployments)).Length];
             }
+
             public int this[BuriedDeployments index]
             {
-                get
-                {
-                    return _Heights[(int)index];
-                }
-                set
-                {
-                    _Parent.EnsureNotFrozen();
-                    _Heights[(int)index] = value;
-                }
+                get { return this.heights[(int)index]; }
+                set { this.heights[(int)index] = value; }
             }
         }
+
         public class BIP9DeploymentsArray
         {
-            Consensus _Parent;
-            BIP9DeploymentsParameters[] _Parameters;
+            readonly Consensus parent;
+            readonly BIP9DeploymentsParameters[] parameters;
+
             public BIP9DeploymentsArray(Consensus parent)
             {
-                _Parent = parent;
-                _Parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
+                this.parent = parent;
+                this.parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
             }
 
             public BIP9DeploymentsParameters this[BIP9Deployments index]
             {
-                get
-                {
-                    return _Parameters[(int)index];
-                }
-                set
-                {
-                    _Parent.EnsureNotFrozen();
-                    _Parameters[(int)index] = value;
-                }
+                get { return this.parameters[(int) index]; }
+                set { this.parameters[(int) index] = value; }
             }
         }
 
         public Consensus()
         {
-            this.buriedDeployments = new BuriedDeploymentsArray(this);
-            this.bIP9Deployments = new BIP9DeploymentsArray(this);
+            this.BuriedDeployments = new BuriedDeploymentsArray(this);
+            this.BIP9Deployments = new BIP9DeploymentsArray(this);
         }
 
-        private readonly BuriedDeploymentsArray buriedDeployments;
-        public BuriedDeploymentsArray BuriedDeployments => this.buriedDeployments;
+        public BuriedDeploymentsArray BuriedDeployments { get; }
 
+        public BIP9DeploymentsArray BIP9Deployments { get; }
 
-        private readonly BIP9DeploymentsArray bIP9Deployments;
-        public BIP9DeploymentsArray BIP9Deployments => this.bIP9Deployments;
+        public int SubsidyHalvingInterval { get; set; }
 
-        int subsidyHalvingInterval;
-        public int SubsidyHalvingInterval
-        {
-            get
-            {
-                return this.subsidyHalvingInterval;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.subsidyHalvingInterval = value;
-            }
-        }
+        public Func<BlockHeader, uint256> GetPoWHash { get; set; } = h => h.GetHash();
 
-        private Func<BlockHeader, uint256> getPoWHash = h => h.GetHash();
+        public int MajorityEnforceBlockUpgrade { get; set; }
 
-        public Func<BlockHeader, uint256> GetPoWHash
-        {
-            get
-            {
-                return this.getPoWHash;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.getPoWHash = value;
-            }
-        }
+        public int MajorityRejectBlockOutdated { get; set; }
 
+        public int MajorityWindow { get; set; }
 
-        int majorityEnforceBlockUpgrade;
+        public uint256 BIP34Hash { get; set; }
 
-        public int MajorityEnforceBlockUpgrade
-        {
-            get
-            {
-                return this.majorityEnforceBlockUpgrade;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.majorityEnforceBlockUpgrade = value;
-            }
-        }
+        public Target PowLimit { get; set; }
 
-        int majorityRejectBlockOutdated;
-        public int MajorityRejectBlockOutdated
-        {
-            get
-            {
-                return this.majorityRejectBlockOutdated;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.majorityRejectBlockOutdated = value;
-            }
-        }
+        public TimeSpan PowTargetTimespan { get; set; }
 
-        int majorityWindow;
-        public int MajorityWindow
-        {
-            get
-            {
-                return this.majorityWindow;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.majorityWindow = value;
-            }
-        }
+        public TimeSpan PowTargetSpacing { get; set; }
 
-        uint256 bIP34Hash;
-        public uint256 BIP34Hash
-        {
-            get
-            {
-                return this.bIP34Hash;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.bIP34Hash = value;
-            }
-        }
+        public bool PowAllowMinDifficultyBlocks { get; set; }
 
+        public bool PowNoRetargeting { get; set; }
 
-        Target powLimit;
-        public Target PowLimit
-        {
-            get
-            {
-                return this.powLimit;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.powLimit = value;
-            }
-        }
+        public uint256 HashGenesisBlock { get; set; }
 
-
-        TimeSpan powTargetTimespan;
-        public TimeSpan PowTargetTimespan
-        {
-            get
-            {
-                return this.powTargetTimespan;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.powTargetTimespan = value;
-            }
-        }
-
-
-        TimeSpan powTargetSpacing;
-        public TimeSpan PowTargetSpacing
-        {
-            get
-            {
-                return this.powTargetSpacing;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.powTargetSpacing = value;
-            }
-        }
-
-
-        bool powAllowMinDifficultyBlocks;
-        public bool PowAllowMinDifficultyBlocks
-        {
-            get
-            {
-                return this.powAllowMinDifficultyBlocks;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.powAllowMinDifficultyBlocks = value;
-            }
-        }
-
-
-        bool powNoRetargeting;
-        public bool PowNoRetargeting
-        {
-            get
-            {
-                return this.powNoRetargeting;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.powNoRetargeting = value;
-            }
-        }
-
-
-        uint256 hashGenesisBlock;
-        public uint256 HashGenesisBlock
-        {
-            get
-            {
-                return this.hashGenesisBlock;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.hashGenesisBlock = value;
-            }
-        }
-
-        uint256 minimumChainWork;
-        public uint256 MinimumChainWork
-        {
-            get
-            {
-                return this.minimumChainWork;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.minimumChainWork = value;
-            }
-        }
+        public uint256 MinimumChainWork { get; set; }
 
         public long DifficultyAdjustmentInterval
         {
-            get
-            {
-                return ((long)PowTargetTimespan.TotalSeconds / (long)PowTargetSpacing.TotalSeconds);
-            }
+            get { return ((long) this.PowTargetTimespan.TotalSeconds / (long) this.PowTargetSpacing.TotalSeconds); }
         }
 
-        int minerConfirmationWindow;
-        public int MinerConfirmationWindow
-        {
-            get
-            {
-                return this.minerConfirmationWindow;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.minerConfirmationWindow = value;
-            }
-        }
+        public int MinerConfirmationWindow { get; set; }
 
-        int ruleChangeActivationThreshold;
-        public int RuleChangeActivationThreshold
-        {
-            get
-            {
-                return this.ruleChangeActivationThreshold;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.ruleChangeActivationThreshold = value;
-            }
-        }
-
-        int coinType;
+        public int RuleChangeActivationThreshold { get; set; }
 
         /// <summary>
         /// Specify the BIP44 coin type for this network
         /// </summary>
-        public int CoinType
-        {
-            get
-            {
-                return this.coinType;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.coinType = value;
-            }
-        }
+        public int CoinType { get; set; }
 
-
-        bool litecoinWorkCalculation;
         /// <summary>
         /// Specify using litecoin calculation for difficulty
         /// </summary>
-        public bool LitecoinWorkCalculation
-        {
-            get
-            {
-                return this.litecoinWorkCalculation;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                this.litecoinWorkCalculation = value;
-            }
-        }
+        public bool LitecoinWorkCalculation { get; set; }
 
-        BigInteger proofOfStakeLimit;
-        public BigInteger ProofOfStakeLimit
-        {
-            get
-            {
-                return proofOfStakeLimit;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                proofOfStakeLimit = value;
-            }
-        }
+        public BigInteger ProofOfStakeLimit { get; set; }
 
-        BigInteger proofOfStakeLimitV2;
-        public BigInteger ProofOfStakeLimitV2
-        {
-            get
-            {
-                return proofOfStakeLimitV2;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                proofOfStakeLimitV2 = value;
-            }
-        }
+        public BigInteger ProofOfStakeLimitV2 { get; set; }
 
-        int lastPOWBlock;
-        public int LastPOWBlock
-        {
-            get
-            {
-                return lastPOWBlock;
-            }
-            set
-            {
-                EnsureNotFrozen();
-                lastPOWBlock = value;
-            }
-        }
-
-        private bool frozen = false;
-        public void Freeze()
-        {
-            this.frozen = true;
-        }
-
-        private void EnsureNotFrozen()
-        {
-            if (this.frozen)
-            {
-                throw new InvalidOperationException("This instance can't be modified");
-            }
-        }
+        public int LastPOWBlock { get; set; }
 
         public virtual Consensus Clone()
         {
-            var consensus = new Consensus();
-            this.Fill(consensus);
-            return consensus;
-        }
-
-        protected void Fill(Consensus consensus)
-        {
-            consensus.EnsureNotFrozen();
-            consensus.bIP34Hash = this.bIP34Hash;
-            consensus.hashGenesisBlock = this.hashGenesisBlock;
-            consensus.majorityEnforceBlockUpgrade = this.majorityEnforceBlockUpgrade;
-            consensus.majorityRejectBlockOutdated = this.majorityRejectBlockOutdated;
-            consensus.majorityWindow = this.majorityWindow;
-            consensus.minerConfirmationWindow = this.minerConfirmationWindow;
-            consensus.powAllowMinDifficultyBlocks = this.powAllowMinDifficultyBlocks;
-            consensus.powLimit = this.powLimit;
-            consensus.powNoRetargeting = this.powNoRetargeting;
-            consensus.powTargetSpacing = this.powTargetSpacing;
-            consensus.powTargetTimespan = this.powTargetTimespan;
-            consensus.ruleChangeActivationThreshold = this.ruleChangeActivationThreshold;
-            consensus.subsidyHalvingInterval = this.subsidyHalvingInterval;
-            consensus.minimumChainWork = this.minimumChainWork;
-            consensus.GetPoWHash = this.GetPoWHash;
-            consensus.coinType = this.CoinType;
-            consensus.litecoinWorkCalculation = this.litecoinWorkCalculation;
-            consensus.LastPOWBlock = this.LastPOWBlock;
-            consensus.ProofOfStakeLimit = this.ProofOfStakeLimit;
-            consensus.ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2;
-
+            return new Consensus
+            {
+                BIP34Hash = this.BIP34Hash,
+                HashGenesisBlock = this.HashGenesisBlock,
+                MajorityEnforceBlockUpgrade = this.MajorityEnforceBlockUpgrade,
+                MajorityRejectBlockOutdated = this.MajorityRejectBlockOutdated,
+                MajorityWindow = this.MajorityWindow,
+                MinerConfirmationWindow = this.MinerConfirmationWindow,
+                PowAllowMinDifficultyBlocks = this.PowAllowMinDifficultyBlocks,
+                PowLimit = this.PowLimit,
+                PowNoRetargeting = this.PowNoRetargeting,
+                PowTargetSpacing = this.PowTargetSpacing,
+                PowTargetTimespan = this.PowTargetTimespan,
+                RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
+                SubsidyHalvingInterval = this.SubsidyHalvingInterval,
+                MinimumChainWork = this.MinimumChainWork,
+                GetPoWHash = this.GetPoWHash,
+                CoinType = this.CoinType,
+                LitecoinWorkCalculation = this.LitecoinWorkCalculation,
+                LastPOWBlock = this.LastPOWBlock,
+                ProofOfStakeLimit = this.ProofOfStakeLimit,
+                ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
+            };
         }
     }
 
@@ -610,9 +328,9 @@ namespace NBitcoin
                     var bytes = new byte[]
                     {
                         (byte) this.Magic,
-                        (byte)(this.Magic >> 8),
-                        (byte)(this.Magic >> 16),
-                        (byte)(this.Magic >> 24)
+                        (byte) (this.Magic >> 8),
+                        (byte) (this.Magic >> 16),
+                        (byte) (this.Magic >> 24)
                     };
                     this.MagicBytesArray = bytes;
                 }
@@ -623,7 +341,8 @@ namespace NBitcoin
 
         public uint Magic => this.magic;
 
-        static readonly ConcurrentDictionary<string, Network> NetworksContainer = new ConcurrentDictionary<string, Network>();
+        static readonly ConcurrentDictionary<string, Network> NetworksContainer =
+            new ConcurrentDictionary<string, Network>();
 
         internal static Network Register(NetworkBuilder builder)
         {
@@ -641,33 +360,32 @@ namespace NBitcoin
             network.RPCPort = builder.RPCPort;
             network.genesis = builder.Genesis;
             network.consensus.HashGenesisBlock = network.genesis.GetHash();
-            network.consensus.Freeze();
 
-            foreach (var seed in builder.Seeds)
+            foreach (DNSSeedData seed in builder.Seeds)
             {
                 network.seeds.Add(seed);
             }
 
-            foreach (var seed in builder.FixedSeeds)
+            foreach (NetworkAddress seed in builder.FixedSeeds)
             {
                 network.fixedSeeds.Add(seed);
             }
 
             network.base58Prefixes = Network.Main.base58Prefixes.ToArray();
 
-            foreach (var kv in builder.Base58Prefixes)
+            foreach (KeyValuePair<Base58Type, byte[]> kv in builder.Base58Prefixes)
             {
                 network.base58Prefixes[(int) kv.Key] = kv.Value;
             }
 
             network.bech32Encoders = Network.Main.bech32Encoders.ToArray();
 
-            foreach (var kv in builder.Bech32Prefixes)
+            foreach (KeyValuePair<Bech32Type, Bech32Encoder> kv in builder.Bech32Prefixes)
             {
                 network.bech32Encoders[(int) kv.Key] = kv.Value;
             }
 
-            foreach (var alias in builder.Aliases)
+            foreach (string alias in builder.Aliases)
             {
                 NetworksContainer.TryAdd(alias.ToLowerInvariant(), network);
             }
@@ -681,10 +399,13 @@ namespace NBitcoin
             return network;
         }
 
-        private static void Assert(bool v)
+        private static void Assert(bool condition)
         {
-            if(!v)
+            // TODO: use Guard when this moves to the FN.
+            if (!condition)
+            {
                 throw new InvalidOperationException("Invalid network");
+            }
         }
 
         public BitcoinSecret CreateBitcoinSecret(string base58)
@@ -701,11 +422,11 @@ namespace NBitcoin
         public BitcoinAddress CreateBitcoinAddress(string base58)
         {
             var type = GetBase58Type(base58);
-            if(!type.HasValue)
+            if (!type.HasValue)
                 throw new FormatException("Invalid Base58 version");
-            if(type == Base58Type.PUBKEY_ADDRESS)
+            if (type == Base58Type.PUBKEY_ADDRESS)
                 return new BitcoinPubKeyAddress(base58, this);
-            if(type == Base58Type.SCRIPT_ADDRESS)
+            if (type == Base58Type.SCRIPT_ADDRESS)
                 return new BitcoinScriptAddress(base58, this);
             throw new FormatException("Invalid Base58 version");
         }
@@ -718,33 +439,33 @@ namespace NBitcoin
         private Base58Type? GetBase58Type(string base58)
         {
             var bytes = Encoders.Base58Check.DecodeData(base58);
-            for(int i = 0; i < base58Prefixes.Length; i++)
+            for (int i = 0; i < this.base58Prefixes.Length; i++)
             {
-                var prefix = base58Prefixes[i];
-                if(prefix == null)
+                var prefix = this.base58Prefixes[i];
+                if (prefix == null)
                     continue;
-                if(bytes.Length < prefix.Length)
+                if (bytes.Length < prefix.Length)
                     continue;
-                if(Utils.ArrayEqual(bytes, 0, prefix, 0, prefix.Length))
-                    return (Base58Type)i;
+                if (Utils.ArrayEqual(bytes, 0, prefix, 0, prefix.Length))
+                    return (Base58Type) i;
             }
             return null;
         }
 
         internal static Network GetNetworkFromBase58Data(string base58, Base58Type? expectedType = null)
         {
-            foreach(var network in GetNetworks())
+            foreach (var network in GetNetworks())
             {
                 var type = network.GetBase58Type(base58);
-                if(type.HasValue)
+                if (type.HasValue)
                 {
-                    if(expectedType != null && expectedType.Value != type.Value)
+                    if (expectedType != null && expectedType.Value != type.Value)
                         continue;
-                    if(type.Value == Base58Type.COLORED_ADDRESS)
+                    if (type.Value == Base58Type.COLORED_ADDRESS)
                     {
                         var raw = Encoders.Base58Check.DecodeData(base58);
                         var version = network.GetVersionBytes(type.Value, false);
-                        if(version == null)
+                        if (version == null)
                             continue;
                         raw = raw.Skip(version.Length).ToArray();
                         base58 = Encoders.Base58Check.EncodeData(raw);
@@ -773,65 +494,74 @@ namespace NBitcoin
 
         public static T Parse<T>(string str, Network expectedNetwork) where T : IBitcoinString
         {
-            if(str == null)
+            if (str == null)
                 throw new ArgumentNullException("str");
 
-            var networks = expectedNetwork == null ? GetNetworks() : new[] { expectedNetwork };
+            var networks = expectedNetwork == null ? GetNetworks() : new[] {expectedNetwork};
             var maybeb58 = true;
             for (int i = 0; i < str.Length; i++)
             {
-                if(!Base58Encoder.pszBase58Chars.Contains(str[i]))
+                if (!Base58Encoder.pszBase58Chars.Contains(str[i]))
                 {
                     maybeb58 = false;
                     break;
                 }
             }
 
-            if(maybeb58)
+            if (maybeb58)
             {
                 try
                 {
                     Encoders.Base58Check.DecodeData(str);
                 }
-                catch(FormatException) { maybeb58 = false; }
-                if(maybeb58)
+                catch (FormatException)
                 {
-                    foreach(var candidate in GetCandidates(networks, str))
+                    maybeb58 = false;
+                }
+                if (maybeb58)
+                {
+                    foreach (var candidate in GetCandidates(networks, str))
                     {
                         bool rightNetwork = expectedNetwork == null || (candidate.Network == expectedNetwork);
                         bool rightType = candidate is T;
-                        if(rightNetwork && rightType)
-                            return (T)(object)candidate;
+                        if (rightNetwork && rightType)
+                            return (T) (object) candidate;
                     }
                     throw new FormatException("Invalid base58 string");
                 }
             }
 
-            foreach(var network in networks)
+            foreach (var network in networks)
             {
                 int i = -1;
-                foreach(var encoder in network.bech32Encoders)
+                foreach (var encoder in network.bech32Encoders)
                 {
                     i++;
-                    if(encoder == null)
+                    if (encoder == null)
                         continue;
-                    var type = (Bech32Type)i;
+                    var type = (Bech32Type) i;
                     try
                     {
                         byte witVersion;
                         var bytes = encoder.Decode(str, out witVersion);
                         object candidate = null;
 
-                        if(witVersion == 0 && bytes.Length == 20 && type == Bech32Type.WITNESS_PUBKEY_ADDRESS)
+                        if (witVersion == 0 && bytes.Length == 20 && type == Bech32Type.WITNESS_PUBKEY_ADDRESS)
                             candidate = new BitcoinWitPubKeyAddress(str, network);
-                        if(witVersion == 0 && bytes.Length == 32 && type == Bech32Type.WITNESS_SCRIPT_ADDRESS)
+                        if (witVersion == 0 && bytes.Length == 32 && type == Bech32Type.WITNESS_SCRIPT_ADDRESS)
                             candidate = new BitcoinWitScriptAddress(str, network);
 
-                        if(candidate is T)
-                            return (T)(object)candidate;
+                        if (candidate is T)
+                            return (T) (object) candidate;
                     }
-                    catch(Bech32FormatException) { throw; }
-                    catch(FormatException) { continue; }
+                    catch (Bech32FormatException)
+                    {
+                        throw;
+                    }
+                    catch (FormatException)
+                    {
+                        continue;
+                    }
                 }
 
             }
@@ -841,34 +571,38 @@ namespace NBitcoin
 
         private static IEnumerable<IBase58Data> GetCandidates(IEnumerable<Network> networks, string base58)
         {
-            if(base58 == null)
+            if (base58 == null)
                 throw new ArgumentNullException("base58");
-            foreach(var network in networks)
+            foreach (var network in networks)
             {
                 var type = network.GetBase58Type(base58);
-                if(type.HasValue)
+                if (type.HasValue)
                 {
-                    if(type.Value == Base58Type.COLORED_ADDRESS)
+                    if (type.Value == Base58Type.COLORED_ADDRESS)
                     {
                         var wrapped = BitcoinColoredAddress.GetWrappedBase58(base58, network);
                         var wrappedType = network.GetBase58Type(wrapped);
-                        if(wrappedType == null)
+                        if (wrappedType == null)
                             continue;
                         try
                         {
                             var inner = network.CreateBase58Data(wrappedType.Value, wrapped);
-                            if(inner.Network != network)
+                            if (inner.Network != network)
                                 continue;
                         }
-                        catch(FormatException) { }
+                        catch (FormatException)
+                        {
+                        }
                     }
                     IBase58Data data = null;
                     try
                     {
                         data = network.CreateBase58Data(type.Value, base58);
                     }
-                    catch(FormatException) { }
-                    if(data != null)
+                    catch (FormatException)
+                    {
+                    }
+                    if (data != null)
                         yield return data;
                 }
             }
@@ -980,7 +714,7 @@ namespace NBitcoin
 
             if (NetworksContainer.Any())
             {
-                List<Network>  others = NetworksContainer.Values.Distinct().ToList();
+                List<Network> others = NetworksContainer.Values.Distinct().ToList();
 
                 foreach (Network network in others)
                     yield return network;
@@ -1004,10 +738,10 @@ namespace NBitcoin
         /// <returns>The network or null of the name does not match any network</returns>
         public static Network GetNetwork(string name)
         {
-            if(name == null)
+            if (name == null)
                 throw new ArgumentNullException("name");
 
-            if(NetworksContainer.Any())
+            if (NetworksContainer.Any())
             {
                 name = name.ToLowerInvariant();
                 return NetworksContainer.TryGet(name);
@@ -1023,7 +757,7 @@ namespace NBitcoin
 
         public BitcoinPubKeyAddress CreateBitcoinAddress(KeyId dest)
         {
-            if(dest == null)
+            if (dest == null)
                 throw new ArgumentNullException("dest");
             return new BitcoinPubKeyAddress(dest, this);
         }
@@ -1056,7 +790,7 @@ namespace NBitcoin
             int halvings = nHeight / this.consensus.SubsidyHalvingInterval;
 
             // Force block reward to zero when right shift is undefined.
-            if(halvings >= 64)
+            if (halvings >= 64)
                 return Money.Zero;
 
             // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
@@ -1068,20 +802,20 @@ namespace NBitcoin
         public bool ReadMagic(Stream stream, CancellationToken cancellation, bool throwIfEOF = false)
         {
             byte[] bytes = new byte[1];
-            for(int i = 0; i < MagicBytes.Length; i++)
+            for (int i = 0; i < MagicBytes.Length; i++)
             {
                 i = Math.Max(0, i);
                 cancellation.ThrowIfCancellationRequested();
 
                 var read = stream.ReadEx(bytes, 0, bytes.Length, cancellation);
-                if(read == 0)
-                    if(throwIfEOF)
+                if (read == 0)
+                    if (throwIfEOF)
                         throw new EndOfStreamException("No more bytes to read");
                     else
                         return false;
-                if(read != 1)
+                if (read != 1)
                     i--;
-                else if(this.MagicBytesArray[i] != bytes[0])
+                else if (this.MagicBytesArray[i] != bytes[0])
                     i = this.MagicBytesArray[0] == bytes[0] ? 0 : -1;
             }
             return true;
