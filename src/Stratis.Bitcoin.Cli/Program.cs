@@ -130,18 +130,13 @@ namespace Stratis.Bitcoin.Cli
             while (ex != null)
             {
                 if (isDebugMode)
-                {
-                    stringBuilder.Append(ex.GetType().Name);
-                    stringBuilder.Append(": ");
-                }
+                    stringBuilder.Append($"{ex.GetType().Name}: ");
                 stringBuilder.Append(ex.Message);
                 if (isDebugMode)
                     stringBuilder.AppendLine(ex.StackTrace);
                 ex = ex.InnerException;
                 if (ex != null)
-                {
                     stringBuilder.Append(" ---> ");
-                }
             }
             return stringBuilder.ToString();
         }
