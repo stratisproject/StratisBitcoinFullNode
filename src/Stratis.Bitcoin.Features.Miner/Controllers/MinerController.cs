@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// </summary>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
+        /// <param name="fullNode">Full Node.</param>
         public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, PosMinting posMinting = null)
         {
             this.fullNode = fullNode;
@@ -106,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                         throw new SecurityException(ex.Message);
                     }
                 }
-                
+
                 this.fullNode.NodeFeature<MiningFeature>(true).StartStaking(request.Name, request.Password);
 
                 return this.Ok();

@@ -32,3 +32,7 @@ dotnet_naming_symbols.any_async_methods.applicable_accessibilities = *
 dotnet_naming_symbols.any_async_methods.required_modifiers         = async
 dotnet_naming_style.end_with_async.required_suffix = Async
 dotnet_naming_style.end_with_async.capitalization  = pascal_case
+
+# .NET formatting settings:
+[*.{cs,vb}]
+dotnet_sort_system_directives_first = true

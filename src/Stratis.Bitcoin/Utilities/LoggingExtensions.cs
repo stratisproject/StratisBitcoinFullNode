@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Converts <see cref="Microsoft.Extensions.Logging.LogLevel"/> to <see cref="NLog.LogLevel">.
+        /// Converts <see cref="Microsoft.Extensions.Logging.LogLevel"/> to <see cref="NLog.LogLevel"/>.
         /// </summary>
         /// <param name="LogLevel">Log level value to convert.</param>
         /// <returns>NLog value of the log level.</returns>

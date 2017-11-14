@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Notifications
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderTransactionNotificationExtension
     {
         public static IFullNodeBuilder UseTransactionNotification(this IFullNodeBuilder fullNodeBuilder)
         {

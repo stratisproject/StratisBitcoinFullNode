@@ -1,7 +1,9 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers;
 using Stratis.Bitcoin.Features.WatchOnlyWallet.Notifications;
 
@@ -52,7 +54,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderWatchOnlyWalletExtension
     {
         /// <summary>
         /// Adds a watch only wallet component to the node being initialized.
@@ -65,6 +67,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             {
                 features
                     .AddFeature<WatchOnlyWalletFeature>()
+                    .DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IWatchOnlyWalletManager, WatchOnlyWalletManager>();

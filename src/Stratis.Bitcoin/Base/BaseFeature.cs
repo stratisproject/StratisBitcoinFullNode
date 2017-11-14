@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Base
     /// The ConnectionManager feature is also part of the base but may go in a feature of its own.
     /// The base features are the minimal components required to connect to peers and maintain the best chain.
     /// <para>
-    /// The base node services for a node are: 
+    /// The base node services for a node are:
     /// <list type="bullet">
     /// <item>the ConcurrentChain to keep track of the best chain,</item>
     /// <item>the ConnectionManager to connect with the network,</item>
@@ -92,6 +92,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Periodic task to save the chain to the database.</summary>
         private IAsyncLoop flushChainLoop;
 
+        /// <summary>A handler that can manage the lifetime of network peers.</summary>
+        private readonly IPeerBanning peerBanning;
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -121,7 +124,8 @@ namespace Stratis.Bitcoin.Base
             IAsyncLoopFactory asyncLoopFactory,
             TimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IPeerBanning peerBanning)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -131,6 +135,7 @@ namespace Stratis.Bitcoin.Base
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
+            this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
             this.dateTimeProvider = dateTimeProvider;
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
@@ -146,7 +151,7 @@ namespace Stratis.Bitcoin.Base
                                     this.chain.Tip.Height.ToString().PadRight(8) +
                                     " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength + 3) + this.chain.Tip.HashBlock);
         }
-        
+
         /// <inheritdoc />
         public override void Start()
         {
@@ -160,6 +165,7 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager) { PeersToDiscover = 10 });
+            connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning));
 
             if (this.nodeSettings.SyncTimeEnabled)
             {
@@ -202,8 +208,8 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>
-        /// Initializes node's address manager. Loads previously known peers from the file 
-        /// or creates new peer file if it does not exist. Creates periodic task to persist changes 
+        /// Initializes node's address manager. Loads previously known peers from the file
+        /// or creates new peer file if it does not exist. Creates periodic task to persist changes
         /// in peers to disk.
         /// </summary>
         private void StartAddressManager()
@@ -259,7 +265,7 @@ namespace Stratis.Bitcoin.Base
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static partial class IFullNodeBuilderExtensions
+    public static class FullNodeBuilderBaseFeatureExtension
     {
         /// <summary>
         /// Makes the full node use all the required features - <see cref="BaseFeature"/>.
@@ -278,6 +284,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton(fullNodeBuilder.NodeSettings.LoggerFactory);
                     services.AddSingleton(fullNodeBuilder.NodeSettings.DataFolder);
                     services.AddSingleton<INodeLifetime, NodeLifetime>();
+                    services.AddSingleton<IPeerBanning, PeerBanning>();
                     services.AddSingleton<FullNodeFeatureExecutor>();
                     services.AddSingleton<Signals.Signals>().AddSingleton<ISignals, Signals.Signals>(provider => provider.GetService<Signals.Signals>());
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });

@@ -3,7 +3,7 @@
 namespace Stratis.Bitcoin.Features.Consensus
 {
     // The default setting of values on the consensus options
-    // should be removed in to the initialization of each 
+    // should be removed in to the initialization of each
     // network this are network specific values
     public class PosConsensusOptions : PowConsensusOptions
     {
@@ -51,21 +51,22 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>The maximum allowed size for a serialized block, in bytes (only for buffer size limits).</summary>
         public int MaxBlockSerializedSize { get; set; }
 
-        /// <summary>The maximum allowed weight for a block, see BIP 141 (network rule) 
+        /// <summary>The maximum allowed weight for a block, see BIP 141 (network rule)</summary>
         public int MaxBlockWeight { get; set; }
 
         public int WitnessScaleFactor { get; set; }
         public int SerializeTransactionNoWitness { get; set; }
 
         /// <summary>
-        /// Changing the default transaction version requires a two step process: 
+        /// Changing the default transaction version requires a two step process:
         /// <list type="bullet">
-        /// <item>Adapting relay policy by bumping <see cref="MaxStandardVersion"/>,</item> 
+        /// <item>Adapting relay policy by bumping <see cref="MaxStandardVersion"/>,</item>
         /// <item>and then later date bumping the default CURRENT_VERSION at which point both CURRENT_VERSION and
         /// <see cref="MaxStandardVersion"/> will be equal.</item>
+        /// </list>
         /// </summary>
         public int MaxStandardVersion { get; set; }
-        
+
         /// <summary>The maximum weight for transactions we're willing to relay/mine.</summary>
         public int MaxStandardTxWeight { get; set; }
         public int MaxBlockBaseSize { get; set; }

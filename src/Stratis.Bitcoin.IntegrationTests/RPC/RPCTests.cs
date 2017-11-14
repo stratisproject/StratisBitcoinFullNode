@@ -5,9 +5,9 @@ using System;
 using System.IO;
 using Xunit;
 
-namespace Stratis.Bitcoin.IntegrationTests
+namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
-    public class RPCTests
+    public class RpcTests
     {
         [Fact]
         public void CheckRPCFailures()

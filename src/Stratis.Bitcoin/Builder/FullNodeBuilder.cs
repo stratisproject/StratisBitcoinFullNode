@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Builder
         private bool fullNodeBuilt;
 
         /// <summary>Collection of features available to and/or used by the node.</summary>
-        public IFeatureCollection Features { get; }
+        public IFeatureCollection Features { get; private set; }
 
         /// <inheritdoc />
         public NodeSettings NodeSettings { get; set; }
@@ -192,7 +193,7 @@ namespace Stratis.Bitcoin.Builder
         {
             this.Services = new ServiceCollection();
 
-            // register services before features 
+            // register services before features
             // as some of the features may depend on independent services
             foreach (var configureServices in this.configureServicesDelegates)
                 configureServices(this.Services);
@@ -203,7 +204,21 @@ namespace Stratis.Bitcoin.Builder
 
             // configure features startup
             foreach (var featureRegistration in this.Features.FeatureRegistrations)
+            {
+                try
+                {
+                    featureRegistration.EnsureDependencies(this.Features.FeatureRegistrations);
+                }
+                catch (MissingDependencyException e)
+                {
+                    this.NodeSettings.Logger.LogCritical("Feature {0} cannot be configured because it depends on other features that were not registered",
+                        featureRegistration.FeatureType.Name);
+
+                    throw e;
+                }
+
                 featureRegistration.BuildFeature(this.Services);
+            }
 
             return this.Services;
         }
