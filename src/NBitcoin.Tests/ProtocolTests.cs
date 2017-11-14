@@ -412,7 +412,7 @@ namespace NBitcoin.Tests
 				node2.CreateRPCClient().Generate(12);
 
 				var node2c = node2.CreateNodeClient();
-				node2c.PollHeaderDelay = TimeSpan.FromSeconds(2);
+				node2c.pollHeaderDelay = TimeSpan.FromSeconds(2);
 				node2c.SynchronizeChain(chain);
 				Assert.Equal(12, chain.Height);
 			}
@@ -432,7 +432,7 @@ namespace NBitcoin.Tests
 					generating = false;
 				});
 				var node = builder.Nodes[0].CreateNodeClient();
-				node.PollHeaderDelay = TimeSpan.FromSeconds(2);
+				node.pollHeaderDelay = TimeSpan.FromSeconds(2);
 				node.VersionHandshake();
 				Random rand = new Random();
 				Thread.Sleep(1000);

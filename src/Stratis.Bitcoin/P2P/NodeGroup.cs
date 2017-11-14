@@ -260,7 +260,10 @@ namespace Stratis.Bitcoin.P2P
 
                 this.Parameters.PeerAddressManager().PeerAttempted(peer.Endpoint, DateTimeOffset.Now);
 
-                node = Node.Connect(this.network, peer, this.connectParameters.Clone(timeoutTokenSource.Token));
+                var clonedConnectParamaters = this.connectParameters.Clone();
+                clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
+
+                node = Node.Connect(this.network, peer, clonedConnectParamaters);
                 node.VersionHandshake(this.requirements, timeoutTokenSource.Token);
             }
         }
