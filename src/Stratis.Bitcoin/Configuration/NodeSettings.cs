@@ -1,3 +1,9 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
@@ -7,12 +13,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using System;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -46,7 +46,6 @@ namespace Stratis.Bitcoin.Configuration
         public NodeSettings()
         {
             this.ConnectionManager = new ConnectionManagerSettings();
-            this.Consensus = new ConsensusSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new ExtendedLoggerFactory();
         }
@@ -59,9 +58,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         public ConnectionManagerSettings ConnectionManager { get; set; }
-
-        /// <summary>Configuration realted to consensus.</summary>
-        public ConsensusSettings Consensus { get; set; }
 
         /// <summary>Configuration related to logging.</summary>
         public LogSettings Log { get; set; }
@@ -229,10 +225,6 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
 
-            nodeSettings.Consensus.Load(config, nodeSettings.Network);
-            if (nodeSettings.Logger.IsEnabled(LogLevel.Debug))
-                nodeSettings.Consensus.LogDebugSettings(nodeSettings.Logger);
- 
             try
             {
                 nodeSettings.ConnectionManager.Connect.AddRange(config.GetAll("connect")

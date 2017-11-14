@@ -9,7 +9,6 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -95,8 +94,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
 
-        /// <summary>Settings for the full node.</summary>
-        private readonly NodeSettings nodeSettings;
+        /// <summary>Consensus settings for the full node.</summary>
+        private readonly ConsensusSettings settings;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -117,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
-        /// <param name="settings">Settings for the full node.</param>
+        /// <param name="settings">Consensus settings for the full node.</param>
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
@@ -133,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
             ICheckpoints checkpoints,
-            NodeSettings settings,
+            ConsensusSettings settings,
             StakeChain stakeChain = null)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
@@ -164,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.NodeDeployments = nodeDeployments;
             this.checkpoints = checkpoints;
             this.dateTimeProvider = dateTimeProvider;
-            this.nodeSettings = settings;
+            this.settings = settings;
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
@@ -418,7 +417,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // Check whether to use checkpoint to skip block validation.
                 context.BlockValidationContext.SkipValidation = false; 
-                if (this.nodeSettings.Consensus.UseCheckpoints)
+                if (this.settings.UseCheckpoints)
                 {
                     int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
                     context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= lastCheckpointHeight;
@@ -427,16 +426,20 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
 
                 // Check whether to use assumevalid switch to skip validation.
-                if (!context.BlockValidationContext.SkipValidation && (this.nodeSettings.Consensus.BlockAssumedValid != null))
+                if (!context.BlockValidationContext.SkipValidation && (this.settings.BlockAssumedValid != null))
                 {
-                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.nodeSettings.Consensus.BlockAssumedValid);
+                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.settings.BlockAssumedValid);
                     if (assumeValidBlock != null)
                     {
                         context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height;
                         if (context.BlockValidationContext.SkipValidation)
                             this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
                     }
-                    else this.logger.LogWarning("Cannot find block specified by config flag assumevalid: '{0}'. Validation will not be skipped.", this.nodeSettings.Consensus.BlockAssumedValid);
+                    else
+                    {
+                        this.logger.LogWarning("Cannot find block specified by config flag assumevalid: '{0}'. Assume valid block feature will be disabled.", this.settings.BlockAssumedValid);
+                        this.settings.BlockAssumedValid = null;
+                    }
                 }
 
                 if (!context.BlockValidationContext.SkipValidation)
