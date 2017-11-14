@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var dataPath = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "BlockNotification", "Notify_WithSync_ScenarioOne"));
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
-            connectionManager.Setup(c => c.NodeSettings).Returns(NodeSettings.FromArguments(new string[] { $"-datadir={dataPath.WalletPath}" }));
+            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings().LoadArguments(new string[] { $"-datadir={dataPath.WalletPath}" }));
             connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
 
             var lookAheadBlockPuller = new LookaheadBlockPuller(chain, connectionManager.Object, new Mock<ILoggerFactory>().Object);
