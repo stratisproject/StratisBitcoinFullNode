@@ -342,8 +342,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
 
             Node node = this.connectedNodes.FindByEndpoint(endpoint);
-            if (node != null)
-                node.DisconnectAsync("Requested by user");
+            node?.DisconnectAsync("Requested by user");
 
             this.logger.LogTrace("(-)");
         }
