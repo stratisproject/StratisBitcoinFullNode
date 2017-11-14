@@ -499,12 +499,10 @@ namespace NBitcoin.Protocol
 		/// <param name="addrman">The addrman used for finding peers</param>
 		/// <param name="parameters">The parameters used by the found node</param>
 		/// <param name="connectedEndpoints">The already connected endpoints, the new endpoint will be select outside of existing groups</param>
-		/// <returns></returns>
-		public static Node Connect(Network network, AddressManager addrman, NodeConnectionParameters parameters = null, IPEndPoint[] connectedEndpoints = null)
+		public static Node ConnectWithDiscovery(Network network, NodeConnectionParameters parameters = null, IPEndPoint[] connectedEndpoints = null)
 		{
 			parameters = parameters ?? new NodeConnectionParameters();
-			AddressManagerBehavior.SetAddrman(parameters, addrman);
-			return Connect(network, parameters, connectedEndpoints);
+			return ConnectWithDiscovery(network, parameters, connectedEndpoints);
 		}
 
 		/// <summary>
@@ -515,37 +513,45 @@ namespace NBitcoin.Protocol
 		/// <param name="connectedEndpoints">The already connected endpoints, the new endpoint will be select outside of existing groups</param>
 		/// <param name="getGroup">Group selector, by default NBicoin.IpExtensions.GetGroup</param>
 		/// <returns></returns>
-		public static Node Connect(Network network, NodeConnectionParameters parameters = null, IPEndPoint[] connectedEndpoints = null, Func<IPEndPoint, byte[]> getGroup = null)
+		public static Node ConnectWithDiscovery(Network network, NodeConnectionParameters parameters = null, IPEndPoint[] connectedEndpoints = null, Func<IPEndPoint, byte[]> getGroup = null)
 		{
-			return Connect(network, parameters, new Func<IPEndPoint[]>(() => connectedEndpoints), getGroup);
+			return ConnectWithDiscovery(network, parameters, new Func<IPEndPoint[]>(() => connectedEndpoints), getGroup);
 		}
 
-		/// <summary>
-		/// Connect to a random node on the network
-		/// </summary>
-		/// <param name="network">The network to connect to</param>
-		/// <param name="parameters">The parameters used by the found node, use AddressManagerBehavior.GetAddrman for finding peers</param>
-		/// <param name="connectedEndpoints">Function returning the already connected endpoints, the new endpoint will be select outside of existing groups</param>
-		/// <param name="getGroup">Group selector, by default NBicoin.IpExtensions.GetGroup</param>
-		/// <returns></returns>
-		public static Node Connect(Network network, NodeConnectionParameters parameters, Func<IPEndPoint[]> connectedEndpoints, Func<IPEndPoint, byte[]> getGroup = null)
+        /// <summary>
+        /// [Deprecated] This whole connect method will be deprecated
+        /// 
+        /// Connect to a random node on the network
+        /// </summary>
+        /// <param name="network">The network to connect to</param>
+        /// <param name="parameters">The parameters used by the found node, use AddressManagerBehavior.GetAddrman for finding peers</param>
+        /// <param name="connectedEndpoints">Function returning the already connected endpoints, the new endpoint will be select outside of existing groups</param>
+        /// <param name="getGroup">Group selector, by default NBicoin.IpExtensions.GetGroup</param>
+        /// <returns></returns>
+        public static Node ConnectWithDiscovery(Network network, NodeConnectionParameters parameters, Func<IPEndPoint[]> connectedEndpoints, Func<IPEndPoint, byte[]> getGroup = null)
 		{
 			getGroup = getGroup ?? new Func<IPEndPoint, byte[]>((a) => IpExtensions.GetGroup(a.Address));
 			if (connectedEndpoints() == null)
 				connectedEndpoints = new Func<IPEndPoint[]>(() => new IPEndPoint[0]);
 			parameters = parameters ?? new NodeConnectionParameters();
-			var addrmanBehavior = parameters.TemplateBehaviors.FindOrCreate(() => new AddressManagerBehavior(new AddressManager()));
-			var addrman = AddressManagerBehavior.GetAddrman(parameters);
-			DateTimeOffset start = DateTimeOffset.UtcNow;
+
+            //[Deprecated] This whole connect method will be deprecated
+            //var addrmanBehavior = parameters.TemplateBehaviors.FindOrCreate(() => new AddressManagerBehavior(new AddressManager()));
+            //var addrman = AddressManagerBehavior.GetAddrman(parameters);
+
+            DateTimeOffset start = DateTimeOffset.UtcNow;
 			while(true)
 			{
 				parameters.ConnectCancellation.ThrowIfCancellationRequested();
-				if(addrman.Count == 0 || DateTimeOffset.UtcNow - start > TimeSpan.FromSeconds(60))
-				{
-					addrmanBehavior.DiscoverPeers(network, parameters);
-					start = DateTimeOffset.UtcNow;
-				}
-				NetworkAddress addr = null;
+
+                //[Deprecated] This whole connect method will be deprecated
+                //if(addrman.Count == 0 || DateTimeOffset.UtcNow - start > TimeSpan.FromSeconds(60))
+                //{
+                //	addrmanBehavior.DiscoverPeers(network, parameters);
+                //	start = DateTimeOffset.UtcNow;
+                //}
+
+                NetworkAddress addr = null;
 				int groupFail = 0;
 				while(true)
 				{
@@ -554,7 +560,9 @@ namespace NBitcoin.Protocol
 						parameters.ConnectCancellation.WaitHandle.WaitOne((int)TimeSpan.FromSeconds(60).TotalMilliseconds);
 						break;
 					}
-					addr = addrman.Select();
+                    
+                    //[Deprecated] This whole connect method will be deprecated
+					//addr = addrman.Select();
 					if(addr == null)
 					{
 						parameters.ConnectCancellation.WaitHandle.WaitOne(1000);
@@ -633,15 +641,15 @@ namespace NBitcoin.Protocol
 		}
 
 		public static Node Connect(Network network,
-							 NetworkAddress endpoint,
-							 NodeConnectionParameters parameters)
+                                   NetworkAddress endpoint,
+                                   NodeConnectionParameters parameters)
 		{
 			return new Node(endpoint, network, parameters);
 		}
 
 		public static Node Connect(Network network,
-							 IPEndPoint endpoint,
-							 NodeConnectionParameters parameters)
+							       IPEndPoint endpoint,
+							       NodeConnectionParameters parameters)
 		{
 			var peer = new NetworkAddress()
 			{
@@ -667,10 +675,13 @@ namespace NBitcoin.Protocol
 			});
 		}
 
+        /// <summary>
+        /// The connect methods should use this Constructor
+        /// </summary>
 		internal Node(NetworkAddress peer, Network network, NodeConnectionParameters parameters)
 		{
 			parameters = parameters ?? new NodeConnectionParameters();
-			var addrman = AddressManagerBehavior.GetAddrman(parameters);
+			//var addrman = AddressManagerBehavior.GetAddrman(parameters);
 			Inbound = false;
 			_Behaviors = new NodeBehaviorsCollection(this);
 			_MyVersion = parameters.CreateVersion(peer.Endpoint, network);
@@ -714,9 +725,6 @@ namespace NBitcoin.Protocol
 							ConnectedAt = DateTimeOffset.UtcNow;
 
 							NodeServerTrace.Information("Outbound connection successful.");
-
-							if (addrman != null)
-								addrman.Attempt(Peer);
 						}
 					}
 				}
@@ -725,8 +733,6 @@ namespace NBitcoin.Protocol
 					Utils.SafeCloseSocket(socket);
 					NodeServerTrace.Information("Connection to node cancelled");
 					State = NodeState.Offline;
-					if(addrman != null)
-						addrman.Attempt(Peer);
 					throw;
 				}
 				catch(Exception ex)
@@ -739,8 +745,6 @@ namespace NBitcoin.Protocol
 						Exception = ex
 					};
 					State = NodeState.Failed;
-					if(addrman != null)
-						addrman.Attempt(Peer);
 					throw;
 				}
 				InitDefaultBehaviors(parameters);

@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <summary>
         /// Memory pool validator interface;
         /// </summary>
-        IMempoolValidator MempoolValidator { get;  }
+        IMempoolValidator MempoolValidator { get; }
 
         /// <summary>
         /// List of the source transactions in the test chain.
@@ -45,10 +45,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public List<Transaction> SrcTxs { get; set; }
     }
 
-   /// <summary>
-   /// Factory for creating the test chain.
-   /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
-   /// </summary>
+    /// <summary>
+    /// Factory for creating the test chain.
+    /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
+    /// </summary>
     internal class TestChainFactory
     {
         /// <summary>
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
 
-            ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
+            ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory));
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
 
             ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network, chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, nodeSettings));

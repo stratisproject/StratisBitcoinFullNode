@@ -27,6 +27,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Protocol\AddressManager.cs" />
+    <Compile Remove="Protocol\Behaviors\AddressManagerBehavior.cs" />
+    <Compile Remove="Protocol\Behaviors\NodesGroupBehavior.cs" />
+    <Compile Remove="Protocol\NodesGroup.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="BitcoinStream.Partial.tt" />
   </ItemGroup>
 

@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
-using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -15,6 +14,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Base
         private readonly DBreezeSerializer dbreezeSerializer;
 
         /// <summary>Manager of node's network peers.</summary>
-        private AddressManager addressManager;
+        private PeerAddressManager addressManager;
 
         /// <summary>Periodic task to save list of peers to disk.</summary>
         private IAsyncLoop flushAddressManagerLoop;
@@ -153,19 +153,19 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("()");
 
             this.dbreezeSerializer.Initialize();
-            this.StartAddressManager();
-            this.StartChainAsync().GetAwaiter().GetResult();
 
-            NodeConnectionParameters connectionParameters = this.connectionManager.Parameters;
+            StartChainAsync().GetAwaiter().GetResult();
+
+            var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = !this.nodeSettings.ConfigReader.GetOrDefault("blocksonly", false);
             connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.loggerFactory));
-            connectionParameters.TemplateBehaviors.Add(new AddressManagerBehavior(this.addressManager) { PeersToDiscover = 10 });
+
+            StartAddressManager(connectionParameters);
 
             if (this.nodeSettings.SyncTimeEnabled)
-            {
                 connectionParameters.TemplateBehaviors.Add(new TimeSyncBehavior(this.timeSyncBehaviorState, this.dateTimeProvider, this.loggerFactory));
-            }
-            else this.logger.LogDebug("Time synchronization with peers is disabled.");
+            else
+                this.logger.LogDebug("Time synchronization with peers is disabled.");
 
             this.disposableResources.Add(this.timeSyncBehaviorState);
             this.disposableResources.Add(this.chainRepository);
@@ -206,30 +206,23 @@ namespace Stratis.Bitcoin.Base
         /// or creates new peer file if it does not exist. Creates periodic task to persist changes
         /// in peers to disk.
         /// </summary>
-        private void StartAddressManager()
+        private void StartAddressManager(NodeConnectionParameters connectionParameters)
         {
-            if (!File.Exists(this.dataFolder.AddrManFile))
+            this.addressManager = new PeerAddressManager(this.asyncLoopFactory, this.dataFolder.AddressManagerFilePath);
+            connectionParameters.TemplateBehaviors.Add(new PeerAddressManagerBehaviour(this.addressManager));
+
+            if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PEERFILENAME)))
             {
-                this.logger.LogInformation($"Creating {this.dataFolder.AddrManFile}");
-                this.addressManager = new AddressManager();
-                this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
-                this.logger.LogInformation("Created");
-            }
-            else
-            {
-                this.logger.LogInformation($"Loading  {this.dataFolder.AddrManFile}");
-                this.addressManager = AddressManager.LoadPeerFile(this.dataFolder.AddrManFile);
-                this.logger.LogInformation("Loaded");
+                this.logger.LogInformation($"Loading peers from : {this.dataFolder.AddressManagerFilePath}...");
+                connectionParameters.PeerAddressManager().LoadPeers();
             }
 
-            if (this.addressManager.Count == 0)
-            {
-                this.logger.LogInformation("AddressManager is empty, discovering peers...");
-            }
+            this.logger.LogInformation("Starting peer discovery...");
+            connectionParameters.PeerAddressManagerBehaviour().DiscoverPeers(this.network, this.connectionManager.Parameters);
 
-            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("FlushAddressManager", token =>
+            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush...", token =>
             {
-                this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
+                connectionParameters.PeerAddressManager().SavePeers();
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
@@ -240,11 +233,11 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override void Stop()
         {
-            this.logger.LogInformation("Flushing address manager");
+            this.logger.LogInformation("Flushing peers...");
             this.flushAddressManagerLoop?.Dispose();
-            this.addressManager.SavePeerFile(this.dataFolder.AddrManFile, this.network);
+            this.addressManager.Dispose();
 
-            this.logger.LogInformation("Flushing headers chain");
+            this.logger.LogInformation("Flushing headers chain...");
             this.flushChainLoop?.Dispose();
             this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
 
@@ -254,7 +247,6 @@ namespace Stratis.Bitcoin.Base
             }
         }
     }
-
 
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.

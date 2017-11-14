@@ -305,7 +305,6 @@ namespace NBitcoin.Tests
 		[Fact]
 		public void CanDecodeAndEncodeRawTransaction()
 		{
-			var a = new Protocol.AddressManager().Select();
 			var tests = TestCase.read_json("data/tx_raw.json");
 			foreach(var test in tests)
 			{

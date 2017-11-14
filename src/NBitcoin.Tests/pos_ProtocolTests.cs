@@ -225,40 +225,6 @@ namespace NBitcoin.Tests
 			}
 		}
 
-#if !NOFILEIO
-		[Fact]
-		public void CanConnectToRandomNode()
-		{
-			Stopwatch watch = new Stopwatch();
-			NodeConnectionParameters parameters = new NodeConnectionParameters();
-			var addrman = GetCachedAddrMan("addrmancache.dat");
-			parameters.TemplateBehaviors.Add(new AddressManagerBehavior(addrman));
-			watch.Start();
-			IPEndPoint[] connectedEndpoints = null;
-			using (var node = Node.Connect(Network.StratisMain, parameters, connectedEndpoints))
-			{
-				var timeToFind = watch.Elapsed;
-				node.VersionHandshake();
-				node.Dispose();
-				watch.Restart();
-				using (var node2 = Node.Connect(Network.StratisMain, parameters, connectedEndpoints))
-				{
-					var timeToFind2 = watch.Elapsed;
-				}
-			}
-			addrman.SavePeerFile("addrmancache.dat", Network.StratisMain);
-		}
-
-		public static AddressManager GetCachedAddrMan(string file)
-		{
-			if (File.Exists(file))
-			{
-				return AddressManager.LoadPeerFile(file);
-			}
-			return new AddressManager();
-		}
-#endif
-
 		[Fact]
 		[Trait("Protocol", "Protocol")]
 		public void CanGetBlocksWithProtocol()

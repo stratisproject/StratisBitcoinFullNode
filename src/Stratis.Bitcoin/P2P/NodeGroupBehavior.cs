@@ -1,20 +1,19 @@
-﻿namespace NBitcoin.Protocol.Behaviors
+﻿using NBitcoin.Protocol;
+using NBitcoin.Protocol.Behaviors;
+
+namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
     /// Maintain connection to a given set of nodes.
     /// </summary>
-    internal class NodesGroupBehavior : NodeBehavior
+    internal sealed class NodeGroupBehavior : NodeBehavior
     {
-        internal NodesGroup Parent;
-
-        public NodesGroupBehavior()
-        {
-        }
-
-        public NodesGroupBehavior(NodesGroup parent)
+        internal NodeGroupBehavior(NodeGroup parent)
         {
             this.Parent = parent;
         }
+
+        internal NodeGroup Parent { get; private set; }
 
         protected override void AttachCore()
         {
@@ -29,16 +28,12 @@
         void AttachedNode_StateChanged(Node node, NodeState oldState)
         {
             if (node.State == NodeState.HandShaked)
-            {
-                this.Parent._ConnectedNodes.Add(node);
-            }
+                this.Parent.Handshaked(node);
 
             if ((node.State == NodeState.Failed) || (node.State == NodeState.Disconnecting) || (node.State == NodeState.Offline))
             {
-                if (this.Parent._ConnectedNodes.Remove(node))
-                {
-                    this.Parent.StartConnecting();
-                }
+                if (this.Parent.RemoveNode(node))
+                    this.Parent.ConnectToPeersAsync();
             }
         }
 
@@ -46,7 +41,7 @@
 
         public override object Clone()
         {
-            return new NodesGroupBehavior(this.Parent);
+            return new NodeGroupBehavior(this.Parent);
         }
 
         #endregion

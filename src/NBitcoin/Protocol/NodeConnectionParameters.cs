@@ -128,7 +128,14 @@ namespace NBitcoin.Protocol
 			return new NodeConnectionParameters(this);
 		}
 
-		public IPEndPoint AddressFrom
+        public NodeConnectionParameters Clone(CancellationToken token)
+        {
+            NodeConnectionParameters parameters = Clone();
+            parameters.ConnectCancellation = token;
+            return parameters;
+        }
+
+        public IPEndPoint AddressFrom
 		{
 			get;
 			set;
