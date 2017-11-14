@@ -418,7 +418,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 // Check whether to use checkpoint to skip block validation.
                 context.BlockValidationContext.SkipValidation = false; 
-                if (this.nodeSettings.UseCheckpoints)
+                if (this.nodeSettings.Consensus.UseCheckpoints)
                 {
                     int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
                     context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= lastCheckpointHeight;
@@ -427,16 +427,16 @@ namespace Stratis.Bitcoin.Features.Consensus
                 }
 
                 // Check whether to use assumevalid switch to skip validation.
-                if (!context.BlockValidationContext.SkipValidation && (this.nodeSettings.BlockAssumedValid != null))
+                if (!context.BlockValidationContext.SkipValidation && (this.nodeSettings.Consensus.BlockAssumedValid != null))
                 {
-                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.nodeSettings.BlockAssumedValid);
+                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.nodeSettings.Consensus.BlockAssumedValid);
                     if (assumeValidBlock != null)
                     {
                         context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height;
                         if (context.BlockValidationContext.SkipValidation)
                             this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
                     }
-                    else this.logger.LogWarning("Cannot find block specified by config flag assumevalid: '{0}'. Validation will not be skipped.", this.nodeSettings.BlockAssumedValid);
+                    else this.logger.LogWarning("Cannot find block specified by config flag assumevalid: '{0}'. Validation will not be skipped.", this.nodeSettings.Consensus.BlockAssumedValid);
                 }
 
                 if (!context.BlockValidationContext.SkipValidation)

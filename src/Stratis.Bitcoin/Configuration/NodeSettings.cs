@@ -1,3 +1,9 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
@@ -7,12 +13,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using System;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -46,6 +46,7 @@ namespace Stratis.Bitcoin.Configuration
         public NodeSettings()
         {
             this.ConnectionManager = new ConnectionManagerSettings();
+            this.Consensus = new ConsensusSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new ExtendedLoggerFactory();
         }
@@ -58,6 +59,9 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         public ConnectionManagerSettings ConnectionManager { get; set; }
+
+        /// <summary>Configuration realted to consensus.</summary>
+        public ConsensusSettings Consensus { get; set; }
 
         /// <summary>Configuration related to logging.</summary>
         public LogSettings Log { get; set; }
@@ -106,15 +110,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Minimum relay transaction fee for network.</summary>
         public FeeRate MinRelayTxFeeRate { get; set; }
-
-        /// <summary>Whether use of checkpoints is enabled or not.</summary>
-        public bool UseCheckpoints { get; set; }
-
-        /// <summary>
-        /// If this block is in the chain assume that it and its ancestors are valid and skip their script verification. 
-        /// Null to not assume valid blocks and therefore validate all blocks.
-        /// </summary>
-        public uint256 BlockAssumedValid { get; set; }
 
         public TextFileConfiguration ConfigReader { get; private set; }
 
@@ -234,22 +229,10 @@ namespace Stratis.Bitcoin.Configuration
             nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
 
-            nodeSettings.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
-            nodeSettings.Logger.LogDebug("Checkpoints are {0}.", nodeSettings.UseCheckpoints ? "enabled" : "disabled");
-
-            // TODO: Figure out where to put defaults so they are easy to configure.
-            uint256 defaultAssumeValid = null;
-            if (!nodeSettings.Network.IsBitcoin() && nodeSettings.Network.IsTest())
-            {
-                // Block Height 184096 https://chainz.cryptoid.info/strat-test/block.dws?184096.htm
-                defaultAssumeValid = new uint256("0x74427b2f85b5d9658ee81f7e73526441311122f2b23702b794be557ba43ca43e");
-            }
-            // TODO: Add defaults for bitcoin and mainnet networks.
-
-            nodeSettings.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", defaultAssumeValid);
-            if (nodeSettings.BlockAssumedValid == 0) // 0 means validate all blocks
-                nodeSettings.BlockAssumedValid = null;
-
+            nodeSettings.Consensus.Load(config, nodeSettings.Network);
+            if (nodeSettings.Logger.IsEnabled(LogLevel.Debug))
+                nodeSettings.Consensus.LogDebugSettings(nodeSettings.Logger);
+ 
             try
             {
                 nodeSettings.ConnectionManager.Connect.AddRange(config.GetAll("connect")

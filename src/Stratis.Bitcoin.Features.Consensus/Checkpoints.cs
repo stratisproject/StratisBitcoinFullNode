@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(settings, nameof(settings));
 
-            if (!settings.UseCheckpoints) this.checkpoints = new Dictionary<int, CheckpointInfo>(); 
+            if (!settings.Consensus.UseCheckpoints) this.checkpoints = new Dictionary<int, CheckpointInfo>(); 
             else if (network.Equals(Network.Main)) this.checkpoints = bitcoinMainnetCheckpoints;
             else if (network.Equals(Network.TestNet)) this.checkpoints = bitcoinTestnetCheckpoints;
             else if (network.Equals(Network.RegTest)) this.checkpoints = new Dictionary<int, CheckpointInfo>();
