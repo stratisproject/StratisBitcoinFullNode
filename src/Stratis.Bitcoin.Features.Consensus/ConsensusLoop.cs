@@ -421,7 +421,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (this.nodeSettings.UseCheckpoints)
                 {
                     int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
-                    context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= this.checkpoints.GetLastCheckpointHeight();
+                    context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= lastCheckpointHeight;
                     if (context.BlockValidationContext.SkipValidation)
                         this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
                 }
@@ -430,9 +430,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (!context.BlockValidationContext.SkipValidation && (this.nodeSettings.BlockAssumedValid != null))
                 {
                     ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.nodeSettings.BlockAssumedValid);
-                    context.BlockValidationContext.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
-                    if (context.BlockValidationContext.SkipValidation)
-                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
+                    if (assumeValidBlock != null)
+                    {
+                        context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height;
+                        if (context.BlockValidationContext.SkipValidation)
+                            this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
+                    }
+                    else this.logger.LogWarning("Cannot find block specified by config flag assumevalid: '{0}'. Validation will not be skipped.", this.nodeSettings.BlockAssumedValid);
                 }
 
                 if (!context.BlockValidationContext.SkipValidation)
