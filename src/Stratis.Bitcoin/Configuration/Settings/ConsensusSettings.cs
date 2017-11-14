@@ -39,6 +39,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         public void LogDebugSettings(ILogger logger)
         {
             logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
+            logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
         }
 
         /// <summary>
