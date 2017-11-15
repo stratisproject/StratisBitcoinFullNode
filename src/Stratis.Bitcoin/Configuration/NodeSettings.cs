@@ -120,9 +120,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Minimum relay transaction fee for network.</summary>
         public FeeRate MinRelayTxFeeRate { get; set; }
 
-        /// <summary>Whether use of checkpoints is enabled or not.</summary>
-        public bool UseCheckpoints { get; set; }
-
         public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
@@ -225,9 +222,6 @@ namespace Stratis.Bitcoin.Configuration
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
-            this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
-            this.Logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
-
             try
             {
                 this.ConnectionManager.Connect.AddRange(config.GetAll("connect")
@@ -292,6 +286,7 @@ namespace Stratis.Bitcoin.Configuration
                 this.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Network.DefaultPort);
             }
 
+            this.ConnectionManager.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
             return this;
         }
 
@@ -469,6 +464,8 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-mintxfee=<number>        Minimum fee rate. Defaults to network specific value.");
                 builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
                 builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
+                builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
+                builder.AppendLine($"-assumevalid=<hex>        If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification(0 to verify all). Defaults to network specific value.");
 
                 defaults.Logger.LogInformation(builder.ToString());
 
