@@ -244,6 +244,9 @@ namespace NBitcoin
 
         public int LastPOWBlock { get; set; }
 
+        /// <summary>The default hash to use for assuming valid blocks.</summary>
+        public uint256 DefaultAssumeValid { get; set; }
+
         public virtual Consensus Clone()
         {
             return new Consensus
@@ -268,6 +271,7 @@ namespace NBitcoin
                 LastPOWBlock = this.LastPOWBlock,
                 ProofOfStakeLimit = this.ProofOfStakeLimit,
                 ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
+                DefaultAssumeValid = this.DefaultAssumeValid
             };
         }
     }
