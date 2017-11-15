@@ -36,6 +36,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly NodeDeployments nodeDeployments;
         private readonly StakeChainStore stakeChain;
 
+        /// <summary>Consensus settings from configuration.</summary>
+        private readonly ConsensusSettings consensusSettings;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -69,6 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IDateTimeProvider dateTimeProvider,
             ConsensusManager consensusManager,
             ConsensusStats consensusStats,
+            ConsensusSettings consensusSettings,
             StakeChainStore stakeChain = null)
         {
             this.dBreezeCoinView = dBreezeCoinView;
@@ -90,6 +94,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dateTimeProvider = dateTimeProvider;
             this.consensusManager = consensusManager;
             this.consensusStats = consensusStats;
+            this.consensusSettings = consensusSettings;
 
             this.chainState.MaxReorgLength = this.network.Consensus.Option<PowConsensusOptions>().MaxReorgLength;
         }
@@ -174,6 +179,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<IGetUnspentTransaction, ConsensusManager>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
+                    services.AddSingleton<ConsensusSettings>();
                 });
             });
 
@@ -210,6 +216,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusManager>().AddSingleton<IBlockDownloadState, ConsensusManager>().AddSingleton<INetworkDifficulty, ConsensusManager>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
+                        services.AddSingleton<ConsensusSettings>();
                     });
             });
 

@@ -345,7 +345,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             };
 
             Network.Main.Consensus.Options = new PowConsensusOptions();
-            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, NodeSettings.Default()), DateTimeProvider.Default, new LoggerFactory());
+            ConsensusSettings consensusSettings = new ConsensusSettings(NodeSettings.Default(), this.loggerFactory);
+            var validator = new PowConsensusValidator(Network.Main, new Checkpoints(Network.Main, consensusSettings), DateTimeProvider.Default, this.loggerFactory);
             //validator.CheckBlockHeader(context);
             validator.ContextualCheckBlock(context);
             validator.CheckBlock(context);
