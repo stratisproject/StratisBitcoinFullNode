@@ -58,20 +58,27 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Gets the default setting for the hash for the block to assume is valid.
+        /// Gets the default setting for the block hash of the block to assume is valid.
         /// </summary>
         /// <param name="network">Network to return hash for.</param>
         /// <returns>The hash for the assume valid block.</returns>
         private uint256 GetDefaultAssumeValidBlock(Network network)
         {
-            // TODO: Figure out where to put defaults so they are easy to configure.
             uint256 defaultAssumeValidBlock = null;
-            if (!network.IsBitcoin() && network.IsTest())
+            if (network.IsBitcoin())
             {
-                // Block Height 184096 https://chainz.cryptoid.info/strat-test/block.dws?184096.htm
-                defaultAssumeValidBlock = new uint256("0x74427b2f85b5d9658ee81f7e73526441311122f2b23702b794be557ba43ca43e");
+                if (network.IsTest())
+                    defaultAssumeValidBlock = new uint256("0x0000000002e9e7b00e1f6dc5123a04aad68dd0f0968d8c7aa45f6640795c37b1"); // 1135275 
+                else
+                    defaultAssumeValidBlock = new uint256("0x0000000000000000003b9ce759c2a087d52abc4266f8f4ebd6d768b89defa50a"); // 477890
             }
-            // TODO: Add defaults for bitcoin and mainnet networks.
+            else
+            {
+                if (network.IsTest())
+                    defaultAssumeValidBlock = new uint256("0x74427b2f85b5d9658ee81f7e73526441311122f2b23702b794be557ba43ca43e"); // 184096
+                else
+                    defaultAssumeValidBlock = new uint256("0x5acb513b96dcb727fbe85c7d50a1266e6414cdd4c3ae66d01313c34a81b466a2"); // 602240
+            }            
 
             return defaultAssumeValidBlock;
         }
