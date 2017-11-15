@@ -176,5 +176,30 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         {
             return this.Wallet;
         }
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// TODO ideally we'd have WatchAddress call this method, but the value populating the Address field is slightly different.
+        /// The Address field is actually not used anywhere and is more there for info. 
+        /// Regardless, we need to consolidate them.
+        /// </remarks>
+        public void WatchScriptPubKey(Script scriptPubKey)
+        {
+            if (this.Wallet.WatchedAddresses.ContainsKey(scriptPubKey.ToString()))
+            {
+                this.logger.LogDebug($"already watching script: {scriptPubKey}. coin: {this.coinType}");
+                return;
+            }
+
+            this.logger.LogDebug($"added script: {scriptPubKey} to the watch list. coin: {this.coinType}");
+            this.Wallet.WatchedAddresses.TryAdd(scriptPubKey.ToString(), new WatchedAddress
+            {
+                Script = scriptPubKey,
+                Address = scriptPubKey.Hash.ToString()
+
+            });
+
+            this.SaveWatchOnlyWallet();
+        }
     }
 }

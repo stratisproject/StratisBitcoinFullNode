@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
 {
     /// <summary>
     /// An interface representing a manager providing operations on a watch-only wallet.
-    /// TODO Add filtering (and clearing) of transactions whose block hash is not found on the chain (meaning a reorg occured).
+    /// TODO Add filtering (and clearing) of transactions whose block hash is not found on the chain (meaning a reorg occurred).
     /// </summary>
     public interface IWatchOnlyWalletManager : IDisposable
     {
@@ -19,7 +19,13 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// </summary>
         /// <returns>A watch-only wallet.</returns>
         WatchOnlyWallet GetWatchOnlyWallet();
-        
+
+        /// <summary>
+        /// Adds this scriptPubKey to the watch-only wallet so that transactions affecting it will be monitored.
+        /// </summary>
+        /// <param name="scriptPubKey">The scriptPubKey.</param>
+        void WatchScriptPubKey(Script scriptPubKey);
+
         /// <summary>
         /// Adds this base58 encoded address to the watch-only wallet so that transactions affecting it will be monitored.
         /// </summary>
