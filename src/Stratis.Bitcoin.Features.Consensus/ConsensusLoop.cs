@@ -429,17 +429,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                 if (!context.BlockValidationContext.SkipValidation && (this.settings.BlockAssumedValid != null))
                 {
                     ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.settings.BlockAssumedValid);
-                    if (assumeValidBlock != null)
-                    {
-                        context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height;
-                        if (context.BlockValidationContext.SkipValidation)
-                            this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
-                    }
-                    else
-                    {
-                        this.logger.LogWarning("Cannot find block specified by config flag assumevalid: '{0}'. Assume valid block feature will be disabled.", this.settings.BlockAssumedValid);
-                        this.settings.BlockAssumedValid = null;
-                    }
+                    context.BlockValidationContext.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
+                    if (context.BlockValidationContext.SkipValidation)
+                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
                 }
 
                 if (!context.BlockValidationContext.SkipValidation)
