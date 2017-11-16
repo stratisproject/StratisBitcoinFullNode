@@ -1,3 +1,9 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
@@ -7,12 +13,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using System;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -106,9 +106,6 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Minimum relay transaction fee for network.</summary>
         public FeeRate MinRelayTxFeeRate { get; set; }
-
-        /// <summary>Whether use of checkpoints is enabled or not.</summary>
-        public bool UseCheckpoints { get; set; }
 
         public TextFileConfiguration ConfigReader { get; private set; }
 
@@ -227,9 +224,6 @@ namespace Stratis.Bitcoin.Configuration
 
             nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
             nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
-
-            nodeSettings.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
-            nodeSettings.Logger.LogDebug("Checkpoints are {0}.", nodeSettings.UseCheckpoints ? "enabled" : "disabled");
 
             try
             {
@@ -467,7 +461,7 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine($"-fallbackfee=<number>     Fallback fee rate. Defaults to network specific value.");
                 builder.AppendLine($"-minrelaytxfee=<number>   Minimum relay fee rate. Defaults to network specific value.");
                 builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).");
-
+                builder.AppendLine($"-assumevalid=<hex>        If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification(0 to verify all). Defaults to network specific value.");
 
                 defaults.Logger.LogInformation(builder.ToString());
 
