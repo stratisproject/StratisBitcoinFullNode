@@ -25,10 +25,10 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public WatchOnlyWallet Wallet { get; private set; }
 
         private readonly CoinType coinType;
-        
+
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
-        
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -75,6 +75,27 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             {
                 Script = script,
                 Address = address
+            });
+
+            this.SaveWatchOnlyWallet();
+        }
+
+        /// <inheritdoc />
+        public void StoreTransaction(TransactionData transactionData)
+        {
+            if (this.Wallet.WatchedTransactions.ContainsKey(transactionData.Id.ToString()))
+            {
+                this.logger.LogDebug($"already watching transaction: {transactionData.Id}. coin: {this.coinType}");
+                return;
+            }
+
+            this.logger.LogDebug($"added transaction: {transactionData.Id} to the watch list. coin: {this.coinType}");
+            this.Wallet.WatchedTransactions.TryAdd(transactionData.Id.ToString(), new TransactionData
+            {
+                BlockHash = transactionData.BlockHash,
+                Hex = transactionData.Hex,
+                Id = transactionData.Id,
+                MerkleProof = transactionData.MerkleProof
             });
 
             this.SaveWatchOnlyWallet();
@@ -129,7 +150,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
                     {
                         // If there is a transaction already present, update the hash of the block containing it.
                         existingTransaction.BlockHash = block?.GetHash();
-                        
+
                         // Add the Merkle proof now that the transaction is confirmed in a block.
                         if (block != null && existingTransaction.MerkleProof == null)
                         {
@@ -167,7 +188,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             this.fileStorage.SaveToFile(watchOnlyWallet, WalletFileName);
             return watchOnlyWallet;
         }
-        
+
         /// <summary>
         /// Gets the watch-only wallet.
         /// </summary>
@@ -175,6 +196,31 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public WatchOnlyWallet GetWatchOnlyWallet()
         {
             return this.Wallet;
+        }
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// TODO ideally we'd have WatchAddress call this method, but the value populating the Address field is slightly different.
+        /// The Address field is actually not used anywhere and is more there for info. 
+        /// Regardless, we need to consolidate them.
+        /// </remarks>
+        public void WatchScriptPubKey(Script scriptPubKey)
+        {
+            if (this.Wallet.WatchedAddresses.ContainsKey(scriptPubKey.ToString()))
+            {
+                this.logger.LogDebug($"already watching script: {scriptPubKey}. coin: {this.coinType}");
+                return;
+            }
+
+            this.logger.LogDebug($"added script: {scriptPubKey} to the watch list. coin: {this.coinType}");
+            this.Wallet.WatchedAddresses.TryAdd(scriptPubKey.ToString(), new WatchedAddress
+            {
+                Script = scriptPubKey,
+                Address = scriptPubKey.Hash.ToString()
+
+            });
+
+            this.SaveWatchOnlyWallet();
         }
     }
 }
