@@ -543,7 +543,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Shuffle = request.ShuffleOutputs ?? true
+                    Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
                 };
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
