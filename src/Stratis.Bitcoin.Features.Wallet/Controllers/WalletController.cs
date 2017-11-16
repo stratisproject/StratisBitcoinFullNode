@@ -480,7 +480,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>
         /// Gets a transaction fee estimate.
         /// Fee can be estimated by creating a <see cref="TransactionBuildContext"/> with no password
-        /// and then building the transaction and retreiving the fee from the context.
+        /// and then building the transaction and retrieving the fee from the context.
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
         /// <returns>The estimated fee for the transaction.</returns>
@@ -543,7 +543,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Shuffle = true
+                    Shuffle = request.ShuffleOutputs ?? true
                 };
 
                 var transactionResult = this.walletTransactionHandler.BuildTransaction(context);
