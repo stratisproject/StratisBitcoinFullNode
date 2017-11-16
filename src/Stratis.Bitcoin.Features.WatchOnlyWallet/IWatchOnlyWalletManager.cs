@@ -33,6 +33,12 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         void WatchAddress(string address);
 
         /// <summary>
+        /// Stores a transaction.
+        /// </summary>
+        /// <param name="transactionData">The transaction data.</param>
+        void StoreTransaction(TransactionData transactionData);
+
+        /// <summary>
         /// Processes a block received from the network.
         /// </summary>
         /// <param name="block">The block to process.</param>
