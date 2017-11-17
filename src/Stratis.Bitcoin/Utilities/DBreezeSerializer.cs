@@ -11,13 +11,16 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     public class DBreezeSerializer
     {
+        public Network Network { get; private set; }
+
         /// <summary>
         /// Initializes custom serializers for DBreeze engine.
         /// </summary>
-        public void Initialize()
+        public void Initialize(Network network)
         {
             CustomSerializator.ByteArraySerializator = this.Serializer;
             CustomSerializator.ByteArrayDeSerializator = this.Deserializer;
+            this.Network = network;
         }
 
         /// <summary>
@@ -29,7 +32,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             IBitcoinSerializable serializable = obj as IBitcoinSerializable;
             if (serializable != null)
-                return serializable.ToBytes();
+                return serializable.ToBytes(network:this.Network);
 
             uint256 u256 = obj as uint256;
             if (u256 != null)
@@ -89,21 +92,21 @@ namespace Stratis.Bitcoin.Utilities
             if (type == typeof(Coins))
             {
                 Coins coin = new Coins();
-                coin.ReadWrite(bytes);
+                coin.ReadWrite(bytes, network:this.Network);
                 return coin;
             }
 
             if (type == typeof(BlockHeader))
             {
                 BlockHeader header = new BlockHeader();
-                header.ReadWrite(bytes);
+                header.ReadWrite(bytes, network:this.Network);
                 return header;
             }
 
             if (type == typeof(RewindData))
             {
                 RewindData rewind = new RewindData();
-                rewind.ReadWrite(bytes);
+                rewind.ReadWrite(bytes, network:this.Network);
                 return rewind;
             }
 
@@ -111,10 +114,10 @@ namespace Stratis.Bitcoin.Utilities
                 return new uint256(bytes);
 
             if (type == typeof(Block))
-                return new Block(bytes);
+                return new Block(bytes, network:this.Network);
 
             if (type == typeof(BlockStake))
-                return new BlockStake(bytes);
+                return new BlockStake(bytes, network:this.Network);
 
             throw new NotSupportedException();
         }
