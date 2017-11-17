@@ -1,7 +1,7 @@
 ﻿using System;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Base
+namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Providing date time functionality.
