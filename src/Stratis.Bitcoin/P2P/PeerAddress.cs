@@ -2,47 +2,51 @@
 using System.Net;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.P2P
 {
     [JsonObject]
     public sealed class PeerAddress
     {
-        private const int PEER_MAX_LAST_SEEN = 30;
-        private const int PEER_MIN_FAIL_DAYS = 7;
-        private const int PEER_MAX_WEEKLY_ATTEMPTS = 10;
-        private const int PEER_MAX_CONNECTION_RETRIES = 3;
+        private const int PeerAddressLastSeen = 30;
+        private const int PeerMinimumFailDays = 7;
+        private const int PeerMaximumWeeklyAttempts = 10;
+        private const int PeerMaximumConnectionRetries = 3;
 
         #region Address Data
 
         [JsonProperty]
-        private string address;
-        [JsonProperty]
-        private int addressPort;
+        private IPEndPoint endPoint;
+
+        //[JsonProperty]
+        //private string address;
+        //[JsonProperty]
+        //private int addressPort;
         [JsonProperty]
         private DateTimeOffset? addressTime;
 
-        [JsonIgnore]
-        public string AddressIP
-        {
-            get { return this.address; }
-        }
+        //[JsonIgnore]
+        //public string AddressIP
+        //{
+        //    get { return this.address; }
+        //}
 
-        [JsonIgnore]
-        public int AddressPort
-        {
-            get { return this.addressPort; }
-        }
+        //[JsonIgnore]
+        //public int AddressPort
+        //{
+        //    get { return this.addressPort; }
+        //}
 
         [JsonIgnore]
         public NetworkAddress NetworkAddress
         {
             get
             {
-                if (string.IsNullOrEmpty(this.address))
+                if (this.endPoint == null)
                     return null;
 
-                var networkAddress = new NetworkAddress(new IPEndPoint(IPAddress.Parse(this.address), this.addressPort));
+                var networkAddress = new NetworkAddress(this.endPoint);
                 if (this.addressTime != null)
                     networkAddress.Time = this.addressTime.Value;
 
@@ -149,7 +153,7 @@ namespace Stratis.Bitcoin.P2P
         #region Peer Preference
 
         /// <summary>
-        /// Determines whether the peer will be selected by <see cref="NodeGroup"/> when connecting.
+        /// Determines whether the peer will be selected by <see cref="PeerConnector"/> when connecting.
         /// <para>
         /// <see cref="PeerHasNeverBeenConnectedTo"/> and <see cref="PeerHasBeenConnectedTo"/>.
         /// </para>
@@ -184,7 +188,7 @@ namespace Stratis.Bitcoin.P2P
 
                 return
                     this.lastConnectionAttempt.Value >= DateTimeOffset.Now - TimeSpan.FromSeconds(60) &&
-                    this.connectionAttempts < PEER_MAX_CONNECTION_RETRIES;
+                    this.connectionAttempts < PeerMaximumConnectionRetries;
             }
         }
 
@@ -202,12 +206,12 @@ namespace Stratis.Bitcoin.P2P
         {
             get
             {
-                if (DateTimeOffset.Now - this.NetworkAddress.Time > TimeSpan.FromDays(PEER_MAX_LAST_SEEN))
+                if (DateTimeOffset.Now - this.NetworkAddress.Time > TimeSpan.FromDays(PeerAddressLastSeen))
                     return false;
 
                 return
-                    DateTimeOffset.Now - this.lastConnectionSuccess < TimeSpan.FromDays(PEER_MIN_FAIL_DAYS) &&
-                    this.connectionAttempts < PEER_MAX_WEEKLY_ATTEMPTS;
+                    DateTimeOffset.Now - this.lastConnectionSuccess < TimeSpan.FromDays(PeerMinimumFailDays) &&
+                    this.connectionAttempts < PeerMaximumWeeklyAttempts;
             }
         }
 
@@ -255,9 +259,10 @@ namespace Stratis.Bitcoin.P2P
         {
             return new PeerAddress
             {
-                address = address.Endpoint.Address.ToString(),
-                addressPort = address.Endpoint.Port,
+                //address = address.Endpoint.Address.ToString(),
+                //addressPort = address.Endpoint.Port,
                 connectionAttempts = 0,
+                endPoint = address.Endpoint,
                 loopbackAddress = IPAddress.Loopback.ToString(),
             };
         }
@@ -269,9 +274,48 @@ namespace Stratis.Bitcoin.P2P
             return peer;
         }
 
-        public bool Match(string ip, int port)
+        public bool Match(IPEndPoint endPoint)
         {
-            return this.address == ip && this.addressPort == port;
+            return this.endPoint.Address.ToString() == endPoint.Address.ToString() && this.endPoint.Port == endPoint.Port;
+        }
+    }
+
+    /// <summary>
+    /// Converter used to convert <see cref="IPEndPoint"/> to and from JSON.
+    /// </summary>
+    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
+    public sealed class IPEndpointConverter : JsonConverter
+    {
+        /// <inheritdoc />
+        public override bool CanConvert(Type objectType)
+        {
+            return objectType == typeof(IPEndPoint);
+        }
+
+        /// <inheritdoc />
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            var json = JToken.Load(reader).ToString();
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            var endPointComponents = json.Split(':');
+            return new IPEndPoint(IPAddress.Parse(endPointComponents[0]), Convert.ToInt32(endPointComponents[1]));
+        }
+
+        /// <inheritdoc />
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            if (value is IPEndPoint ipEndPoint)
+            {
+                if (ipEndPoint.Address != null || ipEndPoint.Port != 0)
+                {
+                    JToken.FromObject(string.Format("{0}:{1}", ipEndPoint.Address, ipEndPoint.Port)).WriteTo(writer);
+                    return;
+                }
+            }
+
+            writer.WriteNull();
         }
     }
 }

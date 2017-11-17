@@ -8,12 +8,12 @@ namespace Stratis.Bitcoin.P2P
     /// </summary>
     internal sealed class NodeGroupBehavior : NodeBehavior
     {
-        internal NodeGroupBehavior(NodeGroup parent)
+        internal NodeGroupBehavior(PeerConnector parent)
         {
             this.Parent = parent;
         }
 
-        internal NodeGroup Parent { get; private set; }
+        internal PeerConnector Parent { get; private set; }
 
         protected override void AttachCore()
         {
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.P2P
         void AttachedNode_StateChanged(Node node, NodeState oldState)
         {
             if (node.State == NodeState.HandShaked)
-                this.Parent.Handshaked(node);
+                this.Parent.AddNode(node);
 
             if ((node.State == NodeState.Failed) || (node.State == NodeState.Disconnecting) || (node.State == NodeState.Offline))
             {

@@ -19,10 +19,10 @@ namespace Stratis.Bitcoin.Connection
 {
     public interface IConnectionManager : IDisposable
     {
-        NodeGroup AddNodeNodeGroup { get; }
+        PeerConnector AddNodeNodeGroup { get; }
         IReadOnlyNodesCollection ConnectedNodes { get; }
-        NodeGroup ConnectNodeGroup { get; }
-        NodeGroup DiscoveredNodeGroup { get; set; }
+        PeerConnector ConnectNodeGroup { get; }
+        PeerConnector DiscoveredNodeGroup { get; set; }
         Network Network { get; }
         NodeSettings NodeSettings { get; }
         NodeConnectionParameters Parameters { get; }
@@ -74,9 +74,9 @@ namespace Stratis.Bitcoin.Connection
 
         public List<NodeServer> Servers { get; }
 
-        public NodeGroup ConnectNodeGroup { get; private set; }
-        public NodeGroup AddNodeNodeGroup { get; private set; }
-        public NodeGroup DiscoveredNodeGroup { get; set; }
+        public PeerConnector ConnectNodeGroup { get; private set; }
+        public PeerConnector AddNodeNodeGroup { get; private set; }
+        public PeerConnector DiscoveredNodeGroup { get; set; }
 
         public ConnectionManager(Network network, NodeConnectionParameters parameters, NodeSettings nodeSettings, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
         {
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:{1})", nameof(services), services);
 
             this.discoveredNodeRequiredService |= services;
-            NodeGroup group = this.DiscoveredNodeGroup;
+            PeerConnector group = this.DiscoveredNodeGroup;
             if ((group != null) && !group.Requirements.RequiredServices.HasFlag(services))
             {
                 group.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Connection
             return speed.ToString("0.00") + " KB/S";
         }
 
-        private NodeGroup CreateNodeGroup(NodeConnectionParameters parameters, NodeServices requiredServices, Func<IPEndPoint, byte[]> groupSelector)
+        private PeerConnector CreateNodeGroup(NodeConnectionParameters parameters, NodeServices requiredServices, Func<IPEndPoint, byte[]> groupSelector)
         {
             this.logger.LogTrace("({0}:{1})", nameof(requiredServices), requiredServices);
 
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Connection
                 RequiredServices = requiredServices,
             };
 
-            var nodeGroup = new NodeGroup(this.Network, this.nodeLifetime, parameters, nodeRequirement, groupSelector, this.asyncLoopFactory);
+            var nodeGroup = new PeerConnector(this.Network, this.nodeLifetime, parameters, nodeRequirement, groupSelector, this.asyncLoopFactory);
 
             this.logger.LogTrace("(-)");
 
@@ -329,7 +329,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
 
-            PeerAddressManager addressManager = this.AddNodeNodeGroup.Parameters.PeerAddressManager();
+            PeerAddressManager addressManager = this.AddNodeNodeGroup.ParentParameters.PeerAddressManager();
             addressManager.AddPeer(PeerAddress.Create(new NetworkAddress(endpoint)));
 
             this.AddNodeNodeGroup.MaximumNodeConnections++;

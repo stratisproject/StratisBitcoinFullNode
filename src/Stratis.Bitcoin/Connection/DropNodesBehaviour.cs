@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Connection
 
             message.Message.IfPayloadIs<VersionPayload>(version =>
             {
-                NodeGroup nodeGroup = this.connection.DiscoveredNodeGroup ?? this.connection.ConnectNodeGroup;
+                PeerConnector nodeGroup = this.connection.DiscoveredNodeGroup ?? this.connection.ConnectNodeGroup;
                 // Find how much 20% max nodes.
                 decimal thresholdCount = Math.Round(nodeGroup.MaximumNodeConnections * this.dropThreshold, MidpointRounding.ToEven);
 
