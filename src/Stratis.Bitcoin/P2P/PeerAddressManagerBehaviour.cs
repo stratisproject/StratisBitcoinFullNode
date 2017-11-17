@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 
@@ -62,7 +61,7 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (message.Message.Payload is AddrPayload addr)
-                    this.AddressManager.AddPeer(addr.Addresses, node.RemoteSocketAddress);
+                    this.AddressManager.AddPeers(addr.Addresses, node.RemoteSocketAddress);
             }
         }
 
@@ -86,12 +85,6 @@ namespace Stratis.Bitcoin.P2P
         protected override void DetachCore()
         {
             this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
-        }
-
-        public void DiscoverPeers(Network network, NodeConnectionParameters parameters)
-        {
-            if (this.Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
-                this.AddressManager.DiscoverPeers(network, parameters, this.PeersToDiscover);
         }
 
         #region ICloneable Members

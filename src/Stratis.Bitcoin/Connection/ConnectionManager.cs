@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Connection
             }
             else
             {
-                clonedParameters.PeerAddressManager().AddPeer(this.connectionManagerSettings.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
+                clonedParameters.PeerAddressManager().AddPeers(this.connectionManagerSettings.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
 
                 this.ConnectNodeGroup = CreateNodeGroup(clonedParameters, NodeServices.Nothing, WellKnownGroupSelectors.ByEndpoint);
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Connection
             }
 
             {
-                clonedParameters.PeerAddressManager().AddPeer(this.connectionManagerSettings.AddNode.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
+                clonedParameters.PeerAddressManager().AddPeers(this.connectionManagerSettings.AddNode.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
 
                 this.AddNodeNodeGroup = CreateNodeGroup(clonedParameters, NodeServices.Nothing, WellKnownGroupSelectors.ByEndpoint);
@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}')", nameof(endpoint), endpoint);
 
             PeerAddressManager addressManager = this.AddNodeNodeGroup.ParentParameters.PeerAddressManager();
-            addressManager.AddPeer(PeerAddress.Create(new NetworkAddress(endpoint)));
+            addressManager.AddPeer(new NetworkAddress(endpoint), IPAddress.Loopback);
 
             this.AddNodeNodeGroup.MaximumNodeConnections++;
 

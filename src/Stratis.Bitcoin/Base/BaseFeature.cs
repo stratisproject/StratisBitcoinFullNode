@@ -86,6 +86,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Manager of node's network peers.</summary>
         private PeerAddressManager addressManager;
 
+        /// <summary>Loop that discovers peers to connect to.</summary>
+        private PeerDiscoveryLoop peerDiscoveryLoop;
+
         /// <summary>Periodic task to save list of peers to disk.</summary>
         private IAsyncLoop flushAddressManagerLoop;
 
@@ -214,21 +217,27 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartAddressManager(NodeConnectionParameters connectionParameters)
         {
-            this.addressManager = new PeerAddressManager(this.asyncLoopFactory, this.dataFolder.AddressManagerFilePath);
-            connectionParameters.TemplateBehaviors.Add(new PeerAddressManagerBehaviour(this.addressManager));
+            this.addressManager = new PeerAddressManager(this.dataFolder);
+            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.addressManager);
+            connectionParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-            if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PEERFILENAME)))
+            if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PeerFileName)))
             {
                 this.logger.LogInformation($"Loading peers from : {this.dataFolder.AddressManagerFilePath}...");
                 connectionParameters.PeerAddressManager().LoadPeers();
             }
 
-            this.logger.LogInformation("Starting peer discovery...");
-            connectionParameters.PeerAddressManagerBehaviour().DiscoverPeers(this.network, this.connectionManager.Parameters);
+            if (addressManagerBehaviour.Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
+            {
+                this.logger.LogInformation("Starting peer discovery...");
+
+                this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.network, this.asyncLoopFactory, connectionParameters, this.nodeLifetime.ApplicationStopping);
+                this.peerDiscoveryLoop.Start();
+            }
 
             this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush...", token =>
             {
-                connectionParameters.PeerAddressManager().SavePeers();
+                this.addressManager.SavePeers();
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
@@ -240,11 +249,16 @@ namespace Stratis.Bitcoin.Base
         public override void Stop()
         {
             this.logger.LogInformation("Flushing peers...");
-            this.flushAddressManagerLoop?.Dispose();
+            this.flushAddressManagerLoop.Dispose();
+
             this.addressManager.Dispose();
+
+            this.logger.LogInformation("Stopping peer discovery...");
+            this.peerDiscoveryLoop?.Dispose();
 
             this.logger.LogInformation("Flushing headers chain...");
             this.flushChainLoop?.Dispose();
+
             this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
 
             foreach (IDisposable disposable in this.disposableResources)
