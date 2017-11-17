@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// <remarks>This represents the number of seconds that have elapsed since 1970-01-01T00:00:00Z.</remarks>
         public static int ToUnixTimestamp(this DateTime value)
         {
-            return (int)Math.Truncate((value.ToUniversalTime().Subtract(new DateTime(1970, 1, 1))).TotalSeconds);
+            return (int)((DateTimeOffset)value).ToUnixTimeSeconds();
         }
     }
 }
