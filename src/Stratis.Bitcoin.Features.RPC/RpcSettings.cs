@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     this.DefaultBindings = config
                         .GetAll("rpcbind")
-                        .Select(p => NodeSettings.ConvertToEndpoint(p, this.RPCPort))
+                        .Select(p => NodeSettings.ConvertIpAddressToEndpoint(p, this.RPCPort))
                         .ToList();
                 }
                 catch (FormatException)

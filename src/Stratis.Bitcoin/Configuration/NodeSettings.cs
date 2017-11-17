@@ -5,7 +5,6 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NLog.Extensions.Logging;
@@ -41,13 +40,27 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>
         /// Initializes a new instance of the object.
-        /// <para>This constructor does not load the configuration itself.</para>
         /// </summary>
-        public NodeSettings()
+        /// <param name="name">Blockchain name. Currently only "bitcoin" and "stratis" are used.</param>
+        /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
+        /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
+        /// <param name="agent">The nodes user agent that will be shared with peers.</param>
+        public NodeSettings(string name = "bitcoin", Network innerNetwork = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, string agent = "StratisBitcoin")
         {
+            if (string.IsNullOrEmpty(name))
+                throw new ConfigurationException("A network name is mandatory.");
+
+            this.Name = name;
+            this.Agent = agent;
+            this.Network = innerNetwork;
+            this.ProtocolVersion = protocolVersion;
+
             this.ConnectionManager = new ConnectionManagerSettings();
             this.Log = new LogSettings();
             this.LoggerFactory = new ExtendedLoggerFactory();
+            this.LoggerFactory.AddConsoleWithFilters();
+            this.LoggerFactory.AddNLog();
+            this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
         }
 
         /// <summary>Factory to create instance logger.</summary>
@@ -120,7 +133,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Default node configuration.</returns>
         public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
-            return NodeSettings.FromArguments(new string[0], innerNetwork: network);
+            NodeSettings nodeSettings = new NodeSettings(innerNetwork: network);
+            nodeSettings.LoadArguments(new string[0]);
+            return nodeSettings;
         }
 
         /// <summary>
@@ -128,107 +143,89 @@ namespace Stratis.Bitcoin.Configuration
         /// <para>This includes loading configuration from file.</para>
         /// </summary>
         /// <param name="args">Application command line arguments.</param>
-        /// <param name="name">Blockchain name. Currently only "bitcoin" and "stratis" are used.</param>
-        /// <param name="innerNetwork">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
-        /// <param name="agent">The nodes user agent that will be shared with peers.</param>
         /// <returns>Initialized node configuration.</returns>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
-        public static NodeSettings FromArguments(string[] args, string name = "bitcoin",
-            Network innerNetwork = null,
-            ProtocolVersion protocolVersion = SupportedProtocolVersion,
-            string agent = "StratisBitcoin")
+        public NodeSettings LoadArguments(string[] args)
         {
-            if (string.IsNullOrEmpty(name))
-                throw new ConfigurationException("A network name is mandatory.");
-
-            NodeSettings nodeSettings = new NodeSettings { Name = name, Agent = agent };
-
-            // The logger factory goes in the settings with minimal configuration, 
-            // that's so the settings can also log out its progress.
-            nodeSettings.LoggerFactory.AddConsoleWithFilters(out ConsoleLoggerSettings consoleSettings);
-            nodeSettings.LoggerFactory.AddNLog();
-            nodeSettings.Logger = nodeSettings.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
-
-            if (innerNetwork != null)
-                nodeSettings.Network = innerNetwork;
-
-            nodeSettings.ProtocolVersion = protocolVersion;
-            nodeSettings.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
-            nodeSettings.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
+            // By default, we look for a file named '<network>.conf' in the network's data directory, 
+            // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
+            this.ConfigurationFile = args.GetValueOf("-conf")?.NormalizeDirectorySeparator();
+            this.DataDir = args.GetValueOf("-datadir")?.NormalizeDirectorySeparator();
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths
-            if (nodeSettings.DataDir != null && nodeSettings.ConfigurationFile != null)
+            if (this.DataDir != null && this.ConfigurationFile != null)
             {
-                bool isRelativePath = Path.GetFullPath(nodeSettings.ConfigurationFile).Length > nodeSettings.ConfigurationFile.Length;
+                bool isRelativePath = Path.GetFullPath(this.ConfigurationFile).Length > this.ConfigurationFile.Length;
                 if (isRelativePath)
-                    nodeSettings.ConfigurationFile = Path.Combine(nodeSettings.DataDir, nodeSettings.ConfigurationFile);
+                    this.ConfigurationFile = Path.Combine(this.DataDir, this.ConfigurationFile);
             }
 
-            nodeSettings.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
-            nodeSettings.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
-
-            if (nodeSettings.ConfigurationFile != null)
+            // Find out if we need to run on testnet or regtest from the config file. 
+            if (this.ConfigurationFile != null)
             {
-                AssertConfigFileExists(nodeSettings);
-                var configTemp = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
-                nodeSettings.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
-                nodeSettings.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
+                AssertConfigFileExists(this.ConfigurationFile);
+                var configTemp = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+                this.Testnet = configTemp.GetOrDefault<bool>("testnet", false);
+                this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
             }
 
-            if (nodeSettings.Testnet && nodeSettings.RegTest)
+            this.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
+            this.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
+
+            if (this.Testnet && this.RegTest)
                 throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
-
-            nodeSettings.Network = nodeSettings.GetNetwork();
-            if (nodeSettings.DataDir == null)
+            
+            this.Network = this.GetNetwork();
+            if (this.DataDir == null)
             {
-                nodeSettings.SetDefaultDataDir(Path.Combine("StratisNode", nodeSettings.Name), nodeSettings.Network);
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Name), this.Network);
             }
 
-            if (!Directory.Exists(nodeSettings.DataDir))
-                throw new ConfigurationException($"Data directory {nodeSettings.DataDir} does not exist.");
+            if (!Directory.Exists(this.DataDir))
+                throw new ConfigurationException($"Data directory {this.DataDir} does not exist.");
 
-            if (nodeSettings.ConfigurationFile == null)
+            // If no configuration file path is passed in the args, load the default file.
+            if (this.ConfigurationFile == null)
             {
-                nodeSettings.ConfigurationFile = nodeSettings.GetDefaultConfigurationFile();
+                this.ConfigurationFile = this.CreateDefaultConfigurationFile();
             }
 
             var consoleConfig = new TextFileConfiguration(args);
-            var config = TextFileConfiguration.Parse(File.ReadAllText(nodeSettings.ConfigurationFile));
-            nodeSettings.ConfigReader = config;
+            var config = new TextFileConfiguration(File.ReadAllText(this.ConfigurationFile));
+            this.ConfigReader = config;
             consoleConfig.MergeInto(config);
 
-            nodeSettings.DataFolder = new DataFolder(nodeSettings);
-            if (!Directory.Exists(nodeSettings.DataFolder.CoinViewPath))
-                Directory.CreateDirectory(nodeSettings.DataFolder.CoinViewPath);
+            this.DataFolder = new DataFolder(this);
+            if (!Directory.Exists(this.DataFolder.CoinViewPath))
+                Directory.CreateDirectory(this.DataFolder.CoinViewPath);
 
             // Set the configuration filter and file path.
-            nodeSettings.Log.Load(config);
-            nodeSettings.LoggerFactory.AddFilters(nodeSettings.Log, nodeSettings.DataFolder);
-            nodeSettings.LoggerFactory.ConfigureConsoleFilters(consoleSettings, nodeSettings.Log);
+            this.Log.Load(config);
+            this.LoggerFactory.AddFilters(this.Log, this.DataFolder);
+            this.LoggerFactory.ConfigureConsoleFilters(this.LoggerFactory.GetConsoleSettings(), this.Log);
 
-            nodeSettings.Logger.LogInformation("Data directory set to '{0}'.", nodeSettings.DataDir);
-            nodeSettings.Logger.LogInformation("Configuration file set to '{0}'.", nodeSettings.ConfigurationFile);
+            this.Logger.LogInformation("Data directory set to '{0}'.", this.DataDir);
+            this.Logger.LogInformation("Configuration file set to '{0}'.", this.ConfigurationFile);
 
-            nodeSettings.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.RegTest || nodeSettings.Testnet));
-            nodeSettings.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
-            nodeSettings.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
+            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(this.RegTest || this.Testnet));
+            this.MaxTipAge = config.GetOrDefault("maxtipage", DefaultMaxTipAge);
+            this.ApiUri = config.GetOrDefault("apiuri", new Uri("http://localhost:37220"));
 
-            nodeSettings.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", nodeSettings.Network.IsTest(), nodeSettings.Network.IsBitcoin());
-            nodeSettings.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", nodeSettings.Network.MinTxFee));
-            nodeSettings.Logger.LogDebug("MinTxFeeRate set to {0}.", nodeSettings.MinTxFeeRate);
-            nodeSettings.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", nodeSettings.Network.FallbackFee));
-            nodeSettings.Logger.LogDebug("FallbackTxFeeRate set to {0}.", nodeSettings.FallbackTxFeeRate);
-            nodeSettings.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", nodeSettings.Network.MinRelayTxFee));
-            nodeSettings.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", nodeSettings.MinRelayTxFeeRate);
+            this.Logger.LogDebug("Network: IsTest='{0}', IsBitcoin='{1}'.", this.Network.IsTest(), this.Network.IsBitcoin());
+            this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee));
+            this.Logger.LogDebug("MinTxFeeRate set to {0}.", this.MinTxFeeRate);
+            this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee));
+            this.Logger.LogDebug("FallbackTxFeeRate set to {0}.", this.FallbackTxFeeRate);
+            this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee));
+            this.Logger.LogDebug("MinRelayTxFeeRate set to {0}.", this.MinRelayTxFeeRate);
 
-            nodeSettings.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
-            nodeSettings.Logger.LogDebug("Time synchronization with peers is {0}.", nodeSettings.SyncTimeEnabled ? "enabled" : "disabled");
+            this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true);
+            this.Logger.LogDebug("Time synchronization with peers is {0}.", this.SyncTimeEnabled ? "enabled" : "disabled");
 
             try
             {
-                nodeSettings.ConnectionManager.Connect.AddRange(config.GetAll("connect")
-                    .Select(c => ConvertToEndpoint(c, nodeSettings.Network.DefaultPort)));
+                this.ConnectionManager.Connect.AddRange(config.GetAll("connect")
+                    .Select(c => ConvertIpAddressToEndpoint(c, this.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -237,19 +234,19 @@ namespace Stratis.Bitcoin.Configuration
 
             try
             {
-                nodeSettings.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
-                        .Select(c => ConvertToEndpoint(c, nodeSettings.Network.DefaultPort)));
+                this.ConnectionManager.AddNode.AddRange(config.GetAll("addnode")
+                        .Select(c => ConvertIpAddressToEndpoint(c, this.Network.DefaultPort)));
             }
             catch (FormatException)
             {
                 throw new ConfigurationException("Invalid 'addnode' parameter.");
             }
 
-            var port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort);
+            var port = config.GetOrDefault<int>("port", this.Network.DefaultPort);
             try
             {
-                nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), false)));
+                this.ConnectionManager.Listen.AddRange(config.GetAll("bind")
+                        .Select(c => new NodeServerEndpoint(ConvertIpAddressToEndpoint(c, port), false)));
             }
             catch (FormatException)
             {
@@ -258,17 +255,17 @@ namespace Stratis.Bitcoin.Configuration
 
             try
             {
-                nodeSettings.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
-                        .Select(c => new NodeServerEndpoint(ConvertToEndpoint(c, port), true)));
+                this.ConnectionManager.Listen.AddRange(config.GetAll("whitebind")
+                        .Select(c => new NodeServerEndpoint(ConvertIpAddressToEndpoint(c, port), true)));
             }
             catch (FormatException)
             {
                 throw new ConfigurationException("Invalid 'listen' parameter");
             }
 
-            if (nodeSettings.ConnectionManager.Listen.Count == 0)
+            if (this.ConnectionManager.Listen.Count == 0)
             {
-                nodeSettings.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
+                this.ConnectionManager.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
             }
 
             var externalIp = config.GetOrDefault<string>("externalip", null);
@@ -276,7 +273,7 @@ namespace Stratis.Bitcoin.Configuration
             {
                 try
                 {
-                    nodeSettings.ConnectionManager.ExternalEndpoint = ConvertToEndpoint(externalIp, port);
+                    this.ConnectionManager.ExternalEndpoint = ConvertIpAddressToEndpoint(externalIp, port);
                 }
                 catch (FormatException)
                 {
@@ -284,66 +281,75 @@ namespace Stratis.Bitcoin.Configuration
                 }
             }
 
-            if (nodeSettings.ConnectionManager.ExternalEndpoint == null)
+            if (this.ConnectionManager.ExternalEndpoint == null)
             {
-                nodeSettings.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
+                this.ConnectionManager.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Network.DefaultPort);
             }
 
-            nodeSettings.ConnectionManager.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
-
-            return nodeSettings;
+            this.ConnectionManager.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds);
+            return this;
         }
 
         /// <summary>
         /// Asserts the configuration file exists.
         /// </summary>
-        /// <param name="nodeSettings">Node configuration containing information about the configuration file path.</param>
+        /// <param name="configurationFilePath">The configuration file path.</param>
         /// <exception cref="ConfigurationException">Thrown if the configuration file does not exist.</exception>
-        private static void AssertConfigFileExists(NodeSettings nodeSettings)
+        private static void AssertConfigFileExists(string configurationFilePath)
         {
-            if (!File.Exists(nodeSettings.ConfigurationFile))
-                throw new ConfigurationException("Configuration file does not exist.");
+            if (!File.Exists(configurationFilePath))
+                throw new ConfigurationException($"Configuration file does not exist at {configurationFilePath}.");
         }
 
         /// <summary>
-        /// Converts string to IP end point.
+        /// Converts a string to an IP endpoint.
         /// </summary>
-        /// <param name="str">String to convert.</param>
-        /// <param name="defaultPort">Port to use if <paramref name="str"/> does not specify it.</param>
+        /// <param name="ipAddress">String to convert.</param>
+        /// <param name="port">Port to use if <paramref name="ipAddress"/> does not specify it.</param>
         /// <returns>IP end point representation of the string.</returns>
-        public static IPEndPoint ConvertToEndpoint(string str, int defaultPort)
+        /// <remarks>
+        /// IP addresses can have a port specified such that the format of <paramref name="ipAddress"/> is as such: address:port.
+        /// IPv4 and IPv6 addresses are supported.
+        /// In the case where the default port is passed and the IP address has a port specified in it, the IP address's port will take precedence.
+        /// Examples of addresses that are supported are: 15.61.23.23, 15.61.23.23:1500, [1233:3432:2434:2343:3234:2345:6546:4534], [1233:3432:2434:2343:3234:2345:6546:4534]:8333.</remarks>
+        public static IPEndPoint ConvertIpAddressToEndpoint(string ipAddress, int port)
         {
-            int portOut = defaultPort;
-            string hostOut = "";
-            int colon = str.LastIndexOf(':');
+            // Checks the validity of the parameters passed.
+            Guard.NotEmpty(ipAddress, nameof(ipAddress));
+            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
+            {
+                throw new ConfigurationException($"Port {port} was outside of the values that can assigned for a port [{IPEndPoint.MinPort}-{IPEndPoint.MaxPort}].");
+            }
+
+            int colon = ipAddress.LastIndexOf(':');
+           
             // if a : is found, and it either follows a [...], or no other : is in the string, treat it as port separator
             bool fHaveColon = colon != -1;
-            bool fBracketed = fHaveColon && (str[0] == '[' && str[colon - 1] == ']'); // if there is a colon, and in[0]=='[', colon is not 0, so in[colon-1] is safe
-            bool fMultiColon = fHaveColon && (str.LastIndexOf(':', colon - 1) != -1);
+            bool fBracketed = fHaveColon && (ipAddress[0] == '[' && ipAddress[colon - 1] == ']'); // if there is a colon, and in[0]=='[', colon is not 0, so in[colon-1] is safe
+            bool fMultiColon = fHaveColon && (ipAddress.LastIndexOf(':', colon - 1) != -1);
             if (fHaveColon && (colon == 0 || fBracketed || !fMultiColon))
             {
-                if (int.TryParse(str.Substring(colon + 1), out var n) && n > 0 && n < 0x10000)
+                if (int.TryParse(ipAddress.Substring(colon + 1), out var n) && n > IPEndPoint.MinPort && n < IPEndPoint.MaxPort)
                 {
-                    str = str.Substring(0, colon);
-                    portOut = n;
+                    ipAddress = ipAddress.Substring(0, colon);
+                    port = n;
                 }
             }
-            if (str.Length > 0 && str[0] == '[' && str[str.Length - 1] == ']')
-                hostOut = str.Substring(1, str.Length - 2);
-            else
-                hostOut = str;
-            return new IPEndPoint(IPAddress.Parse(str), portOut);
+            
+            return new IPEndPoint(IPAddress.Parse(ipAddress), port);
         }
 
         /// <summary>
         /// Creates a default configuration file if no configuration file is found.
         /// </summary>
         /// <returns>Path to the configuration file.</returns>
-        private string GetDefaultConfigurationFile()
+        private string CreateDefaultConfigurationFile()
         {
-            string config = Path.Combine(this.DataDir, $"{this.Name}.conf");
-            this.Logger.LogInformation("Configuration file set to '{0}'.", config);
-            if (!File.Exists(config))
+            string configFilePath = Path.Combine(this.DataDir, $"{this.Name}.conf");
+            this.Logger.LogInformation("Configuration file set to '{0}'.", configFilePath);
+
+            // Create a config file if none exist.
+            if (!File.Exists(configFilePath))
             {
                 this.Logger.LogInformation("Creating configuration file...");
 
@@ -355,9 +361,9 @@ namespace Stratis.Bitcoin.Configuration
                 builder.AppendLine("#rpcbind=127.0.0.1");
                 builder.AppendLine("#Ip address allowed to connect to RPC (default all: 0.0.0.0 and ::)");
                 builder.AppendLine("#rpcallowip=127.0.0.1");
-                File.WriteAllText(config, builder.ToString());
+                File.WriteAllText(configFilePath, builder.ToString());
             }
-            return config;
+            return configFilePath;
         }
 
         /// <summary>
@@ -375,25 +381,27 @@ namespace Stratis.Bitcoin.Configuration
         }
 
         /// <summary>
-        /// Finds a location of the default data directory respecting different operating system specifics.
+        /// Creates default data directories respecting different operating system specifics.
         /// </summary>
         /// <param name="appName">Name of the node, which will be reflected in the name of the data directory.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        private void SetDefaultDataDir(string appName, Network network)
+        /// <returns>The top-level data directory path.</returns>
+        private string CreateDefaultDataDirectories(string appName, Network network)
         {
-            string directory = null;
+            string directoryPath;
 
+            // Directory paths are different between Windows or Linux/OSX systems.
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var home = Environment.GetEnvironmentVariable("HOME");
                 if (!string.IsNullOrEmpty(home))
                 {
                     this.Logger.LogInformation("Using HOME environment variable for initializing application data.");
-                    directory = Path.Combine(home, "." + appName.ToLowerInvariant());
+                    directoryPath = Path.Combine(home, "." + appName.ToLowerInvariant());
                 }
                 else
                 {
-                    throw new DirectoryNotFoundException("Could not find suitable datadir.");
+                    throw new DirectoryNotFoundException("Could not find HOME directory.");
                 }
             }
             else
@@ -402,25 +410,21 @@ namespace Stratis.Bitcoin.Configuration
                 if (!string.IsNullOrEmpty(localAppData))
                 {
                     this.Logger.LogInformation("Using APPDATA environment variable for initializing application data.");
-                    directory = Path.Combine(localAppData, appName);
+                    directoryPath = Path.Combine(localAppData, appName);
                 }
                 else
                 {
-                    throw new DirectoryNotFoundException("Could not find suitable datadir.");
+                    throw new DirectoryNotFoundException("Could not find APPDATA directory.");
                 }
             }
 
-            if (!Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            // Create the data directories if they don't exist. 
+            Directory.CreateDirectory(directoryPath);
+            directoryPath = Path.Combine(directoryPath, network.Name);
+            Directory.CreateDirectory(directoryPath);
 
-            directory = Path.Combine(directory, network.Name);
-            if (!Directory.Exists(directory))
-            {
-                this.Logger.LogInformation("Creating data directory...");
-                Directory.CreateDirectory(directory);
-            }
-
-            this.DataDir = directory;
+            this.Logger.LogInformation("Data directory initialized with path {0}.", directoryPath);
+            return directoryPath;
         }
 
         /// <summary>

@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Connection
         public bool AddNode(string endpointStr, string command)
         {
             Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
-            IPEndPoint endpoint = NodeSettings.ConvertToEndpoint(endpointStr, this.ConnectionManager.Network.DefaultPort);
+            IPEndPoint endpoint = NodeSettings.ConvertIpAddressToEndpoint(endpointStr, this.ConnectionManager.Network.DefaultPort);
             switch (command)
             {
                 case "add":
