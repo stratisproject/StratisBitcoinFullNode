@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -63,6 +64,9 @@ namespace Stratis.Bitcoin.BlockPulling
 
             /// <summary>Description of a block.</summary>
             public Block Block;
+
+            /// <summary>The peer the block came from.</summary>
+            public IPEndPoint Peer;
         }
 
         /// <summary>Number of historic samples we keep to calculate quality score stats from.</summary>

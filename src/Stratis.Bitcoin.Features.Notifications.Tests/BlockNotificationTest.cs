@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var stub = new Mock<ILookaheadBlockPuller>();
             stub.SetupSequence(s => s.NextBlock(lifetime.ApplicationStopping))
-                .Returns(blocks[0])
-                .Returns(blocks[1])
+                .Returns(new LookaheadResult { Block = blocks[0] })
+                .Returns(new LookaheadResult { Block = blocks[1] })
                 .Returns(null);
 
             var signals = new Mock<ISignals>();

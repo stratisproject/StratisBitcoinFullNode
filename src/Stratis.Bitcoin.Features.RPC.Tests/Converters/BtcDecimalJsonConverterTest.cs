@@ -4,11 +4,11 @@ using Stratis.Bitcoin.Features.RPC.Converters;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Stratis.Bitcoin.Tests.Converters
+namespace Stratis.Bitcoin.Features.RPC.Tests.Converters
 {
     public class BtcDecimalJsonConverterTest
     {
-        private readonly ITestOutputHelper _console;
+        private readonly ITestOutputHelper console;
 
         private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
         {
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.Converters
         {
             //use this if you want to see the console output for xunit tests.
             //because xunit runs tests in parallel.
-            this._console = console;
+            this.console = console;
         }
 
         [Fact]
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Tests.Converters
                 Amount = 1.0m
             };
             var result = JsonConvert.SerializeObject(input, this._jsonSerializerSettings);
-            this._console.WriteLine(result);
+            this.console.WriteLine(result);
             Assert.Equal("{\"Amount\":1.00000000}", result);
         }
 
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Tests.Converters
                 Amount = 1.123456789m
             };
             var result = JsonConvert.SerializeObject(input, this._jsonSerializerSettings);
-            this._console.WriteLine(result);
+            this.console.WriteLine(result);
             Assert.Equal("{\"Amount\":1.123456789}", result);  //is this correct?
         }
 
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Converters
                 Amount = 9m
             };
             var result = JsonConvert.SerializeObject(input, this._jsonSerializerSettings);
-            this._console.WriteLine(result);
+            this.console.WriteLine(result);
             Assert.Equal("{\"Amount\":9.00000000}", result);
         }
     }
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.Converters
 
         public override string ToString()
         {
-            return $"{nameof(Amount)}: {Amount}";
+            return $"{nameof(this.Amount)}: {this.Amount}";
         }
     }
 }

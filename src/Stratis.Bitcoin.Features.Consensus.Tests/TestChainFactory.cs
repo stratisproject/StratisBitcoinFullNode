@@ -9,46 +9,31 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.MemoryPool.Tests
+namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
-    /// <summary>
-    /// Public interface for test chain context.
-    /// </summary>
-    public interface ITestChainContext
-    {
-        /// <summary>
-        /// Memory pool validator interface;
-        /// </summary>
-        IMempoolValidator MempoolValidator { get;  }
-
-        /// <summary>
-        /// List of the source transactions in the test chain.
-        /// </summary>
-        List<Transaction> SrcTxs { get; }
-    }
-
     /// <summary>
     /// Concrete instance of the test chain.
     /// </summary>
-    internal class TestChainContext : ITestChainContext
+    internal class TestChainContext 
     {
-        /// <inheritdoc />
-        public IMempoolValidator MempoolValidator { get; set; }
+        public List<Block> Blocks { get; set; }
 
-        /// <inheritdoc />
-        public List<Transaction> SrcTxs { get; set; }
+        public ConsensusLoop Consensus { get; set; }
+
+        public PeerBanning PeerBanning { get; set; }
+
     }
 
-   /// <summary>
-   /// Factory for creating the test chain.
-   /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
-   /// </summary>
+    /// <summary>
+    /// Factory for creating the test chain.
+    /// Much of this logic was taken directly from the embedded TestContext class in MinerTest.cs in the integration tests.
+    /// </summary>
     internal class TestChainFactory
     {
         /// <summary>
@@ -57,7 +42,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <param name="network">Network to create the chain on.</param>
         /// <param name="scriptPubKey">Public key to create blocks/txs with.</param>
         /// <returns>Context object representing the test chain.</returns>
-        public static async Task<ITestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
+        public static async Task<TestChainContext> CreateAsync(Network network, Script scriptPubKey, string dataDir)
         {
             NodeSettings nodeSettings = NodeSettings.FromArguments(new string[] { $"-datadir={dataDir}" }, network.Name, network);
             if (dataDir != null)
@@ -88,8 +73,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // Simple block creation, nothing special yet:
             PowBlockAssembler blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
             BlockTemplate newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
-            chain.SetTip(newBlock.Block.Header);
-            await consensus.ValidateAndExecuteBlockAsync(new ContextInformation(new BlockValidationContext { Block = newBlock.Block }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+
+
+            await consensus.AcceptBlockAsync(new BlockValidationContext { Block = newBlock.Block });
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
@@ -117,21 +103,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 if (srcTxs.Count < 4)
                     srcTxs.Add(currentBlock.Transactions[0]);
                 currentBlock.UpdateMerkleRoot();
-
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
-
-                chain.SetTip(currentBlock.Header);
-                await consensus.ValidateAndExecuteBlockAsync(new ContextInformation(new BlockValidationContext { Block = currentBlock }, network.Consensus) { CheckPow = false, CheckMerkleRoot = false });
+                await consensus.AcceptBlockAsync(new BlockValidationContext { Block = currentBlock });
                 blocks.Add(currentBlock);
             }
 
-            // Just to make sure we can still make simple blocks
-            blockAssembler = CreatePowBlockAssembler(network, consensus, chain, mempoolLock, mempool, dateTimeProvider, loggerFactory);
-            newBlock = blockAssembler.CreateNewBlock(scriptPubKey);
-
-            MempoolValidator mempoolValidator = new MempoolValidator(mempool, mempoolLock, consensusValidator, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings);
-
-            return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
+            return new TestChainContext { Blocks = blocks, Consensus = consensus, PeerBanning = peerBanning };
         }
 
         /// <summary>
