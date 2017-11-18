@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Cli
                     Console.WriteLine(builder);
                     return;
                 }
-            
+
                 // Determine API port.
                 string blockchain = "bitcoin";
                 int apiPort = 37220;
@@ -47,8 +47,8 @@ namespace Stratis.Bitcoin.Cli
                     blockchain = "stratis";
                     apiPort = 37221;
                     // hack until static flags are removed.
-                    var s = Network.StratisMain;
-                    var st = Network.StratisTest;
+                    Network s = Network.StratisMain;
+                    Network st = Network.StratisTest;
                 }
 
                 // The first argument is the network name.
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Cli
                     // Process RPC call.
                     try
                     {
-                        NodeSettings nodeSettings = NodeSettings.FromArguments(args, blockchain, network);
+                        NodeSettings nodeSettings = new NodeSettings(blockchain, network).LoadArguments(args);
                         var rpcSettings = new RpcSettings();
                         rpcSettings.Load(nodeSettings);
 
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Cli
                             // Get the response.
                             Console.WriteLine($"Sending API command to {url}...");
                             var response = client.GetStringAsync(url).GetAwaiter().GetResult();
-                            
+
                             // Format and return the result as a string to the console.
                             Console.WriteLine(JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented));
                         }

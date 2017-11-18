@@ -53,9 +53,6 @@ namespace Stratis.Bitcoin.P2P
 
         public void AddPeer(NetworkAddress networkAddress, IPAddress source)
         {
-            //Specific IP address ranges that are reserved specifically as non - routable addresses to be used in 
-            //private networks: 10.0.0.0 through 10.255.255.255. 172.16.0.0 through 172.32.255.255. 192.168.0.0 
-            //through 192.168.255.255.
             if (networkAddress.Endpoint.Address.IsRoutable(true) == false)
                 return;
 
