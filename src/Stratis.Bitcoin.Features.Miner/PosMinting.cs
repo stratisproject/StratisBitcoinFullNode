@@ -20,6 +20,39 @@ using IBlockRepository = Stratis.Bitcoin.Features.BlockStore.IBlockRepository;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
+    /// <summary>
+    /// PosMinting is used in order to generate new blocks. It involves a sort of lottery, similar to proof-of-work,
+    /// but the chances of winning this lottery depend on how many coins you are staking, not on hashing power.
+    /// </summary>
+    /// <remarks>
+    /// Staking is attempted only if the node is fully synchronized and connected to the network.
+    /// If not it will wait  till node is synced. Only transactions that were confirmed at least
+    /// PosConsensusOptions.StakeMinConfirmations blocks ago are eligible for staking.
+    /// </remarks>
+    /// <remarks>
+    /// The overall process for "attempting" to mine a PoS block looks like this:
+    /// 1) Get UTXOs (Unspent Transaction Output) that can participate in staking (have suitable depth).
+    /// 2) Split those UTXOs in subsets so each subset contains max of TransactionsPerCoinstakeWorker transactions
+    /// and run CoinstakeWorker for each subset. Splitting is done only to achieve a good level of parallelism.
+    /// 3) CoinstakeWorker will try different versions of a block we are trying to mine (the only difference is the
+    /// timestamp which is tried in a time interval from now to now - searchInterval seconds.
+    /// Search interval is a length of an unexplored block time space in seconds.
+    /// Worker calculates the kernel's hash using the next formula:
+    /// hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime).
+    /// Then it calculates staking target using the next formula:
+    /// (header of a block that we are trying to mine as BigInteger * amount of satoshi we are staking).
+    /// We compare kernel's hash (as BigInteger) against the staking target, if it's greater then we met the criteria
+    /// and kernel is found.
+    /// So the more coins we stake the higher the staking target => higher chances of meeting the criteria.
+    /// 4) In case kernel is found we add a coinbase transaction, staking transaction and prepare the block normally,
+    /// with transactions from network, sign the block and add it to the chain.
+    ///
+    /// More about PoS kernel:
+    /// the idea behind it is that in consists of values that cant easily be changed in context of that block so miner
+    /// have very little wiggle room in order to generate different hashes.The only piece of data that is mutable is
+    /// the current blocktime (so miners will try different values within the search interval.
+    /// Max val - Min val is usually around 16 so there are only 16 valid kernel hashes that can be used).
+    /// </remarks>
     public class PosMinting
     {
         public class StakeOutput
@@ -149,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Number of UTXOs that a single worker's task will process.</summary>
         /// <remarks>To achieve a good level of parallelism, this should be low enough so that CPU threads are used,
         /// but high enough to compensate for tasks' overhead.</remarks>
-        private const int CoinsPerCoinstakeWorker = 25;
+        private const int TransactionsPerCoinstakeWorker = 25;
 
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
@@ -622,7 +655,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Create worker tasks that will look for kernel.
             // Run task in parallel using the default task scheduler.
             int coinIndex = 0;
-            int workerCount = (setCoins.Count + CoinsPerCoinstakeWorker - 1) / CoinsPerCoinstakeWorker;
+            int workerCount = (setCoins.Count + TransactionsPerCoinstakeWorker - 1) / TransactionsPerCoinstakeWorker;
             Task[] workers = new Task[workerCount];
             CoinstakeWorkerContext[] workerContexts = new CoinstakeWorkerContext[workerCount];
 
@@ -638,7 +671,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     Result = workersResult
                 };
 
-                int coinCount = Math.Min(setCoins.Count - coinIndex, CoinsPerCoinstakeWorker);
+                int coinCount = Math.Min(setCoins.Count - coinIndex, TransactionsPerCoinstakeWorker);
                 cwc.Coins.AddRange(setCoins.GetRange(coinIndex, coinCount));
                 coinIndex += coinCount;
                 workerContexts[workerIndex] = cwc;
