@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner
             public ILogger Logger { get; set; }
 
             /// <summary>List of UTXO descriptions that the worker should check.</summary>
-            public List<StakeTx> Coins { get; set; }
+            public List<StakeTx> Transactions { get; set; }
 
             /// <summary>Information related to coinstake transaction.</summary>
             public CoinstakeContext CoinstakeContext { get; set; }
@@ -621,16 +621,16 @@ namespace Stratis.Bitcoin.Features.Miner
                 return false;
             }
 
-            // Select coins with suitable depth.
-            List<StakeTx> setCoins = this.FindCoinsForStaking(stakeTxes, coinstakeContext.CoinstakeTx.Time, balance - this.reserveBalance);
-            if (!setCoins.Any())
+            // Select transactions with suitable depth.
+            List<StakeTx> stackingTxes = this.GetTxesSuitableForStaking(stakeTxes, coinstakeContext.CoinstakeTx.Time, balance - this.reserveBalance);
+            if (!stackingTxes.Any())
             {
                 this.rpcGetStakingInfoModel.Staking = false;
                 this.logger.LogTrace("(-)[NO_SELECTION]:false");
                 return false;
             }
 
-            long ourWeight = setCoins.Sum(s => s.TxOut.Value);
+            long ourWeight = stackingTxes.Sum(s => s.TxOut.Value);
             long expectedTime = StakeValidator.TargetSpacingSeconds * this.networkWeight / ourWeight;
             decimal ourPercent = this.networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)this.networkWeight : 0;
 
@@ -642,7 +642,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.rpcGetStakingInfoModel.Errors = null;
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
-            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", setCoins.Count, minimalAllowedTime, coinstakeContext.CoinstakeTx.Time);
+            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", stackingTxes.Count, minimalAllowedTime, coinstakeContext.CoinstakeTx.Time);
 
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
@@ -655,7 +655,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Create worker tasks that will look for kernel.
             // Run task in parallel using the default task scheduler.
             int coinIndex = 0;
-            int workerCount = (setCoins.Count + TransactionsPerCoinstakeWorker - 1) / TransactionsPerCoinstakeWorker;
+            int workerCount = (stackingTxes.Count + TransactionsPerCoinstakeWorker - 1) / TransactionsPerCoinstakeWorker;
             Task[] workers = new Task[workerCount];
             CoinstakeWorkerContext[] workerContexts = new CoinstakeWorkerContext[workerCount];
 
@@ -666,14 +666,14 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     Index = workerIndex,
                     Logger = this.loggerFactory.CreateLogger(this.GetType().FullName, $"[Worker #{workerIndex}] "),
-                    Coins = new List<StakeTx>(),
+                    Transactions = new List<StakeTx>(),
                     CoinstakeContext = coinstakeContext,
                     Result = workersResult
                 };
 
-                int coinCount = Math.Min(setCoins.Count - coinIndex, TransactionsPerCoinstakeWorker);
-                cwc.Coins.AddRange(setCoins.GetRange(coinIndex, coinCount));
-                coinIndex += coinCount;
+                int txesCount = Math.Min(stackingTxes.Count - coinIndex, TransactionsPerCoinstakeWorker);
+                cwc.Transactions.AddRange(stackingTxes.GetRange(coinIndex, txesCount));
+                coinIndex += txesCount;
                 workerContexts[workerIndex] = cwc;
 
                 workers[workerIndex] = Task.Run(() => this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval));
@@ -764,11 +764,11 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             context.Logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(chainTip), chainTip, nameof(minimalAllowedTime), minimalAllowedTime, nameof(searchInterval), searchInterval);
 
-            context.Logger.LogTrace("Going to process {0} UTXOs.", context.Coins.Count);
+            context.Logger.LogTrace("Going to process {0} UTXOs.", context.Transactions.Count);
 
             // Sort coins by amount, so that highest amounts are tried first
             // because they have greater chance to succeed and thus saving some work.
-            List<StakeTx> orderedCoins = context.Coins.OrderByDescending(o => o.TxOut.Value).ToList();
+            List<StakeTx> orderedCoins = context.Transactions.OrderByDescending(o => o.TxOut.Value).ToList();
 
             bool stopWork = false;
             foreach (StakeTx coin in orderedCoins)
@@ -929,11 +929,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// and it also has to be mature and meet requirement for minimal value.
         /// </para>
         /// </summary>
-        /// <param name="stakeTxes">List of coins that are candidates for being used for staking.</param>
+        /// <param name="stakeTxes">List of UTXOs that are candidates for being used for staking.</param>
         /// <param name="spendTime">Timestamp of the coinstake transaction.</param>
         /// <param name="maxValue">Maximal amount of coins that can be used for staking.</param>
         /// <returns>List of coins that meet the requirements.</returns>
-        private List<StakeTx> FindCoinsForStaking(List<StakeTx> stakeTxes, uint spendTime, long maxValue)
+        private List<StakeTx> GetTxesSuitableForStaking(List<StakeTx> stakeTxes, uint spendTime, long maxValue)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count, nameof(spendTime), spendTime, nameof(maxValue), maxValue);
             var res = new List<StakeTx>();
