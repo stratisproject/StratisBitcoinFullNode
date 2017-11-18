@@ -119,10 +119,15 @@ namespace Stratis.Bitcoin.Features.Miner
         // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code
         public const int DefaultBlockMinTxFee = 1000;
 
-        // Default for -blockmaxsize, which controls the maximum size of block the mining code will create
+        // Default for -blockmaxsize, which controls the maximum number of serialized bytes in a block the mining code will create.
         public const int DefaultBlockMaxSize = 750000;
 
-        // Default for -blockmaxweight, which controls the range of block weights the mining code will create
+        /// <summary>
+        /// Default for -blockmaxweight, which controls the maximum of block weight the mining code will create.
+        /// Block is measured in weight units. Data which touches the UTXO (What addresses are involved in the transaction, how many coins are being transferred) costs
+        /// 4 weight units (WU) per byte. Witness data (signatures used to unlock existing coins so that they can be spent) costs 1 WU per byte.
+        /// <remarks>See also: http://learnmeabitcoin.com/faq/segregated-witness </remarks>
+        /// </summary>
         public const int DefaultBlockMaxWeight = 3000000;
 
         /** The maximum allowed size for a serialized block, in bytes (network rule) */
@@ -218,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Miner
             AssemblerFactory blockAssemblerFactory,
             IBlockRepository blockRepository,
             ChainState chainState,
-            Signals.Signals signals, 
+            Signals.Signals signals,
             INodeLifetime nodeLifetime,
             NodeSettings settings,
             CoinView coinView,
@@ -578,7 +583,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.rpcGetStakingInfoModel.Staking = false;
 
-                this.logger.LogTrace("Total balance of available UTXOs is {0}, which is lower than reserve balance {1}.", balance, this.reserveBalance);
+                this.logger.LogTrace("Total balance of available UTXOs is {0}, which is equal or lower than reserve balance {1}.", balance, this.reserveBalance);
                 this.logger.LogTrace("(-)[BELOW_RESERVE]:false");
                 return false;
             }

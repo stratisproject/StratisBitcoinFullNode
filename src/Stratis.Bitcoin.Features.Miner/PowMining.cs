@@ -29,12 +29,18 @@ namespace Stratis.Bitcoin.Features.Miner
         // Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code.
         public const int DefaultBlockMinTxFee = 1000;
 
-        // Default for -blockmaxsize, which controls the maximum size of block the mining code will create.
+        // Default for -blockmaxsize, which controls the maximum number of serialized bytes in a block the mining code will create.
         public const int DefaultBlockMaxSize = 750000;
 
-        // Default for -blockmaxweight, which controls the range of block weights the mining code will create.
+        /// <summary>
+        /// Default for -blockmaxweight, which controls the maximum of block weight the mining code will create.
+        /// Block is measured in weight units. Data which touches the UTXO (What addresses are involved in the transaction, how many coins are being transferred) costs
+        /// 4 weight units (WU) per byte. Witness data (signatures used to unlock existing coins so that they can be spent) costs 1 WU per byte.
+        /// <remarks>See also: http://learnmeabitcoin.com/faq/segregated-witness </remarks>
+        /// </summary>
         public const int DefaultBlockMaxWeight = 3000000;
 
+        /// <summary>InnerLoopCount = 65536.</summary>
         const int InnerLoopCount = 0x10000;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
@@ -98,6 +104,14 @@ namespace Stratis.Bitcoin.Features.Miner
             return this.mining;
         }
 
+        /// <summary>
+        /// Generates specified amount of blocks in specified maximum amount of tries.
+        /// It is possible that less than the required number of blocks will be mined.
+        /// </summary>
+        /// <param name="reserveScript"></param>
+        /// <param name="generate">Blocks count to generate</param>
+        /// <param name="maxTries">Maximum amount of times miner will calculate PoW hash in order to find suitable ones to generate specified amount of blocks</param>
+        /// <returns>List with generated block's hashes</returns>
         public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong generate, ulong maxTries)
         {
             ulong nHeightStart = 0;
@@ -125,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 if (Block.BlockSignature)
                 {
-                    // POS: make sure the POS consensus rules are valid 
+                    // POS: make sure the POS consensus rules are valid
                     if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
                     {
                         continue;
