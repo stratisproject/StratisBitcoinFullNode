@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {

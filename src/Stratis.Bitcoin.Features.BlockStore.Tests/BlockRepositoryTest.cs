@@ -2,8 +2,8 @@
 using System.Linq;
 using DBreeze;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Tests;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests

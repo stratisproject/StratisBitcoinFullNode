@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Cli
                         // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
                         System.Net.IPEndPoint nodeEndPoint = rpcSettings.Bind.FirstOrDefault(b => b.Address.ToString() == "127.0.0.1") ?? rpcSettings.Bind[0];
 
-                        // Initilize the RPC client with the configured or passed userid, password and endpoint.
+                        // Initialize the RPC client with the configured or passed userid, password and endpoint
                         RPCClient rpc = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", new Uri($"http://{nodeEndPoint}"));
 
                         // Execute the RPC command

@@ -110,9 +110,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void Start(string dataDir)
         {
-            var args = NodeSettings.FromArguments(new string[] { "-conf=stratis.conf", "-datadir=" + dataDir }, "stratis", InitStratisRegTest(), ProtocolVersion.ALT_PROTOCOL_VERSION);
+            NodeSettings nodeSettings = new NodeSettings("stratis", InitStratisRegTest(), ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(new string[] { "-conf=stratis.conf", "-datadir=" + dataDir });
 
-            var node = BuildFullNode(args, this.callback);
+            var node = BuildFullNode(nodeSettings, this.callback);
 
             this.FullNode = node;
             this.FullNode.Start();
@@ -249,9 +249,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void Start(string dataDir)
         {
 
-            var args = NodeSettings.FromArguments(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
+            NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { "-conf=bitcoin.conf", "-datadir=" + dataDir });
 
-            var node = BuildFullNode(args, this.callback);
+            var node = BuildFullNode(nodeSettings, this.callback);
 
             this.FullNode = node;
             this.FullNode.Start();
