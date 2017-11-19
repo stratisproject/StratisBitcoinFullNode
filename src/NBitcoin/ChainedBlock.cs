@@ -16,7 +16,7 @@ namespace NBitcoin
         /// <summary>Window length for calculating median time span.</summary>
         private const int MedianTimeSpan = 11;
 
-        /// <summary>The hash of the block, if any.</summary>
+        /// <summary>The hash of the block.</summary>
         public uint256 HashBlock { get; private set; }
 
         /// <summary>Predecessor of this block.</summary>
@@ -31,8 +31,8 @@ namespace NBitcoin
         /// <summary>Integer representation of the <see cref="ChainWork"/>.</summary>
         private BigInteger chainWork;
 
-        /// <summary>Total amount of work (expected number of hashes) in the chain up to and including this block.</summary>
-        public uint256 ChainWork { get {return Target.ToUInt256(this.chainWork);} }
+        /// <summary>Total amount of work in the chain up to and including this block.</summary>
+        public uint256 ChainWork { get { return Target.ToUInt256(this.chainWork); } }
 
         /// <summary>
         /// Constructs a chained block.
@@ -68,7 +68,7 @@ namespace NBitcoin
         /// Constructs a chained block.
         /// </summary>
         /// <param name="header">The header for the chained block.</param>
-        /// <param name="height">The height of the chained block</param>
+        /// <param name="height">The height of the chained block.</param>
         public ChainedBlock(BlockHeader header, int height)
         {
             this.Header = header ?? throw new ArgumentNullException("header");
@@ -79,14 +79,14 @@ namespace NBitcoin
 
 
         /// <summary>
-        /// Calculates the total amount of work (expected number of hashes) in the chain up to and including this block.
+        /// Calculates the total amount of work in the chain up to and including this block.
         /// </summary>
         private void CalculateChainWork()
         {
             this.chainWork = (this.Previous == null ? BigInteger.Zero : this.Previous.chainWork).Add(GetBlockProof());
         }
 
-        /// <summary>Amount of work for this entry in the chain.</summary>
+        /// <summary>Calculates the amount of work that this block contributes to the total chain work.</summary>
         /// <returns>Amount of work.</returns>
         private BigInteger GetBlockProof()
         {
@@ -94,10 +94,10 @@ namespace NBitcoin
             if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(Pow256) >= 0))
                 return BigInteger.Zero;
 
-            // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256
-            // as it's too large for a arith_uint256. However, as 2**256 is at least as large
-            // as bnTarget+1, it is equal to ((2**256 - bnTarget - 1) / (bnTarget+1)) + 1,
-            // or ~bnTarget / (nTarget+1) + 1.
+            // We need to compute 2**256 / (target+1), but we can't represent 2**256
+            // as it's too large for a uint256. However, as 2**256 is at least as large
+            // as target+1, it is equal to ((2**256 - target - 1) / (target+1)) + 1,
+            // or ~target / (target+1) + 1.
             return ((Pow256.Subtract(target).Subtract(BigInteger.One)).Divide(target.Add(BigInteger.One))).Add(BigInteger.One);
         }
 
@@ -356,7 +356,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Check PoW and that the blocks connect correctly.
+        /// Check PoW/PoS and that the blocks connect correctly.
         /// </summary>
         /// <param name="network">The network being used.</param>
         /// <returns>True if PoW is correct.</returns>
@@ -373,7 +373,7 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Check PoW and that the blocks connect correctly.
+        /// Check PoW/PoS and that the blocks connect correctly.
         /// </summary>
         /// <param name="consensus">The consensus being used.</param>
         /// <returns>True if PoW is correct.</returns>
