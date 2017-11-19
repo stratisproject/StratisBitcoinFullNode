@@ -30,10 +30,12 @@ namespace Stratis.Bitcoin.Features.Miner
     /// <see cref="PosConsensusOptions.StakeMinConfirmations"/> blocks ago are eligible for staking.
     /// <para>
     /// The overall process for "attempting" to mine a PoS block looks like this:
-    /// 1) Create new block with transactions from mempool.
-    /// 2) Get UTXOs that can participate in staking (have suitable depth).
-    /// 3) Split these UTXOs in subsets and create tasks processing each subset to allow for parallel processing.
-    /// 4) Each of the tasks mentioned above will try to find a solution for proof of stake target. This is done by creating a coinstake
+    /// <list>
+    ///     <item>1) Create new block with transactions from mempool.</item>
+    ///     <item>2) Get UTXOs that can participate in staking (have suitable depth).</item>
+    ///     <item>3) Split these UTXOs in subsets and create tasks processing each subset to allow for parallel processing.</item>
+    ///     <item>4) Each of the tasks mentioned above will try to find a solution for proof of stake target. This is done by creating a coinstake.</item>
+    /// </list>
     /// transaction with each of the available UTXOs combined with all valid unix timestamps that were not checked.
     /// Those timestamps are within a time interval from now to now - searchInterval seconds. Only timestamps that are divisible by
     /// <c><see cref="PosConsensusValidator.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
