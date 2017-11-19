@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -27,7 +28,7 @@ namespace Stratis.StratisD
             try
             {
                 Network network = args.Contains("-testnet") ? Network.StratisTest : Network.StratisMain;
-                NodeSettings nodeSettings = NodeSettings.FromArguments(args, "stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION);
+                NodeSettings nodeSettings = new NodeSettings("stratis", network, ProtocolVersion.ALT_PROTOCOL_VERSION).LoadArguments(args);
 
                 // NOTES: running BTC and STRAT side by side is not possible yet as the flags for serialization are static
 
@@ -38,6 +39,7 @@ namespace Stratis.StratisD
                     .UseMempool()
                     .UseWallet()
                     .AddPowPosMining()
+                    .UseApi()
                     .AddRPC()
                     .Build();
 

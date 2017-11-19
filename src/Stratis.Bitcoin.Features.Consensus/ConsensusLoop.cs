@@ -32,6 +32,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
         public ConsensusError Error { get; set; }
+
+        /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
+        public bool SkipValidation { get; set; }
     }
     
     /// <summary>
@@ -91,6 +94,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Provider of block header hash checkpoints.</summary>
         private readonly ICheckpoints checkpoints;
 
+        /// <summary>Consensus settings for the full node.</summary>
+        private readonly ConsensusSettings settings;
+
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -110,6 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="signals">A signaler that used to signal messages between features.</param>
         /// <param name="checkpoints">Provider of block header hash checkpoints.</param>
+        /// <param name="settings">Consensus settings for the full node.</param>
         /// <param name="stakeChain">Information holding POS data chained.</param>
         public ConsensusLoop(
             IAsyncLoopFactory asyncLoopFactory,
@@ -125,6 +132,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IDateTimeProvider dateTimeProvider,
             Signals.Signals signals,
             ICheckpoints checkpoints,
+            ConsensusSettings settings,
             StakeChain stakeChain = null)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
@@ -137,6 +145,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(signals, nameof(signals));
+            Guard.NotNull(settings, nameof(settings));
 
             this.consensusLock = new AsyncLock();
 
@@ -154,6 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.NodeDeployments = nodeDeployments;
             this.checkpoints = checkpoints;
             this.dateTimeProvider = dateTimeProvider;
+            this.settings = settings;
 
             // chain of stake info can be null if POS is not enabled
             this.StakeChain = stakeChain;
@@ -405,15 +415,33 @@ namespace Stratis.Bitcoin.Features.Consensus
                 // Calculate the consensus flags and check they are valid.
                 context.Flags = this.NodeDeployments.GetFlags(context.BlockValidationContext.ChainedBlock);
 
-                int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
-                if (context.BlockValidationContext.ChainedBlock.Height > lastCheckpointHeight)
+                // Check whether to use checkpoint to skip block validation.
+                context.BlockValidationContext.SkipValidation = false; 
+                if (this.settings.UseCheckpoints)
+                {
+                    int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
+                    context.BlockValidationContext.SkipValidation = context.BlockValidationContext.ChainedBlock.Height <= lastCheckpointHeight;
+                    if (context.BlockValidationContext.SkipValidation)
+                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
+                }
+
+                // Check whether to use assumevalid switch to skip validation.
+                if (!context.BlockValidationContext.SkipValidation && (this.settings.BlockAssumedValid != null))
+                {
+                    ChainedBlock assumeValidBlock = this.Chain.GetBlock(this.settings.BlockAssumedValid);
+                    context.BlockValidationContext.SkipValidation = (assumeValidBlock != null) && (context.BlockValidationContext.ChainedBlock.Height <= assumeValidBlock.Height);
+                    if (context.BlockValidationContext.SkipValidation)
+                        this.logger.LogTrace("Block validation will be partially skipped due to block height {0} is not greater than assumed valid block height {1}.", context.BlockValidationContext.ChainedBlock.Height, assumeValidBlock.Height);
+                }
+
+                if (!context.BlockValidationContext.SkipValidation)
                 {
                     this.Validator.ContextualCheckBlock(context);
 
                     // Check the block itself.
                     this.Validator.CheckBlock(context);
                 }
-                else this.logger.LogTrace("Block validation partially skipped because block height {0} is not greater than last checkpointed block height {1}.", context.BlockValidationContext.ChainedBlock.Height, lastCheckpointHeight);
+                else this.logger.LogTrace("Block validator skipped for block at height {0}.", context.BlockValidationContext.ChainedBlock.Height);
             }
 
             this.logger.LogTrace("(-)[OK]");

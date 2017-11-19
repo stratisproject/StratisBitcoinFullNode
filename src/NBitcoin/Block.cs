@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using NBitcoin.BouncyCastle.Math;
+﻿using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.RPC;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace NBitcoin
 {
@@ -162,7 +162,7 @@ namespace NBitcoin
 
         public bool CheckProofOfWork(Consensus consensus)
         {
-            consensus = consensus ?? Consensus.Main;
+            consensus = consensus ?? Network.Main.Consensus;
             BigInteger bits = this.Bits.ToBigInteger();
             if ((bits.CompareTo(BigInteger.Zero) <= 0) || (bits.CompareTo(Pow256) >= 0))
                 return false;

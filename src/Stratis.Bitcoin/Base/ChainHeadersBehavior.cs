@@ -1,13 +1,13 @@
 ﻿#if !NOSOCKET
-using System;
-using System.Linq;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Utilities;
+using System;
+using System.Linq;
+using System.Threading;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        private void Intercept(IncomingMessage message, Action act)
+        private void Intercept(IncomingMessage message, Action continueInvocation)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(message), message.Message.Command, nameof(this.AttachedNode), this.AttachedNode?.RemoteSocketEndpoint);
 
@@ -278,11 +278,11 @@ namespace Stratis.Bitcoin.Base
                     this.pendingTip = chainedPendingTip; 
                 }
 
-                if ((newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
+                if ((!this.invalidHeaderReceived) && (newHeaders.Headers.Count != 0) && (pendingTipBefore.HashBlock != this.GetPendingTipOrChainTip().HashBlock))
                     this.TrySync();
             }
 
-            act();
+            continueInvocation();
 
             this.logger.LogTrace("(-)");
         }

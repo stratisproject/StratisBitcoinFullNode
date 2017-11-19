@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NBitcoin;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -107,17 +108,7 @@ namespace Stratis.Bitcoin.Configuration
                     destination.Add(kv.Key, v);
             }
         }
-
-        /// <summary>
-        /// Parses configuration file contents into the argument list.
-        /// </summary>
-        /// <param name="data">Configuration file contents.</param>
-        /// <returns>Parsed configuration.</returns>
-        public static TextFileConfiguration Parse(string data)
-        {
-            return new TextFileConfiguration(data);
-        }
-
+        
         /// <summary>
         /// Retrieves all values of a specific argument name. This looks up for the argument name with and without a dash prefix.
         /// </summary>
@@ -199,6 +190,14 @@ namespace Stratis.Bitcoin.Configuration
             if (typeof(T) == typeof(Uri))
             {
                 return (T)(object)new Uri(str);
+            }
+
+            if (typeof(T) == typeof(uint256))
+            {
+                uint256 value;
+                if (!uint256.TryParse(str, out value))
+                    throw new FormatException($"Cannot parse uint256 from {str}.");
+                return (T)(object)value;
             }
 
             throw new NotSupportedException("Configuration value does not support type " + typeof(T).Name);
