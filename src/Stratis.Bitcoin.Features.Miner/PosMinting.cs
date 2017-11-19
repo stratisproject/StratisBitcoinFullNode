@@ -30,12 +30,11 @@ namespace Stratis.Bitcoin.Features.Miner
     /// <see cref="PosConsensusOptions.StakeMinConfirmations"/> blocks ago are eligible for staking.
     /// <para>
     /// The overall process for "attempting" to mine a PoS block looks like this:
-    /// <list>
-    ///     <item>1) Create new block with transactions from mempool.</item>
-    ///     <item>2) Get UTXOs that can participate in staking (have suitable depth).</item>
-    ///     <item>3) Split these UTXOs in subsets and create tasks processing each subset to allow for parallel processing.</item>
-    ///     <item>4) Each of the tasks mentioned above will try to find a solution for proof of stake target. This is done by creating a coinstake.</item>
-    /// </list>
+    /// <list type="number">
+    /// <item>Create new block with transactions from mempool.</item>
+    /// <item>Get UTXOs that can participate in staking (have suitable depth).</item>
+    /// <item>Split these UTXOs in subsets and create tasks processing each subset to allow for parallel processing.</item>
+    /// <item>Each of the tasks mentioned above will try to find a solution for proof of stake target. This is done by creating a coinstake
     /// transaction with each of the available UTXOs combined with all valid unix timestamps that were not checked.
     /// Those timestamps are within a time interval from now to now - searchInterval seconds. Only timestamps that are divisible by
     /// <c><see cref="PosConsensusValidator.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
@@ -43,10 +42,10 @@ namespace Stratis.Bitcoin.Features.Miner
     /// Task calculates the kernel's hash (kernel is the first input in the coinstake transaction) using the next formula:
     /// <c>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime)</c>.
     /// Then it calculates staking target using the next formula: <c>block difficulty * UTXO value</c>.
-    /// We compare kernel's hash against the staking target, if it's greater then we met the criteria
-    /// and kernel is found.
-    /// So the more coins we stake the higher the staking target and so the higher the chance to meet the criteria.
-    /// 5) In case kernel is found we add a coinstake transaction, sign the block and add it to the chain.
+    /// We compare kernel's hash against the staking target, if it's greater then we met the criteria and kernel is found.
+    /// So the more coins we stake the higher the staking target and so the higher the chance to meet the criteria.</item>
+    /// <item>In case kernel is found we add a coinstake transaction, sign the block and add it to the chain.</item>
+    /// </list>
     /// </para>
     /// </remarks>
     public class PosMinting
@@ -152,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO
         /// to prevent halting chain; <c>false</c> to disable coinstake splitting.</summary>
-        /// <remarks>TODO: It should be configurable option, not constant. See https://github.com/stratisproject/StratisBitcoinFullNode/issues/550 </remarks>
+        /// <remarks>TODO: It should be configurable option, not constant. <see cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/550"/></remarks>
         public const bool CoinstakeSplitEnabled = true;
 
         /// <summary> If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if
@@ -309,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 catch (MinerException me)
                 {
-                    // Miner rexceptions should be ignored. It means that the miner
+                    // Miner exceptions should be ignored. It means that the miner
                     // possibly mined a block that was not accepted by peers or is even invalid,
                     // but it should not halted the mining operation.
                     this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
@@ -342,8 +341,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Attempts to stake new blocks in a loop.
         /// <para>
-        /// Staking is attempted only if the node is fully synchronized
-        /// and connected to the network.
+        /// Staking is attempted only if the node is fully synchronized and connected to the network.
         /// </para>
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
@@ -496,7 +494,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Attempts to find a POS staking solution and if it succeeds, then it completes a block
         /// to be mined and signes it.
         /// </summary>
-        /// <param name="utxoStakeDescriptions">List of coins that are available in the wallet for staking.</param>
+        /// <param name="utxoStakeDescriptions">List of UTXOs that are available in the wallet for staking.</param>
         /// <param name="block">Template of the block that we are trying to mine.</param>
         /// <param name="chainTip">Tip of the best chain.</param>
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
@@ -574,7 +572,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Creates a coinstake transaction with kernel that satisfies POS staking target.
         /// </summary>
-        /// <param name="utxoStakeDescriptions">List of coins that are available in the wallet for staking.</param>
+        /// <param name="utxoStakeDescriptions">List of UTXOs that are available in the wallet for staking.</param>
         /// <param name="block">Template of the block that we are trying to mine.</param>
         /// <param name="chainTip">Tip of the best chain.</param>
         /// <param name="searchInterval">Length of an unexplored block time space in seconds. It only makes sense to look for a solution within this interval.</param>
@@ -882,20 +880,20 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Calculates the total balance from all UTXOs in the wallet that are mature.
         /// </summary>
-        /// <param name="stakeTxes">Description of coins in the wallet that will be used for staking.</param>
+        /// <param name="utxoStakeDescriptions">Description of coins in the wallet that will be used for staking.</param>
         /// <returns>Total balance from all UTXOs in the wallet that are mature.</returns>
-        public Money GetMatureBalance(List<UtxoStakeDescription> stakeTxes)
+        public Money GetMatureBalance(List<UtxoStakeDescription> utxoStakeDescriptions)
         {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(stakeTxes), nameof(stakeTxes.Count), stakeTxes.Count);
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count);
 
             var money = new Money(0);
-            foreach (UtxoStakeDescription stakeTx in stakeTxes)
+            foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions)
             {
                 // Must wait until coinbase is safely deep enough in the chain before valuing it.
-                if ((stakeTx.UtxoSet.IsCoinbase || stakeTx.UtxoSet.IsCoinstake) && (this.GetBlocksToMaturity(stakeTx) > 0))
+                if ((utxoStakeDescription.UtxoSet.IsCoinbase || utxoStakeDescription.UtxoSet.IsCoinstake) && (this.GetBlocksToMaturity(utxoStakeDescription) > 0))
                     continue;
 
-                money += stakeTx.TxOut.Value;
+                money += utxoStakeDescription.TxOut.Value;
             }
 
             this.logger.LogTrace("(-):{0}", money);
@@ -903,16 +901,16 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Selects coins that are suitable for staking.
+        /// Selects UTXOs that are suitable for staking.
         /// <para>
-        /// Such a coin has to be confirmed with enough confirmations - i.e. has suitable depth,
+        /// Such a UTXO has to be confirmed with enough confirmations - i.e. has suitable depth,
         /// and it also has to be mature and meet requirement for minimal value.
         /// </para>
         /// </summary>
         /// <param name="utxoStakeDescriptions">List of UTXO descriptions that are candidates for being used for staking.</param>
         /// <param name="spendTime">Timestamp of the coinstake transaction.</param>
-        /// <param name="maxValue">Maximal amount of coins that can be used for staking.</param>
-        /// <returns>List of coins that meet the requirements.</returns>
+        /// <param name="maxValue">Maximal amount of UTXOs that can be used for staking.</param>
+        /// <returns>List of UTXO descriptions that meet the requirements for staking.</returns>
         private List<UtxoStakeDescription> GetUtxoStakeDescriptionsSuitableForStaking(List<UtxoStakeDescription> utxoStakeDescriptions, uint spendTime, long maxValue)
         {
             this.logger.LogTrace("({0}.{1}:{2},{3}:{4},{5}:{6})", nameof(utxoStakeDescriptions), nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count, nameof(spendTime), spendTime, nameof(maxValue), maxValue);
@@ -999,7 +997,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <returns>Staking difficulty.</returns>
         /// <remarks>
         /// The actual idea behind the calculation is a mystery. It was simply ported from
-        /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16 .
+        /// <see cref="https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L16"/>.
         /// </remarks>
         public double GetDifficulty(ChainedBlock block)
         {
@@ -1044,7 +1042,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Estimates the total staking weight of the network.
         /// </summary>
-        /// <returns>Estimated number of coins that are used by all stakers on the network.</returns>
+        /// <returns>Estimated amount of money that is used by all stakers on the network.</returns>
         /// <remarks>
         /// The idea behind estimating the network staking weight is very similar to estimating
         /// the total hash power of PoW network. The difficulty retarget algorithm tries to make
@@ -1053,7 +1051,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// presented on the network to generate each block.
         /// <para>
         /// The method was ported from
-        /// https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L74 .
+        /// <see cref="https://github.com/stratisproject/stratisX/blob/47851b7337f528f52ec20e86dca7dcead8191cf5/src/rpcblockchain.cpp#L74"/>.
         /// </para>
         /// </remarks>
         public double GetNetworkWeight()
