@@ -26,32 +26,26 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     /// <remarks>
     /// Staking is attempted only if the node is fully synchronized and connected to the network.
-    /// If not it will wait  till node is synced. Only transactions that were confirmed at least
+    /// If not it will wait till node is synced. Only transactions that were confirmed at least
     /// <see cref="PosConsensusOptions.StakeMinConfirmations"/> blocks ago are eligible for staking.
-    /// </remarks>
-    /// <remarks>
+    /// <para>
     /// The overall process for "attempting" to mine a PoS block looks like this:
-    /// 1) Create new block with transactions from <see cref="TxMempool"/>
-    /// 2) Get UTXOs (Unspent Transaction Output) that can participate in staking (have suitable depth).
-    /// 3) Split those UTXOs in subsets so each subset contains max of <see cref="utxoStakeDescriptionsPerCoinstakeWorker"/> transactions
-    /// and run CoinstakeWorker for each subset. Splitting is done only to achieve a good level of parallelism.
-    /// 4) CoinstakeWorker will try different versions of a block we are trying to mine (the only difference is the
-    /// timestamp which is tried in a time interval from now to now - searchInterval seconds.
+    /// 1) Create new block with transactions from mempool.
+    /// 2) Get UTXOs that can participate in staking (have suitable depth).
+    /// 3) Split these UTXOs in subsets and create tasks processing each subset to allow for parallel processing.
+    /// 4) Each of the tasks mentioned above will try to find a solution for proof of stake target. This is done by creating a coinstake
+    /// transaction with each of the available UTXOs combined with all valid unix timestamps that were not checked.
+    /// Those timestamps are within a time interval from now to now - searchInterval seconds. Only timestamps that are divisible by
+    /// <c><see cref="PosConsensusValidator.StakeTimestampMask"/> + 1</c> are valid candidates (this is done to decrease granularity of timestamps).
     /// Search interval is a length of an unexplored block time space in seconds.
-    /// Worker calculates the kernel's hash using the next formula:
-    /// hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime).
-    /// Then it calculates staking target using the next formula:
-    /// (header of a block that we are trying to mine as BigInteger * amount of satoshi we are staking).
-    /// We compare kernel's hash (as BigInteger) against the staking target, if it's greater then we met the criteria
+    /// Task calculates the kernel's hash (kernel is the first input in the coinstake transaction) using the next formula:
+    /// <c>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime)</c>.
+    /// Then it calculates staking target using the next formula: <c>block difficulty * UTXO value</c>.
+    /// We compare kernel's hash against the staking target, if it's greater then we met the criteria
     /// and kernel is found.
-    /// So the more coins we stake the higher the staking target => higher chances of meeting the criteria.
-    /// 5) In case kernel is found we add a coinbase transaction and staking transaction, sign the block and add it to the chain.
-    ///
-    /// More about PoS kernel:
-    /// the idea behind it is that in consists of values that cant easily be changed in context of that block so miner
-    /// have very little wiggle room in order to generate different hashes.The only piece of data that is mutable is
-    /// the current blocktime (so miners will try different values within the search interval.
-    /// Max val - Min val is usually around 16 so there are only 16 valid kernel hashes that can be used).
+    /// So the more coins we stake the higher the staking target and so the higher the chance to meet the criteria.
+    /// 5) In case kernel is found we add a coinstake transaction, sign the block and add it to the chain.
+    /// </para>
     /// </remarks>
     public class PosMinting
     {
@@ -149,23 +143,9 @@ namespace Stratis.Bitcoin.Features.Miner
             public Key Key { get; set; }
         }
 
-        /// <summary>Default for "-blockmintxfee", which sets the minimum feerate for a transaction in blocks created by mining code.</summary>
-        public const int DefaultBlockMinTxFee = 1000;
-
-        /// <summary>Default for "-blockmaxsize", which controls the maximum size of block the mining code will create.</summary>
-        public const int DefaultBlockMaxSize = 750000;
-
-        /// <summary>
-        /// Default for "-blockmaxweight", which controls the maximum of block weight the mining code will create.
-        /// Block is measured in weight units. Data which touches the UTXO (What addresses are involved in the transaction, how many coins are being transferred) costs
-        /// 4 weight units (WU) per byte. Witness data (signatures used to unlock existing coins so that they can be spent) costs 1 WU per byte.
-        /// <seealso>http://learnmeabitcoin.com/faq/segregated-witness </seealso>
-        /// </summary>
-        public const int DefaultBlockMaxWeight = 3000000;
-
-        /** The maximum allowed size for a serialized block, in bytes (network rule) */
+        /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
         public const int MaxBlockSize = 1000000;
-        /** The maximum size for mined blocks */
+        ///<summary>The maximum size for mined blocks.</summary>
         public const int MaxBlockSizeGen = MaxBlockSize / 2;
 
         /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO
@@ -173,8 +153,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <remarks>TODO: It should be configurable option, not constant. See https://github.com/stratisproject/StratisBitcoinFullNode/issues/550 </remarks>
         public const bool CoinstakeSplitEnabled = true;
 
-        /// <summary>
-        /// If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if
+        /// <summary> If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if
         /// the number of non-empty UTXOs in the wallet is lower than the required coin age for staking plus 1,
         /// multiplied by this value. See <see cref="GetSplitStake(int)"/>.</summary>
         public const int CoinstakeSplitLimitMultiplier = 3;
@@ -182,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Number of UTXO descriptions that a single worker's task will process.</summary>
         /// <remarks>To achieve a good level of parallelism, this should be low enough so that CPU threads are used,
         /// but high enough to compensate for tasks' overhead.</remarks>
-        private const int utxoStakeDescriptionsPerCoinstakeWorker = 25;
+        private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
         private readonly ConsensusLoop consensusLoop;
         private readonly ConcurrentChain chain;
@@ -594,8 +573,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Creates a coinstake transaction with kernel that satisfies POS staking target.
         /// </summary>
         /// <param name="utxoStakeDescriptions">List of coins that are available in the wallet for staking.</param>
-        /// <param name="chainTip">Tip of the best chain.</param>
         /// <param name="block">Template of the block that we are trying to mine.</param>
+        /// <param name="chainTip">Tip of the best chain.</param>
         /// <param name="searchInterval">Length of an unexplored block time space in seconds. It only makes sense to look for a solution within this interval.</param>
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeContext">Information about coinstake transaction and its private key that is to be filled when the kernel is found.</param>
@@ -622,15 +601,15 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Select UTXOs with suitable depth.
-            List<UtxoStakeDescription> stackingUtxoDescriptions = this.GetUtxoStakeDescriptionsSuitableForStaking(utxoStakeDescriptions, coinstakeContext.CoinstakeTx.Time, balance - this.reserveBalance);
-            if (!stackingUtxoDescriptions.Any())
+            List<UtxoStakeDescription> stakingUtxoDescriptions = this.GetUtxoStakeDescriptionsSuitableForStaking(utxoStakeDescriptions, coinstakeContext.CoinstakeTx.Time, balance - this.reserveBalance);
+            if (!stakingUtxoDescriptions.Any())
             {
                 this.rpcGetStakingInfoModel.Staking = false;
                 this.logger.LogTrace("(-)[NO_SELECTION]:false");
                 return false;
             }
 
-            long ourWeight = stackingUtxoDescriptions.Sum(s => s.TxOut.Value);
+            long ourWeight = stakingUtxoDescriptions.Sum(s => s.TxOut.Value);
             long expectedTime = StakeValidator.TargetSpacingSeconds * this.networkWeight / ourWeight;
             decimal ourPercent = this.networkWeight != 0 ? 100.0m * (decimal)ourWeight / (decimal)this.networkWeight : 0;
 
@@ -642,7 +621,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.rpcGetStakingInfoModel.Errors = null;
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
-            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", stackingUtxoDescriptions.Count, minimalAllowedTime, coinstakeContext.CoinstakeTx.Time);
+            this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", stakingUtxoDescriptions.Count, minimalAllowedTime, coinstakeContext.CoinstakeTx.Time);
 
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
@@ -655,7 +634,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // Create worker tasks that will look for kernel.
             // Run task in parallel using the default task scheduler.
             int coinIndex = 0;
-            int workerCount = (stackingUtxoDescriptions.Count + utxoStakeDescriptionsPerCoinstakeWorker - 1) / utxoStakeDescriptionsPerCoinstakeWorker;
+            int workerCount = (stakingUtxoDescriptions.Count + UtxoStakeDescriptionsPerCoinstakeWorker - 1) / UtxoStakeDescriptionsPerCoinstakeWorker;
             Task[] workers = new Task[workerCount];
             CoinstakeWorkerContext[] workerContexts = new CoinstakeWorkerContext[workerCount];
 
@@ -671,9 +650,9 @@ namespace Stratis.Bitcoin.Features.Miner
                     Result = workersResult
                 };
 
-                int txesCount = Math.Min(stackingUtxoDescriptions.Count - coinIndex, utxoStakeDescriptionsPerCoinstakeWorker);
-                cwc.utxoStakeDescriptions.AddRange(stackingUtxoDescriptions.GetRange(coinIndex, txesCount));
-                coinIndex += txesCount;
+                int stakingUtxoCount = Math.Min(stakingUtxoDescriptions.Count - coinIndex, UtxoStakeDescriptionsPerCoinstakeWorker);
+                cwc.utxoStakeDescriptions.AddRange(stakingUtxoDescriptions.GetRange(coinIndex, stakingUtxoCount ));
+                coinIndex += stakingUtxoCount ;
                 workerContexts[workerIndex] = cwc;
 
                 workers[workerIndex] = Task.Run(() => this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval));
@@ -768,15 +747,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Sort staking UTXOs by amount, so that highest amounts are tried first
             // because they have greater chance to succeed and thus saving some work.
-            List<UtxoStakeDescription> orderedutxoStakeDescriptions = context.utxoStakeDescriptions.OrderByDescending(o => o.TxOut.Value).ToList();
+            List<UtxoStakeDescription> orderedUtxoStakeDescriptions = context.utxoStakeDescriptions.OrderByDescending(o => o.TxOut.Value).ToList();
 
             bool stopWork = false;
-            foreach (UtxoStakeDescription utxoStakeInfo in orderedutxoStakeDescriptions)
+            foreach (UtxoStakeDescription utxoStakeInfo in orderedUtxoStakeDescriptions)
             {
                 context.Logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", utxoStakeInfo.Address.Address, utxoStakeInfo.TxOut.Value);
 
                 // Script of the first coinstake input.
-                Script scriptPubKeyKernel = scriptPubKeyKernel = utxoStakeInfo.TxOut.ScriptPubKey;
+                Script scriptPubKeyKernel = utxoStakeInfo.TxOut.ScriptPubKey;
                 if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
                     && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
                 {
@@ -831,7 +810,6 @@ namespace Stratis.Bitcoin.Features.Miner
                         {
                             context.Logger.LogTrace("Kernel found with solution hash '{0}'.", contextInformation.Stake.HashProofOfStake);
 
-                            BitcoinAddress outPubKey = scriptPubKeyKernel.GetDestinationAddress(this.network);
                             Wallet.Wallet wallet = this.walletManager.GetWalletByName(utxoStakeInfo.Secret.WalletName);
                             context.CoinstakeContext.Key = wallet.GetExtendedPrivateKeyForAddress(utxoStakeInfo.Secret.WalletPassword, utxoStakeInfo.Address).PrivateKey;
 

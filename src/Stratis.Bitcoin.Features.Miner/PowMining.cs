@@ -33,14 +33,14 @@ namespace Stratis.Bitcoin.Features.Miner
         public const int DefaultBlockMaxSize = 750000;
 
         /// <summary>
-        /// Default for "-blockmaxweight", which controls the maximum of block weight the mining code will create.
+        /// Default for "-blockmaxweight", which controls the maximum block weight the mining code can create.
         /// Block is measured in weight units. Data which touches the UTXO (What addresses are involved in the transaction, how many coins are being transferred) costs
         /// 4 weight units (WU) per byte. Witness data (signatures used to unlock existing coins so that they can be spent) costs 1 WU per byte.
-        /// <seealso>http://learnmeabitcoin.com/faq/segregated-witness </seealso>
+        /// <seealso cref="http://learnmeabitcoin.com/faq/segregated-witness"/>
         /// </summary>
         public const int DefaultBlockMaxWeight = 3000000;
 
-        private const int innerLoopCount = 0x10000;
+        private const int InnerLoopCount = 0x10000;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly ConsensusLoop consensusLoop;
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         /// <param name="reserveScript"></param>
         /// <param name="generate">Number of blocks to generate. It is possible that less than the required number of blocks will be mined.</param>
-        /// <param name="maxTries">MMaximum number of attempts the miner will calculate PoW hash in order to find suitable ones to generate specified amount of blocks.</param>
+        /// <param name="maxTries">Maximum number of attempts the miner will calculate PoW hash in order to find suitable ones to generate specified amount of blocks.</param>
         /// <returns>List with generated block's hashes</returns>
         public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong generate, ulong maxTries)
         {
@@ -137,8 +137,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 if (Block.BlockSignature)
                 {
-                    //Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
-                    //where it is possible to generate multiple blocks within one second.
+                    // Make sure the POS consensus rules are valid. This is required for generation of blocks inside tests,
+                    // where it is possible to generate multiple blocks within one second.
                     if (pblockTemplate.Block.Header.Time <= chainTip.Header.Time)
                     {
                         continue;
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.IncrementExtraNonce(pblockTemplate.Block, chainTip, nExtraNonce);
                 Block pblock = pblockTemplate.Block;
 
-                while ((maxTries > 0) && (pblock.Header.Nonce < innerLoopCount) && !pblock.CheckProofOfWork())
+                while ((maxTries > 0) && (pblock.Header.Nonce < InnerLoopCount) && !pblock.CheckProofOfWork())
                 {
                     this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
 
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (maxTries == 0)
                     break;
 
-                if (pblock.Header.Nonce == innerLoopCount)
+                if (pblock.Header.Nonce == InnerLoopCount)
                     continue;
 
                 var newChain = new ChainedBlock(pblock.Header, pblock.GetHash(), chainTip);
