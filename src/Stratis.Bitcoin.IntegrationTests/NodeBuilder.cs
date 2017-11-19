@@ -560,7 +560,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         private Money fee = Money.Coins(0.0001m);
         private object lockObject = new object();
 
-        public string Folder { get { return this.folder; } }        
+        public string Folder { get { return this.folder; } }
 
         /// <summary>Location of the data directory for the node.</summary>
         public string DataFolder { get { return this.dataDir; } }
@@ -595,10 +595,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             get
             {
-                if(this.runner is StratisBitcoinPosRunner)
-                   return ((StratisBitcoinPosRunner)this.runner).FullNode;
+                if (this.runner is StratisBitcoinPosRunner)
+                    return ((StratisBitcoinPosRunner)this.runner).FullNode;
 
-                return ((StratisBitcoinPowRunner) this.runner).FullNode;
+                return ((StratisBitcoinPowRunner)this.runner).FullNode;
             }
         }
 
