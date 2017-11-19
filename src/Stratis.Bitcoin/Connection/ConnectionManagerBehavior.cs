@@ -50,21 +50,8 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
+            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
             this.chainHeadersBehavior = this.AttachedNode.Behaviors.Find<ChainHeadersBehavior>();
-
-            this.logger.LogTrace("(-)");
-        }
-
-        private void AttachedNode_MessageReceived(Node node, IncomingMessage message)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(node), node.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
-            if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.Whitelisted)
-            {
-                node.DisconnectAsync("Invalid block received");
-            }
 
             this.logger.LogTrace("(-)");
         }
@@ -76,18 +63,13 @@ namespace Stratis.Bitcoin.Connection
             if (node.State == NodeState.HandShaked)
             {
                 this.ConnectionManager.AddConnectedNode(node);
-                this.infoLogger.LogInformation("Node {0} connected ({1}), agent {2}, height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
+                this.infoLogger.LogInformation("Node '{0}' connected ({1}), agent '{2}', height {3}", node.RemoteSocketEndpoint, this.Inbound ? "inbound" : "outbound", node.PeerVersion.UserAgent, node.PeerVersion.StartHeight);
                 node.SendMessageAsync(new SendHeadersPayload());
             }
 
             if ((node.State == NodeState.Failed) || (node.State == NodeState.Offline))
             {
-                this.infoLogger.LogInformation("Node {0} offline.", node.RemoteSocketEndpoint);
-
-                NodeDisconnectReason reason = node.DisconnectReason;
-                if ((reason != null) && !string.IsNullOrEmpty(reason.Reason))
-                    this.infoLogger.LogInformation("Reason: {0}", reason.Reason);
-
+                this.infoLogger.LogInformation("Node '{0}' offline, reason: '{1}'.", node.RemoteSocketEndpoint, node.DisconnectReason?.Reason ?? "unknown");
                 this.ConnectionManager.RemoveConnectedNode(node);
             }
 
@@ -98,8 +80,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived -= AttachedNode_MessageReceived;
+            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
 
             this.logger.LogTrace("(-)");
         }

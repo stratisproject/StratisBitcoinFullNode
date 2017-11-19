@@ -1,7 +1,7 @@
 ﻿using System;
-using NBitcoin;
+using Stratis.Bitcoin.Utilities.Extensions;
 
-namespace Stratis.Bitcoin.Base
+namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Providing date time functionality.
@@ -46,9 +46,7 @@ namespace Stratis.Bitcoin.Base
     public class DateTimeProvider : IDateTimeProvider
     {
         /// <summary>Static instance of the object to prevent the need of creating new instance.</summary>
-        private static readonly IDateTimeProvider defaultInstance;
-        /// <summary>Static instance of the object to prevent the need of creating new instance.</summary>
-        public static IDateTimeProvider Default { get { return defaultInstance; } }
+        public static IDateTimeProvider Default { get; }
 
         /// <summary>UTC adjusted timestamp, or null if no adjusted time is set.</summary>
         private TimeSpan adjustedTimeOffset;
@@ -58,7 +56,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         static DateTimeProvider()
         {
-            defaultInstance = new DateTimeProvider();
+            Default = new DateTimeProvider();
         }
 
         /// <summary>

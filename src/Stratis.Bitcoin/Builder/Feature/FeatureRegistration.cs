@@ -117,9 +117,9 @@ namespace Stratis.Bitcoin.Builder.Feature
         }
 
         /// <inheritdoc />
-        public IFeatureRegistration DependOn<TImplementation>() where TImplementation : class, IFullNodeFeature
+        public IFeatureRegistration DependOn<TFeatureImplementation>() where TFeatureImplementation : class, IFullNodeFeature
         {
-            this.dependencies.Add(typeof(TImplementation));
+            this.dependencies.Add(typeof(TFeatureImplementation));
 
             return this;
         }

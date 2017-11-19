@@ -201,11 +201,10 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// Configure the console logger and set it to filter logs not related to the fullnode.
         /// </summary>
         /// <param name="loggerFactory">The logger factory to add the console logger.</param>
-        /// <param name="consoleLoggerSettings"></param>
         /// <returns>The new console settings.</returns>
-        public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory, out ConsoleLoggerSettings consoleLoggerSettings)
+        public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory)
         {
-            consoleLoggerSettings = new ConsoleLoggerSettings
+            ConsoleLoggerSettings consoleLoggerSettings = new ConsoleLoggerSettings
             {
                 Switches =
                 {

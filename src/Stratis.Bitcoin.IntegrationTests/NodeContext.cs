@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
