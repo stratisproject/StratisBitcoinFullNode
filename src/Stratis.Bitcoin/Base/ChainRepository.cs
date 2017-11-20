@@ -43,21 +43,33 @@ namespace Stratis.Bitcoin.Base
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
+                    transaction.ValuesLazyLoadingIsOn = false;
                     ChainedBlock tip = null;
+                    BlockHeader previousHeader = null;
                     bool first = true;
 
                     foreach (Row<int, BlockHeader> row in transaction.SelectForward<int, BlockHeader>("Chain"))
                     {
-                        if ((tip != null) && (row.Value.HashPrevBlock != tip.HashBlock))
+                        if (previousHeader == null)
+                        {
+                            previousHeader = row.Value;
+                            continue;
+                        }
+
+                        if ((tip != null) && (previousHeader.HashPrevBlock != tip.HashBlock))
                             break;
 
-                        tip = new ChainedBlock(row.Value, null, tip);
+                        tip = new ChainedBlock(previousHeader, row.Value.HashPrevBlock, tip);
+
                         if (first)
                         {
                             first = false;
                             Guard.Assert(tip.HashBlock == chain.Genesis.HashBlock); // can't swap networks
                         }
+                        previousHeader = row.Value;
                     }
+
+                    tip = new ChainedBlock(previousHeader, null, tip);
 
                     if (tip == null)
                         return;
