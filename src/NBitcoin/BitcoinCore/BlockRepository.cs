@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NBitcoin.BitcoinCore
 {
-	public class BlockRepository : IBlockRepository
+	public class BlockRepository : INBitcoinBlockRepository
 	{
 		IndexedBlockStore _BlockStore;
 		IndexedBlockStore _HeaderStore;

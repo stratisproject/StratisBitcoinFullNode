@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
-    public class BlockRepositoryInMemory : BlockStore.IBlockRepository
+    public class BlockRepositoryInMemory : IBlockRepository
     {
         private ConcurrentDictionary<uint256, Block> store;
         public uint256 BlockHash { get; private set; }
