@@ -16,7 +16,7 @@ namespace NBitcoin
         /// <summary>Window length for calculating median time span.</summary>
         private const int MedianTimeSpan = 11;
 
-        /// <summary>The hash of the block.</summary>
+        /// <summary>The hash of the block which is also known as the block id.</summary>
         public uint256 HashBlock { get; private set; }
 
         /// <summary>Predecessor of this block.</summary>
@@ -94,11 +94,7 @@ namespace NBitcoin
             if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(Pow256) >= 0))
                 return BigInteger.Zero;
 
-            // We need to compute 2**256 / (target+1), but we can't represent 2**256
-            // as it's too large for a uint256. However, as 2**256 is at least as large
-            // as target+1, it is equal to ((2**256 - target - 1) / (target+1)) + 1,
-            // or ~target / (target+1) + 1.
-            return ((Pow256.Subtract(target).Subtract(BigInteger.One)).Divide(target.Add(BigInteger.One))).Add(BigInteger.One);
+            return Pow256.Divide(target.Add(BigInteger.One));
         }
 
         /// <summary>Gets a <see cref="BlockLocator"/> for this chain entry.</summary>
@@ -356,10 +352,10 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Check PoW/PoS and that the blocks connect correctly.
+        /// Check PoW/PoS on the network and that the blocks connect correctly.
         /// </summary>
-        /// <param name="network">The network being used.</param>
-        /// <returns>True if PoW is correct.</returns>
+        /// <param name="network">The network to verify against.</param>
+        /// <returns>True if PoW/Pos is valid.</returns>
         public bool Validate(Network network)
         {
             if (network == null)
@@ -373,10 +369,10 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Check PoW/PoS and that the blocks connect correctly.
+        /// Check PoW against consensus and that the blocks connect correctly.
         /// </summary>
-        /// <param name="consensus">The consensus being used.</param>
-        /// <returns>True if PoW is correct.</returns>
+        /// <param name="consensus">The consensus rules being used.</param>
+        /// <returns>True if PoW is valid.</returns>
         public bool Validate(Consensus consensus)
         {
             if (consensus == null)
