@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
         public bool SyncTimeEnabled { get; set; }
-        
+
         /// <summary>
         /// Initializes default configuration.
         /// </summary>
@@ -169,12 +169,17 @@ namespace Stratis.Bitcoin.Configuration
                 this.RegTest = configTemp.GetOrDefault<bool>("regtest", false);
             }
 
-            this.Testnet = args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase);
-            this.RegTest = args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase);
+            //Only if args contains -testnet, do we set it to true, otherwise it overwrites file configuration
+            if (args.Contains("-testnet", StringComparer.CurrentCultureIgnoreCase))
+                this.Testnet = true;
+
+            //Only if args contains -regtest, do we set it to true, otherwise it overwrites file configuration
+            if (args.Contains("-regtest", StringComparer.CurrentCultureIgnoreCase))
+                this.RegTest = true;
 
             if (this.Testnet && this.RegTest)
                 throw new ConfigurationException("Invalid combination of -regtest and -testnet.");
-            
+
             this.Network = this.GetNetwork();
             if (this.DataDir == null)
             {
@@ -322,7 +327,7 @@ namespace Stratis.Bitcoin.Configuration
             }
 
             int colon = ipAddress.LastIndexOf(':');
-           
+
             // if a : is found, and it either follows a [...], or no other : is in the string, treat it as port separator
             bool fHaveColon = colon != -1;
             bool fBracketed = fHaveColon && (ipAddress[0] == '[' && ipAddress[colon - 1] == ']'); // if there is a colon, and in[0]=='[', colon is not 0, so in[colon-1] is safe
@@ -335,7 +340,7 @@ namespace Stratis.Bitcoin.Configuration
                     port = n;
                 }
             }
-            
+
             return new IPEndPoint(IPAddress.Parse(ipAddress), port);
         }
 
