@@ -24,7 +24,7 @@ namespace NBitcoin
 {
 	public static class Extensions
 	{
-		public static Block GetBlock(this IBlockRepository repository, uint256 blockId)
+		public static Block GetBlock(this INBitcoinBlockRepository repository, uint256 blockId)
 		{
 			try
 			{
