@@ -89,14 +89,18 @@ namespace NBitcoin
 				return _Serializing;
 			}
 		}
-		public BitcoinStream(Stream inner, bool serializing)
+
+        public Network Network { get; private set; }
+
+		public BitcoinStream(Stream inner, bool serializing, Network network = null)
 		{
 			_Serializing = serializing;
 			_Inner = inner;
+            Network = network;
 		}
 
-		public BitcoinStream(byte[] bytes)
-			: this(new MemoryStream(bytes), false)
+		public BitcoinStream(byte[] bytes, Network network = null)
+			: this(new MemoryStream(bytes), false, network)
 		{
 		}
 

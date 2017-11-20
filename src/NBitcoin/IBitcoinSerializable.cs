@@ -9,11 +9,28 @@ namespace NBitcoin
 		void ReadWrite(BitcoinStream stream);
 	}
 
-	public static class BitcoinSerializableExtensions
+    public interface IGetSetNetwork
+    {
+        Network GetNetwork();
+        void SetNetwork(Network network);
+    }
+
+    public static class BitcoinSerializableExtensions
 	{
-		public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+		public static void ReadWrite(this IBitcoinSerializable serializable, Stream stream, bool serializing, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
 		{
-			BitcoinStream s = new BitcoinStream(stream, serializing)
+            if (serializable as IGetSetNetwork != null)
+            {
+                if (serializing)
+                    network = (serializable as IGetSetNetwork)?.GetNetwork();
+                else
+                    (serializable as IGetSetNetwork)?.SetNetwork(network);
+
+                if (network == null)
+                     throw new ArgumentNullException($"{serializable.GetType().Name} serialization requires a Network argument");
+            }
+
+			BitcoinStream s = new BitcoinStream(stream, serializing, network)
 			{
 				ProtocolVersion = version
 			};
@@ -21,28 +38,28 @@ namespace NBitcoin
 		}
 		public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
 		{
-			BitcoinStream s = new BitcoinStream(Stream.Null, true);
+            BitcoinStream s = new BitcoinStream(Stream.Null, true, (serializable as IGetSetNetwork)?.GetNetwork());
 			s.Type = serializationType;
 			s.ReadWrite(serializable);
 			return (int)s.Counter.WrittenBytes;
 		}
 		public static int GetSerializedSize(this IBitcoinSerializable serializable, TransactionOptions options)
 		{
-			var bms = new BitcoinStream(Stream.Null, true);
+            var bms = new BitcoinStream(Stream.Null, true, (serializable as IGetSetNetwork)?.GetNetwork());
 			bms.TransactionOptions = options;
 			serializable.ReadWrite(bms);
 			return (int)bms.Counter.WrittenBytes;
 		}
 		public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
 		{
-			return GetSerializedSize(serializable, version, SerializationType.Disk);
+            return GetSerializedSize(serializable, version, SerializationType.Disk);
 		}
 
 		public static string ToHex(this IBitcoinSerializable serializable, SerializationType serializationType = SerializationType.Disk)
 		{
 			using (var memoryStream = new MemoryStream())
 			{
-				BitcoinStream bitcoinStream = new BitcoinStream(memoryStream, true);
+                BitcoinStream bitcoinStream = new BitcoinStream(memoryStream, true, (serializable as IGetSetNetwork)?.GetNetwork());
 				bitcoinStream.Type = serializationType;
 				bitcoinStream.ReadWrite(serializable);
 				memoryStream.Seek(0, SeekOrigin.Begin);
@@ -51,28 +68,32 @@ namespace NBitcoin
 			}
 		}
 
-		public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+		public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
 		{
-			ReadWrite(serializable, new MemoryStream(bytes), false, version);
+			ReadWrite(serializable, new MemoryStream(bytes), false, version, network);
 		}
-		public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+
+		public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
 		{
-			serializable.ReadWrite(new BitcoinStream(bytes)
+            if (network == null && (serializable as IGetSetNetwork) != null)
+                throw new ArgumentNullException($"{serializable.GetType().Name} serialization requires a Network argument");
+
+            serializable.ReadWrite(new BitcoinStream(bytes, network)
 			{
 				ProtocolVersion = version
 			});
 		}
 
-		public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) where T : IBitcoinSerializable, new()
+		public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null) where T : IBitcoinSerializable, new()
 		{
-			var instance = new T();
-			instance.FromBytes(serializable.ToBytes(version), version);
+            var instance = new T();
+			instance.FromBytes(serializable.ToBytes(version, network), version, network ?? (serializable as IGetSetNetwork)?.GetNetwork());
 			return instance;
 		}
-		public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+		public static byte[] ToBytes(this IBitcoinSerializable serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION, Network network = null)
 		{
-			MemoryStream ms = new MemoryStream();
-			serializable.ReadWrite(new BitcoinStream(ms, true)
+            MemoryStream ms = new MemoryStream();
+			serializable.ReadWrite(new BitcoinStream(ms, true, network ?? (serializable as IGetSetNetwork)?.GetNetwork())
 			{
 				ProtocolVersion = version
 			});
