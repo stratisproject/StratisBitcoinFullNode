@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             string dataDir = Path.Combine("TestData", nameof(PeerBanningTest), nameof(this.GivenANodeIsSynced_WhenAPeerSendsABadBlock_ThePeerGetBanned_Async));
             Directory.CreateDirectory(dataDir);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(Network.TestNet, new Key().ScriptPubKey, dataDir);
+            TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, new Key().ScriptPubKey, dataDir);
 
             // create a new block that breaks consensus.
             var block = new Block();
