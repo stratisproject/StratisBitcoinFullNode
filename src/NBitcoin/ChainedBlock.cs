@@ -122,7 +122,7 @@ namespace NBitcoin
                     nStep *= 2;
             }
 
-            BlockLocator locators = new BlockLocator();
+            var locators = new BlockLocator();
             locators.Blocks = blockHashes;
             return locators;
         }
@@ -352,10 +352,10 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Check PoW/PoS on the network and that the blocks connect correctly.
+        /// Check that the header is a valid block header including the work done for PoW blocks.
         /// </summary>
         /// <param name="network">The network to verify against.</param>
-        /// <returns>True if PoW/Pos is valid.</returns>
+        /// <returns><c>true</c> if the header is a valid block header, <c>false</c> otherwise.</returns>
         public bool Validate(Network network)
         {
             if (network == null)
@@ -372,7 +372,7 @@ namespace NBitcoin
         /// Check PoW against consensus and that the blocks connect correctly.
         /// </summary>
         /// <param name="consensus">The consensus rules being used.</param>
-        /// <returns>True if PoW is valid.</returns>
+        /// <returns><c>true</c> if the header is a valid block header, <c>false</c> otherwise.</returns>
         public bool Validate(Consensus consensus)
         {
             if (consensus == null)
