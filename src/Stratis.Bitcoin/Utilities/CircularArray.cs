@@ -76,6 +76,26 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
+        /// Removes the first item from the circular array, which is the oldest entry in the array.
+        /// </summary>
+        /// <param name="firstItem">If the function returns <c>true</c>, this is filled with the oldest item that was removed.</param>
+        /// <returns><c>true</c> if the oldest item was removed, <c>false</c> if there were no items.</returns>
+        public bool RemoveFirst(out T firstItem)
+        {
+            bool res = false;
+            firstItem = default(T);
+            if (this.Count > 0)
+            {
+                firstItem = this.items[this.Index];
+                this.Index = (this.Index + 1) % this.Capacity;
+                this.Count--;
+                res = true;
+            }
+
+            return res;
+        }
+
+        /// <summary>
         /// Access to an item at specific index.
         /// </summary>
         /// <param name="i">Zero-based index of the item to access. Index must be an integer between 0 and <see cref="Capacity"/> - 1.</param>
