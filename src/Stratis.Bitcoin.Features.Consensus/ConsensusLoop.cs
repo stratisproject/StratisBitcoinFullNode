@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -33,10 +34,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
         public ConsensusError Error { get; set; }
 
+        /// <summary>
+        /// If the block validation failed with <see cref="ConsensusErrors.BlockTimestampTooFar"/>
+        /// then this is set to a time until which the block should be marked as invalid. Otherwise it is <c>null</c>.
+        /// </summary>
+        public DateTime? RejectUntil { get; set; }
+
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
     }
-    
+
     /// <summary>
     /// A class that is responsible for downloading blocks from peers using the <see cref="ILookaheadBlockPuller"/> 
     /// and validating this blocks using either the <see cref="PowConsensusValidator"/> for POF networks or <see cref="PosConsensusValidator"/> for POS networks. 
@@ -348,8 +355,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
                     // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
-                    this.logger.LogError("Marking block '{0}' as invalid.", rejectedBlockHash);
-                    this.chainState.MarkBlockInvalid(rejectedBlockHash);
+                    this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, blockValidationContext.RejectUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", blockValidationContext.RejectUntil.Value) : "");
+                    this.chainState.MarkBlockInvalid(rejectedBlockHash, blockValidationContext.RejectUntil);
                 }
                 else
                 {
