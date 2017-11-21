@@ -228,13 +228,13 @@ namespace Stratis.Bitcoin.P2P
     {
         public static IEnumerable<PeerAddress> New(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var isNew = peers.Where(p => p.Value.IsNew).Select(p => p.Value);
+            var isNew = peers.Skip(0).Where(p => p.Value.IsNew).Select(p => p.Value);
             return isNew;
         }
 
         public static IEnumerable<PeerAddress> Tried(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
         {
-            var tried = peers.Where(p => !p.Value.IsNew).Select(p => p.Value);
+            var tried = peers.Skip(0).Where(p => !p.Value.IsNew).Select(p => p.Value);
             return tried;
         }
 

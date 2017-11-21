@@ -132,14 +132,14 @@ namespace Stratis.Bitcoin.Connection
 
             if (!this.connectionManagerSettings.Connect.Any())
             {
-                this.DiscoveryPeerConnector = CreateNodeGroup(clonedParameters, this.discoveredNodeRequiredService, WellKnownPeerConnectorSelectors.ByNetwork);
+                this.DiscoveryPeerConnector = CreatePeerConnector(clonedParameters, this.discoveredNodeRequiredService, WellKnownPeerConnectorSelectors.ByNetwork);
             }
             else
             {
                 this.peerAddressManager.AddPeers(this.connectionManagerSettings.Connect.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.None;
 
-                this.ConnectPeerConnector = CreateNodeGroup(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint);
+                this.ConnectPeerConnector = CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint);
                 this.ConnectPeerConnector.MaximumNodeConnections = this.connectionManagerSettings.Connect.Count;
             }
 
@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Connection
                 this.peerAddressManager.AddPeers(this.connectionManagerSettings.AddNode.Select(c => new NetworkAddress(c)).ToArray(), IPAddress.Loopback);
                 clonedParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
 
-                this.AddNodePeerConnector = CreateNodeGroup(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint);
+                this.AddNodePeerConnector = CreatePeerConnector(clonedParameters, NodeServices.Nothing, WellKnownPeerConnectorSelectors.ByEndpoint);
                 this.AddNodePeerConnector.MaximumNodeConnections = this.connectionManagerSettings.AddNode.Count;
             }
 
@@ -197,11 +197,12 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:{1})", nameof(services), services);
 
             this.discoveredNodeRequiredService |= services;
-            PeerConnector group = this.DiscoveryPeerConnector;
-            if ((group != null) && !group.Requirements.RequiredServices.HasFlag(services))
+
+            PeerConnector peerConnector = this.DiscoveryPeerConnector;
+            if ((peerConnector != null) && !peerConnector.Requirements.RequiredServices.HasFlag(services))
             {
-                group.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
-                foreach (Node node in group.ConnectedNodes)
+                peerConnector.Requirements.RequiredServices |= NodeServices.NODE_WITNESS;
+                foreach (Node node in peerConnector.ConnectedNodes)
                 {
                     if (!node.PeerVersion.Services.HasFlag(services))
                         node.DisconnectAsync("The peer does not support the required services requirement.");
@@ -278,10 +279,10 @@ namespace Stratis.Bitcoin.Connection
             return speed.ToString("0.00") + " KB/S";
         }
 
-        private PeerConnector CreateNodeGroup(
+        private PeerConnector CreatePeerConnector(
             NodeConnectionParameters parameters,
             NodeServices requiredServices,
-            Func<IPEndPoint, byte[]> groupSelector)
+            Func<IPEndPoint, byte[]> peerSelector)
         {
             this.logger.LogTrace("({0}:{1})", nameof(requiredServices), requiredServices);
 
@@ -291,11 +292,11 @@ namespace Stratis.Bitcoin.Connection
                 RequiredServices = requiredServices,
             };
 
-            var nodeGroup = new PeerConnector(this.Network, this.nodeLifetime, parameters, nodeRequirement, groupSelector, this.asyncLoopFactory, this.peerAddressManager);
+            var peerConnector = new PeerConnector(this.Network, this.nodeLifetime, parameters, nodeRequirement, peerSelector, this.asyncLoopFactory, this.peerAddressManager);
 
             this.logger.LogTrace("(-)");
 
-            return nodeGroup;
+            return peerConnector;
         }
 
         private string GetVersion()
