@@ -8,9 +8,9 @@ using NBitcoin;
 using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -175,6 +175,8 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly IBlockRepository blockRepository;
         private readonly ChainState chainState;
         private readonly Signals.Signals signals;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
         private readonly NodeSettings settings;
         private readonly CoinView coinView;
@@ -651,8 +653,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 };
 
                 int stakingUtxoCount = Math.Min(stakingUtxoDescriptions.Count - coinIndex, UtxoStakeDescriptionsPerCoinstakeWorker);
-                cwc.utxoStakeDescriptions.AddRange(stakingUtxoDescriptions.GetRange(coinIndex, stakingUtxoCount ));
-                coinIndex += stakingUtxoCount ;
+                cwc.utxoStakeDescriptions.AddRange(stakingUtxoDescriptions.GetRange(coinIndex, stakingUtxoCount));
+                coinIndex += stakingUtxoCount;
                 workerContexts[workerIndex] = cwc;
 
                 workers[workerIndex] = Task.Run(() => this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval));

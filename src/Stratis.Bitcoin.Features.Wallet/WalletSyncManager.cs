@@ -21,6 +21,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly IBlockStoreCache blockStoreCache;
         private readonly StoreSettings storeSettings;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
         protected ChainedBlock walletTip;
@@ -51,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Start()
         {
             this.logger.LogTrace("()");
-            
+
             // When a node is pruned it impossible to catch up 
             // if the wallet falls behind the block puller.
             // To support pruning the wallet will need to be 
@@ -100,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
-                return; 
+                return;
             }
 
             // If the new block's previous hash is the same as the 

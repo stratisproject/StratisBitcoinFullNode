@@ -12,14 +12,10 @@ namespace Stratis.Bitcoin.P2P
 {
     public interface IPeerAddressManager : IDisposable
     {
-        /// <summary>
-        /// Data folder of where the json peer file is located.
-        /// </summary>
+        /// <summary> Data folder of where the json peer file is located.</summary>
         DataFolder PeerFilePath { get; set; }
 
-        /// <summary>
-        /// A key value store that indexes all discovered peers by their end point.
-        /// </summary>
+        /// <summary> Key value store that indexes all discovered peers by their end point.</summary>
         ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; }
 
         /// <summary>
@@ -107,7 +103,9 @@ namespace Stratis.Bitcoin.P2P
             this.PeerFilePath = peerFilePath;
         }
 
+        /// <inheritdoc />
         public ConcurrentDictionary<IPEndPoint, PeerAddress> Peers { get; private set; }
+
         internal const string PeerFileName = "peers.json";
         public DataFolder PeerFilePath { get; set; }
 
