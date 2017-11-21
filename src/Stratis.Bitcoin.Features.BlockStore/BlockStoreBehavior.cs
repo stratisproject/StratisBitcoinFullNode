@@ -14,14 +14,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public interface IBlockStoreBehavior : INodeBehavior
     {
-        bool CanRespondeToGetDataPayload { get; set; }
+        bool CanRespondToGetDataPayload { get; set; }
 
         bool CanRespondToGetBlocksPayload { get; set; }
 
         Task AnnounceBlocks(List<uint256> blockHashesToAnnounce);
     }
 
-    public class BlockStoreBehavior : NodeBehavior
+    public class BlockStoreBehavior : NodeBehavior, IBlockStoreBehavior
     {
         // TODO: move this to the options
         // Maximum number of headers to announce when relaying blocks with headers message.
@@ -37,8 +37,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        /// <inheritdoc />
         public bool CanRespondToGetBlocksPayload { get; set; }
 
+        /// <inheritdoc />
         public bool CanRespondToGetDataPayload { get; set; }
 
         // local resources
@@ -200,6 +202,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public Task AnnounceBlocks(List<uint256> blockHashesToAnnounce)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blockHashesToAnnounce), nameof(blockHashesToAnnounce.Count), blockHashesToAnnounce?.Count);
