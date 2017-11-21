@@ -45,17 +45,12 @@ namespace Stratis.Bitcoin.Base
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     ChainedBlock tip = null;
-                    BlockHeader previousHeader = null;
+                    BlockHeader previousHeader = transaction.Count("Chain") != 0 ?
+                        transaction.Select<int, BlockHeader>("Chain", 0).Value : null;
                     bool first = true;
 
-                    foreach (Row<int, BlockHeader> row in transaction.SelectForward<int, BlockHeader>("Chain"))
+                    foreach (Row<int, BlockHeader> row in transaction.SelectForward<int, BlockHeader>("Chain").Skip(1))
                     {
-                        if (previousHeader == null)
-                        {
-                            previousHeader = row.Value;
-                            continue;
-                        }
-
                         if ((tip != null) && (previousHeader.HashPrevBlock != tip.HashBlock))
                             break;
 
@@ -69,7 +64,8 @@ namespace Stratis.Bitcoin.Base
                         previousHeader = row.Value;
                     }
 
-                    tip = new ChainedBlock(previousHeader, null, tip);
+                    if (previousHeader != null)
+                        tip = new ChainedBlock(previousHeader, null, tip);
 
                     if (tip == null)
                         return;
