@@ -219,5 +219,53 @@ namespace Stratis.Bitcoin.Tests.Base
 
             Assert.Equal(6, invalidBlockHashStore.orderedHashList.Count);
         }
+
+        /// <summary>
+        /// Checks that the hash store behaves correctly when all its entries expired and were removed.
+        /// </summary>
+        [Fact]
+        public void AllEntriesExpired()
+        {
+            var invalidBlockHashStore = new InvalidBlockHashStore(DateTimeProvider.Default, 6);
+
+            // Create some hashes that will be banned temporarily, but not after 5 seconds.
+            uint256[] hashesBannedTemporarily = new uint256[]
+            {
+                uint256.Parse("0000000000000000000000000000000000000000000000000000000000000011"),
+                uint256.Parse("0000000000000000000000000000000000000000000000000000000000000012"),
+                uint256.Parse("0000000000000000000000000000000000000000000000000000000000000013"),
+                uint256.Parse("0000000000000000000000000000000000000000000000000000000000000014"),
+                uint256.Parse("0000000000000000000000000000000000000000000000000000000000000015"),
+                uint256.Parse("0000000000000000000000000000000000000000000000000000000000000016"),
+            };
+
+            foreach (uint256 hash in hashesBannedTemporarily)
+                invalidBlockHashStore.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
+
+            // Check all hashes are banned now.
+            foreach (uint256 hash in hashesBannedTemporarily)
+                Assert.True(invalidBlockHashStore.IsInvalid(hash));
+
+            // Wait 5 seconds and touch all the entries, so they are removed from the store's dictionary.
+            Thread.Sleep(5000);
+
+            // Check all hashes are no longer banned.
+            foreach (uint256 hash in hashesBannedTemporarily)
+                Assert.False(invalidBlockHashStore.IsInvalid(hash));
+
+            // Add a new hash, which should remove all the other entries from the store's circular array as well.
+            uint256 lastHash = uint256.Parse("0000000000000000000000000000000000000000000000000000000000000031");
+            invalidBlockHashStore.MarkInvalid(lastHash);
+
+            // Check all removed hashes are no longer banned.
+            foreach (uint256 hash in hashesBannedTemporarily)
+                Assert.False(invalidBlockHashStore.IsInvalid(hash));
+
+            // Check the number of entries is now 1.
+            Assert.Equal(1, invalidBlockHashStore.orderedHashList.Count);
+
+            // Check the last entry is banned.
+            Assert.True(invalidBlockHashStore.IsInvalid(lastHash));
+        }
     }
 }
