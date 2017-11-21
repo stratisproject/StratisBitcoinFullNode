@@ -45,9 +45,10 @@ namespace Stratis.Bitcoin.Base
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     ChainedBlock tip = null;
-                    BlockHeader previousHeader = transaction.Count("Chain") != 0 ?
-                        transaction.Select<int, BlockHeader>("Chain", 0)?.Value : null;
-                    bool first = true;
+                    Row<int, BlockHeader> firstRow = transaction.Select<int, BlockHeader>("Chain", 0);
+                    BlockHeader previousHeader = firstRow.Exists ? firstRow.Value : null;
+
+                    Guard.Assert(previousHeader.GetHash() == chain.Genesis.HashBlock); // can't swap networks
 
                     foreach (Row<int, BlockHeader> row in transaction.SelectForwardSkip<int, BlockHeader>("Chain", 1))
                     {
@@ -56,11 +57,6 @@ namespace Stratis.Bitcoin.Base
 
                         tip = new ChainedBlock(previousHeader, row.Value.HashPrevBlock, tip);
 
-                        if (first)
-                        {
-                            first = false;
-                            Guard.Assert(tip.HashBlock == chain.Genesis.HashBlock); // can't swap networks
-                        }
                         previousHeader = row.Value;
                     }
 
