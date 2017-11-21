@@ -56,8 +56,11 @@ namespace Stratis.Bitcoin.Base
         private readonly Dictionary<uint256, DateTime?> invalidBlockHashes;
 
         /// <summary>Circular array of block header hash entries to allow quick removal of the oldest entry once the capacity is reached.</summary>
-        /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
-        private readonly CircularArray<uint256> orderedHashList;
+        /// <remarks>
+        /// All access to this object has to be protected by <see cref="lockObject"/>.
+        /// <para>The field is internal for testing purposes.</para>
+        /// </remarks>
+        internal readonly CircularArray<uint256> orderedHashList;
 
         /// <summary>
         /// Initializes the instance of the object.
