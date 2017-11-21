@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Base
                         transaction.Select<int, BlockHeader>("Chain", 0).Value : null;
                     bool first = true;
 
-                    foreach (Row<int, BlockHeader> row in transaction.SelectForward<int, BlockHeader>("Chain").Skip(1))
+                    foreach (Row<int, BlockHeader> row in transaction.SelectForwardSkip<int, BlockHeader>("Chain", 1))
                     {
                         if ((tip != null) && (previousHeader.HashPrevBlock != tip.HashBlock))
                             break;
