@@ -2,52 +2,41 @@
 using System.Linq;
 using NBitcoin.Protocol;
 using NBitcoin.Protocol.Behaviors;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
-    /// Behaviour implementation that encapsulates <see cref="PeerAddressManager"/>.
+    /// Behaviour implementation that encapsulates <see cref="IPeerAddressManager"/>.
     /// <para>
     /// Subscribes to state change events from <see cref="Node"/> and relays connection and handshake attempts to 
-    /// the <see cref="PeerAddressManager"/> instance.
-    /// </para>
-    /// <para>
-    /// Peer discovery also get initiated from here.
+    /// the <see cref="IPeerAddressManager"/> instance.
     /// </para>
     /// </summary>
     public sealed class PeerAddressManagerBehaviour : NodeBehavior
     {
-        public PeerAddressManagerBehaviour(PeerAddressManager manager)
+        public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
         {
-            this.addressManager = manager ?? throw new ArgumentNullException("manager");
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+            Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
+
+            this.dateTimeProvider = dateTimeProvider;
             this.Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
+            this.peerAddressManager = peerAddressManager;
+            this.PeersToDiscover = 1000;
         }
 
-        int peersToDiscover = 1000;
-        public int PeersToDiscover
-        {
-            get { return this.peersToDiscover; }
-            set { this.peersToDiscover = value; }
-        }
-
+        private readonly IDateTimeProvider dateTimeProvider;
+        public int PeersToDiscover { get; set; }
         public PeerAddressManagerBehaviourMode Mode { get; set; }
 
-        private PeerAddressManager addressManager;
-        public PeerAddressManager AddressManager
-        {
-            get { return this.addressManager; }
-            set
-            {
-                AssertNotAttached();
-
-                this.addressManager = value ?? throw new ArgumentNullException("value");
-            }
-        }
+        /// <summary> Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
+        private readonly IPeerAddressManager peerAddressManager;
 
         protected override void AttachCore()
         {
-            this.AttachedNode.StateChanged += AttachedNode_StateChanged;
-            this.AttachedNode.MessageReceived += AttachedNode_MessageReceived;
+            this.AttachedNode.StateChanged += this.AttachedNode_StateChanged;
+            this.AttachedNode.MessageReceived += this.AttachedNode_MessageReceived;
         }
 
         void AttachedNode_MessageReceived(Node node, IncomingMessage message)
@@ -55,43 +44,43 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
             {
                 if (message.Message.Payload is GetAddrPayload getaddr)
-                    node.SendMessageAsync(new AddrPayload(this.AddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
+                    node.SendMessageAsync(new AddrPayload(this.peerAddressManager.SelectPeersToConnectTo().Take(1000).ToArray()));
             }
 
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (message.Message.Payload is AddrPayload addr)
-                    this.AddressManager.AddPeers(addr.Addresses, node.RemoteSocketAddress);
+                    this.peerAddressManager.AddPeers(addr.Addresses, node.RemoteSocketAddress);
             }
         }
 
+        //TODO: We need to refactor this as the StateChanged event handlers only gets attached
+        //AFTER the node has connected, which means that we can never go:
+        //if (node.State == NodeState.Connected)
+        //which is more intuitive.
+        //This happens in PeerDiscovery as well where we connect and then disconnect straight after.
         void AttachedNode_StateChanged(Node node, NodeState previousState)
         {
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
-                //TODO: We need to refactor this as the StateChanged event handlers only gets attached
-                //AFTER the node has connected, which means that we can never go:
-                //if (node.State == NodeState.Connected)
-                //which is more intuitive.
-                //This happens in PeerDiscovery as well where we connect and then disconnect straight after.
                 if (node.State <= NodeState.Disconnecting && previousState == NodeState.HandShaked)
-                    this.AddressManager.PeerConnected(node.Peer.Endpoint, DateTimeOffset.Now);
+                    this.peerAddressManager.PeerConnected(node.Peer.Endpoint, this.dateTimeProvider.GetUtcNow());
 
                 if (node.State == NodeState.HandShaked)
-                    this.AddressManager.PeerHandshaked(node.Peer.Endpoint, DateTimeOffset.Now);
+                    this.peerAddressManager.PeerHandshaked(node.Peer.Endpoint, this.dateTimeProvider.GetUtcNow());
             }
         }
 
         protected override void DetachCore()
         {
-            this.AttachedNode.StateChanged -= AttachedNode_StateChanged;
+            this.AttachedNode.StateChanged -= this.AttachedNode_StateChanged;
         }
 
         #region ICloneable Members
 
         public override object Clone()
         {
-            return new PeerAddressManagerBehaviour(this.AddressManager)
+            return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager)
             {
                 PeersToDiscover = this.PeersToDiscover,
                 Mode = this.Mode

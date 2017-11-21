@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
-    public sealed class WellKnownGroupSelectors
+    public sealed class WellKnownPeerConnectorSelectors
     {
         private static Func<IPEndPoint, byte[]> byEndpoint;
         public static Func<IPEndPoint, byte[]> ByEndpoint
@@ -42,14 +42,14 @@ namespace Stratis.Bitcoin.P2P
         }
     }
 
-    public sealed class RelatedNodeGroups : Dictionary<string, PeerConnector>
+    public sealed class RelatedPeerConnectors : Dictionary<string, PeerConnector>
     {
-        public void Register(string name, PeerConnector nodeGroup)
+        public void Register(string name, PeerConnector connector)
         {
-            if (nodeGroup != null)
+            if (connector != null)
             {
-                this.Add(name, nodeGroup);
-                nodeGroup.RelatedGroups = this;
+                this.Add(name, connector);
+                connector.RelatedPeerConnector = this;
             }
         }
 
@@ -68,9 +68,15 @@ namespace Stratis.Bitcoin.P2P
 
     public sealed class PeerConnector : IDisposable
     {
-        internal PeerConnector(Network network, INodeLifetime nodeLifeTime, NodeConnectionParameters parameters, NodeRequirement nodeRequirements, Func<IPEndPoint, byte[]> groupSelector, IAsyncLoopFactory asyncLoopFactory)
+        internal PeerConnector(Network network,
+            INodeLifetime nodeLifeTime,
+            NodeConnectionParameters parameters,
+            NodeRequirement nodeRequirements,
+            Func<IPEndPoint, byte[]> groupSelector,
+            IAsyncLoopFactory asyncLoopFactory,
+            IPeerAddressManager peerAddressManager)
         {
-            this.disconnect = CancellationTokenSource.CreateLinkedTokenSource(nodeLifeTime.ApplicationStopping);
+            this.nodeLifetime = nodeLifeTime;
             this.MaximumNodeConnections = 8;
 
             this.asyncLoopFactory = asyncLoopFactory;
@@ -78,26 +84,27 @@ namespace Stratis.Bitcoin.P2P
             this.groupSelector = groupSelector;
             this.network = network;
             this.ParentParameters = parameters;
+            this.peerAddressManager = peerAddressManager;
             this.Requirements = nodeRequirements;
 
             this.currentParameters = this.ParentParameters.Clone();
-            this.currentParameters.TemplateBehaviors.Add(new NodeGroupBehavior(this));
-            this.currentParameters.ConnectCancellation = this.disconnect.Token;
+            this.currentParameters.TemplateBehaviors.Add(new PeerConnectorBehaviour(this));
+            this.currentParameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
         }
 
-        /// <summary> The async loop we need to wait upon before we can shut down this feature.</summary>
+        /// <summary> The async loop we need to wait upon before we can shut down this connector.</summary>
         private IAsyncLoop asyncLoop;
 
         /// <summary> Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        private int busyConnectingToPeers;
         internal NodesCollection ConnectedNodes { get; private set; }
 
         /// <summary> The cloned parameters used to connect to peers. </summary>
         private NodeConnectionParameters currentParameters;
 
-        private CancellationTokenSource disconnect;
+        /// <summary> Global application life cycle control - triggers when application shuts down.</summary>
+        private INodeLifetime nodeLifetime;
 
         /// <summary> How to calculate a group of an IP, by default using NBitcoin.IpExtensions.GetGroup.</summary>
         private Func<IPEndPoint, byte[]> groupSelector;
@@ -105,7 +112,8 @@ namespace Stratis.Bitcoin.P2P
         internal int MaximumNodeConnections { get; set; }
         private Network network;
         internal NodeConnectionParameters ParentParameters { get; private set; }
-        internal RelatedNodeGroups RelatedGroups { get; set; }
+        private IPeerAddressManager peerAddressManager;
+        internal RelatedPeerConnectors RelatedPeerConnector { get; set; }
         internal NodeRequirement Requirements { get; private set; }
 
         internal void AddNode(Node node)
@@ -115,57 +123,49 @@ namespace Stratis.Bitcoin.P2P
             this.ConnectedNodes.Add(node);
         }
 
-        internal void ConnectToPeersAsync()
+        internal void StartConnectAsync()
         {
-            if (Interlocked.CompareExchange(ref this.busyConnectingToPeers, 1, 0) == 1)
-                return;
-
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.ConnectToPeersAsync), token =>
-            {
-                ConnectToPeers();
-                return Task.CompletedTask;
-            },
-            this.disconnect.Token,
-            repeatEvery: TimeSpans.RunOnce);
+            this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.ConnectAsync), async token =>
+             {
+                 if (this.ConnectedNodes.Count < this.MaximumNodeConnections)
+                     await ConnectAsync();
+             },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.Second);
         }
 
-        private void ConnectToPeers()
+        private Task ConnectAsync()
         {
-            while (!this.disconnect.IsCancellationRequested)
+            Node node = null;
+
+            try
             {
-                if (this.ConnectedNodes.Count >= this.MaximumNodeConnections)
+                var peer = FindPeerToConnectTo();
+                if (peer == null)
+                    return Task.CompletedTask;
+
+                using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
                 {
-                    Thread.Sleep(TimeSpan.FromSeconds(1));
-                    continue;
-                }
+                    timeoutTokenSource.CancelAfter(5000);
 
-                Node node = null;
+                    this.peerAddressManager.PeerAttempted(peer.Endpoint, DateTimeProvider.Default.GetUtcNow());
 
-                try
-                {
-                    var peer = FindPeerToConnectTo();
-                    if (peer == null)
-                        continue;
+                    var clonedConnectParamaters = this.currentParameters.Clone();
+                    clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
 
-                    using (var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.disconnect.Token))
-                    {
-                        timeoutTokenSource.CancelAfter(5000);
+                    node = Node.Connect(this.network, peer, clonedConnectParamaters);
+                    node.VersionHandshake(this.Requirements, timeoutTokenSource.Token);
 
-                        this.ParentParameters.PeerAddressManager().PeerAttempted(peer.Endpoint, DateTimeOffset.Now);
-
-                        var clonedConnectParamaters = this.currentParameters.Clone();
-                        clonedConnectParamaters.ConnectCancellation = timeoutTokenSource.Token;
-
-                        node = Node.Connect(this.network, peer, clonedConnectParamaters);
-                        node.VersionHandshake(this.Requirements, timeoutTokenSource.Token);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    if (node != null)
-                        node.DisconnectAsync("Error while connecting", exception);
+                    return Task.CompletedTask;
                 }
             }
+            catch (Exception exception)
+            {
+                if (node != null)
+                    node.DisconnectAsync("Error while connecting", exception);
+            }
+
+            return Task.CompletedTask;
         }
 
         private void Disconnect()
@@ -184,16 +184,16 @@ namespace Stratis.Bitcoin.P2P
 
             NetworkAddress peer = null;
 
-            while (groupFail < 50 && !this.disconnect.IsCancellationRequested)
+            while (groupFail < 50 && !this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                peer = this.ParentParameters.PeerAddressManager().SelectPeerToConnectTo();
+                peer = this.peerAddressManager.SelectPeerToConnectTo();
                 if (peer == null)
                     break;
 
                 if (!peer.Endpoint.Address.IsValid())
                     continue;
 
-                var nodeExistsInGroup = this.RelatedGroups.GlobalConnectedNodes().Any(a => this.groupSelector(a).SequenceEqual(this.groupSelector(peer.Endpoint)));
+                var nodeExistsInGroup = this.RelatedPeerConnector.GlobalConnectedNodes().Any(a => this.groupSelector(a).SequenceEqual(this.groupSelector(peer.Endpoint)));
                 if (nodeExistsInGroup)
                 {
                     groupFail++;

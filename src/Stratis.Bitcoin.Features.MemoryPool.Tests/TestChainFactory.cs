@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -74,7 +75,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConcurrentChain chain = new ConcurrentChain(network);
             CachedCoinView cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
 
-            ConnectionManager connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory));
+            var connectionManager = new ConnectionManager(network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager());
             LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
 
             ConsensusLoop consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), chain, cachedCoinView, blockPuller, new NodeDeployments(network, chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(network, consensusSettings), consensusSettings);

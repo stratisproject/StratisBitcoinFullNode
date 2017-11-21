@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -148,7 +149,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 PowConsensusValidator consensusValidator = new PowConsensusValidator(this.network, new Checkpoints(this.network, consensusSettings), dateTimeProvider, loggerFactory);
 
-                ConnectionManager connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory));
+                var connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime(), new AsyncLoopFactory(loggerFactory), new PeerAddressManager());
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
 
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, consensusSettings), consensusSettings);

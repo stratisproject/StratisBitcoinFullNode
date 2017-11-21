@@ -9,11 +9,5 @@ namespace Stratis.Bitcoin
         {
             return parameters.TemplateBehaviors.Find<PeerAddressManagerBehaviour>();
         }
-
-        public static PeerAddressManager PeerAddressManager(this NodeConnectionParameters parameters)
-        {
-            var behaviour = parameters.TemplateBehaviors.Find<PeerAddressManagerBehaviour>();
-            return behaviour.AddressManager;
-        }
     }
 }

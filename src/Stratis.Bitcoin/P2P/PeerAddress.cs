@@ -195,15 +195,9 @@ namespace Stratis.Bitcoin.P2P
         {
             get
             {
-                var currentDate = DateTimeOffset.Now;
                 double selectability = 1.0;
 
-                var timeSinceLastSeen = currentDate - this.NetworkAddress.Time;
-                var timeSinceLastAttempt = currentDate - this.LastConnectionAttempt;
-
-                if (timeSinceLastSeen < TimeSpan.Zero)
-                    timeSinceLastSeen = TimeSpan.Zero;
-
+                var timeSinceLastAttempt = DateTimeOffset.Now - this.LastConnectionAttempt;
                 if (timeSinceLastAttempt < TimeSpan.Zero)
                     timeSinceLastAttempt = TimeSpan.Zero;
 

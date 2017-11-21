@@ -26,19 +26,24 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
             nodeSettings.DataFolder = new DataFolder(nodeSettings);
 
             var addressManager = new PeerAddressManager(nodeSettings.DataFolder);
-            var addressManagerBehaviour = new PeerAddressManagerBehaviour(addressManager)
+            var addressManagerBehaviour = new PeerAddressManagerBehaviour(new DateTimeProvider(), addressManager)
             {
-                Mode = PeerAddressManagerBehaviourMode.Discover,
-                PeersToDiscover = 5
+                PeersToDiscover = 3
             };
 
             parameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
-            var peerDiscoveryLoop = new PeerDiscoveryLoop(Network.Main, new AsyncLoopFactory(new LoggerFactory()), parameters, new System.Threading.CancellationToken());
+            var peerDiscoveryLoop = new PeerDiscoveryLoop(
+                new AsyncLoopFactory(new LoggerFactory()),
+                Network.Main,
+                parameters,
+                new NodeLifetime(),
+                addressManager);
+
             peerDiscoveryLoop.Start();
 
-            //Wait until we have discovered 5 peers
-            while (addressManager.Peers.Count < 5)
+            //Wait until we have discovered 3 peers
+            while (addressManager.Peers.Count < 3)
             {
                 Task.Delay(TimeSpans.Second);
             }

@@ -1,7 +1,7 @@
-﻿using NBitcoin.Protocol.Behaviors;
-using System;
+﻿using System;
 using System.Net;
 using System.Threading;
+using NBitcoin.Protocol.Behaviors;
 
 namespace NBitcoin.Protocol
 {

@@ -413,5 +413,25 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             Assert.Null(networkAddresses.FirstOrDefault(n => n.Endpoint.Address.ToString() == addressOne.Endpoint.Address.ToString()));
         }
+
+        [Fact]
+        public void PeerSelectability_Decreases_AfterEachFailedAttempt()
+        {
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var addressOne = new NetworkAddress(ipAddress, 80);
+
+            var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
+            var addressManager = new PeerAddressManager(peerFolder);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback);
+
+            var peer = addressManager.FindPeer(addressOne.Endpoint);
+            peer.Attempted(DateTimeOffset.Now);
+            var resultOne = peer.Selectability;
+
+            peer.Attempted(DateTimeOffset.Now);
+            var resultTwo = peer.Selectability;
+
+            Assert.True(resultOne > resultTwo);
+        }
     }
 }

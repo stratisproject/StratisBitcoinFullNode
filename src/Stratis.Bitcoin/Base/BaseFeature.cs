@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Base
         private readonly DBreezeSerializer dbreezeSerializer;
 
         /// <summary>Manager of node's network peers.</summary>
-        private PeerAddressManager addressManager;
+        private IPeerAddressManager peerAddressManager;
 
         /// <summary>Loop that discovers peers to connect to.</summary>
         private PeerDiscoveryLoop peerDiscoveryLoop;
@@ -128,7 +128,8 @@ namespace Stratis.Bitcoin.Base
             TimeSyncBehaviorState timeSyncBehaviorState,
             DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
-            IPeerBanning peerBanning)
+            IPeerBanning peerBanning,
+            IPeerAddressManager peerAddressManager)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -139,6 +140,10 @@ namespace Stratis.Bitcoin.Base
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
+
+            this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
+            this.peerAddressManager.PeerFilePath = this.dataFolder;
+
             this.dateTimeProvider = dateTimeProvider;
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
@@ -217,27 +222,26 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartAddressManager(NodeConnectionParameters connectionParameters)
         {
-            this.addressManager = new PeerAddressManager(this.dataFolder);
-            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.addressManager);
+            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager);
             connectionParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
             if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PeerFileName)))
             {
                 this.logger.LogInformation($"Loading peers from : {this.dataFolder.AddressManagerFilePath}...");
-                connectionParameters.PeerAddressManager().LoadPeers();
+                this.peerAddressManager.LoadPeers();
             }
 
             if (addressManagerBehaviour.Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
             {
                 this.logger.LogInformation("Starting peer discovery...");
 
-                this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.network, this.asyncLoopFactory, connectionParameters, this.nodeLifetime.ApplicationStopping);
+                this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.network, connectionParameters, this.nodeLifetime, peerAddressManager);
                 this.peerDiscoveryLoop.Start();
             }
 
             this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush...", token =>
             {
-                this.addressManager.SavePeers();
+                this.peerAddressManager.SavePeers();
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
@@ -251,7 +255,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogInformation("Flushing peers...");
             this.flushAddressManagerLoop.Dispose();
 
-            this.addressManager.Dispose();
+            this.peerAddressManager.Dispose();
 
             this.logger.LogInformation("Stopping peer discovery...");
             this.peerDiscoveryLoop?.Dispose();
@@ -302,9 +306,12 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();
 
-                    // == connection ==
+                    // Connection
                     services.AddSingleton<NodeConnectionParameters>(new NodeConnectionParameters());
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
+
+                    // Peer address manager
+                    services.AddSingleton<IPeerAddressManager, PeerAddressManager>();
                 });
             });
 

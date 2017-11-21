@@ -4,16 +4,16 @@ using NBitcoin.Protocol.Behaviors;
 namespace Stratis.Bitcoin.P2P
 {
     /// <summary>
-    /// Maintain connection to a given set of nodes.
+    /// Maintain connection to a given set of peers.
     /// </summary>
-    internal sealed class NodeGroupBehavior : NodeBehavior
+    internal sealed class PeerConnectorBehaviour : NodeBehavior
     {
-        internal NodeGroupBehavior(PeerConnector parent)
+        internal PeerConnectorBehaviour(PeerConnector parent)
         {
             this.Parent = parent;
         }
 
-        internal PeerConnector Parent { get; private set; }
+        internal readonly PeerConnector Parent;
 
         protected override void AttachCore()
         {
@@ -29,19 +29,13 @@ namespace Stratis.Bitcoin.P2P
         {
             if (node.State == NodeState.HandShaked)
                 this.Parent.AddNode(node);
-
-            if ((node.State == NodeState.Failed) || (node.State == NodeState.Disconnecting) || (node.State == NodeState.Offline))
-            {
-                if (this.Parent.RemoveNode(node))
-                    this.Parent.ConnectToPeersAsync();
-            }
         }
 
         #region ICloneable Members
 
         public override object Clone()
         {
-            return new NodeGroupBehavior(this.Parent);
+            return new PeerConnectorBehaviour(this.Parent);
         }
 
         #endregion

@@ -10,98 +10,111 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
+    /// <summary>
+    /// Async loop that discovers new peers to connect to.
+    /// </summary>
     public sealed class PeerDiscoveryLoop : IDisposable
     {
+        /// <summary> The async loop we need to wait upon before we can shut down this connector.</summary>
         private IAsyncLoop asyncLoop;
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly PeerAddressManager addressManager;
-        private readonly CancellationToken applicationStopping;
-        private readonly Network network;
-        private readonly NodeConnectionParameters parameters;
-        private readonly int peersToFind;
 
-        public PeerDiscoveryLoop(Network network, IAsyncLoopFactory asyncLoopFactory, NodeConnectionParameters parameters, CancellationToken applicationStopping)
+        /// <summary> Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
+        private readonly INodeLifetime nodeLifetime;
+
+        private readonly NodeConnectionParameters parameters;
+
+        /// <summary> Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
+        private readonly IPeerAddressManager peerAddressManager;
+
+        private readonly int peersToFind;
+        private readonly Network network;
+
+        public PeerDiscoveryLoop(
+            IAsyncLoopFactory asyncLoopFactory,
+            Network network,
+            NodeConnectionParameters nodeConnectionParameters,
+            INodeLifetime nodeLifetime,
+            IPeerAddressManager peerAddressManager)
         {
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
 
-            this.applicationStopping = applicationStopping;
             this.asyncLoopFactory = asyncLoopFactory;
-            this.parameters = parameters;
-            this.addressManager = parameters.PeerAddressManager();
-            this.network = network;
+            this.parameters = nodeConnectionParameters;
+            this.peerAddressManager = peerAddressManager;
             this.peersToFind = this.parameters.PeerAddressManagerBehaviour().PeersToDiscover;
+            this.network = network;
+            this.nodeLifetime = nodeLifetime;
         }
 
         public void Start()
         {
-            this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.DiscoverPeersAsync), async token =>
+            this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.StartAsync), async token =>
             {
-                await DiscoverPeersAsync().ConfigureAwait(false);
+                if (this.peerAddressManager.Peers.Count < this.peersToFind)
+                    await this.StartAsync();
             },
-            this.applicationStopping,
-            TimeSpans.RunOnce);
+            this.nodeLifetime.ApplicationStopping,
+            TimeSpans.Second);
         }
 
-        private async Task DiscoverPeersAsync()
+        private Task StartAsync()
         {
-            while (this.addressManager.Peers.Count < this.peersToFind)
+            var peersToDiscover = new List<NetworkAddress>();
+            peersToDiscover.AddRange(this.peerAddressManager.SelectPeersToConnectTo());
+
+            if (peersToDiscover.Count == 0)
             {
-                this.applicationStopping.ThrowIfCancellationRequested();
+                PopulateTableWithDNSNodes(peersToDiscover);
+                PopulateTableWithHardNodes(peersToDiscover);
 
-                var peersToDiscover = new List<NetworkAddress>();
-                peersToDiscover.AddRange(this.addressManager.SelectPeersToConnectTo());
-
+                peersToDiscover = new List<NetworkAddress>(peersToDiscover.OrderBy(a => RandomUtils.GetInt32()));
                 if (peersToDiscover.Count == 0)
-                {
-                    PopulateTableWithDNSNodes(peersToDiscover);
-                    PopulateTableWithHardNodes(peersToDiscover);
-
-                    peersToDiscover = new List<NetworkAddress>(peersToDiscover.OrderBy(a => RandomUtils.GetInt32()));
-                    if (peersToDiscover.Count == 0)
-                        await Task.CompletedTask;
-                }
-
-                var clonedParameters = this.parameters.Clone();
-
-                Parallel.ForEach(peersToDiscover, new ParallelOptions()
-                {
-                    MaxDegreeOfParallelism = 5,
-                    CancellationToken = this.applicationStopping,
-                },
-                peer =>
-                {
-                    using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.applicationStopping))
-                    {
-                        connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
-
-                        Node node = null;
-
-                        try
-                        {
-                            clonedParameters.ConnectCancellation = connectTokenSource.Token;
-
-                            var addressManagerBehaviour = clonedParameters.TemplateBehaviors.Find<PeerAddressManagerBehaviour>();
-                            clonedParameters.TemplateBehaviors.Clear();
-                            clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
-
-                            node = Node.Connect(this.network, peer.Endpoint, clonedParameters);
-                            node.VersionHandshake(connectTokenSource.Token);
-                            node.SendMessageAsync(new GetAddrPayload());
-
-                            connectTokenSource.Token.WaitHandle.WaitOne(2000);
-                        }
-                        catch
-                        {
-                        }
-                        finally
-                        {
-                            node?.DisconnectAsync();
-                        }
-                    }
-                });
+                    return Task.CompletedTask;
             }
 
-            await Task.CompletedTask;
+            var clonedParameters = this.parameters.Clone();
+
+            Parallel.ForEach(peersToDiscover, new ParallelOptions()
+            {
+                MaxDegreeOfParallelism = 5,
+                CancellationToken = this.nodeLifetime.ApplicationStopping,
+            },
+            peer =>
+            {
+                using (var connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
+                {
+                    connectTokenSource.CancelAfter(TimeSpan.FromSeconds(5));
+
+                    Node node = null;
+
+                    try
+                    {
+                        clonedParameters.ConnectCancellation = connectTokenSource.Token;
+
+                        var addressManagerBehaviour = clonedParameters.TemplateBehaviors.Find<PeerAddressManagerBehaviour>();
+                        clonedParameters.TemplateBehaviors.Clear();
+                        clonedParameters.TemplateBehaviors.Add(addressManagerBehaviour);
+
+                        node = Node.Connect(this.network, peer.Endpoint, clonedParameters);
+                        node.VersionHandshake(connectTokenSource.Token);
+                        node.SendMessageAsync(new GetAddrPayload());
+
+                        connectTokenSource.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5));
+                    }
+                    catch
+                    {
+                    }
+                    finally
+                    {
+                        node?.DisconnectAsync();
+                    }
+                }
+            });
+
+            return Task.CompletedTask;
         }
 
         private void PopulateTableWithDNSNodes(List<NetworkAddress> peers)
