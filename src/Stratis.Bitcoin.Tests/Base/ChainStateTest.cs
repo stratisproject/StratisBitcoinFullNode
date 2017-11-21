@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Base;
-using Xunit;
-using Moq;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
-using NBitcoin;
 using System.Threading;
+using Moq;
+using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Base
 {
@@ -21,9 +18,11 @@ namespace Stratis.Bitcoin.Tests.Base
         private static Random rng = new Random();
 
         /// <summary>
-        /// Tests <see cref="ChainState.MarkBlockInvalid(NBitcoin.uint256, DateTime?)"/> and <see cref="ChainState.IsMarkedInvalid(NBitcoin.uint256)"/>
+        /// Tests <see cref="ChainState.MarkBlockInvalid(uint256, DateTime?)"/> and <see cref="ChainState.IsMarkedInvalid(uint256)"/>
         /// for both permantently and temporary bans of blocks.
         /// </summary>
+        /// <remarks>Note that this test is almost identical to <see cref="InvalidBlockHashStoreTest.MarkInvalid_PermanentAndTemporaryBans"/>
+        /// as the <see cref="ChainState"/> is just a middleman between the users of the block hash store and the store itself.</remarks>
         [Fact]
         public void MarkBlockInvalid_PermanentAndTemporaryBans()
         {
