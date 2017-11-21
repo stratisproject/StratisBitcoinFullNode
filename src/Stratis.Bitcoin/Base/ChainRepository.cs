@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Base
                     transaction.ValuesLazyLoadingIsOn = false;
                     ChainedBlock tip = null;
                     BlockHeader previousHeader = transaction.Count("Chain") != 0 ?
-                        transaction.Select<int, BlockHeader>("Chain", 0).Value : null;
+                        transaction.Select<int, BlockHeader>("Chain", 0)?.Value : null;
                     bool first = true;
 
                     foreach (Row<int, BlockHeader> row in transaction.SelectForwardSkip<int, BlockHeader>("Chain", 1))
