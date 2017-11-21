@@ -46,8 +46,9 @@ namespace Stratis.Bitcoin.Base
                     transaction.ValuesLazyLoadingIsOn = false;
                     ChainedBlock tip = null;
                     Row<int, BlockHeader> firstRow = transaction.Select<int, BlockHeader>("Chain", 0);
-                    BlockHeader previousHeader = firstRow.Exists ? firstRow.Value : null;
-
+                    if (!firstRow.Exists)
+                        throw new InvalidOperationException("Block header with index 0 doesn't exist in the database");
+                    BlockHeader previousHeader = firstRow.Value;
                     Guard.Assert(previousHeader.GetHash() == chain.Genesis.HashBlock); // can't swap networks
 
                     foreach (Row<int, BlockHeader> row in transaction.SelectForwardSkip<int, BlockHeader>("Chain", 1))
