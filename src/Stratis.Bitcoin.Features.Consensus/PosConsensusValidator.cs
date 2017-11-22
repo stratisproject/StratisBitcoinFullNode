@@ -61,7 +61,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly CoinView coinView;
         private readonly PosConsensusOptions consensusOptions;
 
-        public PosConsensusValidator(StakeValidator stakeValidator, ICheckpoints checkpoints, Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public PosConsensusValidator(
+            StakeValidator stakeValidator,
+            ICheckpoints checkpoints,
+            Network network,
+            StakeChain stakeChain,
+            ConcurrentChain chain,
+            CoinView coinView,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory)
             : base(network, checkpoints, dateTimeProvider, loggerFactory)
         {
             Guard.NotNull(network.Consensus.Option<PosConsensusOptions>(), nameof(network.Consensus.Options));

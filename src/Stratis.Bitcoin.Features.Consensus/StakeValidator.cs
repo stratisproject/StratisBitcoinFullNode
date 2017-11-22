@@ -25,9 +25,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Class logger.</summary>
         private static readonly ILogger clogger;
 
-        /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
-
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly StakeChain stakeChain;
 
@@ -45,7 +42,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         public StakeValidator(Network network, StakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.network = network;
             this.stakeChain = stakeChain;
             this.chain = chain;
             this.coinView = coinView;
@@ -284,6 +280,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("(-):{0}={1}", nameof(pBlockTime), pBlockTime);
         }
 
+        /// <summary>
+        /// Gets the last block in the chain that was generated using
+        /// PoS if <see cref="proofOfStake"/> is <c>true</c> or PoW if <see cref="proofOfStake"/> is <c>false</c>.
+        /// </summary>
+        /// <param name="stakeChain">Chain that is used for retrieving blocks.</param>
+        /// <param name="index">Block that we start from. Only blocks before that one will be checked.</param>
+        /// <param name="proofOfStake">Specifies what kind of block we are looking for: PoS or PoW.</param>
         public static ChainedBlock GetLastBlockIndex(StakeChain stakeChain, ChainedBlock index, bool proofOfStake)
         {
             if (index == null)
