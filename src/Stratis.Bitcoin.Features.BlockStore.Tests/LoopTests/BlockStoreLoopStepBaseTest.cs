@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests.LoopTests
     {
         private IAsyncLoopFactory asyncLoopFactory;
         private StoreBlockPuller blockPuller;
-        internal BlockStore.IBlockRepository BlockRepository { get; private set; }
+        internal IBlockRepository BlockRepository { get; private set; }
         private Mock<ChainState> chainState;
         private Mock<IConnectionManager> connectionManager;
         private DataFolder dataFolder;

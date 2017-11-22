@@ -2,7 +2,7 @@
 
 namespace NBitcoin
 {
-	public interface IBlockRepository
+	public interface INBitcoinBlockRepository
 	{
 		Task<Block> GetBlockAsync(uint256 blockId);
 	}

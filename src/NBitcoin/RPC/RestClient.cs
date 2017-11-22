@@ -25,7 +25,7 @@ namespace NBitcoin.RPC
 	/// <summary>
 	/// Client class for the unauthenticated REST Interface
 	/// </summary>
-	public class RestClient : IBlockRepository
+	public class RestClient : INBitcoinBlockRepository
 	{
 		private readonly Uri _address;
 

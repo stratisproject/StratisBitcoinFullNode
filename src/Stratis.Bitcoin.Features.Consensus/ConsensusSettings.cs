@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.nodeSettings = nodeSettings;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            LoadFromConfig();
+            this.LoadFromConfig();
         }
 
         /// <summary>
@@ -46,9 +47,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             TextFileConfiguration config = this.nodeSettings.ConfigReader;
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true);
 
-            this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", this.nodeSettings.Network.Consensus.DefaultAssumeValid);
-            if (this.BlockAssumedValid == 0) // 0 means validate all blocks
+            if (config.GetAll("assumevalid").Any(i => i.Equals("0"))) // 0 means validate all blocks.
+            {
                 this.BlockAssumedValid = null;
+            }
+            else
+            {
+                this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", this.nodeSettings.Network.Consensus.DefaultAssumeValid);
+            }
 
             this.logger.LogDebug("Checkpoints are {0}.", this.UseCheckpoints ? "enabled" : "disabled");
             this.logger.LogDebug("Assume valid block is '{0}'.", this.BlockAssumedValid == null ? "disabled" : this.BlockAssumedValid.ToString());
