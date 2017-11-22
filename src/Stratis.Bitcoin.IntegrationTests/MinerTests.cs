@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 ConnectionManager connectionManager = new ConnectionManager(this.network, new NodeConnectionParameters(), nodeSettings, loggerFactory, new NodeLifetime());
                 LookaheadBlockPuller blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
 
-                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode()), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, consensusSettings), consensusSettings);
+                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), consensusValidator, new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new FullNode(), new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), new Checkpoints(this.network, consensusSettings), consensusSettings);
                 await this.consensus.StartAsync();
 
                 this.entry.Fee(11);
