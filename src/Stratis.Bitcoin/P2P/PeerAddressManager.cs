@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Utilities.FileStorage;
 
 namespace Stratis.Bitcoin.P2P
 {
+    /// <summary> Contract for <see cref="PeerAddressManager"/>.</summary>
     public interface IPeerAddressManager : IDisposable
     {
         /// <summary> Data folder of where the json peer file is located.</summary>

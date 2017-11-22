@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -10,64 +9,42 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.P2P
 {
-    public sealed class WellKnownPeerConnectorSelectors
-    {
-        private static Func<IPEndPoint, byte[]> byEndpoint;
-        public static Func<IPEndPoint, byte[]> ByEndpoint
-        {
-            get
-            {
-                return byEndpoint = byEndpoint ?? new Func<IPEndPoint, byte[]>((endpoint) =>
-                {
-                    var bytes = endpoint.Address.GetAddressBytes();
-                    var port = Utils.ToBytes((uint)endpoint.Port, true);
-                    var result = new byte[bytes.Length + port.Length];
-                    Array.Copy(bytes, result, bytes.Length);
-                    Array.Copy(port, 0, result, bytes.Length, port.Length);
-                    return bytes;
-                });
-            }
-        }
-
-        private static Func<IPEndPoint, byte[]> byNetwork;
-        public static Func<IPEndPoint, byte[]> ByNetwork
-        {
-            get
-            {
-                return byNetwork = byNetwork ?? new Func<IPEndPoint, byte[]>((ip) =>
-                {
-                    return IpExtensions.GetGroup(ip.Address);
-                });
-            }
-        }
-    }
-
-    public sealed class RelatedPeerConnectors : Dictionary<string, PeerConnector>
-    {
-        public void Register(string name, PeerConnector connector)
-        {
-            if (connector != null)
-            {
-                this.Add(name, connector);
-                connector.RelatedPeerConnector = this;
-            }
-        }
-
-        public IPEndPoint[] GlobalConnectedNodes()
-        {
-            IPEndPoint[] all = new IPEndPoint[0];
-            foreach (var kv in this)
-            {
-                var endPoints = kv.Value.ConnectedNodes.Select(n => n.RemoteSocketEndpoint).ToArray<IPEndPoint>();
-                all = all.Union<IPEndPoint>(endPoints).ToArray<IPEndPoint>();
-            }
-
-            return all;
-        }
-    }
-
+    /// <summary> Connects to peers asynchronously.</summary>
     public sealed class PeerConnector : IDisposable
     {
+        /// <summary> The async loop we need to wait upon before we can shut down this connector.</summary>
+        private IAsyncLoop asyncLoop;
+
+        /// <summary> Factory for creating background async loop tasks.</summary>
+        private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary> The collection of peers the node is currently connected to.</summary>
+        internal readonly NodesCollection ConnectedPeers;
+
+        /// <summary> The cloned parameters used to connect to peers. </summary>
+        private readonly NodeConnectionParameters currentParameters;
+
+        /// <summary> How to calculate a group of an IP, by default using NBitcoin.IpExtensions.GetGroup.</summary>
+        private readonly Func<IPEndPoint, byte[]> groupSelector;
+
+        /// <summary> The maximum amount of peers the node can connect to (defaults to 8).</summary>
+        internal int MaximumNodeConnections { get; set; }
+
+        /// <summary> Global application life cycle control - triggers when application shuts down.</summary>
+        private readonly INodeLifetime nodeLifetime;
+
+        private Network network;
+
+        internal NodeConnectionParameters ParentParameters { get; private set; }
+
+        /// <summary> Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
+        private readonly IPeerAddressManager peerAddressManager;
+
+        internal RelatedPeerConnectors RelatedPeerConnector { get; set; }
+
+        /// <summary> Specification of requirements the <see cref="PeerConnector"/> has when connect to other peers.</summary>
+        internal readonly NodeRequirement Requirements;
+
         internal PeerConnector(Network network,
             INodeLifetime nodeLifeTime,
             NodeConnectionParameters parameters,
@@ -76,13 +53,12 @@ namespace Stratis.Bitcoin.P2P
             IAsyncLoopFactory asyncLoopFactory,
             IPeerAddressManager peerAddressManager)
         {
-            this.nodeLifetime = nodeLifeTime;
-            this.MaximumNodeConnections = 8;
-
             this.asyncLoopFactory = asyncLoopFactory;
-            this.ConnectedNodes = new NodesCollection();
+            this.ConnectedPeers = new NodesCollection();
             this.groupSelector = groupSelector;
+            this.MaximumNodeConnections = 8;
             this.network = network;
+            this.nodeLifetime = nodeLifeTime;
             this.ParentParameters = parameters;
             this.peerAddressManager = peerAddressManager;
             this.Requirements = nodeRequirements;
@@ -92,44 +68,20 @@ namespace Stratis.Bitcoin.P2P
             this.currentParameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
         }
 
-        /// <summary> The async loop we need to wait upon before we can shut down this connector.</summary>
-        private IAsyncLoop asyncLoop;
-
-        /// <summary> Factory for creating background async loop tasks.</summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
-        internal NodesCollection ConnectedNodes { get; private set; }
-
-        /// <summary> The cloned parameters used to connect to peers. </summary>
-        private NodeConnectionParameters currentParameters;
-
-        /// <summary> Global application life cycle control - triggers when application shuts down.</summary>
-        private INodeLifetime nodeLifetime;
-
-        /// <summary> How to calculate a group of an IP, by default using NBitcoin.IpExtensions.GetGroup.</summary>
-        private Func<IPEndPoint, byte[]> groupSelector;
-
-        internal int MaximumNodeConnections { get; set; }
-        private Network network;
-        internal NodeConnectionParameters ParentParameters { get; private set; }
-        private IPeerAddressManager peerAddressManager;
-        internal RelatedPeerConnectors RelatedPeerConnector { get; set; }
-        internal NodeRequirement Requirements { get; private set; }
-
         internal void AddNode(Node node)
         {
             Guard.NotNull(node, nameof(node));
 
-            this.ConnectedNodes.Add(node);
+            this.ConnectedPeers.Add(node);
         }
 
         internal void StartConnectAsync()
         {
             this.asyncLoop = this.asyncLoopFactory.Run(nameof(this.ConnectAsync), async token =>
-             {
-                 if (this.ConnectedNodes.Count < this.MaximumNodeConnections)
-                     await ConnectAsync();
-             },
+            {
+                if (this.ConnectedPeers.Count < this.MaximumNodeConnections)
+                    await ConnectAsync();
+            },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.Second);
         }
@@ -170,12 +122,12 @@ namespace Stratis.Bitcoin.P2P
 
         private void Disconnect()
         {
-            this.ConnectedNodes.DisconnectAll();
+            this.ConnectedPeers.DisconnectAll();
         }
 
         internal void RemoveNode(Node node)
         {
-            this.ConnectedNodes.Remove(node);
+            this.ConnectedPeers.Remove(node);
         }
 
         private NetworkAddress FindPeerToConnectTo()

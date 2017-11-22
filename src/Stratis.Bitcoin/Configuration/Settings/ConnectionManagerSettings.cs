@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
     /// <summary>
     /// Configuration related to incoming and outgoing connections.
     /// </summary>
-    public class ConnectionManagerSettings
+    public sealed class ConnectionManagerSettings
     {
         /// <summary>Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).</summary>
         public const int DefaultMisbehavingBantimeSeconds = 24 * 60 * 60;
