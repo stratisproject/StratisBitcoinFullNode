@@ -46,8 +46,10 @@ namespace Stratis.Bitcoin.Base
                     transaction.ValuesLazyLoadingIsOn = false;
                     ChainedBlock tip = null;
                     Row<int, BlockHeader> firstRow = transaction.Select<int, BlockHeader>("Chain", 0);
+
                     if (!firstRow.Exists)
                         return;
+
                     BlockHeader previousHeader = firstRow.Value;
                     Guard.Assert(previousHeader.GetHash() == chain.Genesis.HashBlock); // can't swap networks
 
@@ -57,7 +59,6 @@ namespace Stratis.Bitcoin.Base
                             break;
 
                         tip = new ChainedBlock(previousHeader, row.Value.HashPrevBlock, tip);
-
                         previousHeader = row.Value;
                     }
 
