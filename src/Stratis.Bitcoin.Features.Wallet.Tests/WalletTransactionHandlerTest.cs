@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Logging;
@@ -128,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void BuildTransactionNoChangeAdressesLeftCreatesNewChangeAddress()
         {
-            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletTransactionHandlerTest/BuildTransactionNoChangeAdressesLeftCreatesNewChangeAddress");
+            DataFolder dataFolder = CreateDataFolder(this);
 
             var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
             var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
@@ -200,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void FundTransaction_Given__a_wallet_has_enough_inputs__When__adding_inputs_to_an_existing_transaction__Then__the_transaction_is_funded_successfully()
         {
-            var dataFolder = AssureEmptyDirAsDataFolder("TestData/WalletTransactionHandlerTest/FundTransaction_Given__a_wallet_has_enough_inputs__When__adding_inputs_to_an_existing_transaction__Then__the_transaction_is_funded_successfully");
+            DataFolder dataFolder = CreateDataFolder(this);
 
             var wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
             var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
@@ -298,8 +296,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Given_AnInvalidAccountIsUsed_When_GetMaximumSpendableAmountIsCalled_Then_AnExceptionIsThrown()
         {
-           string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_AnInvalidAccountIsUsed_When_GetMaximumSpendableAmountIsCalled_Then_AnExceptionIsThrown");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+
+            DataFolder dataFolder = CreateDataFolder(this);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new Mock<ConcurrentChain>().Object, NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
@@ -323,8 +321,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoSpendableFound_Then_MaxAmountReturnsAsZero()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoSpendableFound_Then_MaxAmountReturnsAsZero");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            DataFolder dataFolder = CreateDataFolder(this);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
@@ -360,8 +357,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Given_GetMaximumSpendableAmountIsCalledForConfirmedTransactions_When_ThereAreNoConfirmedSpendableFound_Then_MaxAmountReturnsAsZero()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_GetMaximumSpendableAmountIsCalledForConfirmedTransactions_When_ThereAreNoConfirmedSpendableFound_Then_MaxAmountReturnsAsZero");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            DataFolder dataFolder = CreateDataFolder(this);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
@@ -397,8 +393,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoConfirmedSpendableFound_Then_MaxAmountReturnsAsTheSumOfUnconfirmedTxs()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_GetMaximumSpendableAmountIsCalledForConfirmedTransactions_When_ThereAreNoConfirmedSpendableFound_Then_MaxAmountReturnsAsZero");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            DataFolder dataFolder = CreateDataFolder(this);
+
             var walletFeePolicy = new Mock<IWalletFeePolicy>();
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));
 
@@ -435,8 +431,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoTransactions_Then_MaxAmountReturnsAsZero()
         {
-            string dir = AssureEmptyDir("TestData/WalletManagerTest/Given_GetMaximumSpendableAmountIsCalled_When_ThereAreNoTransactions_Then_MaxAmountReturnsAsZero");
-            var dataFolder = new DataFolder(new NodeSettings { DataDir = dir });
+            DataFolder dataFolder = CreateDataFolder(this);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main.GetGenesis().Header), NodeSettings.Default(),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default);
@@ -469,8 +464,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void EstimateFeeWithLowFeeMatchesBuildTxLowFee()
         {
-            string dataPath = Path.Combine("TestData", nameof(WalletTransactionHandlerTest), nameof(EstimateFeeWithLowFeeMatchesBuildTxLowFee));
-            DataFolder dataFolder = AssureEmptyDirAsDataFolder(dataPath);
+            var dataFolder = CreateDataFolder(this);
 
             Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
             var accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");

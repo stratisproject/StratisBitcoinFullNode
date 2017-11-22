@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void CanSpecifyStoreSettings()
         {
-            var dir = AssureEmptyDir("TestData/StoreSettingsTest/CanSpecifyStoreSettings");
+            string dir = CreateTestDir(this);
 
             NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
 

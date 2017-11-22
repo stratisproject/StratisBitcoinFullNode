@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void InitializesGenBlockAndTxIndexOnFirstLoad()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/InitializeGenBlockAndTxIndex");
+            string dir = CreateTestDir(this);
             using (var repository = SetupRepository(Network.Main, dir))
             {
             }
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void DoesNotOverwriteExistingBlockAndTxIndexOnFirstLoad()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/NoOverwriteExistingBlockAndTxIndex");
+            string dir = CreateTestDir(this);
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetTrxAsyncWithoutTransactionIndexReturnsNewTransaction()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithoutTxIndex");
+            string dir = CreateTestDir(this);
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetTrxAsyncWithoutTransactionInIndexReturnsNull()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithoutTransactionFound");
+            string dir = CreateTestDir(this);
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetTrxAsyncWithTransactionReturnsExistingTransaction()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxAsyncWithTransaction");
+            string dir = CreateTestDir(this);
             var trans = new Transaction();
             trans.Version = 125;
 
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetTrxBlockIdAsyncWithoutTxIndexReturnsDefaultId()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTxIndex");
+            string dir = CreateTestDir(this);
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetTrxBlockIdAsyncWithoutExistingTransactionReturnsNull()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTransaction");
+            string dir = CreateTestDir(this);
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetTrxBlockIdAsyncWithTransactionReturnsBlockId()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/GetTrxBlockIdAsyncWithoutTransaction");
+            string dir = CreateTestDir(this);
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void PutAsyncWritesBlocksAndTransactionsToDbAndSavesNextBlockHash()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/PutAsyncStoresBlocksAndTxs");
+            string dir = CreateTestDir(this);
 
             var nextBlockHash = new uint256(1241256);
             var blocks = new List<Block>();
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void SetTxIndexUpdatesTxIndex()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/SetTxIndexUpdatesTxIndex");
+            string dir = CreateTestDir(this);
             using (var engine = new DBreezeEngine(dir))
             {
                 var trans = engine.GetTransaction();
@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void SetBlockHashUpdatesBlockHash()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/SetBlockHashUpdatesBlockHash");
+            string dir = CreateTestDir(this);
             using (var engine = new DBreezeEngine(dir))
             {
                 var trans = engine.GetTransaction();
@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetAsyncWithExistingBlockReturnsBlock()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/GetAsyncWithExistingBlock");
+            string dir = CreateTestDir(this);
             var block = new Block();
 
             using (var engine = new DBreezeEngine(dir))
@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetAsyncWithoutExistingBlockReturnsNull()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/GetAsyncWithoutExistingBlock");
+            string dir = CreateTestDir(this);
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void ExistAsyncWithExistingBlockReturnsTrue()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/ExistAsyncWithExistingBlock");
+            string dir = CreateTestDir(this);
             var block = new Block();
 
             using (var engine = new DBreezeEngine(dir))
@@ -381,7 +381,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void ExistAsyncWithoutExistingBlockReturnsFalse()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/ExistAsyncWithoutExistingBlock");
+            string dir = CreateTestDir(this);
 
             using (var repository = SetupRepository(Network.Main, dir))
             {
@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void DeleteAsyncRemovesBlocksAndTransactions()
         {
-            var dir = AssureEmptyDir("TestData/BlockRepository/DeleteAsyncRemovesBlocksAndTransactions");
+            string dir = CreateTestDir(this);
             var block = new Block();
             block.Transactions.Add(new Transaction());
 
@@ -428,7 +428,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             }
         }
 
-        private BlockStore.IBlockRepository SetupRepository(Network main, string dir)
+        private IBlockRepository SetupRepository(Network main, string dir)
         {
             var repository = new BlockRepository(main, dir, DateTimeProvider.Default, this.loggerFactory);
             repository.InitializeAsync().GetAwaiter().GetResult();

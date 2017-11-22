@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         [Fact]
         public void CanSpecifyRPCSettings()
         {
-            var dir = AssureEmptyDir("TestData/StoreSettingsTest/CanSpecifyRPCSettings");
+            var dir = CreateTestDir(this);
 
             NodeSettings nodeSettings = new NodeSettings().LoadArguments(new string[] { $"-datadir={dir}" });
 
