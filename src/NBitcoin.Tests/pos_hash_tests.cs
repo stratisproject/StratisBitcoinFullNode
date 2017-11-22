@@ -11,8 +11,15 @@ namespace NBitcoin.Tests
 
     public class pos_hash_tests
 	{
+        public pos_hash_tests()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
 
-		[Fact]
+        [Fact]
 		[Trait("Core", "Core")]
 		public void murmurhash3()
 		{

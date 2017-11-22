@@ -13,9 +13,17 @@ namespace NBitcoin
         static Network()
         {
             // initialize the networks
+            bool saveTS = Transaction.TimeStamp;
+            bool saveSig = Block.BlockSignature;
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+
             Network main = Network.Main;
             Network testNet = Network.TestNet;
             Network regTest = Network.RegTest;
+
+            Transaction.TimeStamp = saveTS;
+            Block.BlockSignature = saveSig;
         }
 
         public static Network Main => Network.GetNetwork("Main") ?? InitMain();

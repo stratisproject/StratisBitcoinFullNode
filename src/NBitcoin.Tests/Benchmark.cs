@@ -16,7 +16,15 @@ namespace NBitcoin.Tests
 {
 	public class Benchmark
 	{
-		[Fact]
+        public Benchmark()
+        {
+            // These flags may get set due to static network initializers
+            // which include the initializers for Stratis.
+            Transaction.TimeStamp = false;
+            Block.BlockSignature = false;
+        }
+
+        [Fact]
 		[Trait("Benchmark", "Benchmark")]
 		public void BlockDirectoryScanSpeed()
 		{
