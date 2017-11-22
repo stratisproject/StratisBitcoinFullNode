@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -67,10 +65,10 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var chain = new ConcurrentChain(blocks[0].Header);
             AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
-            var dataPath = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "BlockNotification", "Notify_WithSync_ScenarioOne"));
+            var dataFolder = CreateDataFolder(this);
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectedNodes).Returns(new NodesCollection());
-            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings().LoadArguments(new string[] { $"-datadir={dataPath.WalletPath}" }));
+            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings().LoadArguments(new string[] { $"-datadir={dataFolder.WalletPath}" }));
             connectionManager.Setup(c => c.Parameters).Returns(new NodeConnectionParameters());
 
             var lookAheadBlockPuller = new LookaheadBlockPuller(chain, connectionManager.Object, new Mock<ILoggerFactory>().Object);
