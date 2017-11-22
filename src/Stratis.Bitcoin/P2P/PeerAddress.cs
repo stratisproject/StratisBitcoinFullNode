@@ -179,6 +179,9 @@ namespace Stratis.Bitcoin.P2P
 
         #endregion
 
+        [JsonIgnore]
+        public PeerIntroductionType PeerIntroductionType { get; set; }
+
         /// <summary>
         /// Calculates the relative chance this peer should be given when selecting nodes to connect to.
         /// <para>
@@ -214,19 +217,20 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
-        public static PeerAddress Create(NetworkAddress address)
+        public static PeerAddress Create(NetworkAddress address, PeerIntroductionType peerIntroductionType)
         {
             return new PeerAddress
             {
                 ConnectionAttempts = 0,
                 endPoint = address.Endpoint,
                 loopback = IPAddress.Loopback.ToString(),
+                PeerIntroductionType = peerIntroductionType
             };
         }
 
-        public static PeerAddress Create(NetworkAddress address, IPAddress source)
+        public static PeerAddress Create(NetworkAddress address, IPAddress source, PeerIntroductionType peerIntroductionType)
         {
-            var peer = Create(address);
+            var peer = Create(address, peerIntroductionType);
             peer.loopback = source.ToString();
             return peer;
         }
@@ -235,6 +239,13 @@ namespace Stratis.Bitcoin.P2P
         {
             return this.endPoint.Address.ToString() == endPoint.Address.ToString() && this.endPoint.Port == endPoint.Port;
         }
+    }
+
+    public enum PeerIntroductionType
+    {
+        Discover,
+        Add,
+        Connect
     }
 
     /// <summary>

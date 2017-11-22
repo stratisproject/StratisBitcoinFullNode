@@ -40,6 +40,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary> Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
+        /// <summary> What peer types (by <see cref="PeerIntroductionType"/> this connector should find and connect to.</summary>
+        private readonly PeerIntroductionType peerIntroductionType;
+
         internal RelatedPeerConnectors RelatedPeerConnector { get; set; }
 
         /// <summary> Specification of requirements the <see cref="PeerConnector"/> has when connect to other peers.</summary>
@@ -51,7 +54,8 @@ namespace Stratis.Bitcoin.P2P
             NodeRequirement nodeRequirements,
             Func<IPEndPoint, byte[]> groupSelector,
             IAsyncLoopFactory asyncLoopFactory,
-            IPeerAddressManager peerAddressManager)
+            IPeerAddressManager peerAddressManager,
+            PeerIntroductionType peerIntroductionType)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.ConnectedPeers = new NodesCollection();
@@ -61,6 +65,7 @@ namespace Stratis.Bitcoin.P2P
             this.nodeLifetime = nodeLifeTime;
             this.ParentParameters = parameters;
             this.peerAddressManager = peerAddressManager;
+            this.peerIntroductionType = peerIntroductionType;
             this.Requirements = nodeRequirements;
 
             this.currentParameters = this.ParentParameters.Clone();
@@ -138,7 +143,7 @@ namespace Stratis.Bitcoin.P2P
 
             while (groupFail < 50 && !this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                peer = this.peerAddressManager.SelectPeerToConnectTo();
+                peer = this.peerAddressManager.SelectPeerToConnectTo(this.peerIntroductionType);
                 if (peer == null)
                     break;
 

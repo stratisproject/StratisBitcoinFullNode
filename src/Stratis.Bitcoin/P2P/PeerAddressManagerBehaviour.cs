@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.P2P
             if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
             {
                 if (message.Message.Payload is AddrPayload addr)
-                    this.peerAddressManager.AddPeers(addr.Addresses, node.RemoteSocketAddress);
+                    this.peerAddressManager.AddPeers(addr.Addresses, node.RemoteSocketAddress, PeerIntroductionType.Discover);
             }
         }
 

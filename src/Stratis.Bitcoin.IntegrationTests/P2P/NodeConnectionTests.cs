@@ -48,12 +48,12 @@ namespace Stratis.Bitcoin.IntegrationTests.P2P
                 Task.Delay(TimeSpans.Second);
             }
 
-            var peerOne = addressManager.SelectPeerToConnectTo();
+            var peerOne = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
             Node node = Node.Connect(Network.Main, peerOne, parameters);
             node.VersionHandshake();
             node.Disconnect();
 
-            var peerTwo = addressManager.SelectPeerToConnectTo();
+            var peerTwo = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Discover);
             Node node2 = Node.Connect(Network.Main, peerTwo, parameters);
             node.Disconnect();
         }

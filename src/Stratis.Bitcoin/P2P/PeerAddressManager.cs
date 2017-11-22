@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.P2P
         /// Only routable IP addresses will be added. <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>
         /// </para>
         /// </summary>
-        void AddPeer(NetworkAddress networkAddress, IPAddress source);
+        void AddPeer(NetworkAddress networkAddress, IPAddress source, PeerIntroductionType peerIntroductionType);
 
         /// <summary>
         /// Add a set of peers to the <see cref="Peers"/> dictionary.
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.P2P
         /// Only routable IP addresses will be added. <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>
         /// </para>
         /// </summary>
-        void AddPeers(NetworkAddress[] networkAddress, IPAddress source);
+        void AddPeers(NetworkAddress[] networkAddress, IPAddress source, PeerIntroductionType introductionType);
 
         /// <summary> Find a peer by endpoint.</summary>
         PeerAddress FindPeer(IPEndPoint endPoint);
@@ -70,12 +70,12 @@ namespace Stratis.Bitcoin.P2P
         void PeerHandshaked(IPEndPoint endpoint, DateTimeOffset peerAttemptedAt);
 
         /// <summary>
-        /// Selects a random peer to connect to.
+        /// Selects a random peer (by <see cref="PeerIntroductionType"/>) to connect to.
         /// <para>
         /// Use a 50% chance for choosing between tried and new peers.
         /// </para>
         /// </summary>
-        NetworkAddress SelectPeerToConnectTo();
+        NetworkAddress SelectPeerToConnectTo(PeerIntroductionType peerIntroductionType);
 
         /// <summary>
         /// Selects a random set of preferred peers to connects to.
@@ -132,28 +132,22 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void AddPeer(NetworkAddress networkAddress, IPAddress source)
+        public void AddPeer(NetworkAddress networkAddress, IPAddress source, PeerIntroductionType peerIntroductionType)
         {
             if (networkAddress.Endpoint.Address.IsRoutable(true) == false)
                 return;
 
-            var peerToAdd = PeerAddress.Create(networkAddress, source);
+            var peerToAdd = PeerAddress.Create(networkAddress, source, peerIntroductionType);
             this.Peers.TryAdd(peerToAdd.NetworkAddress.Endpoint, peerToAdd);
         }
 
         /// <inheritdoc/>
-        public void AddPeers(NetworkAddress[] networkAddresses, IPAddress source)
+        public void AddPeers(NetworkAddress[] networkAddresses, IPAddress source, PeerIntroductionType peerIntroductionType)
         {
             foreach (var networkAddress in networkAddresses)
             {
-                this.AddPeer(networkAddress, source);
+                this.AddPeer(networkAddress, source, peerIntroductionType);
             }
-        }
-
-        public void DeletePeer(PeerAddress peer)
-        {
-            IPEndPoint endPoint = null;
-            this.Peers.TryRemove(endPoint, out peer);
         }
 
         /// <inheritdoc/>
@@ -196,14 +190,14 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc />
-        public NetworkAddress SelectPeerToConnectTo()
+        public NetworkAddress SelectPeerToConnectTo(PeerIntroductionType peerIntroductionType)
         {
-            if (this.Peers.Tried().Any() == true &&
-                (this.Peers.New().Any() == false || GetRandomInteger(2) == 0))
-                return this.Peers.Tried().Random().NetworkAddress;
+            if (this.Peers.Tried(peerIntroductionType).Any() == true &&
+                (this.Peers.New(peerIntroductionType).Any() == false || GetRandomInteger(2) == 0))
+                return this.Peers.Tried(peerIntroductionType).Random().NetworkAddress;
 
-            if (this.Peers.New().Any() == true)
-                return this.Peers.New().Random().NetworkAddress;
+            if (this.Peers.New(peerIntroductionType).Any() == true)
+                return this.Peers.New(peerIntroductionType).Random().NetworkAddress;
 
             return null;
         }
@@ -227,15 +221,20 @@ namespace Stratis.Bitcoin.P2P
 
     public static class PeerAddressExtensions
     {
-        public static IEnumerable<PeerAddress> New(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        public static IEnumerable<PeerAddress> New(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers, PeerIntroductionType peerIntroductionType)
         {
-            var isNew = peers.Skip(0).Where(p => p.Value.IsNew).Select(p => p.Value);
+            var isNew = peers.Skip(0)
+                .Where(p => p.Value.PeerIntroductionType == peerIntroductionType)
+                .Where(p => p.Value.IsNew).Select(p => p.Value);
             return isNew;
         }
 
-        public static IEnumerable<PeerAddress> Tried(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers)
+        public static IEnumerable<PeerAddress> Tried(this ConcurrentDictionary<IPEndPoint, PeerAddress> peers, PeerIntroductionType peerIntroductionType)
         {
-            var tried = peers.Skip(0).Where(p => !p.Value.IsNew).Select(p => p.Value);
+            var tried = peers.Skip(0)
+                .Where(p => p.Value.PeerIntroductionType == peerIntroductionType)
+                .Where(p => !p.Value.IsNew).Select(p => p.Value);
+
             return tried;
         }
 

@@ -86,9 +86,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Manager of node's network peers.</summary>
         private IPeerAddressManager peerAddressManager;
 
-        /// <summary>Loop that discovers peers to connect to.</summary>
-        private PeerDiscoveryLoop peerDiscoveryLoop;
-
         /// <summary>Periodic task to save list of peers to disk.</summary>
         private IAsyncLoop flushAddressManagerLoop;
 
@@ -231,22 +228,14 @@ namespace Stratis.Bitcoin.Base
                 this.peerAddressManager.LoadPeers();
             }
 
-            if (addressManagerBehaviour.Mode.HasFlag(PeerAddressManagerBehaviourMode.Discover))
-            {
-                this.logger.LogInformation("Starting peer discovery...");
-
-                this.peerDiscoveryLoop = new PeerDiscoveryLoop(this.asyncLoopFactory, this.network, connectionParameters, this.nodeLifetime, peerAddressManager);
-                this.peerDiscoveryLoop.Start();
-            }
-
             this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush...", token =>
-            {
-                this.peerAddressManager.SavePeers();
-                return Task.CompletedTask;
-            },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpan.FromMinutes(5.0),
-            startAfter: TimeSpan.FromMinutes(5.0));
+           {
+               this.peerAddressManager.SavePeers();
+               return Task.CompletedTask;
+           },
+           this.nodeLifetime.ApplicationStopping,
+           repeatEvery: TimeSpan.FromMinutes(5.0),
+           startAfter: TimeSpan.FromMinutes(5.0));
         }
 
         /// <inheritdoc />
@@ -256,9 +245,6 @@ namespace Stratis.Bitcoin.Base
             this.flushAddressManagerLoop.Dispose();
 
             this.peerAddressManager.Dispose();
-
-            this.logger.LogInformation("Stopping peer discovery...");
-            this.peerDiscoveryLoop?.Dispose();
 
             this.logger.LogInformation("Flushing headers chain...");
             this.flushChainLoop?.Dispose();

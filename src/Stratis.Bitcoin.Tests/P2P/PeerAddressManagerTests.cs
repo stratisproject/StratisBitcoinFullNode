@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
 
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(networkAddress, IPAddress.Loopback);
+            addressManager.AddPeer(networkAddress, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeOffset.Now);
             addressManager.PeerConnected(networkAddress.Endpoint, DateTimeOffset.Now);
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
 
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(networkAddress, IPAddress.Loopback);
+            addressManager.AddPeer(networkAddress, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerAttempted(networkAddress.Endpoint, DateTimeOffset.Now);
             addressManager.PeerConnected(networkAddress.Endpoint, DateTimeOffset.Now);
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(networkAddress, IPAddress.Loopback);
+            addressManager.AddPeer(networkAddress, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerConnected(networkAddress.Endpoint, DateTimeOffset.Now);
 
@@ -113,15 +113,15 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
-            addressManager.AddPeer(addressFour, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressFour, IPAddress.Loopback, PeerIntroductionType.Add);
 
-            var randomPeer = addressManager.SelectPeerToConnectTo();
+            var randomPeer = addressManager.SelectPeerToConnectTo(PeerIntroductionType.Add);
             addressManager.PeerAttempted(randomPeer.Endpoint, DateTimeOffset.Now);
 
-            Assert.Null(addressManager.Peers.New().FirstOrDefault(p => p.Match(randomPeer.Endpoint)));
+            Assert.Null(addressManager.Peers.New(PeerIntroductionType.Add).FirstOrDefault(p => p.Match(randomPeer.Endpoint)));
         }
 
         /// <summary>
@@ -147,9 +147,9 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
 
             var networkAddresses = addressManager.SelectPeersToConnectTo();
             Assert.Equal(3, networkAddresses.Count());
@@ -178,9 +178,9 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now);
 
@@ -212,9 +212,9 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now);
             addressManager.PeerAttempted(addressTwo.Endpoint, DateTimeOffset.Now - TimeSpan.FromSeconds(70));
@@ -249,9 +249,9 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
             addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now.AddSeconds(-65));
@@ -286,9 +286,9 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
             addressManager.PeerAttempted(addressOne.Endpoint, DateTimeOffset.Now);
@@ -324,9 +324,9 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerConnected(addressThree.Endpoint, DateTimeOffset.Now);
 
@@ -360,9 +360,9 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerConnected(addressThree.Endpoint, DateTimeOffset.Now.AddDays(-8));
 
@@ -398,9 +398,9 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
-            addressManager.AddPeer(addressTwo, IPAddress.Loopback);
-            addressManager.AddPeer(addressThree, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressTwo, IPAddress.Loopback, PeerIntroductionType.Add);
+            addressManager.AddPeer(addressThree, IPAddress.Loopback, PeerIntroductionType.Add);
 
             addressManager.PeerConnected(addressOne.Endpoint, DateTimeOffset.Now.AddDays(-5));
             for (int i = 0; i < 11; i++)
@@ -422,7 +422,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var peerFolder = AssureEmptyDirAsDataFolder(Path.Combine(AppContext.BaseDirectory, "PeerAddressManager"));
             var addressManager = new PeerAddressManager(peerFolder);
-            addressManager.AddPeer(addressOne, IPAddress.Loopback);
+            addressManager.AddPeer(addressOne, IPAddress.Loopback, PeerIntroductionType.Add);
 
             var peer = addressManager.FindPeer(addressOne.Endpoint);
             peer.Attempted(DateTimeOffset.Now);
