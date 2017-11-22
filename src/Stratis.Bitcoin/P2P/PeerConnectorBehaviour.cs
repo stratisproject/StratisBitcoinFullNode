@@ -29,6 +29,9 @@ namespace Stratis.Bitcoin.P2P
         {
             if (node.State == NodeState.HandShaked)
                 this.Parent.AddNode(node);
+
+            if ((node.State == NodeState.Failed) || (node.State == NodeState.Disconnecting) || (node.State == NodeState.Offline))
+                this.Parent.RemoveNode(node);
         }
 
         #region ICloneable Members

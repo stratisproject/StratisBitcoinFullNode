@@ -173,9 +173,9 @@ namespace Stratis.Bitcoin.P2P
             this.ConnectedNodes.DisconnectAll();
         }
 
-        internal bool RemoveNode(Node node)
+        internal void RemoveNode(Node node)
         {
-            return this.ConnectedNodes.Remove(node);
+            this.ConnectedNodes.Remove(node);
         }
 
         private NetworkAddress FindPeerToConnectTo()
